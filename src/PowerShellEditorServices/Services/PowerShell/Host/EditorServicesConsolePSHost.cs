@@ -11,18 +11,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
     {
         private readonly ILogger _logger;
 
-        private readonly HostStartupInfo _hostInfo;
-
         private Runspace _pushedRunspace;
 
         public EditorServicesConsolePSHost(
             ILogger logger,
             EditorServicesConsolePSHostUserInterface ui,
-            HostStartupInfo hostInfo)
+            string name,
+            Version version)
         {
             _logger = logger;
-            _hostInfo = hostInfo;
             _pushedRunspace = null;
+            Name = name;
+            Version = version;
             UI = ui;
         }
 
@@ -32,11 +32,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public override Guid InstanceId { get; } = Guid.NewGuid();
 
-        public override string Name => _hostInfo.Name;
+        public override string Name { get; }
 
         public override PSHostUserInterface UI { get; }
 
-        public override Version Version => _hostInfo.Version;
+        public override Version Version { get; }
 
         public bool IsRunspacePushed { get; private set; }
 

@@ -4,6 +4,8 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
@@ -14,6 +16,7 @@ using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Services
@@ -29,7 +32,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private ILogger logger;
         private string remoteFilesPath;
         private string processTempPath;
-        private PowerShellContextService powerShellContext;
+        private readonly PowerShellStartupService _startupService;
+        private readonly PowerShellExecutionService _executionService;
         private IEditorOperations editorOperations;
 
         private Dictionary<string, RemotePathMappings> filesPerComputer =
@@ -247,14 +251,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </param>
         public RemoteFileManagerService(
             ILoggerFactory factory,
-            PowerShellContextService powerShellContext,
+            PowerShellStartupService startupService,
+            PowerShellExecutionService executionService,
             EditorOperationsService editorOperations)
         {
-            Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
-
             this.logger = factory.CreateLogger<RemoteFileManagerService>();
-            this.powerShellContext = powerShellContext;
-            this.powerShellContext.RunspaceChanged += HandleRunspaceChangedAsync;
+            _executionService = executionService;
+            _startupService = startupService;
+            //this.powerShellContext.RunspaceChanged += HandleRunspaceChangedAsync;
 
             this.editorOperations = editorOperations;
 
@@ -269,7 +273,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             this.TryDeleteTemporaryPath();
 
             // Register the psedit function in the current runspace
-            this.RegisterPSEditFunction(this.powerShellContext.CurrentRunspace);
+            //this.RegisterPSEditFunction(this.powerShellContext.CurrentRunspace);
         }
 
         #endregion
@@ -314,7 +318,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             command.AddParameter("Encoding", "Byte");
 
                             byte[] fileContent =
-                                (await this.powerShellContext.ExecuteCommandAsync<byte[]>(command, false, false).ConfigureAwait(false))
+                                (await this._executionService.ExecutePSCommandAsync<byte[]>(command, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false))
                                     .FirstOrDefault();
 
                             if (fileContent != null)
@@ -354,7 +358,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             string remoteFilePath =
                 this.GetMappedPath(
                     localFilePath,
-                    this.powerShellContext.CurrentRunspace);
+                    null); //_startupService.EditorServicesHost.Runspace);
 
             this.logger.LogTrace(
                 $"Saving remote file {remoteFilePath} (local path: {localFilePath})");
@@ -379,18 +383,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 .AddParameter("RemoteFilePath", remoteFilePath)
                 .AddParameter("Content", localFileContents);
 
-            StringBuilder errorMessages = new StringBuilder();
-
-            await powerShellContext.ExecuteCommandAsync<object>(
+            await _executionService.ExecutePSCommandAsync<object>(
                 saveCommand,
-                errorMessages,
-                false,
-                false).ConfigureAwait(false);
+                new PowerShellExecutionOptions(),
+                CancellationToken.None).ConfigureAwait(false);
 
+            /*
             if (errorMessages.Length > 0)
             {
                 this.logger.LogError($"Remote file save failed due to an error:\r\n\r\n{errorMessages}");
             }
+            */
         }
 
         /// <summary>
@@ -541,6 +544,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private async void HandlePSEventReceivedAsync(object sender, PSEventArgs args)
         {
+            return;
+
             if (string.Equals(RemoteSessionOpenFile, args.SourceIdentifier, StringComparison.CurrentCultureIgnoreCase))
             {
                 try
@@ -551,7 +556,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         string remoteFilePath = args.SourceArgs[0] as string;
 
                         // Is this a local process runspace?  Treat as a local file
-                        if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Local)
+                        if (false) //_executionService.CurrentRunspace.Location == RunspaceLocation.Local)
                         {
                             localFilePath = remoteFilePath;
                         }
@@ -584,7 +589,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                                     this.StoreRemoteFile(
                                         remoteFilePath,
                                         fileContent,
-                                        this.powerShellContext.CurrentRunspace);
+                                        (RunspaceDetails)null);
+                                        //this.powerShellContext.CurrentRunspace);
                             }
                             else
                             {
@@ -628,7 +634,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                     if (runspaceDetails.Context == RunspaceContext.DebuggedRunspace)
                     {
-                        this.powerShellContext.ExecuteCommandAsync(createCommand).Wait();
+                        _executionService.ExecutePSCommandAsync(createCommand, new PowerShellExecutionOptions(), CancellationToken.None).GetAwaiter().GetResult();
                     }
                     else
                     {

@@ -20,6 +20,7 @@ using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Utility;
+using SMA = System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -79,7 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly bool isPSReadLineEnabled;
         private readonly ILogger logger;
 
-        private PowerShell powerShell;
+        private SMA.PowerShell powerShell;
         private bool ownsInitialRunspace;
         private RunspaceDetails initialRunspace;
         private SessionDetails mostRecentSessionDetails;
@@ -337,7 +338,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     initialRunspace,
                     this.logger);
 
-            this.powerShell = PowerShell.Create();
+            this.powerShell = SMA.PowerShell.Create();
             this.powerShell.Runspace = initialRunspace;
 
             this.initialRunspace =
@@ -736,7 +737,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     AddToHistory = executionOptions.AddToHistory
                 };
 
-                PowerShell shell = this.PromptNest.GetPowerShell(executionOptions.IsReadLine);
+                this.logger.LogTrace("Passing to PowerShell");
+
+                SMA.PowerShell shell = this.PromptNest.GetPowerShell(executionOptions.IsReadLine);
 
                 // Due to the following PowerShell bug, we can't just assign shell.Commands to psCommand
                 // because PowerShell strips out CommandInfo:
@@ -1021,7 +1024,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 try
                 {
                     var scriptBlock = ScriptBlock.Create(scriptString);
-                    PowerShell ps = scriptBlock.GetPowerShell(isTrustedInput: false, null);
+                    SMA.PowerShell ps = scriptBlock.GetPowerShell(isTrustedInput: false, null);
                     command = ps.Commands;
                 }
                 catch (Exception e)
@@ -1163,7 +1166,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// This method is called automatically by <see cref="ExecuteCommandAsync" />. Consider using
         /// that method instead of calling this directly when possible.
         /// </remarks>
-        internal Task InvokeOnPipelineThreadAsync(Action<PowerShell> invocationAction)
+        internal Task InvokeOnPipelineThreadAsync(Action<SMA.PowerShell> invocationAction)
         {
             if (this.PromptNest.IsReadLineBusy())
             {
@@ -1190,7 +1193,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             TResult defaultValue = default,
             bool useLocalScope = false)
         {
-            using (PowerShell pwsh = PowerShell.Create())
+            using (SMA.PowerShell pwsh = SMA.PowerShell.Create())
             {
                 pwsh.Runspace = runspace;
                 IEnumerable<TResult> results = pwsh.AddScript(scriptToExecute, useLocalScope).Invoke<TResult>();
@@ -1523,7 +1526,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 try
                 {
-                    using (PowerShell ps = PowerShell.Create())
+                    using (SMA.PowerShell ps = SMA.PowerShell.Create())
                     {
                         ps.Runspace = runspaceDetails.Runspace;
                         ps.AddCommand(exitCommand);
@@ -2263,7 +2266,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.GetSessionDetails(
                     command =>
                     {
-                        using (PowerShell powerShell = PowerShell.Create())
+                        using (SMA.PowerShell powerShell = SMA.PowerShell.Create())
                         {
                             powerShell.Runspace = runspace;
                             powerShell.Commands = command;
@@ -2300,7 +2303,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return this.GetSessionDetails(
                 command =>
                 {
-                    using (var localPwsh = PowerShell.Create(RunspaceMode.CurrentRunspace))
+                    using (var localPwsh = SMA.PowerShell.Create(RunspaceMode.CurrentRunspace))
                     {
                         localPwsh.Commands = command;
                         return localPwsh.Invoke().FirstOrDefault();

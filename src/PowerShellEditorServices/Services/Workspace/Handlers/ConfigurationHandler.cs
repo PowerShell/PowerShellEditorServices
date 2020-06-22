@@ -17,6 +17,9 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Window;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
+using System.IO;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -26,7 +29,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly WorkspaceService _workspaceService;
         private readonly ConfigurationService _configurationService;
         private readonly PowerShellContextService _powerShellContextService;
+        private readonly PowerShellExecutionService _executionService;
         private readonly ILanguageServerFacade _languageServer;
+        private DidChangeConfigurationCapability _capability;
         private bool _profilesLoaded;
         private bool _consoleReplStarted;
         private bool _cwdSet;
@@ -37,13 +42,16 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             AnalysisService analysisService,
             ConfigurationService configurationService,
             PowerShellContextService powerShellContextService,
+            PowerShellExecutionService executionService,
             ILanguageServerFacade languageServer)
         {
             _logger = factory.CreateLogger<PsesConfigurationHandler>();
             _workspaceService = workspaceService;
             _configurationService = configurationService;
             _powerShellContextService = powerShellContextService;
+            _executionService = executionService;
             _languageServer = languageServer;
+
             ConfigurationUpdated += analysisService.OnConfigurationUpdated;
         }
 
@@ -102,7 +110,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 && (!this._profilesLoaded || !profileLoadingPreviouslyEnabled))
             {
                 this._logger.LogTrace("Loading profiles...");
-                await _powerShellContextService.LoadHostProfilesAsync().ConfigureAwait(false);
+                //await _executionService.LoadHostProfilesAsync().ConfigureAwait(false);
                 this._profilesLoaded = true;
                 this._logger.LogTrace("Loaded!");
             }
@@ -113,7 +121,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 // Start the interactive terminal
                 this._logger.LogTrace("Starting command loop");
-                _powerShellContextService.ConsoleReader.StartCommandLoop();
+                //_executionService.ConsoleReader.StartCommandLoop();
                 this._consoleReplStarted = true;
             }
 

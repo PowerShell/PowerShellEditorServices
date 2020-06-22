@@ -11,7 +11,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
@@ -58,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             Ast scriptAst,
             Token[] currentTokens,
             int fileOffset,
-            PowerShellContextService powerShellContext,
+            PowerShellExecutionService executionService,
             ILogger logger,
             CancellationToken cancellationToken)
         {
@@ -80,16 +80,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                         cursorPosition.LineNumber,
                         cursorPosition.ColumnNumber));
 
+                /*
                 if (!powerShellContext.IsAvailable)
                 {
                     return null;
                 }
+                */
 
                 var stopwatch = new Stopwatch();
 
                 // If the current runspace is out of process we can use
                 // CommandCompletion.CompleteInput because PSReadLine won't be taking up the
                 // main runspace.
+                /*
                 if (powerShellContext.IsCurrentRunspaceOutOfProcess())
                 {
                     using (RunspaceHandle runspaceHandle = await powerShellContext.GetRunspaceHandleAsync(cancellationToken).ConfigureAwait(false))
@@ -113,19 +116,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                         }
                     }
                 }
+                */
 
                 CommandCompletion commandCompletion = null;
-                await powerShellContext.InvokeOnPipelineThreadAsync(
-                    pwsh =>
-                    {
-                        stopwatch.Start();
-                        commandCompletion = CommandCompletion.CompleteInput(
-                            scriptAst,
-                            currentTokens,
-                            cursorPosition,
-                            options: null,
-                            powershell: pwsh);
-                    }).ConfigureAwait(false);
+                await executionService.ExecuteDelegateAsync((pwsh, cancellationToken) =>
+                {
+                    stopwatch.Start();
+                    commandCompletion = CommandCompletion.CompleteInput(
+                        scriptAst,
+                        currentTokens,
+                        cursorPosition,
+                        options: null,
+                        powershell: pwsh);
+                }, cancellationToken);
+
                 stopwatch.Stop();
                 logger.LogTrace($"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
 
