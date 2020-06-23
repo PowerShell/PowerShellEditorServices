@@ -19,15 +19,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private readonly PSHostUserInterface _underlyingHostUI;
 
         public EditorServicesConsolePSHostUserInterface(
-            ILogger logger,
-            EditorServicesConsolePSHostRawUserInterface rawUI,
+            ILoggerFactory loggerFactory,
             ConsoleReadLine readLine,
             PSHostUserInterface underlyingHostUI)
         {
-            _logger = logger;
+            _logger = loggerFactory.CreateLogger<EditorServicesConsolePSHostUserInterface>();
             _readLine = readLine;
             _underlyingHostUI = underlyingHostUI;
-            RawUI = rawUI;
+            RawUI = new EditorServicesConsolePSHostRawUserInterface(loggerFactory, underlyingHostUI.RawUI);
         }
 
         public override PSHostRawUserInterface RawUI { get; }

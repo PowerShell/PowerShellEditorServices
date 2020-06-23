@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Hosting;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 using System;
 using System.Globalization;
 using System.Management.Automation.Host;
@@ -14,16 +14,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private Runspace _pushedRunspace;
 
         public EditorServicesConsolePSHost(
-            ILogger logger,
-            EditorServicesConsolePSHostUserInterface ui,
+            ILoggerFactory loggerFactory,
             string name,
-            Version version)
+            Version version,
+            PSHost internalHost,
+            ConsoleReadLine readline)
         {
-            _logger = logger;
+            _logger = loggerFactory.CreateLogger<EditorServicesConsolePSHost>();
             _pushedRunspace = null;
             Name = name;
             Version = version;
-            UI = ui;
+            UI = new EditorServicesConsolePSHostUserInterface(loggerFactory, readline, internalHost.UI);
         }
 
         public override CultureInfo CurrentCulture => CultureInfo.CurrentCulture;
@@ -80,6 +81,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             {
                 PopRunspace();
             }
+        }
+
+        public void RegisterRunspace(Runspace runspace)
+        {
+            Runspace = runspace;
         }
     }
 }

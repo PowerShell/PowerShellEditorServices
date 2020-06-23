@@ -25,8 +25,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class PsesCompletionHandler : ICompletionHandler, ICompletionResolveHandler
     {
         const int DefaultWaitTimeoutMilliseconds = 5000;
-        private readonly SemaphoreSlim _completionLock = AsyncUtils.CreateSimpleLockingSemaphore();
-        private readonly SemaphoreSlim _completionResolveLock = AsyncUtils.CreateSimpleLockingSemaphore();
 
         private readonly ILogger _logger;
         private readonly PowerShellExecutionService _executionService;
@@ -69,47 +67,30 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
-            try
-            {
-                await _completionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
+            if (cancellationToken.IsCancellationRequested)
             {
                 _logger.LogDebug("Completion request canceled for file: {0}", request.TextDocument.Uri);
                 return Array.Empty<CompletionItem>();
             }
 
-            try
+            CompletionResults completionResults =
+                await GetCompletionsInFileAsync(
+                    scriptFile,
+                    cursorLine,
+                    cursorColumn).ConfigureAwait(false);
+
+            if (completionResults == null)
             {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    _logger.LogDebug("Completion request canceled for file: {0}", request.TextDocument.Uri);
-                    return Array.Empty<CompletionItem>();
-                }
-
-                CompletionResults completionResults =
-                    await GetCompletionsInFileAsync(
-                        scriptFile,
-                        cursorLine,
-                        cursorColumn).ConfigureAwait(false);
-
-                if (completionResults == null)
-                {
-                    return Array.Empty<CompletionItem>();
-                }
-
-                CompletionItem[] completionItems = new CompletionItem[completionResults.Completions.Length];
-                for (int i = 0; i < completionItems.Length; i++)
-                {
-                    completionItems[i] = CreateCompletionItem(completionResults.Completions[i], completionResults.ReplacedRange, i + 1);
-                }
-
-                return completionItems;
+                return Array.Empty<CompletionItem>();
             }
-            finally
+
+            CompletionItem[] completionItems = new CompletionItem[completionResults.Completions.Length];
+            for (int i = 0; i < completionItems.Length; i++)
             {
-                _completionLock.Release();
+                completionItems[i] = CreateCompletionItem(completionResults.Completions[i], completionResults.ReplacedRange, i + 1);
             }
+
+            return completionItems;
         }
 
         public bool CanResolve(CompletionItem value)
@@ -126,39 +107,22 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return request;
             }
 
-            try
-            {
-                await _completionResolveLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogDebug("CompletionItemResolve request canceled for item: {0}", request.Label);
-                return request;
-            }
+            // Get the documentation for the function
+            CommandInfo commandInfo =
+                await CommandHelpers.GetCommandInfoAsync(
+                    request.Label,
+                    _executionService).ConfigureAwait(false);
 
-            try
+            if (commandInfo != null)
             {
-                // Get the documentation for the function
-                CommandInfo commandInfo =
-                    await CommandHelpers.GetCommandInfoAsync(
-                        request.Label,
+                request.Documentation =
+                    await CommandHelpers.GetCommandSynopsisAsync(
+                        commandInfo,
                         _executionService).ConfigureAwait(false);
-
-                if (commandInfo != null)
-                {
-                    request.Documentation =
-                        await CommandHelpers.GetCommandSynopsisAsync(
-                            commandInfo,
-                            _executionService).ConfigureAwait(false);
-                }
-
-                // Send back the updated CompletionItem
-                return request;
             }
-            finally
-            {
-                _completionResolveLock.Release();
-            }
+
+            // Send back the updated CompletionItem
+            return request;
         }
 
         public void SetCapability(CompletionCapability capability)

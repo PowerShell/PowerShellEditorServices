@@ -19,16 +19,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private const bool DefaultPreviewSetting = true;
 
         private readonly WorkspaceService _workspaceService;
-        private readonly PowerShellStartupService _startupService;
+        private readonly PowerShellExecutionService _executionService;
         private readonly ILanguageServer _languageServer;
 
         public EditorOperationsService(
             WorkspaceService workspaceService,
-            PowerShellStartupService startupService,
+            PowerShellExecutionService executionService,
             ILanguageServer languageServer)
         {
             _workspaceService = workspaceService;
-            _startupService = startupService;
+            _executionService = executionService;
             _languageServer = languageServer;
         }
 
@@ -275,7 +275,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (warnUser)
             {
-                _startupService.EditorServicesHost.UI.WriteWarningLine(
+                _executionService.EditorServicesHost.UI.WriteWarningLine(
                     "Editor operations are not supported in temporary consoles. Re-run the command in the main PowerShell Intergrated Console.");
             }
 

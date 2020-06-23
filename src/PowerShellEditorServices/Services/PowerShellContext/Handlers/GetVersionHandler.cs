@@ -26,20 +26,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private readonly ILogger<GetVersionHandler> _logger;
         private readonly PowerShellExecutionService _executionService;
-        private readonly PowerShellStartupService _startupService;
         private readonly ILanguageServer _languageServer;
         private readonly ConfigurationService _configurationService;
 
         public GetVersionHandler(
             ILoggerFactory factory,
             PowerShellExecutionService executionService,
-            PowerShellStartupService startupService,
             ILanguageServer languageServer,
             ConfigurationService configurationService)
         {
             _logger = factory.CreateLogger<GetVersionHandler>();
             _executionService = executionService;
-            _startupService = startupService;
             _languageServer = languageServer;
             _configurationService = configurationService;
         }
@@ -95,7 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 _logger.LogDebug("Old version of PackageManagement detected.");
 
-                if (_startupService.EditorServicesHost.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
+                if (_executionService.EditorServicesHost.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
                 {
                     _languageServer.Window.ShowWarning("You have an older version of PackageManagement known to cause issues with the PowerShell extension. Please run the following command in a new Windows PowerShell session and then restart the PowerShell extension: `Install-Module PackageManagement -Force -AllowClobber -MinimumVersion 1.4.6`");
                     return;
