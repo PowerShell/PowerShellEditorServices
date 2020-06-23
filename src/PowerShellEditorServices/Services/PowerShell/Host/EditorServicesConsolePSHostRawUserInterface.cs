@@ -26,11 +26,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// <param name="logger">The ILogger implementation to use for this instance.</param>
         /// <param name="internalHost">The InternalHost instance from the origin runspace.</param>
         public EditorServicesConsolePSHostRawUserInterface(
-            ILogger logger,
+            ILoggerFactory loggerFactory,
             PSHostRawUserInterface internalRawUI)
         {
-            this._logger = logger;
-            this._internalRawUI = internalRawUI;
+            _logger = loggerFactory.CreateLogger<EditorServicesConsolePSHostRawUserInterface>();
+            _internalRawUI = internalRawUI;
         }
 
         #endregion
@@ -60,8 +60,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// </summary>
         public override Size BufferSize
         {
-            get => this._internalRawUI.BufferSize;
-            set => this._internalRawUI.BufferSize = value;
+            get => _internalRawUI.BufferSize;
+            set => _internalRawUI.BufferSize = value;
         }
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                     ConsoleProxy.GetCursorTop());
             }
 
-            set => this._internalRawUI.CursorPosition = value;
+            set => _internalRawUI.CursorPosition = value;
         }
 
         /// <summary>
@@ -84,8 +84,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// </summary>
         public override int CursorSize
         {
-            get => this._internalRawUI.CursorSize;
-            set => this._internalRawUI.CursorSize = value;
+            get => _internalRawUI.CursorSize;
+            set => _internalRawUI.CursorSize = value;
         }
 
         /// <summary>
@@ -93,8 +93,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// </summary>
         public override Coordinates WindowPosition
         {
-            get => this._internalRawUI.WindowPosition;
-            set => this._internalRawUI.WindowPosition = value;
+            get => _internalRawUI.WindowPosition;
+            set => _internalRawUI.WindowPosition = value;
         }
 
         /// <summary>
@@ -102,8 +102,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// </summary>
         public override Size WindowSize
         {
-            get => this._internalRawUI.WindowSize;
-            set => this._internalRawUI.WindowSize = value;
+            get => _internalRawUI.WindowSize;
+            set => _internalRawUI.WindowSize = value;
         }
 
         /// <summary>
@@ -111,24 +111,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// </summary>
         public override string WindowTitle
         {
-            get => this._internalRawUI.WindowTitle;
-            set => this._internalRawUI.WindowTitle = value;
+            get => _internalRawUI.WindowTitle;
+            set => _internalRawUI.WindowTitle = value;
         }
 
         /// <summary>
         /// Gets a boolean that determines whether a keypress is available.
         /// </summary>
-        public override bool KeyAvailable => this._internalRawUI.KeyAvailable;
+        public override bool KeyAvailable => _internalRawUI.KeyAvailable;
 
         /// <summary>
         /// Gets the maximum physical size of the console window.
         /// </summary>
-        public override Size MaxPhysicalWindowSize => this._internalRawUI.MaxPhysicalWindowSize;
+        public override Size MaxPhysicalWindowSize => _internalRawUI.MaxPhysicalWindowSize;
 
         /// <summary>
         /// Gets the maximum size of the console window.
         /// </summary>
-        public override Size MaxWindowSize => this._internalRawUI.MaxWindowSize;
+        public override Size MaxWindowSize => _internalRawUI.MaxWindowSize;
 
         /// <summary>
         /// Reads the current key pressed in the console.
@@ -141,10 +141,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             bool includeUp = (options & ReadKeyOptions.IncludeKeyUp) != 0;
 
             // Key Up was requested and we have a cached key down we can return.
-            if (includeUp && this._lastKeyDown != null)
+            if (includeUp && _lastKeyDown != null)
             {
-                KeyInfo info = this._lastKeyDown.Value;
-                this._lastKeyDown = null;
+                KeyInfo info = _lastKeyDown.Value;
+                _lastKeyDown = null;
                 return new KeyInfo(
                     info.VirtualKeyCode,
                     info.Character,
@@ -207,7 +207,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// <returns>A BufferCell array with the requested buffer contents.</returns>
         public override BufferCell[,] GetBufferContents(Rectangle rectangle)
         {
-            return this._internalRawUI.GetBufferContents(rectangle);
+            return _internalRawUI.GetBufferContents(rectangle);
         }
 
         /// <summary>
@@ -223,7 +223,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             Rectangle clip,
             BufferCell fill)
         {
-            this._internalRawUI.ScrollBufferContents(source, destination, clip, fill);
+            _internalRawUI.ScrollBufferContents(source, destination, clip, fill);
         }
 
         /// <summary>
@@ -245,7 +245,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 return;
             }
 
-            this._internalRawUI.SetBufferContents(rectangle, fill);
+            _internalRawUI.SetBufferContents(rectangle, fill);
         }
 
         /// <summary>
@@ -257,7 +257,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             Coordinates origin,
             BufferCell[,] contents)
         {
-            this._internalRawUI.SetBufferContents(origin, contents);
+            _internalRawUI.SetBufferContents(origin, contents);
         }
 
         #endregion
@@ -313,7 +313,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             var result = new KeyInfo((int)key.Key, key.KeyChar, states, isDown);
             if (isDown)
             {
-                this._lastKeyDown = result;
+                _lastKeyDown = result;
             }
 
             return result;

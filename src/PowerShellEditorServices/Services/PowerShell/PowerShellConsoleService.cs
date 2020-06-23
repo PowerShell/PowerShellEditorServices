@@ -13,16 +13,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
     internal class PowerShellConsoleService : IDisposable
     {
         public static PowerShellConsoleService CreateAndStart(
-            ILogger logger,
-            PowerShellStartupService startupService,
+            ILoggerFactory loggerFactory,
             PowerShellExecutionService executionService)
         {
             var consoleService = new PowerShellConsoleService(
-                logger,
+                loggerFactory,
                 executionService,
-                startupService.EngineIntrinsics,
-                startupService.EditorServicesHost,
-                startupService.ReadLine);
+                executionService.EngineIntrinsics,
+                executionService.EditorServicesHost,
+                executionService.ReadLine);
 
             return consoleService;
         }
@@ -44,13 +43,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         private CancellationTokenSource _currentCommandCancellationSource;
 
         private PowerShellConsoleService(
-            ILogger logger,
+            ILoggerFactory loggerFactory,
             PowerShellExecutionService executionService,
             EngineIntrinsics engineIntrinsics,
             EditorServicesConsolePSHost editorServicesHost,
             ConsoleReadLine readLine)
         {
-            _logger = logger;
+            _logger = loggerFactory.CreateLogger<PowerShellConsoleService>();
             _executionService = executionService;
             _engineIntrinsics = engineIntrinsics;
             _editorServicesHost = editorServicesHost;
@@ -113,30 +112,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                 _currentCommandCancellationSource.Token);
         }
 
-        private async Task<string> InvokeReadLineAsync()
+        private Task<string> InvokeReadLineAsync()
         {
-            string input = null;
-            while (string.IsNullOrEmpty(input))
-            {
-                try
-                {
-                    input = await InvokePSReadLineAsync(timeoutMillis: 30);
-                }
-                catch (OperationCanceledException)
-                {
-                    continue;
-                }
-            }
-
-            return input;
-        }
-
-        private Task<string> InvokePSReadLineAsync(int timeoutMillis)
-        {
-            var readlineCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(_currentCommandCancellationSource.Token);
-            readlineCancellationSource.CancelAfter(timeoutMillis);
-
-            return _readLine.ReadCommandLineAsync(readlineCancellationSource.Token);
+            return _readLine.ReadCommandLineAsync(_currentCommandCancellationSource.Token);
         }
 
         private Task InvokeInputAsync(string input)
