@@ -6,7 +6,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Reflection;
@@ -23,13 +25,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// </summary>
     internal static class AstOperations
     {
-        // TODO: When netstandard is upgraded to 2.0, see if
-        //       Delegate.CreateDelegate can be used here instead
-        private static readonly MethodInfo s_extentCloneWithNewOffset = typeof(PSObject).GetTypeInfo().Assembly
-           .GetType("System.Management.Automation.Language.InternalScriptPosition")
-           .GetMethod("CloneWithNewOffset", BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly Func<IScriptPosition, int, IScriptPosition> s_clonePositionWithNewOffset;
 
-        // TODO: BRING THIS BACK
+        static AstOperations()
+        {
+            Type internalScriptPositionType = typeof(PSObject).GetTypeInfo().Assembly
+                .GetType("System.Management.Automation.Language.InternalScriptPosition");
+
+            MethodInfo cloneWithNewOffsetMethod = internalScriptPositionType.GetMethod("CloneWithNewOffset", BindingFlags.Instance | BindingFlags.NonPublic);
+
+            ParameterExpression originalPosition = Expression.Parameter(typeof(IScriptPosition));
+            ParameterExpression newOffset = Expression.Parameter(typeof(int));
+
+            var parameters = new ParameterExpression[] { originalPosition, newOffset };
+            s_clonePositionWithNewOffset = Expression.Lambda<Func<IScriptPosition, int, IScriptPosition>>(
+                Expression.Call(
+                    Expression.Convert(originalPosition, internalScriptPositionType),
+                    cloneWithNewOffsetMethod,
+                    newOffset),
+                parameters).Compile();
+        }
+
         /// <summary>
         /// Gets completions for the symbol found in the Ast at
         /// the given file offset.
@@ -62,9 +78,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             ILogger logger,
             CancellationToken cancellationToken)
         {
-            IScriptPosition cursorPosition = (IScriptPosition)s_extentCloneWithNewOffset.Invoke(
-            scriptAst.Extent.StartScriptPosition,
-            new object[] { fileOffset });
+            IScriptPosition cursorPosition = s_clonePositionWithNewOffset(scriptAst.Extent.StartScriptPosition, fileOffset);
 
             logger.LogTrace(
                 string.Format(
