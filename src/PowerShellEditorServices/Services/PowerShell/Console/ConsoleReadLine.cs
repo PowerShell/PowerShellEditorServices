@@ -22,11 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
     {
         private PSReadLineProxy _psrlProxy;
 
-        private EngineIntrinsics _engineIntrinsics;
-
         private PowerShellExecutionService _executionService;
-
-        private EditorServicesConsolePSHost _editorServicesHost;
 
         #region Constructors
 
@@ -34,19 +30,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         #region Public Methods
 
-        public void RegisterPowerShellEngine(EditorServicesConsolePSHost editorServicesHost, EngineIntrinsics engineIntrinsics)
-        {
-            _editorServicesHost = editorServicesHost;
-            _engineIntrinsics = engineIntrinsics;
-        }
-
-        public void RegisterExecutionService(PowerShellExecutionService executionService)
+        public void RegisterExecutionDependencies(
+            PowerShellExecutionService executionService,
+            PSReadLineProxy psrlProxy)
         {
             _executionService = executionService;
-        }
-
-        public void RegisterPSReadLineProxy(PSReadLineProxy psrlProxy)
-        {
             _psrlProxy = psrlProxy;
         }
 
@@ -156,9 +144,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private string InvokePSReadLine(CancellationToken cancellationToken)
         {
-            return _psrlProxy.ReadLine(_editorServicesHost.Runspace, _engineIntrinsics, cancellationToken);
+            return _psrlProxy.ReadLine(_executionService.EditorServicesHost.Runspace, _executionService.EngineIntrinsics, cancellationToken);
         }
-
 
         /// <summary>
         /// Invokes a custom ReadLine method that is similar to but more basic than PSReadLine.
