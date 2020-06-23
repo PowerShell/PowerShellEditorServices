@@ -31,6 +31,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private const string ReadKeyOverrideFieldName = "_readKeyOverride";
 
+        private const string HandleIdleOverrideName = "_handleIdleOverride";
+
         private const string VirtualTerminalTypeName = "Microsoft.PowerShell.Internal.VirtualTerminal";
 
         private const string ForcePSEventHandlingMethodName = "ForcePSEventHandling";
@@ -72,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             }}";
 
         public static PSReadLineProxy LoadAndCreate(
-            ILogger logger,
+            ILoggerFactory loggerFactory,
             SMA.PowerShell pwsh)
         {
             Type psConsoleReadLineType = pwsh.AddScript(ReadLineInitScript).InvokeAndClear<Type>().FirstOrDefault();
@@ -81,15 +83,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
             RuntimeHelpers.RunClassConstructor(type.TypeHandle);
 
-            return new PSReadLineProxy(logger, psConsoleReadLineType);
+            return new PSReadLineProxy(loggerFactory, psConsoleReadLineType);
         }
 
         private readonly FieldInfo _readKeyOverrideField;
 
+        private readonly FieldInfo _handleIdleOverrideField;
+
+        private readonly ILogger _logger;
+
         public PSReadLineProxy(
-            ILogger logger,
+            ILoggerFactory loggerFactory,
             Type psConsoleReadLine)
         {
+            _logger = loggerFactory.CreateLogger<PSReadLineProxy>();
+
             ReadLine = (Func<Runspace, EngineIntrinsics, CancellationToken, string>)psConsoleReadLine.GetMethod(
                 ReadLineMethodName,
                 new[] { typeof(Runspace), typeof(EngineIntrinsics), typeof(CancellationToken) })
@@ -110,6 +118,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                 s_setKeyHandlerTypes)
                 ?.CreateDelegate(typeof(Action<string[], Action<ConsoleKeyInfo?, object>, string, string>));
 
+            _handleIdleOverrideField = psConsoleReadLine.GetField(HandleIdleOverrideName, BindingFlags.Static | BindingFlags.NonPublic);
+
             _readKeyOverrideField = psConsoleReadLine.GetTypeInfo().Assembly
                 .GetType(VirtualTerminalTypeName)
                 ?.GetField(ReadKeyOverrideFieldName, BindingFlags.Static | BindingFlags.NonPublic);
@@ -119,7 +129,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                 throw NewInvalidPSReadLineVersionException(
                     FieldMemberType,
                     ReadKeyOverrideFieldName,
-                    logger);
+                    _logger);
             }
 
             if (ReadLine == null)
@@ -127,7 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                 throw NewInvalidPSReadLineVersionException(
                     MethodMemberType,
                     ReadLineMethodName,
-                    logger);
+                    _logger);
             }
 
             if (SetKeyHandler == null)
@@ -135,7 +145,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                 throw NewInvalidPSReadLineVersionException(
                     MethodMemberType,
                     SetKeyHandlerMethodName,
-                    logger);
+                    _logger);
             }
 
             if (AddToHistory == null)
@@ -143,7 +153,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                 throw NewInvalidPSReadLineVersionException(
                     MethodMemberType,
                     AddToHistoryMethodName,
-                    logger);
+                    _logger);
             }
 
             if (ForcePSEventHandling == null)
@@ -151,7 +161,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                 throw NewInvalidPSReadLineVersionException(
                     MethodMemberType,
                     ForcePSEventHandlingMethodName,
-                    logger);
+                    _logger);
             }
         }
 
@@ -166,6 +176,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
         internal void OverrideReadKey(Func<bool, ConsoleKeyInfo> readKeyFunc)
         {
             _readKeyOverrideField.SetValue(null, readKeyFunc);
+        }
+
+        internal void OverrideIdleHandler(Action idleAction)
+        {
+            _handleIdleOverrideField.SetValue(null, idleAction);
         }
 
         private static InvalidOperationException NewInvalidPSReadLineVersionException(

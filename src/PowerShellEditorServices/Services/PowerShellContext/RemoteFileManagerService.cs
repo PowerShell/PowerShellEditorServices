@@ -32,7 +32,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private ILogger logger;
         private string remoteFilesPath;
         private string processTempPath;
-        private readonly PowerShellStartupService _startupService;
         private readonly PowerShellExecutionService _executionService;
         private IEditorOperations editorOperations;
 
@@ -251,13 +250,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </param>
         public RemoteFileManagerService(
             ILoggerFactory factory,
-            PowerShellStartupService startupService,
             PowerShellExecutionService executionService,
             EditorOperationsService editorOperations)
         {
             this.logger = factory.CreateLogger<RemoteFileManagerService>();
             _executionService = executionService;
-            _startupService = startupService;
             //this.powerShellContext.RunspaceChanged += HandleRunspaceChangedAsync;
 
             this.editorOperations = editorOperations;
