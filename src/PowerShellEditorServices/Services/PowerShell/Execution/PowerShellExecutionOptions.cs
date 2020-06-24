@@ -14,16 +14,10 @@
 
         public bool AddToHistory { get; set; }
 
-        public bool InterruptCommandPrompt { get; set; }
-
         public bool WriteInputToHost { get; set; }
 
-        public string InputStringToDisplay { get; set; }
+        public bool PropagateCancellationToCaller { get; set; }
 
-        public bool UseNewScope { get; set; }
-
-        internal bool IsReadLine { get; set; }
-
-        internal bool ShouldExecuteInOriginalRunspace { get; set; }
+        public bool InterruptCommandPrompt { get; set; }
     }
 }

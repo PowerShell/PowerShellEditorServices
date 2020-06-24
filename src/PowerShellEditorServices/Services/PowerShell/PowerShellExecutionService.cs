@@ -74,6 +74,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private SMA.PowerShell _pwsh;
 
+        private PowerShellConsoleService _consoleService;
+
         private PowerShellExecutionService(
             ILoggerFactory loggerFactory,
             string hostName,
@@ -97,32 +99,42 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         public EditorServicesConsolePSHost EditorServicesHost { get; private set; }
 
+        public PSReadLineProxy PSReadLineProxy { get; private set; }
+
         public ConsoleReadLine ReadLine { get; private set; }
 
-        public Task<TResult> ExecuteDelegateAsync<TResult>(Func<SMA.PowerShell, CancellationToken, TResult> func, CancellationToken cancellationToken)
+        public Task<TResult> ExecuteDelegateAsync<TResult>(
+            Func<SMA.PowerShell, CancellationToken, TResult> func,
+            string representation,
+            CancellationToken cancellationToken)
         {
             TResult appliedFunc(CancellationToken cancellationToken) => func(_pwsh, cancellationToken);
-            return ExecuteDelegateAsync(appliedFunc, cancellationToken);
+            return ExecuteDelegateAsync(appliedFunc, representation, cancellationToken);
         }
 
-        public Task ExecuteDelegateAsync(Action<SMA.PowerShell, CancellationToken> action, CancellationToken cancellationToken)
+        public Task ExecuteDelegateAsync(
+            Action<SMA.PowerShell, CancellationToken> action,
+            string representation,
+            CancellationToken cancellationToken)
         {
             void appliedAction(CancellationToken cancellationToken) => action(_pwsh, cancellationToken);
-            return ExecuteDelegateAsync(appliedAction, cancellationToken);
+            return ExecuteDelegateAsync(appliedAction, representation, cancellationToken);
         }
 
-        public Task<TResult> ExecuteDelegateAsync<TResult>(Func<CancellationToken, TResult> func, CancellationToken cancellationToken)
+        public Task<TResult> ExecuteDelegateAsync<TResult>(
+            Func<CancellationToken, TResult> func,
+            string representation,
+            CancellationToken cancellationToken)
         {
-            var delegateTask = new SynchronousDelegateTask<TResult>(_logger, func, cancellationToken);
-            _executionQueue.Add(delegateTask);
-            return delegateTask.Task;
+            return QueueTask(new SynchronousDelegateTask<TResult>(_logger, func, representation, cancellationToken));
         }
 
-        public Task ExecuteDelegateAsync(Action<CancellationToken> action, CancellationToken cancellationToken)
+        public Task ExecuteDelegateAsync(
+            Action<CancellationToken> action,
+            string representation,
+            CancellationToken cancellationToken)
         {
-            var delegateTask = new SynchronousDelegateTask(_logger, action, cancellationToken);
-            _executionQueue.Add(delegateTask);
-            return delegateTask.Task;
+            return QueueTask(new SynchronousDelegateTask(_logger, action, representation, cancellationToken));
         }
 
         public Task<Collection<TResult>> ExecutePSCommandAsync<TResult>(
@@ -130,9 +142,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             PowerShellExecutionOptions executionOptions,
             CancellationToken cancellationToken)
         {
-            var psTask = new SynchronousPowerShellTask<TResult>(_logger, _pwsh, psCommand, executionOptions, cancellationToken);
-            _executionQueue.Add(psTask);
-            return psTask.Task;
+            Task<Collection<TResult>> result = QueueTask(new SynchronousPowerShellTask<TResult>(_logger, _pwsh, EditorServicesHost, psCommand, executionOptions, cancellationToken));
+
+            if (executionOptions.InterruptCommandPrompt)
+            {
+                _consoleService?.CancelCurrentPrompt();
+            }
+
+            return result;
         }
 
         public Task ExecutePSCommandAsync(
@@ -154,10 +171,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             }
         }
 
+        public void RegisterConsoleService(PowerShellConsoleService consoleService)
+        {
+            _consoleService = consoleService;
+        }
+
         public void Dispose()
         {
             Stop();
             _pwsh.Dispose();
+        }
+
+        private Task<T> QueueTask<T>(SynchronousTask<T> task)
+        {
+            _executionQueue.Add(task);
+            return task.Task;
         }
 
         private void Start()
@@ -183,9 +211,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
             var engineIntrinsics = (EngineIntrinsics)_pwsh.Runspace.SessionStateProxy.GetVariable("ExecutionContext");
 
-            var psrlProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, _pwsh);
-            psrlProxy.OverrideIdleHandler(HandlePowerShellOnIdle);
-            ReadLine.RegisterExecutionDependencies(this, psrlProxy);
+            PSReadLineProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, _pwsh);
+            PSReadLineProxy.OverrideIdleHandler(HandlePowerShellOnIdle);
+            ReadLine.RegisterExecutionDependencies(this, PSReadLineProxy);
 
             EnqueueModuleImport(s_commandsModulePath);
 
@@ -245,15 +273,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                 .AddParameter("-Name", moduleNameOrPath);
 
             ExecutePSCommandAsync(command, new PowerShellExecutionOptions(), CancellationToken.None);
-        }
-
-        private static void SetSubscriberExecutionThreadWithReflection(PSEventSubscriber subscriber)
-        {
-            // We need to create the PowerShell object in the same thread so we can get a nested
-            // PowerShell.  This is the only way to consistently take control of the pipeline.  The
-            // alternative is to make the subscriber a script block and have that create and process
-            // the PowerShell object, but that puts us in a different SessionState and is a lot slower.
-            s_shouldProcessInExecutionThreadProperty.SetValue(subscriber, true);
         }
 
         private static Runspace CreateRunspace(

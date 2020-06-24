@@ -139,7 +139,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private Task<string> ReadLineAsync(bool isCommandLine, CancellationToken cancellationToken)
         {
-            return _executionService.ExecuteDelegateAsync(InvokePSReadLine, cancellationToken);
+            return _executionService.ExecuteDelegateAsync(InvokePSReadLine, representation: "ReadLine", cancellationToken);
         }
 
         private string InvokePSReadLine(CancellationToken cancellationToken)
