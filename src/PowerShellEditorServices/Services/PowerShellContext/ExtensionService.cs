@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             await ExecutionService.ExecuteDelegateAsync((pwsh, cancellationToken) =>
             {
                 pwsh.Runspace.SessionStateProxy.PSVariable.Set("psEditor", EditorObject);
-            }, CancellationToken.None);
+            }, representation: "Set PSEditor",  CancellationToken.None);
         }
 
         /// <summary>

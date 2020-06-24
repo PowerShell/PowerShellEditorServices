@@ -132,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                     cursorPosition,
                     options: null,
                     powershell: pwsh);
-            }, cancellationToken);
+            }, representation: "CompleteInput", cancellationToken);
 
             stopwatch.Stop();
             logger.LogTrace($"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");

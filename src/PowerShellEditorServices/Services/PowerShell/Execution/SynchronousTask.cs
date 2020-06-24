@@ -36,6 +36,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public abstract TResult Run(CancellationToken cancellationToken);
 
+        public abstract override string ToString();
+
         public void ExecuteSynchronously(ref CancellationTokenSource cancellationSource, CancellationToken threadCancellation)
         {
             if (_taskCancellationToken.IsCancellationRequested || threadCancellation.IsCancellationRequested)
@@ -47,7 +49,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(_taskCancellationToken, threadCancellation);
             try
             {
-                _taskCompletionSource.SetResult(Run(cancellationSource.Token));
+                TResult result = Run(cancellationSource.Token);
+
+                _taskCompletionSource.SetResult(result);
             }
             catch (OperationCanceledException)
             {
