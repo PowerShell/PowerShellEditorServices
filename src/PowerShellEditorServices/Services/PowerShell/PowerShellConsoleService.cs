@@ -21,7 +21,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                 executionService,
                 executionService.EngineIntrinsics,
                 executionService.EditorServicesHost,
-                executionService.ReadLine);
+                executionService.ReadLine,
+                executionService.PSReadLineProxy);
 
             return consoleService;
         }
@@ -36,6 +37,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private readonly ConsoleReadLine _readLine;
 
+        private readonly PSReadLineProxy _psrlProxy;
+
         private Task _consoleLoopThread;
 
         private CancellationTokenSource _replLoopCancellationSource;
@@ -47,13 +50,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             PowerShellExecutionService executionService,
             EngineIntrinsics engineIntrinsics,
             EditorServicesConsolePSHost editorServicesHost,
-            ConsoleReadLine readLine)
+            ConsoleReadLine readLine,
+            PSReadLineProxy psrlProxy)
         {
             _logger = loggerFactory.CreateLogger<PowerShellConsoleService>();
             _executionService = executionService;
             _engineIntrinsics = engineIntrinsics;
             _editorServicesHost = editorServicesHost;
             _readLine = readLine;
+            _psrlProxy = psrlProxy;
         }
 
         public void Dispose()
@@ -66,7 +71,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             _replLoopCancellationSource = new CancellationTokenSource();
             System.Console.CancelKeyPress += HandleConsoleCancellation;
             System.Console.OutputEncoding = Encoding.UTF8;
+            _psrlProxy.OverrideReadKey(ReadKey);
             _consoleLoopThread = Task.Run(RunReplLoopAsync, _replLoopCancellationSource.Token);
+            _executionService.RegisterConsoleService(this);
+        }
+
+        public void CancelCurrentPrompt()
+        {
+            _currentCommandCancellationSource?.Cancel();
         }
 
         private async Task RunReplLoopAsync()
@@ -78,16 +90,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                 try
                 {
                     await InvokePromptFunctionAsync().ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
 
-                try
-                {
-                    // Poll for user input here so that the prompt does not block
-                    string userInput = await InvokeReadLineAsync();
+                    string userInput = await InvokeReadLineAsync().ConfigureAwait(false);
 
                     await InvokeInputAsync(userInput).ConfigureAwait(false);
                 }
@@ -95,12 +99,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                 {
                     continue;
                 }
+                catch (Exception e)
+                {
+
+                }
             }
         }
 
         private Task InvokePromptFunctionAsync()
         {
-            var promptCommand = new PSCommand().AddCommand("prompt");
+            var promptCommand = new PSCommand()
+                .AddCommand("prompt")
+                .AddCommand("Write-Host")
+                    .AddParameter("NoNewline");
+
             var executionOptions = new PowerShellExecutionOptions
             {
                 WriteOutputToHost = true,
@@ -131,6 +143,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private void HandleConsoleCancellation(object sender, ConsoleCancelEventArgs args)
         {
+            _currentCommandCancellationSource.Cancel();
+        }
+
+        private ConsoleKeyInfo ReadKey(bool intercept)
+        {
+            return ConsoleProxy.SafeReadKey(intercept, _currentCommandCancellationSource?.Token ?? CancellationToken.None);
         }
     }
 }

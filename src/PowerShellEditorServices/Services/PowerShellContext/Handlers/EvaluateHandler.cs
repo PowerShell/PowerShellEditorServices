@@ -15,7 +15,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly ILogger _logger;
         private readonly PowerShellExecutionService _executionService;
 
-        public EvaluateHandler(ILoggerFactory factory, PowerShellExecutionService executionService)
+        public EvaluateHandler(
+            ILoggerFactory factory,
+            PowerShellExecutionService executionService)
         {
             _logger = factory.CreateLogger<EvaluateHandler>();
             _executionService = executionService;
@@ -25,8 +27,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             _executionService.ExecutePSCommandAsync(
                 new PSCommand().AddScript(request.Expression),
-                new PowerShellExecutionOptions { WriteInputToHost = true, WriteOutputToHost = true, AddToHistory = true },
-                cancellationToken);
+                new PowerShellExecutionOptions { WriteInputToHost = true, WriteOutputToHost = true, AddToHistory = true, InterruptCommandPrompt = true },
+                CancellationToken.None);
 
             return Task.FromResult(new EvaluateResponseBody
             {
