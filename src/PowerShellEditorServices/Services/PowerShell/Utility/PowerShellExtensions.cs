@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Management.Automation;
+using System.Management.Automation.Runspaces;
 using System.Text;
 using SMA = System.Management.Automation;
 
@@ -34,6 +35,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
         public static SMA.PowerShell AddOutputCommand(this SMA.PowerShell pwsh)
         {
+            Command lastCommand = pwsh.Commands.Commands[pwsh.Commands.Commands.Count - 1];
+            lastCommand.MergeMyResults(PipelineResultTypes.Error, PipelineResultTypes.Output);
+            lastCommand.MergeMyResults(PipelineResultTypes.Information, PipelineResultTypes.Output);
             return pwsh.AddCommand("Microsoft.Powershell.Core\\Out-Default", useLocalScope: true);
         }
 
