@@ -239,8 +239,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                     ImportModule(module);
                 }
             }
-
-            Runspace.DefaultRunspace = _pwsh.Runspace;
         }
 
         private void RunConsumerLoop()
