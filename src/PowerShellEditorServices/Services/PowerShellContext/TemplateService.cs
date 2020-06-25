@@ -169,7 +169,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             await _executionService.ExecutePSCommandAsync(
                 command,
-                new PowerShellExecutionOptions { WriteErrorsToHost = true, InterruptCommandPrompt = true },
+                new PowerShellExecutionOptions { WriteOutputToHost = true, InterruptCommandPrompt = true },
                 CancellationToken.None).ConfigureAwait(false);
 
             // If any errors were written out, creation was not successful

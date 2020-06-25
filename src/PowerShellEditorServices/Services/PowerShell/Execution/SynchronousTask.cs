@@ -9,14 +9,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
     {
         bool IsCanceled { get; }
 
-        void ExecuteSynchronously(ref CancellationTokenSource cancellationSource, CancellationToken threadCancellationToken);
+        void ExecuteSynchronously(CancellationToken threadCancellationToken);
     }
 
     internal abstract class SynchronousTask<TResult> : ISynchronousTask
     {
         private readonly TaskCompletionSource<TResult> _taskCompletionSource;
 
-        private readonly CancellationToken _taskCancellationToken;
+        private readonly CancellationToken _taskRequesterCancellationToken;
 
         private bool _executionCanceled;
 
@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         {
             Logger = logger;
             _taskCompletionSource = new TaskCompletionSource<TResult>();
-            _taskCancellationToken = cancellationToken;
+            _taskRequesterCancellationToken = cancellationToken;
             _executionCanceled = false;
         }
 
@@ -32,38 +32,40 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public Task<TResult> Task => _taskCompletionSource.Task;
 
-        public bool IsCanceled => _taskCancellationToken.IsCancellationRequested || _executionCanceled;
+        public bool IsCanceled => _executionCanceled || _taskRequesterCancellationToken.IsCancellationRequested;
 
         public abstract TResult Run(CancellationToken cancellationToken);
 
         public abstract override string ToString();
 
-        public void ExecuteSynchronously(ref CancellationTokenSource cancellationSource, CancellationToken threadCancellation)
+        public void ExecuteSynchronously(CancellationToken executorCancellationToken)
         {
-            if (_taskCancellationToken.IsCancellationRequested || threadCancellation.IsCancellationRequested)
+            using (var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(_taskRequesterCancellationToken, executorCancellationToken))
             {
-                Cancel();
-                return;
-            }
+                if (cancellationSource.IsCancellationRequested)
+                {
+                    SetCanceled();
+                    return;
+                }
 
-            cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(_taskCancellationToken, threadCancellation);
-            try
-            {
-                TResult result = Run(cancellationSource.Token);
+                try
+                {
+                    TResult result = Run(cancellationSource.Token);
 
-                _taskCompletionSource.SetResult(result);
-            }
-            catch (OperationCanceledException)
-            {
-                Cancel();
-            }
-            catch (Exception e)
-            {
-                _taskCompletionSource.SetException(e);
+                    _taskCompletionSource.SetResult(result);
+                }
+                catch (OperationCanceledException)
+                {
+                    SetCanceled();
+                }
+                catch (Exception e)
+                {
+                    _taskCompletionSource.SetException(e);
+                }
             }
         }
 
-        private void Cancel()
+        private void SetCanceled()
         {
             _executionCanceled = true;
             _taskCompletionSource.SetCanceled();

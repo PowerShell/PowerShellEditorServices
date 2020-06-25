@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             {
                 Logger.LogWarning($"Runtime exception occurred while executing command:{Environment.NewLine}{Environment.NewLine}{e}");
 
-                if (!_executionOptions.WriteErrorsToHost)
+                if (!_executionOptions.WriteOutputToHost)
                 {
                     throw;
                 }

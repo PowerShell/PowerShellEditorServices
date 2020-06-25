@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (_debugStateService.ExecutionCompleted == false)
             {
                 _debugStateService.ExecutionCompleted = true;
-                _executionService.CancelCurrentTask();
+                //_executionService.CancelCurrentTask();
 
                 if (_debugStateService.IsInteractiveDebugSession && _debugStateService.IsAttachSession)
                 {

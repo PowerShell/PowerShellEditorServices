@@ -3,6 +3,8 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using System;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Management.Automation;
 using System.Text;
 using System.Threading;
@@ -16,15 +18,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             ILoggerFactory loggerFactory,
             PowerShellExecutionService executionService)
         {
-            var consoleService = new PowerShellConsoleService(
+            return new PowerShellConsoleService(
                 loggerFactory,
                 executionService,
                 executionService.EngineIntrinsics,
                 executionService.EditorServicesHost,
                 executionService.ReadLine,
                 executionService.PSReadLineProxy);
-
-            return consoleService;
         }
 
         private readonly ILogger _logger;
@@ -44,6 +44,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         private CancellationTokenSource _replLoopCancellationSource;
 
         private CancellationTokenSource _currentCommandCancellationSource;
+
+        private bool _canCancel;
 
         private PowerShellConsoleService(
             ILoggerFactory loggerFactory,
@@ -78,7 +80,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         public void CancelCurrentPrompt()
         {
-            _currentCommandCancellationSource?.Cancel();
+            if (_canCancel)
+            {
+                _currentCommandCancellationSource?.Cancel();
+            }
+        }
+
+        public void Stop()
+        {
+            _replLoopCancellationSource.Cancel();
         }
 
         private async Task RunReplLoopAsync()
@@ -86,12 +96,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             while (!_replLoopCancellationSource.IsCancellationRequested)
             {
                 _currentCommandCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(_replLoopCancellationSource.Token);
-
+                _canCancel = true;
                 try
                 {
-                    await InvokePromptFunctionAsync().ConfigureAwait(false);
+                    string promptString = (await GetPromptOutputAsync().ConfigureAwait(false)).FirstOrDefault() ?? "PS> ";
+
+                    WritePrompt(promptString);
 
                     string userInput = await InvokeReadLineAsync().ConfigureAwait(false);
+
+                    if (_currentCommandCancellationSource.IsCancellationRequested)
+                    {
+                        continue;
+                    }
 
                     await InvokeInputAsync(userInput).ConfigureAwait(false);
                 }
@@ -103,25 +120,28 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                 {
 
                 }
+                finally
+                {
+                    _canCancel = false;
+                    _currentCommandCancellationSource.Dispose();
+                    _currentCommandCancellationSource = null;
+                }
             }
         }
 
-        private Task InvokePromptFunctionAsync()
+        private Task<Collection<string>> GetPromptOutputAsync()
         {
-            var promptCommand = new PSCommand()
-                .AddCommand("prompt")
-                .AddCommand("Write-Host")
-                    .AddParameter("NoNewline");
+            var promptCommand = new PSCommand().AddCommand("prompt");
 
-            var executionOptions = new PowerShellExecutionOptions
-            {
-                WriteOutputToHost = true,
-            };
-
-            return _executionService.ExecutePSCommandAsync(
+            return _executionService.ExecutePSCommandAsync<string>(
                 promptCommand,
-                executionOptions,
-                _currentCommandCancellationSource.Token);
+                new PowerShellExecutionOptions(),
+                CancellationToken.None);
+        }
+
+        private void WritePrompt(string promptString)
+        {
+            _editorServicesHost.UI.Write(promptString);
         }
 
         private Task<string> InvokeReadLineAsync()
