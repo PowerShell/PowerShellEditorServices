@@ -107,10 +107,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
                     if (_currentCommandCancellationSource.IsCancellationRequested)
                     {
+                        _editorServicesHost.UI.WriteLine();
                         continue;
                     }
 
                     await InvokeInputAsync(userInput).ConfigureAwait(false);
+
+                    if (_currentCommandCancellationSource.IsCancellationRequested)
+                    {
+                        _editorServicesHost.UI.WriteLine();
+                    }
                 }
                 catch (OperationCanceledException)
                 {
