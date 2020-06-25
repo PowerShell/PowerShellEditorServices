@@ -225,18 +225,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
             if (VersionUtils.IsWindows)
             {
-                ExecuteDelegateAsync(SetExecutionPolicy, nameof(SetExecutionPolicy), CancellationToken.None);
+                SetExecutionPolicy();
             }
 
-            EnqueueProfileLoads();
+            LoadProfiles();
 
-            EnqueueModuleImport(s_commandsModulePath);
+            ImportModule(s_commandsModulePath);
 
             if (_additionalModulesToLoad != null && _additionalModulesToLoad.Count > 0)
             {
                 foreach (string module in _additionalModulesToLoad)
                 {
-                    EnqueueModuleImport(module);
+                    ImportModule(module);
                 }
             }
 
@@ -292,11 +292,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             }
         }
 
-        private void SetExecutionPolicy(SMA.PowerShell pwsh, CancellationToken cancellationToken)
+        private void SetExecutionPolicy()
         {
             // We want to get the list hierarchy of execution policies
             // Calling the cmdlet is the simplest way to do that
-            IReadOnlyList<PSObject> policies = pwsh
+            IReadOnlyList<PSObject> policies = _pwsh
                 .AddCommand("Microsoft.PowerShell.Security\\Get-ExecutionPolicy")
                     .AddParameter("-List")
                 .InvokeAndClear<PSObject>();
@@ -339,7 +339,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             _logger.LogTrace("Setting execution policy to {Policy}", policyToSet);
             try
             {
-                pwsh.AddCommand("Microsoft.PowerShell.Security\\Set-ExecutionPolicy")
+                _pwsh.AddCommand("Microsoft.PowerShell.Security\\Set-ExecutionPolicy")
                     .AddParameter("Scope", ExecutionPolicyScope.Process)
                     .AddParameter("ExecutionPolicy", policyToSet)
                     .AddParameter("Force")
@@ -351,36 +351,33 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             }
         }
 
-        private void EnqueueProfileLoads()
+        private void LoadProfiles()
         {
             var profileVariable = new PSObject();
 
-            AddProfileMemberAndQueueDotSourceIfExists(profileVariable, nameof(_profilePaths.AllUsersAllHosts), _profilePaths.AllUsersAllHosts);
-            AddProfileMemberAndQueueDotSourceIfExists(profileVariable, nameof(_profilePaths.AllUsersCurrentHost), _profilePaths.AllUsersCurrentHost);
-            AddProfileMemberAndQueueDotSourceIfExists(profileVariable, nameof(_profilePaths.CurrentUserAllHosts), _profilePaths.CurrentUserAllHosts);
-            AddProfileMemberAndQueueDotSourceIfExists(profileVariable, nameof(_profilePaths.CurrentUserCurrentHost), _profilePaths.CurrentUserCurrentHost);
+            AddProfileMemberAndLoadIfExists(profileVariable, nameof(_profilePaths.AllUsersAllHosts), _profilePaths.AllUsersAllHosts);
+            AddProfileMemberAndLoadIfExists(profileVariable, nameof(_profilePaths.AllUsersCurrentHost), _profilePaths.AllUsersCurrentHost);
+            AddProfileMemberAndLoadIfExists(profileVariable, nameof(_profilePaths.CurrentUserAllHosts), _profilePaths.CurrentUserAllHosts);
+            AddProfileMemberAndLoadIfExists(profileVariable, nameof(_profilePaths.CurrentUserCurrentHost), _profilePaths.CurrentUserCurrentHost);
 
             _pwsh.Runspace.SessionStateProxy.SetVariable("PROFILE", profileVariable);
         }
 
-        private void AddProfileMemberAndQueueDotSourceIfExists(PSObject profileVariable, string profileName, string profilePath)
+        private void AddProfileMemberAndLoadIfExists(PSObject profileVariable, string profileName, string profilePath)
         {
             profileVariable.Members.Add(new PSNoteProperty(profileName, profilePath));
 
             if (File.Exists(profilePath))
             {
-                var command = new PSCommand().AddScript(profilePath, useLocalScope: false);
-                ExecutePSCommandAsync(command, new PowerShellExecutionOptions { WriteOutputToHost = true }, CancellationToken.None);
+                _pwsh.AddScript(profilePath, useLocalScope: false).AddOutputCommand().InvokeAndClear();
             }
         }
 
-        private void EnqueueModuleImport(string moduleNameOrPath)
+        private void ImportModule(string moduleNameOrPath)
         {
-            var command = new PSCommand()
-                .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
-                .AddParameter("-Name", moduleNameOrPath);
-
-            ExecutePSCommandAsync(command, new PowerShellExecutionOptions(), CancellationToken.None);
+            _pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                .AddParameter("-Name", moduleNameOrPath)
+                .InvokeAndClear();
         }
 
         private static Runspace CreateRunspace(
