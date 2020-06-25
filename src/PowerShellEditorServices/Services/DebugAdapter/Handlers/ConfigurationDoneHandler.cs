@@ -111,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     // This seems to be the simplest way to invoke a script block (which contains breakpoint information) via the PowerShell API.
                     var cmd = new PSCommand().AddScript(". $args[0]").AddArgument(ast.GetScriptBlock());
                     await _executionService
-                        .ExecutePSCommandAsync<object>(cmd, new PowerShellExecutionOptions { WriteOutputToHost = true, WriteErrorsToHost = true }, CancellationToken.None)
+                        .ExecutePSCommandAsync<object>(cmd, new PowerShellExecutionOptions { WriteOutputToHost = true }, CancellationToken.None)
                         .ConfigureAwait(false);
                 }
                 else
@@ -119,7 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     await _executionService
                         .ExecutePSCommandAsync(
                             new PSCommand().AddScript(untitledScript.Contents),
-                            new PowerShellExecutionOptions { WriteOutputToHost = true, WriteErrorsToHost = true },
+                            new PowerShellExecutionOptions { WriteOutputToHost = true },
                             CancellationToken.None)
                         .ConfigureAwait(false);
                 }

@@ -2,15 +2,7 @@
 {
     public struct PowerShellExecutionOptions
     {
-        public static PowerShellExecutionOptions Default = new PowerShellExecutionOptions
-        {
-            WriteOutputToHost = true,
-            WriteErrorsToHost = true,
-        };
-
         public bool WriteOutputToHost { get; set; }
-
-        public bool WriteErrorsToHost { get; set; }
 
         public bool AddToHistory { get; set; }
 
