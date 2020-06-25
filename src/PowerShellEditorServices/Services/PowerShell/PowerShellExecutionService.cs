@@ -4,6 +4,7 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
+using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -222,9 +223,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             PSReadLineProxy.OverrideIdleHandler(HandlePowerShellOnIdle);
             ReadLine.RegisterExecutionDependencies(this, PSReadLineProxy);
 
-            //SetExecutionPolicy();
+            if (VersionUtils.IsWindows)
+            {
+                ExecuteDelegateAsync(SetExecutionPolicy, nameof(SetExecutionPolicy), CancellationToken.None);
+            }
 
-            LoadProfiles();
+            EnqueueProfileLoads();
 
             EnqueueModuleImport(s_commandsModulePath);
 
@@ -288,7 +292,66 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             }
         }
 
-        private void LoadProfiles()
+        private void SetExecutionPolicy(SMA.PowerShell pwsh, CancellationToken cancellationToken)
+        {
+            // We want to get the list hierarchy of execution policies
+            // Calling the cmdlet is the simplest way to do that
+            IReadOnlyList<PSObject> policies = pwsh
+                .AddCommand("Microsoft.PowerShell.Security\\Get-ExecutionPolicy")
+                    .AddParameter("-List")
+                .InvokeAndClear<PSObject>();
+
+            // The policies come out in the following order:
+            // - MachinePolicy
+            // - UserPolicy
+            // - Process
+            // - CurrentUser
+            // - LocalMachine
+            // We want to ignore policy settings, since we'll already have those anyway.
+            // Then we need to look at the CurrentUser setting, and then the LocalMachine setting.
+            //
+            // Get-ExecutionPolicy -List emits PSObjects with Scope and ExecutionPolicy note properties
+            // set to expected values, so we must sift through those.
+
+            ExecutionPolicy policyToSet = ExecutionPolicy.Bypass;
+            var currentUserPolicy = (ExecutionPolicy)policies[policies.Count - 2].Members["ExecutionPolicy"].Value;
+            if (currentUserPolicy != ExecutionPolicy.Undefined)
+            {
+                policyToSet = currentUserPolicy;
+            }
+            else
+            {
+                var localMachinePolicy = (ExecutionPolicy)policies[policies.Count - 1].Members["ExecutionPolicy"].Value;
+                if (localMachinePolicy != ExecutionPolicy.Undefined)
+                {
+                    policyToSet = localMachinePolicy;
+                }
+            }
+
+            // If there's nothing to do, save ourselves a PowerShell invocation
+            if (policyToSet == ExecutionPolicy.Bypass)
+            {
+                _logger.LogTrace("Execution policy already set to Bypass. Skipping execution policy set");
+                return;
+            }
+
+            // Finally set the inherited execution policy
+            _logger.LogTrace("Setting execution policy to {Policy}", policyToSet);
+            try
+            {
+                pwsh.AddCommand("Microsoft.PowerShell.Security\\Set-ExecutionPolicy")
+                    .AddParameter("Scope", ExecutionPolicyScope.Process)
+                    .AddParameter("ExecutionPolicy", policyToSet)
+                    .AddParameter("Force")
+                    .InvokeAndClear();
+            }
+            catch (CmdletInvocationException e)
+            {
+                _logger.LogError(e, "Error occurred calling 'Set-ExecutionPolicy -Scope Process -ExecutionPolicy {Policy} -Force'", policyToSet);
+            }
+        }
+
+        private void EnqueueProfileLoads()
         {
             var profileVariable = new PSObject();
 
