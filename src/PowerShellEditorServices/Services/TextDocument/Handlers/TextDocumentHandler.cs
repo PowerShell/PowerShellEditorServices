@@ -58,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             // Kick off script diagnostics without blocking the response
             // TODO: Get all recently edited files in the workspace
-            _analysisService.RunScriptDiagnostics(new ScriptFile[] { changedFile });
+            _analysisService.StartScriptDiagnostics(new ScriptFile[] { changedFile });
             return Unit.Task;
         }
 
@@ -91,7 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 // Kick off script diagnostics if we got a PowerShell file without blocking the response
                 // TODO: Get all recently edited files in the workspace
-                _analysisService.RunScriptDiagnostics(new ScriptFile[] { openedFile });
+                _analysisService.StartScriptDiagnostics(new ScriptFile[] { openedFile });
             }
 
             _logger.LogTrace("Finished opening document.");

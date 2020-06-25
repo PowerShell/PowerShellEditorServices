@@ -43,6 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                 hostInfo.Version,
                 hostInfo.LanguageMode,
                 hostInfo.PSHost,
+                hostInfo.ProfilePaths,
                 hostInfo.AdditionalModules);
 
             executionService.Start();
@@ -66,6 +67,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private readonly PSHost _internalHost;
 
+        private readonly ProfilePathInfo _profilePaths;
+
         private readonly IReadOnlyList<string> _additionalModulesToLoad;
 
         private Thread _pipelineThread;
@@ -76,12 +79,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private PowerShellConsoleService _consoleService;
 
+        private bool _taskRunning;
+
         private PowerShellExecutionService(
             ILoggerFactory loggerFactory,
             string hostName,
             Version hostVersion,
             PSLanguageMode languageMode,
             PSHost internalHost,
+            ProfilePathInfo profilePaths,
             IReadOnlyList<string> additionalModules)
         {
             _loggerFactory = loggerFactory;
@@ -92,6 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             _hostVersion = hostVersion;
             _languageMode = languageMode;
             _internalHost = internalHost;
+            _profilePaths = profilePaths;
             _additionalModulesToLoad = additionalModules;
         }
 
@@ -165,9 +172,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         public void CancelCurrentTask()
         {
-            if (_currentExecutionCancellationSource != null)
+            if (_taskRunning)
             {
-                _currentExecutionCancellationSource.Cancel();
+                _currentExecutionCancellationSource?.Cancel();
             }
         }
 
@@ -214,6 +221,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             PSReadLineProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, _pwsh);
             PSReadLineProxy.OverrideIdleHandler(HandlePowerShellOnIdle);
             ReadLine.RegisterExecutionDependencies(this, PSReadLineProxy);
+
+            //SetExecutionPolicy();
+
+            LoadProfiles();
 
             EnqueueModuleImport(s_commandsModulePath);
 
@@ -263,7 +274,41 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                 return;
             }
 
-            task.ExecuteSynchronously(ref _currentExecutionCancellationSource, _stopThreadCancellationSource.Token);
+            using (_currentExecutionCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(_stopThreadCancellationSource.Token))
+            {
+                _taskRunning = true;
+                try
+                {
+                    task.ExecuteSynchronously(_currentExecutionCancellationSource.Token);
+                }
+                finally
+                {
+                    _taskRunning = false;
+                }
+            }
+        }
+
+        private void LoadProfiles()
+        {
+            var profileVariable = new PSObject();
+
+            AddProfileMemberAndQueueDotSourceIfExists(profileVariable, nameof(_profilePaths.AllUsersAllHosts), _profilePaths.AllUsersAllHosts);
+            AddProfileMemberAndQueueDotSourceIfExists(profileVariable, nameof(_profilePaths.AllUsersCurrentHost), _profilePaths.AllUsersCurrentHost);
+            AddProfileMemberAndQueueDotSourceIfExists(profileVariable, nameof(_profilePaths.CurrentUserAllHosts), _profilePaths.CurrentUserAllHosts);
+            AddProfileMemberAndQueueDotSourceIfExists(profileVariable, nameof(_profilePaths.CurrentUserCurrentHost), _profilePaths.CurrentUserCurrentHost);
+
+            _pwsh.Runspace.SessionStateProxy.SetVariable("PROFILE", profileVariable);
+        }
+
+        private void AddProfileMemberAndQueueDotSourceIfExists(PSObject profileVariable, string profileName, string profilePath)
+        {
+            profileVariable.Members.Add(new PSNoteProperty(profileName, profilePath));
+
+            if (File.Exists(profilePath))
+            {
+                var command = new PSCommand().AddScript(profilePath, useLocalScope: false);
+                ExecutePSCommandAsync(command, new PowerShellExecutionOptions { WriteOutputToHost = true }, CancellationToken.None);
+            }
         }
 
         private void EnqueueModuleImport(string moduleNameOrPath)
