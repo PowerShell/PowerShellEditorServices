@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rules", "..\PSScriptAnalyze
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.PowerShell.Commands.Utility", "..\PowerShell\src\Microsoft.PowerShell.Commands.Utility\Microsoft.PowerShell.Commands.Utility.csproj", "{E64BB0B6-9D93-4B6D-9EFF-F669FD5BA842}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.PowerShell.ConsoleHost", "..\PowerShell\src\Microsoft.PowerShell.ConsoleHost\Microsoft.PowerShell.ConsoleHost.csproj", "{39FB7ECC-F839-474C-89CC-467E8A4ADB51}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -130,6 +132,18 @@ Global
 		{E64BB0B6-9D93-4B6D-9EFF-F669FD5BA842}.Release|x64.Build.0 = Release|Any CPU
 		{E64BB0B6-9D93-4B6D-9EFF-F669FD5BA842}.Release|x86.ActiveCfg = Release|Any CPU
 		{E64BB0B6-9D93-4B6D-9EFF-F669FD5BA842}.Release|x86.Build.0 = Release|Any CPU
+		{39FB7ECC-F839-474C-89CC-467E8A4ADB51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39FB7ECC-F839-474C-89CC-467E8A4ADB51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39FB7ECC-F839-474C-89CC-467E8A4ADB51}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{39FB7ECC-F839-474C-89CC-467E8A4ADB51}.Debug|x64.Build.0 = Debug|Any CPU
+		{39FB7ECC-F839-474C-89CC-467E8A4ADB51}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{39FB7ECC-F839-474C-89CC-467E8A4ADB51}.Debug|x86.Build.0 = Debug|Any CPU
+		{39FB7ECC-F839-474C-89CC-467E8A4ADB51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39FB7ECC-F839-474C-89CC-467E8A4ADB51}.Release|Any CPU.Build.0 = Release|Any CPU
+		{39FB7ECC-F839-474C-89CC-467E8A4ADB51}.Release|x64.ActiveCfg = Release|Any CPU
+		{39FB7ECC-F839-474C-89CC-467E8A4ADB51}.Release|x64.Build.0 = Release|Any CPU
+		{39FB7ECC-F839-474C-89CC-467E8A4ADB51}.Release|x86.ActiveCfg = Release|Any CPU
+		{39FB7ECC-F839-474C-89CC-467E8A4ADB51}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{00158E75-B6E0-43E4-98E9-BDAC8EEF4C09} = {31BB87E9-A4A1-4266-B150-CEACE7C424C4}
