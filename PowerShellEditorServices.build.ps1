@@ -286,6 +286,7 @@ task TestServerPS7 {
 }
 
 task TestServerPS71 {
+    Install-Dotnet -Channel 5.0
     Set-Location .\test\PowerShellEditorServices.Test\
     Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
         exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS71 (DotNetTestFilter) }
