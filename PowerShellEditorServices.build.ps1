@@ -19,9 +19,6 @@ param(
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
 
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
-$script:AdditionalSdkVersions = @(
-    '3.1'
-)
 $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Hosting", "BuildInfo.cs")
 $script:PsesCommonProps = [xml](Get-Content -Raw "$PSScriptRoot/PowerShellEditorServices.Common.props")
 $script:IsPreview = [bool]($script:PsesCommonProps.Project.PropertyGroup.VersionSuffix)
@@ -72,35 +69,20 @@ function Install-Dotnet {
     Invoke-WebRequest "https://dot.net/v1/dotnet-install.$installScriptExt" -OutFile $installScriptPath
     $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
 
-    $splat = if ($script:IsUnix) {
-        if($Version) {
-            '-Version'
-            $Version
-        } else {
-            '-Channel'
-            $Channel
-        }
+    $paramArr = if($Version) {
+        '-Version'
+        $Version
     } else {
-        if($Version) {
-            @{
-                Version = $Version
-            }
-        } else {
-            @{
-                Channel = $Channel
-            }
-        }
+        '-Channel'
+        $Channel
     }
 
     if ($script:IsUnix) {
         chmod +x $installScriptPath
     }
 
-    & $installScriptPath @splat -InstallDir "$env:DOTNET_INSTALL_DIR"
-
-    if ($script:IsUnix) {
-        $env:PATH = $env:DOTNET_INSTALL_DIR + [System.IO.Path]::PathSeparator + $env:PATH
-    }
+    Invoke-Expression "$installScriptPath $paramArr -InstallDir '$env:DOTNET_INSTALL_DIR' -NoPath"
+    $env:PATH = $env:DOTNET_INSTALL_DIR + [System.IO.Path]::PathSeparator + $env:PATH
 
     Write-Host "`n### Installation complete." -ForegroundColor Green
 }
