@@ -97,7 +97,7 @@ function Install-Dotnet {
     Write-Host "`n### Installation complete." -ForegroundColor Green
 }
 
-task SetupDotNet -Before Clean, Build, TestHost, TestServerWinPS, TestServerPS62, TestServerPS7, TestServerPS71, TestE2E {
+task SetupDotNet -Before Clean, Build, TestHost, TestServerWinPS, TestServerPS7, TestServerPS71, TestE2E {
 
     $dotnetPath = "$PSScriptRoot/.dotnet"
     $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
@@ -270,19 +270,11 @@ function DotNetTestFilter {
 
 task Test TestServer,TestE2E
 
-task TestServer TestServerWinPS,TestServerPS62,TestServerPS7,TestServerPS71
+task TestServer TestServerWinPS,TestServerPS7,TestServerPS71
 
 task TestServerWinPS -If (-not $script:IsUnix) {
     Set-Location .\test\PowerShellEditorServices.Test\
     exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Desktop (DotNetTestFilter) }
-}
-
-task TestServerPS62 {
-    Install-Dotnet -Channel 2.1
-    Set-Location .\test\PowerShellEditorServices.Test\
-    Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
-        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS62 (DotNetTestFilter) }
-    }
 }
 
 task TestServerPS7 {
