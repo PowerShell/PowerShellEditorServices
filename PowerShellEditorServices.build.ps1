@@ -72,22 +72,31 @@ function Install-Dotnet {
     Invoke-WebRequest "https://raw.githubusercontent.com/dotnet/sdk/master/scripts/obtain/dotnet-install.$installScriptExt" -OutFile $installScriptPath
     $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
 
-    $args = if($Version) {
-        '-Version'
-        $Version
-    } elseif ($Channel) {
-        '-Channel'
-        $Channel
+    $splat = if ($script:IsUnix) {
+        if($Version) {
+            '-Version'
+            $Version
+        } else {
+            '-Channel'
+            $Channel
+        }
     } else {
-        '-JSonFile',
-        (Join-Path $PSScriptRoot 'global.json')
+        if($Version) {
+            @{
+                Version = $Version
+            }
+        } else {
+            @{
+                Channel = $Channel
+            }
+        }
     }
 
     if ($script:IsUnix) {
         chmod +x $installScriptPath
     }
 
-    & $installScriptPath @args -InstallDir "$env:DOTNET_INSTALL_DIR"
+    & $installScriptPath @splat -InstallDir "$env:DOTNET_INSTALL_DIR"
 
     if ($script:IsUnix) {
         $env:PATH = $env:DOTNET_INSTALL_DIR + [System.IO.Path]::PathSeparator + $env:PATH
