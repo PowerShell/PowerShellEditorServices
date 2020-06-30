@@ -69,7 +69,7 @@ function Install-Dotnet {
 
     # Download the official installation script and run it
     $installScriptPath = "$([System.IO.Path]::GetTempPath())dotnet-install.$installScriptExt"
-    Invoke-WebRequest "https://raw.githubusercontent.com/dotnet/sdk/master/scripts/obtain/dotnet-install.$installScriptExt" -OutFile $installScriptPath
+    Invoke-WebRequest "https://dot.net/v1/dotnet-install.$installScriptExt" -OutFile $installScriptPath
     $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
 
     $args = if($Version) {
