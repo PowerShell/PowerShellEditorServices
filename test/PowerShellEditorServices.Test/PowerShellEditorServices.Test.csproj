@@ -18,6 +18,9 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
     <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.0.2" />
   </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="6.2.4" />
+  </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
     <PackageReference Include="Microsoft.PowerShell.5.ReferenceAssemblies" Version="1.1.0" />
   </ItemGroup>
@@ -36,7 +39,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' Or '$(TargetFramework)' == 'net5.0' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' != 'net461' ">
     <DefineConstants>$(DefineConstants);CoreCLR</DefineConstants>
   </PropertyGroup>
 </Project>
