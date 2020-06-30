@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <summary>
         /// True if we are running on .NET Core, false otherwise.
         /// </summary>
-        public static bool IsNetCore { get; } = RuntimeInformation.FrameworkDescription.StartsWith(".NET Core", StringComparison.Ordinal);
+        public static bool IsNetCore { get; } = !RuntimeInformation.FrameworkDescription.StartsWith(".NET Framework", StringComparison.Ordinal);
 
         /// <summary>
         /// Gets the Version of PowerShell being used.

@@ -78,9 +78,18 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                     CompleteCommandFromModule.SourceDetails);
 
             Assert.NotEmpty(completionResults.Completions);
+
             Assert.Equal(
-                CompleteCommandFromModule.ExpectedCompletion,
-                completionResults.Completions[0]);
+                CompleteCommandFromModule.ExpectedCompletion.CompletionText,
+                completionResults.Completions[0].CompletionText
+            );
+
+            Assert.Equal(
+                CompleteCommandFromModule.ExpectedCompletion.CompletionType,
+                completionResults.Completions[0].CompletionType
+            );
+
+            Assert.NotNull(completionResults.Completions[0].ToolTipText);
         }
 
         [Trait("Category", "Completions")]

@@ -97,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
                 ignoreReparsePoints: s_defaultIgnoreReparsePoints
             );
 
-            if (RuntimeInformation.FrameworkDescription.StartsWith(".NET Core"))
+            if (!RuntimeInformation.FrameworkDescription.StartsWith(".NET Framework"))
             {
                 // .Net Core doesn't appear to use the same three letter pattern matching rule although the docs
                 // suggest it should be find the '.ps1xml' files because we search for the pattern '*.ps1'

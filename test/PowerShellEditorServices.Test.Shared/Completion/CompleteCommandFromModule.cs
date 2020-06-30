@@ -30,7 +30,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
             CompletionDetails.Create(
                 "Get-Random",
                 CompletionType.Command,
-                string.Join(Environment.NewLine + Environment.NewLine, s_getRandomParamSets)
+                string.Join(Environment.NewLine + Environment.NewLine, s_getRandomParamSets),
+                listItemText: "Get-Random"
             );
     }
 }
