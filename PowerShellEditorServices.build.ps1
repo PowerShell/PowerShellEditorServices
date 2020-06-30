@@ -104,6 +104,8 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServerWinPS, TestServerPS7,
 
     if (!(Test-Path $dotnetExePath)) {
         Install-Dotnet
+        Install-Dotnet -Channel 3.1
+        Install-Dotnet -Channel 5.0
     }
 
     # This variable is used internally by 'dotnet' to know where it's installed
@@ -251,7 +253,6 @@ task TestServerWinPS -If (-not $script:IsUnix) {
 }
 
 task TestServerPS7 {
-    Install-Dotnet -Channel 3.1
     Set-Location .\test\PowerShellEditorServices.Test\
     Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
         exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS7 (DotNetTestFilter) }
@@ -259,7 +260,6 @@ task TestServerPS7 {
 }
 
 task TestServerPS71 {
-    Install-Dotnet -Channel 5.0
     Set-Location .\test\PowerShellEditorServices.Test\
     Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
         exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS71 (DotNetTestFilter) }
