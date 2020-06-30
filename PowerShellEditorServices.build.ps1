@@ -101,40 +101,13 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServerWinPS, TestServerPS7,
 
     $dotnetPath = "$PSScriptRoot/.dotnet"
     $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
-    $originalDotNetExePath = $dotnetExePath
 
     if (!(Test-Path $dotnetExePath)) {
-        $installedDotnet = Get-Command dotnet -ErrorAction Ignore
-        if ($installedDotnet) {
-            $dotnetExePath = $installedDotnet.Source
-        }
-        else {
-            $dotnetExePath = $null
-        }
-    }
-
-    # Make sure the dotnet we found is the right version
-    if ($dotnetExePath) {
-        # dotnet --version can write to stderr, which causes builds to abort, therefore use --list-sdks instead.
-        if ((& $dotnetExePath --list-sdks | ForEach-Object { $_.Split()[0] } ) -contains $script:RequiredSdkVersion) {
-            $script:dotnetExe = $dotnetExePath
-        }
-        else {
-            # Clear the path so that we invoke installation
-            $script:dotnetExe = $null
-        }
-    }
-    else {
-        # Clear the path so that we invoke installation
-        $script:dotnetExe = $null
-    }
-
-    if ($script:dotnetExe -eq $null) {
         Install-Dotnet
     }
 
     # This variable is used internally by 'dotnet' to know where it's installed
-    $script:dotnetExe = Resolve-Path $originalDotNetExePath
+    $script:dotnetExe = Resolve-Path $dotnetExePath
     if (!$env:DOTNET_INSTALL_DIR)
     {
         $dotnetExeDir = [System.IO.Path]::GetDirectoryName($script:dotnetExe)
