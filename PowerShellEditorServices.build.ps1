@@ -19,7 +19,6 @@ param(
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
 
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
-$script:RequiredSdkVersion = (Get-Content (Join-Path $PSScriptRoot 'global.json') | ConvertFrom-Json).sdk.version
 $script:AdditionalSdkVersions = @(
     '3.1'
 )
@@ -103,9 +102,9 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServerWinPS, TestServerPS7,
     $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
 
     if (!(Test-Path $dotnetExePath)) {
-        Install-Dotnet
-        Install-Dotnet -Channel 3.1
-        Install-Dotnet -Channel 5.0
+        Install-Dotnet -Channel '2.1'
+        Install-Dotnet -Channel '3.1'
+        Install-Dotnet -Version '5.0.100-preview.6.20318.15'
     }
 
     # This variable is used internally by 'dotnet' to know where it's installed
