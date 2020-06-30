@@ -55,7 +55,6 @@ function Invoke-WithCreateDefaultHook {
 
 function Install-Dotnet {
     param (
-        $Version,
         $Channel
     )
 
@@ -69,19 +68,12 @@ function Install-Dotnet {
     Invoke-WebRequest "https://dot.net/v1/dotnet-install.$installScriptExt" -OutFile $installScriptPath
     $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
 
-    $paramArr = if($Version) {
-        '-Version'
-        $Version
-    } else {
-        '-Channel'
-        $Channel
-    }
-
     if ($script:IsUnix) {
         chmod +x $installScriptPath
     }
 
-    Invoke-Expression "$installScriptPath $paramArr -InstallDir '$env:DOTNET_INSTALL_DIR' -NoPath"
+    $paramArr = @('-Channel', $Channel, '-InstallDir', "'$env:DOTNET_INSTALL_DIR'", '-NoPath')
+    Invoke-Expression "$installScriptPath $paramArr"
     $env:PATH = $env:DOTNET_INSTALL_DIR + [System.IO.Path]::PathSeparator + $env:PATH
 
     Write-Host "`n### Installation complete." -ForegroundColor Green
@@ -95,7 +87,7 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServerWinPS, TestServerPS7,
     if (!(Test-Path $dotnetExePath)) {
         Install-Dotnet -Channel '2.1'
         Install-Dotnet -Channel '3.1'
-        Install-Dotnet -Version '5.0.100-preview.6.20318.15'
+        Install-Dotnet -Channel 'release/5.0.1xx-preview6'
     }
 
     # This variable is used internally by 'dotnet' to know where it's installed
