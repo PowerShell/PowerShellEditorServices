@@ -7,7 +7,7 @@ steps:
 
       # Use `AGENT_TEMPDIRECTORY` to make sure the downloaded PowerShell is cleaned up.
       $powerShellPath = Join-Path -Path $env:AGENT_TEMPDIRECTORY -ChildPath 'powershell'
-      Invoke-WebRequest -Uri https://raw.githubusercontent.com/PowerShell/PowerShell/ce2f447f5d17aabccbb455151d949fe8dd62efcd/tools/install-powershell.ps1 -OutFile ./install-powershell.ps1
+      Invoke-WebRequest -Uri https://raw.githubusercontent.com/TylerLeonhardt/PowerShell/patch-1/tools/install-powershell.ps1 -OutFile ./install-powershell.ps1
 
       ./install-powershell.ps1 -Destination $powerShellPath -Daily
 
