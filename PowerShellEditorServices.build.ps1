@@ -60,7 +60,7 @@ function Install-Dotnet {
 
     $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
 
-    Write-Information "Installing .NET channels $Channel"
+    Write-Host "Installing .NET channels $Channel" -ForegroundColor Green
 
     # The install script is platform-specific
     $installScriptExt = if ($script:IsUnix) { "sh" } else { "ps1" }
@@ -73,7 +73,7 @@ function Install-Dotnet {
     # Download and install the different .NET channels in parallel
     foreach ($dotnetChannel in $Channel)
     {
-        Write-Information "`n### Installing .NET CLI $Version...`n"
+        Write-Host "`n### Installing .NET CLI $Version...`n"
 
         if ($script:IsUnix) {
             chmod +x $installScriptPath
@@ -95,12 +95,12 @@ function Install-Dotnet {
 
         & $installScriptPath @params
 
-        Write-Information "`n### Installation complete for version $Version."
+        Write-Host "`n### Installation complete for version $Version."
     }
 
     $env:PATH = $env:DOTNET_INSTALL_DIR + [System.IO.Path]::PathSeparator + $env:PATH
 
-    Write-Information '.NET installation complete'
+    Write-Host '.NET installation complete' -ForegroundColor Green
 }
 
 task SetupDotNet -Before Clean, Build, TestHost, TestServerWinPS, TestServerPS7, TestServerPS71, TestE2E {
