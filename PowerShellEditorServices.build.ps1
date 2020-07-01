@@ -55,28 +55,65 @@ function Invoke-WithCreateDefaultHook {
 
 function Install-Dotnet {
     param (
-        $Channel
+        [string[]]$Channel
     )
 
-    Write-Host "`n### Installing .NET CLI $Version...`n" -ForegroundColor Green
-
-    # The install script is platform-specific
-    $installScriptExt = if ($script:IsUnix) { "sh" } else { "ps1" }
-
-    # Download the official installation script and run it
-    $installScriptPath = "$([System.IO.Path]::GetTempPath())dotnet-install.$installScriptExt"
-    Invoke-WebRequest "https://dot.net/v1/dotnet-install.$installScriptExt" -OutFile $installScriptPath
     $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
 
-    if ($script:IsUnix) {
-        chmod +x $installScriptPath
+    $installSb = {
+        param(
+            $InstallScriptPath,
+            $Version,
+            $Channel,
+            $DotnetInstallDir,
+            $IsUnix
+        )
+
+        Write-Information "`n### Installing .NET CLI $Version...`n"
+
+        if ($IsUnix) {
+            chmod +x $InstallScriptPath
+        }
+
+        $params = if ($script:IsUnix)
+        {
+            @('-Channel', $Channel, '-InstallDir', $DotnetInstallDir, '-NoPath', '-Verbose')
+        }
+        else
+        {
+            @{
+                Channel = $Channel
+                InstallDir = $DotnetInstallDir
+                NoPath = $true
+                Verbose = $true
+            }
+        }
+
+        & $InstallScriptPath @params
+
+        Write-Information "`n### Installation complete for version $Version."
     }
 
-    $paramArr = @('-Channel', $Channel, '-InstallDir', "'$env:DOTNET_INSTALL_DIR'", '-NoPath')
-    Invoke-Expression "$installScriptPath $paramArr"
+    Write-Information "Installing .NET channels $Channel"
+
+    # The install script is platform-specific
+    $installScriptExt = if ($IsUnix) { "sh" } else { "ps1" }
+    $installScript = "dotnet-install.$installScriptExt"
+
+    # Download the official installation script and run it
+    $installScriptPath = Join-Path ([System.IO.Path]::GetTempPath()) $installScript
+    Invoke-WebRequest "https://dot.net/v1/$installScript" -OutFile $installScriptPath
+
+    # Download and install the different .NET channels in parallel
+    $Channel |
+        ForEach-Object {
+            Start-Job -ScriptBlock $installSb -ArgumentList $installScriptPath,$Version,$_,$env:DOTNET_INSTALL_DIR,$script:IsUnix
+        } |
+        Receive-Job -Wait
+
     $env:PATH = $env:DOTNET_INSTALL_DIR + [System.IO.Path]::PathSeparator + $env:PATH
 
-    Write-Host "`n### Installation complete." -ForegroundColor Green
+    Write-Information '.NET installation complete'
 }
 
 task SetupDotNet -Before Clean, Build, TestHost, TestServerWinPS, TestServerPS7, TestServerPS71, TestE2E {
@@ -85,9 +122,7 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServerWinPS, TestServerPS7,
     $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
 
     if (!(Test-Path $dotnetExePath)) {
-        Install-Dotnet -Channel '2.1'
-        Install-Dotnet -Channel '3.1'
-        Install-Dotnet -Channel 'release/5.0.1xx-preview6'
+        Install-Dotnet -Channel '2.1','3.1','release/5.0.1xx-preview6'
     }
 
     # This variable is used internally by 'dotnet' to know where it's installed
