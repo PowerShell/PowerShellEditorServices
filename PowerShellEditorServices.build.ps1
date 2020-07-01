@@ -70,7 +70,7 @@ function Install-Dotnet {
     $installScriptPath = Join-Path ([System.IO.Path]::GetTempPath()) $installScript
     Invoke-WebRequest "https://dot.net/v1/$installScript" -OutFile $installScriptPath
 
-    # Download and install the different .NET channels in parallel
+    # Download and install the different .NET channels
     foreach ($dotnetChannel in $Channel)
     {
         Write-Host "`n### Installing .NET CLI $Version...`n"
