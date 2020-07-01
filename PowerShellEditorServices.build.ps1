@@ -55,28 +55,52 @@ function Invoke-WithCreateDefaultHook {
 
 function Install-Dotnet {
     param (
-        $Channel
+        [string[]]$Channel
     )
 
-    Write-Host "`n### Installing .NET CLI $Version...`n" -ForegroundColor Green
+    $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
+
+    Write-Host "Installing .NET channels $Channel" -ForegroundColor Green
 
     # The install script is platform-specific
     $installScriptExt = if ($script:IsUnix) { "sh" } else { "ps1" }
+    $installScript = "dotnet-install.$installScriptExt"
 
     # Download the official installation script and run it
-    $installScriptPath = "$([System.IO.Path]::GetTempPath())dotnet-install.$installScriptExt"
-    Invoke-WebRequest "https://dot.net/v1/dotnet-install.$installScriptExt" -OutFile $installScriptPath
-    $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
+    $installScriptPath = Join-Path ([System.IO.Path]::GetTempPath()) $installScript
+    Invoke-WebRequest "https://dot.net/v1/$installScript" -OutFile $installScriptPath
 
-    if ($script:IsUnix) {
-        chmod +x $installScriptPath
+    # Download and install the different .NET channels
+    foreach ($dotnetChannel in $Channel)
+    {
+        Write-Host "`n### Installing .NET CLI $Version...`n"
+
+        if ($script:IsUnix) {
+            chmod +x $installScriptPath
+        }
+
+        $params = if ($script:IsUnix)
+        {
+            @('-Channel', $dotnetChannel, '-InstallDir', $env:DOTNET_INSTALL_DIR, '-NoPath', '-Verbose')
+        }
+        else
+        {
+            @{
+                Channel = $dotnetChannel
+                InstallDir = $env:DOTNET_INSTALL_DIR
+                NoPath = $true
+                Verbose = $true
+            }
+        }
+
+        & $installScriptPath @params
+
+        Write-Host "`n### Installation complete for version $Version."
     }
 
-    $paramArr = @('-Channel', $Channel, '-InstallDir', "'$env:DOTNET_INSTALL_DIR'", '-NoPath')
-    Invoke-Expression "$installScriptPath $paramArr"
     $env:PATH = $env:DOTNET_INSTALL_DIR + [System.IO.Path]::PathSeparator + $env:PATH
 
-    Write-Host "`n### Installation complete." -ForegroundColor Green
+    Write-Host '.NET installation complete' -ForegroundColor Green
 }
 
 task SetupDotNet -Before Clean, Build, TestHost, TestServerWinPS, TestServerPS7, TestServerPS71, TestE2E {
@@ -85,9 +109,7 @@ task SetupDotNet -Before Clean, Build, TestHost, TestServerWinPS, TestServerPS7,
     $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
 
     if (!(Test-Path $dotnetExePath)) {
-        Install-Dotnet -Channel '2.1'
-        Install-Dotnet -Channel '3.1'
-        Install-Dotnet -Channel 'release/5.0.1xx-preview6'
+        Install-Dotnet -Channel '2.1','3.1','release/5.0.1xx-preview6'
     }
 
     # This variable is used internally by 'dotnet' to know where it's installed
