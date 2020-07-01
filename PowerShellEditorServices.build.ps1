@@ -60,44 +60,10 @@ function Install-Dotnet {
 
     $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
 
-    $installSb = {
-        param(
-            $InstallScriptPath,
-            $Version,
-            $Channel,
-            $DotnetInstallDir,
-            $IsUnix
-        )
-
-        Write-Information "`n### Installing .NET CLI $Version...`n"
-
-        if ($IsUnix) {
-            chmod +x $InstallScriptPath
-        }
-
-        $params = if ($script:IsUnix)
-        {
-            @('-Channel', $Channel, '-InstallDir', $DotnetInstallDir, '-NoPath', '-Verbose')
-        }
-        else
-        {
-            @{
-                Channel = $Channel
-                InstallDir = $DotnetInstallDir
-                NoPath = $true
-                Verbose = $true
-            }
-        }
-
-        & $InstallScriptPath @params
-
-        Write-Information "`n### Installation complete for version $Version."
-    }
-
     Write-Information "Installing .NET channels $Channel"
 
     # The install script is platform-specific
-    $installScriptExt = if ($IsUnix) { "sh" } else { "ps1" }
+    $installScriptExt = if ($script:IsUnix) { "sh" } else { "ps1" }
     $installScript = "dotnet-install.$installScriptExt"
 
     # Download the official installation script and run it
@@ -105,11 +71,32 @@ function Install-Dotnet {
     Invoke-WebRequest "https://dot.net/v1/$installScript" -OutFile $installScriptPath
 
     # Download and install the different .NET channels in parallel
-    $Channel |
-        ForEach-Object {
-            Start-Job -ScriptBlock $installSb -ArgumentList $installScriptPath,$Version,$_,$env:DOTNET_INSTALL_DIR,$script:IsUnix
-        } |
-        Receive-Job -Wait
+    foreach ($dotnetChannel in $Channel)
+    {
+        Write-Information "`n### Installing .NET CLI $Version...`n"
+
+        if ($script:IsUnix) {
+            chmod +x $installScriptPath
+        }
+
+        $params = if ($script:IsUnix)
+        {
+            @('-Channel', $dotnetChannel, '-InstallDir', $env:DOTNET_INSTALL_DIR, '-NoPath', '-Verbose')
+        }
+        else
+        {
+            @{
+                Channel = $dotnetChannel
+                InstallDir = $env:DOTNET_INSTALL_DIR
+                NoPath = $true
+                Verbose = $true
+            }
+        }
+
+        & $installScriptPath @params
+
+        Write-Information "`n### Installation complete for version $Version."
+    }
 
     $env:PATH = $env:DOTNET_INSTALL_DIR + [System.IO.Path]::PathSeparator + $env:PATH
 
