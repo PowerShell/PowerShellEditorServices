@@ -19,18 +19,19 @@ param(
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
 
 $script:IsUnix = $PSVersionTable.PSEdition -and $PSVersionTable.PSEdition -eq "Core" -and !$IsWindows
-$script:RequiredSdkVersion = (Get-Content (Join-Path $PSScriptRoot 'global.json') | ConvertFrom-Json).sdk.version
 $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Hosting", "BuildInfo.cs")
 $script:PsesCommonProps = [xml](Get-Content -Raw "$PSScriptRoot/PowerShellEditorServices.Common.props")
 $script:IsPreview = [bool]($script:PsesCommonProps.Project.PropertyGroup.VersionSuffix)
 
 $script:NetRuntime = @{
-    Core = 'netcoreapp2.1'
+    PS62 = 'netcoreapp2.1'
+    PS7 = 'netcoreapp3.1'
+    PS71 = 'net5.0'
     Desktop = 'net461'
     Standard = 'netstandard2.0'
 }
 
-$script:HostCoreOutput = "$PSScriptRoot/src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetRuntime.Core)/publish"
+$script:HostCoreOutput = "$PSScriptRoot/src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetRuntime.PS62)/publish"
 $script:HostDeskOutput = "$PSScriptRoot/src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetRuntime.Desktop)/publish"
 $script:PsesOutput = "$PSScriptRoot/src/PowerShellEditorServices/bin/$Configuration/$($script:NetRuntime.Standard)/publish"
 $script:VSCodeOutput = "$PSScriptRoot/src/PowerShellEditorServices.VSCode/bin/$Configuration/$($script:NetRuntime.Standard)/publish"
@@ -52,64 +53,45 @@ function Invoke-WithCreateDefaultHook {
     }
 }
 
-task SetupDotNet -Before Clean, Build, TestHost, TestServer, TestE2E {
+function Install-Dotnet {
+    param (
+        $Channel
+    )
+
+    Write-Host "`n### Installing .NET CLI $Version...`n" -ForegroundColor Green
+
+    # The install script is platform-specific
+    $installScriptExt = if ($script:IsUnix) { "sh" } else { "ps1" }
+
+    # Download the official installation script and run it
+    $installScriptPath = "$([System.IO.Path]::GetTempPath())dotnet-install.$installScriptExt"
+    Invoke-WebRequest "https://dot.net/v1/dotnet-install.$installScriptExt" -OutFile $installScriptPath
+    $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
+
+    if ($script:IsUnix) {
+        chmod +x $installScriptPath
+    }
+
+    $paramArr = @('-Channel', $Channel, '-InstallDir', "'$env:DOTNET_INSTALL_DIR'", '-NoPath')
+    Invoke-Expression "$installScriptPath $paramArr"
+    $env:PATH = $env:DOTNET_INSTALL_DIR + [System.IO.Path]::PathSeparator + $env:PATH
+
+    Write-Host "`n### Installation complete." -ForegroundColor Green
+}
+
+task SetupDotNet -Before Clean, Build, TestHost, TestServerWinPS, TestServerPS7, TestServerPS71, TestE2E {
 
     $dotnetPath = "$PSScriptRoot/.dotnet"
     $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
-    $originalDotNetExePath = $dotnetExePath
 
     if (!(Test-Path $dotnetExePath)) {
-        $installedDotnet = Get-Command dotnet -ErrorAction Ignore
-        if ($installedDotnet) {
-            $dotnetExePath = $installedDotnet.Source
-        }
-        else {
-            $dotnetExePath = $null
-        }
-    }
-
-    # Make sure the dotnet we found is the right version
-    if ($dotnetExePath) {
-        # dotnet --version can write to stderr, which causes builds to abort, therefore use --list-sdks instead.
-        if ((& $dotnetExePath --list-sdks | ForEach-Object { $_.Split()[0] } ) -contains $script:RequiredSdkVersion) {
-            $script:dotnetExe = $dotnetExePath
-        }
-        else {
-            # Clear the path so that we invoke installation
-            $script:dotnetExe = $null
-        }
-    }
-    else {
-        # Clear the path so that we invoke installation
-        $script:dotnetExe = $null
-    }
-
-    if ($script:dotnetExe -eq $null) {
-
-        Write-Host "`n### Installing .NET CLI $script:RequiredSdkVersion...`n" -ForegroundColor Green
-
-        # The install script is platform-specific
-        $installScriptExt = if ($script:IsUnix) { "sh" } else { "ps1" }
-
-        # Download the official installation script and run it
-        $installScriptPath = "$([System.IO.Path]::GetTempPath())dotnet-install.$installScriptExt"
-        Invoke-WebRequest "https://raw.githubusercontent.com/dotnet/sdk/master/scripts/obtain/dotnet-install.$installScriptExt" -OutFile $installScriptPath
-        $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
-
-        if (!$script:IsUnix) {
-            & $installScriptPath -Version $script:RequiredSdkVersion -InstallDir "$env:DOTNET_INSTALL_DIR"
-        }
-        else {
-            & /bin/bash $installScriptPath -Version $script:RequiredSdkVersion -InstallDir "$env:DOTNET_INSTALL_DIR"
-            $env:PATH = $dotnetExeDir + [System.IO.Path]::PathSeparator + $env:PATH
-        }
-
-        Write-Host "`n### Installation complete." -ForegroundColor Green
-        $script:dotnetExe = $originalDotnetExePath
+        Install-Dotnet -Channel '2.1'
+        Install-Dotnet -Channel '3.1'
+        Install-Dotnet -Channel 'release/5.0.1xx-preview6'
     }
 
     # This variable is used internally by 'dotnet' to know where it's installed
-    $script:dotnetExe = Resolve-Path $script:dotnetExe
+    $script:dotnetExe = Resolve-Path $dotnetExePath
     if (!$env:DOTNET_INSTALL_DIR)
     {
         $dotnetExeDir = [System.IO.Path]::GetDirectoryName($script:dotnetExe)
@@ -228,7 +210,7 @@ task SetupHelpForTests -Before Test {
 
 task Build BinClean,{
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetRuntime.Standard }
-    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Core }
+    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.PS62 }
     if (-not $script:IsUnix)
     {
         exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Desktop }
@@ -245,15 +227,24 @@ function DotNetTestFilter {
 
 task Test TestServer,TestE2E
 
-task TestServer {
+task TestServer TestServerWinPS,TestServerPS7,TestServerPS71
+
+task TestServerWinPS -If (-not $script:IsUnix) {
     Set-Location .\test\PowerShellEditorServices.Test\
+    exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Desktop (DotNetTestFilter) }
+}
 
-    if (-not $script:IsUnix) {
-        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Desktop (DotNetTestFilter) }
-    }
-
+task TestServerPS7 {
+    Set-Location .\test\PowerShellEditorServices.Test\
     Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
-        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Core (DotNetTestFilter) }
+        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS7 (DotNetTestFilter) }
+    }
+}
+
+task TestServerPS71 {
+    Set-Location .\test\PowerShellEditorServices.Test\
+    Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
+        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS71 (DotNetTestFilter) }
     }
 }
 
@@ -265,21 +256,21 @@ task TestHost {
         exec { & $script:dotnetExe test -f $script:NetRuntime.Desktop (DotNetTestFilter) }
     }
 
-    exec { & $script:dotnetExe build -c $Configuration -f $script:NetRuntime.Core }
-    exec { & $script:dotnetExe test -f $script:NetRuntime.Core (DotNetTestFilter) }
+    exec { & $script:dotnetExe build -c $Configuration -f $script:NetRuntime.PS62 }
+    exec { & $script:dotnetExe test -f $script:NetRuntime.PS62 (DotNetTestFilter) }
 }
 
 task TestE2E {
     Set-Location .\test\PowerShellEditorServices.Test.E2E\
 
     $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
-    exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Core (DotNetTestFilter) }
+    exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS62 (DotNetTestFilter) }
 
     # Run E2E tests in ConstrainedLanguage mode.
     if (!$script:IsUnix) {
         try {
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", "0x80000007", [System.EnvironmentVariableTarget]::Machine);
-            exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Core (DotNetTestFilter) }
+            exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS62 (DotNetTestFilter) }
         } finally {
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", $null, [System.EnvironmentVariableTarget]::Machine);
         }
@@ -302,10 +293,6 @@ task LayoutModule -After Build {
 
     # Copy Third Party Notices.txt to module folder
     Copy-Item -Force -Path "$PSScriptRoot\Third Party Notices.txt" -Destination $psesOutputPath
-
-    # Copy UnixConsoleEcho native libraries
-    Copy-Item -Path "$script:PsesOutput/runtimes/osx-64/native/*" -Destination $psesDepsPath -Force
-    Copy-Item -Path "$script:PsesOutput/runtimes/linux-64/native/*" -Destination $psesDepsPath -Force
 
     # Assemble PSES module
 
