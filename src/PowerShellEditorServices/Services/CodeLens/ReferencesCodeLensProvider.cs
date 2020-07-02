@@ -115,9 +115,9 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
 
                     DocumentUri uri = DocumentUri.From(foundReference.FilePath);
                     // For any vscode-notebook-cell, we need to ignore the backing file on disk.
-                    if (scriptFile.DocumentUri.Scheme == "vscode-notebook-cell" &&
-                        uri.Path == scriptFile.DocumentUri.Path &&
-                        uri.Scheme == "file")
+                    if (uri.Scheme == "file" &&
+                        scriptFile.DocumentUri.Scheme == "vscode-notebook-cell" &&
+                        uri.Path == scriptFile.DocumentUri.Path)
                     {
                         continue;
                     }
