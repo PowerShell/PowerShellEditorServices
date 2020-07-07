@@ -70,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (!this._cwdSet)
             {
-                if (!String.IsNullOrEmpty(_configurationService.CurrentSettings.Cwd)
+                if (!string.IsNullOrEmpty(_configurationService.CurrentSettings.Cwd)
                     && Directory.Exists(_configurationService.CurrentSettings.Cwd))
                 {
                     await _powerShellContextService.SetWorkingDirectoryAsync(
@@ -78,7 +78,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         isPathAlreadyEscaped: false).ConfigureAwait(false);
 
                 } else if (_workspaceService.WorkspacePath != null
-                           && Directory.Exists(_workspaceService.WorkspacePath))
+                    && Directory.Exists(_workspaceService.WorkspacePath))
                 {
                     await _powerShellContextService.SetWorkingDirectoryAsync(
                         _workspaceService.WorkspacePath,
