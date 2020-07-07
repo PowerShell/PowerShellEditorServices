@@ -3,7 +3,7 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using System;
-using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Text;
@@ -16,11 +16,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
     {
         public static PowerShellConsoleService CreateAndStart(
             ILoggerFactory loggerFactory,
-            PowerShellExecutionService executionService)
+            PowerShellExecutionService executionService,
+            PowerShellEventService eventService)
         {
             return new PowerShellConsoleService(
                 loggerFactory,
                 executionService,
+                eventService,
                 executionService.EngineIntrinsics,
                 executionService.EditorServicesHost,
                 executionService.ReadLine,
@@ -30,6 +32,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         private readonly ILogger _logger;
 
         private readonly PowerShellExecutionService _executionService;
+
+        private readonly PowerShellEventService _eventService;
 
         private readonly EngineIntrinsics _engineIntrinsics;
 
@@ -50,6 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         private PowerShellConsoleService(
             ILoggerFactory loggerFactory,
             PowerShellExecutionService executionService,
+            PowerShellEventService eventService,
             EngineIntrinsics engineIntrinsics,
             EditorServicesConsolePSHost editorServicesHost,
             ConsoleReadLine readLine,
@@ -57,6 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         {
             _logger = loggerFactory.CreateLogger<PowerShellConsoleService>();
             _executionService = executionService;
+            _eventService = eventService;
             _engineIntrinsics = engineIntrinsics;
             _editorServicesHost = editorServicesHost;
             _readLine = readLine;
@@ -65,17 +71,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         public void Dispose()
         {
-            System.Console.CancelKeyPress -= HandleConsoleCancellation;
+            System.Console.CancelKeyPress -= OnCancelKeyPress;
+            _eventService.PromptFramePushed -= OnPromptFramePushed;
         }
 
         public void StartRepl()
         {
             _replLoopCancellationSource = new CancellationTokenSource();
-            System.Console.CancelKeyPress += HandleConsoleCancellation;
+            System.Console.CancelKeyPress += OnCancelKeyPress;
             System.Console.OutputEncoding = Encoding.UTF8;
             _psrlProxy.OverrideReadKey(ReadKey);
             _consoleLoopThread = Task.Run(RunReplLoopAsync, _replLoopCancellationSource.Token);
             _executionService.RegisterConsoleService(this);
+            _eventService.PromptFramePushed += OnPromptFramePushed;
+            _eventService.PromptFramePopped += OnPromptFramePopped;
         }
 
         public void CancelCurrentPrompt()
@@ -135,7 +144,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             }
         }
 
-        private Task<Collection<string>> GetPromptOutputAsync()
+        private Task<IReadOnlyList<string>> GetPromptOutputAsync()
         {
             var promptCommand = new PSCommand().AddCommand("prompt");
 
@@ -167,9 +176,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             return _executionService.ExecutePSCommandAsync(command, executionOptions, _currentCommandCancellationSource.Token);
         }
 
-        private void HandleConsoleCancellation(object sender, ConsoleCancelEventArgs args)
+        private void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
         {
-            _currentCommandCancellationSource.Cancel();
+            CancelCurrentPrompt();
+        }
+
+        public void OnPromptFramePushed(object sender, PromptFramePushedArgs args)
+        {
+            Task.Run(RunReplLoopAsync);
+        }
+
+        public void OnPromptFramePopped(object sender, PromptFramePoppedArgs args)
+        {
+            CancelCurrentPrompt();
         }
 
         private ConsoleKeyInfo ReadKey(bool intercept)
