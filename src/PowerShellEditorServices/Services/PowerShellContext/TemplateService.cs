@@ -10,6 +10,7 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Management.Automation;
@@ -97,7 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         .AddParameter("ModuleInfo", (PSModuleInfo)moduleObject.ImmediateBaseObject)
                         .AddParameter("PassThru");
 
-                    Collection<PSModuleInfo> importResult = await _executionService.ExecutePSCommandAsync<PSModuleInfo>(psCommand, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false);
+                    IReadOnlyList<PSModuleInfo> importResult = await _executionService.ExecutePSCommandAsync<PSModuleInfo>(psCommand, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false);
 
                     this.isPlasterLoaded = importResult.Any();
                     string loadedQualifier =
@@ -136,7 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 psCommand.AddParameter("IncludeModules");
             }
 
-            Collection<PSObject> templateObjects = await _executionService.ExecutePSCommandAsync<PSObject>(
+            IReadOnlyList<PSObject> templateObjects = await _executionService.ExecutePSCommandAsync<PSObject>(
                 psCommand,
                 new PowerShellExecutionOptions(),
                 CancellationToken.None).ConfigureAwait(false);
