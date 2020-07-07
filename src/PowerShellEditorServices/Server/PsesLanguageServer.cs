@@ -144,7 +144,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                             {
                                 await serviceProvider.GetService<PowerShellExecutionService>()
                                     .ExecutePSCommandAsync(
-                                        new PSCommand().AddCommand("Set-Location").AddParameter("-Path", workspaceService.WorkspacePath),
+                                        new PSCommand().AddCommand("Set-Location").AddParameter("-LiteralPath", workspaceService.WorkspacePath),
                                         new PowerShellExecutionOptions(),
                                         cancellationToken)
                                     .ConfigureAwait(false);

@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Server
 {
@@ -21,10 +22,18 @@ namespace Microsoft.PowerShell.EditorServices.Server
             return collection.AddSingleton<WorkspaceService>()
                 .AddSingleton<SymbolsService>()
                 .AddSingleton<ConfigurationService>()
+                .AddSingleton<PowerShellEventService>()
                 .AddSingleton<PowerShellExecutionService>(
-                    (provider) => PowerShellExecutionService.CreateAndStart(provider.GetService<ILoggerFactory>(), hostStartupInfo))
+                    (provider) => PowerShellExecutionService.CreateAndStart(
+                        provider.GetService<ILoggerFactory>(),
+                        provider.GetService<ILanguageServer>(),
+                        provider.GetService<PowerShellEventService>(),
+                        hostStartupInfo))
                 .AddSingleton<PowerShellConsoleService>(
-                    (provider) => PowerShellConsoleService.CreateAndStart(provider.GetService<ILoggerFactory>(), provider.GetService<PowerShellExecutionService>()))
+                    (provider) => PowerShellConsoleService.CreateAndStart(
+                        provider.GetService<ILoggerFactory>(),
+                        provider.GetService<PowerShellExecutionService>(),
+                        provider.GetService<PowerShellEventService>()))
                 .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<RemoteFileManagerService>()
