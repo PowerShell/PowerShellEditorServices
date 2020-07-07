@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Management.Automation;
 using System.Management.Automation.Host;
@@ -10,8 +11,12 @@ using SMA = System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 {
-    internal class SynchronousPowerShellTask<TResult> : SynchronousTask<Collection<TResult>>
+    internal class SynchronousPowerShellTask<TResult> : SynchronousTask<IReadOnlyList<TResult>>
     {
+        private readonly ILogger _logger;
+
+        private readonly PowerShellEventService _eventService;
+
         private readonly SMA.PowerShell _pwsh;
 
         private readonly PSCommand _psCommand;
@@ -22,6 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public SynchronousPowerShellTask(
             ILogger logger,
+            PowerShellEventService eventService,
             SMA.PowerShell pwsh,
             PSHost psHost,
             PSCommand command,
@@ -29,22 +35,39 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             CancellationToken cancellationToken)
             : base(logger, cancellationToken)
         {
+            _logger = logger;
+            _eventService = eventService;
             _pwsh = pwsh;
             _psHost = psHost;
             _psCommand = command;
             _executionOptions = executionOptions;
         }
 
-        public override Collection<TResult> Run(CancellationToken cancellationToken)
+        public override IReadOnlyList<TResult> Run(CancellationToken cancellationToken)
         {
             cancellationToken.Register(Cancel);
-
-            _pwsh.Commands = _psCommand;
 
             if (_executionOptions.WriteInputToHost)
             {
                 _psHost.UI.WriteLine(_psCommand.GetInvocationText());
             }
+
+            if (_pwsh.Runspace.Debugger.IsActive)
+            {
+                return ExecuteInDebugger(cancellationToken);
+            }
+
+            return ExecuteNormally(cancellationToken);
+        }
+
+        public override string ToString()
+        {
+            return _psCommand.GetInvocationText();
+        }
+
+        private IReadOnlyList<TResult> ExecuteNormally(CancellationToken cancellationToken)
+        {
+            _pwsh.Commands = _psCommand;
 
             if (_executionOptions.WriteOutputToHost)
             {
@@ -91,9 +114,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             return result;
         }
 
-        public override string ToString()
+        private IReadOnlyList<TResult> ExecuteInDebugger(CancellationToken cancellationToken)
         {
-            return _psCommand.GetInvocationText();
+            var outputCollection = new PSDataCollection<PSObject>();
+            DebuggerCommandResults debuggerResult = _pwsh.Runspace.Debugger.ProcessCommand(_psCommand, outputCollection);
+            _eventService.ProcessDebuggerCommandResults(debuggerResult);
+
+            if (typeof(TResult) == typeof(PSObject))
+            {
+                return (IReadOnlyList<TResult>)outputCollection;
+            }
+
+            var results = new List<TResult>(outputCollection.Count);
+            foreach (PSObject outputResult in outputCollection)
+            {
+                if (LanguagePrimitives.TryConvertTo(outputResult, typeof(TResult), out object result))
+                {
+                    results.Add((TResult)result);
+                }
+            }
+
+            return results;
         }
 
         private void Cancel()

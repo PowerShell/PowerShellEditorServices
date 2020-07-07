@@ -146,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 .AddParameter("Online", false)
                 .AddParameter("ErrorAction", "Ignore");
 
-            Collection<PSObject> results = await executionService.ExecutePSCommandAsync<PSObject>(command, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false);
+            IReadOnlyList<PSObject> results = await executionService.ExecutePSCommandAsync<PSObject>(command, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false);
             PSObject helpObject = results.FirstOrDefault();
 
             // Extract the synopsis string from the object

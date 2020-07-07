@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
+using PowerShellEditorServices.Services;
 using System;
 using System.Globalization;
 using System.Management.Automation.Host;
@@ -11,16 +12,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
     {
         private readonly ILogger _logger;
 
+        private readonly PowerShellExecutionService _executionService;
+
         private Runspace _pushedRunspace;
 
         public EditorServicesConsolePSHost(
             ILoggerFactory loggerFactory,
+            PowerShellExecutionService executionService,
             string name,
             Version version,
             PSHost internalHost,
             ConsoleReadLine readline)
         {
             _logger = loggerFactory.CreateLogger<EditorServicesConsolePSHost>();
+            _executionService = executionService;
             _pushedRunspace = null;
             Name = name;
             Version = version;
@@ -45,12 +50,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public override void EnterNestedPrompt()
         {
-            throw new NotImplementedException();
+            _executionService.EnterNestedPrompt();
         }
 
         public override void ExitNestedPrompt()
         {
-            throw new NotImplementedException();
+            _executionService.ExitNestedPrompt();
         }
 
         public override void NotifyBeginApplication()
