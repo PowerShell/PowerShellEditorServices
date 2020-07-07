@@ -30,6 +30,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
 
         public PesterSettings Pester { get; set; }
 
+        public string Cwd { get; set; }
+
         public LanguageServerSettings()
         {
             this.ScriptAnalysis = new ScriptAnalysisSettings();
@@ -56,6 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     this.CodeFormatting = new CodeFormattingSettings(settings.CodeFormatting);
                     this.CodeFolding.Update(settings.CodeFolding, logger);
                     this.Pester = new PesterSettings(settings.Pester);
+                    this.Cwd = settings.Cwd;
                 }
             }
         }

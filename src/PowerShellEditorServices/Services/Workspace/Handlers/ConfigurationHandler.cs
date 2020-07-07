@@ -14,6 +14,7 @@ using MediatR;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
+using System.IO;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -26,6 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private DidChangeConfigurationCapability _capability;
         private bool _profilesLoaded;
         private bool _consoleReplStarted;
+        private bool _cwdSet;
 
         public PsesConfigurationHandler(
             ILoggerFactory factory,
@@ -65,6 +67,26 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 incomingSettings.Powershell,
                 _workspaceService.WorkspacePath,
                 _logger);
+
+            if (!this._cwdSet)
+            {
+                if (!String.IsNullOrEmpty(_configurationService.CurrentSettings.Cwd)
+                    && Directory.Exists(_configurationService.CurrentSettings.Cwd))
+                {
+                    await _powerShellContextService.SetWorkingDirectoryAsync(
+                        _configurationService.CurrentSettings.Cwd,
+                        isPathAlreadyEscaped: false).ConfigureAwait(false);
+
+                } else if (_workspaceService.WorkspacePath != null
+                           && Directory.Exists(_workspaceService.WorkspacePath))
+                {
+                    await _powerShellContextService.SetWorkingDirectoryAsync(
+                        _workspaceService.WorkspacePath,
+                        isPathAlreadyEscaped: false).ConfigureAwait(false);
+                }
+
+                this._cwdSet = true;
+            }
 
             if (!this._profilesLoaded &&
                 _configurationService.CurrentSettings.EnableProfileLoading &&
