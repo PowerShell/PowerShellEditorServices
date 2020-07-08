@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             return executionService;
         }
 
-        private readonly CancellationTokenSource _stopThreadCancellationSource;
+        private readonly CancellationTokenSource _consumerThreadCancellationSource;
 
         private readonly BlockingCollection<ISynchronousTask> _executionQueue;
 
@@ -76,6 +76,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         private readonly IReadOnlyList<string> _additionalModulesToLoad;
 
         private Thread _pipelineThread;
+
+        private CancellationTokenSource _loopCancellationSource;
 
         private CancellationTokenSource _currentExecutionCancellationSource;
 
@@ -100,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<PowerShellExecutionService>();
             _languageServer = languageServer;
-            _stopThreadCancellationSource = new CancellationTokenSource();
+            _consumerThreadCancellationSource = new CancellationTokenSource();
             _executionQueue = new BlockingCollection<ISynchronousTask>();
             _hostName = hostName;
             _hostVersion = hostVersion;
@@ -184,7 +186,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         public void Stop()
         {
-            _stopThreadCancellationSource.Cancel();
+            _consumerThreadCancellationSource.Cancel();
             _pipelineThread.Join();
         }
 
@@ -204,26 +206,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         public void EnterNestedPrompt()
         {
             _pwshContext.PushNestedPowerShell();
-
             try
             {
-                foreach (ISynchronousTask task in _executionQueue.GetConsumingEnumerable(_stopThreadCancellationSource.Token))
-                {
-                    RunTaskSynchronously(task);
-
-                    if (_exitNestedPrompt)
-                    {
-                        break;
-                    }
-                }
-            }
-            catch (OperationCanceledException)
-            {
+                RunConsumerLoop();
             }
             finally
             {
                 _pwshContext.PopPowerShell();
-                _exitNestedPrompt = false;
             }
         }
 
@@ -246,7 +235,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private void Start()
         {
-            _pipelineThread = new Thread(RunConsumerLoop)
+            _pipelineThread = new Thread(RunTopLevelConsumerLoop)
             {
                 Name = "PSES Execution Service Thread",
             };
@@ -286,29 +275,67 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             }
         }
 
-        private void RunConsumerLoop()
+        private void RunTopLevelConsumerLoop()
         {
             Initialize();
 
+            RunConsumerLoop();
+        }
+
+        private void RunConsumerLoop()
+        {
+            _loopCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(
+                _pwshContext.CurrentCancellationSource.Token,
+                _consumerThreadCancellationSource.Token);
+
             try
             {
-                foreach (ISynchronousTask synchronousTask in _executionQueue.GetConsumingEnumerable(_stopThreadCancellationSource.Token))
+                foreach (ISynchronousTask task in _executionQueue.GetConsumingEnumerable(_loopCancellationSource.Token))
                 {
-                    RunTaskSynchronously(synchronousTask);
+                    RunTaskSynchronously(task);
+
+                    if (_exitNestedPrompt)
+                    {
+                        break;
+                    }
                 }
             }
             catch (OperationCanceledException)
             {
-                // End nicely
+                // Catch cancellations to end nicely
+            }
+            finally
+            {
+                _exitNestedPrompt = false;
             }
         }
 
         private void OnPowerShellIdle()
         {
-            while (_pwshContext.CurrentPowerShell.InvocationStateInfo.State == PSInvocationState.Completed
-                && _executionQueue.TryTake(out ISynchronousTask task))
+            if (_executionQueue.Count == 0)
             {
-                RunTaskSynchronously(task);
+                return;
+            }
+
+            _loopCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(
+                _pwshContext.CurrentCancellationSource.Token,
+                _consumerThreadCancellationSource.Token);
+
+            try
+            {
+                while (_pwshContext.CurrentPowerShell.InvocationStateInfo.State == PSInvocationState.Completed
+                    && _executionQueue.TryTake(out ISynchronousTask task))
+                {
+                    RunTaskSynchronously(task);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+
+            }
+            finally
+            {
+                _loopCancellationSource.Dispose();
             }
 
             // TODO: Run nested pipeline here for engine event handling
@@ -321,7 +348,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                 return;
             }
 
-            using (_currentExecutionCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(_stopThreadCancellationSource.Token))
+            using (_currentExecutionCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(_loopCancellationSource.Token))
             {
                 _taskRunning = true;
                 try
