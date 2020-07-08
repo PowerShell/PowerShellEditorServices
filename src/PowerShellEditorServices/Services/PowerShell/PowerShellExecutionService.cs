@@ -12,7 +12,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Management.Automation;
 using System.Management.Automation.Host;
-using System.Management.Automation.Runspaces;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -249,8 +248,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         {
             _pipelineThread = new Thread(RunConsumerLoop)
             {
-                Name = "PSES Execution Service Thread"
+                Name = "PSES Execution Service Thread",
             };
+            _pipelineThread.SetApartmentState(ApartmentState.STA);
             _pipelineThread.Start();
         }
 
