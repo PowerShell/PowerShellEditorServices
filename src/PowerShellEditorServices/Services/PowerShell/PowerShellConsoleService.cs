@@ -16,14 +16,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
     {
         public static PowerShellConsoleService CreateAndStart(
             ILoggerFactory loggerFactory,
-            PowerShellExecutionService executionService,
-            PowerShellEventService eventService)
+            PowerShellExecutionService executionService)
         {
             return new PowerShellConsoleService(
                 loggerFactory,
                 executionService,
-                eventService,
-                executionService.EngineIntrinsics,
                 executionService.EditorServicesHost,
                 executionService.ReadLine,
                 executionService.PSReadLineProxy);
@@ -32,10 +29,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         private readonly ILogger _logger;
 
         private readonly PowerShellExecutionService _executionService;
-
-        private readonly PowerShellEventService _eventService;
-
-        private readonly EngineIntrinsics _engineIntrinsics;
 
         private readonly EditorServicesConsolePSHost _editorServicesHost;
 
@@ -54,16 +47,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         private PowerShellConsoleService(
             ILoggerFactory loggerFactory,
             PowerShellExecutionService executionService,
-            PowerShellEventService eventService,
-            EngineIntrinsics engineIntrinsics,
             EditorServicesConsolePSHost editorServicesHost,
             ConsoleReadLine readLine,
             PSReadLineProxy psrlProxy)
         {
             _logger = loggerFactory.CreateLogger<PowerShellConsoleService>();
             _executionService = executionService;
-            _eventService = eventService;
-            _engineIntrinsics = engineIntrinsics;
             _editorServicesHost = editorServicesHost;
             _readLine = readLine;
             _psrlProxy = psrlProxy;
@@ -72,7 +61,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         public void Dispose()
         {
             System.Console.CancelKeyPress -= OnCancelKeyPress;
-            _eventService.PromptFramePushed -= OnPromptFramePushed;
+            _executionService.PromptFramePushed -= OnPromptFramePushed;
+            _executionService.PromptFramePopped -= OnPromptFramePopped;
         }
 
         public void StartRepl()
@@ -83,8 +73,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             _psrlProxy.OverrideReadKey(ReadKey);
             _consoleLoopThread = Task.Run(RunReplLoopAsync, _replLoopCancellationSource.Token);
             _executionService.RegisterConsoleService(this);
-            _eventService.PromptFramePushed += OnPromptFramePushed;
-            _eventService.PromptFramePopped += OnPromptFramePopped;
+            _executionService.PromptFramePushed += OnPromptFramePushed;
+            _executionService.PromptFramePopped += OnPromptFramePopped;
         }
 
         public void CancelCurrentPrompt()
