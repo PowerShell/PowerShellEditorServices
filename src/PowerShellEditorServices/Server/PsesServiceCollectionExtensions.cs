@@ -24,18 +24,15 @@ namespace Microsoft.PowerShell.EditorServices.Server
             return collection.AddSingleton<WorkspaceService>()
                 .AddSingleton<SymbolsService>()
                 .AddSingleton<ConfigurationService>()
-                .AddSingleton<PowerShellEventService>()
                 .AddSingleton<PowerShellExecutionService>(
                     (provider) => PowerShellExecutionService.CreateAndStart(
                         provider.GetService<ILoggerFactory>(),
                         provider.GetService<ILanguageServer>(),
-                        provider.GetService<PowerShellEventService>(),
                         hostStartupInfo))
                 .AddSingleton<PowerShellConsoleService>(
                     (provider) => PowerShellConsoleService.CreateAndStart(
                         provider.GetService<ILoggerFactory>(),
-                        provider.GetService<PowerShellExecutionService>(),
-                        provider.GetService<PowerShellEventService>()))
+                        provider.GetService<PowerShellExecutionService>()))
                 .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<RemoteFileManagerService>()

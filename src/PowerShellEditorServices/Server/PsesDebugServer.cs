@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Serialization;
 using OmniSharp.Extensions.JsonRpc;
@@ -88,12 +89,12 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 // This is only needed for Temp sessions who only have a debug server.
                 if (_usePSReadLine && _useTempSession && Interlocked.Exchange(ref s_hasRunPsrlStaticCtor, 1) == 0)
                 {
-                    var command = new PSCommand()
-                        .AddCommand(s_lazyInvokeReadLineConstructorCmdletInfo.Value);
-
                     // This must be run synchronously to ensure debugging works
-                    _powerShellContextService
-                        .ExecuteCommandAsync<object>(command, sendOutputToHost: true, sendErrorToHost: true)
+                    _executionService
+                        .ExecuteDelegateAsync((cancellationToken) =>
+                        {
+                            // Is this needed now that we do things the cool way??
+                        }, "PSRL static constructor execution", CancellationToken.None)
                         .GetAwaiter()
                         .GetResult();
                 }
