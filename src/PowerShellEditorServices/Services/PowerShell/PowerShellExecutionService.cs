@@ -37,13 +37,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         public static PowerShellExecutionService CreateAndStart(
             ILoggerFactory loggerFactory,
             ILanguageServer languageServer,
-            PowerShellEventService eventService,
             HostStartupInfo hostInfo)
         {
             var executionService = new PowerShellExecutionService(
                 loggerFactory,
                 languageServer,
-                eventService,
                 hostInfo.Name,
                 hostInfo.Version,
                 hostInfo.LanguageMode,
@@ -66,8 +64,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private readonly ILanguageServer _languageServer;
 
-        private readonly PowerShellEventService _eventService;
-
         private readonly string _hostName;
 
         private readonly Version _hostVersion;
@@ -80,13 +76,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private readonly IReadOnlyList<string> _additionalModulesToLoad;
 
-        private readonly Stack<SMA.PowerShell> _pwshStack;
-
         private Thread _pipelineThread;
 
         private CancellationTokenSource _currentExecutionCancellationSource;
 
-        private SMA.PowerShell _currentPwsh;
+        private Execution.PowerShellContext _pwshContext;
 
         private PowerShellConsoleService _consoleService;
 
@@ -97,7 +91,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         private PowerShellExecutionService(
             ILoggerFactory loggerFactory,
             ILanguageServer languageServer,
-            PowerShellEventService eventService,
             string hostName,
             Version hostVersion,
             PSLanguageMode languageMode,
@@ -108,7 +101,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<PowerShellExecutionService>();
             _languageServer = languageServer;
-            _eventService = eventService;
             _stopThreadCancellationSource = new CancellationTokenSource();
             _executionQueue = new BlockingCollection<ISynchronousTask>();
             _hostName = hostName;
@@ -117,7 +109,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             _internalHost = internalHost;
             _profilePaths = profilePaths;
             _additionalModulesToLoad = additionalModules;
-            _pwshStack = new Stack<SMA.PowerShell>();
         }
 
         public EngineIntrinsics EngineIntrinsics { get; private set; }
@@ -128,12 +119,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         public ConsoleReadLine ReadLine { get; private set; }
 
+        public event Action<object, PromptFramePushedArgs> PromptFramePushed;
+
+        public event Action<object, PromptFramePoppedArgs> PromptFramePopped;
+
+        public event Action<object, DebuggerStopEventArgs> DebuggerStopped;
+
+        public event Action<object, DebuggerResumedArgs> DebuggerResumed;
+
+        public event Action<object, BreakpointUpdatedEventArgs> BreakpointUpdated;
+
         public Task<TResult> ExecuteDelegateAsync<TResult>(
             Func<SMA.PowerShell, CancellationToken, TResult> func,
             string representation,
             CancellationToken cancellationToken)
         {
-            TResult appliedFunc(CancellationToken cancellationToken) => func(_currentPwsh, cancellationToken);
+            TResult appliedFunc(CancellationToken cancellationToken) => func(_pwshContext.CurrentPowerShell, cancellationToken);
             return ExecuteDelegateAsync(appliedFunc, representation, cancellationToken);
         }
 
@@ -142,7 +143,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             string representation,
             CancellationToken cancellationToken)
         {
-            void appliedAction(CancellationToken cancellationToken) => action(_currentPwsh, cancellationToken);
+            void appliedAction(CancellationToken cancellationToken) => action(_pwshContext.CurrentPowerShell, cancellationToken);
             return ExecuteDelegateAsync(appliedAction, representation, cancellationToken);
         }
 
@@ -167,7 +168,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             PowerShellExecutionOptions executionOptions,
             CancellationToken cancellationToken)
         {
-            Task<IReadOnlyList<TResult>> result = QueueTask(new SynchronousPowerShellTask<TResult>(_logger, _eventService, _currentPwsh, EditorServicesHost, psCommand, executionOptions, cancellationToken));
+            Task<IReadOnlyList<TResult>> result = QueueTask(new SynchronousPowerShellTask<TResult>(_logger, _pwshContext, EditorServicesHost, psCommand, executionOptions, cancellationToken));
 
             if (executionOptions.InterruptCommandPrompt)
             {
@@ -203,9 +204,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         public void EnterNestedPrompt()
         {
-            _currentPwsh = _currentPwsh.CreateNestedPowerShell();
-            _pwshStack.Push(_currentPwsh);
-            _eventService.PushFrame(_currentPwsh.Runspace, PromptFrameType.NestedPrompt);
+            _pwshContext.PushNestedPowerShell();
 
             try
             {
@@ -224,9 +223,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             }
             finally
             {
-                _currentPwsh.Dispose();
-                _currentPwsh = _pwshStack.Pop();
-                _eventService.PopFrame();
+                _pwshContext.PopPowerShell();
                 _exitNestedPrompt = false;
             }
         }
@@ -239,10 +236,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         public void Dispose()
         {
             Stop();
-            foreach (SMA.PowerShell pwsh in _pwshStack)
-            {
-                pwsh.Dispose();
-            }
+            _pwshContext.Dispose();
         }
 
         private Task<T> QueueTask<T>(SynchronousTask<T> task)
@@ -262,22 +256,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private void Initialize()
         {
-            _currentPwsh = SMA.PowerShell.Create();
-            _pwshStack.Push(_currentPwsh);
-
-            _eventService.PushFrame(_currentPwsh.Runspace, PromptFrameType.Normal);
-
             ReadLine = new ConsoleReadLine();
 
             EditorServicesHost = new EditorServicesConsolePSHost(_loggerFactory, this, _hostName, _hostVersion, _internalHost, ReadLine);
 
-            _currentPwsh.Runspace = CreateRunspace(EditorServicesHost, _languageMode);
-            Runspace.DefaultRunspace = _currentPwsh.Runspace;
-            EditorServicesHost.RegisterRunspace(_currentPwsh.Runspace);
+            SetPowerShellContext(EditorServicesHost, _languageMode);
 
-            var engineIntrinsics = (EngineIntrinsics)_currentPwsh.Runspace.SessionStateProxy.GetVariable("ExecutionContext");
+            EngineIntrinsics = (EngineIntrinsics)_pwshContext.CurrentPowerShell.Runspace.SessionStateProxy.GetVariable("ExecutionContext");
 
-            PSReadLineProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, _currentPwsh);
+            PSReadLineProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, _pwshContext.CurrentPowerShell);
             PSReadLineProxy.OverrideIdleHandler(OnPowerShellIdle);
             ReadLine.RegisterExecutionDependencies(this, PSReadLineProxy);
 
@@ -318,7 +305,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private void OnPowerShellIdle()
         {
-            while (_currentPwsh.InvocationStateInfo.State == PSInvocationState.Completed
+            while (_pwshContext.CurrentPowerShell.InvocationStateInfo.State == PSInvocationState.Completed
                 && _executionQueue.TryTake(out ISynchronousTask task))
             {
                 RunTaskSynchronously(task);
@@ -352,7 +339,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         {
             // We want to get the list hierarchy of execution policies
             // Calling the cmdlet is the simplest way to do that
-            IReadOnlyList<PSObject> policies = _currentPwsh
+            IReadOnlyList<PSObject> policies = _pwshContext.CurrentPowerShell
                 .AddCommand("Microsoft.PowerShell.Security\\Get-ExecutionPolicy")
                     .AddParameter("-List")
                 .InvokeAndClear<PSObject>();
@@ -395,7 +382,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             _logger.LogTrace("Setting execution policy to {Policy}", policyToSet);
             try
             {
-                _currentPwsh.AddCommand("Microsoft.PowerShell.Security\\Set-ExecutionPolicy")
+                _pwshContext.CurrentPowerShell.AddCommand("Microsoft.PowerShell.Security\\Set-ExecutionPolicy")
                     .AddParameter("Scope", ExecutionPolicyScope.Process)
                     .AddParameter("ExecutionPolicy", policyToSet)
                     .AddParameter("Force")
@@ -416,7 +403,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             AddProfileMemberAndLoadIfExists(profileVariable, nameof(_profilePaths.CurrentUserAllHosts), _profilePaths.CurrentUserAllHosts);
             AddProfileMemberAndLoadIfExists(profileVariable, nameof(_profilePaths.CurrentUserCurrentHost), _profilePaths.CurrentUserCurrentHost);
 
-            _currentPwsh.Runspace.SessionStateProxy.SetVariable("PROFILE", profileVariable);
+            _pwshContext.CurrentPowerShell.Runspace.SessionStateProxy.SetVariable("PROFILE", profileVariable);
         }
 
         private void AddProfileMemberAndLoadIfExists(PSObject profileVariable, string profileName, string profilePath)
@@ -425,7 +412,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
             if (File.Exists(profilePath))
             {
-                _currentPwsh.AddScript(profilePath, useLocalScope: false)
+                _pwshContext.CurrentPowerShell.AddScript(profilePath, useLocalScope: false)
                     .AddOutputCommand()
                     .InvokeAndClear();
             }
@@ -433,29 +420,44 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private void ImportModule(string moduleNameOrPath)
         {
-            _currentPwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+            _pwshContext.CurrentPowerShell.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
                 .AddParameter("-Name", moduleNameOrPath)
                 .InvokeAndClear();
         }
 
-        private static Runspace CreateRunspace(
-            PSHost psHost,
-            PSLanguageMode languageMode)
+        private void SetPowerShellContext(EditorServicesConsolePSHost psHost, PSLanguageMode languageMode)
         {
-            InitialSessionState iss = Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1"
-                ? InitialSessionState.CreateDefault()
-                : InitialSessionState.CreateDefault2();
+            _pwshContext = Execution.PowerShellContext.Create(psHost, languageMode);
+            _pwshContext.PromptFramePushed += OnPromptFramePushed;
+            _pwshContext.PromptFramePopped += OnPromptFramePopped;
+            _pwshContext.DebuggerStopped += OnDebuggerStopped;
+            _pwshContext.DebuggerResumed += OnDebuggerResumed;
+            _pwshContext.BreakpointUpdated += OnBreakpointUpdated;
+        }
 
-            iss.LanguageMode = languageMode;
+        private void OnPromptFramePushed(object sender, PromptFramePushedArgs promptFramePushedArgs)
+        {
+            PromptFramePushed?.Invoke(this, promptFramePushedArgs);
+        }
 
-            Runspace runspace = RunspaceFactory.CreateRunspace(psHost, iss);
+        private void OnPromptFramePopped(object sender, PromptFramePoppedArgs promptFramePoppedArgs)
+        {
+            PromptFramePopped?.Invoke(this, promptFramePoppedArgs);
+        }
 
-            runspace.SetApartmentStateToSta();
-            runspace.ThreadOptions = PSThreadOptions.ReuseThread;
+        private void OnDebuggerStopped(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
+        {
+            DebuggerStopped?.Invoke(this, debuggerStopEventArgs);
+        }
 
-            runspace.Open();
+        private void OnDebuggerResumed(object sender, DebuggerResumedArgs debuggerResumedArgs)
+        {
+            DebuggerResumed?.Invoke(this, debuggerResumedArgs);
+        }
 
-            return runspace;
+        private void OnBreakpointUpdated(object sender, BreakpointUpdatedEventArgs breakpointUpdatedEventArgs)
+        {
+            BreakpointUpdated?.Invoke(this, breakpointUpdatedEventArgs);
         }
     }
 }

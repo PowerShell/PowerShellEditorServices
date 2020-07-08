@@ -15,9 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
     {
         private readonly ILogger _logger;
 
-        private readonly PowerShellEventService _eventService;
-
-        private readonly SMA.PowerShell _pwsh;
+        private readonly PowerShellContext _pwshContext;
 
         private readonly PSCommand _psCommand;
 
@@ -25,10 +23,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private readonly PowerShellExecutionOptions _executionOptions;
 
+        private SMA.PowerShell _pwsh;
+
         public SynchronousPowerShellTask(
             ILogger logger,
-            PowerShellEventService eventService,
-            SMA.PowerShell pwsh,
+            PowerShellContext pwshContext,
             PSHost psHost,
             PSCommand command,
             PowerShellExecutionOptions executionOptions,
@@ -36,8 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             : base(logger, cancellationToken)
         {
             _logger = logger;
-            _eventService = eventService;
-            _pwsh = pwsh;
+            _pwshContext = pwshContext;
             _psHost = psHost;
             _psCommand = command;
             _executionOptions = executionOptions;
@@ -45,6 +43,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public override IReadOnlyList<TResult> Run(CancellationToken cancellationToken)
         {
+            _pwsh = _pwshContext.CurrentPowerShell;
+
             cancellationToken.Register(Cancel);
 
             if (_executionOptions.WriteInputToHost)
@@ -118,7 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         {
             var outputCollection = new PSDataCollection<PSObject>();
             DebuggerCommandResults debuggerResult = _pwsh.Runspace.Debugger.ProcessCommand(_psCommand, outputCollection);
-            _eventService.ProcessDebuggerCommandResults(debuggerResult);
+            _pwshContext.ProcessDebuggerResult(debuggerResult);
 
             if (typeof(TResult) == typeof(PSObject))
             {
