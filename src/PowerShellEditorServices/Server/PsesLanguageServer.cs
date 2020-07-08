@@ -113,15 +113,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
                                     break;
                                 }
                             }
-
-                            // Set the working directory of the PowerShell session to the workspace path
-                            if (workspaceService.WorkspacePath != null
-                                && Directory.Exists(workspaceService.WorkspacePath))
-                            {
-                                await serviceProvider.GetService<PowerShellContextService>().SetWorkingDirectoryAsync(
-                                    workspaceService.WorkspacePath,
-                                    isPathAlreadyEscaped: false).ConfigureAwait(false);
-                            }
                         });
             }).ConfigureAwait(false);
 
