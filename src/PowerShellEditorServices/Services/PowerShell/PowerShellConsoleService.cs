@@ -26,6 +26,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                 executionService.PSReadLineProxy);
         }
 
+        private readonly object _stackLock = new object();
+
         private readonly ILogger _logger;
 
         private readonly PowerShellExecutionService _executionService;
@@ -36,11 +38,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private readonly PSReadLineProxy _psrlProxy;
 
-        private Task _consoleLoopThread;
+        private readonly Stack<ReplTask> _replLoopTaskStack;
 
-        private CancellationTokenSource _replLoopCancellationSource;
-
-        private CancellationTokenSource _currentCommandCancellationSource;
+        private readonly Stack<CancellationTokenSource> _currentCommandCancellationSourceStack;
 
         private bool _canCancel;
 
@@ -52,6 +52,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             PSReadLineProxy psrlProxy)
         {
             _logger = loggerFactory.CreateLogger<PowerShellConsoleService>();
+            _replLoopTaskStack = new Stack<ReplTask>();
+            _currentCommandCancellationSourceStack = new Stack<CancellationTokenSource>();
             _executionService = executionService;
             _editorServicesHost = editorServicesHost;
             _readLine = readLine;
@@ -60,6 +62,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         public void Dispose()
         {
+            while (_replLoopTaskStack.Count > 0)
+            {
+                StopCurrentRepl();
+            }
+
             System.Console.CancelKeyPress -= OnCancelKeyPress;
             _executionService.PromptFramePushed -= OnPromptFramePushed;
             _executionService.PromptFramePopped -= OnPromptFramePopped;
@@ -67,81 +74,104 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         public void StartRepl()
         {
-            _replLoopCancellationSource = new CancellationTokenSource();
             System.Console.CancelKeyPress += OnCancelKeyPress;
             System.Console.OutputEncoding = Encoding.UTF8;
             _psrlProxy.OverrideReadKey(ReadKey);
-            _consoleLoopThread = Task.Run(RunReplLoopAsync, _replLoopCancellationSource.Token);
             _executionService.RegisterConsoleService(this);
             _executionService.PromptFramePushed += OnPromptFramePushed;
             _executionService.PromptFramePopped += OnPromptFramePopped;
+            PushNewReplTask();
         }
 
         public void CancelCurrentPrompt()
         {
             if (_canCancel)
             {
-                _currentCommandCancellationSource?.Cancel();
+                _currentCommandCancellationSourceStack.Peek().Cancel();
             }
         }
 
-        public void Stop()
+        public void StopCurrentRepl()
         {
-            _replLoopCancellationSource.Cancel();
+            ReplTask replTask;
+            lock (_stackLock)
+            {
+                replTask = _replLoopTaskStack.Pop();
+            }
+            replTask.CancellationTokenSource.Cancel();
         }
 
         private async Task RunReplLoopAsync()
         {
-            while (!_replLoopCancellationSource.IsCancellationRequested)
+            ReplTask replTask;
+            lock (_stackLock)
             {
-                _currentCommandCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(_replLoopCancellationSource.Token);
-                _canCancel = true;
-                try
+                replTask = _replLoopTaskStack.Peek();
+            }
+
+            using (replTask.CancellationTokenSource)
+            {
+                while (!replTask.CancellationTokenSource.IsCancellationRequested)
                 {
-                    string promptString = (await GetPromptOutputAsync().ConfigureAwait(false)).FirstOrDefault() ?? "PS> ";
-
-                    WritePrompt(promptString);
-
-                    string userInput = await InvokeReadLineAsync().ConfigureAwait(false);
-
-                    if (_currentCommandCancellationSource.IsCancellationRequested)
+                    var currentCommandCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(replTask.CancellationTokenSource.Token);
+                    _currentCommandCancellationSourceStack.Push(currentCommandCancellationSource);
+                    _canCancel = true;
+                    try
                     {
-                        _editorServicesHost.UI.WriteLine();
+
+                        string promptString = (await GetPromptOutputAsync(currentCommandCancellationSource.Token).ConfigureAwait(false)).FirstOrDefault() ?? "PS> ";
+
+                        if (currentCommandCancellationSource.IsCancellationRequested)
+                        {
+                            continue;
+                        }
+
+                        WritePrompt(promptString);
+
+                        string userInput = await InvokeReadLineAsync(currentCommandCancellationSource.Token).ConfigureAwait(false);
+
+                        if (currentCommandCancellationSource.IsCancellationRequested)
+                        {
+                            continue;
+                        }
+
+                        await InvokeInputAsync(userInput, currentCommandCancellationSource.Token).ConfigureAwait(false);
+
+                        if (replTask.CancellationTokenSource.IsCancellationRequested)
+                        {
+                            break;
+                        }
+
+                        if (currentCommandCancellationSource.IsCancellationRequested)
+                        {
+                            _editorServicesHost.UI.WriteLine();
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
                         continue;
                     }
-
-                    await InvokeInputAsync(userInput).ConfigureAwait(false);
-
-                    if (_currentCommandCancellationSource.IsCancellationRequested)
+                    catch (Exception e)
                     {
-                        _editorServicesHost.UI.WriteLine();
-                    }
-                }
-                catch (OperationCanceledException)
-                {
-                    continue;
-                }
-                catch (Exception e)
-                {
 
-                }
-                finally
-                {
-                    _canCancel = false;
-                    _currentCommandCancellationSource.Dispose();
-                    _currentCommandCancellationSource = null;
+                    }
+                    finally
+                    {
+                        _canCancel = false;
+                        _currentCommandCancellationSourceStack.Pop().Dispose();
+                    }
                 }
             }
         }
 
-        private Task<IReadOnlyList<string>> GetPromptOutputAsync()
+        private Task<IReadOnlyList<string>> GetPromptOutputAsync(CancellationToken cancellationToken)
         {
             var promptCommand = new PSCommand().AddCommand("prompt");
 
             return _executionService.ExecutePSCommandAsync<string>(
                 promptCommand,
                 new PowerShellExecutionOptions(),
-                CancellationToken.None);
+                cancellationToken);
         }
 
         private void WritePrompt(string promptString)
@@ -149,12 +179,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             _editorServicesHost.UI.Write(promptString);
         }
 
-        private Task<string> InvokeReadLineAsync()
+        private Task<string> InvokeReadLineAsync(CancellationToken cancellationToken)
         {
-            return _readLine.ReadCommandLineAsync(_currentCommandCancellationSource.Token);
+            return _readLine.ReadCommandLineAsync(cancellationToken);
         }
 
-        private Task InvokeInputAsync(string input)
+        private Task InvokeInputAsync(string input, CancellationToken cancellationToken)
         {
             var command = new PSCommand().AddScript(input);
             var executionOptions = new PowerShellExecutionOptions
@@ -163,7 +193,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                 AddToHistory = true
             };
 
-            return _executionService.ExecutePSCommandAsync(command, executionOptions, _currentCommandCancellationSource.Token);
+            return _executionService.ExecutePSCommandAsync(command, executionOptions, cancellationToken);
         }
 
         private void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
@@ -171,19 +201,42 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             CancelCurrentPrompt();
         }
 
-        public void OnPromptFramePushed(object sender, PromptFramePushedArgs args)
+        private void OnPromptFramePushed(object sender, PromptFramePushedArgs args)
         {
-            Task.Run(RunReplLoopAsync);
+            PushNewReplTask();
         }
 
-        public void OnPromptFramePopped(object sender, PromptFramePoppedArgs args)
+        private void OnPromptFramePopped(object sender, PromptFramePoppedArgs args)
         {
-            CancelCurrentPrompt();
+            StopCurrentRepl();
         }
 
         private ConsoleKeyInfo ReadKey(bool intercept)
         {
-            return ConsoleProxy.SafeReadKey(intercept, _currentCommandCancellationSource?.Token ?? CancellationToken.None);
+            return ConsoleProxy.SafeReadKey(intercept, _currentCommandCancellationSourceStack.Peek().Token);
+        }
+
+        private void PushNewReplTask()
+        {
+            var replLoopCancellationSource = new CancellationTokenSource();
+            lock (_stackLock)
+            {
+                _replLoopTaskStack.Push(new ReplTask(Task.Run(RunReplLoopAsync, replLoopCancellationSource.Token), replLoopCancellationSource));
+            }
+        }
+
+
+        private struct ReplTask
+        {
+            public ReplTask(Task loopTask, CancellationTokenSource cancellationTokenSource)
+            {
+                LoopTask = loopTask;
+                CancellationTokenSource = cancellationTokenSource;
+            }
+
+            public Task LoopTask { get; }
+
+            public CancellationTokenSource CancellationTokenSource { get; }
         }
     }
 }
