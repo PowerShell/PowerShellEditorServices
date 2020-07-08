@@ -63,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, iss);
 
             runspace.SetApartmentStateToSta();
-            runspace.ThreadOptions = PSThreadOptions.ReuseThread;
+            runspace.ThreadOptions = PSThreadOptions.UseCurrentThread;
 
             runspace.Open();
 
@@ -105,8 +105,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public void PushNestedPowerShell()
         {
-            var pwsh = CurrentPowerShell.CreateNestedPowerShell();
-            pwsh.Runspace.ThreadOptions = PSThreadOptions.ReuseThread;
+            // PowerShell.CreateNestedPowerShell() sets IsNested but not IsChild
+            // So we must use the RunspaceMode.CurrentRunspace option on PowerShell.Create() instead
+            var pwsh = SMA.PowerShell.Create(RunspaceMode.CurrentRunspace);
+            pwsh.Runspace.ThreadOptions = PSThreadOptions.UseCurrentThread;
 
             PushFrame(new ContextFrame(pwsh, PromptFrameType.NestedPrompt));
         }
