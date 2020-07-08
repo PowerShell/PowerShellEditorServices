@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Management.Automation.Runspaces;
+using System.Threading;
 using SMA = System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
@@ -85,7 +86,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public SMA.PowerShell CurrentPowerShell
         {
-            get => _frameStack.Count > 0 ? _frameStack.Peek().PowerShell : null;
+            get => _frameStack.Peek().PowerShell;
+        }
+
+        public CancellationTokenSource CurrentCancellationSource
+        {
+            get => _frameStack.Peek().CancellationTokenSource;
         }
 
         public event Action<object, PromptFramePushedArgs> PromptFramePushed;
@@ -110,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             var pwsh = SMA.PowerShell.Create(RunspaceMode.CurrentRunspace);
             pwsh.Runspace.ThreadOptions = PSThreadOptions.UseCurrentThread;
 
-            PushFrame(new ContextFrame(pwsh, PromptFrameType.NestedPrompt));
+            PushFrame(new ContextFrame(pwsh, PromptFrameType.NestedPrompt, new CancellationTokenSource()));
         }
 
         public void PopPowerShell()
@@ -131,7 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             var pwsh = SMA.PowerShell.Create();
             pwsh.Runspace = runspace;
 
-            PushFrame(new ContextFrame(pwsh, PromptFrameType.Normal));
+            PushFrame(new ContextFrame(pwsh, PromptFrameType.Normal, new CancellationTokenSource()));
         }
 
         private void PushFrame(ContextFrame frame)
@@ -145,10 +151,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         private void PopFrame()
         {
             ContextFrame frame = _frameStack.Pop();
-            frame.PowerShell.Runspace.Debugger.DebuggerStop -= OnDebuggerStopped;
-            frame.PowerShell.Runspace.Debugger.BreakpointUpdated -= OnBreakpointUpdated;
-            PromptFramePopped?.Invoke(this, new PromptFramePoppedArgs(frame.FrameType));
-            frame.PowerShell.Dispose();
+            try
+            {
+                frame.PowerShell.Runspace.Debugger.DebuggerStop -= OnDebuggerStopped;
+                frame.PowerShell.Runspace.Debugger.BreakpointUpdated -= OnBreakpointUpdated;
+                PromptFramePopped?.Invoke(this, new PromptFramePoppedArgs(frame.FrameType));
+            }
+            finally
+            {
+                frame.Dispose();
+            }
         }
 
         private void OnDebuggerStopped(object sender, DebuggerStopEventArgs args)
@@ -161,17 +173,43 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             BreakpointUpdated?.Invoke(this, args);
         }
 
-        private class ContextFrame
+        private class ContextFrame : IDisposable
         {
-            public ContextFrame(SMA.PowerShell powerShell, PromptFrameType frameType)
+            private bool disposedValue;
+
+            public ContextFrame(SMA.PowerShell powerShell, PromptFrameType frameType, CancellationTokenSource cancellationTokenSource)
             {
                 PowerShell = powerShell;
                 FrameType = frameType;
+                CancellationTokenSource = cancellationTokenSource;
             }
 
             public SMA.PowerShell PowerShell { get; }
 
             public PromptFrameType FrameType { get; }
+
+            public CancellationTokenSource CancellationTokenSource { get; }
+
+            protected virtual void Dispose(bool disposing)
+            {
+                if (!disposedValue)
+                {
+                    if (disposing)
+                    {
+                        PowerShell.Dispose();
+                        CancellationTokenSource.Dispose();
+                    }
+
+                    disposedValue = true;
+                }
+            }
+
+            public void Dispose()
+            {
+                // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+                Dispose(disposing: true);
+                GC.SuppressFinalize(this);
+            }
         }
     }
 }
