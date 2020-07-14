@@ -195,6 +195,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // List supported schemes here
                 case "file":
                 case "untitled":
+                case "vscode-notebook-cell":
                     break;
 
                 default:
