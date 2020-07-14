@@ -50,6 +50,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         DebuggerResumeAction? ResumeAction { get; }
     }
 
+    internal class PromptCancellationRequestedArgs
+    {
+    }
+
+    internal class NestedPromptExitedArgs
+    {
+    }
 
     internal class PowerShellContext : IDisposable
     {
