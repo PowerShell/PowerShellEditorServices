@@ -2,7 +2,9 @@
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Utility;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
@@ -26,8 +28,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                 executionService.PSReadLineProxy);
         }
 
-        private readonly object _stackLock = new object();
-
         private readonly ILogger _logger;
 
         private readonly PowerShellExecutionService _executionService;
@@ -38,11 +38,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private readonly PSReadLineProxy _psrlProxy;
 
-        private readonly Stack<ReplTask> _replLoopTaskStack;
+        private readonly ConcurrentStack<ReplTask> _replLoopTaskStack;
 
-        private readonly Stack<CancellationTokenSource> _currentCommandCancellationSourceStack;
-
-        private bool _canCancel;
+        // This is required because PSRL will keep prompting for keys as we push a new REPL task
+        // Keeping current command cancellations on their own stack simplifies access to the cancellation token
+        // for the REPL command that's currently running.
+        private readonly ConcurrentStack<CommandCancellation> _commandCancellationStack;
 
         private ConsoleKeyInfo? _lastKey;
 
@@ -56,8 +57,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             PSReadLineProxy psrlProxy)
         {
             _logger = loggerFactory.CreateLogger<PowerShellConsoleService>();
-            _replLoopTaskStack = new Stack<ReplTask>();
-            _currentCommandCancellationSourceStack = new Stack<CancellationTokenSource>();
+            _replLoopTaskStack = new ConcurrentStack<ReplTask>();
+            _commandCancellationStack = new ConcurrentStack<CommandCancellation>();
             _executionService = executionService;
             _editorServicesHost = editorServicesHost;
             _readLine = readLine;
@@ -91,61 +92,55 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         public void CancelCurrentPrompt()
         {
-            bool canCancel = false;
-            lock (_stackLock)
+            if (_commandCancellationStack.TryPeek(out CommandCancellation commandCancellation))
             {
-                canCancel = _replLoopTaskStack.Peek().CanCancel;
-            }
-
-            if (canCancel)
-            {
-                _currentCommandCancellationSourceStack.Peek().Cancel();
+                commandCancellation.CancellationSource?.Cancel();
             }
         }
 
         public void StopCurrentRepl()
         {
-            ReplTask replTask;
-            lock (_stackLock)
+            if (_replLoopTaskStack.TryPop(out ReplTask currentReplTask))
             {
-                replTask = _replLoopTaskStack.Pop();
+                currentReplTask.ReplCancellationSource.Cancel();
             }
-
-            replTask.CancellationTokenSource.Cancel();
         }
 
         private async Task RunReplLoopAsync()
         {
-            ReplTask replTask;
-            lock (_stackLock)
-            {
-                replTask = _replLoopTaskStack.Peek();
-            }
+            _replLoopTaskStack.TryPeek(out ReplTask replTask);
 
-            using (replTask.CancellationTokenSource)
+            try
             {
-                while (!replTask.CancellationTokenSource.IsCancellationRequested)
+                while (!replTask.ReplCancellationSource.IsCancellationRequested)
                 {
-                    var currentCommandCancellationSource = new CancellationTokenSource();
-                    _currentCommandCancellationSourceStack.Push(currentCommandCancellationSource);
-                    replTask.CanCancel = true;
+                    var currentCommandCancellation = new CommandCancellation();
+                    _commandCancellationStack.Push(currentCommandCancellation);
+
                     try
                     {
 
-                        string promptString = (await GetPromptOutputAsync(currentCommandCancellationSource.Token).ConfigureAwait(false)).FirstOrDefault() ?? "PS> ";
+                        string promptString = (await GetPromptOutputAsync(currentCommandCancellation.CancellationSource.Token).ConfigureAwait(false)).FirstOrDefault() ?? "PS> ";
 
-                        if (currentCommandCancellationSource.IsCancellationRequested)
+                        if (currentCommandCancellation.CancellationSource.IsCancellationRequested)
                         {
                             continue;
                         }
 
                         WritePrompt(promptString);
 
-                        string userInput = await InvokeReadLineAsync(currentCommandCancellationSource.Token).ConfigureAwait(false);
+                        string userInput = await InvokeReadLineAsync(currentCommandCancellation.CancellationSource.Token).ConfigureAwait(false);
 
+                        // If the user input was empty it's because:
+                        //  - the user provided no input
+                        //  - the readline task was canceled
+                        //  - CtrlC was sent to readline (which does not propagate a cancellation)
+                        //
+                        // In any event there's nothing to run in PowerShell, so we just loop back to the prompt again.
+                        // However, we must distinguish the last two scenarios, since PSRL will print a new line in those cases
                         if (string.IsNullOrEmpty(userInput))
                         {
-                            if (currentCommandCancellationSource.IsCancellationRequested
+                            if (currentCommandCancellation.CancellationSource.IsCancellationRequested
                                 || LastKeyWasCtrlC())
                             {
                                 _editorServicesHost.UI.WriteLine();
@@ -153,9 +148,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                             continue;
                         }
 
-                        await InvokeInputAsync(userInput, currentCommandCancellationSource.Token).ConfigureAwait(false);
+                        await InvokeInputAsync(userInput, currentCommandCancellation.CancellationSource.Token).ConfigureAwait(false);
 
-                        if (replTask.CancellationTokenSource.IsCancellationRequested)
+                        if (replTask.ReplCancellationSource.IsCancellationRequested)
                         {
                             break;
                         }
@@ -166,17 +161,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                     }
                     catch (Exception e)
                     {
-
+                        // TODO: Do something here
                     }
                     finally
                     {
-                        replTask.CanCancel = false;
-                        _currentCommandCancellationSourceStack.Pop().Dispose();
+                        _commandCancellationStack.TryPop(out CommandCancellation _);
+                        currentCommandCancellation.CancellationSource.Dispose();
+                        currentCommandCancellation.CancellationSource = null;
                     }
                 }
             }
+            finally
+            {
+                _exiting = false;
+                replTask.ReplCancellationSource.Dispose();
+            }
 
-            _exiting = false;
         }
 
         private Task<IReadOnlyList<string>> GetPromptOutputAsync(CancellationToken cancellationToken)
@@ -234,6 +234,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private void OnReplCanceled()
         {
+            // Ordinarily, when the REPL is canceled
+            // we want to propagate the cancellation to any currently running command.
+            // However, when the REPL is canceled by an 'exit' command,
+            // the currently running command is doing the cancellation.
+            // Not only would canceling it not make sense
+            // but trying to cancel it from its own thread will deadlock PowerShell.
+            // Instead we just let the command progress.
+
             if (_exiting)
             {
                 return;
@@ -244,7 +252,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private ConsoleKeyInfo ReadKey(bool intercept)
         {
-            _lastKey = ConsoleProxy.SafeReadKey(intercept, _currentCommandCancellationSourceStack.Peek().Token);
+            _commandCancellationStack.TryPeek(out CommandCancellation commandCancellation);
+
+            // PSRL doesn't tell us when CtrlC was sent.
+            // So instead we keep track of the last key here.
+            // This isn't functionally required,
+            // but helps us determine when the prompt needs a newline added
+
+            _lastKey = ConsoleProxy.SafeReadKey(intercept, commandCancellation.CancellationSource.Token);
             return _lastKey.Value;
         }
 
@@ -259,12 +274,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         private void PushNewReplTask()
         {
             var replLoopCancellationSource = new CancellationTokenSource();
-            lock (_stackLock)
-            {
-                replLoopCancellationSource.Token.Register(OnReplCanceled);
-                var replTask = new ReplTask(Task.Run(RunReplLoopAsync, replLoopCancellationSource.Token), replLoopCancellationSource);
-                _replLoopTaskStack.Push(replTask);
-            }
+            replLoopCancellationSource.Token.Register(OnReplCanceled);
+            var replTask = new ReplTask(Task.Run(RunReplLoopAsync, replLoopCancellationSource.Token), replLoopCancellationSource);
+            _replLoopTaskStack.Push(replTask);
         }
 
 
@@ -273,18 +285,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             public ReplTask(Task loopTask, CancellationTokenSource cancellationTokenSource)
             {
                 LoopTask = loopTask;
-                CancellationTokenSource = cancellationTokenSource;
+                ReplCancellationSource = cancellationTokenSource;
                 Guid = Guid.NewGuid();
-                CanCancel = false;
             }
 
             public Task LoopTask { get; }
 
-            public CancellationTokenSource CancellationTokenSource { get; }
+            public CancellationTokenSource ReplCancellationSource { get; }
 
             public Guid Guid { get; }
+        }
 
-            public bool CanCancel { get; set; }
+        private class CommandCancellation
+        {
+            public CommandCancellation()
+            {
+                CancellationSource = new CancellationTokenSource();
+            }
+
+            public CancellationTokenSource CancellationSource { get; set; }
         }
     }
 }
