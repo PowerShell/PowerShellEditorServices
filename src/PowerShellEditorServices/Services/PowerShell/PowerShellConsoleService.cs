@@ -44,6 +44,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private bool _canCancel;
 
+        private ConsoleKeyInfo? _lastKey;
+
+        private bool _exiting;
+
         private PowerShellConsoleService(
             ILoggerFactory loggerFactory,
             PowerShellExecutionService executionService,
@@ -58,6 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             _editorServicesHost = editorServicesHost;
             _readLine = readLine;
             _psrlProxy = psrlProxy;
+            _exiting = false;
         }
 
         public void Dispose()
@@ -69,7 +74,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
             System.Console.CancelKeyPress -= OnCancelKeyPress;
             _executionService.PromptFramePushed -= OnPromptFramePushed;
-            _executionService.PromptFramePopped -= OnPromptFramePopped;
+            _executionService.PromptCancellationRequested -= OnPromptCancellationRequested;
+            _executionService.NestedPromptExited -= OnNestedPromptExited;
         }
 
         public void StartRepl()
@@ -77,15 +83,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             System.Console.CancelKeyPress += OnCancelKeyPress;
             System.Console.OutputEncoding = Encoding.UTF8;
             _psrlProxy.OverrideReadKey(ReadKey);
-            _executionService.RegisterConsoleService(this);
             _executionService.PromptFramePushed += OnPromptFramePushed;
-            _executionService.PromptFramePopped += OnPromptFramePopped;
+            _executionService.PromptCancellationRequested += OnPromptCancellationRequested;
+            _executionService.NestedPromptExited += OnNestedPromptExited;
             PushNewReplTask();
         }
 
         public void CancelCurrentPrompt()
         {
-            if (_canCancel)
+            bool canCancel = false;
+            lock (_stackLock)
+            {
+                canCancel = _replLoopTaskStack.Peek().CanCancel;
+            }
+
+            if (canCancel)
             {
                 _currentCommandCancellationSourceStack.Peek().Cancel();
             }
@@ -98,6 +110,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             {
                 replTask = _replLoopTaskStack.Pop();
             }
+
             replTask.CancellationTokenSource.Cancel();
         }
 
@@ -113,9 +126,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             {
                 while (!replTask.CancellationTokenSource.IsCancellationRequested)
                 {
-                    var currentCommandCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(replTask.CancellationTokenSource.Token);
+                    var currentCommandCancellationSource = new CancellationTokenSource();
                     _currentCommandCancellationSourceStack.Push(currentCommandCancellationSource);
-                    _canCancel = true;
+                    replTask.CanCancel = true;
                     try
                     {
 
@@ -130,8 +143,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
                         string userInput = await InvokeReadLineAsync(currentCommandCancellationSource.Token).ConfigureAwait(false);
 
-                        if (currentCommandCancellationSource.IsCancellationRequested)
+                        if (string.IsNullOrEmpty(userInput))
                         {
+                            if (currentCommandCancellationSource.IsCancellationRequested
+                                || LastKeyWasCtrlC())
+                            {
+                                _editorServicesHost.UI.WriteLine();
+                            }
                             continue;
                         }
 
@@ -140,11 +158,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                         if (replTask.CancellationTokenSource.IsCancellationRequested)
                         {
                             break;
-                        }
-
-                        if (currentCommandCancellationSource.IsCancellationRequested)
-                        {
-                            _editorServicesHost.UI.WriteLine();
                         }
                     }
                     catch (OperationCanceledException)
@@ -157,11 +170,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                     }
                     finally
                     {
-                        _canCancel = false;
+                        replTask.CanCancel = false;
                         _currentCommandCancellationSourceStack.Pop().Dispose();
                     }
                 }
             }
+
+            _exiting = false;
         }
 
         private Task<IReadOnlyList<string>> GetPromptOutputAsync(CancellationToken cancellationToken)
@@ -206,14 +221,39 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             PushNewReplTask();
         }
 
-        private void OnPromptFramePopped(object sender, PromptFramePoppedArgs args)
+        private void OnPromptCancellationRequested(object sender, PromptCancellationRequestedArgs args)
         {
+            CancelCurrentPrompt();
+        }
+
+        private void OnNestedPromptExited(object sender, NestedPromptExitedArgs args)
+        {
+            _exiting = true;
             StopCurrentRepl();
+        }
+
+        private void OnReplCanceled()
+        {
+            if (_exiting)
+            {
+                return;
+            }
+
+            CancelCurrentPrompt();
         }
 
         private ConsoleKeyInfo ReadKey(bool intercept)
         {
-            return ConsoleProxy.SafeReadKey(intercept, _currentCommandCancellationSourceStack.Peek().Token);
+            _lastKey = ConsoleProxy.SafeReadKey(intercept, _currentCommandCancellationSourceStack.Peek().Token);
+            return _lastKey.Value;
+        }
+
+        private bool LastKeyWasCtrlC()
+        {
+            return _lastKey != null
+                && _lastKey.Value.Key == ConsoleKey.C
+                && (_lastKey.Value.Modifiers & ConsoleModifiers.Control) != 0
+                && (_lastKey.Value.Modifiers & ConsoleModifiers.Alt) == 0;
         }
 
         private void PushNewReplTask()
@@ -221,22 +261,30 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             var replLoopCancellationSource = new CancellationTokenSource();
             lock (_stackLock)
             {
-                _replLoopTaskStack.Push(new ReplTask(Task.Run(RunReplLoopAsync, replLoopCancellationSource.Token), replLoopCancellationSource));
+                replLoopCancellationSource.Token.Register(OnReplCanceled);
+                var replTask = new ReplTask(Task.Run(RunReplLoopAsync, replLoopCancellationSource.Token), replLoopCancellationSource);
+                _replLoopTaskStack.Push(replTask);
             }
         }
 
 
-        private struct ReplTask
+        private class ReplTask
         {
             public ReplTask(Task loopTask, CancellationTokenSource cancellationTokenSource)
             {
                 LoopTask = loopTask;
                 CancellationTokenSource = cancellationTokenSource;
+                Guid = Guid.NewGuid();
+                CanCancel = false;
             }
 
             public Task LoopTask { get; }
 
             public CancellationTokenSource CancellationTokenSource { get; }
+
+            public Guid Guid { get; }
+
+            public bool CanCancel { get; set; }
         }
     }
 }
