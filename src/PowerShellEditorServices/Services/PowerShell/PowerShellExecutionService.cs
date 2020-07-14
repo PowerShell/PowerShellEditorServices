@@ -130,6 +130,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         public event Action<object, BreakpointUpdatedEventArgs> BreakpointUpdated;
 
+        public event Action<object, PromptCancellationRequestedArgs> PromptCancellationRequested;
+
+        public event Action<object, NestedPromptExitedArgs> NestedPromptExited;
+
         public Task<TResult> ExecuteDelegateAsync<TResult>(
             Func<SMA.PowerShell, CancellationToken, TResult> func,
             string representation,
@@ -173,7 +177,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
             if (executionOptions.InterruptCommandPrompt)
             {
-                _consoleService?.CancelCurrentPrompt();
+                PromptCancellationRequested?.Invoke(this, new PromptCancellationRequestedArgs());
             }
 
             return result;
@@ -198,11 +202,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             }
         }
 
-        public void RegisterConsoleService(PowerShellConsoleService consoleService)
-        {
-            _consoleService = consoleService;
-        }
-
         public void EnterNestedPrompt()
         {
             _pwshContext.PushNestedPowerShell();
@@ -218,6 +217,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         public void ExitNestedPrompt()
         {
+            NestedPromptExited?.Invoke(this, new NestedPromptExitedArgs());
             _exitNestedPrompt = true;
         }
 
