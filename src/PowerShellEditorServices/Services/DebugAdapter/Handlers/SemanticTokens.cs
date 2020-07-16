@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
+﻿using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -64,6 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private static void pushToken(Token token, SemanticTokensBuilder builder){
             if(token is StringExpandableToken stringExpandableToken){
+                //try parsing tokens within the string
                 if(stringExpandableToken.NestedTokens != null)
                 {
                     foreach(Token t in stringExpandableToken.NestedTokens){
@@ -73,12 +70,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
             }
 
+            //Tokens line and col numbers indexed starting from 1, expecting indexing from 0
             var line = token.Extent.StartLineNumber - 1;
             var index = token.Extent.StartColumnNumber - 1;
-            var length = token.Text.Length;
-            var type = token.Kind;
 
-            builder.Push(line, index, length, MapSemanticToken(token), new string[]{});
+            builder.Push(line, index, token.Text.Length, MapSemanticToken(token), new string[]{});
         }
 
         private static SemanticTokenType MapSemanticToken(Token token)
