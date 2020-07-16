@@ -16,7 +16,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class SemanticTokens : SemanticTokensHandler
     {
         private readonly ILogger _logger;
-        private UTF8Encoding _utf8;
         public WorkspaceService _workspaceService;
         public SemanticTokens(ILogger<SemanticTokens> logger, WorkspaceService workspaceService) : base(new SemanticTokensRegistrationOptions() {
             DocumentSelector = DocumentSelector.ForLanguage("powershell"),
@@ -29,7 +28,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         })
         {
             _logger = logger;
-            _utf8 = new UTF8Encoding();
             _workspaceService = workspaceService;
         }
 
