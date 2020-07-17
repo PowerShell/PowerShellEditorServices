@@ -19,9 +19,12 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models.Proposals;
 using Xunit;
 using Xunit.Abstractions;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
+using OmniSharp.Extensions.LanguageServer.Protocol.Document.Proposals;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace PowerShellEditorServices.Test.E2E
 {
@@ -1136,5 +1139,36 @@ function CanSendGetCommentHelpRequest {
 
             Assert.Equal("Get-ChildItem", expandAliasResult.Text);
         }
+
+#pragma warning disable 618
+         [Fact]
+        public async Task CanSendSemanticTokenRequest()
+        {
+
+            //var tokens = semanticTokensBuilder.Commit().GetSemanticTokens();
+            string scriptPath = NewTestFile(@"
+function add {}
+");
+            var result =
+                await PsesLanguageClient
+                    .SendRequest<SemanticTokensParams>(
+                        "textDocument/semanticTokens",
+                        new SemanticTokensParams
+                        {
+                            TextDocument = new TextDocumentIdentifier
+                            {
+                                Uri = new Uri(scriptPath)
+                            }
+                        })
+                    .Returning<SemanticTokens>(CancellationToken.None);
+
+            scriptPath = null;
+            // Information about how this data is generated can be found at
+            // https://github.com/microsoft/vscode-extension-samples/blob/5ae1f7787122812dcc84e37427ca90af5ee09f14/semantic-tokens-sample/vscode.proposed.d.ts#L71
+            var arr = new int[35]{0,0,2,0,0,1,0,8,2,0,0,9,3,0,0,0,4,1,0,0,0,1,1,0,0,0,1,2,0,0,1,1,0,0,0};
+            Assert.Equal(result.Data.ToArray(), arr);
+        }
+
+#pragma warning restore 618
     }
 }
