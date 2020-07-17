@@ -3,22 +3,22 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
+using System.Management.Automation.Language;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using System.Management.Automation.Language;
+using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document.Proposals;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models.Proposals;
-using System;
-using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    //Disable warnings having to do with SemanticTokensHandler being labelled obsolete
+    //SemanticTokensHandler is labeled "Obsolete" because that is how Omnisharp marks proposed LSP features. Since we want this proposed feature, we disable this warning.
 #pragma warning disable 618
     internal class PsesSemanticTokens : SemanticTokensHandler
     {
@@ -27,8 +27,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         static readonly SemanticTokensRegistrationOptions _registrationOptions = new SemanticTokensRegistrationOptions() {
             DocumentSelector = LspUtils.PowerShellDocumentSelector,
             Legend = new SemanticTokensLegend(),
-            DocumentProvider = new Supports<SemanticTokensDocumentProviderOptions>(true,
-                new SemanticTokensDocumentProviderOptions() {
+            DocumentProvider = new Supports<SemanticTokensDocumentProviderOptions>(isSupported: true,
+                new SemanticTokensDocumentProviderOptions {
                     Edits = true
                 }),
             RangeProvider = true
@@ -70,7 +70,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             int line = token.Extent.StartLineNumber - 1;
             int index = token.Extent.StartColumnNumber - 1;
 
-            builder.Push(line, index, token.Text.Length, MapSemanticToken(token), Array.Empty<string>());
+            builder.Push(line: line, @char: index, length: token.Text.Length,
+                tokenType: MapSemanticToken(token), tokenModifiers: Array.Empty<string>());
         }
 
         private static SemanticTokenType MapSemanticToken(Token token)
