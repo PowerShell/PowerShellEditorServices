@@ -1,5 +1,4 @@
-﻿using System.Text;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
@@ -9,6 +8,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document.Proposals;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models.Proposals;
+using System;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -41,27 +41,30 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             await Task.Yield();
             Token[] tokens = file.ScriptTokens;
             foreach (var token in tokens){
-                pushToken(token, builder);
+                PushToken(token, builder);
             }
         }
 
-        private static void pushToken(Token token, SemanticTokensBuilder builder){
-            if(token is StringExpandableToken stringExpandableToken){
-                //try parsing tokens within the string
-                if(stringExpandableToken.NestedTokens != null)
+        private static void PushToken(Token token, SemanticTokensBuilder builder)
+        {
+            if(token is StringExpandableToken stringExpandableToken)
+            {
+                // Try parsing tokens within the string
+                if (stringExpandableToken.NestedTokens != null)
                 {
-                    foreach(Token t in stringExpandableToken.NestedTokens){
-                        pushToken(t, builder);
+                    foreach (Token t in stringExpandableToken.NestedTokens)
+                    {
+                        PushToken(t, builder);
                     }
                     return;
                 }
             }
 
             //Tokens line and col numbers indexed starting from 1, expecting indexing from 0
-            var line = token.Extent.StartLineNumber - 1;
-            var index = token.Extent.StartColumnNumber - 1;
+            int line = token.Extent.StartLineNumber - 1;
+            int index = token.Extent.StartColumnNumber - 1;
 
-            builder.Push(line, index, token.Text.Length, MapSemanticToken(token), new string[]{});
+            builder.Push(line, index, token.Text.Length, MapSemanticToken(token), Array.Empty<string>());
         }
 
         private static SemanticTokenType MapSemanticToken(Token token)
