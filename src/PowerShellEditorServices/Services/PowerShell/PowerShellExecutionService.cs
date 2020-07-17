@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Management.Automation;
 using System.Management.Automation.Host;
+using System.Management.Automation.Language;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -75,19 +76,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private readonly IReadOnlyList<string> _additionalModulesToLoad;
 
+        private readonly DebuggingContext _debuggingContext;
+
         private Thread _pipelineThread;
 
-        private CancellationTokenSource _loopCancellationSource;
+        private ConcurrentStack<CancellationTokenSource> _loopCancellationStack;
 
-        private CancellationTokenSource _currentExecutionCancellationSource;
+        private ConcurrentStack<CancellationTokenSource> _commandCancellationStack;
 
         private Execution.PowerShellContext _pwshContext;
 
-        private PowerShellConsoleService _consoleService;
-
-        private bool _taskRunning;
-
         private bool _exitNestedPrompt;
+
+        private DebuggerResumeAction? _debuggerResumeAction;
 
         private PowerShellExecutionService(
             ILoggerFactory loggerFactory,
@@ -103,7 +104,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             _logger = loggerFactory.CreateLogger<PowerShellExecutionService>();
             _languageServer = languageServer;
             _consumerThreadCancellationSource = new CancellationTokenSource();
+            _loopCancellationStack = new ConcurrentStack<CancellationTokenSource>();
+            _commandCancellationStack = new ConcurrentStack<CancellationTokenSource>();
             _executionQueue = new BlockingCollection<ISynchronousTask>();
+            _debuggingContext = new DebuggingContext();
             _hostName = hostName;
             _hostVersion = hostVersion;
             _languageMode = languageMode;
@@ -196,21 +200,36 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         public void CancelCurrentTask()
         {
-            if (_taskRunning)
+            if (_commandCancellationStack.TryPeek(out CancellationTokenSource currentCommandCancellation))
             {
-                _currentExecutionCancellationSource?.Cancel();
+                currentCommandCancellation.Cancel();
             }
         }
 
         public void EnterNestedPrompt()
         {
             _pwshContext.PushNestedPowerShell();
+            var cancellationContext = LoopCancellationContext.EnterNew(this, _pwshContext.CurrentCancellationSource, _consumerThreadCancellationSource);
             try
             {
-                RunConsumerLoop();
+                foreach (ISynchronousTask task in _executionQueue.GetConsumingEnumerable(cancellationContext.CancellationToken))
+                {
+                    RunTaskSynchronously(task, cancellationContext.CancellationToken);
+
+                    if (_exitNestedPrompt)
+                    {
+                        break;
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Catch cancellations to end nicely
             }
             finally
             {
+                _exitNestedPrompt = false;
+                cancellationContext.Dispose();
                 _pwshContext.PopPowerShell();
             }
         }
@@ -279,25 +298,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         {
             Initialize();
 
-            RunConsumerLoop();
-        }
-
-        private void RunConsumerLoop()
-        {
-            _loopCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(
-                _pwshContext.CurrentCancellationSource.Token,
-                _consumerThreadCancellationSource.Token);
-
+            var cancellationContext = LoopCancellationContext.EnterNew(
+                this,
+                _pwshContext.CurrentCancellationSource,
+                _consumerThreadCancellationSource);
             try
             {
-                foreach (ISynchronousTask task in _executionQueue.GetConsumingEnumerable(_loopCancellationSource.Token))
+                foreach (ISynchronousTask task in _executionQueue.GetConsumingEnumerable(cancellationContext.CancellationToken))
                 {
-                    RunTaskSynchronously(task);
-
-                    if (_exitNestedPrompt)
-                    {
-                        break;
-                    }
+                    RunTaskSynchronously(task, cancellationContext.CancellationToken);
                 }
             }
             catch (OperationCanceledException)
@@ -306,7 +315,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             }
             finally
             {
-                _exitNestedPrompt = false;
+                cancellationContext.Dispose();
             }
         }
 
@@ -317,16 +326,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                 return;
             }
 
-            _loopCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(
-                _pwshContext.CurrentCancellationSource.Token,
-                _consumerThreadCancellationSource.Token);
+            var loopCancellationContext = LoopCancellationContext.EnterNew(
+                this,
+                _pwshContext.CurrentCancellationSource,
+                _consumerThreadCancellationSource);
 
             try
             {
                 while (_pwshContext.CurrentPowerShell.InvocationStateInfo.State == PSInvocationState.Completed
                     && _executionQueue.TryTake(out ISynchronousTask task))
                 {
-                    RunTaskSynchronously(task);
+                    RunTaskSynchronously(task, loopCancellationContext.CancellationToken);
                 }
             }
             catch (OperationCanceledException)
@@ -335,30 +345,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             }
             finally
             {
-                _loopCancellationSource.Dispose();
+                loopCancellationContext.Dispose();
             }
 
             // TODO: Run nested pipeline here for engine event handling
         }
 
-        private void RunTaskSynchronously(ISynchronousTask task)
+        private void RunTaskSynchronously(ISynchronousTask task, CancellationToken loopCancellationToken)
         {
             if (task.IsCanceled)
             {
                 return;
             }
 
-            using (_currentExecutionCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(_loopCancellationSource.Token))
+            using (var cancellationContext = TaskCancellationContext.EnterNew(this, loopCancellationToken))
             {
-                _taskRunning = true;
-                try
-                {
-                    task.ExecuteSynchronously(_currentExecutionCancellationSource.Token);
-                }
-                finally
-                {
-                    _taskRunning = false;
-                }
+                task.ExecuteSynchronously(cancellationContext.CancellationToken);
             }
         }
 
@@ -474,17 +476,150 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private void OnDebuggerStopped(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
         {
+            _debuggingContext.OnDebuggerStop(sender, debuggerStopEventArgs);
+
+            _pwshContext.PushNestedPowerShell();
+
             DebuggerStopped?.Invoke(this, debuggerStopEventArgs);
+
+            var cancellationContext = LoopCancellationContext.EnterNew(
+                this,
+                _pwshContext.CurrentCancellationSource,
+                _consumerThreadCancellationSource);
+
+            var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(_debuggingContext.DebuggerResumeCancellationToken.Value, cancellationContext.CancellationToken);
+
+            try
+            {
+                // Run commands, but cancelling our blocking wait if the debugger resumes
+                foreach (ISynchronousTask task in _executionQueue.GetConsumingEnumerable(cancellationSource.Token))
+                {
+                    // We don't want to cancel the current command when the debugger resumes,
+                    // since that command will be resuming the debugger.
+                    // Instead let it complete and check the cancellation afterward.
+                    RunTaskSynchronously(task, cancellationContext.CancellationToken);
+
+                    if (cancellationSource.IsCancellationRequested)
+                    {
+                        break;
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Catch cancellations to end nicely
+            }
+            finally
+            {
+                cancellationSource.Dispose();
+                cancellationContext.Dispose();
+                _pwshContext.PopPowerShell();
+            }
         }
 
         private void OnDebuggerResumed(object sender, DebuggerResumedArgs debuggerResumedArgs)
         {
+            _debuggingContext.OnDebuggerResume(sender, debuggerResumedArgs);
+
             DebuggerResumed?.Invoke(this, debuggerResumedArgs);
         }
 
         private void OnBreakpointUpdated(object sender, BreakpointUpdatedEventArgs breakpointUpdatedEventArgs)
         {
             BreakpointUpdated?.Invoke(this, breakpointUpdatedEventArgs);
+        }
+
+        private class DebuggingContext
+        {
+            private CancellationTokenSource _debuggerCancellationTokenSource;
+
+            public CancellationToken? DebuggerResumeCancellationToken => _debuggerCancellationTokenSource?.Token;
+
+            public DebuggerResumeAction? LastResumeAction { get; private set; }
+
+            public void OnDebuggerStop(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
+            {
+                _debuggerCancellationTokenSource = new CancellationTokenSource();
+            }
+
+            public void OnDebuggerResume(object sender, DebuggerResumedArgs debuggerResumedArgs)
+            {
+                LastResumeAction = debuggerResumedArgs.ResumeAction;
+
+                if (_debuggerCancellationTokenSource != null)
+                {
+                    try
+                    {
+                        _debuggerCancellationTokenSource.Cancel();
+                    }
+                    finally
+                    {
+                        _debuggerCancellationTokenSource.Dispose();
+                        _debuggerCancellationTokenSource = null;
+                    }
+                }
+            }
+        }
+
+        private readonly struct LoopCancellationContext : IDisposable
+        {
+            public static LoopCancellationContext EnterNew(
+                PowerShellExecutionService executionService,
+                CancellationTokenSource cts1,
+                CancellationTokenSource cts2)
+            {
+                var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cts1.Token, cts2.Token);
+                executionService._loopCancellationStack.Push(cancellationTokenSource);
+                return new LoopCancellationContext(executionService._loopCancellationStack, cancellationTokenSource.Token);
+            }
+
+            private readonly ConcurrentStack<CancellationTokenSource> _loopCancellationStack;
+
+            public readonly CancellationToken CancellationToken;
+
+            private LoopCancellationContext(
+                ConcurrentStack<CancellationTokenSource> loopCancellationStack,
+                CancellationToken cancellationToken)
+            {
+                _loopCancellationStack = loopCancellationStack;
+                CancellationToken = cancellationToken;
+            }
+
+            public void Dispose()
+            {
+                if (_loopCancellationStack.TryPop(out CancellationTokenSource loopCancellation))
+                {
+                    loopCancellation.Dispose();
+                }
+            }
+        }
+
+        private readonly struct TaskCancellationContext : IDisposable
+        {
+            public static TaskCancellationContext EnterNew(PowerShellExecutionService executionService, CancellationToken loopCancellationToken)
+            {
+                var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(loopCancellationToken);
+                executionService._commandCancellationStack.Push(cancellationTokenSource);
+                return new TaskCancellationContext(executionService._commandCancellationStack, cancellationTokenSource.Token);
+            }
+
+            private TaskCancellationContext(ConcurrentStack<CancellationTokenSource> commandCancellationStack, CancellationToken cancellationToken)
+            {
+                _commandCancellationStack = commandCancellationStack;
+                CancellationToken = cancellationToken;
+            }
+
+            private readonly ConcurrentStack<CancellationTokenSource> _commandCancellationStack;
+
+            public readonly CancellationToken CancellationToken;
+
+            public void Dispose()
+            {
+                if (_commandCancellationStack.TryPop(out CancellationTokenSource taskCancellation))
+                {
+                    taskCancellation.Dispose();
+                }
+            }
         }
     }
 }
