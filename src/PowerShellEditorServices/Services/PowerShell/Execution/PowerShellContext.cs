@@ -47,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             ResumeAction = resumeAction;
         }
 
-        DebuggerResumeAction? ResumeAction { get; }
+        public DebuggerResumeAction? ResumeAction { get; }
     }
 
     internal class PromptCancellationRequestedArgs
@@ -113,7 +113,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public void ProcessDebuggerResult(DebuggerCommandResults result)
         {
-            DebuggerResumed?.Invoke(this, new DebuggerResumedArgs(result.ResumeAction));
+            if (result.ResumeAction != null)
+            {
+                DebuggerResumed?.Invoke(this, new DebuggerResumedArgs(result.ResumeAction));
+            }
         }
 
         public void PushNestedPowerShell()
