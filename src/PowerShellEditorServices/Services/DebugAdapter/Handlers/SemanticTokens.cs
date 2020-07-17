@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     //Disable warnings having to do with SemanticTokensHandler being labelled obsolete
 #pragma warning disable 618
-    internal class SemanticTokens : SemanticTokensHandler
+    internal class PsesSemanticTokens : SemanticTokensHandler
     {
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
@@ -28,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             RangeProvider = true
         };
 
-        public SemanticTokens(ILogger<SemanticTokens> logger, WorkspaceService workspaceService) : base(_registrationOptions)
+        public PsesSemanticTokens(ILogger<PsesSemanticTokens> logger, WorkspaceService workspaceService) : base(_registrationOptions)
         {
             _logger = logger;
             _workspaceService = workspaceService;
