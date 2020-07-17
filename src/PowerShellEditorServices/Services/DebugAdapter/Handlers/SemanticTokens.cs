@@ -12,12 +12,13 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models.Proposals;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
+    //Disable warnings having to do with SemanticTokensHandler being labelled obsolete
 #pragma warning disable 618
     internal class SemanticTokens : SemanticTokensHandler
     {
         private readonly ILogger _logger;
-        public WorkspaceService _workspaceService;
-        public SemanticTokens(ILogger<SemanticTokens> logger, WorkspaceService workspaceService) : base(new SemanticTokensRegistrationOptions() {
+        private readonly WorkspaceService _workspaceService;
+        static readonly SemanticTokensRegistrationOptions _registrationOptions = new SemanticTokensRegistrationOptions() {
             DocumentSelector = DocumentSelector.ForLanguage("powershell"),
             Legend = new SemanticTokensLegend(),
             DocumentProvider = new Supports<SemanticTokensDocumentProviderOptions>(true,
@@ -25,24 +26,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     Edits = true
                 }),
             RangeProvider = true
-        })
+        };
+
+        public SemanticTokens(ILogger<SemanticTokens> logger, WorkspaceService workspaceService) : base(_registrationOptions)
         {
             _logger = logger;
             _workspaceService = workspaceService;
-        }
-
-        public override async Task<OmniSharp.Extensions.LanguageServer.Protocol.Models.Proposals.SemanticTokens> Handle(
-            SemanticTokensParams request, CancellationToken cancellationToken)
-        {
-            var result = await base.Handle(request, cancellationToken);
-            return result;
-        }
-
-        public override async Task<SemanticTokensOrSemanticTokensEdits> Handle(SemanticTokensEditsParams request,
-            CancellationToken cancellationToken)
-        {
-            var result = await base.Handle(request, cancellationToken);
-            return result;
         }
 
         protected override async Task Tokenize(SemanticTokensBuilder builder, ITextDocumentIdentifierParams identifier,
@@ -77,7 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private static SemanticTokenType MapSemanticToken(Token token)
         {
-            //first check token flags
+            // First check token flags
             if ((token.TokenFlags & TokenFlags.Keyword) != 0)
             {
                 return SemanticTokenType.Keyword;
@@ -89,7 +78,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             if (token.Kind != TokenKind.Generic && (token.TokenFlags &
-                (TokenFlags.BinaryOperator | TokenFlags.UnaryOperator | TokenFlags.AssignmentOperator )) != 0)
+                (TokenFlags.BinaryOperator | TokenFlags.UnaryOperator | TokenFlags.AssignmentOperator)) != 0)
             {
                 return SemanticTokenType.Operator;
             }
@@ -135,8 +124,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return SemanticTokenType.Documentation;
         }
 
-        protected override Task<SemanticTokensDocument>
-            GetSemanticTokensDocument(ITextDocumentIdentifierParams @params, CancellationToken cancellationToken)
+        protected override Task<SemanticTokensDocument> GetSemanticTokensDocument(
+            ITextDocumentIdentifierParams @params,
+            CancellationToken cancellationToken)
         {
             return Task.FromResult(new SemanticTokensDocument(GetRegistrationOptions().Legend));
         }
