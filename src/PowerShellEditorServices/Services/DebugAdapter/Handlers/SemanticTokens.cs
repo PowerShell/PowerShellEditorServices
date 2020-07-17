@@ -1,4 +1,9 @@
-﻿using System.Threading;
+﻿//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
@@ -9,6 +14,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Document.Proposals;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models.Proposals;
 using System;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -19,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
         static readonly SemanticTokensRegistrationOptions _registrationOptions = new SemanticTokensRegistrationOptions() {
-            DocumentSelector = DocumentSelector.ForLanguage("powershell"),
+            DocumentSelector = LspUtils.PowerShellDocumentSelector,
             Legend = new SemanticTokensLegend(),
             DocumentProvider = new Supports<SemanticTokensDocumentProviderOptions>(true,
                 new SemanticTokensDocumentProviderOptions() {
