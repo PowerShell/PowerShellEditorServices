@@ -45,12 +45,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         {
             _pwsh = _pwshContext.CurrentPowerShell;
 
-            cancellationToken.Register(Cancel);
-
             if (_executionOptions.WriteInputToHost)
             {
                 _psHost.UI.WriteLine(_psCommand.GetInvocationText());
             }
+
+            _pwsh.Commands = _psCommand;
 
             if (_pwsh.Runspace.Debugger.IsActive)
             {
@@ -67,12 +67,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private IReadOnlyList<TResult> ExecuteNormally(CancellationToken cancellationToken)
         {
-            _pwsh.Commands = _psCommand;
-
             if (_executionOptions.WriteOutputToHost)
             {
                 _pwsh.AddOutputCommand();
             }
+
+            cancellationToken.Register(CancelNormalExecution);
 
             Collection<TResult> result = null;
             try
@@ -116,15 +116,40 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private IReadOnlyList<TResult> ExecuteInDebugger(CancellationToken cancellationToken)
         {
+            cancellationToken.Register(CancelDebugExecution);
+
             var outputCollection = new PSDataCollection<PSObject>();
+
+            if (_executionOptions.WriteOutputToHost)
+            {
+                _pwsh.AddDebugOutputCommand();
+
+                // Use an inline delegate here, since otherwise we need a cast -- allocation < cast
+                outputCollection.DataAdded += (object sender, DataAddedEventArgs args) =>
+                    {
+                        for (int i = args.Index; i < outputCollection.Count; i++)
+                        {
+                            _psHost.UI.WriteLine(outputCollection[i].ToString());
+                        }
+                    };
+            }
+
             DebuggerCommandResults debuggerResult = _pwsh.Runspace.Debugger.ProcessCommand(_psCommand, outputCollection);
             _pwshContext.ProcessDebuggerResult(debuggerResult);
 
+            // Optimisation to save wasted computation if we're going to throw the output away anyway
+            if (_executionOptions.WriteOutputToHost)
+            {
+                return Array.Empty<TResult>();
+            }
+
+            // If we've been asked for a PSObject, no need to allocate a new collection
             if (typeof(TResult) == typeof(PSObject))
             {
                 return (IReadOnlyList<TResult>)outputCollection;
             }
 
+            // Otherwise, convert things over
             var results = new List<TResult>(outputCollection.Count);
             foreach (PSObject outputResult in outputCollection)
             {
@@ -133,13 +158,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                     results.Add((TResult)result);
                 }
             }
-
             return results;
         }
 
-        private void Cancel()
+        private void CancelNormalExecution()
         {
             _pwsh.Stop();
+        }
+
+        private void CancelDebugExecution()
+        {
+            _pwsh.Runspace.Debugger.StopProcessCommand();
         }
     }
 }

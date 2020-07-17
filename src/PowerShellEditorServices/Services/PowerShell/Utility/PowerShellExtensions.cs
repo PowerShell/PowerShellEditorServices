@@ -35,10 +35,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
         public static SMA.PowerShell AddOutputCommand(this SMA.PowerShell pwsh)
         {
-            Command lastCommand = pwsh.Commands.Commands[pwsh.Commands.Commands.Count - 1];
-            lastCommand.MergeMyResults(PipelineResultTypes.Error, PipelineResultTypes.Output);
-            lastCommand.MergeMyResults(PipelineResultTypes.Information, PipelineResultTypes.Output);
-            return pwsh.AddCommand("Microsoft.Powershell.Core\\Out-Default", useLocalScope: true);
+            return pwsh.MergePipelineResults()
+                .AddCommand("Microsoft.Powershell.Core\\Out-Default", useLocalScope: true);
+        }
+
+        public static SMA.PowerShell AddDebugOutputCommand(this SMA.PowerShell pwsh)
+        {
+            return pwsh.MergePipelineResults()
+                .AddCommand("Microsoft.Powershell.Core\\Out-String", useLocalScope: true)
+                .AddParameter("Stream");
         }
 
         public static string GetErrorString(this SMA.PowerShell pwsh)
@@ -77,6 +82,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             }
 
             return sb;
+        }
+
+        private static SMA.PowerShell MergePipelineResults(this SMA.PowerShell pwsh)
+        {
+            Command lastCommand = pwsh.Commands.Commands[pwsh.Commands.Commands.Count - 1];
+            lastCommand.MergeMyResults(PipelineResultTypes.Error, PipelineResultTypes.Output);
+            lastCommand.MergeMyResults(PipelineResultTypes.Information, PipelineResultTypes.Output);
+            return pwsh;
         }
     }
 }

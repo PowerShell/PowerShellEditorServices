@@ -49,6 +49,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private bool _exiting;
 
+        private bool _debugging;
+
         private PowerShellConsoleService(
             ILoggerFactory loggerFactory,
             PowerShellExecutionService executionService,
@@ -64,6 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             _readLine = readLine;
             _psrlProxy = psrlProxy;
             _exiting = false;
+            _debugging = false;
         }
 
         public void Dispose()
@@ -137,7 +140,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                         //  - CtrlC was sent to readline (which does not propagate a cancellation)
                         //
                         // In any event there's nothing to run in PowerShell, so we just loop back to the prompt again.
-                        // However, we must distinguish the last two scenarios, since PSRL will print a new line in those cases
+                        // However, we must distinguish the last two scenarios, since PSRL will not print a new line in those cases.
                         if (string.IsNullOrEmpty(userInput))
                         {
                             if (currentCommandCancellation.CancellationSource.IsCancellationRequested
