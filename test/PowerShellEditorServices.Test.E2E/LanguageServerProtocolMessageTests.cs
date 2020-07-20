@@ -1146,9 +1146,8 @@ function CanSendGetCommentHelpRequest {
         {
 
             //var tokens = semanticTokensBuilder.Commit().GetSemanticTokens();
-            string scriptPath = NewTestFile(@"
-function add {}
-");
+            string scriptContent = "function";
+            string scriptPath = NewTestFile(scriptContent);
             var result =
                 await PsesLanguageClient
                     .SendRequest<SemanticTokensParams>(
@@ -1162,11 +1161,34 @@ function add {}
                         })
                     .Returning<SemanticTokens>(CancellationToken.None);
 
-            scriptPath = null;
-            // Information about how this data is generated can be found at
+            // Information about how this data is generated can be found at 0,0,11,14,0,0,12,0,0,0
             // https://github.com/microsoft/vscode-extension-samples/blob/5ae1f7787122812dcc84e37427ca90af5ee09f14/semantic-tokens-sample/vscode.proposed.d.ts#L71
-            var arr = new int[35]{0,0,2,0,0,1,0,8,2,0,0,9,3,0,0,0,4,1,0,0,0,1,1,0,0,0,1,2,0,0,1,1,0,0,0};
+
+
+            var arr = new int[10]
+                {
+                    //line, index, token length, token type, token modifiers
+                    0, 0, scriptContent.Length, 2, 0, //token 1 is function
+                    0, 9, 0, 0, 0 //token 2 is EOF
+                };
+
+
             Assert.Equal(result.Data.ToArray(), arr);
+
+            SemanticTokensRegistrationOptions options = new SemanticTokensRegistrationOptions() {
+                DocumentSelector = LspUtils.PowerShellDocumentSelector,
+                Legend = new SemanticTokensLegend(),
+                DocumentProvider = new Supports<SemanticTokensDocumentProviderOptions>(isSupported: true,
+                    new SemanticTokensDocumentProviderOptions {
+                        Edits = true
+                    }),
+                RangeProvider = true
+            };
+
+            SemanticTokensBuilder builder = new SemanticTokensBuilder(new SemanticTokensDocument(options), options.Legend);
+            builder.Push(0, 0, 8, SemanticTokenType.Keyword,  Array.Empty<string>());
+            SemanticTokens tokens = builder.Commit().GetSemanticTokens();
+
         }
 
 #pragma warning restore 618
