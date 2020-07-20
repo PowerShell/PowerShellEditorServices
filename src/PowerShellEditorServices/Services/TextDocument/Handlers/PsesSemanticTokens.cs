@@ -18,13 +18,11 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models.Proposals;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    //SemanticTokensHandler is labeled "Obsolete" because that is how Omnisharp marks proposed LSP features. Since we want this proposed feature, we disable this warning.
-#pragma warning disable 618
     internal class PsesSemanticTokens : SemanticTokensHandler
     {
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
-        static readonly SemanticTokensRegistrationOptions _registrationOptions = new SemanticTokensRegistrationOptions() {
+        private static readonly SemanticTokensRegistrationOptions s_registrationOptions = new SemanticTokensRegistrationOptions() {
             DocumentSelector = LspUtils.PowerShellDocumentSelector,
             Legend = new SemanticTokensLegend(),
             DocumentProvider = new Supports<SemanticTokensDocumentProviderOptions>(isSupported: true,
@@ -34,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             RangeProvider = true
         };
 
-        public PsesSemanticTokens(ILogger<PsesSemanticTokens> logger, WorkspaceService workspaceService) : base(_registrationOptions)
+        public PsesSemanticTokens(ILogger<PsesSemanticTokens> logger, WorkspaceService workspaceService) : base(s_registrationOptions)
         {
             _logger = logger;
             _workspaceService = workspaceService;
@@ -70,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             int line = token.Extent.StartLineNumber - 1;
             int index = token.Extent.StartColumnNumber - 1;
 
-            builder.Push(line: line, @char: index, length: token.Text.Length,
+            builder.Push(line, index, length: token.Text.Length,
                 tokenType: MapSemanticToken(token), tokenModifiers: Array.Empty<string>());
         }
 
@@ -141,5 +139,4 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return Task.FromResult(new SemanticTokensDocument(GetRegistrationOptions().Legend));
         }
     }
-#pragma warning restore 618
 }
