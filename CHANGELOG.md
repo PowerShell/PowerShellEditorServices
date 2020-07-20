@@ -1,5 +1,19 @@
 # PowerShell Editor Services Release History
 
+## v2.3.0-preview.1
+### Wednesday, July 22, 2020
+
+- 📺✨ [PowerShellEditorServices #1321](https://github.com/PowerShell/PowerShellEditorServices/pull/1321) -
+  Needed changes for Notebook UI Support.
+- 🛫✨ [PowerShellEditorServices #1323](https://github.com/PowerShell/PowerShellEditorServices/pull/1323) -
+  Add cwd property to settings. (Thanks @jwfx!)
+- 🛫🐛 [PowerShellEditorServices #1317](https://github.com/PowerShell/PowerShellEditorServices/pull/1318) -
+  Move tests to PS7 and PS7.1 and fix IsNetCore check.
+- 🔗✨ [PowerShellEditorServices #1316](https://github.com/PowerShell/PowerShellEditorServices/pull/1316) -
+  Return null when Hover request is cancelled or no symbol details. (Thanks @ralish!)
+- 🛫🐛 [vscode-powershell #2763](https://github.com/PowerShell/PowerShellEditorServices/pull/1315) -
+  TLS 1.2 Support When Installing PackageManagement Module. (Thanks @serkanz!)
+
 ## v2.2.0
 ### Thursday, June 11, 2020
 
