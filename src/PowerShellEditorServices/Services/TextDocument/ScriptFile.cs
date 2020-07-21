@@ -217,7 +217,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         internal static bool IsUntitledPath(string path)
         {
             Validate.IsNotNull(nameof(path), path);
-            return string.Equals(
+            return !string.Equals(
                 DocumentUri.From(path).Scheme,
                 Uri.UriSchemeFile,
                 StringComparison.OrdinalIgnoreCase);
