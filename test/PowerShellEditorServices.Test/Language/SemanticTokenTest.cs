@@ -36,7 +36,7 @@ function Get-Sum {
 
             foreach(Token t in scriptFile.ScriptTokens)
             {
-                List<SemanticToken> mappedTokens = PsesSemanticTokens.ConvertToSemanticTokens(t);
+                List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokens.ConvertToSemanticTokens(t));
                 switch(t.Text)
                 {
                     case "function":
@@ -77,12 +77,12 @@ function Get-Sum {
                 Version.Parse("5.0"));
 
             Token commandToken = scriptFile.ScriptTokens[0];
-            List<SemanticToken> mappedTokens = PsesSemanticTokens.ConvertToSemanticTokens(commandToken);
+            List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokens.ConvertToSemanticTokens(commandToken));
             Assert.Single(mappedTokens);
             Assert.Equal(SemanticTokenType.Function, mappedTokens[0].Type);
 
             Token stringExpandableToken = scriptFile.ScriptTokens[1];
-            mappedTokens = PsesSemanticTokens.ConvertToSemanticTokens(stringExpandableToken);
+            mappedTokens = new List<SemanticToken>(PsesSemanticTokens.ConvertToSemanticTokens(stringExpandableToken));
             Assert.Collection(mappedTokens,
                 sToken => Assert.Equal(SemanticTokenType.Function, sToken.Type),
                 sToken => Assert.Equal(SemanticTokenType.Function, sToken.Type),
