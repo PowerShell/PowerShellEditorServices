@@ -85,6 +85,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         public void StartRepl()
         {
             System.Console.CancelKeyPress += OnCancelKeyPress;
+            System.Console.InputEncoding = Encoding.UTF8;
             System.Console.OutputEncoding = Encoding.UTF8;
             _psrlProxy.OverrideReadKey(ReadKey);
             _executionService.PromptFramePushed += OnPromptFramePushed;
@@ -208,7 +209,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             var executionOptions = new PowerShellExecutionOptions
             {
                 WriteOutputToHost = true,
-                AddToHistory = true
+                AddToHistory = true,
             };
 
             return _executionService.ExecutePSCommandAsync(command, executionOptions, cancellationToken);
