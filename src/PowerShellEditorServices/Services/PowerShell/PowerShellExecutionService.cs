@@ -515,14 +515,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             {
                 cancellationSource.Dispose();
                 cancellationContext.Dispose();
+                _exitNestedPrompt = false;
                 _pwshContext.PopPowerShell();
+            }
+
+            if (_debuggingContext.LastResumeAction == DebuggerResumeAction.Stop)
+            {
+                CancelCurrentTask();
             }
         }
 
         private void OnDebuggerResumed(object sender, DebuggerResumedArgs debuggerResumedArgs)
         {
             _debuggingContext.OnDebuggerResume(sender, debuggerResumedArgs);
-
+            ExitNestedPrompt();
             DebuggerResumed?.Invoke(this, debuggerResumedArgs);
         }
 
