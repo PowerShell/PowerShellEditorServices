@@ -441,9 +441,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
             if (File.Exists(profilePath))
             {
-                _pwshContext.CurrentPowerShell.AddScript(profilePath, useLocalScope: false)
-                    .AddOutputCommand()
-                    .InvokeAndClear();
+                var psCommand = new PSCommand()
+                    .AddScript(profilePath, useLocalScope: false)
+                    .AddOutputCommand();
+
+                _pwshContext.CurrentPowerShell.InvokeCommand(psCommand);
             }
         }
 

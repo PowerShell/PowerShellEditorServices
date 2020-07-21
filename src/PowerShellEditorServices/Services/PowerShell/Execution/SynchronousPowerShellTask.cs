@@ -50,14 +50,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 _psHost.UI.WriteLine(_psCommand.GetInvocationText());
             }
 
-            _pwsh.Commands = _psCommand;
-
-            if (_pwsh.Runspace.Debugger.IsActive)
-            {
-                return ExecuteInDebugger(cancellationToken);
-            }
-
-            return ExecuteNormally(cancellationToken);
+            return _pwsh.Runspace.Debugger.IsActive
+                ? ExecuteInDebugger(cancellationToken)
+                : ExecuteNormally(cancellationToken);
         }
 
         public override string ToString()
@@ -69,7 +64,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         {
             if (_executionOptions.WriteOutputToHost)
             {
-                _pwsh.AddOutputCommand();
+                _psCommand.AddOutputCommand();
             }
 
             cancellationToken.Register(CancelNormalExecution);
@@ -77,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             Collection<TResult> result = null;
             try
             {
-                result = _pwsh.InvokeAndClear<TResult>();
+                result = _pwsh.InvokeCommand<TResult>(_psCommand);
 
                 if (_executionOptions.PropagateCancellationToCaller)
                 {
@@ -99,9 +94,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                     throw;
                 }
 
-                _pwsh.AddOutputCommand()
-                    .AddParameter("InputObject", e.ErrorRecord.AsPSObject())
-                    .InvokeAndClear();
+                var command = new PSCommand()
+                    .AddOutputCommand()
+                    .AddParameter("InputObject", e.ErrorRecord.AsPSObject());
+
+                _pwsh.InvokeCommand(command);
             }
             finally
             {
@@ -122,7 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
             if (_executionOptions.WriteOutputToHost)
             {
-                _pwsh.AddDebugOutputCommand();
+                _psCommand.AddDebugOutputCommand();
 
                 // Use an inline delegate here, since otherwise we need a cast -- allocation < cast
                 outputCollection.DataAdded += (object sender, DataAddedEventArgs args) =>

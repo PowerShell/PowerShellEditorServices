@@ -6,6 +6,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 {
     internal static class PSCommandExtensions
     {
+        public static PSCommand AddOutputCommand(this PSCommand psCommand)
+        {
+            return psCommand.MergePipelineResults()
+                .AddCommand("Out-Default", useLocalScope: true);
+        }
+
+        public static PSCommand AddDebugOutputCommand(this PSCommand psCommand)
+        {
+            return psCommand.MergePipelineResults()
+                .AddCommand("Out-String", useLocalScope: true)
+                .AddParameter("Stream");
+        }
+
+        public static PSCommand MergePipelineResults(this PSCommand psCommand)
+        {
+            Command lastCommand = psCommand.Commands[psCommand.Commands.Count - 1];
+            lastCommand.MergeMyResults(PipelineResultTypes.Error, PipelineResultTypes.Output);
+            lastCommand.MergeMyResults(PipelineResultTypes.Information, PipelineResultTypes.Output);
+            return psCommand;
+        }
+
         public static string GetInvocationText(this PSCommand command)
         {
             Command lastCommand = command.Commands[0];
