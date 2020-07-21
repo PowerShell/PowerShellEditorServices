@@ -43,8 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             CancellationToken cancellationToken)
         {
             ScriptFile file = _workspaceService.GetFile(DocumentUri.GetFileSystemPath(identifier));
-            Token[] tokens = file.ScriptTokens;
-            foreach (var token in tokens){
+            foreach (var token in file.ScriptTokens){
                 PushToken(token, builder);
             }
             return Task.CompletedTask;
@@ -52,33 +51,36 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private static void PushToken(Token token, SemanticTokensBuilder builder)
         {
-
-            List<SemanticToken> semanticToken = ConvertToSemanticTokens(token);
-            foreach(SemanticToken sToken in semanticToken)
+            foreach(SemanticToken sToken in ConvertToSemanticTokens(token))
             {
-                builder.Push(sToken.Line, sToken.Index, length: sToken.Text.Length,
-                    sToken.Type, tokenModifiers: sToken.TokenModifiers);
+                builder.Push(
+                    sToken.Line,
+                    sToken.Index,
+                    length: sToken.Text.Length,
+                    sToken.Type,
+                    tokenModifiers: sToken.TokenModifiers);
             }
         }
 
-        internal static List<SemanticToken> ConvertToSemanticTokens(Token token){
-            if(token is StringExpandableToken stringExpandableToken)
+        internal static IEnumerable<SemanticToken> ConvertToSemanticTokens(Token token)
+        {
+            if (token is StringExpandableToken stringExpandableToken)
             {
                 // Try parsing tokens within the string
                 if (stringExpandableToken.NestedTokens != null)
                 {
-                    List<SemanticToken> tokens = new List<SemanticToken>();
                     foreach (Token t in stringExpandableToken.NestedTokens)
                     {
-                        tokens.AddRange(ConvertToSemanticTokens(t));
+                        foreach (SemanticToken subToken in ConvertToSemanticTokens(t))
+                            yield return subToken;
                     }
-                    return tokens;
+                    yield break;
                 }
             }
 
             SemanticTokenType mappedType =  MapSemanticTokenType(token);
-            if(mappedType == null){
-                return new List<SemanticToken>();
+            if (mappedType == null){
+                yield break;
             }
 
             //Tokens line and col numbers indexed starting from 1, expecting indexing from 0
@@ -86,7 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             int index = token.Extent.StartColumnNumber - 1;
             SemanticToken sToken = new SemanticToken(token.Text, mappedType,
                 line, index, Array.Empty<string>());
-            return new List<SemanticToken>{sToken};
+            yield return sToken;
         }
 
         private static SemanticTokenType MapSemanticTokenType(Token token)
@@ -155,21 +157,4 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return Task.FromResult(new SemanticTokensDocument(GetRegistrationOptions().Legend));
         }
     }
-}
-
-class SemanticToken
-{
-    public SemanticToken(string text, SemanticTokenType type, int line, int index, IEnumerable<string> tokenModifiers)
-    {
-        Line = line;
-        Text = text;
-        Index = index;
-        Type = type;
-        TokenModifiers = tokenModifiers;
-    }
-    public string Text {get; set;}
-    public int Line {get; set;}
-    public int Index {get; set;}
-    public SemanticTokenType Type {get; set;}
-    public IEnumerable<string> TokenModifiers {get; set;}
 }

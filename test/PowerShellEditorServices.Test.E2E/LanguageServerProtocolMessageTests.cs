@@ -1161,14 +1161,14 @@ function CanSendGetCommentHelpRequest {
 
             // More information about how this data is generated can be found at
             // https://github.com/microsoft/vscode-extension-samples/blob/5ae1f7787122812dcc84e37427ca90af5ee09f14/semantic-tokens-sample/vscode.proposed.d.ts#L71
-            var arr = new int[10]
+            var expectedArr = new int[10]
                 {
                     //line, index, token length, token type, token modifiers
                     0, 0, scriptContent.Length, 2, 0, //token 1 is function
                     0, 9, 0, 0, 0 //token 2 is EOF
                 };
 
-            Assert.Equal(result.Data.ToArray(), arr);
+            Assert.Equal(expectedArr, result.Data.ToArray());
         }
     }
 }
