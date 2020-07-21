@@ -658,5 +658,17 @@ First line
                 Assert.Equal("file:///home/JamesHolden/projects/Rocinate/Proto%3AMole%5Ccule.ps1", scriptFile.DocumentUri);
             }
         }
+
+        [Trait("Category", "ScriptFile")]
+        [Theory]
+        [InlineData("C:\\Users\\me\\Documents\\test.ps1", false)]
+        [InlineData("/Users/me/Documents/test.ps1", false)]
+        [InlineData("vscode-notebook-cell:/Users/me/Documents/test.ps1#0001", true)]
+        [InlineData("https://microsoft.com", true)]
+        [InlineData("Untitled:Untitled-1", true)]
+        public void IsUntitledFileIsCorrect(string path, bool expected)
+        {
+            Assert.Equal(expected, ScriptFile.IsUntitledPath(path));
+        }
     }
 }
