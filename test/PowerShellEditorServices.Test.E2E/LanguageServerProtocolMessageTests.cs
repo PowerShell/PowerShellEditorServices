@@ -1140,7 +1140,7 @@ function CanSendGetCommentHelpRequest {
             Assert.Equal("Get-ChildItem", expandAliasResult.Text);
         }
 
-         [Fact]
+        [Fact]
         public async Task CanSendSemanticTokenRequest()
         {
             string scriptContent = "function";
