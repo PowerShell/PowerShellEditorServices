@@ -11,5 +11,7 @@
         public bool PropagateCancellationToCaller { get; set; }
 
         public bool InterruptCommandPrompt { get; set; }
+
+        public bool NoDebuggerExecution { get; set; }
     }
 }

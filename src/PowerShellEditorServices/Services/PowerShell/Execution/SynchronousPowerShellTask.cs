@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 _psHost.UI.WriteLine(_psCommand.GetInvocationText());
             }
 
-            return _pwsh.Runspace.Debugger.IsActive
+            return !_executionOptions.NoDebuggerExecution && _pwsh.Runspace.Debugger.InBreakpoint
                 ? ExecuteInDebugger(cancellationToken)
                 : ExecuteNormally(cancellationToken);
         }
