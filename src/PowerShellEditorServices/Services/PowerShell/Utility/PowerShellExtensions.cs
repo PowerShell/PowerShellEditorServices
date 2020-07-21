@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Text;
@@ -33,17 +34,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             }
         }
 
-        public static SMA.PowerShell AddOutputCommand(this SMA.PowerShell pwsh)
+        public static Collection<TResult> InvokeCommand<TResult>(this SMA.PowerShell pwsh, PSCommand psCommand)
         {
-            return pwsh.MergePipelineResults()
-                .AddCommand("Microsoft.Powershell.Core\\Out-Default", useLocalScope: true);
+            pwsh.Commands = psCommand;
+            return pwsh.InvokeAndClear<TResult>();
         }
 
-        public static SMA.PowerShell AddDebugOutputCommand(this SMA.PowerShell pwsh)
+        public static void InvokeCommand(this SMA.PowerShell pwsh, PSCommand psCommand)
         {
-            return pwsh.MergePipelineResults()
-                .AddCommand("Microsoft.Powershell.Core\\Out-String", useLocalScope: true)
-                .AddParameter("Stream");
+            pwsh.Commands = psCommand;
+            pwsh.InvokeAndClear();
         }
 
         public static string GetErrorString(this SMA.PowerShell pwsh)
@@ -82,14 +82,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             }
 
             return sb;
-        }
-
-        private static SMA.PowerShell MergePipelineResults(this SMA.PowerShell pwsh)
-        {
-            Command lastCommand = pwsh.Commands.Commands[pwsh.Commands.Commands.Count - 1];
-            lastCommand.MergeMyResults(PipelineResultTypes.Error, PipelineResultTypes.Output);
-            lastCommand.MergeMyResults(PipelineResultTypes.Information, PipelineResultTypes.Output);
-            return pwsh;
         }
     }
 }
