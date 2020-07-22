@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
     public class SemanticTokenTest
     {
         [Fact]
-        public async Task MapsFunctionElements()
+        public async Task TokenizesFunctionElements()
         {
             string text = @"
 function Get-Sum {
@@ -42,25 +42,20 @@ function Get-Sum {
                     case "function":
                     case "param":
                     case "return":
-                        Assert.Single(mappedTokens);
-                        Assert.Equal(SemanticTokenType.Keyword, mappedTokens[0].Type);
+                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Keyword, mappedTokens[0].Type));
                         break;
                     case "Get-Sum":
-                        Assert.Single(mappedTokens);
-                        Assert.Equal(SemanticTokenType.Function, mappedTokens[0].Type);
+                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Function, mappedTokens[0].Type));
                         break;
                     case "$a":
                     case "$b":
-                        Assert.Single(mappedTokens);
-                        Assert.Equal(SemanticTokenType.Variable, mappedTokens[0].Type);
+                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Variable, mappedTokens[0].Type));
                         break;
                     case "[int]":
-                        Assert.Single(mappedTokens);
-                        Assert.Equal(SemanticTokenType.Type, mappedTokens[0].Type);
+                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Type, mappedTokens[0].Type));
                         break;
                     case "+":
-                        Assert.Single(mappedTokens);
-                        Assert.Equal(SemanticTokenType.Operator, mappedTokens[0].Type);
+                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Operator, mappedTokens[0].Type));
                         break;
                 }
             }
@@ -88,6 +83,74 @@ function Get-Sum {
                 sToken => Assert.Equal(SemanticTokenType.Function, sToken.Type),
                 sToken => Assert.Equal(SemanticTokenType.Function, sToken.Type)
             );
+        }
+
+        [Fact]
+        public async Task RecognizesTokensWithAsterisk()
+        {
+string text = @"
+function Get-A*A {
+}
+Get-A*A
+";
+            ScriptFile scriptFile = new ScriptFile(
+                // Use any absolute path. Even if it doesn't exist.
+                DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
+                text,
+                Version.Parse("5.0"));
+
+            foreach(Token t in scriptFile.ScriptTokens)
+            {
+                List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokens.ConvertToSemanticTokens(t));
+                switch(t.Text)
+                {
+                    case "function":
+                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Keyword, mappedTokens[0].Type));
+                        break;
+                    case "Get-A*A":
+                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Function, mappedTokens[0].Type));
+                        break;
+                }
+            }
+        }
+
+        [Fact]
+        public async Task RecognizesArrayMemberInExpandableString()
+        {
+            string text = "\"$(@($Array).Count) OtherText\"";
+            ScriptFile scriptFile = new ScriptFile(
+                // Use any absolute path. Even if it doesn't exist.
+                DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
+                text,
+                Version.Parse("5.0"));
+
+            foreach(Token t in scriptFile.ScriptTokens)
+            {
+                List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokens.ConvertToSemanticTokens(t));
+                switch(t.Text)
+                {
+                    case "$Array":
+                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Variable, mappedTokens[0].Type));
+                        break;
+                    case "Count":
+                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Member, mappedTokens[0].Type));
+                        break;
+                }
+            }
+        }
+
+        [Fact]
+        public async Task RecognizesCurlyQuotedString()
+        {
+            string text = "“^[-'a-z]*”";
+            ScriptFile scriptFile = new ScriptFile(
+                // Use any absolute path. Even if it doesn't exist.
+                DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
+                text,
+                Version.Parse("5.0"));
+
+            List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokens.ConvertToSemanticTokens(scriptFile.ScriptTokens[0]));
+            Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.String, mappedTokens[0].Type));
         }
     }
 }
