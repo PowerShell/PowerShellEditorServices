@@ -1163,7 +1163,7 @@ function CanSendGetCommentHelpRequest {
             // https://github.com/microsoft/vscode-extension-samples/blob/5ae1f7787122812dcc84e37427ca90af5ee09f14/semantic-tokens-sample/vscode.proposed.d.ts#L71
             var expectedArr = new int[5]
                 {
-                    //line, index, token length, token type, token modifiers
+                    // line, index, token length, token type, token modifiers
                     0, 0, scriptContent.Length, 2, 0 //token 1 is function
                 };
 
