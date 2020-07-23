@@ -19,7 +19,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models.Proposals;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class PsesSemanticTokens : SemanticTokensHandler
+    internal class PsesSemanticTokensHandler : SemanticTokensHandler
     {
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             RangeProvider = true
         };
 
-        public PsesSemanticTokens(ILogger<PsesSemanticTokens> logger, WorkspaceService workspaceService) : base(s_registrationOptions)
+        public PsesSemanticTokensHandler(ILogger<PsesSemanticTokensHandler> logger, WorkspaceService workspaceService) : base(s_registrationOptions)
         {
             _logger = logger;
             _workspaceService = workspaceService;
