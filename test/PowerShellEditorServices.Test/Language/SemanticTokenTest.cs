@@ -88,7 +88,7 @@ function Get-Sum {
         [Fact]
         public async Task RecognizesTokensWithAsterisk()
         {
-string text = @"
+            string text = @"
 function Get-A*A {
 }
 Get-A*A
@@ -151,6 +151,40 @@ Get-A*A
 
             List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokens.ConvertToSemanticTokens(scriptFile.ScriptTokens[0]));
             Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.String, mappedTokens[0].Type));
+        }
+
+        [Fact]
+        public async Task RecognizeDoubleQuotedHereString()
+        {
+            string text =  @"
+enum MyEnum{
+    one
+    two
+    three
+}
+";
+            ScriptFile scriptFile = new ScriptFile(
+                // Use any absolute path. Even if it doesn't exist.
+                DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
+                text,
+                Version.Parse("5.0"));
+
+            foreach(Token t in scriptFile.ScriptTokens)
+            {
+                List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokens.ConvertToSemanticTokens(t));
+                switch(t.Text)
+                {
+                    case "enum":
+                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Keyword, mappedTokens[0].Type));
+                        break;
+                    case "MyEnum":
+                    case "one":
+                    case "two":
+                    case "three":
+                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Member, mappedTokens[0].Type));
+                        break;
+                }
+            }
         }
     }
 }
