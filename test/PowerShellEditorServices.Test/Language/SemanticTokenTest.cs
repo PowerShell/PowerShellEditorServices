@@ -34,10 +34,10 @@ function Get-Sum {
                 text,
                 Version.Parse("5.0"));
 
-            foreach(Token t in scriptFile.ScriptTokens)
+            foreach (Token t in scriptFile.ScriptTokens)
             {
                 List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokens.ConvertToSemanticTokens(t));
-                switch(t.Text)
+                switch (t.Text)
                 {
                     case "function":
                     case "param":
@@ -99,10 +99,10 @@ Get-A*A
                 text,
                 Version.Parse("5.0"));
 
-            foreach(Token t in scriptFile.ScriptTokens)
+            foreach (Token t in scriptFile.ScriptTokens)
             {
                 List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokens.ConvertToSemanticTokens(t));
-                switch(t.Text)
+                switch (t.Text)
                 {
                     case "function":
                         Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Keyword, mappedTokens[0].Type));
@@ -124,10 +124,10 @@ Get-A*A
                 text,
                 Version.Parse("5.0"));
 
-            foreach(Token t in scriptFile.ScriptTokens)
+            foreach (Token t in scriptFile.ScriptTokens)
             {
                 List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokens.ConvertToSemanticTokens(t));
-                switch(t.Text)
+                switch (t.Text)
                 {
                     case "$Array":
                         Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Variable, mappedTokens[0].Type));
@@ -169,10 +169,10 @@ enum MyEnum{
                 text,
                 Version.Parse("5.0"));
 
-            foreach(Token t in scriptFile.ScriptTokens)
+            foreach (Token t in scriptFile.ScriptTokens)
             {
                 List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokens.ConvertToSemanticTokens(t));
-                switch(t.Text)
+                switch (t.Text)
                 {
                     case "enum":
                         Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Keyword, mappedTokens[0].Type));

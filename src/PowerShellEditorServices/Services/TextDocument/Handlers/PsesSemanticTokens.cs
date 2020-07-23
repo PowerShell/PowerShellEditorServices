@@ -51,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private static void PushToken(Token token, SemanticTokensBuilder builder)
         {
-            foreach(SemanticToken sToken in ConvertToSemanticTokens(token))
+            foreach (SemanticToken sToken in ConvertToSemanticTokens(token))
             {
                 builder.Push(
                     sToken.Line,
