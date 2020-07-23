@@ -88,8 +88,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private bool _exitNestedPrompt;
 
-        private DebuggerResumeAction? _debuggerResumeAction;
-
         private PowerShellExecutionService(
             ILoggerFactory loggerFactory,
             ILanguageServer languageServer,
@@ -489,6 +487,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                 _pwshContext.CurrentCancellationSource,
                 _consumerThreadCancellationSource);
 
+            // If the debugger is resumed while the execution queue listener is blocked on getting a new execution event,
+            // we must cancel the blocking call
             var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(_debuggingContext.DebuggerResumeCancellationToken.Value, cancellationContext.CancellationToken);
 
             try
@@ -501,8 +501,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                     // Instead let it complete and check the cancellation afterward.
                     RunTaskSynchronously(task, cancellationContext.CancellationToken);
 
+                    if (_debuggingContext.LastResumeAction != null)
+                    {
+                        debuggerStopEventArgs.ResumeAction = _debuggingContext.LastResumeAction.Value;
+                        break;
+                    }
+
                     if (cancellationSource.IsCancellationRequested)
                     {
+                        debuggerStopEventArgs.ResumeAction = DebuggerResumeAction.Stop;
                         break;
                     }
                 }
@@ -515,13 +522,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             {
                 cancellationSource.Dispose();
                 cancellationContext.Dispose();
+                _debuggingContext.LastResumeAction = null;
                 _exitNestedPrompt = false;
                 _pwshContext.PopPowerShell();
-            }
-
-            if (_debuggingContext.LastResumeAction == DebuggerResumeAction.Stop)
-            {
-                CancelCurrentTask();
             }
         }
 
@@ -543,7 +546,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
             public CancellationToken? DebuggerResumeCancellationToken => _debuggerCancellationTokenSource?.Token;
 
-            public DebuggerResumeAction? LastResumeAction { get; private set; }
+            public DebuggerResumeAction? LastResumeAction { get; set; }
 
             public void OnDebuggerStop(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
             {
