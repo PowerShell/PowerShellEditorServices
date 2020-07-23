@@ -43,7 +43,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             CancellationToken cancellationToken)
         {
             ScriptFile file = _workspaceService.GetFile(DocumentUri.GetFileSystemPath(identifier));
-            foreach (Token token in file.ScriptTokens){
+            foreach (Token token in file.ScriptTokens)
+            {
                 PushToken(token, builder);
             }
             return Task.CompletedTask;
@@ -79,7 +80,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             SemanticTokenType mappedType = MapSemanticTokenType(token);
-            if (mappedType == null){
+            if (mappedType == null)
+            {
                 yield break;
             }
 
