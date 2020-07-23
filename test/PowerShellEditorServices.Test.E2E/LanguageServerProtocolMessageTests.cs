@@ -1164,7 +1164,7 @@ function CanSendGetCommentHelpRequest {
             var expectedArr = new int[5]
                 {
                     // line, index, token length, token type, token modifiers
-                    0, 0, scriptContent.Length, 2, 0 //token 1 is function
+                    0, 0, scriptContent.Length, 2, 0 //function token: line 0, index 0, length, type 2 = keyword, no modifiers
                 };
 
             Assert.Equal(expectedArr, result.Data.ToArray());
