@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using OmniSharp.Extensions.LanguageServer.Protocol;
-using OmniSharp.Extensions.LanguageServer.Protocol.Document.Proposals;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models.Proposals;
 using Xunit;
 
@@ -42,20 +41,20 @@ function Get-Sum {
                     case "function":
                     case "param":
                     case "return":
-                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Keyword, mappedTokens[0].Type));
+                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Keyword == sToken.Type);
                         break;
                     case "Get-Sum":
-                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Function, mappedTokens[0].Type));
+                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Function == sToken.Type);
                         break;
                     case "$a":
                     case "$b":
-                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Variable, mappedTokens[0].Type));
+                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Variable == sToken.Type);
                         break;
                     case "[int]":
-                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Type, mappedTokens[0].Type));
+                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Type == sToken.Type);
                         break;
                     case "+":
-                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Operator, mappedTokens[0].Type));
+                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Operator == sToken.Type);
                         break;
                 }
             }
@@ -73,8 +72,7 @@ function Get-Sum {
 
             Token commandToken = scriptFile.ScriptTokens[0];
             List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokensHandler.ConvertToSemanticTokens(commandToken));
-            Assert.Single(mappedTokens);
-            Assert.Equal(SemanticTokenType.Function, mappedTokens[0].Type);
+            Assert.Single(mappedTokens, sToken => SemanticTokenType.Function == sToken.Type);
 
             Token stringExpandableToken = scriptFile.ScriptTokens[1];
             mappedTokens = new List<SemanticToken>(PsesSemanticTokensHandler.ConvertToSemanticTokens(stringExpandableToken));
@@ -105,10 +103,10 @@ Get-A*A
                 switch (t.Text)
                 {
                     case "function":
-                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Keyword, mappedTokens[0].Type));
+                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Keyword == sToken.Type);
                         break;
                     case "Get-A*A":
-                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Function, mappedTokens[0].Type));
+                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Function == sToken.Type);
                         break;
                 }
             }
@@ -130,10 +128,10 @@ Get-A*A
                 switch (t.Text)
                 {
                     case "$Array":
-                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Variable, mappedTokens[0].Type));
+                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Variable == sToken.Type);
                         break;
                     case "Count":
-                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Member, mappedTokens[0].Type));
+                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Member == sToken.Type);
                         break;
                 }
             }
@@ -150,11 +148,11 @@ Get-A*A
                 Version.Parse("5.0"));
 
             List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokensHandler.ConvertToSemanticTokens(scriptFile.ScriptTokens[0]));
-            Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.String, mappedTokens[0].Type));
+            Assert.Single(mappedTokens, sToken => SemanticTokenType.String == sToken.Type);
         }
 
         [Fact]
-        public async Task RecognizeDoubleQuotedHereString()
+        public async Task RecognizeEnum()
         {
             string text =  @"
 enum MyEnum{
@@ -175,13 +173,13 @@ enum MyEnum{
                 switch (t.Text)
                 {
                     case "enum":
-                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Keyword, mappedTokens[0].Type));
+                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Keyword == sToken.Type);
                         break;
                     case "MyEnum":
                     case "one":
                     case "two":
                     case "three":
-                        Assert.Collection(mappedTokens, sToken => Assert.Equal(SemanticTokenType.Member, mappedTokens[0].Type));
+                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Member == sToken.Type);
                         break;
                 }
             }
