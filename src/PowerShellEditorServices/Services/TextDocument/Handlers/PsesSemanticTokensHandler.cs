@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         protected override Task Tokenize(SemanticTokensBuilder builder, ITextDocumentIdentifierParams identifier,
             CancellationToken cancellationToken)
         {
-            ScriptFile file = _workspaceService.GetFile(DocumentUri.GetFileSystemPath(identifier));
+            ScriptFile file = _workspaceService.GetFile(identifier.TextDocument.Uri);
             foreach (Token token in file.ScriptTokens)
             {
                 PushToken(token, builder);
