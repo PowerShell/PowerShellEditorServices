@@ -20,9 +20,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         Remote = 4,
     }
 
-    internal class PromptFramePushedArgs
+    internal class PowerShellPushedArgs
     {
-        public PromptFramePushedArgs(PromptFrameType frameType)
+        public PowerShellPushedArgs(PromptFrameType frameType)
         {
             FrameType = frameType;
         }
@@ -30,9 +30,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         public PromptFrameType FrameType { get; }
     }
 
-    internal class PromptFramePoppedArgs
+    internal class PowerShellPoppedArgs
     {
-        public PromptFramePoppedArgs(PromptFrameType frameType)
+        public PowerShellPoppedArgs(PromptFrameType frameType)
         {
             FrameType = frameType;
         }
@@ -40,9 +40,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         public PromptFrameType FrameType { get; }
     }
 
-    internal class DebuggerResumedArgs
+    internal class DebuggerResumingArgs
     {
-        public DebuggerResumedArgs(DebuggerResumeAction? resumeAction)
+        public DebuggerResumingArgs(DebuggerResumeAction? resumeAction)
         {
             ResumeAction = resumeAction;
         }
@@ -54,7 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
     {
     }
 
-    internal class NestedPromptExitedArgs
+    internal class NestedPromptExitingArgs
     {
     }
 
@@ -76,10 +76,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             runspace.Open();
 
             var context = new PowerShellContext();
-            context.PushPowerShell(runspace);
+            context.PushInitialPowerShell(runspace);
 
             Runspace.DefaultRunspace = runspace;
-            psHost.RegisterRunspace(runspace);
 
             return context;
         }
@@ -91,6 +90,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             _frameStack = new Stack<ContextFrame>();
         }
 
+        public int PowerShellDepth => _frameStack.Count;
+
         public SMA.PowerShell CurrentPowerShell
         {
             get => _frameStack.Peek().PowerShell;
@@ -101,37 +102,73 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             get => _frameStack.Peek().CancellationTokenSource;
         }
 
-        public event Action<object, PromptFramePushedArgs> PromptFramePushed;
+        public bool IsExiting { get; private set; }
 
-        public event Action<object, PromptFramePoppedArgs> PromptFramePopped;
+        public event Action<object, PowerShellPushedArgs> PowerShellPushed;
+
+        public event Action<object, PowerShellPoppedArgs> PowerShellPopped;
+
+        public event Action<object, NestedPromptExitingArgs> NestedPromptExiting;
 
         public event Action<object, DebuggerStopEventArgs> DebuggerStopped;
 
-        public event Action<object, DebuggerResumedArgs> DebuggerResumed;
+        public event Action<object, DebuggerResumingArgs> DebuggerResumed;
 
         public event Action<object, BreakpointUpdatedEventArgs> BreakpointUpdated;
+
+        public void BeginExiting()
+        {
+            IsExiting = true;
+            NestedPromptExiting?.Invoke(this, new NestedPromptExitingArgs());
+        }
 
         public void ProcessDebuggerResult(DebuggerCommandResults result)
         {
             if (result.ResumeAction != null)
             {
-                DebuggerResumed?.Invoke(this, new DebuggerResumedArgs(result.ResumeAction));
+                DebuggerResumed?.Invoke(this, new DebuggerResumingArgs(result.ResumeAction));
             }
         }
 
         public void PushNestedPowerShell()
         {
-            // PowerShell.CreateNestedPowerShell() sets IsNested but not IsChild
-            // So we must use the RunspaceMode.CurrentRunspace option on PowerShell.Create() instead
-            var pwsh = SMA.PowerShell.Create(RunspaceMode.CurrentRunspace);
-            pwsh.Runspace.ThreadOptions = PSThreadOptions.UseCurrentThread;
+            PushNestedPowerShell(PromptFrameType.Normal);
+        }
 
-            PushFrame(new ContextFrame(pwsh, PromptFrameType.NestedPrompt, new CancellationTokenSource()));
+        public void PushDebugPowerShell()
+        {
+            PushNestedPowerShell(PromptFrameType.Debug);
+        }
+
+        public void PushPowerShell(Runspace runspace)
+        {
+            var pwsh = SMA.PowerShell.Create();
+            pwsh.Runspace = runspace;
+
+            PromptFrameType frameType = PromptFrameType.Normal;
+
+            if (runspace.RunspaceIsRemote)
+            {
+                frameType |= PromptFrameType.Remote;
+            }
+
+            PushFrame(new ContextFrame(pwsh, frameType, new CancellationTokenSource()));
         }
 
         public void PopPowerShell()
         {
             PopFrame();
+        }
+
+        public bool TryPopPowerShell()
+        {
+            if (_frameStack.Count <= 1)
+            {
+                return false;
+            }
+
+            PopFrame();
+            return true;
         }
 
         public void Dispose()
@@ -142,7 +179,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             }
         }
 
-        private void PushPowerShell(Runspace runspace)
+        private void PushInitialPowerShell(Runspace runspace)
         {
             var pwsh = SMA.PowerShell.Create();
             pwsh.Runspace = runspace;
@@ -150,22 +187,39 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             PushFrame(new ContextFrame(pwsh, PromptFrameType.Normal, new CancellationTokenSource()));
         }
 
+        private void PushNestedPowerShell(PromptFrameType frameType)
+        {
+            SMA.PowerShell pwsh = CreateNestedPowerShell();
+            PromptFrameType newFrameType = _frameStack.Peek().FrameType | PromptFrameType.NestedPrompt | frameType;
+            PushFrame(new ContextFrame(pwsh, newFrameType, new CancellationTokenSource()));
+        }
+
+        private SMA.PowerShell CreateNestedPowerShell()
+        {
+            // PowerShell.CreateNestedPowerShell() sets IsNested but not IsChild
+            // So we must use the RunspaceMode.CurrentRunspace option on PowerShell.Create() instead
+            var pwsh = SMA.PowerShell.Create(RunspaceMode.CurrentRunspace);
+            pwsh.Runspace.ThreadOptions = PSThreadOptions.UseCurrentThread;
+            return pwsh;
+        }
+
         private void PushFrame(ContextFrame frame)
         {
             _frameStack.Push(frame);
             frame.PowerShell.Runspace.Debugger.DebuggerStop += OnDebuggerStopped;
             frame.PowerShell.Runspace.Debugger.BreakpointUpdated += OnBreakpointUpdated;
-            PromptFramePushed?.Invoke(this, new PromptFramePushedArgs(frame.FrameType));
+            PowerShellPushed?.Invoke(this, new PowerShellPushedArgs(frame.FrameType));
         }
 
         private void PopFrame()
         {
+            IsExiting = false;
             ContextFrame frame = _frameStack.Pop();
             try
             {
                 frame.PowerShell.Runspace.Debugger.DebuggerStop -= OnDebuggerStopped;
                 frame.PowerShell.Runspace.Debugger.BreakpointUpdated -= OnBreakpointUpdated;
-                PromptFramePopped?.Invoke(this, new PromptFramePoppedArgs(frame.FrameType));
+                PowerShellPopped?.Invoke(this, new PowerShellPoppedArgs(frame.FrameType));
             }
             finally
             {
