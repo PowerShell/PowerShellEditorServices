@@ -21,17 +21,20 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class PsesSemanticTokensHandler : SemanticTokensHandler
     {
-        private readonly ILogger _logger;
-        private readonly WorkspaceService _workspaceService;
-        private static readonly SemanticTokensRegistrationOptions s_registrationOptions = new SemanticTokensRegistrationOptions() {
+        private static readonly SemanticTokensRegistrationOptions s_registrationOptions = new SemanticTokensRegistrationOptions
+        {
             DocumentSelector = LspUtils.PowerShellDocumentSelector,
             Legend = new SemanticTokensLegend(),
-            DocumentProvider = new Supports<SemanticTokensDocumentProviderOptions>(isSupported: true,
-                new SemanticTokensDocumentProviderOptions {
+            DocumentProvider = new Supports<SemanticTokensDocumentProviderOptions>(
+                isSupported: true,
+                new SemanticTokensDocumentProviderOptions
+                {
                     Edits = true
                 }),
             RangeProvider = true
         };
+        private readonly ILogger _logger;
+        private readonly WorkspaceService _workspaceService;
 
         public PsesSemanticTokensHandler(ILogger<PsesSemanticTokensHandler> logger, WorkspaceService workspaceService) : base(s_registrationOptions)
         {
