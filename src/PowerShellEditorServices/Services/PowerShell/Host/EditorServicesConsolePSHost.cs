@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
-using PowerShellEditorServices.Services;
 using System;
 using System.Globalization;
 using System.Management.Automation.Host;
@@ -8,24 +7,24 @@ using System.Management.Automation.Runspaces;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 {
+    using PowerShellContext = Execution.PowerShellContext;
+
     internal class EditorServicesConsolePSHost : PSHost, IHostSupportsInteractiveSession
     {
         private readonly ILogger _logger;
 
-        private readonly PowerShellExecutionService _executionService;
+        private PowerShellContext _pwshContext;
 
         private Runspace _pushedRunspace;
 
         public EditorServicesConsolePSHost(
             ILoggerFactory loggerFactory,
-            PowerShellExecutionService executionService,
             string name,
             Version version,
             PSHost internalHost,
             ConsoleReadLine readline)
         {
             _logger = loggerFactory.CreateLogger<EditorServicesConsolePSHost>();
-            _executionService = executionService;
             _pushedRunspace = null;
             Name = name;
             Version = version;
@@ -44,18 +43,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public override Version Version { get; }
 
-        public bool IsRunspacePushed { get; private set; }
+        public Runspace Runspace => _pwshContext.CurrentPowerShell.Runspace;
 
-        public Runspace Runspace { get; private set; }
+        public bool IsRunspacePushed => _pwshContext.PowerShellDepth > 1;
 
         public override void EnterNestedPrompt()
         {
-            _executionService.EnterNestedPrompt();
+            _pwshContext.PushNestedPowerShell();
         }
 
         public override void ExitNestedPrompt()
         {
-            _executionService.ExitNestedPrompt();
+            _pwshContext.BeginExiting();
         }
 
         public override void NotifyBeginApplication()
@@ -66,31 +65,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         {
         }
 
-        public void PopRunspace()
-        {
-            Runspace = _pushedRunspace;
-            _pushedRunspace = null;
-            IsRunspacePushed = false;
-        }
-
         public void PushRunspace(Runspace runspace)
         {
-            _pushedRunspace = Runspace;
-            Runspace = runspace;
-            IsRunspacePushed = true;
+            _pwshContext.PushPowerShell(runspace);
+        }
+
+        public void PopRunspace()
+        {
+            // TODO: What if we're in a nested prompt in a remote/debug session?
+            _pwshContext.PopPowerShell();
         }
 
         public override void SetShouldExit(int exitCode)
         {
-            if (IsRunspacePushed)
-            {
-                PopRunspace();
-            }
+            _pwshContext.TryPopPowerShell();
         }
 
-        public void RegisterRunspace(Runspace runspace)
+        internal void RegisterPowerShellContext(PowerShellContext pwshContext)
         {
-            Runspace = runspace;
+            _pwshContext = pwshContext;
         }
     }
 }

@@ -86,8 +86,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private Execution.PowerShellContext _pwshContext;
 
-        private bool _exitNestedPrompt;
-
         private PowerShellExecutionService(
             ILoggerFactory loggerFactory,
             ILanguageServer languageServer,
@@ -122,19 +120,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         public ConsoleReadLine ReadLine { get; private set; }
 
-        public event Action<object, PromptFramePushedArgs> PromptFramePushed;
+        public event Action<object, PowerShellPushedArgs> PowerShellPushed;
 
-        public event Action<object, PromptFramePoppedArgs> PromptFramePopped;
+        public event Action<object, PowerShellPoppedArgs> PromptFramePopped;
 
         public event Action<object, DebuggerStopEventArgs> DebuggerStopped;
 
-        public event Action<object, DebuggerResumedArgs> DebuggerResumed;
+        public event Action<object, DebuggerResumingArgs> DebuggerResuming;
 
         public event Action<object, BreakpointUpdatedEventArgs> BreakpointUpdated;
 
         public event Action<object, PromptCancellationRequestedArgs> PromptCancellationRequested;
 
-        public event Action<object, NestedPromptExitedArgs> NestedPromptExited;
+        public event Action<object, NestedPromptExitingArgs> NestedPromptExiting;
 
         public Task<TResult> ExecuteDelegateAsync<TResult>(
             Func<SMA.PowerShell, CancellationToken, TResult> func,
@@ -204,40 +202,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             }
         }
 
-        public void EnterNestedPrompt()
-        {
-            _pwshContext.PushNestedPowerShell();
-            var cancellationContext = LoopCancellationContext.EnterNew(this, _pwshContext.CurrentCancellationSource, _consumerThreadCancellationSource);
-            try
-            {
-                foreach (ISynchronousTask task in _executionQueue.GetConsumingEnumerable(cancellationContext.CancellationToken))
-                {
-                    RunTaskSynchronously(task, cancellationContext.CancellationToken);
-
-                    if (_exitNestedPrompt)
-                    {
-                        break;
-                    }
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Catch cancellations to end nicely
-            }
-            finally
-            {
-                _exitNestedPrompt = false;
-                cancellationContext.Dispose();
-                _pwshContext.PopPowerShell();
-            }
-        }
-
-        public void ExitNestedPrompt()
-        {
-            NestedPromptExited?.Invoke(this, new NestedPromptExitedArgs());
-            _exitNestedPrompt = true;
-        }
-
         public void Dispose()
         {
             Stop();
@@ -258,38 +222,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             };
             _pipelineThread.SetApartmentState(ApartmentState.STA);
             _pipelineThread.Start();
-        }
-
-        private void Initialize()
-        {
-            ReadLine = new ConsoleReadLine();
-
-            EditorServicesHost = new EditorServicesConsolePSHost(_loggerFactory, this, _hostName, _hostVersion, _internalHost, ReadLine);
-
-            SetPowerShellContext(EditorServicesHost, _languageMode);
-
-            EngineIntrinsics = (EngineIntrinsics)_pwshContext.CurrentPowerShell.Runspace.SessionStateProxy.GetVariable("ExecutionContext");
-
-            PSReadLineProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, _pwshContext.CurrentPowerShell);
-            PSReadLineProxy.OverrideIdleHandler(OnPowerShellIdle);
-            ReadLine.RegisterExecutionDependencies(this, PSReadLineProxy);
-
-            if (VersionUtils.IsWindows)
-            {
-                SetExecutionPolicy();
-            }
-
-            LoadProfiles();
-
-            ImportModule(s_commandsModulePath);
-
-            if (_additionalModulesToLoad != null && _additionalModulesToLoad.Count > 0)
-            {
-                foreach (string module in _additionalModulesToLoad)
-                {
-                    ImportModule(module);
-                }
-            }
         }
 
         private void RunTopLevelConsumerLoop()
@@ -317,38 +249,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             }
         }
 
-        private void OnPowerShellIdle()
-        {
-            if (_executionQueue.Count == 0)
-            {
-                return;
-            }
-
-            var loopCancellationContext = LoopCancellationContext.EnterNew(
-                this,
-                _pwshContext.CurrentCancellationSource,
-                _consumerThreadCancellationSource);
-
-            try
-            {
-                while (_pwshContext.CurrentPowerShell.InvocationStateInfo.State == PSInvocationState.Completed
-                    && _executionQueue.TryTake(out ISynchronousTask task))
-                {
-                    RunTaskSynchronously(task, loopCancellationContext.CancellationToken);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-
-            }
-            finally
-            {
-                loopCancellationContext.Dispose();
-            }
-
-            // TODO: Run nested pipeline here for engine event handling
-        }
-
         private void RunTaskSynchronously(ISynchronousTask task, CancellationToken loopCancellationToken)
         {
             if (task.IsCanceled)
@@ -359,6 +259,43 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             using (var cancellationContext = TaskCancellationContext.EnterNew(this, loopCancellationToken))
             {
                 task.ExecuteSynchronously(cancellationContext.CancellationToken);
+            }
+        }
+
+        private void Initialize()
+        {
+            ReadLine = new ConsoleReadLine();
+
+            EditorServicesHost = new EditorServicesConsolePSHost(
+                _loggerFactory,
+                _hostName,
+                _hostVersion,
+                _internalHost,
+                ReadLine);
+
+            SetPowerShellContext(EditorServicesHost, _languageMode);
+
+            EngineIntrinsics = (EngineIntrinsics)_pwshContext.CurrentPowerShell.Runspace.SessionStateProxy.GetVariable("ExecutionContext");
+
+            PSReadLineProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, _pwshContext.CurrentPowerShell);
+            PSReadLineProxy.OverrideIdleHandler(OnPowerShellIdle);
+            ReadLine.RegisterExecutionDependencies(this, PSReadLineProxy);
+
+            if (VersionUtils.IsWindows)
+            {
+                SetExecutionPolicy();
+            }
+
+            LoadProfiles();
+
+            ImportModule(s_commandsModulePath);
+
+            if (_additionalModulesToLoad != null && _additionalModulesToLoad.Count > 0)
+            {
+                foreach (string module in _additionalModulesToLoad)
+                {
+                    ImportModule(module);
+                }
             }
         }
 
@@ -457,35 +394,38 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         private void SetPowerShellContext(EditorServicesConsolePSHost psHost, PSLanguageMode languageMode)
         {
             _pwshContext = Execution.PowerShellContext.Create(psHost, languageMode);
-            _pwshContext.PromptFramePushed += OnPromptFramePushed;
-            _pwshContext.PromptFramePopped += OnPromptFramePopped;
+            EditorServicesHost.RegisterPowerShellContext(_pwshContext);
+            _pwshContext.PowerShellPushed += OnPowerShellPushed;
+            _pwshContext.PowerShellPopped += OnPowerShellPopped;
+            _pwshContext.NestedPromptExiting += OnNestedPromptExiting;
             _pwshContext.DebuggerStopped += OnDebuggerStopped;
-            _pwshContext.DebuggerResumed += OnDebuggerResumed;
+            _pwshContext.DebuggerResumed += OnDebuggerResuming;
             _pwshContext.BreakpointUpdated += OnBreakpointUpdated;
         }
 
-        private void OnPromptFramePushed(object sender, PromptFramePushedArgs promptFramePushedArgs)
+        private void RunNestedLoop(in LoopCancellationContext cancellationContext)
         {
-            PromptFramePushed?.Invoke(this, promptFramePushedArgs);
+            try
+            {
+                foreach (ISynchronousTask task in _executionQueue.GetConsumingEnumerable(cancellationContext.CancellationToken))
+                {
+                    RunTaskSynchronously(task, cancellationContext.CancellationToken);
+
+                    if (_pwshContext.IsExiting)
+                    {
+                        break;
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Catch cancellations to end nicely
+            }
         }
 
-        private void OnPromptFramePopped(object sender, PromptFramePoppedArgs promptFramePoppedArgs)
+        private void RunDebugLoop(in LoopCancellationContext cancellationContext)
         {
-            PromptFramePopped?.Invoke(this, promptFramePoppedArgs);
-        }
-
-        private void OnDebuggerStopped(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
-        {
-            _debuggingContext.OnDebuggerStop(sender, debuggerStopEventArgs);
-
-            _pwshContext.PushNestedPowerShell();
-
-            DebuggerStopped?.Invoke(this, debuggerStopEventArgs);
-
-            var cancellationContext = LoopCancellationContext.EnterNew(
-                this,
-                _pwshContext.CurrentCancellationSource,
-                _consumerThreadCancellationSource);
+            DebuggerStopped?.Invoke(this, _debuggingContext.LastStopEventArgs);
 
             // If the debugger is resumed while the execution queue listener is blocked on getting a new execution event,
             // we must cancel the blocking call
@@ -501,15 +441,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                     // Instead let it complete and check the cancellation afterward.
                     RunTaskSynchronously(task, cancellationContext.CancellationToken);
 
-                    if (_debuggingContext.LastResumeAction != null)
+                    if (_debuggingContext.ShouldResume)
                     {
-                        debuggerStopEventArgs.ResumeAction = _debuggingContext.LastResumeAction.Value;
-                        break;
-                    }
-
-                    if (cancellationSource.IsCancellationRequested)
-                    {
-                        debuggerStopEventArgs.ResumeAction = DebuggerResumeAction.Stop;
                         break;
                     }
                 }
@@ -521,18 +454,88 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             finally
             {
                 cancellationSource.Dispose();
-                cancellationContext.Dispose();
-                _debuggingContext.LastResumeAction = null;
-                _exitNestedPrompt = false;
-                _pwshContext.PopPowerShell();
             }
         }
 
-        private void OnDebuggerResumed(object sender, DebuggerResumedArgs debuggerResumedArgs)
+        private void OnPowerShellIdle()
         {
-            _debuggingContext.OnDebuggerResume(sender, debuggerResumedArgs);
-            ExitNestedPrompt();
-            DebuggerResumed?.Invoke(this, debuggerResumedArgs);
+            if (_executionQueue.Count == 0)
+            {
+                return;
+            }
+
+            var loopCancellationContext = LoopCancellationContext.EnterNew(
+                this,
+                _pwshContext.CurrentCancellationSource,
+                _consumerThreadCancellationSource);
+
+            try
+            {
+                while (_pwshContext.CurrentPowerShell.InvocationStateInfo.State == PSInvocationState.Completed
+                    && _executionQueue.TryTake(out ISynchronousTask task))
+                {
+                    RunTaskSynchronously(task, loopCancellationContext.CancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+
+            }
+            finally
+            {
+                loopCancellationContext.Dispose();
+            }
+
+            // TODO: Run nested pipeline here for engine event handling
+        }
+
+        private void OnPowerShellPushed(object sender, PowerShellPushedArgs powerShellPushedArgs)
+        {
+            var cancellationContext = LoopCancellationContext.EnterNew(
+                this,
+                _pwshContext.CurrentCancellationSource,
+                _consumerThreadCancellationSource);
+
+            PowerShellPushed?.Invoke(this, powerShellPushedArgs);
+
+            try
+            {
+                if ((powerShellPushedArgs.FrameType & PromptFrameType.Debug) != 0)
+                {
+                    RunDebugLoop(cancellationContext);
+                }
+                else
+                {
+                    RunNestedLoop(cancellationContext);
+                }
+            }
+            finally
+            {
+                _pwshContext.PopPowerShell();
+                cancellationContext.Dispose();
+            }
+        }
+
+        private void OnPowerShellPopped(object sender, PowerShellPoppedArgs promptFramePoppedArgs)
+        {
+            PromptFramePopped?.Invoke(this, promptFramePoppedArgs);
+        }
+
+        private void OnNestedPromptExiting(object sender, NestedPromptExitingArgs nestedPromptExitingArgs)
+        {
+            NestedPromptExiting?.Invoke(this, nestedPromptExitingArgs);
+        }
+
+        private void OnDebuggerStopped(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
+        {
+            _debuggingContext.OnDebuggerStop(sender, debuggerStopEventArgs);
+            _pwshContext.PushDebugPowerShell();
+        }
+
+        private void OnDebuggerResuming(object sender, DebuggerResumingArgs debuggerResumedArgs)
+        {
+            _debuggingContext.OnDebuggerResuming(sender, debuggerResumedArgs);
+            DebuggerResuming?.Invoke(this, debuggerResumedArgs);
         }
 
         private void OnBreakpointUpdated(object sender, BreakpointUpdatedEventArgs breakpointUpdatedEventArgs)
@@ -546,16 +549,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
             public CancellationToken? DebuggerResumeCancellationToken => _debuggerCancellationTokenSource?.Token;
 
-            public DebuggerResumeAction? LastResumeAction { get; set; }
+            public DebuggerStopEventArgs LastStopEventArgs { get; private set; }
+
+            public bool ShouldResume { get; private set; }
+
+            public void Reset()
+            {
+                LastStopEventArgs = null;
+                ShouldResume = false;
+            }
 
             public void OnDebuggerStop(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
             {
                 _debuggerCancellationTokenSource = new CancellationTokenSource();
+                LastStopEventArgs = debuggerStopEventArgs;
             }
 
-            public void OnDebuggerResume(object sender, DebuggerResumedArgs debuggerResumedArgs)
+            public void OnDebuggerResuming(object sender, DebuggerResumingArgs debuggerResumedArgs)
             {
-                LastResumeAction = debuggerResumedArgs.ResumeAction;
+                ShouldResume = true;
+
+                LastStopEventArgs.ResumeAction = debuggerResumedArgs.ResumeAction.Value;
 
                 if (_debuggerCancellationTokenSource != null)
                 {

@@ -69,6 +69,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             _debugging = false;
         }
 
+        public void StartRepl()
+        {
+            System.Console.CancelKeyPress += OnCancelKeyPress;
+            System.Console.InputEncoding = Encoding.UTF8;
+            System.Console.OutputEncoding = Encoding.UTF8;
+            _psrlProxy.OverrideReadKey(ReadKey);
+            _executionService.PowerShellPushed += OnPromptFramePushed;
+            _executionService.PromptCancellationRequested += OnPromptCancellationRequested;
+            _executionService.NestedPromptExiting += OnNestedPromptExiting;
+            _executionService.DebuggerResuming += OnDebuggerResuming;
+            PushNewReplTask();
+        }
+
         public void Dispose()
         {
             while (_replLoopTaskStack.Count > 0)
@@ -77,21 +90,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             }
 
             System.Console.CancelKeyPress -= OnCancelKeyPress;
-            _executionService.PromptFramePushed -= OnPromptFramePushed;
+            _executionService.PowerShellPushed -= OnPromptFramePushed;
             _executionService.PromptCancellationRequested -= OnPromptCancellationRequested;
-            _executionService.NestedPromptExited -= OnNestedPromptExited;
-        }
-
-        public void StartRepl()
-        {
-            System.Console.CancelKeyPress += OnCancelKeyPress;
-            System.Console.InputEncoding = Encoding.UTF8;
-            System.Console.OutputEncoding = Encoding.UTF8;
-            _psrlProxy.OverrideReadKey(ReadKey);
-            _executionService.PromptFramePushed += OnPromptFramePushed;
-            _executionService.PromptCancellationRequested += OnPromptCancellationRequested;
-            _executionService.NestedPromptExited += OnNestedPromptExited;
-            PushNewReplTask();
+            _executionService.NestedPromptExiting -= OnNestedPromptExiting;
+            _executionService.DebuggerResuming -= OnDebuggerResuming;
         }
 
         public void CancelCurrentPrompt()
@@ -104,7 +106,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         public void StopCurrentRepl()
         {
-            if (_replLoopTaskStack.TryPop(out ReplTask currentReplTask))
+            if (_replLoopTaskStack.TryPeek(out ReplTask currentReplTask))
             {
                 currentReplTask.ReplCancellationSource.Cancel();
             }
@@ -178,6 +180,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             finally
             {
                 _exiting = false;
+                _replLoopTaskStack.TryPop(out _);
                 replTask.ReplCancellationSource.Dispose();
             }
 
@@ -220,7 +223,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             CancelCurrentPrompt();
         }
 
-        private void OnPromptFramePushed(object sender, PromptFramePushedArgs args)
+        private void OnPromptFramePushed(object sender, PowerShellPushedArgs args)
         {
             PushNewReplTask();
         }
@@ -230,7 +233,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             CancelCurrentPrompt();
         }
 
-        private void OnNestedPromptExited(object sender, NestedPromptExitedArgs args)
+        private void OnNestedPromptExiting(object sender, NestedPromptExitingArgs args)
+        {
+            _exiting = true;
+            StopCurrentRepl();
+        }
+
+        private void OnDebuggerResuming(object sender, DebuggerResumingArgs args)
         {
             _exiting = true;
             StopCurrentRepl();
@@ -277,23 +286,31 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private void PushNewReplTask()
         {
-            var replLoopCancellationSource = new CancellationTokenSource();
-            replLoopCancellationSource.Token.Register(OnReplCanceled);
-            var replTask = new ReplTask(Task.Run(RunReplLoopAsync, replLoopCancellationSource.Token), replLoopCancellationSource);
-            _replLoopTaskStack.Push(replTask);
+            ReplTask.PushAndStart(_replLoopTaskStack, RunReplLoopAsync, OnReplCanceled);
         }
 
 
         private class ReplTask
         {
-            public ReplTask(Task loopTask, CancellationTokenSource cancellationTokenSource)
+            public static void PushAndStart(
+                ConcurrentStack<ReplTask> replLoopTaskStack,
+                Func<Task> replLoopTaskFunc,
+                Action cancellationAction)
             {
-                LoopTask = loopTask;
+                var replLoopCancellationSource = new CancellationTokenSource();
+                replLoopCancellationSource.Token.Register(cancellationAction);
+                var replTask = new ReplTask(replLoopCancellationSource);
+                replLoopTaskStack.Push(replTask);
+                replTask.LoopTask = Task.Run(replLoopTaskFunc, replLoopCancellationSource.Token);
+            }
+
+            public ReplTask(CancellationTokenSource cancellationTokenSource)
+            {
                 ReplCancellationSource = cancellationTokenSource;
                 Guid = Guid.NewGuid();
             }
 
-            public Task LoopTask { get; }
+            public Task LoopTask { get; private set;  }
 
             public CancellationTokenSource ReplCancellationSource { get; }
 
