@@ -69,6 +69,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             string commandName,
             PowerShellExecutionService executionService)
         {
+            // This mechanism only works in-process
+            if (executionService.IsCurrentlyRemote)
+            {
+                return null;
+            }
+
             Validate.IsNotNull(nameof(commandName), commandName);
             Validate.IsNotNull(nameof(executionService), executionService);
 

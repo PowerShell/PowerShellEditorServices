@@ -2,12 +2,15 @@
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
+using System.Management.Automation.Runspaces;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -75,10 +78,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             System.Console.InputEncoding = Encoding.UTF8;
             System.Console.OutputEncoding = Encoding.UTF8;
             _psrlProxy.OverrideReadKey(ReadKey);
-            _executionService.PowerShellPushed += OnPromptFramePushed;
+            _executionService.PowerShellPushed += OnPowerShellPushed;
             _executionService.PromptCancellationRequested += OnPromptCancellationRequested;
-            _executionService.NestedPromptExiting += OnNestedPromptExiting;
-            _executionService.DebuggerResuming += OnDebuggerResuming;
+            _executionService.FrameExiting += OnFrameExiting;
             PushNewReplTask();
         }
 
@@ -90,10 +92,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             }
 
             System.Console.CancelKeyPress -= OnCancelKeyPress;
-            _executionService.PowerShellPushed -= OnPromptFramePushed;
+            _executionService.PowerShellPushed -= OnPowerShellPushed;
             _executionService.PromptCancellationRequested -= OnPromptCancellationRequested;
-            _executionService.NestedPromptExiting -= OnNestedPromptExiting;
-            _executionService.DebuggerResuming -= OnDebuggerResuming;
+            _executionService.FrameExiting -= OnFrameExiting;
         }
 
         public void CancelCurrentPrompt()
@@ -125,8 +126,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
                     try
                     {
-
-                        string promptString = (await GetPromptOutputAsync(currentCommandCancellation.CancellationSource.Token).ConfigureAwait(false)).FirstOrDefault() ?? "PS> ";
+                        string promptString = await GetPromptStringAsync(currentCommandCancellation.CancellationSource.Token).ConfigureAwait(false);
 
                         if (currentCommandCancellation.CancellationSource.IsCancellationRequested)
                         {
@@ -186,6 +186,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         }
 
+        private async Task<string> GetPromptStringAsync(CancellationToken cancellationToken)
+        {
+            string prompt = (await GetPromptOutputAsync(cancellationToken).ConfigureAwait(false)).FirstOrDefault() ?? "PS> ";
+
+            if (_editorServicesHost.Runspace.RunspaceIsRemote)
+            {
+                prompt = _editorServicesHost.Runspace.GetRemotePrompt(prompt);
+            }
+
+            return prompt;
+        }
+
         private Task<IReadOnlyList<string>> GetPromptOutputAsync(CancellationToken cancellationToken)
         {
             var promptCommand = new PSCommand().AddCommand("prompt");
@@ -223,9 +235,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             CancelCurrentPrompt();
         }
 
-        private void OnPromptFramePushed(object sender, PowerShellPushedArgs args)
+        private void OnPowerShellPushed(object sender, PowerShellPushedArgs args)
         {
-            PushNewReplTask();
+            if ((args.FrameType & PowerShellFrameType.NonInteractive) == 0)
+            {
+                PushNewReplTask();
+            }
         }
 
         private void OnPromptCancellationRequested(object sender, PromptCancellationRequestedArgs args)
@@ -233,13 +248,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             CancelCurrentPrompt();
         }
 
-        private void OnNestedPromptExiting(object sender, NestedPromptExitingArgs args)
-        {
-            _exiting = true;
-            StopCurrentRepl();
-        }
-
-        private void OnDebuggerResuming(object sender, DebuggerResumingArgs args)
+        private void OnFrameExiting(object sender, FrameExitingArgs args)
         {
             _exiting = true;
             StopCurrentRepl();

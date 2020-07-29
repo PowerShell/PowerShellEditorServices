@@ -12,32 +12,33 @@ using SMA = System.Management.Automation;
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 {
     [Flags]
-    internal enum PromptFrameType
+    internal enum PowerShellFrameType
     {
         Normal = 0,
         NestedPrompt = 1,
         Debug = 2,
         Remote = 4,
+        NonInteractive = 8,
     }
 
     internal class PowerShellPushedArgs
     {
-        public PowerShellPushedArgs(PromptFrameType frameType)
+        public PowerShellPushedArgs(PowerShellFrameType frameType)
         {
             FrameType = frameType;
         }
 
-        public PromptFrameType FrameType { get; }
+        public PowerShellFrameType FrameType { get; }
     }
 
     internal class PowerShellPoppedArgs
     {
-        public PowerShellPoppedArgs(PromptFrameType frameType)
+        public PowerShellPoppedArgs(PowerShellFrameType frameType)
         {
             FrameType = frameType;
         }
 
-        public PromptFrameType FrameType { get; }
+        public PowerShellFrameType FrameType { get; }
     }
 
     internal class DebuggerResumingArgs
@@ -54,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
     {
     }
 
-    internal class NestedPromptExitingArgs
+    internal class FrameExitingArgs
     {
     }
 
@@ -108,7 +109,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public event Action<object, PowerShellPoppedArgs> PowerShellPopped;
 
-        public event Action<object, NestedPromptExitingArgs> NestedPromptExiting;
+        public event Action<object, FrameExitingArgs> FrameExiting;
 
         public event Action<object, DebuggerStopEventArgs> DebuggerStopped;
 
@@ -116,10 +117,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public event Action<object, BreakpointUpdatedEventArgs> BreakpointUpdated;
 
-        public void BeginExiting()
+        public void SetShouldExit()
         {
+            if (_frameStack.Count <= 1)
+            {
+                return;
+            }
+
             IsExiting = true;
-            NestedPromptExiting?.Invoke(this, new NestedPromptExitingArgs());
+            FrameExiting?.Invoke(this, new FrameExitingArgs());
         }
 
         public void ProcessDebuggerResult(DebuggerCommandResults result)
@@ -127,17 +133,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             if (result.ResumeAction != null)
             {
                 DebuggerResumed?.Invoke(this, new DebuggerResumingArgs(result.ResumeAction));
+                FrameExiting?.Invoke(this, new FrameExitingArgs());
             }
+        }
+
+        public void PushNonInteractivePowerShell()
+        {
+            PushNestedPowerShell(PowerShellFrameType.NonInteractive);
         }
 
         public void PushNestedPowerShell()
         {
-            PushNestedPowerShell(PromptFrameType.Normal);
+            PushNestedPowerShell(PowerShellFrameType.Normal);
         }
 
         public void PushDebugPowerShell()
         {
-            PushNestedPowerShell(PromptFrameType.Debug);
+            PushNestedPowerShell(PowerShellFrameType.Debug);
         }
 
         public void PushPowerShell(Runspace runspace)
@@ -145,11 +157,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             var pwsh = SMA.PowerShell.Create();
             pwsh.Runspace = runspace;
 
-            PromptFrameType frameType = PromptFrameType.Normal;
+            PowerShellFrameType frameType = PowerShellFrameType.Normal;
 
             if (runspace.RunspaceIsRemote)
             {
-                frameType |= PromptFrameType.Remote;
+                frameType |= PowerShellFrameType.Remote;
             }
 
             PushFrame(new ContextFrame(pwsh, frameType, new CancellationTokenSource()));
@@ -184,19 +196,28 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             var pwsh = SMA.PowerShell.Create();
             pwsh.Runspace = runspace;
 
-            PushFrame(new ContextFrame(pwsh, PromptFrameType.Normal, new CancellationTokenSource()));
+            PushFrame(new ContextFrame(pwsh, PowerShellFrameType.Normal, new CancellationTokenSource()));
         }
 
-        private void PushNestedPowerShell(PromptFrameType frameType)
+        private void PushNestedPowerShell(PowerShellFrameType frameType)
         {
             SMA.PowerShell pwsh = CreateNestedPowerShell();
-            PromptFrameType newFrameType = _frameStack.Peek().FrameType | PromptFrameType.NestedPrompt | frameType;
+            PowerShellFrameType newFrameType = _frameStack.Peek().FrameType | PowerShellFrameType.NestedPrompt | frameType;
             PushFrame(new ContextFrame(pwsh, newFrameType, new CancellationTokenSource()));
         }
 
         private SMA.PowerShell CreateNestedPowerShell()
         {
+            ContextFrame currentFrame = _frameStack.Peek();
+            if ((currentFrame.FrameType & PowerShellFrameType.Remote) != 0)
+            {
+                var remotePwsh = SMA.PowerShell.Create();
+                remotePwsh.Runspace = currentFrame.PowerShell.Runspace;
+                return remotePwsh;
+            }
+
             // PowerShell.CreateNestedPowerShell() sets IsNested but not IsChild
+            // This means it throws due to the parent pipeline not running...
             // So we must use the RunspaceMode.CurrentRunspace option on PowerShell.Create() instead
             var pwsh = SMA.PowerShell.Create(RunspaceMode.CurrentRunspace);
             pwsh.Runspace.ThreadOptions = PSThreadOptions.UseCurrentThread;
@@ -205,9 +226,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private void PushFrame(ContextFrame frame)
         {
+            if (_frameStack.Count > 0)
+            {
+                RemoveRunspaceEventHandlers(CurrentPowerShell.Runspace);
+            }
+            AddRunspaceEventHandlers(frame.PowerShell.Runspace);
             _frameStack.Push(frame);
-            frame.PowerShell.Runspace.Debugger.DebuggerStop += OnDebuggerStopped;
-            frame.PowerShell.Runspace.Debugger.BreakpointUpdated += OnBreakpointUpdated;
             PowerShellPushed?.Invoke(this, new PowerShellPushedArgs(frame.FrameType));
         }
 
@@ -217,14 +241,29 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             ContextFrame frame = _frameStack.Pop();
             try
             {
-                frame.PowerShell.Runspace.Debugger.DebuggerStop -= OnDebuggerStopped;
-                frame.PowerShell.Runspace.Debugger.BreakpointUpdated -= OnBreakpointUpdated;
+                RemoveRunspaceEventHandlers(frame.PowerShell.Runspace);
+                if (_frameStack.Count > 0)
+                {
+                    AddRunspaceEventHandlers(CurrentPowerShell.Runspace);
+                }
                 PowerShellPopped?.Invoke(this, new PowerShellPoppedArgs(frame.FrameType));
             }
             finally
             {
                 frame.Dispose();
             }
+        }
+
+        private void AddRunspaceEventHandlers(Runspace runspace)
+        {
+            runspace.Debugger.DebuggerStop += OnDebuggerStopped;
+            runspace.Debugger.BreakpointUpdated += OnBreakpointUpdated;
+        }
+
+        private void RemoveRunspaceEventHandlers(Runspace runspace)
+        {
+            runspace.Debugger.DebuggerStop -= OnDebuggerStopped;
+            runspace.Debugger.BreakpointUpdated -= OnBreakpointUpdated;
         }
 
         private void OnDebuggerStopped(object sender, DebuggerStopEventArgs args)
@@ -241,7 +280,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         {
             private bool disposedValue;
 
-            public ContextFrame(SMA.PowerShell powerShell, PromptFrameType frameType, CancellationTokenSource cancellationTokenSource)
+            public ContextFrame(SMA.PowerShell powerShell, PowerShellFrameType frameType, CancellationTokenSource cancellationTokenSource)
             {
                 PowerShell = powerShell;
                 FrameType = frameType;
@@ -250,7 +289,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
             public SMA.PowerShell PowerShell { get; }
 
-            public PromptFrameType FrameType { get; }
+            public PowerShellFrameType FrameType { get; }
 
             public CancellationTokenSource CancellationTokenSource { get; }
 
