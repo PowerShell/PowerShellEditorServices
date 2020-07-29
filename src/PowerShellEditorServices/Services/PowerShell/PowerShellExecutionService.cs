@@ -86,6 +86,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private Execution.PowerShellContext _pwshContext;
 
+        private bool _runIdleLoop;
+
         private PowerShellExecutionService(
             ILoggerFactory loggerFactory,
             ILanguageServer languageServer,
@@ -120,6 +122,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         public ConsoleReadLine ReadLine { get; private set; }
 
+        public bool IsCurrentlyRemote => EditorServicesHost.Runspace.RunspaceIsRemote;
+
         public event Action<object, PowerShellPushedArgs> PowerShellPushed;
 
         public event Action<object, PowerShellPoppedArgs> PromptFramePopped;
@@ -132,7 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         public event Action<object, PromptCancellationRequestedArgs> PromptCancellationRequested;
 
-        public event Action<object, NestedPromptExitingArgs> NestedPromptExiting;
+        public event Action<object, FrameExitingArgs> FrameExiting;
 
         public Task<TResult> ExecuteDelegateAsync<TResult>(
             Func<SMA.PowerShell, CancellationToken, TResult> func,
@@ -205,6 +209,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         public void Dispose()
         {
             Stop();
+            _pwshContext.PowerShellPushed -= OnPowerShellPushed;
+            _pwshContext.PowerShellPopped -= OnPowerShellPopped;
+            _pwshContext.FrameExiting -= OnFrameExiting;
+            _pwshContext.DebuggerStopped -= OnDebuggerStopped;
+            _pwshContext.DebuggerResumed -= OnDebuggerResuming;
+            _pwshContext.BreakpointUpdated -= OnBreakpointUpdated;
             _pwshContext.Dispose();
         }
 
@@ -397,7 +407,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             EditorServicesHost.RegisterPowerShellContext(_pwshContext);
             _pwshContext.PowerShellPushed += OnPowerShellPushed;
             _pwshContext.PowerShellPopped += OnPowerShellPopped;
-            _pwshContext.NestedPromptExiting += OnNestedPromptExiting;
+            _pwshContext.FrameExiting += OnFrameExiting;
             _pwshContext.DebuggerStopped += OnDebuggerStopped;
             _pwshContext.DebuggerResumed += OnDebuggerResuming;
             _pwshContext.BreakpointUpdated += OnBreakpointUpdated;
@@ -453,8 +463,26 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             }
             finally
             {
+                _debuggingContext.Reset();
                 cancellationSource.Dispose();
             }
+        }
+
+        private void RunIdleLoop(in LoopCancellationContext cancellationContext)
+        {
+            try
+            {
+                while (_executionQueue.TryTake(out ISynchronousTask task))
+                {
+                    RunTaskSynchronously(task, cancellationContext.CancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+
+            }
+
+            // TODO: Run nested pipeline here for engine event handling
         }
 
         private void OnPowerShellIdle()
@@ -464,29 +492,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                 return;
             }
 
-            var loopCancellationContext = LoopCancellationContext.EnterNew(
-                this,
-                _pwshContext.CurrentCancellationSource,
-                _consumerThreadCancellationSource);
-
-            try
-            {
-                while (_pwshContext.CurrentPowerShell.InvocationStateInfo.State == PSInvocationState.Completed
-                    && _executionQueue.TryTake(out ISynchronousTask task))
-                {
-                    RunTaskSynchronously(task, loopCancellationContext.CancellationToken);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-
-            }
-            finally
-            {
-                loopCancellationContext.Dispose();
-            }
-
-            // TODO: Run nested pipeline here for engine event handling
+            _runIdleLoop = true;
+            _pwshContext.PushNonInteractivePowerShell();
         }
 
         private void OnPowerShellPushed(object sender, PowerShellPushedArgs powerShellPushedArgs)
@@ -500,17 +507,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
             try
             {
-                if ((powerShellPushedArgs.FrameType & PromptFrameType.Debug) != 0)
+                if (_runIdleLoop)
+                {
+                    RunIdleLoop(cancellationContext);
+                    return;
+                }
+
+                if ((powerShellPushedArgs.FrameType & PowerShellFrameType.Debug) != 0)
                 {
                     RunDebugLoop(cancellationContext);
+                    return;
                 }
-                else
-                {
-                    RunNestedLoop(cancellationContext);
-                }
+
+                RunNestedLoop(cancellationContext);
             }
             finally
             {
+                _runIdleLoop = false;
                 _pwshContext.PopPowerShell();
                 cancellationContext.Dispose();
             }
@@ -521,9 +534,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             PromptFramePopped?.Invoke(this, promptFramePoppedArgs);
         }
 
-        private void OnNestedPromptExiting(object sender, NestedPromptExitingArgs nestedPromptExitingArgs)
+        private void OnFrameExiting(object sender, FrameExitingArgs nestedPromptExitingArgs)
         {
-            NestedPromptExiting?.Invoke(this, nestedPromptExitingArgs);
+            FrameExiting?.Invoke(this, nestedPromptExitingArgs);
         }
 
         private void OnDebuggerStopped(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
