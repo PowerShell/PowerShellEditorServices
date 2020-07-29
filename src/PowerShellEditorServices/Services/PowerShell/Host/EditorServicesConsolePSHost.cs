@@ -54,7 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public override void ExitNestedPrompt()
         {
-            _pwshContext.BeginExiting();
+            _pwshContext.SetShouldExit();
         }
 
         public override void NotifyBeginApplication()
@@ -72,13 +72,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public void PopRunspace()
         {
-            // TODO: What if we're in a nested prompt in a remote/debug session?
-            _pwshContext.PopPowerShell();
+            _pwshContext.SetShouldExit();
         }
 
         public override void SetShouldExit(int exitCode)
         {
-            _pwshContext.TryPopPowerShell();
+            _pwshContext.SetShouldExit();
         }
 
         internal void RegisterPowerShellContext(PowerShellContext pwshContext)

@@ -145,7 +145,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private string InvokePSReadLine(CancellationToken cancellationToken)
         {
-            return _psrlProxy.ReadLine(_executionService.EditorServicesHost.Runspace, _executionService.EngineIntrinsics, cancellationToken);
+            EngineIntrinsics engineIntrinsics = _executionService.EditorServicesHost.IsRunspacePushed ? null : _executionService.EngineIntrinsics;
+            return _psrlProxy.ReadLine(_executionService.EditorServicesHost.Runspace, engineIntrinsics, cancellationToken);
         }
 
         /// <summary>
