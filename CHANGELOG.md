@@ -3,6 +3,10 @@
 ## v2.3.0-preview.1
 ### Wednesday, July 22, 2020
 
+- 📺✨ [PowerShellEditorServices #1328](https://github.com/PowerShell/PowerShellEditorServices/pull/1328) -
+  Enable handlers for Semantic Highlighting for better highlighting accuracy.
+- 👮✨ [PowerShellEditorServices #1333](https://github.com/PowerShell/PowerShellEditorServices/pull/1333) -
+  Expose new rule PSAvoidUsingDoubleQuotesForConstantString added in PSScriptAnalyzer 1.19.1. (Thanks @bergmeister!)
 - 📺✨ [PowerShellEditorServices #1321](https://github.com/PowerShell/PowerShellEditorServices/pull/1321) -
   Needed changes for Notebook UI Support.
 - 🛫✨ [PowerShellEditorServices #1323](https://github.com/PowerShell/PowerShellEditorServices/pull/1323) -
