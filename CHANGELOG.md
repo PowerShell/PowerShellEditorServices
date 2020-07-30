@@ -1,7 +1,7 @@
 # PowerShell Editor Services Release History
 
 ## v2.3.0-preview.1
-### Wednesday, July 22, 2020
+### Thursday, July 30, 2020
 
 - 📺✨ [PowerShellEditorServices #1328](https://github.com/PowerShell/PowerShellEditorServices/pull/1328) -
   Enable handlers for Semantic Highlighting for better highlighting accuracy.
