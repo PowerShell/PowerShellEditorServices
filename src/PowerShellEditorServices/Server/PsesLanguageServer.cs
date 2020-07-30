@@ -92,6 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<GetCommandHandler>()
                     .WithHandler<ShowHelpHandler>()
                     .WithHandler<ExpandAliasHandler>()
+                    .WithHandler<PsesSemanticTokensHandler>()
                     .OnInitialize(
                         async (languageServer, request, cancellationToken) =>
                         {

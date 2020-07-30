@@ -19,6 +19,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models.Proposals;
 using Xunit;
 using Xunit.Abstractions;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
@@ -1135,6 +1136,36 @@ function CanSendGetCommentHelpRequest {
                     .Returning<ExpandAliasResult>(CancellationToken.None);
 
             Assert.Equal("Get-ChildItem", expandAliasResult.Text);
+        }
+
+        [Fact]
+        public async Task CanSendSemanticTokenRequest()
+        {
+            string scriptContent = "function";
+            string scriptPath = NewTestFile(scriptContent);
+
+            SemanticTokens result =
+                await PsesLanguageClient
+                    .SendRequest<SemanticTokensParams>(
+                        "textDocument/semanticTokens",
+                        new SemanticTokensParams
+                        {
+                            TextDocument = new TextDocumentIdentifier
+                            {
+                                Uri = new Uri(scriptPath)
+                            }
+                        })
+                    .Returning<SemanticTokens>(CancellationToken.None);
+
+            // More information about how this data is generated can be found at
+            // https://github.com/microsoft/vscode-extension-samples/blob/5ae1f7787122812dcc84e37427ca90af5ee09f14/semantic-tokens-sample/vscode.proposed.d.ts#L71
+            var expectedArr = new int[5]
+                {
+                    // line, index, token length, token type, token modifiers
+                    0, 0, scriptContent.Length, 2, 0 //function token: line 0, index 0, length, type 2 = keyword, no modifiers
+                };
+
+            Assert.Equal(expectedArr, result.Data.ToArray());
         }
     }
 }
