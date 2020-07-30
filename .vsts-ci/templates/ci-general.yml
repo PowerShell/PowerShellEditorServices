@@ -2,6 +2,8 @@ parameters:
   pwsh: true
 
 steps:
+  # TODO: Bring this back when we understand why it was causing E2E tests to hang.
+  # Related issue: https://github.com/PowerShell/PowerShellEditorServices/issues/1335
   # - powershell: |
   #     Write-Host "Installing PowerShell Daily..."
 
