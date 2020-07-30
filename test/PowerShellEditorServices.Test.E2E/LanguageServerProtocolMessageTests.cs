@@ -23,8 +23,6 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models.Proposals;
 using Xunit;
 using Xunit.Abstractions;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
-using OmniSharp.Extensions.LanguageServer.Protocol.Document.Proposals;
-using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace PowerShellEditorServices.Test.E2E
 {
