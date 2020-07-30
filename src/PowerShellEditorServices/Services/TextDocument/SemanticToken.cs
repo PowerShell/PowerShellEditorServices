@@ -5,23 +5,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 {
     internal class SemanticToken
     {
-        public SemanticToken(string text, SemanticTokenType type, int line, int index, IEnumerable<string> tokenModifiers)
+        public SemanticToken(string text, SemanticTokenType type, int line, int column, IEnumerable<string> tokenModifiers)
         {
             Line = line;
             Text = text;
-            Index = index;
+            Column = column;
             Type = type;
             TokenModifiers = tokenModifiers;
         }
 
-        public string Text {get; set;}
+        public string Text { get; set ;}
 
-        public int Line {get; set;}
+        public int Line { get; set; }
 
-        public int Index {get; set;}
+        public int Column { get; set; }
 
-        public SemanticTokenType Type {get; set;}
+        public SemanticTokenType Type { get; set; }
 
-        public IEnumerable<string> TokenModifiers {get; set;}
+        public IEnumerable<string> TokenModifiers { get; set; }
     }
 }

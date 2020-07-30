@@ -33,10 +33,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }),
             RangeProvider = true
         };
+
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
 
-        public PsesSemanticTokensHandler(ILogger<PsesSemanticTokensHandler> logger, WorkspaceService workspaceService) : base(s_registrationOptions)
+        public PsesSemanticTokensHandler(ILogger<PsesSemanticTokensHandler> logger, WorkspaceService workspaceService)
+            : base(s_registrationOptions)
         {
             _logger = logger;
             _workspaceService = workspaceService;
@@ -59,7 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 builder.Push(
                     sToken.Line,
-                    sToken.Index,
+                    sToken.Column,
                     length: sToken.Text.Length,
                     sToken.Type,
                     tokenModifiers: sToken.TokenModifiers);
@@ -88,12 +90,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 yield break;
             }
 
-            //Tokens line and col numbers indexed starting from 1, expecting indexing from 0
-            int line = token.Extent.StartLineNumber - 1;
-            int index = token.Extent.StartColumnNumber - 1;
-            SemanticToken sToken = new SemanticToken(token.Text, mappedType,
-                line, index, Array.Empty<string>());
-            yield return sToken;
+            //Note that both column and line numbers are 0-based
+            yield return new SemanticToken(
+                token.Text,
+                mappedType,
+                line: token.Extent.StartLineNumber - 1,
+                column: token.Extent.StartColumnNumber - 1,
+                tokenModifiers: Array.Empty<string>());
         }
 
         private static SemanticTokenType MapSemanticTokenType(Token token)
