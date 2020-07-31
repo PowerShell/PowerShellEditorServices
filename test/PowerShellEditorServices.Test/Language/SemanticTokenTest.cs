@@ -113,7 +113,7 @@ Get-A*A
         }
 
         [Fact]
-        public async Task RecognizesArrayMemberInExpandableString()
+        public async Task RecognizesArrayPropertyInExpandableString()
         {
             string text = "\"$(@($Array).Count) OtherText\"";
             ScriptFile scriptFile = new ScriptFile(
@@ -131,7 +131,7 @@ Get-A*A
                         Assert.Single(mappedTokens, sToken => SemanticTokenType.Variable == sToken.Type);
                         break;
                     case "Count":
-                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Member == sToken.Type);
+                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Property == sToken.Type);
                         break;
                 }
             }
@@ -179,7 +179,7 @@ enum MyEnum{
                     case "one":
                     case "two":
                     case "three":
-                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Member == sToken.Type);
+                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Property == sToken.Type);
                         break;
                 }
             }
