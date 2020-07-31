@@ -123,9 +123,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return SemanticTokenType.Type;
             }
 
+            // This represents keys in hashtables and also properties like `Foo` in `$myVar.Foo`
             if ((token.TokenFlags & TokenFlags.MemberName) != 0)
             {
-                return SemanticTokenType.Member;
+                return SemanticTokenType.Property;
             }
 
             // Only check token kind after checking flags
