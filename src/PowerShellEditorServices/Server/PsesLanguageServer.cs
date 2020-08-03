@@ -118,8 +118,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
                             IServiceProvider serviceProvider = languageServer.Services;
 
-                            serviceProvider.GetService<PowerShellConsoleService>().StartRepl();
-
                             var workspaceService = serviceProvider.GetService<WorkspaceService>();
 
                             // Grab the workspace path from the parameters

@@ -3,8 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using System.Collections.ObjectModel;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +10,6 @@ using System.Threading.Tasks;
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
     using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
-    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
     using System;
     using System.Collections.Generic;
     using System.Management.Automation;

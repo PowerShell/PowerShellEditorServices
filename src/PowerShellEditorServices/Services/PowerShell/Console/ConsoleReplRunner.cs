@@ -1,45 +1,24 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
-using Microsoft.PowerShell.EditorServices.Utility;
+using PowerShellEditorServices.Services.PowerShell.Utility;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
-using System.Management.Automation.Runspaces;
-using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
+namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
-    internal class PowerShellConsoleService : IDisposable
+    internal class ConsoleReplRunner : IDisposable
     {
-        public static PowerShellConsoleService CreateAndStart(
-            ILoggerFactory loggerFactory,
-            PowerShellExecutionService executionService)
-        {
-            return new PowerShellConsoleService(
-                loggerFactory,
-                executionService,
-                executionService.EditorServicesHost,
-                executionService.ReadLine,
-                executionService.PSReadLineProxy);
-        }
-
         private readonly ILogger _logger;
 
         private readonly PowerShellExecutionService _executionService;
-
-        private readonly EditorServicesConsolePSHost _editorServicesHost;
-
-        private readonly ConsoleReadLine _readLine;
-
-        private readonly PSReadLineProxy _psrlProxy;
 
         private readonly ConcurrentStack<ReplTask> _replLoopTaskStack;
 
@@ -52,24 +31,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private bool _exiting;
 
-        private bool _debugging;
-
-        private PowerShellConsoleService(
+        public ConsoleReplRunner(
             ILoggerFactory loggerFactory,
-            PowerShellExecutionService executionService,
-            EditorServicesConsolePSHost editorServicesHost,
-            ConsoleReadLine readLine,
-            PSReadLineProxy psrlProxy)
+            PowerShellExecutionService executionService)
         {
-            _logger = loggerFactory.CreateLogger<PowerShellConsoleService>();
+            _logger = loggerFactory.CreateLogger<ConsoleReplRunner>();
             _replLoopTaskStack = new ConcurrentStack<ReplTask>();
             _commandCancellationStack = new ConcurrentStack<CommandCancellation>();
             _executionService = executionService;
-            _editorServicesHost = editorServicesHost;
-            _readLine = readLine;
-            _psrlProxy = psrlProxy;
             _exiting = false;
-            _debugging = false;
         }
 
         public void StartRepl()
@@ -77,10 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             System.Console.CancelKeyPress += OnCancelKeyPress;
             System.Console.InputEncoding = Encoding.UTF8;
             System.Console.OutputEncoding = Encoding.UTF8;
-            _psrlProxy.OverrideReadKey(ReadKey);
-            _executionService.PowerShellPushed += OnPowerShellPushed;
-            _executionService.PromptCancellationRequested += OnPromptCancellationRequested;
-            _executionService.FrameExiting += OnFrameExiting;
+            _executionService.PSReadLineProxy.OverrideReadKey(ReadKey);
             PushNewReplTask();
         }
 
@@ -92,9 +59,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             }
 
             System.Console.CancelKeyPress -= OnCancelKeyPress;
-            _executionService.PowerShellPushed -= OnPowerShellPushed;
-            _executionService.PromptCancellationRequested -= OnPromptCancellationRequested;
-            _executionService.FrameExiting -= OnFrameExiting;
         }
 
         public void CancelCurrentPrompt()
@@ -149,7 +113,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                             if (currentCommandCancellation.CancellationSource.IsCancellationRequested
                                 || LastKeyWasCtrlC())
                             {
-                                _editorServicesHost.UI.WriteLine();
+                                _executionService.EditorServicesHost.UI.WriteLine();
                             }
                             continue;
                         }
@@ -190,9 +154,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         {
             string prompt = (await GetPromptOutputAsync(cancellationToken).ConfigureAwait(false)).FirstOrDefault() ?? "PS> ";
 
-            if (_editorServicesHost.Runspace.RunspaceIsRemote)
+            if (_executionService.EditorServicesHost.Runspace.RunspaceIsRemote)
             {
-                prompt = _editorServicesHost.Runspace.GetRemotePrompt(prompt);
+                prompt = _executionService.EditorServicesHost.Runspace.GetRemotePrompt(prompt);
             }
 
             return prompt;
@@ -210,12 +174,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private void WritePrompt(string promptString)
         {
-            _editorServicesHost.UI.Write(promptString);
+            _executionService.EditorServicesHost.UI.Write(promptString);
         }
 
         private Task<string> InvokeReadLineAsync(CancellationToken cancellationToken)
         {
-            return _readLine.ReadCommandLineAsync(cancellationToken);
+            return _executionService.ReadLine.ReadCommandLineAsync(cancellationToken);
         }
 
         private Task InvokeInputAsync(string input, CancellationToken cancellationToken)
@@ -230,28 +194,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             return _executionService.ExecutePSCommandAsync(command, executionOptions, cancellationToken);
         }
 
-        private void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
-        {
-            CancelCurrentPrompt();
-        }
-
-        private void OnPowerShellPushed(object sender, PowerShellPushedArgs args)
-        {
-            if ((args.FrameType & PowerShellFrameType.NonInteractive) == 0)
-            {
-                PushNewReplTask();
-            }
-        }
-
-        private void OnPromptCancellationRequested(object sender, PromptCancellationRequestedArgs args)
-        {
-            CancelCurrentPrompt();
-        }
-
-        private void OnFrameExiting(object sender, FrameExitingArgs args)
+        public void SetReplPop()
         {
             _exiting = true;
             StopCurrentRepl();
+        }
+
+        private void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
+        {
+            CancelCurrentPrompt();
         }
 
         private void OnReplCanceled()
@@ -293,11 +244,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                 && (_lastKey.Value.Modifiers & ConsoleModifiers.Alt) == 0;
         }
 
-        private void PushNewReplTask()
+        public void PushNewReplTask()
         {
             ReplTask.PushAndStart(_replLoopTaskStack, RunReplLoopAsync, OnReplCanceled);
         }
-
 
         private class ReplTask
         {
