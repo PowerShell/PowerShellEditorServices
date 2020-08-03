@@ -4,18 +4,15 @@ using System;
 using System.Globalization;
 using System.Management.Automation.Host;
 using System.Management.Automation.Runspaces;
+using static Microsoft.PowerShell.EditorServices.Services.PowerShell.PowerShellExecutionService;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 {
-    using PowerShellContext = Execution.PowerShellContext;
-
     internal class EditorServicesConsolePSHost : PSHost, IHostSupportsInteractiveSession
     {
         private readonly ILogger _logger;
 
-        private PowerShellContext _pwshContext;
-
-        private Runspace _pushedRunspace;
+        private PowerShellRunspaceContext _psRunspaceContext;
 
         public EditorServicesConsolePSHost(
             ILoggerFactory loggerFactory,
@@ -25,7 +22,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             ConsoleReadLine readline)
         {
             _logger = loggerFactory.CreateLogger<EditorServicesConsolePSHost>();
-            _pushedRunspace = null;
             Name = name;
             Version = version;
             UI = new EditorServicesConsolePSHostUserInterface(loggerFactory, readline, internalHost.UI);
@@ -43,18 +39,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public override Version Version { get; }
 
-        public Runspace Runspace => _pwshContext.CurrentPowerShell.Runspace;
+        public Runspace Runspace => _psRunspaceContext.Runspace;
 
-        public bool IsRunspacePushed => _pwshContext.PowerShellDepth > 1;
+        public bool IsRunspacePushed => _psRunspaceContext.IsRunspacePushed;
 
         public override void EnterNestedPrompt()
         {
-            _pwshContext.PushNestedPowerShell();
+            _psRunspaceContext.PushNestedPowerShell();
         }
 
         public override void ExitNestedPrompt()
         {
-            _pwshContext.SetShouldExit();
+            _psRunspaceContext.SetShouldExit();
         }
 
         public override void NotifyBeginApplication()
@@ -67,22 +63,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public void PushRunspace(Runspace runspace)
         {
-            _pwshContext.PushPowerShell(runspace);
+            _psRunspaceContext.PushPowerShell(runspace);
         }
 
         public void PopRunspace()
         {
-            _pwshContext.SetShouldExit();
+            _psRunspaceContext.SetShouldExit();
         }
 
         public override void SetShouldExit(int exitCode)
         {
-            _pwshContext.SetShouldExit();
+            _psRunspaceContext.SetShouldExit();
         }
 
-        internal void RegisterPowerShellContext(PowerShellContext pwshContext)
+        internal void RegisterPowerShellContext(PowerShellExecutionService.PowerShellRunspaceContext psRunspaceContext)
         {
-            _pwshContext = pwshContext;
+            _psRunspaceContext = psRunspaceContext;
         }
     }
 }
