@@ -29,10 +29,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         provider.GetService<ILoggerFactory>(),
                         provider.GetService<ILanguageServer>(),
                         hostStartupInfo))
-                .AddSingleton<PowerShellConsoleService>(
-                    (provider) => PowerShellConsoleService.CreateAndStart(
-                        provider.GetService<ILoggerFactory>(),
-                        provider.GetService<PowerShellExecutionService>()))
                 .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<RemoteFileManagerService>()

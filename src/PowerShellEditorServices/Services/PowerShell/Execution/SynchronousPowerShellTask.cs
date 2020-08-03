@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
     {
         private readonly ILogger _logger;
 
-        private readonly PowerShellContext _pwshContext;
+        private readonly PowerShellExecutionService.PowerShellRunspaceContext _psRunspaceContext;
 
         private readonly PSCommand _psCommand;
 
@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public SynchronousPowerShellTask(
             ILogger logger,
-            PowerShellContext pwshContext,
+            PowerShellExecutionService.PowerShellRunspaceContext psRunspaceContext,
             PSHost psHost,
             PSCommand command,
             PowerShellExecutionOptions executionOptions,
@@ -35,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             : base(logger, cancellationToken)
         {
             _logger = logger;
-            _pwshContext = pwshContext;
+            _psRunspaceContext = psRunspaceContext;
             _psHost = psHost;
             _psCommand = command;
             _executionOptions = executionOptions;
@@ -43,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public override IReadOnlyList<TResult> Run(CancellationToken cancellationToken)
         {
-            _pwsh = _pwshContext.CurrentPowerShell;
+            _pwsh = _psRunspaceContext.CurrentPowerShell;
 
             if (_executionOptions.WriteInputToHost)
             {
@@ -132,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             }
 
             DebuggerCommandResults debuggerResult = _pwsh.Runspace.Debugger.ProcessCommand(_psCommand, outputCollection);
-            _pwshContext.ProcessDebuggerResult(debuggerResult);
+            _psRunspaceContext.ProcessDebuggerResult(debuggerResult);
 
             // Optimisation to save wasted computation if we're going to throw the output away anyway
             if (_executionOptions.WriteOutputToHost)
