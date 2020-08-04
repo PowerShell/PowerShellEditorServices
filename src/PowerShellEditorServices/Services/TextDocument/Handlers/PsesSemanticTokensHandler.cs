@@ -12,26 +12,23 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
-using OmniSharp.Extensions.LanguageServer.Protocol;
+using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document.Proposals;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models.Proposals;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class PsesSemanticTokensHandler : SemanticTokensHandler
+    internal class PsesSemanticTokensHandler : SemanticTokensHandlerBase
     {
         private static readonly SemanticTokensRegistrationOptions s_registrationOptions = new SemanticTokensRegistrationOptions
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector,
             Legend = new SemanticTokensLegend(),
-            DocumentProvider = new Supports<SemanticTokensDocumentProviderOptions>(
-                isSupported: true,
-                new SemanticTokensDocumentProviderOptions
-                {
-                    Edits = true
-                }),
-            RangeProvider = true
+            Full = new SemanticTokensCapabilityRequestFull() {
+                Delta = true
+            },
+            Range = true
         };
 
         private readonly ILogger _logger;
