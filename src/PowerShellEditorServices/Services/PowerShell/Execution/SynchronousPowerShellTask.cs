@@ -79,7 +79,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                     cancellationToken.ThrowIfCancellationRequested();
                 }
             }
-            catch (Exception e) when (e is PipelineStoppedException || e is PSRemotingDataStructureException)
+            catch (PipelineStoppedException)
+            {
+                throw new OperationCanceledException();
+            }
+            catch (PSRemotingDataStructureException e)
             {
                 string message = $"Pipeline stopped while executing command:{Environment.NewLine}{Environment.NewLine}{e}";
                 Logger.LogError(message);
@@ -131,7 +135,58 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                     };
             }
 
-            DebuggerCommandResults debuggerResult = _pwsh.Runspace.Debugger.ProcessCommand(_psCommand, outputCollection);
+            DebuggerCommandResults debuggerResult = null;
+            try
+            {
+                debuggerResult = _pwsh.Runspace.Debugger.ProcessCommand(_psCommand, outputCollection);
+
+                if (_executionOptions.PropagateCancellationToCaller)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                }
+            }
+            catch (PipelineStoppedException)
+            {
+                throw new OperationCanceledException();
+            }
+            catch (PSRemotingDataStructureException e)
+            {
+                string message = $"Pipeline stopped while executing command:{Environment.NewLine}{Environment.NewLine}{e}";
+                Logger.LogError(message);
+                throw new ExecutionCanceledException(message, e);
+            }
+            catch (RuntimeException e)
+            {
+                Logger.LogWarning($"Runtime exception occurred while executing command:{Environment.NewLine}{Environment.NewLine}{e}");
+
+                if (!_executionOptions.WriteOutputToHost)
+                {
+                    throw;
+                }
+
+                var errorOutputCollection = new PSDataCollection<PSObject>();
+                errorOutputCollection.DataAdded += (object sender, DataAddedEventArgs args) =>
+                    {
+                        for (int i = args.Index; i < outputCollection.Count; i++)
+                        {
+                            _psHost.UI.WriteLine(outputCollection[i].ToString());
+                        }
+                    };
+
+                var command = new PSCommand()
+                    .AddDebugOutputCommand()
+                    .AddParameter("InputObject", e.ErrorRecord.AsPSObject());
+
+                _pwsh.Runspace.Debugger.ProcessCommand(command, errorOutputCollection);
+            }
+            finally
+            {
+                if (_pwsh.HadErrors)
+                {
+                    _pwsh.Streams.Error.Clear();
+                }
+            }
+
             _psRunspaceContext.ProcessDebuggerResult(debuggerResult);
 
             // Optimisation to save wasted computation if we're going to throw the output away anyway
