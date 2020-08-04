@@ -649,8 +649,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private void OnDebuggerStopped(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
         {
+            CurrentPowerShell.WaitForRemoteOutputIfNeeded();
             _debuggingContext.OnDebuggerStop(sender, debuggerStopEventArgs);
             PushDebugPowerShell();
+            CurrentPowerShell.ResumeRemoteOutputIfNeeded();
         }
 
         private void SetDebuggerResuming(DebuggerResumeAction resumeAction)
