@@ -3,6 +3,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using SMA = System.Management.Automation;
 
@@ -10,6 +12,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 {
     internal static class PowerShellExtensions
     {
+        private static readonly Action<SMA.PowerShell> s_waitForServicingComplete;
+
+        private static readonly Action<SMA.PowerShell> s_suspendIncomingData;
+
+        private static readonly Action<SMA.PowerShell> s_resumeIncomingData;
+
+        static PowerShellExtensions()
+        {
+            s_waitForServicingComplete = (Action<SMA.PowerShell>)Delegate.CreateDelegate(
+                typeof(Action<SMA.PowerShell>),
+                typeof(SMA.PowerShell).GetMethod("WaitForServicingComplete", BindingFlags.Instance | BindingFlags.NonPublic));
+
+            s_suspendIncomingData = (Action<SMA.PowerShell>)Delegate.CreateDelegate(
+                typeof(Action<SMA.PowerShell>),
+                typeof(SMA.PowerShell).GetMethod("SuspendIncomingData", BindingFlags.Instance | BindingFlags.NonPublic));
+
+            s_resumeIncomingData = (Action<SMA.PowerShell>)Delegate.CreateDelegate(
+                typeof(Action<SMA.PowerShell>),
+                typeof(SMA.PowerShell).GetMethod("ResumeIncomingData", BindingFlags.Instance | BindingFlags.NonPublic));
+        }
+
         public static Collection<TResult> InvokeAndClear<TResult>(this SMA.PowerShell pwsh)
         {
             try
@@ -44,6 +67,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         {
             pwsh.Commands = psCommand;
             pwsh.InvokeAndClear();
+        }
+
+        public static void WaitForRemoteOutputIfNeeded(this SMA.PowerShell pwsh)
+        {
+            if (!pwsh.Runspace.RunspaceIsRemote)
+            {
+                return;
+            }
+
+            s_waitForServicingComplete(pwsh);
+            s_suspendIncomingData(pwsh);
+        }
+
+        public static void ResumeRemoteOutputIfNeeded(this SMA.PowerShell pwsh)
+        {
+            if (!pwsh.Runspace.RunspaceIsRemote)
+            {
+                return;
+            }
+
+            s_resumeIncomingData(pwsh);
         }
 
         public static string GetErrorString(this SMA.PowerShell pwsh)
