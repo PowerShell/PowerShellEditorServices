@@ -131,7 +131,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                     }
                     catch (Exception e)
                     {
-                        // TODO: Do something here
+                        _executionService.EditorServicesHost.UI.WriteErrorLine($"An error occurred while running the REPL loop:{Environment.NewLine}{e}");
+                        _logger.LogError(e, "An error occurred while running the REPL loop");
+                        break;
                     }
                     finally
                     {
@@ -202,6 +204,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
         {
+            // We don't want to terminate the process
+            args.Cancel = true;
             CancelCurrentPrompt();
         }
 

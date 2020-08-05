@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
@@ -90,6 +91,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         private readonly ConcurrentStack<CancellationTokenSource> _commandCancellationStack;
 
+        private readonly ReaderWriterLockSlim _taskProcessingLock;
+
         private bool _runIdleLoop;
 
         private bool _isExiting;
@@ -114,6 +117,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             _executionQueue = new BlockingCollection<ISynchronousTask>();
             _debuggingContext = new DebuggingContext();
             _psFrameStack = new Stack<PowerShellContextFrame>();
+            _taskProcessingLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
             _hostName = hostName;
             _hostVersion = hostVersion;
             _languageMode = languageMode;
@@ -243,8 +247,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         {
             Initialize();
 
-            _consoleRepl.StartRepl();
-
             var cancellationContext = LoopCancellationContext.EnterNew(
                 this,
                 CurrentPowerShellCancellationSource,
@@ -316,6 +318,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
                     ImportModule(module);
                 }
             }
+
+            _consoleRepl.StartRepl();
         }
 
         private void SetExecutionPolicy()
@@ -542,7 +546,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             return pwsh;
         }
 
-
         private void PushNonInteractivePowerShell()
         {
             PushNestedPowerShell(PowerShellFrameType.NonInteractive);
@@ -606,12 +609,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         {
             runspace.Debugger.DebuggerStop += OnDebuggerStopped;
             runspace.Debugger.BreakpointUpdated += OnBreakpointUpdated;
+            runspace.StateChanged += OnRunspaceStateChanged;
         }
 
         private void RemoveRunspaceEventHandlers(Runspace runspace)
         {
             runspace.Debugger.DebuggerStop -= OnDebuggerStopped;
             runspace.Debugger.BreakpointUpdated -= OnBreakpointUpdated;
+            runspace.StateChanged -= OnRunspaceStateChanged;
         }
 
         private void RunPowerShellLoop(PowerShellFrameType powerShellFrameType)
@@ -665,6 +670,54 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         private void OnBreakpointUpdated(object sender, BreakpointUpdatedEventArgs breakpointUpdatedEventArgs)
         {
             BreakpointUpdated?.Invoke(this, breakpointUpdatedEventArgs);
+        }
+
+        private void OnRunspaceStateChanged(object sender, RunspaceStateEventArgs runspaceStateEventArgs)
+        {
+            if (!runspaceStateEventArgs.RunspaceStateInfo.IsUsable())
+            {
+                PopOrReinitializeRunspace();
+            }
+        }
+
+        private void PopOrReinitializeRunspace()
+        {
+            _consoleRepl.SetReplPop();
+            CancelCurrentTask();
+
+            RunspaceStateInfo oldRunspaceState = CurrentPowerShell.Runspace.RunspaceStateInfo;
+            _taskProcessingLock.EnterWriteLock();
+            try
+            {
+                while (_psFrameStack.Count > 0
+                    && !_psFrameStack.Peek().PowerShell.Runspace.RunspaceStateInfo.IsUsable())
+                {
+                    PopFrame();
+                }
+
+                if (_psFrameStack.Count == 0)
+                {
+                    // If our main runspace was corrupted,
+                    // we must re-initialize our state.
+                    // TODO: Use runspace.ResetRunspaceState() here instead
+                    Initialize();
+
+                    _logger.LogError($"Top level runspace entered state '{oldRunspaceState.State}' for reason '{oldRunspaceState.Reason}' and was reinitialized."
+                        + " Please report this issue in the PowerShell/vscode-PowerShell GitHub repository with these logs.");
+                    EditorServicesHost.UI.WriteErrorLine("The main runspace encountered an error and has been reinitialized. See the PowerShell extension logs for more details.");
+                }
+                else
+                {
+                    _logger.LogError($"Current runspace entered state '{oldRunspaceState.State}' for reason '{oldRunspaceState.Reason}' and was popped.");
+                    EditorServicesHost.UI.WriteErrorLine($"The current runspace entered state '{oldRunspaceState.State}' for reason '{oldRunspaceState.Reason}'."
+                        + " If this occurred when using Ctrl+C in a Windows PowerShell remoting session, this is expected behavior."
+                        + " The session is now returning to the previous runspace.");
+                }
+            }
+            finally
+            {
+                _taskProcessingLock.ExitWriteLock();
+            }
         }
 
         internal struct PowerShellRunspaceContext
@@ -783,24 +836,26 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         {
             public static TaskCancellationContext EnterNew(PowerShellExecutionService executionService, CancellationToken loopCancellationToken)
             {
+                executionService._taskProcessingLock.EnterReadLock();
                 var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(loopCancellationToken);
                 executionService._commandCancellationStack.Push(cancellationTokenSource);
-                return new TaskCancellationContext(executionService._commandCancellationStack, cancellationTokenSource.Token);
+                return new TaskCancellationContext(executionService, cancellationTokenSource.Token);
             }
 
-            private TaskCancellationContext(ConcurrentStack<CancellationTokenSource> commandCancellationStack, CancellationToken cancellationToken)
+            private TaskCancellationContext(PowerShellExecutionService executionService, CancellationToken cancellationToken)
             {
-                _commandCancellationStack = commandCancellationStack;
+                _executionService = executionService;
                 CancellationToken = cancellationToken;
             }
 
-            private readonly ConcurrentStack<CancellationTokenSource> _commandCancellationStack;
+            private readonly PowerShellExecutionService _executionService;
 
             public readonly CancellationToken CancellationToken;
 
             public void Dispose()
             {
-                if (_commandCancellationStack.TryPop(out CancellationTokenSource taskCancellation))
+                _executionService._taskProcessingLock.ExitReadLock();
+                if (_executionService._commandCancellationStack.TryPop(out CancellationTokenSource taskCancellation))
                 {
                     taskCancellation.Dispose();
                 }
