@@ -133,6 +133,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             }
             catch (Exception e) when (cancellationToken.IsCancellationRequested || e is PipelineStoppedException || e is PSRemotingDataStructureException)
             {
+                StopDebuggerIfRemoteDebugSessionFailed();
                 throw new OperationCanceledException();
             }
             catch (RuntimeException e)
@@ -191,6 +192,30 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 }
             }
             return results;
+        }
+
+        private void StopDebuggerIfRemoteDebugSessionFailed()
+        {
+            // When remoting to Windows PowerShell,
+            // command cancellation may cancel the remote debug session in a way that the local debug session doesn't detect.
+            // Instead we have to query the remote directly
+            if (_pwsh.Runspace.RunspaceIsRemote)
+            {
+                var assessDebuggerCommand = new PSCommand().AddScript("$Host.Runspace.Debugger.InBreakpoint");
+
+                var outputCollection = new PSDataCollection<PSObject>();
+                _pwsh.Runspace.Debugger.ProcessCommand(assessDebuggerCommand, outputCollection);
+
+                foreach (PSObject output in outputCollection)
+                {
+                    if (object.Equals(output?.BaseObject, false))
+                    {
+                        _psRunspaceContext.ProcessDebuggerResult(new DebuggerCommandResults(DebuggerResumeAction.Stop, evaluatedByDebugger: true));
+                        _logger.LogWarning("Cancelling debug session due to remote command cancellation causing the end of remote debugging session");
+                        _psHost.UI.WriteWarningLine("Debug session aborted by command cancellation. This is a known issue in the Windows PowerShell 5.1 remoting system.");
+                    }
+                }
+            }
         }
 
         private void CancelNormalExecution()
