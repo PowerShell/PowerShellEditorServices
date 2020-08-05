@@ -73,21 +73,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             try
             {
                 result = _pwsh.InvokeCommand<TResult>(_psCommand);
-
-                if (_executionOptions.PropagateCancellationToCaller)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                }
+                cancellationToken.ThrowIfCancellationRequested();
             }
-            catch (PipelineStoppedException)
+            catch (Exception e) when (cancellationToken.IsCancellationRequested || e is PipelineStoppedException || e is PSRemotingDataStructureException)
             {
                 throw new OperationCanceledException();
-            }
-            catch (PSRemotingDataStructureException e)
-            {
-                string message = $"Pipeline stopped while executing command:{Environment.NewLine}{Environment.NewLine}{e}";
-                Logger.LogError(message);
-                throw new ExecutionCanceledException(message, e);
             }
             catch (RuntimeException e)
             {
@@ -139,21 +129,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             try
             {
                 debuggerResult = _pwsh.Runspace.Debugger.ProcessCommand(_psCommand, outputCollection);
-
-                if (_executionOptions.PropagateCancellationToCaller)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                }
+                cancellationToken.ThrowIfCancellationRequested();
             }
-            catch (PipelineStoppedException)
+            catch (Exception e) when (cancellationToken.IsCancellationRequested || e is PipelineStoppedException || e is PSRemotingDataStructureException)
             {
                 throw new OperationCanceledException();
-            }
-            catch (PSRemotingDataStructureException e)
-            {
-                string message = $"Pipeline stopped while executing command:{Environment.NewLine}{Environment.NewLine}{e}";
-                Logger.LogError(message);
-                throw new ExecutionCanceledException(message, e);
             }
             catch (RuntimeException e)
             {

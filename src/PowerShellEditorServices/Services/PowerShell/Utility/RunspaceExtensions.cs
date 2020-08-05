@@ -48,5 +48,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         {
             return s_getRemotePromptFunc(runspace, basePrompt);
         }
+
+        public static bool IsUsable(this RunspaceStateInfo runspaceStateInfo)
+        {
+            switch (runspaceStateInfo.State)
+            {
+                case RunspaceState.Broken:
+                case RunspaceState.Closed:
+                case RunspaceState.Closing:
+                case RunspaceState.Disconnecting:
+                case RunspaceState.Disconnected:
+                    return false;
+
+                default:
+                    return true;
+            }
+        }
     }
 }
