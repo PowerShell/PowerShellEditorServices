@@ -25,7 +25,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector,
             Legend = new SemanticTokensLegend(),
-            Full = new SemanticTokensCapabilityRequestFull() {
+            Full = new SemanticTokensCapabilityRequestFull
+            {
                 Delta = true
             },
             Range = true
