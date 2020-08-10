@@ -91,7 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             if (_debugStateService.WaitingForAttach &&
                 e.ChangeAction == RunspaceChangeAction.Enter &&
-                e.NewRunspace.Context == RunspaceContext.DebuggedRunspace)
+                e.NewRunspace.Context == RunspaceOrigin.DebuggedRunspace)
             {
                 // Sends the InitializedEvent so that the debugger will continue
                 // sending configuration requests

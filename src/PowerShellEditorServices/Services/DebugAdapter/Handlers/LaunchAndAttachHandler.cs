@@ -397,7 +397,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (_debugStateService.IsAttachSession)
             {
                // Pop the sessions
-               if (_powerShellContextService.CurrentRunspace.Context == RunspaceContext.EnteredProcess)
+               if (_powerShellContextService.CurrentRunspace.Context == RunspaceOrigin.EnteredProcess)
                {
                    try
                    {
