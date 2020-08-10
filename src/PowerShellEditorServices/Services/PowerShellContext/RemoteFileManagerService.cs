@@ -618,7 +618,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private void RegisterPSEditFunction(RunspaceDetails runspaceDetails)
         {
             if (runspaceDetails.Location == RunspaceLocation.Remote &&
-                runspaceDetails.Context == RunspaceContext.Original)
+                runspaceDetails.Context == RunspaceOrigin.Original)
             {
                 try
                 {
@@ -629,7 +629,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         .AddScript(CreatePSEditFunctionScript)
                         .AddParameter("PSEditModule", PSEditModule);
 
-                    if (runspaceDetails.Context == RunspaceContext.DebuggedRunspace)
+                    if (runspaceDetails.Context == RunspaceOrigin.DebuggedRunspace)
                     {
                         _executionService.ExecutePSCommandAsync(createCommand, new PowerShellExecutionOptions(), CancellationToken.None).GetAwaiter().GetResult();
                     }
@@ -653,7 +653,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private void RemovePSEditFunction(RunspaceDetails runspaceDetails)
         {
             if (runspaceDetails.Location == RunspaceLocation.Remote &&
-                runspaceDetails.Context == RunspaceContext.Original)
+                runspaceDetails.Context == RunspaceOrigin.Original)
             {
                 try
                 {
