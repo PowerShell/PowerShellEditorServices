@@ -29,27 +29,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     }
 
     /// <summary>
-    /// Specifies the context in which the runspace was encountered.
-    /// </summary>
-    internal enum RunspaceContext
-    {
-        /// <summary>
-        /// The original runspace in a local or remote session.
-        /// </summary>
-        Original,
-
-        /// <summary>
-        /// A runspace in a process that was entered with Enter-PSHostProcess.
-        /// </summary>
-        EnteredProcess,
-
-        /// <summary>
-        /// A runspace that is being debugged with Debug-Runspace.
-        /// </summary>
-        DebuggedRunspace
-    }
-
-    /// <summary>
     /// Provides details about a runspace being used in the current
     /// editing session.
     /// </summary>

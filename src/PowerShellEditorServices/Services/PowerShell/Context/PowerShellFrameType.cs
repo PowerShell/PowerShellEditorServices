@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
+namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
 {
     [Flags]
     internal enum PowerShellFrameType
