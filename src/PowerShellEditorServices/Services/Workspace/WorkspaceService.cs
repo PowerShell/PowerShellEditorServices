@@ -406,7 +406,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var fileMatchResult = matcher.Execute(fsFactory.RootDirectory);
             foreach (FilePatternMatch item in fileMatchResult.Files)
             {
-                yield return Path.Combine(WorkspacePath, item.Path);
+                // item.Path always contains forward slashes in paths when it should be backslashes on Windows.
+                // Since we're returning strings here, it's important to use the correct directory separator.
+                var path = VersionUtils.IsWindows ? item.Path.Replace('/', Path.DirectorySeparatorChar) : item.Path;
+                yield return Path.Combine(WorkspacePath, path);
             }
         }
 
