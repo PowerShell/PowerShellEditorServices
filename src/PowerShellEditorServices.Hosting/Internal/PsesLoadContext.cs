@@ -37,16 +37,15 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             // we must restrict the code in here to only use core types,
             // otherwise we may depend on assembly that we are trying to load and cause a StackOverflowException
 
+            // If we find the required assembly in $PSHOME, let another mechanism load the assembly
             string psHomeAsmPath = Path.Join(s_psHome, $"{assemblyName.Name}.dll");
-
-            if (File.Exists(psHomeAsmPath))
+            if (IsSatisfyingAssembly(assemblyName, psHomeAsmPath))
             {
                 return null;
             }
 
             string asmPath = Path.Join(_dependencyDirPath, $"{assemblyName.Name}.dll");
-
-            if (File.Exists(asmPath))
+            if (IsSatisfyingAssembly(assemblyName, asmPath))
             {
                 return LoadFromAssemblyPath(asmPath);
             }
@@ -73,6 +72,19 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             {
                 // Do nothing -- we did our best
             }
+        }
+
+        private static bool IsSatisfyingAssembly(AssemblyName requiredAssemblyName, string assemblyPath)
+        {
+            if (!File.Exists(assemblyPath))
+            {
+                return false;
+            }
+
+            AssemblyName asmToLoadName = AssemblyName.GetAssemblyName(assemblyPath);
+
+            return string.Equals(asmToLoadName.Name, requiredAssemblyName.Name, StringComparison.OrdinalIgnoreCase)
+                && asmToLoadName.Version >= requiredAssemblyName.Version;
         }
     }
 }
