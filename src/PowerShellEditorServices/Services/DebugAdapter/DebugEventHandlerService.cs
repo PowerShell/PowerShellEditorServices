@@ -5,7 +5,7 @@ using System.Management.Automation;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal void RegisterEventHandlers()
         {
-            //_powerShellContextService.RunspaceChanged += PowerShellContext_RunspaceChanged;
+            _executionService.RunspaceChanged += ExecutionService_RunspaceChanged;
             _debugService.BreakpointUpdated += DebugService_BreakpointUpdated;
             _debugService.DebuggerStopped += DebugService_DebuggerStopped;
             //_powerShellContextService.DebuggerResumed += PowerShellContext_DebuggerResumed;
@@ -44,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal void UnregisterEventHandlers()
         {
-            //_powerShellContextService.RunspaceChanged -= PowerShellContext_RunspaceChanged;
+            _executionService.RunspaceChanged -= ExecutionService_RunspaceChanged;
             _debugService.BreakpointUpdated -= DebugService_BreakpointUpdated;
             _debugService.DebuggerStopped -= DebugService_DebuggerStopped;
             //_powerShellContextService.DebuggerResumed -= PowerShellContext_DebuggerResumed;
@@ -86,11 +86,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 });
         }
 
-        private void PowerShellContext_RunspaceChanged(object sender, RunspaceChangedEventArgs e)
+        private void ExecutionService_RunspaceChanged(object sender, RunspaceChangedEventArgs e)
         {
             if (_debugStateService.WaitingForAttach &&
                 e.ChangeAction == RunspaceChangeAction.Enter &&
-                e.NewRunspace.Context == RunspaceOrigin.DebuggedRunspace)
+                e.NewRunspace.RunspaceOrigin == RunspaceOrigin.DebuggedRunspace)
             {
                 // Sends the InitializedEvent so that the debugger will continue
                 // sending configuration requests

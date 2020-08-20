@@ -44,5 +44,9 @@
 
   <ItemGroup>
     <Compile Remove="Extensions\Api\DocumentSymbolService.cs" />
+    <Compile Remove="Services\Extension\Templating\**" />
+    <Compile Remove="Services\PowerShellContext\**\*.cs" />
+    <EmbeddedResource Remove="Services\Extension\Templating\**" />
+    <None Remove="Services\Extension\Templating\**" />
   </ItemGroup>
 </Project>

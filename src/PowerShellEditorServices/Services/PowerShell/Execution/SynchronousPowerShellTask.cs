@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using System;
 using System.Collections.Generic;
@@ -15,35 +16,34 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
     {
         private readonly ILogger _logger;
 
-        private readonly PowerShellExecutionService.PowerShellRunspaceContext _psRunspaceContext;
+        private readonly PowerShellContext _pwshContext;
 
         private readonly PSCommand _psCommand;
-
-        private readonly PSHost _psHost;
 
         private readonly PowerShellExecutionOptions _executionOptions;
 
         private SMA.PowerShell _pwsh;
 
+        private PSHost _psHost;
+
         public SynchronousPowerShellTask(
             ILogger logger,
-            PowerShellExecutionService.PowerShellRunspaceContext psRunspaceContext,
-            PSHost psHost,
+            PowerShellContext pwshContext,
             PSCommand command,
             PowerShellExecutionOptions executionOptions,
             CancellationToken cancellationToken)
             : base(logger, cancellationToken)
         {
             _logger = logger;
-            _psRunspaceContext = psRunspaceContext;
-            _psHost = psHost;
+            _pwshContext = pwshContext;
             _psCommand = command;
             _executionOptions = executionOptions;
         }
 
         public override IReadOnlyList<TResult> Run(CancellationToken cancellationToken)
         {
-            _pwsh = _psRunspaceContext.CurrentPowerShell;
+            _pwsh = _pwshContext.CurrentPowerShell;
+            _psHost = _pwshContext.EditorServicesPSHost;
 
             if (_executionOptions.WriteInputToHost)
             {
@@ -168,7 +168,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 }
             }
 
-            _psRunspaceContext.ProcessDebuggerResult(debuggerResult);
+            _pwshContext.ProcessDebuggerResult(debuggerResult);
 
             // Optimisation to save wasted computation if we're going to throw the output away anyway
             if (_executionOptions.WriteOutputToHost)
@@ -210,7 +210,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 {
                     if (object.Equals(output?.BaseObject, false))
                     {
-                        _psRunspaceContext.ProcessDebuggerResult(new DebuggerCommandResults(DebuggerResumeAction.Stop, evaluatedByDebugger: true));
+                        _pwshContext.ProcessDebuggerResult(new DebuggerCommandResults(DebuggerResumeAction.Stop, evaluatedByDebugger: true));
                         _logger.LogWarning("Cancelling debug session due to remote command cancellation causing the end of remote debugging session");
                         _psHost.UI.WriteWarningLine("Debug session aborted by command cancellation. This is a known issue in the Windows PowerShell 5.1 remoting system.");
                     }

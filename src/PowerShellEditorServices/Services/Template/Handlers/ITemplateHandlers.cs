@@ -4,7 +4,7 @@
 using MediatR;
 using OmniSharp.Extensions.JsonRpc;
 
-namespace Microsoft.PowerShell.EditorServices.Handlers
+namespace Microsoft.PowerShell.EditorServices.Services.Template
 {
     [Serial]
     [Method("powerShell/getProjectTemplates", Direction.ClientToServer)]

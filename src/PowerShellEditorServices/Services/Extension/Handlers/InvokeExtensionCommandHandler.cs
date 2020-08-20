@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Extensions;
 
-namespace Microsoft.PowerShell.EditorServices.Handlers
+namespace Microsoft.PowerShell.EditorServices.Services.Extension
 {
     internal class InvokeExtensionCommandHandler : IInvokeExtensionCommandHandler
     {
