@@ -5,16 +5,15 @@
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Utility;
 
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
+namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 {
     /// <summary>
     /// Provides utility methods for working with PowerShell commands.
@@ -70,7 +69,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             PowerShellExecutionService executionService)
         {
             // This mechanism only works in-process
-            if (executionService.IsCurrentlyRemote)
+            if (executionService.CurrentRunspace.IsRemote())
             {
                 return null;
             }

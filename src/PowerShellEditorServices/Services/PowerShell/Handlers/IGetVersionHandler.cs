@@ -3,11 +3,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using MediatR;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
 using OmniSharp.Extensions.JsonRpc;
 
-namespace Microsoft.PowerShell.EditorServices.Handlers
+namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 {
     [Serial, Method("powerShell/getVersion")]
     internal interface IGetVersionHandler : IJsonRpcRequestHandler<GetVersionParams, PowerShellVersion> { }

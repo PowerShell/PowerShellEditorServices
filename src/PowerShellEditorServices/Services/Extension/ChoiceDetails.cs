@@ -6,7 +6,7 @@
 using System;
 using System.Management.Automation.Host;
 
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
+namespace Microsoft.PowerShell.EditorServices.Services.Extension
 {
     /// <summary>
     /// Contains the details about a choice that should be displayed

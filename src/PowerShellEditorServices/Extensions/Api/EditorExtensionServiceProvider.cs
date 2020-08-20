@@ -8,6 +8,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.Extension;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 

@@ -5,19 +5,19 @@
 
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Logging;
+using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
+using Microsoft.PowerShell.EditorServices.Utility;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Management.Automation;
+
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 {
-    using Microsoft.Extensions.Logging;
-    using Microsoft.PowerShell.EditorServices.Logging;
-    using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
-    using Microsoft.PowerShell.EditorServices.Utility;
-    using System;
-    using System.Collections.Generic;
-    using System.Collections.ObjectModel;
-    using System.Management.Automation;
-
-    internal class DscBreakpointCapability : IRunspaceCapability
+    internal class DscBreakpointCapability
     {
         private string[] dscResourceRootPaths = Array.Empty<string>();
 

@@ -4,27 +4,30 @@
 //
 
 using System;
+using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class DebugEvaluateHandler : IEvaluateHandler
     {
         private readonly ILogger _logger;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly PowerShellExecutionService _executionService;
         private readonly DebugService _debugService;
 
         public DebugEvaluateHandler(
             ILoggerFactory factory,
-            PowerShellContextService powerShellContextService,
+            PowerShellExecutionService executionService,
             DebugService debugService)
         {
             _logger = factory.CreateLogger<DebugEvaluateHandler>();
-            _powerShellContextService = powerShellContextService;
+            _executionService = executionService;
             _debugService = debugService;
         }
 
@@ -41,10 +44,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (isFromRepl)
             {
-                var notAwaited =
-                    _powerShellContextService
-                        .ExecuteScriptStringAsync(request.Expression, false, true)
-                        .ConfigureAwait(false);
+                // TODO: Await this or handle errors from it
+                _executionService.ExecutePSCommandAsync(
+                    new PSCommand().AddScript(request.Expression),
+                    new PowerShellExecutionOptions { WriteOutputToHost = true },
+                    CancellationToken.None);
             }
             else
             {
@@ -52,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 // VS Code might send this request after the debugger
                 // has been resumed, return an empty result in this case.
-                if (_powerShellContextService.IsDebuggerStopped)
+                if (_executionService.DebugContext.IsStopped)
                 {
                     // First check to see if the watch expression refers to a naked variable reference.
                     result =

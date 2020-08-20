@@ -14,6 +14,7 @@ using Microsoft.PowerShell.EditorServices.Services;
 using Serilog;
 using Serilog.Events;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using Microsoft.PowerShell.EditorServices.Services.Extension;
 
 #if DEBUG
 using Serilog.Debugging;

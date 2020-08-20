@@ -4,11 +4,16 @@
 //
 
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using System;
 using System.Collections;
+using System.Linq;
+using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
+namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
 {
     /// <summary>
     /// Defines the possible enumeration values for the PowerShell process architecture.
@@ -92,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <param name="runspace">The runspace for which version details will be gathered.</param>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         /// <returns>A new PowerShellVersionDetails instance.</returns>
-        public static PowerShellVersionDetails GetVersionDetails(Runspace runspace, ILogger logger)
+        public static async Task<PowerShellVersionDetails> GetVersionDetailsAsync(ILogger logger, PowerShellExecutionService executionService, CancellationToken cancellationToken)
         {
             Version powerShellVersion = new Version(5, 0);
             string versionString = null;
@@ -101,7 +106,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             try
             {
-                var psVersionTable = PowerShellContextService.ExecuteScriptAndGetItem<Hashtable>("$PSVersionTable", runspace, useLocalScope: true);
+                var psVersionTableCommand = new PSCommand().AddScript("$PSVersionTable", useLocalScope: true);
+
+                Hashtable psVersionTable = (await executionService.ExecutePSCommandAsync<Hashtable>(
+                        psVersionTableCommand,
+                        new PowerShellExecutionOptions(),
+                        cancellationToken)
+                    .ConfigureAwait(false))
+                    .FirstOrDefault();
+
                 if (psVersionTable != null)
                 {
                     var edition = psVersionTable["PSEdition"] as string;
@@ -134,7 +147,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         versionString = powerShellVersion.ToString();
                     }
 
-                    var arch = PowerShellContextService.ExecuteScriptAndGetItem<string>("$env:PROCESSOR_ARCHITECTURE", runspace, useLocalScope: true);
+                    var procArchCommand = new PSCommand().AddScript("$env:PROCESSOR_ARCHITECTURE", useLocalScope: true);
+
+                    string arch = (await executionService.ExecutePSCommandAsync<string>(
+                            procArchCommand,
+                            new PowerShellExecutionOptions(),
+                            cancellationToken)
+                        .ConfigureAwait(false))
+                        .FirstOrDefault();
+
                     if (arch != null)
                     {
                         if (string.Equals(arch, "AMD64", StringComparison.CurrentCultureIgnoreCase))

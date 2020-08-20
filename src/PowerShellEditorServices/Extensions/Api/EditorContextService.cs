@@ -6,7 +6,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.PowerShell.EditorServices.Handlers;
+using Microsoft.PowerShell.EditorServices.Services.Extension;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Extensions.Services

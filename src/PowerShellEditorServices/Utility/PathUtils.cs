@@ -4,6 +4,7 @@
 //
 
 using System.IO;
+using System.Management.Automation;
 using System.Runtime.InteropServices;
 
 namespace Microsoft.PowerShell.EditorServices.Utility
@@ -36,6 +37,11 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         public static string NormalizePathSeparators(string path)
         {
             return string.IsNullOrWhiteSpace(path) ? path : path.Replace(AlternatePathSeparator, DefaultPathSeparator);
+        }
+
+        public static string WildcardEscape(string path)
+        {
+            return WildcardPattern.Escape(path);
         }
     }
 }

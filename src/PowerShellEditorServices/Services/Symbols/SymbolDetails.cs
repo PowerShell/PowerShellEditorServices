@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.Management.Automation;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {

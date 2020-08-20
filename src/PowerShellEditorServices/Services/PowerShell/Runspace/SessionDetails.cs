@@ -8,7 +8,7 @@ using System.Management.Automation;
 using System.Collections;
 using Microsoft.PowerShell.EditorServices.Utility;
 
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
+namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
 {
     /// <summary>
     /// Provides details about the current PowerShell session.
@@ -36,15 +36,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// PSCommand returned by GetDetailsCommand.
         /// </summary>
         /// <param name="detailsObject"></param>
-        public SessionDetails(PSObject detailsObject)
+        protected SessionDetails(
+            int processId,
+            string computerName,
+            Guid? instanceId)
         {
-            Validate.IsNotNull(nameof(detailsObject), detailsObject);
-
-            Hashtable innerHashtable = detailsObject.BaseObject as Hashtable;
-
-            this.ProcessId = (int)innerHashtable["processId"] as int?;
-            this.ComputerName = innerHashtable["computerName"] as string;
-            this.InstanceId = innerHashtable["instanceId"] as Guid?;
+            ProcessId = processId;
+            ComputerName = computerName;
+            InstanceId = instanceId;
         }
 
         /// <summary>

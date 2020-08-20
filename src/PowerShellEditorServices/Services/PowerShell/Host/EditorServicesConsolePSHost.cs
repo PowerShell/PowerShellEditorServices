@@ -1,18 +1,19 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
 using System;
 using System.Globalization;
 using System.Management.Automation.Host;
-using System.Management.Automation.Runspaces;
-using static Microsoft.PowerShell.EditorServices.Services.PowerShell.PowerShellExecutionService;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 {
+    using System.Management.Automation.Runspaces;
+
     internal class EditorServicesConsolePSHost : PSHost, IHostSupportsInteractiveSession
     {
         private readonly ILogger _logger;
 
-        private PowerShellRunspaceContext _psRunspaceContext;
+        private PowerShellContext _psContext;
 
         public EditorServicesConsolePSHost(
             ILoggerFactory loggerFactory,
@@ -39,18 +40,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public override Version Version { get; }
 
-        public Runspace Runspace => _psRunspaceContext.Runspace;
+        public Runspace Runspace => _psContext.CurrentRunspace;
 
-        public bool IsRunspacePushed => _psRunspaceContext.IsRunspacePushed;
+        public bool IsRunspacePushed => _psContext.IsRunspacePushed;
 
         public override void EnterNestedPrompt()
         {
-            _psRunspaceContext.PushNestedPowerShell();
+            _psContext.PushNestedPowerShell();
         }
 
         public override void ExitNestedPrompt()
         {
-            _psRunspaceContext.SetShouldExit();
+            _psContext.SetShouldExit(exitCode: null);
         }
 
         public override void NotifyBeginApplication()
@@ -63,22 +64,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public void PushRunspace(Runspace runspace)
         {
-            _psRunspaceContext.PushPowerShell(runspace);
+            _psContext.PushPowerShell(runspace);
         }
 
         public void PopRunspace()
         {
-            _psRunspaceContext.SetShouldExit();
+            _psContext.SetShouldExit(exitCode: null);
         }
 
         public override void SetShouldExit(int exitCode)
         {
-            _psRunspaceContext.SetShouldExit();
+            _psContext.SetShouldExit(exitCode);
         }
 
-        internal void RegisterPowerShellContext(PowerShellExecutionService.PowerShellRunspaceContext psRunspaceContext)
+        internal void RegisterPowerShellContext(PowerShellContext psContext)
         {
-            _psRunspaceContext = psRunspaceContext;
+            _psContext = psContext;
         }
     }
 }

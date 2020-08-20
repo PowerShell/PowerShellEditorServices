@@ -1,34 +1,48 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 
-namespace PowerShellEditorServices.Services.PowerShell.Utility
+namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 {
-    internal struct CancellationContext : IDisposable
+    internal class CancellationContext
     {
-        public static CancellationContext Enter(ConcurrentStack<CancellationTokenSource> cancellationStack, params CancellationToken[] linkedTokens)
+        private readonly ConcurrentStack<CancellationTokenSource> _cancellationSourceStack;
+
+        public CancellationContext()
         {
-            var linkedCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(linkedTokens);
-            return Enter(cancellationStack, linkedCancellationSource);
+            _cancellationSourceStack = new ConcurrentStack<CancellationTokenSource>();
         }
 
-        public static CancellationContext Enter(ConcurrentStack<CancellationTokenSource> cancellationStack, CancellationToken token1, CancellationToken token2)
+        public CancellationScope EnterScope(params CancellationToken[] linkedTokens)
         {
-            var linkedCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(token1, token2);
-            return Enter(cancellationStack, linkedCancellationSource);
+            return EnterScope(CancellationTokenSource.CreateLinkedTokenSource(linkedTokens));
         }
 
-        private static CancellationContext Enter(ConcurrentStack<CancellationTokenSource> cancellationStack, CancellationTokenSource linkedCancellationSource)
+        public CancellationScope EnterScope(CancellationToken linkedToken1, CancellationToken linkedToken2)
         {
-            cancellationStack.Push(linkedCancellationSource);
-            return new CancellationContext(cancellationStack, linkedCancellationSource.Token);
+            return EnterScope(CancellationTokenSource.CreateLinkedTokenSource(linkedToken1, linkedToken2));
         }
 
+        public void CancelCurrentTask()
+        {
+            if (_cancellationSourceStack.TryPeek(out CancellationTokenSource currentCancellationSource))
+            {
+                currentCancellationSource.Cancel();
+            }
+        }
+
+        private CancellationScope EnterScope(CancellationTokenSource cancellationFrameSource)
+        {
+            _cancellationSourceStack.Push(cancellationFrameSource);
+            return new CancellationScope(_cancellationSourceStack, cancellationFrameSource.Token);
+        }
+    }
+
+    internal struct CancellationScope : IDisposable
+    {
         private readonly ConcurrentStack<CancellationTokenSource> _cancellationStack;
 
-        private CancellationContext(ConcurrentStack<CancellationTokenSource> cancellationStack, CancellationToken currentCancellationToken)
+        internal CancellationScope(ConcurrentStack<CancellationTokenSource> cancellationStack, CancellationToken currentCancellationToken)
         {
             _cancellationStack = cancellationStack;
             CancellationToken = currentCancellationToken;
