@@ -7,7 +7,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
-using System.Management.Automation.Runspaces;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -17,6 +16,8 @@ using SMA = System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
+    using System.Management.Automation.Runspaces;
+
     internal class PSReadLineProxy
     {
         private const string FieldMemberType = "field";

@@ -2,12 +2,13 @@
 using System;
 using System.Linq.Expressions;
 using System.Management.Automation;
-using System.Management.Automation.Runspaces;
 using System.Reflection;
 using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 {
+    using System.Management.Automation.Runspaces;
+
     internal static class RunspaceExtensions
     {
         private static readonly Action<Runspace, ApartmentState> s_runspaceApartmentStateSetter;

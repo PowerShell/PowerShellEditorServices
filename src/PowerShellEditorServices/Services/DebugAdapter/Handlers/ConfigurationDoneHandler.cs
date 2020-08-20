@@ -10,7 +10,6 @@ using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
@@ -59,16 +58,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (!string.IsNullOrEmpty(_debugStateService.ScriptToLaunch))
             {
-                if (false)//_powerShellContextService.SessionState == PowerShellContextState.Ready)
-                {
-                    // Configuration is done, launch the script
-                    var nonAwaitedTask = LaunchScriptAsync(_debugStateService.ScriptToLaunch)
+                // TODO: ContinueWith on this task so that any errors can be handled
+                LaunchScriptAsync(_debugStateService.ScriptToLaunch)
                         .ConfigureAwait(continueOnCapturedContext: false);
-                }
-                else
-                {
-                    _logger.LogTrace("configurationDone request called after script was already launched, skipping it.");
-                }
             }
 
             if (_debugStateService.IsInteractiveDebugSession)

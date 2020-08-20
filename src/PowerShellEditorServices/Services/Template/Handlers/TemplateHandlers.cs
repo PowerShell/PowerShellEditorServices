@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 
-namespace Microsoft.PowerShell.EditorServices.Handlers
+namespace Microsoft.PowerShell.EditorServices.Services.Template
 {
     internal class TemplateHandlers : IGetProjectTemplatesHandler, INewProjectFromTemplateHandler
     {

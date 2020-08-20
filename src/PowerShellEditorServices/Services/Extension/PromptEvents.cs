@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
+namespace Microsoft.PowerShell.EditorServices.Services.Extension
 {
     internal class ShowChoicePromptRequest
     {

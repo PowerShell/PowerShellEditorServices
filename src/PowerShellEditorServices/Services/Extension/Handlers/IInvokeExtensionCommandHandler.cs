@@ -5,7 +5,7 @@ using MediatR;
 using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
-namespace Microsoft.PowerShell.EditorServices.Handlers
+namespace Microsoft.PowerShell.EditorServices.Services.Extension
 {
     [Serial, Method("powerShell/invokeExtensionCommand")]
     internal interface IInvokeExtensionCommandHandler : IJsonRpcNotificationHandler<InvokeExtensionCommandParams> { }
