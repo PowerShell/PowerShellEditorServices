@@ -7,9 +7,9 @@ using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Reflection;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Utility;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -17,7 +17,8 @@ using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
-using Microsoft.PowerShell.EditorServices.Utility;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -64,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// Gets a boolean that indicates whether the debugger is currently
         /// stopped at a breakpoint.
         /// </summary>
-        public bool IsDebuggerStopped => _executionService.IsDebuggerStopped;
+        public bool IsDebuggerStopped => _executionService.DebugContext.IsStopped;
 
         /// <summary>
         /// Gets the current DebuggerStoppedEventArgs when the debugger
@@ -113,9 +114,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _executionService = executionService;
             _breakpointService = breakpointService;
             _psesHost = psesHost;
-            _executionService.DebuggerStopped += this.OnDebuggerStopAsync;
-            _executionService.DebuggerResuming += this.OnDebuggerResuming;
-            _executionService.BreakpointUpdated += this.OnBreakpointUpdated;
+            _executionService.DebugContext.DebuggerStopped += this.OnDebuggerStopAsync;
+            _executionService.DebugContext.DebuggerResuming += this.OnDebuggerResuming;
+            _executionService.DebugContext.BreakpointUpdated += this.OnBreakpointUpdated;
 
             this.remoteFileManager = remoteFileManager;
 
@@ -142,10 +143,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             BreakpointDetails[] breakpoints,
             bool clearExisting = true)
         {
-            var dscBreakpoints =
-                this.powerShellContext
-                    .CurrentRunspace
-                    .GetCapability<DscBreakpointCapability>();
+            DscBreakpointCapability dscBreakpoints = _executionService.CurrentRunspace.DscBreakpointCapability;
 
             string scriptPath = scriptFile.FilePath;
             // Make sure we're using the remote script path
@@ -163,7 +161,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 string mappedPath =
                     this.remoteFileManager.GetMappedPath(
                         scriptPath,
-                        this.powerShellContext.CurrentRunspace);
+                        _executionService.CurrentRunspace);
 
                 scriptPath = mappedPath;
             }
@@ -179,8 +177,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // Fix for issue #123 - file paths that contain wildcard chars [ and ] need to
             // quoted and have those wildcard chars escaped.
-            string escapedScriptPath =
-                PowerShellContextService.WildcardEscapePath(scriptPath);
+            string escapedScriptPath = PathUtils.WildcardEscape(scriptPath);
 
             if (dscBreakpoints == null || !dscBreakpoints.IsDscResourcePath(escapedScriptPath))
             {
@@ -231,8 +228,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public void Continue()
         {
-            this.powerShellContext.ResumeDebugger(
-                DebuggerResumeAction.Continue);
+            _executionService.DebugContext.Continue();
         }
 
         /// <summary>
@@ -240,8 +236,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public void StepOver()
         {
-            this.powerShellContext.ResumeDebugger(
-                DebuggerResumeAction.StepOver);
+            _executionService.DebugContext.StepOver();
         }
 
         /// <summary>
@@ -249,8 +244,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public void StepIn()
         {
-            this.powerShellContext.ResumeDebugger(
-                DebuggerResumeAction.StepInto);
+            _executionService.DebugContext.StepInto();
         }
 
         /// <summary>
@@ -258,8 +252,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public void StepOut()
         {
-            this.powerShellContext.ResumeDebugger(
-                DebuggerResumeAction.StepOut);
+            _executionService.DebugContext.StepOut();
         }
 
         /// <summary>
@@ -269,8 +262,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public void Break()
         {
-            // Break execution in the debugger
-            this.powerShellContext.BreakExecution();
+            _executionService.DebugContext.BreakExecution();
         }
 
         /// <summary>
@@ -279,7 +271,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public void Abort()
         {
-            this.powerShellContext.AbortExecution(shouldAbortDebugSession: true);
+            _executionService.DebugContext.Abort();
         }
 
         /// <summary>
@@ -816,7 +808,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 // When debugging, this is the best way I can find to get what is likely the workspace root.
                 // This is controlled by the "cwd:" setting in the launch config.
-                string workspaceRootPath = this.powerShellContext.InitialWorkingDirectory;
+                string workspaceRootPath = _executionService.PowerShellContext.InitialWorkingDirectory;
 
                 this.stackFrameDetails[i] =
                     StackFrameDetails.Create(callStackFrames[i], autoVariables, localVariables, workspaceRootPath);
@@ -827,14 +819,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     this.stackFrameDetails[i].ScriptPath = scriptNameOverride;
                 }
-                else if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
-                    this.remoteFileManager != null &&
-                    !string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
+                else if (_executionService.CurrentRunspace.IsRemote()
+                    && this.remoteFileManager != null
+                    && !string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
                 {
                     this.stackFrameDetails[i].ScriptPath =
                         this.remoteFileManager.GetMappedPath(
                             stackFrameScriptPath,
-                            this.powerShellContext.CurrentRunspace);
+                            _executionService.CurrentRunspace);
                 }
             }
         }
@@ -896,9 +888,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                     this.temporaryScriptListingPath =
                         this.remoteFileManager.CreateTemporaryFile(
-                            $"[{this.powerShellContext.CurrentRunspace.SessionDetails.ComputerName}] {TemporaryScriptFileName}",
+                            $"[{_executionService.CurrentRunspace.SessionDetails.ComputerName}] {TemporaryScriptFileName}",
                             scriptListing,
-                            this.powerShellContext.CurrentRunspace);
+                            _executionService.CurrentRunspace);
 
                     localScriptPath =
                         this.temporaryScriptListingPath
@@ -918,14 +910,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // If this is a remote connection and the debugger stopped at a line
             // in a script file, get the file contents
-            if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
-                this.remoteFileManager != null &&
-                !noScriptName)
+            if (_executionService.CurrentRunspace.IsRemote()
+                && this.remoteFileManager != null
+                && !noScriptName)
             {
                 localScriptPath =
                     await this.remoteFileManager.FetchRemoteFileAsync(
                         e.InvocationInfo.ScriptName,
-                        powerShellContext.CurrentRunspace).ConfigureAwait(false);
+                        _executionService.CurrentRunspace).ConfigureAwait(false);
             }
 
             if (this.stackFrameDetails.Length > 0)
@@ -945,7 +937,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             this.CurrentDebuggerStoppedEventArgs =
                 new DebuggerStoppedEventArgs(
                     e,
-                    this.powerShellContext.CurrentRunspace,
+                    _executionService.CurrentRunspace,
                     localScriptPath);
 
             // Notify the host that the debugger is stopped
@@ -975,13 +967,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 // TODO: This could be either a path or a script block!
                 string scriptPath = lineBreakpoint.Script;
-                if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
-                    this.remoteFileManager != null)
+                if (_executionService.CurrentRunspace.IsRemote()
+                    && this.remoteFileManager != null)
                 {
                     string mappedPath =
                         this.remoteFileManager.GetMappedPath(
                             scriptPath,
-                            this.powerShellContext.CurrentRunspace);
+                            _executionService.CurrentRunspace);
 
                     if (mappedPath == null)
                     {

@@ -22,6 +22,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private PowerShellExecutionService _executionService;
 
+        private EngineIntrinsics _engineIntrinsics;
+
         #region Constructors
 
         #endregion
@@ -30,9 +32,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         public void RegisterExecutionDependencies(
             PowerShellExecutionService executionService,
+            EngineIntrinsics engineIntrinsics,
             PSReadLineProxy psrlProxy)
         {
             _executionService = executionService;
+            _engineIntrinsics = engineIntrinsics;
             _psrlProxy = psrlProxy;
         }
 
@@ -142,8 +146,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private string InvokePSReadLine(CancellationToken cancellationToken)
         {
-            EngineIntrinsics engineIntrinsics = _executionService.EditorServicesHost.IsRunspacePushed ? null : _executionService.EngineIntrinsics;
-            return _psrlProxy.ReadLine(_executionService.EditorServicesHost.Runspace, engineIntrinsics, cancellationToken);
+            EngineIntrinsics engineIntrinsics = _executionService.PowerShellContext.IsRunspacePushed ? null : _engineIntrinsics;
+            return _psrlProxy.ReadLine(_executionService.CurrentRunspace.Runspace, engineIntrinsics, cancellationToken);
         }
 
         /// <summary>

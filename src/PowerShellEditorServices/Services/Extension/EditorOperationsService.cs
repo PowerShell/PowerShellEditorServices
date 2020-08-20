@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.PowerShell.EditorServices.Extensions;
-using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -10,7 +9,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.PowerShell.EditorServices.Services
+namespace Microsoft.PowerShell.EditorServices.Services.Extension
 {
     internal class EditorOperationsService : IEditorOperations
     {
@@ -275,7 +274,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (warnUser)
             {
-                _executionService.EditorServicesHost.UI.WriteWarningLine(
+                _executionService.PowerShellContext.EditorServicesPSHost.UI.WriteWarningLine(
                     "Editor operations are not supported in temporary consoles. Re-run the command in the main PowerShell Intergrated Console.");
             }
 

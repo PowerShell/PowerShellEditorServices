@@ -90,7 +90,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 _logger.LogDebug("Old version of PackageManagement detected.");
 
-                if (_executionService.EditorServicesHost.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
+                if (_executionService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
                 {
                     _languageServer.Window.ShowWarning("You have an older version of PackageManagement known to cause issues with the PowerShell extension. Please run the following command in a new Windows PowerShell session and then restart the PowerShell extension: `Install-Module PackageManagement -Force -AllowClobber -MinimumVersion 1.4.6`");
                     return;

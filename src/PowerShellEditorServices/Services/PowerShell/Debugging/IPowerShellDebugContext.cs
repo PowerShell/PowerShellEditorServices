@@ -1,8 +1,5 @@
-﻿using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Management.Automation;
-using System.Text;
 using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
@@ -17,6 +14,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         CancellationToken OnResumeCancellationToken { get; }
 
+        public event Action<object, DebuggerStopEventArgs> DebuggerStopped;
+
+        public event Action<object, DebuggerResumingEventArgs> DebuggerResuming;
+
+        public event Action<object, BreakpointUpdatedEventArgs> BreakpointUpdated;
+
         void Continue();
 
         void StepOver();
@@ -25,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         void StepOut();
 
-        void Break();
+        void BreakExecution();
 
         void Abort();
     }

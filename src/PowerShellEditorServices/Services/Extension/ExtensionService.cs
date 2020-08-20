@@ -9,11 +9,10 @@ using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
-namespace Microsoft.PowerShell.EditorServices.Services
+namespace Microsoft.PowerShell.EditorServices.Services.Extension
 {
     /// <summary>
     /// Provides a high-level service which enables PowerShell scripts
