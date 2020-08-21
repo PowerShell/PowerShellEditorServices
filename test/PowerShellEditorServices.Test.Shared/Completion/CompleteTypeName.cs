@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
             CompletionDetails.Create(
                 "System.Collections.ArrayList",
                 CompletionType.Type,
-                string.join(Environment.NewLine + Environment.NewLine, s_systemcollectiontypes)
+                string.Join(Environment.NewLine + Environment.NewLine, s_systemcollectiontypes)
             );
     }
 }
