@@ -17,8 +17,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
             "System.Collections.CaseInsensitiveHashCodeProvider"
         };
 
-        public static readonly scriptregion SourceDetails =
-            new scriptregion(
+        public static readonly ScriptRegion SourceDetails =
+            new ScriptRegion(
                 file: TestUtilities.NormalizePath("Completion/CompletionExamples.psm1"),
                 text: string.Empty,
                 startLineNumber: 21,
