@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
             "System.Collections.BitArray",
             "System.Collections.CaseInsensitiveComparer",
             "System.Collections.CaseInsensitiveHashCodeProvider"
-        }
+        };
 
         public static readonly scriptregion SourceDetails =
             new scriptregion(
@@ -33,5 +33,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
                 "System.Collections.ArrayList",
                 CompletionType.Type,
                 string.join(Environment.NewLine + Environment.NewLine, s_systemcollectiontypes)
-            )
+            );
+    }
 }
