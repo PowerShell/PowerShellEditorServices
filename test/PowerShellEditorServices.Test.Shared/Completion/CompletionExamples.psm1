@@ -18,4 +18,4 @@ function Test-Completion {
 
 Get-ChildItem /
 
-[System.Collections.]
+[System.Collections.ArrayLi]

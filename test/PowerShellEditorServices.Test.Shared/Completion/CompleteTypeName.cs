@@ -10,13 +10,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
 {
     internal class CompleteTypeName
     {
-        private static readonly string[] s_systemcollectiontypes = {
-            "System.Collections.ArrayList",
-            "System.Collections.BitArray",
-            "System.Collections.CaseInsensitiveComparer",
-            "System.Collections.CaseInsensitiveHashCodeProvider"
-        };
-
         public static readonly ScriptRegion SourceDetails =
             new ScriptRegion(
                 file: TestUtilities.NormalizePath("Completion/CompletionExamples.psm1"),
@@ -30,9 +23,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
 
         public static readonly CompletionDetails ExpectedCompletion =
             CompletionDetails.Create(
-                "System.Collections.ArrayList",
+                "ArrayList",
                 CompletionType.Type,
-                string.Join(Environment.NewLine + Environment.NewLine, s_systemcollectiontypes)
+                "System.Collections.ArrayList"
             );
     }
 }
