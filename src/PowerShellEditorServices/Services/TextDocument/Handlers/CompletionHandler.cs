@@ -251,6 +251,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             switch (completionDetails.CompletionType)
             {
+                case CompletionType.Type:
                 case CompletionType.ParameterValue:
                 case CompletionType.Method:
                 case CompletionType.Property:
