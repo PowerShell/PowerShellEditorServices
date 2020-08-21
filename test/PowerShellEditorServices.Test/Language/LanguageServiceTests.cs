@@ -108,7 +108,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             );
 
             Assert.Equal(
-                CompleteTypeNameExpectedCompletion.CompletionType,
+                CompleteTypeName.ExpectedCompletion.CompletionType,
                 completionResults.Completions[0].CompletionType
             );
 
