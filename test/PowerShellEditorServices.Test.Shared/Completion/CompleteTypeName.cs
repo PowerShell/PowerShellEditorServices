@@ -3,7 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using System;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
@@ -15,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
                 file: TestUtilities.NormalizePath("Completion/CompletionExamples.psm1"),
                 text: string.Empty,
                 startLineNumber: 21,
-                startColumnNumber: 21,
+                startColumnNumber: 27,
                 startOffset: 0,
                 endLineNumber: 0,
                 endColumnNumber: 0,
