@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
                 file: TestUtilities.NormalizePath("Completion/CompletionExamples.psm1"),
                 text: string.Empty,
                 startLineNumber: 21,
-                startColumnNumber: 27,
+                startColumnNumber: 25,
                 startOffset: 0,
                 endLineNumber: 0,
                 endColumnNumber: 0,
