@@ -117,6 +117,29 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
         [Trait("Category", "Completions")]
         [Fact]
+        public async Task LanguageServiceCompletesNamespace()
+        {
+            CompletionResults completionResults =
+                await this.GetCompletionResults(
+                    CompleteNamespace.SourceDetails);
+
+            Assert.NotEmpty(completionResults.Completions);
+
+            Assert.Equal(
+                CompleteNamespace.ExpectedCompletion.CompletionText,
+                completionResults.Completions[0].CompletionText
+            );
+
+            Assert.Equal(
+                CompleteNamespace.ExpectedCompletion.CompletionType,
+                completionResults.Completions[0].CompletionType
+            );
+
+            Assert.NotNull(completionResults.Completions[0].ToolTipText);
+        }
+
+        [Trait("Category", "Completions")]
+        [Fact]
         public async Task LanguageServiceCompletesVariableInFile()
         {
             CompletionResults completionResults =
