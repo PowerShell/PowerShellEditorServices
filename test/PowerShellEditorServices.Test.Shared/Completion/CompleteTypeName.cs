@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
 
         public static readonly CompletionDetails ExpectedCompletion =
             CompletionDetails.Create(
-                "ArrayList",
+                "System.Collections.ArrayList",
                 CompletionType.Type,
                 "System.Collections.ArrayList"
             );
