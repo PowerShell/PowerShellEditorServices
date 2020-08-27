@@ -13,13 +13,14 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
-    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
+    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 
     internal class ConsoleReplRunner : IDisposable
     {
         private readonly ILogger _logger;
 
-        private PowerShellContext _pwshContext;
+        private readonly EditorServicesConsolePSHost _psesHost;
 
         private readonly PowerShellExecutionService _executionService;
 
@@ -30,18 +31,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
         // for the REPL command that's currently running.
         private readonly ConcurrentStack<CommandCancellation> _commandCancellationStack;
 
+        private readonly IReadLineProvider _readLineProvider;
+
         private ConsoleKeyInfo? _lastKey;
 
         private bool _exiting;
 
         public ConsoleReplRunner(
             ILoggerFactory loggerFactory,
-            PowerShellContext pwshContext,
+            EditorServicesConsolePSHost psesHost,
+            IReadLineProvider readLineProvider,
             PowerShellExecutionService executionService)
         {
             _logger = loggerFactory.CreateLogger<ConsoleReplRunner>();
             _replLoopTaskStack = new ConcurrentStack<ReplTask>();
             _commandCancellationStack = new ConcurrentStack<CommandCancellation>();
+            _psesHost = psesHost;
+            _readLineProvider = readLineProvider;
             _executionService = executionService;
             _exiting = false;
         }
@@ -51,8 +57,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             System.Console.CancelKeyPress += OnCancelKeyPress;
             System.Console.InputEncoding = Encoding.UTF8;
             System.Console.OutputEncoding = Encoding.UTF8;
-            _pwshContext.PSReadLineProxy.OverrideReadKey(ReadKey);
+            _readLineProvider.ReadLine.TryOverrideReadKey(ReadKey);
             PushNewReplTask();
+            _logger.LogInformation("REPL started");
         }
 
         public void Dispose()
@@ -117,7 +124,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                             if (currentCommandCancellation.CancellationSource.IsCancellationRequested
                                 || LastKeyWasCtrlC())
                             {
-                                _pwshContext.EditorServicesHost.UI.WriteLine();
+                                _psesHost.UI.WriteLine();
                             }
                             continue;
                         }
@@ -135,7 +142,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                     }
                     catch (Exception e)
                     {
-                        _pwshContext.EditorServicesHost.UI.WriteErrorLine($"An error occurred while running the REPL loop:{Environment.NewLine}{e}");
+                        _psesHost.UI.WriteErrorLine($"An error occurred while running the REPL loop:{Environment.NewLine}{e}");
                         _logger.LogError(e, "An error occurred while running the REPL loop");
                         break;
                     }
@@ -160,9 +167,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
         {
             string prompt = (await GetPromptOutputAsync(cancellationToken).ConfigureAwait(false)).FirstOrDefault() ?? "PS> ";
 
-            if (_pwshContext.EditorServicesHost.Runspace.RunspaceIsRemote)
+            if (_psesHost.CurrentRunspace.RunspaceOrigin != RunspaceOrigin.Local)
             {
-                prompt = _pwshContext.EditorServicesHost.Runspace.GetRemotePrompt(prompt);
+                prompt = _psesHost.Runspace.GetRemotePrompt(prompt);
             }
 
             return prompt;
@@ -180,12 +187,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private void WritePrompt(string promptString)
         {
-            _pwshContext.EditorServicesHost.UI.Write(promptString);
+            _psesHost.UI.Write(promptString);
         }
 
         private Task<string> InvokeReadLineAsync(CancellationToken cancellationToken)
         {
-            return _pwshContext.ReadLine.ReadCommandLineAsync(cancellationToken);
+            return _readLineProvider.ReadLine.ReadLineAsync(cancellationToken);
         }
 
         private Task InvokeInputAsync(string input, CancellationToken cancellationToken)

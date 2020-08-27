@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
     {
         private readonly ILogger _logger;
 
-        private readonly ConsoleReadLine _readLine;
+        private readonly IReadLineProvider _readLineProvider;
 
         private readonly PSHostUserInterface _underlyingHostUI;
 
@@ -23,11 +23,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public EditorServicesConsolePSHostUserInterface(
             ILoggerFactory loggerFactory,
-            ConsoleReadLine readLine,
+            IReadLineProvider readLineProvider,
             PSHostUserInterface underlyingHostUI)
         {
             _logger = loggerFactory.CreateLogger<EditorServicesConsolePSHostUserInterface>();
-            _readLine = readLine;
+            _readLineProvider = readLineProvider;
             _underlyingHostUI = underlyingHostUI;
             RawUI = new EditorServicesConsolePSHostRawUserInterface(loggerFactory, underlyingHostUI.RawUI);
 
@@ -84,12 +84,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public override string ReadLine()
         {
-            return _readLine.ReadCommandLineAsync(CancellationToken.None).GetAwaiter().GetResult();
+            return _readLineProvider.ReadLine.ReadLineAsync(CancellationToken.None).GetAwaiter().GetResult();
         }
 
         public override SecureString ReadLineAsSecureString()
         {
-            return _readLine.ReadSecureLineAsync(CancellationToken.None).GetAwaiter().GetResult();
+            return _readLineProvider.ReadLine.ReadSecureLineAsync(CancellationToken.None).GetAwaiter().GetResult();
         }
 
         public override void Write(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value)

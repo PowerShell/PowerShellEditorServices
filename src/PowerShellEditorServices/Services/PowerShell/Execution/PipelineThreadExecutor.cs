@@ -1,25 +1,19 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Management.Automation;
-using System.Management.Automation.Host;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using SMA = System.Management.Automation;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 {
-    using System.Management.Automation.Runspaces;
-    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
 
     internal class PipelineThreadExecutor
     {
@@ -32,6 +26,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         private readonly ILoggerFactory _loggerFactory;
 
         private readonly ILogger _logger;
+
+        private readonly EditorServicesConsolePSHost _psesHost;
+
+        private readonly PowerShellDebugContext _debugContext;
+
+        private readonly IReadLineProvider _readLineProvider;
 
         private readonly HostStartupInfo _hostInfo;
 
@@ -47,20 +47,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private readonly ReaderWriterLockSlim _taskProcessingLock;
 
-        private PowerShellContext _pwshContext;
-
-        private PowerShellDebugContext _debugContext;
-
-        private ConsoleReplRunner _consoleRepl;
-
         private bool _runIdleLoop;
 
         public PipelineThreadExecutor(
             ILoggerFactory loggerFactory,
-            HostStartupInfo hostInfo)
+            HostStartupInfo hostInfo,
+            EditorServicesConsolePSHost psesHost,
+            IReadLineProvider readLineProvider)
         {
             _logger = loggerFactory.CreateLogger<PipelineThreadExecutor>();
             _hostInfo = hostInfo;
+            _psesHost = psesHost;
+            _debugContext = psesHost.DebugContext;
+            _readLineProvider = readLineProvider;
 
             _pipelineThread = new Thread(Run)
             {
@@ -76,10 +75,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             _executionQueue.Add(synchronousTask);
             return synchronousTask.Task;
         }
-        public void Start(PowerShellContext pwshContext, ConsoleReplRunner consoleReplRunner)
+        public void Start()
         {
-            _pwshContext = pwshContext;
-            _consoleRepl = consoleReplRunner;
+            // We need to override the idle handler here,
+            // since readline will be overridden by this point
+            _readLineProvider.ReadLine.TryOverrideIdleHandler(OnPowerShellIdle);
             _pipelineThread.Start();
         }
 
@@ -97,7 +97,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         public void Dispose()
         {
             Stop();
-            _pwshContext.Dispose();
         }
 
         public IDisposable TakeTaskWriterLock()
@@ -112,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public void RunPowerShellLoop(PowerShellFrameType powerShellFrameType)
         {
-            using (CancellationScope cancellationScope = _loopCancellationContext.EnterScope(_pwshContext.CurrentCancellationSource.Token, _consumerThreadCancellationSource.Token))
+            using (CancellationScope cancellationScope = _loopCancellationContext.EnterScope(_psesHost.CurrentCancellationSource.Token, _consumerThreadCancellationSource.Token))
             {
                 try
                 {
@@ -122,7 +121,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                         return;
                     }
 
-                    _consoleRepl?.PushNewReplTask();
+                    _psesHost.PushNewReplTask();
 
                     if ((powerShellFrameType & PowerShellFrameType.Debug) != 0)
                     {
@@ -135,14 +134,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 finally
                 {
                     _runIdleLoop = false;
-                    _pwshContext.PopFrame();
+                    _psesHost.PopPowerShell();
                 }
             }
         }
 
         private void RunTopLevelConsumerLoop()
         {
-            using (CancellationScope cancellationScope = _loopCancellationContext.EnterScope(_pwshContext.CurrentCancellationSource.Token, _consumerThreadCancellationSource.Token))
+            using (CancellationScope cancellationScope = _loopCancellationContext.EnterScope(_psesHost.CurrentCancellationSource.Token, _consumerThreadCancellationSource.Token))
             {
                 try
                 {
@@ -253,7 +252,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             }
 
             _runIdleLoop = true;
-            _pwshContext.PushNonInteractivePowerShell();
+            _psesHost.PushNonInteractivePowerShell();
         }
 
         private struct TaskProcessingWriterLockLifetime : IDisposable

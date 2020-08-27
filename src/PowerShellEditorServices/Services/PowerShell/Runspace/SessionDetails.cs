@@ -8,25 +8,38 @@ using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
 {
+    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
+    using System.Linq;
+    using System.Management.Automation;
+
     /// <summary>
     /// Provides details about the current PowerShell session.
     /// </summary>
     internal class SessionDetails
     {
-        /// <summary>
-        /// Gets the process ID of the current process.
-        /// </summary>
-        public int? ProcessId { get; private set; }
+        private const string Property_ComputerName = "computerName";
+        private const string Property_ProcessId = "processId";
+        private const string Property_InstanceId = "instanceId";
 
         /// <summary>
-        /// Gets the name of the current computer.
+        /// Gets the PSCommand that gathers details from the
+        /// current session.
         /// </summary>
-        public string ComputerName { get; private set; }
+        /// <returns>A PSCommand used to gather session details.</returns>
+        public static SessionDetails GetFromPowerShell(PowerShell pwsh)
+        {
+            Hashtable detailsObject = pwsh
+                .AddScript(
+                    $"@{{ '{Property_ComputerName}' = if ([Environment]::MachineName) {{[Environment]::MachineName}}  else {{'localhost'}}; '{Property_ProcessId}' = $PID; '{Property_InstanceId}' = $host.InstanceId }}",
+                    useLocalScope: true)
+                .InvokeAndClear<Hashtable>()
+                .FirstOrDefault();
 
-        /// <summary>
-        /// Gets the current PSHost instance ID.
-        /// </summary>
-        public Guid? InstanceId { get; private set; }
+            return new SessionDetails(
+                (int)detailsObject[Property_ProcessId],
+                (string)detailsObject[Property_ComputerName],
+                (Guid?)detailsObject[Property_InstanceId]);
+        }
 
         /// <summary>
         /// Creates an instance of SessionDetails using the information
@@ -34,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
         /// PSCommand returned by GetDetailsCommand.
         /// </summary>
         /// <param name="detailsObject"></param>
-        protected SessionDetails(
+        public SessionDetails(
             int processId,
             string computerName,
             Guid? instanceId)
@@ -45,18 +58,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
         }
 
         /// <summary>
-        /// Gets the PSCommand that gathers details from the
-        /// current session.
+        /// Gets the process ID of the current process.
         /// </summary>
-        /// <returns>A PSCommand used to gather session details.</returns>
-        public static PSCommand GetDetailsCommand()
-        {
-            PSCommand infoCommand = new PSCommand();
-            infoCommand.AddScript(
-                "@{ 'computerName' = if ([Environment]::MachineName) {[Environment]::MachineName}  else {'localhost'}; 'processId' = $PID; 'instanceId' = $host.InstanceId }",
-                useLocalScope: true);
+        public int? ProcessId { get; }
 
-            return infoCommand;
-        }
+        /// <summary>
+        /// Gets the name of the current computer.
+        /// </summary>
+        public string ComputerName { get; }
+
+        /// <summary>
+        /// Gets the current PSHost instance ID.
+        /// </summary>
+        public Guid? InstanceId { get; }
     }
 }

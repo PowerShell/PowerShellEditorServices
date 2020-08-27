@@ -19,6 +19,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Window;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 using System.IO;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
@@ -28,8 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
         private readonly ConfigurationService _configurationService;
-        private readonly PowerShellContextService _powerShellContextService;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly EditorServicesConsolePSHost _psesHost;
         private readonly ILanguageServerFacade _languageServer;
         private DidChangeConfigurationCapability _capability;
         private bool _profilesLoaded;
@@ -41,16 +41,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             WorkspaceService workspaceService,
             AnalysisService analysisService,
             ConfigurationService configurationService,
-            PowerShellContextService powerShellContextService,
-            PowerShellExecutionService executionService,
-            ILanguageServerFacade languageServer)
+            ILanguageServerFacade languageServer,
+            EditorServicesConsolePSHost psesHost)
         {
             _logger = factory.CreateLogger<PsesConfigurationHandler>();
             _workspaceService = workspaceService;
             _configurationService = configurationService;
-            _powerShellContextService = powerShellContextService;
-            _executionService = executionService;
             _languageServer = languageServer;
+            _psesHost = psesHost;
 
             ConfigurationUpdated += analysisService.OnConfigurationUpdated;
         }
@@ -84,18 +82,21 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     && Directory.Exists(_configurationService.CurrentSettings.Cwd))
                 {
                     this._logger.LogTrace($"Setting CWD (from config) to {_configurationService.CurrentSettings.Cwd}");
-                    await _powerShellContextService.SetWorkingDirectoryAsync(
+                    await _psesHost.SetInitialWorkingDirectoryAsync(
                         _configurationService.CurrentSettings.Cwd,
-                        isPathAlreadyEscaped: false).ConfigureAwait(false);
+                        CancellationToken.None).ConfigureAwait(false);
 
-                } else if (_workspaceService.WorkspacePath != null
+                }
+                else if (_workspaceService.WorkspacePath != null
                     && Directory.Exists(_workspaceService.WorkspacePath))
                 {
                     this._logger.LogTrace($"Setting CWD (from workspace) to {_workspaceService.WorkspacePath}");
-                    await _powerShellContextService.SetWorkingDirectoryAsync(
+                    await _psesHost.SetInitialWorkingDirectoryAsync(
                         _workspaceService.WorkspacePath,
-                        isPathAlreadyEscaped: false).ConfigureAwait(false);
-                } else {
+                        CancellationToken.None).ConfigureAwait(false);
+                }
+                else
+                {
                     this._logger.LogTrace("Tried to set CWD but in bad state");
                 }
 
@@ -106,23 +107,27 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // - Profile loading is configured, AND
             //   - Profiles haven't been loaded before, OR
             //   - The profile loading configuration just changed
-            if (_configurationService.CurrentSettings.EnableProfileLoading
-                && (!this._profilesLoaded || !profileLoadingPreviouslyEnabled))
-            {
-                this._logger.LogTrace("Loading profiles...");
-                //await _executionService.LoadHostProfilesAsync().ConfigureAwait(false);
-                this._profilesLoaded = true;
-                this._logger.LogTrace("Loaded!");
-            }
+            bool loadProfiles = _configurationService.CurrentSettings.EnableProfileLoading
+                && (!_profilesLoaded || !profileLoadingPreviouslyEnabled);
 
-            // Wait until after profiles are loaded (or not, if that's the
-            // case) before starting the interactive console.
-            if (!this._consoleReplStarted)
+            if (!_psesHost.IsRunning)
             {
-                // Start the interactive terminal
-                this._logger.LogTrace("Starting command loop");
-                //_executionService.ConsoleReader.StartCommandLoop();
-                this._consoleReplStarted = true;
+                _logger.LogTrace("Starting command loop");
+
+                if (loadProfiles)
+                {
+                    _logger.LogTrace("Loading profiles...");
+                }
+
+                await _psesHost.StartAsync(new HostStartOptions
+                {
+                    LoadProfiles = loadProfiles,
+                }, CancellationToken.None).ConfigureAwait(false);
+
+                _consoleReplStarted = true;
+                _profilesLoaded = loadProfiles;
+
+                _logger.LogTrace("Loaded!");
             }
 
             // Run any events subscribed to configuration updates

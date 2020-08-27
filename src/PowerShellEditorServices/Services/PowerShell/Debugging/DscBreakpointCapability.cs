@@ -18,6 +18,7 @@ using System.Threading;
 using SMA = System.Management.Automation;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 {
@@ -88,13 +89,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         }
 
         public static async Task<DscBreakpointCapability> GetDscCapabilityAsync(
-            PowerShellExecutionService executionService,
             ILogger logger,
+            IRunspaceInfo currentRunspace,
+            PowerShellExecutionService executionService,
             CancellationToken cancellationToken)
         {
             // DSC support is enabled only for Windows PowerShell.
-            if ((executionService.CurrentRunspace.PowerShellVersionDetails.Version.Major >= 6) &&
-                (executionService.CurrentRunspace.RunspaceOrigin != RunspaceOrigin.DebuggedRunspace))
+            if ((currentRunspace.PowerShellVersionDetails.Version.Major >= 6) &&
+                (currentRunspace.RunspaceOrigin != RunspaceOrigin.DebuggedRunspace))
             {
                 return null;
             }
