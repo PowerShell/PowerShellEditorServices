@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using System;
 using System.Threading;
 using SMA = System.Management.Automation;
@@ -69,24 +70,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private readonly string _representation;
 
-        private readonly PowerShellContext _pwshContext;
+        private readonly EditorServicesConsolePSHost _psesHost;
 
         public SynchronousPSDelegateTask(
             ILogger logger,
-            PowerShellContext pwshContext,
+            EditorServicesConsolePSHost psesHost,
             Action<SMA.PowerShell, CancellationToken> action,
             string representation,
             CancellationToken cancellationToken)
             : base(logger, cancellationToken)
         {
-            _pwshContext = pwshContext;
+            _psesHost = psesHost;
             _action = action;
             _representation = representation;
         }
 
         public override object Run(CancellationToken cancellationToken)
         {
-            _action(_pwshContext.CurrentPowerShell, cancellationToken);
+            _action(_psesHost.CurrentPowerShell, cancellationToken);
             return null;
         }
 
@@ -102,24 +103,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private readonly string _representation;
 
-        private readonly PowerShellContext _pwshContext;
+        private readonly EditorServicesConsolePSHost _psesHost;
 
         public SynchronousPSDelegateTask(
             ILogger logger,
-            PowerShellContext pwshContext,
+            EditorServicesConsolePSHost psesHost,
             Func<SMA.PowerShell, CancellationToken, TResult> func,
             string representation,
             CancellationToken cancellationToken)
             : base(logger, cancellationToken)
         {
-            _pwshContext = pwshContext;
+            _psesHost = psesHost;
             _func = func;
             _representation = representation;
         }
 
         public override TResult Run(CancellationToken cancellationToken)
         {
-            return _func(_pwshContext.CurrentPowerShell, cancellationToken);
+            return _func(_psesHost.CurrentPowerShell, cancellationToken);
         }
 
         public override string ToString()

@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Management.Automation;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 {
     internal interface IPowerShellDebugContext
     {
         bool IsStopped { get; }
-
-        DscBreakpointCapability DscBreakpointCapability { get; }
 
         DebuggerStopEventArgs LastStopEventArgs { get; }
 
@@ -31,5 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         void BreakExecution();
 
         void Abort();
+
+        Task<DscBreakpointCapability> GetDscBreakpointCapabilityAsync(CancellationToken cancellationToken);
     }
 }

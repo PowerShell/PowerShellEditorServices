@@ -5,24 +5,30 @@ using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 {
-    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
+    using Microsoft.Extensions.Logging;
+    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
     using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+    using System.Threading.Tasks;
 
     internal class PowerShellDebugContext : IPowerShellDebugContext
     {
+        private readonly ILogger _logger;
+
         private readonly ILanguageServer _languageServer;
 
-        private readonly PowerShellContext _pwshContext;
+        private readonly EditorServicesConsolePSHost _psesHost;
 
         private readonly ConsoleReplRunner _consoleRepl;
 
         public PowerShellDebugContext(
+            ILoggerFactory loggerFactory,
             ILanguageServer languageServer,
-            PowerShellContext pwshContext,
+            EditorServicesConsolePSHost psesHost,
             ConsoleReplRunner consoleReplRunner)
         {
+            _logger = loggerFactory.CreateLogger<PowerShellDebugContext>();
             _languageServer = languageServer;
-            _pwshContext = pwshContext;
+            _psesHost = psesHost;
             _consoleRepl = consoleReplRunner;
         }
 
@@ -32,13 +38,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         public DscBreakpointCapability DscBreakpointCapability => throw new NotImplementedException();
 
-        public DebuggerStopEventArgs LastStopEventArgs { get; set; }
+        public DebuggerStopEventArgs LastStopEventArgs { get; private set; }
 
         public CancellationToken OnResumeCancellationToken => _debugLoopCancellationSource.Token;
 
         public event Action<object, DebuggerStopEventArgs> DebuggerStopped;
         public event Action<object, DebuggerResumingEventArgs> DebuggerResuming;
         public event Action<object, BreakpointUpdatedEventArgs> BreakpointUpdated;
+
+        public Task<DscBreakpointCapability> GetDscBreakpointCapabilityAsync(CancellationToken cancellationToken)
+        {
+            return _psesHost.CurrentRunspace.GetDscBreakpointCapabilityAsync(_logger, _psesHost.ExecutionService, cancellationToken);
+        }
 
         public void Abort()
         {
@@ -47,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         public void BreakExecution()
         {
-            _pwshContext.CurrentRunspace.Debugger.SetDebuggerStepMode(enabled: true);
+            _psesHost.Runspace.Debugger.SetDebuggerStepMode(enabled: true);
         }
 
         public void Continue()
@@ -101,20 +112,28 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
             IsStopped = false;
         }
 
+        public void ProcessDebuggerResult(DebuggerCommandResults debuggerResult)
+        {
+            if (debuggerResult.ResumeAction != null)
+            {
+                RaiseDebuggerResumingEvent(new DebuggerResumingEventArgs(debuggerResult.ResumeAction.Value));
+            }
+        }
+
+        public void HandleBreakpointUpdated(BreakpointUpdatedEventArgs breakpointUpdatedEventArgs)
+        {
+            BreakpointUpdated?.Invoke(this, breakpointUpdatedEventArgs);
+        }
+
         private void RaiseDebuggerStoppedEvent()
         {
             // TODO: Send language server message to start debugger
             DebuggerStopped?.Invoke(this, LastStopEventArgs);
         }
 
-        public void RaiseDebuggerResumingEvent(DebuggerResumingEventArgs debuggerResumingEventArgs)
+        private void RaiseDebuggerResumingEvent(DebuggerResumingEventArgs debuggerResumingEventArgs)
         {
             DebuggerResuming?.Invoke(this, debuggerResumingEventArgs);
-        }
-
-        public void HandleBreakpointUpdated(BreakpointUpdatedEventArgs breakpointUpdatedEventArgs)
-        {
-            BreakpointUpdated?.Invoke(this, breakpointUpdatedEventArgs);
         }
     }
 }

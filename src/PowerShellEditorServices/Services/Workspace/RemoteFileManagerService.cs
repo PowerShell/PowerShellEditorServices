@@ -8,7 +8,6 @@ using Microsoft.PowerShell.EditorServices.Services.Extension;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
-using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -33,6 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private ILogger logger;
         private string remoteFilesPath;
         private string processTempPath;
+        private readonly IRunspaceContext _runspaceContext;
         private readonly PowerShellExecutionService _executionService;
         private IEditorOperations editorOperations;
 
@@ -251,10 +251,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </param>
         public RemoteFileManagerService(
             ILoggerFactory factory,
+            IRunspaceContext runspaceContext,
             PowerShellExecutionService executionService,
             EditorOperationsService editorOperations)
         {
             this.logger = factory.CreateLogger<RemoteFileManagerService>();
+            _runspaceContext = runspaceContext;
             _executionService = executionService;
             //this.powerShellContext.RunspaceChanged += HandleRunspaceChangedAsync;
 
@@ -524,7 +526,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             // Close any remote files that were opened
-            if (e.PreviousRunspace.IsRemote() &&
+            if (e.PreviousRunspace.IsOnRemoteMachine &&
                 (e.ChangeAction == RunspaceChangeAction.Shutdown ||
                  !string.Equals(
                      e.NewRunspace.SessionDetails.ComputerName,
@@ -559,7 +561,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         string remoteFilePath = args.SourceArgs[0] as string;
 
                         // Is this a local process runspace?  Treat as a local file
-                        if (_executionService.CurrentRunspace.RunspaceOrigin == RunspaceOrigin.Local)
+                        if (!_runspaceContext.CurrentRunspace.IsOnRemoteMachine)
                         {
                             localFilePath = remoteFilePath;
                         }
@@ -592,7 +594,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                                     this.StoreRemoteFile(
                                         remoteFilePath,
                                         fileContent,
-                                        _executionService.CurrentRunspace);
+                                        _runspaceContext.CurrentRunspace);
                             }
                             else
                             {
@@ -622,35 +624,37 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void RegisterPSEditFunction(IRunspaceInfo runspaceInfo)
         {
-            if (runspaceInfo.IsRemote())
+            if (!runspaceInfo.IsOnRemoteMachine)
             {
-                try
+                return;
+            }
+
+            try
+            {
+                runspaceInfo.Runspace.Events.ReceivedEvents.PSEventReceived += HandlePSEventReceivedAsync;
+
+                PSCommand createCommand = new PSCommand();
+                createCommand
+                    .AddScript(CreatePSEditFunctionScript)
+                    .AddParameter("PSEditModule", PSEditModule);
+
+                if (runspaceInfo.RunspaceOrigin == RunspaceOrigin.DebuggedRunspace)
                 {
-                    runspaceInfo.Runspace.Events.ReceivedEvents.PSEventReceived += HandlePSEventReceivedAsync;
-
-                    PSCommand createCommand = new PSCommand();
-                    createCommand
-                        .AddScript(CreatePSEditFunctionScript)
-                        .AddParameter("PSEditModule", PSEditModule);
-
-                    if (runspaceInfo.RunspaceOrigin == RunspaceOrigin.DebuggedRunspace)
+                    _executionService.ExecutePSCommandAsync(createCommand, new PowerShellExecutionOptions(), CancellationToken.None).GetAwaiter().GetResult();
+                }
+                else
+                {
+                    using (var powerShell = System.Management.Automation.PowerShell.Create())
                     {
-                        _executionService.ExecutePSCommandAsync(createCommand, new PowerShellExecutionOptions(), CancellationToken.None).GetAwaiter().GetResult();
-                    }
-                    else
-                    {
-                        using (var powerShell = System.Management.Automation.PowerShell.Create())
-                        {
-                            powerShell.Runspace = runspaceInfo.Runspace;
-                            powerShell.Commands = createCommand;
-                            powerShell.Invoke();
-                        }
+                        powerShell.Runspace = runspaceInfo.Runspace;
+                        powerShell.Commands = createCommand;
+                        powerShell.Invoke();
                     }
                 }
-                catch (RemoteException e)
-                {
-                    this.logger.LogException("Could not create psedit function.", e);
-                }
+            }
+            catch (RemoteException e)
+            {
+                this.logger.LogException("Could not create psedit function.", e);
             }
         }
 

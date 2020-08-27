@@ -10,34 +10,58 @@ using System.Threading.Tasks;
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
     using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
     using System;
     using System.Collections.Generic;
     using System.Management.Automation;
     using System.Management.Automation.Language;
+    using System.Runtime.CompilerServices;
     using System.Security;
 
-    internal class ConsoleReadLine
+    internal class ConsoleReadLine : IReadLine
     {
-        private PSReadLineProxy _psrlProxy;
+        private readonly PSReadLineProxy _psrlProxy;
 
-        private PowerShellExecutionService _executionService;
+        private readonly EditorServicesConsolePSHost _psesHost;
 
-        private EngineIntrinsics _engineIntrinsics;
+        private readonly PowerShellExecutionService _executionService;
+
+        private readonly EngineIntrinsics _engineIntrinsics;
 
         #region Constructors
+
+        public ConsoleReadLine(
+            PSReadLineProxy psrlProxy,
+            EditorServicesConsolePSHost psesHost,
+            PowerShellExecutionService executionService,
+            EngineIntrinsics engineIntrinsics)
+        {
+            _psrlProxy = psrlProxy;
+            _psesHost = psesHost;
+            _executionService = executionService;
+            _engineIntrinsics = engineIntrinsics;
+        }
 
         #endregion
 
         #region Public Methods
 
-        public void RegisterExecutionDependencies(
-            PowerShellExecutionService executionService,
-            EngineIntrinsics engineIntrinsics,
-            PSReadLineProxy psrlProxy)
+        public Task<string> ReadLineAsync(CancellationToken cancellationToken) => ReadLineAsync(isCommandLine: true, cancellationToken);
+
+        public string ReadLine() => ReadLineAsync(CancellationToken.None).GetAwaiter().GetResult();
+
+        public SecureString ReadSecureLine() => ReadSecureLineAsync(CancellationToken.None).GetAwaiter().GetResult();
+
+        public bool TryOverrideReadKey(Func<bool, ConsoleKeyInfo> readKeyFunc)
         {
-            _executionService = executionService;
-            _engineIntrinsics = engineIntrinsics;
-            _psrlProxy = psrlProxy;
+            _psrlProxy.OverrideReadKey(readKeyFunc);
+            return true;
+        }
+
+        public bool TryOverrideIdleHandler(Action idleHandler)
+        {
+            _psrlProxy.OverrideIdleHandler(idleHandler);
+            return true;
         }
 
         public Task<string> ReadCommandLineAsync(CancellationToken cancellationToken)
@@ -146,8 +170,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private string InvokePSReadLine(CancellationToken cancellationToken)
         {
-            EngineIntrinsics engineIntrinsics = _executionService.PowerShellContext.IsRunspacePushed ? null : _engineIntrinsics;
-            return _psrlProxy.ReadLine(_executionService.CurrentRunspace.Runspace, engineIntrinsics, cancellationToken);
+            EngineIntrinsics engineIntrinsics = _psesHost.IsRunspacePushed ? null : _engineIntrinsics;
+            return _psrlProxy.ReadLine(_psesHost.Runspace, engineIntrinsics, cancellationToken);
         }
 
         /// <summary>

@@ -6,10 +6,12 @@ using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Server;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 
@@ -23,10 +25,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly DebugStateService _debugStateService;
         private readonly DebugEventHandlerService _debugEventHandlerService;
         private readonly PsesDebugServer _psesDebugServer;
+        private readonly IRunspaceContext _runspaceContext;
 
         public DisconnectHandler(
             ILoggerFactory factory,
             PsesDebugServer psesDebugServer,
+            IRunspaceContext runspaceContext,
             PowerShellExecutionService executionService,
             DebugService debugService,
             DebugStateService debugStateService,
@@ -34,6 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             _logger = factory.CreateLogger<DisconnectHandler>();
             _psesDebugServer = psesDebugServer;
+            _runspaceContext = runspaceContext;
             _executionService = executionService;
             _debugService = debugService;
             _debugStateService = debugStateService;
@@ -51,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 if (_debugStateService.IsInteractiveDebugSession && _debugStateService.IsAttachSession)
                 {
                     // Pop the sessions
-                    if (_executionService.CurrentRunspace.RunspaceOrigin == RunspaceOrigin.EnteredProcess)
+                    if (_runspaceContext.CurrentRunspace.RunspaceOrigin == RunspaceOrigin.EnteredProcess)
                     {
                         try
                         {
@@ -61,7 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                                 CancellationToken.None).ConfigureAwait(false);
 
                             if (_debugStateService.IsRemoteAttach &&
-                                _executionService.CurrentRunspace.IsRemote())
+                                _runspaceContext.CurrentRunspace.RunspaceOrigin == RunspaceOrigin.EnteredProcess)
                             {
                                 await _executionService.ExecutePSCommandAsync(
                                     new PSCommand().AddCommand("Exit-PSSession"),

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -25,6 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     {
         const int DefaultWaitTimeoutMilliseconds = 5000;
         private readonly ILogger _logger;
+        private readonly IRunspaceContext _runspaceContext;
         private readonly PowerShellExecutionService _executionService;
         private readonly WorkspaceService _workspaceService;
         private CompletionResults _mostRecentCompletions;
@@ -37,10 +39,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public PsesCompletionHandler(
             ILoggerFactory factory,
+            IRunspaceContext runspaceContext,
             PowerShellExecutionService executionService,
             WorkspaceService workspaceService)
         {
             _logger = factory.CreateLogger<PsesCompletionHandler>();
+            _runspaceContext = runspaceContext;
             _executionService = executionService;
             _workspaceService = workspaceService;
         }
@@ -109,6 +113,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             CommandInfo commandInfo =
                 await CommandHelpers.GetCommandInfoAsync(
                     request.Label,
+                    _runspaceContext.CurrentRunspace,
                     _executionService).ConfigureAwait(false);
 
             if (commandInfo != null)

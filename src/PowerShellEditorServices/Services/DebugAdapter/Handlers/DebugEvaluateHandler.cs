@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
@@ -16,15 +17,18 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class DebugEvaluateHandler : IEvaluateHandler
     {
         private readonly ILogger _logger;
+        private readonly IPowerShellDebugContext _debugContext;
         private readonly PowerShellExecutionService _executionService;
         private readonly DebugService _debugService;
 
         public DebugEvaluateHandler(
             ILoggerFactory factory,
+            IPowerShellDebugContext debugContext,
             PowerShellExecutionService executionService,
             DebugService debugService)
         {
             _logger = factory.CreateLogger<DebugEvaluateHandler>();
+            _debugContext = debugContext;
             _executionService = executionService;
             _debugService = debugService;
         }
@@ -54,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 // VS Code might send this request after the debugger
                 // has been resumed, return an empty result in this case.
-                if (_executionService.DebugContext.IsStopped)
+                if (_debugContext.IsStopped)
                 {
                     // First check to see if the watch expression refers to a naked variable reference.
                     result =
