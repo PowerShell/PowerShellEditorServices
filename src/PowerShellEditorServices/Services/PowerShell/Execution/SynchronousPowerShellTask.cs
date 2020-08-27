@@ -1,11 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Management.Automation;
-using System.Management.Automation.Host;
 using System.Management.Automation.Remoting;
 using System.Threading;
 using SMA = System.Management.Automation;
@@ -16,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
     {
         private readonly ILogger _logger;
 
-        private readonly PowerShellContext _pwshContext;
+        private readonly EditorServicesConsolePSHost _psesHost;
 
         private readonly PSCommand _psCommand;
 
@@ -24,30 +23,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private SMA.PowerShell _pwsh;
 
-        private PSHost _psHost;
-
         public SynchronousPowerShellTask(
             ILogger logger,
-            PowerShellContext pwshContext,
+            EditorServicesConsolePSHost psesHost,
             PSCommand command,
             PowerShellExecutionOptions executionOptions,
             CancellationToken cancellationToken)
             : base(logger, cancellationToken)
         {
             _logger = logger;
-            _pwshContext = pwshContext;
+            _psesHost = psesHost;
             _psCommand = command;
             _executionOptions = executionOptions;
         }
 
         public override IReadOnlyList<TResult> Run(CancellationToken cancellationToken)
         {
-            _pwsh = _pwshContext.CurrentPowerShell;
-            _psHost = _pwshContext.EditorServicesPSHost;
+            _pwsh = _psesHost.CurrentPowerShell;
 
             if (_executionOptions.WriteInputToHost)
             {
-                _psHost.UI.WriteLine(_psCommand.GetInvocationText());
+                _psesHost.UI.WriteLine(_psCommand.GetInvocationText());
             }
 
             return !_executionOptions.NoDebuggerExecution && _pwsh.Runspace.Debugger.InBreakpoint
@@ -120,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                     {
                         for (int i = args.Index; i < outputCollection.Count; i++)
                         {
-                            _psHost.UI.WriteLine(outputCollection[i].ToString());
+                            _psesHost.UI.WriteLine(outputCollection[i].ToString());
                         }
                     };
             }
@@ -150,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                     {
                         for (int i = args.Index; i < outputCollection.Count; i++)
                         {
-                            _psHost.UI.WriteLine(outputCollection[i].ToString());
+                            _psesHost.UI.WriteLine(outputCollection[i].ToString());
                         }
                     };
 
@@ -168,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 }
             }
 
-            _pwshContext.ProcessDebuggerResult(debuggerResult);
+            _psesHost.DebugContext.ProcessDebuggerResult(debuggerResult);
 
             // Optimisation to save wasted computation if we're going to throw the output away anyway
             if (_executionOptions.WriteOutputToHost)
@@ -210,9 +206,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 {
                     if (object.Equals(output?.BaseObject, false))
                     {
-                        _pwshContext.ProcessDebuggerResult(new DebuggerCommandResults(DebuggerResumeAction.Stop, evaluatedByDebugger: true));
+                        _psesHost.DebugContext.ProcessDebuggerResult(new DebuggerCommandResults(DebuggerResumeAction.Stop, evaluatedByDebugger: true));
                         _logger.LogWarning("Cancelling debug session due to remote command cancellation causing the end of remote debugging session");
-                        _psHost.UI.WriteWarningLine("Debug session aborted by command cancellation. This is a known issue in the Windows PowerShell 5.1 remoting system.");
+                        _psesHost.UI.WriteWarningLine("Debug session aborted by command cancellation. This is a known issue in the Windows PowerShell 5.1 remoting system.");
                     }
                 }
             }

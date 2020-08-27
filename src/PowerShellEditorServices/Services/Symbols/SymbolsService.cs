@@ -18,6 +18,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.CodeLenses;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -34,6 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         #region Private Fields
 
         private readonly ILogger _logger;
+        private readonly IRunspaceContext _runspaceContext;
         private readonly PowerShellExecutionService _executionService;
         private readonly WorkspaceService _workspaceService;
 
@@ -51,11 +54,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="factory">An ILoggerFactory implementation used for writing log messages.</param>
         public SymbolsService(
             ILoggerFactory factory,
+            IRunspaceContext runspaceContext,
             PowerShellExecutionService executionService,
             WorkspaceService workspaceService,
             ConfigurationService configurationService)
         {
             _logger = factory.CreateLogger<SymbolsService>();
+            _runspaceContext = runspaceContext;
             _executionService = executionService;
             _workspaceService = workspaceService;
 
@@ -322,6 +327,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             symbolReference.FilePath = scriptFile.FilePath;
             SymbolDetails symbolDetails = await SymbolDetails.CreateAsync(
                 symbolReference,
+                _runspaceContext.CurrentRunspace,
                 _executionService).ConfigureAwait(false);
 
             return symbolDetails;
@@ -357,6 +363,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             CommandInfo commandInfo =
                 await CommandHelpers.GetCommandInfoAsync(
                     foundSymbol.SymbolName,
+                    _runspaceContext.CurrentRunspace,
                     _executionService).ConfigureAwait(false);
 
             if (commandInfo == null)
@@ -473,6 +480,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 CommandInfo cmdInfo =
                     await CommandHelpers.GetCommandInfoAsync(
                         foundSymbol.SymbolName,
+                        _runspaceContext.CurrentRunspace,
                         _executionService).ConfigureAwait(false);
 
                 foundDefinition =

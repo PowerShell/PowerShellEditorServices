@@ -13,6 +13,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -25,17 +27,20 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private static readonly Version s_desiredPackageManagementVersion = new Version(1, 4, 6);
 
         private readonly ILogger<GetVersionHandler> _logger;
+        private IRunspaceContext _runspaceContext;
         private readonly PowerShellExecutionService _executionService;
         private readonly ILanguageServer _languageServer;
         private readonly ConfigurationService _configurationService;
 
         public GetVersionHandler(
             ILoggerFactory factory,
+            IRunspaceContext runspaceContext,
             PowerShellExecutionService executionService,
             ILanguageServer languageServer,
             ConfigurationService configurationService)
         {
             _logger = factory.CreateLogger<GetVersionHandler>();
+            _runspaceContext = runspaceContext;
             _executionService = executionService;
             _languageServer = languageServer;
             _configurationService = configurationService;
@@ -92,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 _logger.LogDebug("Old version of PackageManagement detected.");
 
-                if (_executionService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
+                if (_runspaceContext.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
                 {
                     _languageServer.Window.ShowWarning("You have an older version of PackageManagement known to cause issues with the PowerShell extension. Please run the following command in a new Windows PowerShell session and then restart the PowerShell extension: `Install-Module PackageManagement -Force -AllowClobber -MinimumVersion 1.4.6`");
                     return;

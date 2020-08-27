@@ -8,13 +8,13 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using System;
 using System.Collections;
 using System.Linq;
-using System.Management.Automation;
-using System.Management.Automation.Runspaces;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
 {
+    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
+    using System.Management.Automation;
+
     /// <summary>
     /// Defines the possible enumeration values for the PowerShell process architecture.
     /// </summary>
@@ -94,10 +94,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
         /// <summary>
         /// Gets the PowerShell version details for the given runspace.
         /// </summary>
-        /// <param name="runspace">The runspace for which version details will be gathered.</param>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         /// <returns>A new PowerShellVersionDetails instance.</returns>
-        public static async Task<PowerShellVersionDetails> GetVersionDetailsAsync(ILogger logger, PowerShellExecutionService executionService, CancellationToken cancellationToken)
+        public static PowerShellVersionDetails GetVersionDetails(ILogger logger, PowerShell pwsh)
         {
             Version powerShellVersion = new Version(5, 0);
             string versionString = null;
@@ -108,11 +107,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
             {
                 var psVersionTableCommand = new PSCommand().AddScript("$PSVersionTable", useLocalScope: true);
 
-                Hashtable psVersionTable = (await executionService.ExecutePSCommandAsync<Hashtable>(
-                        psVersionTableCommand,
-                        new PowerShellExecutionOptions(),
-                        cancellationToken)
-                    .ConfigureAwait(false))
+                Hashtable psVersionTable = pwsh
+                    .AddScript("$PSVersionTable", useLocalScope: true)
+                    .InvokeAndClear<Hashtable>()
                     .FirstOrDefault();
 
                 if (psVersionTable != null)
@@ -149,11 +146,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
 
                     var procArchCommand = new PSCommand().AddScript("$env:PROCESSOR_ARCHITECTURE", useLocalScope: true);
 
-                    string arch = (await executionService.ExecutePSCommandAsync<string>(
-                            procArchCommand,
-                            new PowerShellExecutionOptions(),
-                            cancellationToken)
-                        .ConfigureAwait(false))
+                    string arch = pwsh
+                        .AddScript("$env:PROCESSOR_ARCHITECTURE", useLocalScope: true)
+                        .InvokeAndClear<string>()
                         .FirstOrDefault();
 
                     if (arch != null)

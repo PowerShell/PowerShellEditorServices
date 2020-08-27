@@ -66,10 +66,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         /// <returns>A CommandInfo object with details about the specified command.</returns>
         public static async Task<CommandInfo> GetCommandInfoAsync(
             string commandName,
+            IRunspaceInfo currentRunspace,
             PowerShellExecutionService executionService)
         {
             // This mechanism only works in-process
-            if (executionService.CurrentRunspace.IsRemote())
+            if (currentRunspace.RunspaceOrigin != RunspaceOrigin.Local)
             {
                 return null;
             }

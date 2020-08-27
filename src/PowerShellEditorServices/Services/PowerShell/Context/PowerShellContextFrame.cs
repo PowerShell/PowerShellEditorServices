@@ -1,4 +1,5 @@
-﻿using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using System;
 using System.Threading;
 using SMA = System.Management.Automation;
@@ -7,16 +8,30 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
 {
     internal class PowerShellContextFrame : IDisposable
     {
+        public static PowerShellContextFrame CreateForPowerShellInstance(
+            ILogger logger,
+            SMA.PowerShell pwsh,
+            RunspaceOrigin runspaceOrigin,
+            PowerShellFrameType frameType,
+            string localComputerName)
+        {
+            var runspaceInfo = RunspaceInfo.CreateFromPowerShell(logger, pwsh, runspaceOrigin, localComputerName);
+            return new PowerShellContextFrame(pwsh, runspaceInfo, frameType);
+        }
+
         private bool disposedValue;
 
-        public PowerShellContextFrame(SMA.PowerShell powerShell, PowerShellFrameType frameType, CancellationTokenSource cancellationTokenSource)
+        public PowerShellContextFrame(SMA.PowerShell powerShell, RunspaceInfo runspaceInfo, PowerShellFrameType frameType)
         {
             PowerShell = powerShell;
+            RunspaceInfo = runspaceInfo;
             FrameType = frameType;
-            CancellationTokenSource = cancellationTokenSource;
+            CancellationTokenSource = new CancellationTokenSource();
         }
 
         public SMA.PowerShell PowerShell { get; }
+
+        public RunspaceInfo RunspaceInfo { get; }
 
         public PowerShellFrameType FrameType { get; }
 

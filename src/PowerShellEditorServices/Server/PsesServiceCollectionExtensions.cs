@@ -12,6 +12,9 @@ using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Extension;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Services.Template;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
@@ -25,12 +28,18 @@ namespace Microsoft.PowerShell.EditorServices.Server
         {
             return collection.AddSingleton<WorkspaceService>()
                 .AddSingleton<SymbolsService>()
-                .AddSingleton<ConfigurationService>()
-                .AddSingleton<PowerShellExecutionService>(
-                    (provider) => PowerShellExecutionService.CreateAndStart(
+                .AddSingleton<EditorServicesConsolePSHost>(
+                    (provider) => EditorServicesConsolePSHost.Create(
                         provider.GetService<ILoggerFactory>(),
                         provider.GetService<ILanguageServer>(),
                         hostStartupInfo))
+                .AddSingleton<IRunspaceContext>(
+                    (provider) => provider.GetService<EditorServicesConsolePSHost>())
+                .AddSingleton<PowerShellExecutionService>(
+                    (provider) => provider.GetService<EditorServicesConsolePSHost>().ExecutionService)
+                .AddSingleton<ConfigurationService>()
+                .AddSingleton<IPowerShellDebugContext>(
+                    (provider) => provider.GetService<EditorServicesConsolePSHost>().DebugContext)
                 .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<RemoteFileManagerService>()

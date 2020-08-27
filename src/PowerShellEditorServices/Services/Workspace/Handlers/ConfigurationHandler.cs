@@ -16,6 +16,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 using System.IO;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -24,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
         private readonly ConfigurationService _configurationService;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly EditorServicesConsolePSHost _psesHost;
         private DidChangeConfigurationCapability _capability;
         private bool _profilesLoaded;
         private bool _consoleReplStarted;
@@ -35,12 +36,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             WorkspaceService workspaceService,
             AnalysisService analysisService,
             ConfigurationService configurationService,
-            PowerShellExecutionService executionService)
+            EditorServicesConsolePSHost psesHost)
         {
             _logger = factory.CreateLogger<PsesConfigurationHandler>();
             _workspaceService = workspaceService;
             _configurationService = configurationService;
-            _executionService = executionService;
+            _psesHost = psesHost;
 
             ConfigurationUpdated += analysisService.OnConfigurationUpdated;
         }
@@ -74,36 +75,27 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 if (!string.IsNullOrEmpty(_configurationService.CurrentSettings.Cwd)
                     && Directory.Exists(_configurationService.CurrentSettings.Cwd))
                 {
-                    await _powerShellContextService.SetWorkingDirectoryAsync(
+                    await _psesHost.SetInitialWorkingDirectoryAsync(
                         _configurationService.CurrentSettings.Cwd,
-                        isPathAlreadyEscaped: false).ConfigureAwait(false);
+                        CancellationToken.None).ConfigureAwait(false);
 
                 } else if (_workspaceService.WorkspacePath != null
                     && Directory.Exists(_workspaceService.WorkspacePath))
                 {
-                    await _powerShellContextService.SetWorkingDirectoryAsync(
+                    await _psesHost.SetInitialWorkingDirectoryAsync(
                         _workspaceService.WorkspacePath,
-                        isPathAlreadyEscaped: false).ConfigureAwait(false);
+                        CancellationToken.None).ConfigureAwait(false);
                 }
 
                 this._cwdSet = true;
             }
 
-            if (!this._profilesLoaded &&
-                _configurationService.CurrentSettings.EnableProfileLoading &&
-                oldLoadProfiles != _configurationService.CurrentSettings.EnableProfileLoading)
+            if (!_psesHost.IsRunning)
             {
-                //await _executionService.LoadHostProfilesAsync().ConfigureAwait(false);
-                this._profilesLoaded = true;
-            }
-
-            // Wait until after profiles are loaded (or not, if that's the
-            // case) before starting the interactive console.
-            if (!this._consoleReplStarted)
-            {
-                // Start the interactive terminal
-                //_executionService.ConsoleReader.StartCommandLoop();
-                this._consoleReplStarted = true;
+                await _psesHost.StartAsync(new HostStartOptions
+                {
+                    LoadProfiles = _configurationService.CurrentSettings.EnableProfileLoading,
+                }, CancellationToken.None).ConfigureAwait(false);
             }
 
             // Run any events subscribed to configuration updates

@@ -4,6 +4,7 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System;
@@ -15,53 +16,23 @@ using SMA = System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 {
-    internal class PowerShellExecutionService : IDisposable
+    internal class PowerShellExecutionService
     {
-        public static PowerShellExecutionService CreateAndStart(
-            ILoggerFactory loggerFactory,
-            ILanguageServer languageServer,
-            HostStartupInfo hostInfo)
-        {
-            var executionService = new PowerShellExecutionService(
-                loggerFactory,
-                hostInfo,
-                languageServer);
-
-            executionService._pipelineExecutor.Start(executionService._pwshContext, executionService._consoleRepl);
-            executionService._consoleRepl?.StartRepl();
-
-            return executionService;
-        }
-
         private readonly ILogger _logger;
 
-        private readonly PowerShellContext _pwshContext;
+        private readonly EditorServicesConsolePSHost _psesHost;
 
         private readonly PipelineThreadExecutor _pipelineExecutor;
 
-        private readonly ConsoleReplRunner _consoleRepl;
-
-        private PowerShellExecutionService(
+        public PowerShellExecutionService(
             ILoggerFactory loggerFactory,
-            HostStartupInfo hostInfo,
-            ILanguageServer languageServer)
+            EditorServicesConsolePSHost psesHost,
+            PipelineThreadExecutor pipelineExecutor)
         {
             _logger = loggerFactory.CreateLogger<PowerShellExecutionService>();
-            _pipelineExecutor = new PipelineThreadExecutor(loggerFactory, hostInfo);
-            _pwshContext = new PowerShellContext(loggerFactory, hostInfo, languageServer, this, _pipelineExecutor);
-
-            // TODO: Fix this
-            if (hostInfo.ConsoleReplEnabled)
-            {
-                _consoleRepl = new ConsoleReplRunner(loggerFactory, _pwshContext, this);
-            }
+            _psesHost = psesHost;
+            _pipelineExecutor = pipelineExecutor;
         }
-
-        public IPowerShellDebugContext DebugContext => _pwshContext.DebugContext;
-
-        public IRunspaceInfo CurrentRunspace => _pwshContext.RunspaceContext;
-
-        public IPowerShellContext PowerShellContext => _pwshContext;
 
         public Action<object, RunspaceChangedEventArgs> RunspaceChanged;
 
@@ -70,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             string representation,
             CancellationToken cancellationToken)
         {
-            return QueueTask(new SynchronousPSDelegateTask<TResult>(_logger, _pwshContext, func, representation, cancellationToken));
+            return QueueTask(new SynchronousPSDelegateTask<TResult>(_logger, _psesHost, func, representation, cancellationToken));
         }
 
         public Task ExecuteDelegateAsync(
@@ -78,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             string representation,
             CancellationToken cancellationToken)
         {
-            return QueueTask(new SynchronousPSDelegateTask(_logger, _pwshContext, action, representation, cancellationToken));
+            return QueueTask(new SynchronousPSDelegateTask(_logger, _psesHost, action, representation, cancellationToken));
         }
 
         public Task<TResult> ExecuteDelegateAsync<TResult>(
@@ -104,14 +75,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         {
             Task<IReadOnlyList<TResult>> result = QueueTask(new SynchronousPowerShellTask<TResult>(
                 _logger,
-                _pwshContext,
+                _psesHost,
                 psCommand,
                 executionOptions,
                 cancellationToken));
 
             if (executionOptions.InterruptCommandPrompt)
             {
-                _consoleRepl.CancelCurrentPrompt();
+                _psesHost.CancelCurrentPrompt();
             }
 
             return result;
@@ -125,13 +96,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         public void CancelCurrentTask()
         {
             _pipelineExecutor.CancelCurrentTask();
-        }
-
-        public void Dispose()
-        {
-            _pipelineExecutor.Dispose();
-            _consoleRepl.Dispose();
-            _pwshContext.Dispose();
         }
 
         private Task<T> QueueTask<T>(SynchronousTask<T> task) => _pipelineExecutor.QueueTask(task);

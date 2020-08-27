@@ -21,6 +21,7 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -101,6 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     {
         private readonly ILogger<LaunchHandler> _logger;
         private readonly DebugService _debugService;
+        private readonly IRunspaceContext _runspaceContext;
         private readonly PowerShellExecutionService _executionService;
         private readonly DebugStateService _debugStateService;
         private readonly DebugEventHandlerService _debugEventHandlerService;
@@ -111,6 +113,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             ILoggerFactory factory,
             IJsonRpcServer jsonRpcServer,
             DebugService debugService,
+            IRunspaceContext runspaceContext,
             PowerShellExecutionService executionService,
             DebugStateService debugStateService,
             DebugEventHandlerService debugEventHandlerService,
@@ -119,6 +122,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _logger = factory.CreateLogger<LaunchHandler>();
             _jsonRpcServer = jsonRpcServer;
             _debugService = debugService;
+            _runspaceContext = runspaceContext;
             _executionService = executionService;
             _debugStateService = debugStateService;
             _debugEventHandlerService = debugEventHandlerService;
@@ -130,8 +134,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _debugEventHandlerService.RegisterEventHandlers();
 
             // Determine whether or not the working directory should be set in the PowerShellContext.
-            if (!_executionService.CurrentRunspace.IsRemote() &&
-                !_debugService.IsDebuggerStopped)
+            if (_runspaceContext.CurrentRunspace.RunspaceOrigin == RunspaceOrigin.Local
+                && !_debugService.IsDebuggerStopped)
             {
                 // Get the working directory that was passed via the debug config
                 // (either via launch.json or generated via no-config debug).
@@ -199,12 +203,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // If the current session is remote, map the script path to the remote
             // machine if necessary
             if (_debugStateService.ScriptToLaunch != null
-                && _executionService.CurrentRunspace.IsRemote())
+                && _runspaceContext.CurrentRunspace.IsOnRemoteMachine)
             {
                 _debugStateService.ScriptToLaunch =
                     _remoteFileManagerService.GetMappedPath(
                         _debugStateService.ScriptToLaunch,
-                        _executionService.CurrentRunspace);
+                        _runspaceContext.CurrentRunspace);
             }
 
             // If no script is being launched, mark this as an interactive
@@ -224,6 +228,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private static readonly Version s_minVersionForCustomPipeName = new Version(6, 2);
 
         private readonly ILogger<AttachHandler> _logger;
+        private readonly IRunspaceContext _runspaceContext;
         private readonly DebugService _debugService;
         private readonly BreakpointService _breakpointService;
         private readonly PowerShellExecutionService _executionService;
@@ -234,6 +239,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public AttachHandler(
             ILoggerFactory factory,
             IJsonRpcServer jsonRpcServer,
+            IRunspaceContext runspaceContext,
             DebugService debugService,
             PowerShellExecutionService executionService,
             DebugStateService debugStateService,
@@ -242,6 +248,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             _logger = factory.CreateLogger<AttachHandler>();
             _jsonRpcServer = jsonRpcServer;
+            _runspaceContext = runspaceContext;
             _debugService = debugService;
             _breakpointService = breakpointService;
             _executionService = executionService;
@@ -258,8 +265,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             bool processIdIsSet = !string.IsNullOrEmpty(request.ProcessId) && request.ProcessId != "undefined";
             bool customPipeNameIsSet = !string.IsNullOrEmpty(request.CustomPipeName) && request.CustomPipeName != "undefined";
 
-            PowerShellVersionDetails runspaceVersion =
-                _executionService.CurrentRunspace.PowerShellVersionDetails;
+            PowerShellVersionDetails runspaceVersion = _runspaceContext.CurrentRunspace.PowerShellVersionDetails;
 
             // If there are no host processes to attach to or the user cancels selection, we get a null for the process id.
             // This is not an error, just a request to stop the original "attach to" request.
@@ -273,15 +279,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 throw new RpcErrorException(0, "User aborted attach to PowerShell host process.");
             }
 
-            StringBuilder errorMessages = new StringBuilder();
-
             if (request.ComputerName != null)
             {
                 if (runspaceVersion.Version.Major < 4)
                 {
                     throw new RpcErrorException(0, $"Remote sessions are only available with PowerShell 4 and higher (current session is {runspaceVersion.Version}).");
                 }
-                else if (_executionService.CurrentRunspace.IsRemote())
+                else if (_runspaceContext.CurrentRunspace.RunspaceOrigin != RunspaceOrigin.Local)
                 {
                     throw new RpcErrorException(0, $"Cannot attach to a process in a remote session when already in a remote session.");
                 }
@@ -346,11 +350,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     string msg = $"Could not attach to process with CustomPipeName: '{request.CustomPipeName}'";
                     _logger.LogError(e, msg);
                     throw new RpcErrorException(0, msg);
-                }
-
-                if (errorMessages.Length > 0)
-                {
-                    throw new RpcErrorException(0, $"Could not attach to process with CustomPipeName: '{request.CustomPipeName}'");
                 }
             }
             else if (request.ProcessId != "current")
@@ -445,14 +444,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (_debugStateService.IsAttachSession)
             {
                 // Pop the sessions
-                if (_executionService.CurrentRunspace.RunspaceOrigin == RunspaceOrigin.EnteredProcess)
+                if (_runspaceContext.CurrentRunspace.RunspaceOrigin == RunspaceOrigin.EnteredProcess)
                 {
                     try
                     {
                         await _executionService.ExecutePSCommandAsync(new PSCommand().AddCommand("Exit-PSHostProcess"), new PowerShellExecutionOptions(), CancellationToken.None);
 
                         if (_debugStateService.IsRemoteAttach &&
-                            _executionService.CurrentRunspace.IsRemote())
+                            _runspaceContext.CurrentRunspace.RunspaceOrigin != RunspaceOrigin.Local)
                         {
                             await _executionService.ExecutePSCommandAsync(new PSCommand().AddCommand("Exit-PSSession"), new PowerShellExecutionOptions(), CancellationToken.None);
                         }
