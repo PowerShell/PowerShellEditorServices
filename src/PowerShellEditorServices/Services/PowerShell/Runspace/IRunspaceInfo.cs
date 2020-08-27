@@ -1,6 +1,6 @@
 ﻿
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
+using System.Threading.Tasks;
 using SMA = System.Management.Automation.Runspaces;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
@@ -9,20 +9,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
     {
         RunspaceOrigin RunspaceOrigin { get; }
 
+        bool IsOnRemoteMachine { get; }
+
         PowerShellVersionDetails PowerShellVersionDetails { get; }
 
         SessionDetails SessionDetails { get; }
 
         SMA.Runspace Runspace { get; }
-
-        DscBreakpointCapability DscBreakpointCapability { get; }
-    }
-
-    internal static class RunspaceInfoExtensions
-    {
-        public static bool IsRemote(this IRunspaceInfo runspaceInfo)
-        {
-            return runspaceInfo.RunspaceOrigin != RunspaceOrigin.Local;
-        }
     }
 }

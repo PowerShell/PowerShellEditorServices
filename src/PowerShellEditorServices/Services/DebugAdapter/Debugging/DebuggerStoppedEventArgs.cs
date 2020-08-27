@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// </summary>
         public bool IsRemoteSession
         {
-            get => RunspaceInfo.IsRemote();
+            get => RunspaceInfo.RunspaceOrigin != RunspaceOrigin.Local;
         }
 
         /// <summary>
