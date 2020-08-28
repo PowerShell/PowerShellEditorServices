@@ -59,10 +59,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         /// PowerShellContext for loading and executing extension code.
         /// </summary>
         /// <param name="powerShellContext">A PowerShellContext used to execute extension code.</param>
-        internal ExtensionService(PowerShellExecutionService executionService, ILanguageServer languageServer)
+        internal ExtensionService(
+            ILanguageServer languageServer,
+            IServiceProvider serviceProvider,
+            IEditorOperations editorOperations,
+            PowerShellExecutionService executionService)
         {
             ExecutionService = executionService;
             _languageServer = languageServer;
+
+            EditorObject =
+                new EditorObject(
+                    serviceProvider,
+                    this,
+                    editorOperations);
+
+            // Attach to ExtensionService events
+            CommandAdded += ExtensionService_ExtensionAddedAsync;
+            CommandUpdated += ExtensionService_ExtensionUpdatedAsync;
+            CommandRemoved += ExtensionService_ExtensionRemovedAsync;
         }
 
         #endregion
@@ -75,23 +90,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         /// </summary>
         /// <param name="editorOperations">An IEditorOperations implementation.</param>
         /// <returns>A Task that can be awaited for completion.</returns>
-        internal async Task InitializeAsync(
-            IServiceProvider serviceProvider,
-            IEditorOperations editorOperations)
+        internal async Task InitializeAsync()
         {
-            // Attach to ExtensionService events
-            this.CommandAdded += ExtensionService_ExtensionAddedAsync;
-            this.CommandUpdated += ExtensionService_ExtensionUpdatedAsync;
-            this.CommandRemoved += ExtensionService_ExtensionRemovedAsync;
-
-            this.EditorObject =
-                new EditorObject(
-                    serviceProvider,
-                    this,
-                    editorOperations);
-
             // Assign the new EditorObject to be the static instance available to binary APIs
-            this.EditorObject.SetAsStaticInstance();
+            EditorObject.SetAsStaticInstance();
 
             // Register the editor object in the runspace
             await ExecutionService.ExecuteDelegateAsync((pwsh, cancellationToken) =>
