@@ -113,7 +113,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             // We need to override the idle handler here,
             // since readline will be overridden when the initial Powershell runspace is instantiated above
             _readLineProvider.ReadLine.TryOverrideIdleHandler(OnPowerShellIdle);
-            _psesHost.PushNewReplTask();
+            _psesHost.StartRepl();
             RunTopLevelConsumerLoop();
         }
 
