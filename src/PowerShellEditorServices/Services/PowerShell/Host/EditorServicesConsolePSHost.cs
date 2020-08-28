@@ -153,6 +153,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _consoleReplRunner?.CancelCurrentPrompt();
         }
 
+        internal void StartRepl()
+        {
+            _consoleReplRunner?.StartRepl();
+        }
+
         internal void PushNewReplTask()
         {
             _consoleReplRunner?.PushNewReplTask();
