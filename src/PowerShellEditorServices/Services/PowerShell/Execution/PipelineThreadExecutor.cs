@@ -106,6 +106,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private void Run()
         {
+            _psesHost.PushInitialPowerShell();
             RunTopLevelConsumerLoop();
         }
 
