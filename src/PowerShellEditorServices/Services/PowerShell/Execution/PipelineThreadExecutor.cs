@@ -60,6 +60,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             _psesHost = psesHost;
             _debugContext = psesHost.DebugContext;
             _readLineProvider = readLineProvider;
+            _consumerThreadCancellationSource = new CancellationTokenSource();
+            _executionQueue = new BlockingCollection<ISynchronousTask>();
+            _loopCancellationContext = new CancellationContext();
+            _commandCancellationContext = new CancellationContext();
+            _taskProcessingLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
 
             _pipelineThread = new Thread(Run)
             {
@@ -75,11 +80,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             _executionQueue.Add(synchronousTask);
             return synchronousTask.Task;
         }
+
         public void Start()
         {
-            // We need to override the idle handler here,
-            // since readline will be overridden by this point
-            _readLineProvider.ReadLine.TryOverrideIdleHandler(OnPowerShellIdle);
             _pipelineThread.Start();
         }
 
@@ -107,6 +110,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         private void Run()
         {
             _psesHost.PushInitialPowerShell();
+            // We need to override the idle handler here,
+            // since readline will be overridden when the initial Powershell runspace is instantiated above
+            _readLineProvider.ReadLine.TryOverrideIdleHandler(OnPowerShellIdle);
+            _psesHost.PushNewReplTask();
             RunTopLevelConsumerLoop();
         }
 
