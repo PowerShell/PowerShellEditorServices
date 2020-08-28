@@ -29,8 +29,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private readonly EditorServicesConsolePSHost _psesHost;
 
-        private readonly PowerShellDebugContext _debugContext;
-
         private readonly IReadLineProvider _readLineProvider;
 
         private readonly HostStartupInfo _hostInfo;
@@ -58,7 +56,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             _logger = loggerFactory.CreateLogger<PipelineThreadExecutor>();
             _hostInfo = hostInfo;
             _psesHost = psesHost;
-            _debugContext = psesHost.DebugContext;
             _readLineProvider = readLineProvider;
             _consumerThreadCancellationSource = new CancellationTokenSource();
             _executionQueue = new BlockingCollection<ISynchronousTask>();
@@ -187,18 +184,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private void RunDebugLoop(in CancellationScope cancellationScope)
         {
-            _debugContext.EnterDebugLoop(cancellationScope.CancellationToken);
+            _psesHost.DebugContext.EnterDebugLoop(cancellationScope.CancellationToken);
             try
             {
                 // Run commands, but cancelling our blocking wait if the debugger resumes
-                foreach (ISynchronousTask task in _executionQueue.GetConsumingEnumerable(_debugContext.OnResumeCancellationToken))
+                foreach (ISynchronousTask task in _executionQueue.GetConsumingEnumerable(_psesHost.DebugContext.OnResumeCancellationToken))
                 {
                     // We don't want to cancel the current command when the debugger resumes,
                     // since that command will be resuming the debugger.
                     // Instead let it complete and check the cancellation afterward.
                     RunTaskSynchronously(task, cancellationScope.CancellationToken);
 
-                    if (_debugContext.OnResumeCancellationToken.IsCancellationRequested)
+                    if (_psesHost.DebugContext.OnResumeCancellationToken.IsCancellationRequested)
                     {
                         break;
                     }
@@ -210,7 +207,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             }
             finally
             {
-                _debugContext.ExitDebugLoop();
+                _psesHost.DebugContext.ExitDebugLoop();
             }
         }
 

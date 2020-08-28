@@ -36,6 +36,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private readonly ReadLineProvider _readLineProvider;
 
+        private readonly Stack<KeyValuePair<Runspace, RunspaceInfo>> _runspacesInUse;
+
         private string _localComputerName;
 
         private int _hostStarted = 0;
@@ -48,6 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _logger = loggerFactory.CreateLogger<EditorServicesConsolePSHost>();
             _psFrameStack = new Stack<PowerShellContextFrame>();
             _psFactory = new PowerShellFactory(loggerFactory, this);
+            _runspacesInUse = new Stack<KeyValuePair<Runspace, RunspaceInfo>>();
             _hostInfo = hostInfo;
             Name = hostInfo.Name;
             Version = hostInfo.Version;
@@ -55,13 +58,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _readLineProvider = new ReadLineProvider(loggerFactory);
             _pipelineExecutor = new PipelineThreadExecutor(loggerFactory, hostInfo, this, _readLineProvider);
             ExecutionService = new PowerShellExecutionService(loggerFactory, this, _pipelineExecutor);
-            DebugContext = new PowerShellDebugContext(loggerFactory, languageServer, this,  _consoleReplRunner);
             UI = new EditorServicesConsolePSHostUserInterface(loggerFactory, _readLineProvider, hostInfo.PSHost.UI);
 
             if (hostInfo.ConsoleReplEnabled)
             {
                 _consoleReplRunner = new ConsoleReplRunner(loggerFactory, this, _readLineProvider, ExecutionService);
             }
+
+            DebugContext = new PowerShellDebugContext(loggerFactory, languageServer, this,  _consoleReplRunner);
         }
 
         public override CultureInfo CurrentCulture => _hostInfo.PSHost.CurrentCulture;
@@ -217,9 +221,28 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void PushPowerShellAndRunLoop(SMA.PowerShell pwsh, PowerShellFrameType frameType)
         {
+            RunspaceInfo runspaceInfo = null;
+            if (_runspacesInUse.Count > 0)
+            {
+                // This is more than just an optimization.
+                // When debugging, we cannot execute PowerShell directly to get this information;
+                // trying to do so will block on the command that called us, deadlocking execution.
+                // Instead, since we are reusing the runspace, we reuse that runspace's info as well.
+                KeyValuePair<Runspace, RunspaceInfo> currentRunspace = _runspacesInUse.Peek();
+                if (currentRunspace.Key == pwsh.Runspace)
+                {
+                    runspaceInfo = currentRunspace.Value;
+                }
+            }
+
+            if (runspaceInfo is null)
+            {
+                RunspaceOrigin runspaceOrigin = pwsh.Runspace.RunspaceIsRemote ? RunspaceOrigin.EnteredProcess : RunspaceOrigin.Local;
+                runspaceInfo = RunspaceInfo.CreateFromPowerShell(_logger, pwsh, runspaceOrigin, _localComputerName);
+                _runspacesInUse.Push(new KeyValuePair<Runspace, RunspaceInfo>(pwsh.Runspace, runspaceInfo));
+            }
+
             // TODO: Improve runspace origin detection here
-            RunspaceOrigin runspaceOrigin = pwsh.Runspace.RunspaceIsRemote ? RunspaceOrigin.EnteredProcess : RunspaceOrigin.Local;
-            var runspaceInfo = RunspaceInfo.CreateFromPowerShell(_logger, pwsh, runspaceOrigin, _localComputerName);
             PushPowerShellAndRunLoop(new PowerShellContextFrame(pwsh, runspaceInfo, frameType));
         }
 
