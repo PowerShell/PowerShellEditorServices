@@ -22,16 +22,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
     internal class EditorServicesConsolePSHost : PSHost, IHostSupportsInteractiveSession, IRunspaceContext
     {
-        public static EditorServicesConsolePSHost Create(
-            ILoggerFactory loggerFactory,
-            ILanguageServer languageServer,
-            HostStartupInfo hostInfo)
-        {
-            var host = new EditorServicesConsolePSHost(loggerFactory, languageServer, hostInfo);
-            host.PushInitialPowerShell();
-            return host;
-        }
-
         private readonly ILogger _logger;
 
         private readonly Stack<PowerShellContextFrame> _psFrameStack;
@@ -145,7 +135,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             SetExit();
         }
 
-        private void PushInitialPowerShell()
+        public void PushInitialPowerShell()
         {
             SMA.PowerShell pwsh = _psFactory.CreateInitialPowerShell(_hostInfo, _readLineProvider);
             var runspaceInfo = RunspaceInfo.CreateFromLocalPowerShell(_logger, pwsh);
