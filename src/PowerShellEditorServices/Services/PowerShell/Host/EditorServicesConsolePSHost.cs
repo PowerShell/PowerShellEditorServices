@@ -100,7 +100,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public override void EnterNestedPrompt()
         {
-            PushPowerShell(_psFactory.CreateNestedPowerShell(CurrentRunspace), PowerShellFrameType.Nested);
+            PushPowerShellAndRunLoop(_psFactory.CreateNestedPowerShell(CurrentRunspace), PowerShellFrameType.Nested);
         }
 
         public override void ExitNestedPrompt()
@@ -127,7 +127,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public void PushRunspace(Runspace runspace)
         {
             IsRunspacePushed = true;
-            PushPowerShell(_psFactory.CreatePowerShellForRunspace(runspace), PowerShellFrameType.Remote);
+            PushPowerShellAndRunLoop(_psFactory.CreatePowerShellForRunspace(runspace), PowerShellFrameType.Remote);
         }
 
         public override void SetShouldExit(int exitCode)
@@ -145,7 +145,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         internal void PushNonInteractivePowerShell()
         {
-            PushPowerShell(_psFactory.CreateNestedPowerShell(CurrentRunspace), PowerShellFrameType.Nested | PowerShellFrameType.NonInteractive);
+            PushPowerShellAndRunLoop(_psFactory.CreateNestedPowerShell(CurrentRunspace), PowerShellFrameType.Nested | PowerShellFrameType.NonInteractive);
         }
 
         internal void CancelCurrentPrompt()
@@ -193,8 +193,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             {
                 await SetInitialWorkingDirectoryAsync(hostStartOptions.InitialWorkingDirectory, CancellationToken.None).ConfigureAwait(false);
             }
-
-            _consoleReplRunner?.StartRepl();
         }
 
         private void SetExit()
@@ -212,12 +210,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             }
         }
 
-        private void PushPowerShell(SMA.PowerShell pwsh, PowerShellFrameType frameType)
+        private void PushPowerShellAndRunLoop(SMA.PowerShell pwsh, PowerShellFrameType frameType)
         {
             // TODO: Improve runspace origin detection here
             RunspaceOrigin runspaceOrigin = pwsh.Runspace.RunspaceIsRemote ? RunspaceOrigin.EnteredProcess : RunspaceOrigin.Local;
             var runspaceInfo = RunspaceInfo.CreateFromPowerShell(_logger, pwsh, runspaceOrigin, _localComputerName);
-            PushPowerShell(new PowerShellContextFrame(pwsh, runspaceInfo, frameType));
+            PushPowerShellAndRunLoop(new PowerShellContextFrame(pwsh, runspaceInfo, frameType));
+        }
+
+        private void PushPowerShellAndRunLoop(PowerShellContextFrame frame)
+        {
+            PushPowerShell(frame);
+            _pipelineExecutor.RunPowerShellLoop(frame.FrameType);
         }
 
         private void PushPowerShell(PowerShellContextFrame frame)
@@ -229,8 +233,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             AddRunspaceEventHandlers(frame.PowerShell.Runspace);
 
             _psFrameStack.Push(frame);
-
-            _pipelineExecutor.RunPowerShellLoop(frame.FrameType);
         }
 
         internal void PopPowerShell()
@@ -271,7 +273,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             try
             {
                 CurrentPowerShell.WaitForRemoteOutputIfNeeded();
-                PushPowerShell(_psFactory.CreateNestedPowerShell(CurrentRunspace), PowerShellFrameType.Debug | PowerShellFrameType.Nested);
+                PushPowerShellAndRunLoop(_psFactory.CreateNestedPowerShell(CurrentRunspace), PowerShellFrameType.Debug | PowerShellFrameType.Nested);
                 CurrentPowerShell.ResumeRemoteOutputIfNeeded();
             }
             finally

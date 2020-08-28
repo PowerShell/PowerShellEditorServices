@@ -39,14 +39,15 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<RemoteFileManagerService>()
-                .AddSingleton(async (provider) =>
+                .AddSingleton<ExtensionService>((provider) =>
                     {
                         var extensionService = new ExtensionService(
-                            provider.GetService<PowerShellExecutionService>(),
-                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade>());
-                        await extensionService.InitializeAsync(
-                            serviceProvider: provider,
-                            editorOperations: provider.GetService<EditorOperationsService>()).ConfigureAwait(false);
+                            provider.GetService<ILanguageServerFacade>(),
+                            provider,
+                            provider.GetService<EditorOperationsService>(),
+                            provider.GetService<PowerShellExecutionService>());
+
+                        extensionService.InitializeAsync().GetAwaiter().GetResult();
 
                         return extensionService;
                     })

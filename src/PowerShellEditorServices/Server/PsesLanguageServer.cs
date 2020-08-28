@@ -114,7 +114,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     // https://microsoft.github.io/language-server-protocol/specifications/specification-current/#initialize
                     .OnInitialize(
                         // TODO: Either fix or ignore "method lacks 'await'" warning.
-                        async (languageServer, request, cancellationToken) =>
+                        (languageServer, request, cancellationToken) =>
                         {
                             Log.Logger.Debug("Initializing OmniSharp Language Server");
 
@@ -138,17 +138,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                                 }
                             }
 
-                            // Set the working directory of the PowerShell session to the workspace path
-                            if (workspaceService.WorkspacePath != null
-                                && Directory.Exists(workspaceService.WorkspacePath))
-                            {
-                                await serviceProvider.GetService<PowerShellExecutionService>()
-                                    .ExecutePSCommandAsync(
-                                        new PSCommand().AddCommand("Set-Location").AddParameter("-LiteralPath", workspaceService.WorkspacePath),
-                                        new PowerShellExecutionOptions(),
-                                        cancellationToken)
-                                    .ConfigureAwait(false);
-                            }
+                            return Task.CompletedTask;
                         });
             }).ConfigureAwait(false);
 

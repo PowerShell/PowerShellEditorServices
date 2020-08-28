@@ -20,6 +20,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 using System.IO;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.Extension;
 
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
@@ -29,11 +30,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
         private readonly ConfigurationService _configurationService;
+        private readonly ExtensionService _extensionService;
         private readonly EditorServicesConsolePSHost _psesHost;
         private readonly ILanguageServerFacade _languageServer;
         private DidChangeConfigurationCapability _capability;
         private bool _profilesLoaded;
         private bool _consoleReplStarted;
+        private bool _extensionServiceInitialized;
         private bool _cwdSet;
 
         public PsesConfigurationHandler(
@@ -42,12 +45,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             AnalysisService analysisService,
             ConfigurationService configurationService,
             ILanguageServerFacade languageServer,
+            ExtensionService extensionService,
             EditorServicesConsolePSHost psesHost)
         {
             _logger = factory.CreateLogger<PsesConfigurationHandler>();
             _workspaceService = workspaceService;
             _configurationService = configurationService;
             _languageServer = languageServer;
+            _extensionService = extensionService;
             _psesHost = psesHost;
 
             ConfigurationUpdated += analysisService.OnConfigurationUpdated;
@@ -75,6 +80,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 incomingSettings.Powershell,
                 _workspaceService.WorkspacePath,
                 _logger);
+
+            if (!_psesHost.IsRunning)
+            {
+                await _psesHost.StartAsync(new HostStartOptions
+                {
+                    LoadProfiles = _configurationService.CurrentSettings.EnableProfileLoading,
+                }, CancellationToken.None).ConfigureAwait(false);
+            }
 
             if (!this._cwdSet)
             {
@@ -130,9 +143,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 _logger.LogTrace("Loaded!");
             }
 
+            if (!_extensionServiceInitialized)
+            {
+                await _extensionService.InitializeAsync();
+            }
+
             // Run any events subscribed to configuration updates
             this._logger.LogTrace("Running configuration update event handlers");
-            ConfigurationUpdated(this, _configurationService.CurrentSettings);
+            ConfigurationUpdated?.Invoke(this, _configurationService.CurrentSettings);
 
             // Convert the editor file glob patterns into an array for the Workspace
             // Both the files.exclude and search.exclude hash tables look like (glob-text, is-enabled):
