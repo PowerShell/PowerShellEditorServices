@@ -24,13 +24,11 @@ namespace Microsoft.PowerShell.EditorServices.Server
             this IServiceCollection collection,
             HostStartupInfo hostStartupInfo)
         {
-            return collection.AddSingleton<WorkspaceService>()
+            return collection
+                .AddSingleton<HostStartupInfo>(hostStartupInfo)
+                .AddSingleton<WorkspaceService>()
                 .AddSingleton<SymbolsService>()
-                .AddSingleton<EditorServicesConsolePSHost>(
-                    (provider) => EditorServicesConsolePSHost.Create(
-                        provider.GetService<ILoggerFactory>(),
-                        provider.GetService<ILanguageServer>(),
-                        hostStartupInfo))
+                .AddSingleton<EditorServicesConsolePSHost>()
                 .AddSingleton<IRunspaceContext>(
                     (provider) => provider.GetService<EditorServicesConsolePSHost>())
                 .AddSingleton<PowerShellExecutionService>(
@@ -41,16 +39,15 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<RemoteFileManagerService>()
-                .AddSingleton(
-                    (provider) =>
+                .AddSingleton(async (provider) =>
                     {
                         var extensionService = new ExtensionService(
                             provider.GetService<PowerShellExecutionService>(),
                             provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade>());
-                        extensionService.InitializeAsync(
+                        await extensionService.InitializeAsync(
                             serviceProvider: provider,
-                            editorOperations: provider.GetService<EditorOperationsService>())
-                            .Wait();
+                            editorOperations: provider.GetService<EditorOperationsService>()).ConfigureAwait(false);
+
                         return extensionService;
                     })
                 .AddSingleton<AnalysisService>();
