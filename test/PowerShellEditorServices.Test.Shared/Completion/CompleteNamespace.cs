@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
             new ScriptRegion(
                 file: TestUtilities.NormalizePath("Completion/CompletionExamples.psm1"),
                 text: string.Empty,
-                startLineNumber: 21,
+                startLineNumber: 22,
                 startColumnNumber: 15,
                 startOffset: 0,
                 endLineNumber: 0,
