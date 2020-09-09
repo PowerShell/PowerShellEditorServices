@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     {
         // TODO: When netstandard is upgraded to 2.0, see if
         //       Delegate.CreateDelegate can be used here instead
-        private static readonly MethodInfo s_extentCloneWithNewOffset = typeof(PSObject).GetTypeInfo().Assembly
+        private static readonly MethodInfo s_extentCloneWithNewOffset = typeof(PSObject).Assembly
            .GetType("System.Management.Automation.Language.InternalScriptPosition")
            .GetMethod("CloneWithNewOffset", BindingFlags.Instance | BindingFlags.NonPublic);
 

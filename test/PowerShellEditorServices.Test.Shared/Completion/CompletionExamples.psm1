@@ -17,3 +17,6 @@ function Test-Completion {
 }
 
 Get-ChildItem /
+
+[System.Collections.ArrayList].GetType()
+[System.Collect
