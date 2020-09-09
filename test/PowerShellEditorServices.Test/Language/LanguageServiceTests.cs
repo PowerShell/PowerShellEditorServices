@@ -22,6 +22,7 @@ using Microsoft.PowerShell.EditorServices.Test.Shared.ParameterHint;
 using Microsoft.PowerShell.EditorServices.Test.Shared.References;
 using Microsoft.PowerShell.EditorServices.Test.Shared.SymbolDetails;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Symbols;
+using Microsoft.PowerShell.EditorServices.Utility;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -35,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         private readonly PowerShellContextService powerShellContext;
         private static readonly string s_baseSharedScriptPath =
             Path.Combine(
-                    Path.GetDirectoryName(RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    Path.GetDirectoryName(VersionUtils.IsWindows
                         // On non-Windows platforms, CodeBase has file:// in it.
                         // On Windows, Location points to a temp directory.
                         ? typeof(LanguageServiceTests).Assembly.CodeBase
@@ -99,7 +100,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         public async Task LanguageServiceCompletesTypeName()
         {
             Skip.If(
-                TestsFixture.IsWindowsPowerShell,
+                !VersionUtils.IsNetCore,
                 "Windows PowerShell return no results from CommandCompletion in the test harness. Since it works in PS7 and works manually when I run the extension, I'm skipping this  test");
 
             CompletionResults completionResults =
@@ -126,7 +127,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         public async Task LanguageServiceCompletesNamespace()
         {
             Skip.If(
-                TestsFixture.IsWindowsPowerShell,
+                !VersionUtils.IsNetCore,
                 "Windows PowerShell return no results from CommandCompletion in the test harness. Since it works in PS7 and works manually when I run the extension, I'm skipping this  test");
 
             CompletionResults completionResults =
