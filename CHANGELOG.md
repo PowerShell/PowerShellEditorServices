@@ -1,5 +1,19 @@
 # PowerShell Editor Services Release History
 
+## v2.3.0-preview.2
+### Wednesday, September 16, 2020
+
+- 🧠 ✨ [vscode-powershell #2898](https://github.com/PowerShell/PowerShellEditorServices/pull/1352) -
+  Type and Namespace completions now have tooltips. (Thanks @AspenForester!)
+- 🛫 🐛 [vscode-powershell #2719](https://github.com/PowerShell/PowerShellEditorServices/pull/1349) -
+  Fix startup assembly version loading issue in PowerShell 6 and up.
+- 🔗 🐛 [vscode-powershell #2810](https://github.com/PowerShell/PowerShellEditorServices/pull/1348) -
+  Fix reference number on Windows due to directory separator difference on Windows.
+- [PowerShellEditorServices #1343](https://github.com/PowerShell/PowerShellEditorServices/pull/1343) -
+  Updated Semantic Handler to work with new LSP APIs. (Thanks @justinytchen!)
+- [PowerShellEditorServices #1337](https://github.com/PowerShell/PowerShellEditorServices/pull/1337) -
+  Treat `Member`s as `Properties` in Semantic Highlighting for better accuracy.
+
 ## v2.3.0-preview.1
 ### Thursday, July 30, 2020
 
