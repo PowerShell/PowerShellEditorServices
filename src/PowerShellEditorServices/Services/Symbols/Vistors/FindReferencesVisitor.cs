@@ -43,7 +43,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             if (!foundName.Equals(searchName, StringComparison.CurrentCultureIgnoreCase)) return;
             int startColumnNumber = ast.Extent.StartScriptPosition.ColumnNumber + ast.Extent.Text.IndexOf(foundName, StringComparison.OrdinalIgnoreCase);
             IScriptExtent nameExtent = new ScriptExtent() {Text = foundName, StartLineNumber = ast.Extent.StartLineNumber, StartColumnNumber = startColumnNumber, EndLineNumber = ast.Extent.StartLineNumber, EndColumnNumber = startColumnNumber + foundName.Length, File = ast.Extent.File };
-            //System.IO.File.AppendAllText(@"d:\tmp\log.txt", $"FindReferencesOfSymbol NOALIAS V2 - Busca {searchName} NAME:{foundName} TYPE:{ast.GetType().Name} LINE:[{nameExtent.StartLineNumber},{nameExtent.EndLineNumber}] COL:[{nameExtent.StartColumnNumber},{nameExtent.EndColumnNumber}] ORGTXT:[{ast.ToString()}]\r\n");
             this.FoundReferences.Add(new SymbolReference(SymbolType.Function, nameExtent));
             }
         public override AstVisitAction VisitCommandExpression(CommandExpressionAst commandExpressionAst) {//confirmed

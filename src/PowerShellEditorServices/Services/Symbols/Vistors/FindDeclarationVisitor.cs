@@ -25,7 +25,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             if (!(symbolRef.SymbolType.Equals(SymbolType.Function) && foundName.Equals(searchName, StringComparison.CurrentCultureIgnoreCase))) return false;
             int startColumnNumber = ast.Extent.StartScriptPosition.ColumnNumber + ast.Extent.Text.IndexOf(foundName, StringComparison.OrdinalIgnoreCase);
             IScriptExtent nameExtent = new ScriptExtent() { Text = foundName, StartLineNumber = ast.Extent.StartLineNumber, StartColumnNumber = startColumnNumber, EndLineNumber = ast.Extent.StartLineNumber, EndColumnNumber = startColumnNumber + foundName.Length, File = ast.Extent.File };
-            //System.IO.File.AppendAllText(@"d:\tmp\log.txt", $"FindDeclarationVisitor2 - Busca {searchName} NAME:{foundName} TYPE:{ast.GetType().Name} LINE:[{nameExtent.StartLineNumber},{nameExtent.EndLineNumber}] COL:[{nameExtent.StartColumnNumber},{nameExtent.EndColumnNumber}] POS:[{ast.Extent.StartColumnNumber},{ ast.Extent.Text.IndexOf(foundName, StringComparison.OrdinalIgnoreCase)},{ast.Extent.StartOffset},{ast.Extent.StartScriptPosition.ColumnNumber},{foundName.Length}] ORGTXT:[{ast.ToString()}]\r\n");
             this.FoundDeclaration = new SymbolReference(SymbolType.Function, nameExtent);
             return true;
             }
