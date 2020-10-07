@@ -9,6 +9,94 @@ using System.Management.Automation.Language;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {
+    internal class FindReferencesVisitor2 : AstVisitor2 {
+        private SymbolReference symbolRef;
+        private Dictionary<String, List<String>> CmdletToAliasDictionary;
+        private Dictionary<String, String> AliasToCmdletDictionary;
+        private string symbolRefCommandName;
+        private bool needsAliases;
+
+        public List<SymbolReference> FoundReferences { get; set; }
+        public FindReferencesVisitor2(
+            SymbolReference symbolReference,
+            Dictionary<String, List<String>> CmdletToAliasDictionary,
+            Dictionary<String, String> AliasToCmdletDictionary) {
+            this.symbolRef = symbolReference;
+            this.FoundReferences = new List<SymbolReference>();
+            this.needsAliases = true;
+            this.CmdletToAliasDictionary = CmdletToAliasDictionary;
+            this.AliasToCmdletDictionary = AliasToCmdletDictionary;
+
+            // Try to get the symbolReference's command name of an alias,
+            // if a command name does not exists (if the symbol isn't an alias to a command)
+            // set symbolRefCommandName to and empty string value
+            AliasToCmdletDictionary.TryGetValue(symbolReference.ScriptRegion.Text, out symbolRefCommandName);
+            if (symbolRefCommandName == null) { symbolRefCommandName = string.Empty; }
+
+            }
+        public FindReferencesVisitor2(SymbolReference foundSymbol) {
+            this.symbolRef = foundSymbol;
+            this.FoundReferences = new List<SymbolReference>();
+            this.needsAliases = false;
+            }
+        private void ValidateExtend(string searchName, string foundName, Ast ast) {
+            if (!foundName.Equals(searchName, StringComparison.CurrentCultureIgnoreCase)) return;
+            int startColumnNumber = ast.Extent.StartScriptPosition.ColumnNumber + ast.Extent.Text.IndexOf(foundName, StringComparison.OrdinalIgnoreCase);
+            IScriptExtent nameExtent = new ScriptExtent() {Text = foundName, StartLineNumber = ast.Extent.StartLineNumber, StartColumnNumber = startColumnNumber, EndLineNumber = ast.Extent.StartLineNumber, EndColumnNumber = startColumnNumber + foundName.Length, File = ast.Extent.File };
+            //System.IO.File.AppendAllText(@"d:\tmp\log.txt", $"FindReferencesOfSymbol NOALIAS V2 - Busca {searchName} NAME:{foundName} TYPE:{ast.GetType().Name} LINE:[{nameExtent.StartLineNumber},{nameExtent.EndLineNumber}] COL:[{nameExtent.StartColumnNumber},{nameExtent.EndColumnNumber}] ORGTXT:[{ast.ToString()}]\r\n");
+            this.FoundReferences.Add(new SymbolReference(SymbolType.Function, nameExtent));
+            }
+        public override AstVisitAction VisitCommandExpression(CommandExpressionAst commandExpressionAst) {//confirmed
+            if (commandExpressionAst.ToString().Contains(symbolRef.ScriptRegion.Text))
+                ValidateExtend(symbolRef.ScriptRegion.Text, commandExpressionAst.Expression.ToString(), commandExpressionAst);
+            return base.VisitCommandExpression(commandExpressionAst);
+            }
+        public override AstVisitAction VisitCommandParameter(CommandParameterAst commandParameterAst) {
+            if (commandParameterAst.ToString().Contains(symbolRef.ScriptRegion.Text))
+                ValidateExtend(symbolRef.ScriptRegion.Text, commandParameterAst.ParameterName, commandParameterAst);
+            return base.VisitCommandParameter(commandParameterAst);
+            }
+        public override AstVisitAction VisitCommand(CommandAst commandAst) {//confirmed
+            if (commandAst.ToString().Contains(symbolRef.ScriptRegion.Text))
+                ValidateExtend(symbolRef.ScriptRegion.Text, commandAst.GetCommandName(), commandAst);
+            return base.VisitCommand(commandAst);
+            }
+        public override AstVisitAction VisitConfigurationDefinition(ConfigurationDefinitionAst configurationDefinitionAst) {
+            if (configurationDefinitionAst.ToString().Contains(symbolRef.ScriptRegion.Text))
+                ValidateExtend(symbolRef.ScriptRegion.Text, configurationDefinitionAst.InstanceName.ToString(), configurationDefinitionAst);
+            return base.VisitConfigurationDefinition(configurationDefinitionAst);
+            }
+        public override AstVisitAction VisitInvokeMemberExpression(InvokeMemberExpressionAst methodCallAst) {//confirmed
+            if (methodCallAst.ToString().Contains(symbolRef.ScriptRegion.Text))
+                ValidateExtend(symbolRef.ScriptRegion.Text, methodCallAst.Member.ToString(), methodCallAst);
+            return base.VisitInvokeMemberExpression(methodCallAst);
+            }
+        public override AstVisitAction VisitMemberExpression(MemberExpressionAst memberExpressionAst) {//confirmed
+            if(memberExpressionAst.ToString().Contains(symbolRef.ScriptRegion.Text)) 
+                ValidateExtend(symbolRef.ScriptRegion.Text, memberExpressionAst.Member.ToString(), memberExpressionAst);
+            return base.VisitMemberExpression(memberExpressionAst);
+            }
+        public override AstVisitAction VisitFunctionMember(FunctionMemberAst functionMemberAst) {//confirmed
+            if (functionMemberAst.ToString().Contains(symbolRef.ScriptRegion.Text))
+                ValidateExtend(symbolRef.ScriptRegion.Text, functionMemberAst.Name, functionMemberAst);
+            return base.VisitFunctionMember(functionMemberAst);
+            }
+        public override AstVisitAction VisitPropertyMember(PropertyMemberAst propertyMemberAst) {//confirmed
+            if (propertyMemberAst.ToString().Contains(symbolRef.ScriptRegion.Text))
+                ValidateExtend(symbolRef.ScriptRegion.Text, propertyMemberAst.Name, propertyMemberAst);
+            return base.VisitPropertyMember(propertyMemberAst);
+            }
+        public override AstVisitAction VisitStringConstantExpression(StringConstantExpressionAst stringConstantExpressionAst) {//confirmed
+            if (stringConstantExpressionAst.ToString().Contains(symbolRef.ScriptRegion.Text))
+                ValidateExtend(symbolRef.ScriptRegion.Text, stringConstantExpressionAst.Value, stringConstantExpressionAst);
+            return base.VisitStringConstantExpression(stringConstantExpressionAst);
+            }
+        public override AstVisitAction VisitTypeDefinition(TypeDefinitionAst typeDefinitionAst) {
+            if (typeDefinitionAst.ToString().Contains(symbolRef.ScriptRegion.Text))
+                ValidateExtend(symbolRef.ScriptRegion.Text, typeDefinitionAst.Name, typeDefinitionAst);
+            return base.VisitTypeDefinition(typeDefinitionAst);
+            }
+        }
     /// <summary>
     /// The visitor used to find the references of a symbol in a script's AST
     /// </summary>

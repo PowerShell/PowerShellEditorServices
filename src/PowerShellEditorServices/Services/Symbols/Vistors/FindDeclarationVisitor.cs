@@ -8,6 +8,44 @@ using System.Management.Automation.Language;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {
+    internal class FindDeclarationVisitor2 : AstVisitor2 {
+        private SymbolReference symbolRef;
+        private string variableName;
+
+        public SymbolReference FoundDeclaration { get; private set; }
+
+        public FindDeclarationVisitor2(SymbolReference symbolRef) {
+            this.symbolRef = symbolRef;
+            if (this.symbolRef.SymbolType == SymbolType.Variable) {
+                // converts `$varName` to `varName` or of the form ${varName} to varName
+                variableName = symbolRef.SymbolName.TrimStart('$').Trim('{', '}');
+                }
+            }
+        private bool ValidateExtend(string searchName, string foundName, Ast ast) {
+            if (!(symbolRef.SymbolType.Equals(SymbolType.Function) && foundName.Equals(searchName, StringComparison.CurrentCultureIgnoreCase))) return false;
+            int startColumnNumber = ast.Extent.StartScriptPosition.ColumnNumber + ast.Extent.Text.IndexOf(foundName, StringComparison.OrdinalIgnoreCase);
+            IScriptExtent nameExtent = new ScriptExtent() { Text = foundName, StartLineNumber = ast.Extent.StartLineNumber, StartColumnNumber = startColumnNumber, EndLineNumber = ast.Extent.StartLineNumber, EndColumnNumber = startColumnNumber + foundName.Length, File = ast.Extent.File };
+            //System.IO.File.AppendAllText(@"d:\tmp\log.txt", $"FindDeclarationVisitor2 - Busca {searchName} NAME:{foundName} TYPE:{ast.GetType().Name} LINE:[{nameExtent.StartLineNumber},{nameExtent.EndLineNumber}] COL:[{nameExtent.StartColumnNumber},{nameExtent.EndColumnNumber}] POS:[{ast.Extent.StartColumnNumber},{ ast.Extent.Text.IndexOf(foundName, StringComparison.OrdinalIgnoreCase)},{ast.Extent.StartOffset},{ast.Extent.StartScriptPosition.ColumnNumber},{foundName.Length}] ORGTXT:[{ast.ToString()}]\r\n");
+            this.FoundDeclaration = new SymbolReference(SymbolType.Function, nameExtent);
+            return true;
+            }
+        public override AstVisitAction VisitMemberExpression(MemberExpressionAst memberExpressionAst) {
+            if (!ValidateExtend(symbolRef.ScriptRegion.Text, memberExpressionAst.Member.ToString(), memberExpressionAst)) return AstVisitAction.Continue;
+            return AstVisitAction.StopVisit;
+            }
+        public override AstVisitAction VisitFunctionMember(FunctionMemberAst functionMemberAst) {
+            if (!ValidateExtend(symbolRef.ScriptRegion.Text, functionMemberAst.Name, functionMemberAst)) return AstVisitAction.Continue;
+            return AstVisitAction.StopVisit;
+            }
+        public override AstVisitAction VisitPropertyMember(PropertyMemberAst propertyMemberAst) {
+            if (!ValidateExtend(symbolRef.ScriptRegion.Text, propertyMemberAst.Name, propertyMemberAst)) return AstVisitAction.Continue;
+            return AstVisitAction.StopVisit;
+            }
+        public override AstVisitAction VisitTypeDefinition(TypeDefinitionAst typeDefinitionAst) {
+            if (!ValidateExtend(symbolRef.ScriptRegion.Text, typeDefinitionAst.Name, typeDefinitionAst)) return AstVisitAction.Continue;
+            return AstVisitAction.StopVisit;
+            }
+        }
     /// <summary>
     /// The visitor used to find the definition of a symbol
     /// </summary>

@@ -153,16 +153,35 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             int columnNumber,
             bool includeFunctionDefinitions = false)
         {
-            FindSymbolVisitor symbolVisitor =
-                new FindSymbolVisitor(
-                    lineNumber,
-                    columnNumber,
-                    includeFunctionDefinitions);
+            var condition = new Func<Ast, bool> ( x => (x.Extent.StartLineNumber == lineNumber && x.Extent.EndLineNumber == lineNumber && x.Extent.StartColumnNumber <= columnNumber && x.Extent.EndColumnNumber >= columnNumber));
+            List<Ast> lAst = scriptAst.FindAll(condition, true)?.OrderBy(x => x.Extent.Text.Length).Take(1).ToList();
+            if (lAst.Count == 0) {
+                condition = new Func<Ast, bool>(x => (x.Extent.StartLineNumber == lineNumber && x.Extent.EndLineNumber > lineNumber && x.Extent.StartColumnNumber <= columnNumber));
+                lAst = scriptAst.FindAll(condition, true)?.OrderBy(x => x.Extent.Text.Length).Take(1).ToList();
+                }
+            if (lAst.Count == 0) return null;
+            Ast ast = lAst[0];
+            string name = null;
+            name = (ast is PropertyMemberAst) ? (ast as PropertyMemberAst).Name : 
+                   (ast is FunctionDefinitionAst) ? (ast as FunctionDefinitionAst).Name : 
+                   (ast is FunctionMemberAst) ? (ast as FunctionMemberAst).Name : 
+                   //(ast is NamedBlockAst) ? (ast as NamedBlockAst).BlockKind.ToString() : 
+                   (ast is TypeExpressionAst) ? (ast as TypeExpressionAst).TypeName.ToString() : null;
 
-            scriptAst.Visit(symbolVisitor);
-
-            return symbolVisitor.FoundSymbolReference;
-        }
+            if (name!=null) {
+                int startColumnNumber = ast.Extent.Text.IndexOf(name) + 1;
+                IScriptExtent nameExtent = new ScriptExtent() {
+                    Text = name,
+                    StartLineNumber = ast.Extent.StartLineNumber,
+                    EndLineNumber = ast.Extent.EndLineNumber,
+                    StartColumnNumber = ast.Extent.StartColumnNumber + startColumnNumber,
+                    EndColumnNumber = ast.Extent.StartColumnNumber + name.Length,
+                    File = ast.Extent.File
+                    };
+                return new SymbolReference(SymbolType.Function, nameExtent);
+                }
+            return new SymbolReference(SymbolType.Function, ast.Extent);
+            }
 
         /// <summary>
         /// Finds the symbol (always Command type) at a given file location
@@ -194,15 +213,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             Dictionary<String, String> AliasToCmdletDictionary)
         {
             // find the symbol evaluators for the node types we are handling
-            FindReferencesVisitor referencesVisitor =
-                new FindReferencesVisitor(
-                    symbolReference,
-                    CmdletToAliasDictionary,
-                    AliasToCmdletDictionary);
+            FindReferencesVisitor referencesVisitor = new FindReferencesVisitor(symbolReference, CmdletToAliasDictionary, AliasToCmdletDictionary);
             scriptAst.Visit(referencesVisitor);
+            //System.IO.File.AppendAllText(@"d:\tmp\log.txt", $"FindReferencesOfSymbol ALIAS V1 - Busca {symbolReference.ScriptRegion.Text} - result {referencesVisitor.FoundReferences.Count}\r\n");
 
-            return referencesVisitor.FoundReferences;
-        }
+            FindReferencesVisitor2 declarationVisitor2 = new FindReferencesVisitor2(symbolReference);
+            scriptAst.Visit(declarationVisitor2);
+            //foreach(SymbolReference r in declarationVisitor2.FoundReferences)
+            //    System.IO.File.AppendAllText(@"d:\tmp\log.txt", $"FindReferencesOfSymbol ALIAS V2 - Busca {foundSymbol.ScriptRegion.Text} - COUNT:{declarationVisitor2.FoundReferences.Count} NAME:{r.SymbolName} TYPE:{r.SymbolType} LINE:[{r.ScriptRegion.StartLineNumber},{r.ScriptRegion.EndLineNumber}] COL:[{r.ScriptRegion.StartColumnNumber},{r.ScriptRegion.EndColumnNumber}] TXT:[{r.ScriptRegion.Text}]\r\n");
+            return referencesVisitor.FoundReferences.Concat(declarationVisitor2.FoundReferences).ToList();
+            }
 
         /// <summary>
         /// Finds all references (not including aliases) in a script for the given symbol
@@ -218,11 +238,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             SymbolReference foundSymbol,
             bool needsAliases)
         {
-            FindReferencesVisitor referencesVisitor =
-                new FindReferencesVisitor(foundSymbol);
+            FindReferencesVisitor referencesVisitor = new FindReferencesVisitor(foundSymbol);
             scriptAst.Visit(referencesVisitor);
 
-            return referencesVisitor.FoundReferences;
+            //System.IO.File.AppendAllText(@"d:\tmp\log.txt", $"FindReferencesOfSymbol NOALIAS V1 - Busca {foundSymbol.ScriptRegion.Text} - COUNT:{referencesVisitor.FoundReferences.Count}\r\n");
+            FindReferencesVisitor2 declarationVisitor2 = new FindReferencesVisitor2(foundSymbol);
+            scriptAst.Visit(declarationVisitor2);
+            //foreach(SymbolReference r in declarationVisitor2.FoundReferences)
+            //    System.IO.File.AppendAllText(@"d:\tmp\log.txt", $"FindReferencesOfSymbol NOALIAS V2 - Busca {foundSymbol.ScriptRegion.Text} - COUNT:{declarationVisitor2.FoundReferences.Count} NAME:{r.SymbolName} TYPE:{r.SymbolType} LINE:[{r.ScriptRegion.StartLineNumber},{r.ScriptRegion.EndLineNumber}] COL:[{r.ScriptRegion.StartColumnNumber},{r.ScriptRegion.EndColumnNumber}] TXT:[{r.ScriptRegion.Text}]\r\n");
+            return referencesVisitor.FoundReferences.Concat(declarationVisitor2.FoundReferences).ToList();
         }
 
         /// <summary>
@@ -235,13 +259,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             Ast scriptAst,
             SymbolReference symbolReference)
         {
-            FindDeclarationVisitor declarationVisitor =
-                new FindDeclarationVisitor(
-                    symbolReference);
+            FindDeclarationVisitor declarationVisitor = new FindDeclarationVisitor(symbolReference);
             scriptAst.Visit(declarationVisitor);
+            //System.IO.File.AppendAllText(@"d:\tmp\log.txt", $"FindDefinitionOfSymbol - Busca {symbolReference.ScriptRegion.Text} - result {declarationVisitor.FoundDeclaration?.SymbolName} en {declarationVisitor.FoundDeclaration?.SourceLine} de {declarationVisitor.FoundDeclaration?.FilePath}\r\n");
+            if (declarationVisitor.FoundDeclaration != null) return declarationVisitor.FoundDeclaration;
 
-            return declarationVisitor.FoundDeclaration;
-        }
+            FindDeclarationVisitor2 declarationVisitor2 = new FindDeclarationVisitor2(symbolReference);
+            scriptAst.Visit(declarationVisitor2);
+            //System.IO.File.AppendAllText(@"d:\tmp\log.txt", $"FindDefinitionOfSymbol V2 - Busca {symbolReference.ScriptRegion.Text} - result {declarationVisitor2.FoundDeclaration?.SymbolName} en {declarationVisitor2.FoundDeclaration?.SourceLine} de {declarationVisitor2.FoundDeclaration?.FilePath}\r\n");
+            return declarationVisitor2.FoundDeclaration;
+            }
 
         /// <summary>
         /// Finds all symbols in a script
