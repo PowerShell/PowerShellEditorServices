@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Utility;
+using OmniSharp.Extensions.DebugAdapter.Protocol;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Serialization;
 using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.LanguageServer.Server;
