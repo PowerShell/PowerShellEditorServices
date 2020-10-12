@@ -6,7 +6,7 @@
 [![Discord](https://img.shields.io/discord/180528040881815552.svg?label=%23vscode&logo=discord&logoColor=white)](https://aka.ms/psdiscord)
 [![Join the chat at https://gitter.im/PowerShell/PowerShellEditorServices](https://badges.gitter.im/PowerShell/PowerShellEditorServices.svg)](https://gitter.im/PowerShell/PowerShellEditorServices?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-PowerShell Editor Services is a PowerShell module that provides common
+**PowerShell Editor Services** is a PowerShell module that provides common
 functionality needed to enable a consistent and robust PowerShell development
 experience in almost any editor or integrated development environment (IDE).
 
@@ -37,7 +37,7 @@ Looking to integrate PowerShell Editor Services into your [Language Server Proto
 
 If you're looking for the more feature-rich experience,
 Named Pipes are the way to go.
-They give you all the benefit of the Lanaguge Server Protocol with extra capabilities that you can take advantage of:
+They give you all the benefit of the Language Server Protocol with extra capabilities that you can take advantage of:
 
 -  The PowerShell Integrated Console
 -  Debugging using the [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/)
@@ -70,7 +70,7 @@ The PowerShell Integrated Console uses the host process' Stdio streams for conso
 If you want to take advantage of the PowerShell Integrated Console which automatically shares state with the editor-side,
 you must include the `-EnableConsoleRepl` switch when called `Start-EditorServices.ps1`.
 
-This is typically used if your client has the ability to create arbirary terminals in the editor like below:
+This is typically used if your client has the ability to create arbitrary terminals in the editor like below:
 
 ![integrated console in vscode](https://user-images.githubusercontent.com/2644648/66245018-04ca8000-e6c0-11e9-808c-b86144149444.png)
 
