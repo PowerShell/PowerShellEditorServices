@@ -24,11 +24,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class PsesCodeLensHandlers : ICodeLensHandler, ICodeLensResolveHandler
     {
+        private readonly Guid _id = new Guid();
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
 
         private CodeLensCapability _capability;
+        public Guid Id => _id;
 
         public PsesCodeLensHandlers(ILoggerFactory factory, SymbolsService symbolsService, WorkspaceService workspaceService, ConfigurationService configurationService)
         {
