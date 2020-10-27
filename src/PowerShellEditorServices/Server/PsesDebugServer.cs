@@ -75,10 +75,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
         {
             _debugAdapterServer = await DebugAdapterServer.From(options =>
             {
-                // options.Serializer = new DapProtocolSerializer();
-                options.LoggerFactory = _loggerFactory;
-                ILogger logger = options.LoggerFactory.CreateLogger("DebugOptionsStartup");
-
                 // We need to let the PowerShell Context Service know that we are in a debug session
                 // so that it doesn't send the powerShell/startDebugger message.
                 _powerShellContextService = ServiceProvider.GetService<PowerShellContextService>();
@@ -98,20 +94,14 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         .GetResult();
                 }
 
-                options.Services = new ServiceCollection()
-                    .AddOptions()
-                    .AddPsesDebugServices(ServiceProvider, this, _useTempSession);
-
                 options
                     .WithInput(_inputStream)
-                    .WithOutput(_outputStream);
-
-                logger.LogInformation("Adding handlers");
-
-                options
-                    .WithHandler<InitializeHandler>()
-                    .WithHandler<LaunchHandler>()
-                    .WithHandler<AttachHandler>()
+                    .WithOutput(_outputStream)
+                    .WithServices(serviceCollection => serviceCollection
+                        .AddLogging()
+                        .AddOptions()
+                        .AddPsesDebugServices(ServiceProvider, this, _useTempSession))
+                    .WithHandler<LaunchAndAttachHandler>()
                     .WithHandler<DisconnectHandler>()
                     .WithHandler<SetFunctionBreakpointsHandler>()
                     .WithHandler<SetExceptionBreakpointsHandler>()
@@ -134,16 +124,16 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         // Clear any existing breakpoints before proceeding
                         await breakpointService.RemoveAllBreakpointsAsync().ConfigureAwait(false);
                     })
-                    .OnInitialized(async (server, request, response, cancellationToken) => {
+                    .OnInitialized((server, request, response, cancellationToken) => {
                         response.SupportsConditionalBreakpoints = true;
                         response.SupportsConfigurationDoneRequest = true;
                         response.SupportsFunctionBreakpoints = true;
                         response.SupportsHitConditionalBreakpoints = true;
                         response.SupportsLogPoints = true;
                         response.SupportsSetVariable = true;
-                    });
 
-                logger.LogInformation("Handlers added");
+                        return Task.CompletedTask;
+                    });
             }).ConfigureAwait(false);
         }
 

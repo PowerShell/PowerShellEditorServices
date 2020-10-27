@@ -38,6 +38,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal bool IsUsingTempIntegratedConsole { get; set; }
 
+        internal TaskCompletionSource<object> ServerStarted { get; set; }
+
         internal void ReleaseSetBreakpointHandle()
         {
             _setBreakpointInProgressHandle.Release();
