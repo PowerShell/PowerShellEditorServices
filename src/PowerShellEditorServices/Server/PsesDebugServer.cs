@@ -75,6 +75,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
         {
             _debugAdapterServer = await DebugAdapterServer.From(options =>
             {
+                options.WithSerializer(new DapProtocolSerializer());
+
                 // We need to let the PowerShell Context Service know that we are in a debug session
                 // so that it doesn't send the powerShell/startDebugger message.
                 _powerShellContextService = ServiceProvider.GetService<PowerShellContextService>();
