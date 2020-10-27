@@ -84,10 +84,10 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 
     internal class EditorContextService : IEditorContextService
     {
-        private readonly ILanguageServer _languageServer;
+        private readonly ILanguageServerFacade _languageServer;
 
         internal EditorContextService(
-            ILanguageServer languageServer)
+            ILanguageServerFacade languageServer)
         {
             _languageServer = languageServer;
         }

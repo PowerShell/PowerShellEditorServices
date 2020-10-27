@@ -15,6 +15,7 @@ using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Serialization;
+using OmniSharp.Extensions.DebugAdapter.Server;
 using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.LanguageServer.Server;
 
@@ -42,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
         private readonly bool _usePSReadLine;
         private readonly TaskCompletionSource<bool> _serverStopped;
 
-        private IJsonRpcServer _jsonRpcServer;
+        private DebugAdapterServer _debugAdapterServer;
         private PowerShellContextService _powerShellContextService;
 
         protected readonly ILoggerFactory _loggerFactory;
@@ -72,10 +73,9 @@ namespace Microsoft.PowerShell.EditorServices.Server
         /// <returns>A task that completes when the server is ready.</returns>
         public async Task StartAsync()
         {
-            _jsonRpcServer = await JsonRpcServer.From(options =>
+            _debugAdapterServer = await DebugAdapterServer.From(options =>
             {
-                options.Serializer = new DapProtocolSerializer();
-                options.Receiver = new DapReceiver();
+                // options.Serializer = new DapProtocolSerializer();
                 options.LoggerFactory = _loggerFactory;
                 ILogger logger = options.LoggerFactory.CreateLogger("DebugOptionsStartup");
 
@@ -99,6 +99,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 }
 
                 options.Services = new ServiceCollection()
+                    .AddOptions()
                     .AddPsesDebugServices(ServiceProvider, this, _useTempSession);
 
                 options
@@ -127,7 +128,20 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<StepOutHandler>()
                     .WithHandler<SourceHandler>()
                     .WithHandler<SetVariableHandler>()
-                    .WithHandler<DebugEvaluateHandler>();
+                    .WithHandler<DebugEvaluateHandler>()
+                    .OnInitialize(async (server, request, cancellationToken) => {
+                        var breakpointService = server.GetService<BreakpointService>();
+                        // Clear any existing breakpoints before proceeding
+                        await breakpointService.RemoveAllBreakpointsAsync().ConfigureAwait(false);
+                    })
+                    .OnInitialized(async (server, request, response, cancellationToken) => {
+                        response.SupportsConditionalBreakpoints = true;
+                        response.SupportsConfigurationDoneRequest = true;
+                        response.SupportsFunctionBreakpoints = true;
+                        response.SupportsHitConditionalBreakpoints = true;
+                        response.SupportsLogPoints = true;
+                        response.SupportsSetVariable = true;
+                    });
 
                 logger.LogInformation("Handlers added");
             }).ConfigureAwait(false);
@@ -136,7 +150,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
         public void Dispose()
         {
             _powerShellContextService.IsDebugServerActive = false;
-            _jsonRpcServer.Dispose();
+            _debugAdapterServer.Dispose();
             _serverStopped.SetResult(true);
         }
 

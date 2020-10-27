@@ -19,12 +19,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly WorkspaceService _workspaceService;
         private readonly PowerShellContextService _powerShellContextService;
-        private readonly ILanguageServer _languageServer;
+        private readonly ILanguageServerFacade _languageServer;
 
         public EditorOperationsService(
             WorkspaceService workspaceService,
             PowerShellContextService powerShellContextService,
-            ILanguageServer languageServer)
+            ILanguageServerFacade languageServer)
         {
             _workspaceService = workspaceService;
             _powerShellContextService = powerShellContextService;

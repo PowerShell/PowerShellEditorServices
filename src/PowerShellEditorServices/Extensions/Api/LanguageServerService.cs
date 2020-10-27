@@ -66,9 +66,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 
     internal class LanguageServerService : ILanguageServerService
     {
-        private readonly ILanguageServer _languageServer;
+        private readonly ILanguageServerFacade _languageServer;
 
-        internal LanguageServerService(ILanguageServer languageServer)
+        internal LanguageServerService(ILanguageServerFacade languageServer)
         {
             _languageServer = languageServer;
         }

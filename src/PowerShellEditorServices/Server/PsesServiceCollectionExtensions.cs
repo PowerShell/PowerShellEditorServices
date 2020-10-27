@@ -26,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     (provider) =>
                         PowerShellContextService.Create(
                             provider.GetService<ILoggerFactory>(),
-                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>(),
+                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade>(),
                             hostStartupInfo))
                 .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     {
                         var extensionService = new ExtensionService(
                             provider.GetService<PowerShellContextService>(),
-                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServer>());
+                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade>());
                         extensionService.InitializeAsync(
                             serviceProvider: provider,
                             editorOperations: provider.GetService<EditorOperationsService>())

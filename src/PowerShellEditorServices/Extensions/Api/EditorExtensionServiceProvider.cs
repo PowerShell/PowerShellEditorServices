@@ -43,12 +43,12 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         internal EditorExtensionServiceProvider(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
-            LanguageServer = new LanguageServerService(_serviceProvider.GetService<ILanguageServer>());
+            LanguageServer = new LanguageServerService(_serviceProvider.GetService<ILanguageServerFacade>());
             //DocumentSymbols = new DocumentSymbolService(_serviceProvider.GetService<SymbolsService>());
             ExtensionCommands = new ExtensionCommandService(_serviceProvider.GetService<ExtensionService>());
             Workspace = new WorkspaceService(_serviceProvider.GetService<Internal.WorkspaceService>());
-            EditorContext = new EditorContextService(_serviceProvider.GetService<ILanguageServer>());
-            EditorUI = new EditorUIService(_serviceProvider.GetService<ILanguageServer>());
+            EditorContext = new EditorContextService(_serviceProvider.GetService<ILanguageServerFacade>());
+            EditorUI = new EditorUIService(_serviceProvider.GetService<ILanguageServerFacade>());
         }
 
         /// <summary>
@@ -143,7 +143,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <remarks>
         /// This method is intended as a trapdoor and should not be used in the first instance.
         /// Consider using the public extension services if possible.
-        /// 
+        ///
         /// Also note that services in PSES may live in a separate assembly load context,
         /// meaning that a type of the seemingly correct name may fail to fetch to a service
         /// that is known under a type of the same name but loaded in a different context.

@@ -23,13 +23,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private readonly ILogger<GetVersionHandler> _logger;
         private readonly PowerShellContextService _powerShellContextService;
-        private readonly ILanguageServer _languageServer;
+        private readonly ILanguageServerFacade _languageServer;
         private readonly ConfigurationService _configurationService;
 
         public GetVersionHandler(
             ILoggerFactory factory,
             PowerShellContextService powerShellContextService,
-            ILanguageServer languageServer,
+            ILanguageServerFacade languageServer,
             ConfigurationService configurationService)
         {
             _logger = factory.CreateLogger<GetVersionHandler>();
