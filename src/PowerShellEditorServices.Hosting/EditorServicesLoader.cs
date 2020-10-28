@@ -398,7 +398,7 @@ PID: {System.Diagnostics.Process.GetCurrentProcess().Id}
             return typeof(PSObject).Assembly
                 .GetType("System.Management.Automation.PSVersionInfo")
                 .GetMethod("get_PSVersion", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
-                .Invoke(null, Array.Empty<object>());
+                .Invoke(null, new object[0] /* Cannot use Array.Empty, since it must work in net452 */);
         }
     }
 }
