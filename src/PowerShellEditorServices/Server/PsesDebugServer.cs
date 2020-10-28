@@ -137,6 +137,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
         {
             _powerShellContextService.IsDebugServerActive = false;
             _debugAdapterServer.Dispose();
+            _inputStream.Dispose();
+            _outputStream.Dispose();
             _serverStopped.SetResult(true);
         }
 
