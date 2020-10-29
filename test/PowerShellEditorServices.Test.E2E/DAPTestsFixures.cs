@@ -20,14 +20,14 @@ namespace PowerShellEditorServices.Test.E2E
 
         public DebugAdapterClient PsesDebugAdapterClient { get; private set; }
 
-        public TaskCompletionSource<object> Started { get; private set; }
+        public TaskCompletionSource<object> Started { get; } = new TaskCompletionSource<object>();
 
         public async override Task CustomInitializeAsync(
             ILoggerFactory factory,
             Stream inputStream,
             Stream outputStream)
         {
-            var started = new TaskCompletionSource<object>();
+            var initialized = new TaskCompletionSource<object>();
             PsesDebugAdapterClient = DebugAdapterClient.Create(options =>
             {
                 options.WithSerializer(new DapProtocolSerializer());
@@ -39,13 +39,13 @@ namespace PowerShellEditorServices.Test.E2E
                         return Task.CompletedTask;
                     })
                     .OnInitialized((client, request, response, token) => {
-                        started.SetResult(true);
+                        initialized.SetResult(true);
                         return Task.CompletedTask;
                     });
             });
 
             PsesDebugAdapterClient.Initialize(CancellationToken.None).ConfigureAwait(false);
-            await started.Task.ConfigureAwait(false);
+            await initialized.Task.ConfigureAwait(false);
         }
 
         public override async Task DisposeAsync()
