@@ -1,4 +1,9 @@
-﻿using System;
+﻿//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -42,27 +47,20 @@ namespace PowerShellEditorServices.Test.E2E
                     .WithInput(inputStream)
                     .WithOutput(outputStream)
                     .WithRootUri(DocumentUri.FromFileSystemPath(testdir.FullName))
-                    .OnPublishDiagnostics(diagnosticParams =>
-                    {
-                        Diagnostics.AddRange(diagnosticParams.Diagnostics.Where(d => d != null));
-                    })
-                    .OnLogMessage(logMessageParams =>
-                    {
-                        Output?.WriteLine($"{logMessageParams.Type.ToString()}: {logMessageParams.Message}");
-                    });
+                    .OnPublishDiagnostics(diagnosticParams => Diagnostics.AddRange(diagnosticParams.Diagnostics.Where(d => d != null)))
+                    .OnLogMessage(logMessageParams => Output?.WriteLine($"{logMessageParams.Type.ToString()}: {logMessageParams.Message}"));
 
                 // Enable all capabilities this this is for testing.
                 // This will be a built in feature of the Omnisharp client at some point.
                 var capabilityTypes = typeof(ICapability).Assembly.GetExportedTypes()
-                    .Where(z => typeof(ICapability).IsAssignableFrom(z))
-                    .Where(z => z.IsClass && !z.IsAbstract);
+                    .Where(z => typeof(ICapability).IsAssignableFrom(z) && z.IsClass && !z.IsAbstract);
                 foreach (Type capabilityType in capabilityTypes)
                 {
                     options.WithCapability(Activator.CreateInstance(capabilityType, Array.Empty<object>()) as ICapability);
                 }
             });
 
-            await PsesLanguageClient.Initialize(CancellationToken.None);
+            await PsesLanguageClient.Initialize(CancellationToken.None).ConfigureAwait(false);
 
             // Make sure Script Analysis is enabled because we'll need it in the tests.
             PsesLanguageClient.Workspace.DidChangeConfiguration(
@@ -84,8 +82,8 @@ namespace PowerShellEditorServices.Test.E2E
         {
             try
             {
-                await PsesLanguageClient.Shutdown();
-                await _psesProcess.Stop();
+                await PsesLanguageClient.Shutdown().ConfigureAwait(false);
+                await _psesProcess.Stop().ConfigureAwait(false);
                 PsesLanguageClient?.Dispose();
             }
             catch (ObjectDisposedException)
