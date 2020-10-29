@@ -20,7 +20,7 @@ namespace PowerShellEditorServices.Test.E2E
 
         public DebugAdapterClient PsesDebugAdapterClient { get; private set; }
 
-        public bool Started { get; private set; }
+        public TaskCompletionSource<object> Started { get; private set; }
 
         public async override Task CustomInitializeAsync(
             ILoggerFactory factory,
@@ -35,7 +35,7 @@ namespace PowerShellEditorServices.Test.E2E
                     .WithInput(inputStream)
                     .WithOutput(outputStream)
                     .OnStarted((client, token) => {
-                        Started = true;
+                        Started.SetResult(true);
                         return Task.CompletedTask;
                     })
                     .OnInitialized((client, request, response, token) => {

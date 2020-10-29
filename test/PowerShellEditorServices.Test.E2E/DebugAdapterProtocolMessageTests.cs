@@ -11,6 +11,7 @@ using Microsoft.PowerShell.EditorServices.Handlers;
 using Xunit;
 using OmniSharp.Extensions.DebugAdapter.Client;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
+using System.Threading;
 
 namespace PowerShellEditorServices.Test.E2E
 {
@@ -63,7 +64,9 @@ namespace PowerShellEditorServices.Test.E2E
             Assert.NotNull(launchResponse);
 
             // This will check to see if we received the Initialized event from the server.
-            Assert.True(_dapTestsFixture.Started);
+            await Task.Run(
+                async () => await _dapTestsFixture.Started.Task.ConfigureAwait(false),
+                new CancellationTokenSource(2000).Token).ConfigureAwait(false);
 
             ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(false);
             Assert.NotNull(configDoneResponse);
