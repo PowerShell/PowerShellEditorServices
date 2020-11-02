@@ -30,7 +30,6 @@ namespace PowerShellEditorServices.Test.E2E
             var initialized = new TaskCompletionSource<object>();
             PsesDebugAdapterClient = DebugAdapterClient.Create(options =>
             {
-                options.WithSerializer(new DapProtocolSerializer());
                 options
                     .WithInput(inputStream)
                     .WithOutput(outputStream)
