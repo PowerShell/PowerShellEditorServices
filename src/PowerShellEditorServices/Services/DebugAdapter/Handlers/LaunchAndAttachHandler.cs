@@ -111,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _debugEventHandlerService = debugEventHandlerService;
             _debugService = debugService;
             _debugStateService = debugStateService;
-            _debugStateService.ServerStarted = new TaskCompletionSource<object>();
+            _debugStateService.ServerStarted = new TaskCompletionSource<bool>();
             _powerShellContextService = powerShellContextService;
             _remoteFileManagerService = remoteFileManagerService;
         }
@@ -353,6 +353,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return new AttachResponse();
         }
 
+        // PSES follows the following flow:
+        // Receive a Initialize request
+        // Run Initialize handler and send response back
+        // Receive a Launch/Attach request
+        // Run Launch/Attach handler and send response back
+        // PSES sends the initialized event at the end of the Launch/Attach handler
+
+        // The way that the Omnisharp server works is that this OnStarted handler runs after OnInitialized
+        // (after the Initialize DAP response is sent to the client) but before the _Initalized_ DAP event
+        // gets sent to the client. Because of the way PSES handles breakpoints,
+        // we can't send the Initialized event until _after_ we finish the Launch/Attach handler.
+        // The flow above depicts this. To achieve this, we wait until _debugStateService.ServerStarted
+        // is set, which will be done by the Launch/Attach handlers.
         public async Task OnStarted(IDebugAdapterServer server, CancellationToken cancellationToken)
         {
             // We wait for this task to be finished before triggering the initialized message to

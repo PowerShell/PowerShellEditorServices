@@ -161,7 +161,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public Task<SetExceptionBreakpointsResponse> Handle(SetExceptionBreakpointsArguments request, CancellationToken cancellationToken)
         {
             // TODO: When support for exception breakpoints (unhandled and/or first chance)
-            //       are added to the PowerShell engine, wire up the VSCode exception
+            //       is added to the PowerShell engine, wire up the VSCode exception
             //       breakpoints here using the pattern below to prevent bug regressions.
             //if (!noDebug)
             //{

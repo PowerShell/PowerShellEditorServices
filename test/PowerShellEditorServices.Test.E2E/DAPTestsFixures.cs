@@ -27,22 +27,40 @@ namespace PowerShellEditorServices.Test.E2E
             Stream inputStream,
             Stream outputStream)
         {
-            var initialized = new TaskCompletionSource<object>();
+            var initialized = new TaskCompletionSource<bool>();
             PsesDebugAdapterClient = DebugAdapterClient.Create(options =>
             {
                 options
                     .WithInput(inputStream)
                     .WithOutput(outputStream)
+                    // The OnStarted delegate gets run when we receive the _Initialized_ event from the server:
+                    // https://microsoft.github.io/debug-adapter-protocol/specification#Events_Initialized
                     .OnStarted((client, token) => {
                         Started.SetResult(true);
                         return Task.CompletedTask;
                     })
+                    // The OnInitialized delegate gets run when we first receive the _Initialize_ response:
+                    // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
                     .OnInitialized((client, request, response, token) => {
                         initialized.SetResult(true);
                         return Task.CompletedTask;
                     });
             });
 
+            // PSES follows the following flow:
+            // Receive a Initialize request
+            // Run Initialize handler and send response back
+            // Receive a Launch/Attach request
+            // Run Launch/Attach handler and send response back
+            // PSES sends the initialized event at the end of the Launch/Attach handler
+
+            // The way that the Omnisharp client works is that this Initialize method doesn't return until
+            // after OnStarted is run... which only happens when Initialized is received from the server.
+            // so if we would await this task, it would deadlock.
+            // To get around this, we run the Initialize() without await but use a `TaskCompletionSource<bool>`
+            // that gets completed when we receive the response to Initialize
+            // This tells us that we are ready to send messages to PSES... but are not stuck waiting for
+            // Initialized.
             PsesDebugAdapterClient.Initialize(CancellationToken.None).ConfigureAwait(false);
             await initialized.Task.ConfigureAwait(false);
         }

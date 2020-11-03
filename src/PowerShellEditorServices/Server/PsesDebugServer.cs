@@ -113,11 +113,15 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<SourceHandler>()
                     .WithHandler<SetVariableHandler>()
                     .WithHandler<DebugEvaluateHandler>()
+                    // The OnInitialize delegate gets run when we first receive the _Initialize_ request:
+                    // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
                     .OnInitialize(async (server, request, cancellationToken) => {
                         var breakpointService = server.GetService<BreakpointService>();
                         // Clear any existing breakpoints before proceeding
                         await breakpointService.RemoveAllBreakpointsAsync().ConfigureAwait(false);
                     })
+                    // The OnInitialized delegate gets run right before the server responds to the _Initialize_ request:
+                    // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
                     .OnInitialized((server, request, response, cancellationToken) => {
                         response.SupportsConditionalBreakpoints = true;
                         response.SupportsConfigurationDoneRequest = true;
