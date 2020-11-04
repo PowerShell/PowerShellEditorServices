@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly Dictionary<string, EditorCommand> editorCommands =
             new Dictionary<string, EditorCommand>();
 
-        private readonly ILanguageServer _languageServer;
+        private readonly ILanguageServerFacade _languageServer;
 
         #endregion
 
@@ -57,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// PowerShellContext for loading and executing extension code.
         /// </summary>
         /// <param name="powerShellContext">A PowerShellContext used to execute extension code.</param>
-        internal ExtensionService(PowerShellContextService powerShellContext, ILanguageServer languageServer)
+        internal ExtensionService(PowerShellContextService powerShellContext, ILanguageServerFacade languageServer)
         {
             this.PowerShellContext = powerShellContext;
             _languageServer = languageServer;

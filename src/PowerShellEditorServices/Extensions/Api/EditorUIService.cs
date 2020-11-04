@@ -103,9 +103,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
     {
         private static string[] s_choiceResponseLabelSeparators = new[] { ", " };
 
-        private readonly ILanguageServer _languageServer;
+        private readonly ILanguageServerFacade _languageServer;
 
-        public EditorUIService(ILanguageServer languageServer)
+        public EditorUIService(ILanguageServerFacade languageServer)
         {
             _languageServer = languageServer;
         }

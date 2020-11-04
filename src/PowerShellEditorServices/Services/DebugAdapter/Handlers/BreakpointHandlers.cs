@@ -19,121 +19,20 @@ using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class SetFunctionBreakpointsHandler : ISetFunctionBreakpointsHandler
-    {
-        private readonly ILogger _logger;
-        private readonly DebugService _debugService;
-        private readonly DebugStateService _debugStateService;
-
-        public SetFunctionBreakpointsHandler(
-            ILoggerFactory loggerFactory,
-            DebugService debugService,
-            DebugStateService debugStateService)
-        {
-            _logger = loggerFactory.CreateLogger<SetFunctionBreakpointsHandler>();
-            _debugService = debugService;
-            _debugStateService = debugStateService;
-        }
-
-        public async Task<SetFunctionBreakpointsResponse> Handle(SetFunctionBreakpointsArguments request, CancellationToken cancellationToken)
-        {
-            CommandBreakpointDetails[] breakpointDetails = request.Breakpoints
-                .Select((funcBreakpoint) => CommandBreakpointDetails.Create(
-                    funcBreakpoint.Name,
-                    funcBreakpoint.Condition,
-                    funcBreakpoint.HitCondition))
-                .ToArray();
-
-            // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
-            CommandBreakpointDetails[] updatedBreakpointDetails = breakpointDetails;
-            if (!_debugStateService.NoDebug)
-            {
-                await _debugStateService.WaitForSetBreakpointHandleAsync().ConfigureAwait(false);
-
-                try
-                {
-                    updatedBreakpointDetails =
-                        await _debugService.SetCommandBreakpointsAsync(
-                            breakpointDetails).ConfigureAwait(false);
-                }
-                catch (Exception e)
-                {
-                    // Log whatever the error is
-                    _logger.LogException($"Caught error while setting command breakpoints", e);
-                }
-                finally
-                {
-                    _debugStateService.ReleaseSetBreakpointHandle();
-                }
-            }
-
-            return new SetFunctionBreakpointsResponse
-            {
-                Breakpoints = updatedBreakpointDetails
-                    .Select(LspDebugUtils.CreateBreakpoint)
-                    .ToArray()
-            };
-        }
-    }
-
-    internal class SetExceptionBreakpointsHandler : ISetExceptionBreakpointsHandler
-    {
-        private readonly ILogger _logger;
-        private readonly DebugService _debugService;
-        private readonly DebugStateService _debugStateService;
-
-        public SetExceptionBreakpointsHandler(
-            ILoggerFactory loggerFactory,
-            DebugService debugService,
-            DebugStateService debugStateService)
-        {
-            _logger = loggerFactory.CreateLogger<SetExceptionBreakpointsHandler>();
-            _debugService = debugService;
-            _debugStateService = debugStateService;
-        }
-
-        public Task<SetExceptionBreakpointsResponse> Handle(SetExceptionBreakpointsArguments request, CancellationToken cancellationToken)
-        {
-            // TODO: When support for exception breakpoints (unhandled and/or first chance)
-            //       are added to the PowerShell engine, wire up the VSCode exception
-            //       breakpoints here using the pattern below to prevent bug regressions.
-            //if (!noDebug)
-            //{
-            //    setBreakpointInProgress = true;
-
-            //    try
-            //    {
-            //        // Set exception breakpoints in DebugService
-            //    }
-            //    catch (Exception e)
-            //    {
-            //        // Log whatever the error is
-            //        Logger.WriteException($"Caught error while setting exception breakpoints", e);
-            //    }
-            //    finally
-            //    {
-            //        setBreakpointInProgress = false;
-            //    }
-            //}
-
-            return Task.FromResult(new SetExceptionBreakpointsResponse());
-        }
-    }
-
-    internal class SetBreakpointsHandler : ISetBreakpointsHandler
+    internal class BreakpointHandlers : ISetFunctionBreakpointsHandler, ISetBreakpointsHandler, ISetExceptionBreakpointsHandler
     {
         private readonly ILogger _logger;
         private readonly DebugService _debugService;
         private readonly DebugStateService _debugStateService;
         private readonly WorkspaceService _workspaceService;
 
-        public SetBreakpointsHandler(
+        public BreakpointHandlers(
             ILoggerFactory loggerFactory,
             DebugService debugService,
             DebugStateService debugStateService,
             WorkspaceService workspaceService)
         {
-            _logger = loggerFactory.CreateLogger<SetBreakpointsHandler>();
+            _logger = loggerFactory.CreateLogger<BreakpointHandlers>();
             _debugService = debugService;
             _debugStateService = debugStateService;
             _workspaceService = workspaceService;
@@ -217,6 +116,73 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 Breakpoints = new Container<Breakpoint>(updatedBreakpointDetails
                     .Select(LspDebugUtils.CreateBreakpoint))
             };
+        }
+
+        public async Task<SetFunctionBreakpointsResponse> Handle(SetFunctionBreakpointsArguments request, CancellationToken cancellationToken)
+        {
+            CommandBreakpointDetails[] breakpointDetails = request.Breakpoints
+                .Select((funcBreakpoint) => CommandBreakpointDetails.Create(
+                    funcBreakpoint.Name,
+                    funcBreakpoint.Condition,
+                    funcBreakpoint.HitCondition))
+                .ToArray();
+
+            // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
+            CommandBreakpointDetails[] updatedBreakpointDetails = breakpointDetails;
+            if (!_debugStateService.NoDebug)
+            {
+                await _debugStateService.WaitForSetBreakpointHandleAsync().ConfigureAwait(false);
+
+                try
+                {
+                    updatedBreakpointDetails =
+                        await _debugService.SetCommandBreakpointsAsync(
+                            breakpointDetails).ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    // Log whatever the error is
+                    _logger.LogException($"Caught error while setting command breakpoints", e);
+                }
+                finally
+                {
+                    _debugStateService.ReleaseSetBreakpointHandle();
+                }
+            }
+
+            return new SetFunctionBreakpointsResponse
+            {
+                Breakpoints = updatedBreakpointDetails
+                    .Select(LspDebugUtils.CreateBreakpoint)
+                    .ToArray()
+            };
+        }
+
+        public Task<SetExceptionBreakpointsResponse> Handle(SetExceptionBreakpointsArguments request, CancellationToken cancellationToken)
+        {
+            // TODO: When support for exception breakpoints (unhandled and/or first chance)
+            //       is added to the PowerShell engine, wire up the VSCode exception
+            //       breakpoints here using the pattern below to prevent bug regressions.
+            //if (!noDebug)
+            //{
+            //    setBreakpointInProgress = true;
+
+            //    try
+            //    {
+            //        // Set exception breakpoints in DebugService
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        // Log whatever the error is
+            //        Logger.WriteException($"Caught error while setting exception breakpoints", e);
+            //    }
+            //    finally
+            //    {
+            //        setBreakpointInProgress = false;
+            //    }
+            //}
+
+            return Task.FromResult(new SetExceptionBreakpointsResponse());
         }
     }
 }

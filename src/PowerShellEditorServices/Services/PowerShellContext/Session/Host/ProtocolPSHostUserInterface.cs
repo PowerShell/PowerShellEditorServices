@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     {
         #region Private Fields
 
-        private readonly ILanguageServer _languageServer;
+        private readonly ILanguageServerFacade _languageServer;
 
         #endregion
 
@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </summary>
         /// <param name="powerShellContext"></param>
         public ProtocolPSHostUserInterface(
-            ILanguageServer languageServer,
+            ILanguageServerFacade languageServer,
             PowerShellContextService powerShellContext,
             ILogger logger)
             : base (

@@ -13,7 +13,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Utility;
+using OmniSharp.Extensions.DebugAdapter.Protocol;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Serialization;
+using OmniSharp.Extensions.DebugAdapter.Server;
 using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.LanguageServer.Server;
 
@@ -41,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
         private readonly bool _usePSReadLine;
         private readonly TaskCompletionSource<bool> _serverStopped;
 
-        private IJsonRpcServer _jsonRpcServer;
+        private DebugAdapterServer _debugAdapterServer;
         private PowerShellContextService _powerShellContextService;
 
         protected readonly ILoggerFactory _loggerFactory;
@@ -71,13 +73,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
         /// <returns>A task that completes when the server is ready.</returns>
         public async Task StartAsync()
         {
-            _jsonRpcServer = await JsonRpcServer.From(options =>
+            _debugAdapterServer = await DebugAdapterServer.From(options =>
             {
-                options.Serializer = new DapProtocolSerializer();
-                options.Receiver = new DapReceiver();
-                options.LoggerFactory = _loggerFactory;
-                ILogger logger = options.LoggerFactory.CreateLogger("DebugOptionsStartup");
-
                 // We need to let the PowerShell Context Service know that we are in a debug session
                 // so that it doesn't send the powerShell/startDebugger message.
                 _powerShellContextService = ServiceProvider.GetService<PowerShellContextService>();
@@ -97,45 +94,53 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         .GetResult();
                 }
 
-                options.Services = new ServiceCollection()
-                    .AddPsesDebugServices(ServiceProvider, this, _useTempSession);
-
                 options
                     .WithInput(_inputStream)
-                    .WithOutput(_outputStream);
-
-                logger.LogInformation("Adding handlers");
-
-                options
-                    .WithHandler<InitializeHandler>()
-                    .WithHandler<LaunchHandler>()
-                    .WithHandler<AttachHandler>()
+                    .WithOutput(_outputStream)
+                    .WithServices(serviceCollection => serviceCollection
+                        .AddLogging()
+                        .AddOptions()
+                        .AddPsesDebugServices(ServiceProvider, this, _useTempSession))
+                    .WithHandler<LaunchAndAttachHandler>()
                     .WithHandler<DisconnectHandler>()
-                    .WithHandler<SetFunctionBreakpointsHandler>()
-                    .WithHandler<SetExceptionBreakpointsHandler>()
+                    .WithHandler<BreakpointHandlers>()
                     .WithHandler<ConfigurationDoneHandler>()
                     .WithHandler<ThreadsHandler>()
-                    .WithHandler<SetBreakpointsHandler>()
                     .WithHandler<StackTraceHandler>()
                     .WithHandler<ScopesHandler>()
                     .WithHandler<VariablesHandler>()
-                    .WithHandler<ContinueHandler>()
-                    .WithHandler<NextHandler>()
-                    .WithHandler<PauseHandler>()
-                    .WithHandler<StepInHandler>()
-                    .WithHandler<StepOutHandler>()
+                    .WithHandler<DebuggerActionHandlers>()
                     .WithHandler<SourceHandler>()
                     .WithHandler<SetVariableHandler>()
-                    .WithHandler<DebugEvaluateHandler>();
+                    .WithHandler<DebugEvaluateHandler>()
+                    // The OnInitialize delegate gets run when we first receive the _Initialize_ request:
+                    // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
+                    .OnInitialize(async (server, request, cancellationToken) => {
+                        var breakpointService = server.GetService<BreakpointService>();
+                        // Clear any existing breakpoints before proceeding
+                        await breakpointService.RemoveAllBreakpointsAsync().ConfigureAwait(false);
+                    })
+                    // The OnInitialized delegate gets run right before the server responds to the _Initialize_ request:
+                    // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
+                    .OnInitialized((server, request, response, cancellationToken) => {
+                        response.SupportsConditionalBreakpoints = true;
+                        response.SupportsConfigurationDoneRequest = true;
+                        response.SupportsFunctionBreakpoints = true;
+                        response.SupportsHitConditionalBreakpoints = true;
+                        response.SupportsLogPoints = true;
+                        response.SupportsSetVariable = true;
 
-                logger.LogInformation("Handlers added");
+                        return Task.CompletedTask;
+                    });
             }).ConfigureAwait(false);
         }
 
         public void Dispose()
         {
             _powerShellContextService.IsDebugServerActive = false;
-            _jsonRpcServer.Dispose();
+            _debugAdapterServer.Dispose();
+            _inputStream.Dispose();
+            _outputStream.Dispose();
             _serverStopped.SetResult(true);
         }
 

@@ -122,11 +122,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                     .ClearProviders()
                     .AddSerilog()
                     .SetMinimumLevel(LogLevel.Trace))
-                .AddSingleton<ILanguageServer>(provider => null)
+                .AddSingleton<ILanguageServerFacade>(provider => null)
                 .AddPsesLanguageServices(hostStartupInfo)
                 // For a Temp session, there is no LanguageServer so just set it to null
                 .AddSingleton(
-                    typeof(ILanguageServer),
+                    typeof(ILanguageServerFacade),
                     _ => null)
                 .BuildServiceProvider();
 

@@ -38,6 +38,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal bool IsUsingTempIntegratedConsole { get; set; }
 
+        // This gets set at the end of the Launch/Attach handler which set debug state.
+        internal TaskCompletionSource<bool> ServerStarted { get; set; }
+
         internal void ReleaseSetBreakpointHandle()
         {
             _setBreakpointInProgressHandle.Release();
