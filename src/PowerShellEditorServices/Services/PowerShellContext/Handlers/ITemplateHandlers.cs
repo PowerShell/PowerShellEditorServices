@@ -8,10 +8,12 @@ using OmniSharp.Extensions.JsonRpc;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    [Serial, Method("powerShell/getProjectTemplates")]
+    [Serial]
+    [Method("powerShell/getProjectTemplates", Direction.ClientToServer)]
     internal interface IGetProjectTemplatesHandler : IJsonRpcRequestHandler<GetProjectTemplatesRequest, GetProjectTemplatesResponse> { }
 
-    [Serial, Method("powerShell/newProjectFromTemplate")]
+    [Serial]
+    [Method("powerShell/newProjectFromTemplate", Direction.ClientToServer)]
     internal interface INewProjectFromTemplateHandler : IJsonRpcRequestHandler<NewProjectFromTemplateRequest, NewProjectFromTemplateResponse> { }
 
     internal class GetProjectTemplatesRequest : IRequest<GetProjectTemplatesResponse>
