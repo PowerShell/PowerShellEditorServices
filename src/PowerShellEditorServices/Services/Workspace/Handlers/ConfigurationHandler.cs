@@ -152,28 +152,37 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private void SendFeatureChangesTelemetry(LanguageServerSettingsWrapper incomingSettings)
         {
             Dictionary<string, bool> configChanges = new Dictionary<string, bool>();
-            if (incomingSettings.Powershell.ScriptAnalysis.Enable != null &&
+            // Send telemetry if the user opted-out of ScriptAnalysis
+            if (incomingSettings.Powershell.ScriptAnalysis.Enable == false &&
                 _configurationService.CurrentSettings.ScriptAnalysis.Enable != incomingSettings.Powershell.ScriptAnalysis.Enable)
             {
                 configChanges["ScriptAnalysis"] = incomingSettings.Powershell.ScriptAnalysis.Enable ?? false;
             }
 
-            if (_configurationService.CurrentSettings.CodeFolding.Enable != incomingSettings.Powershell.CodeFolding.Enable)
+            // Send telemetry if the user opted-out of CodeFolding
+            if (!incomingSettings.Powershell.CodeFolding.Enable &&
+                _configurationService.CurrentSettings.CodeFolding.Enable != incomingSettings.Powershell.CodeFolding.Enable)
             {
                 configChanges["CodeFolding"] = incomingSettings.Powershell.CodeFolding.Enable;
             }
 
-            if (_configurationService.CurrentSettings.PromptToUpdatePackageManagement != incomingSettings.Powershell.PromptToUpdatePackageManagement)
+            // Send telemetry if the user opted-out of the prompt to update PackageManagement
+            if (!incomingSettings.Powershell.PromptToUpdatePackageManagement &&
+                _configurationService.CurrentSettings.PromptToUpdatePackageManagement != incomingSettings.Powershell.PromptToUpdatePackageManagement)
             {
                 configChanges["PromptToUpdatePackageManagement"] = incomingSettings.Powershell.PromptToUpdatePackageManagement;
             }
 
-            if (_configurationService.CurrentSettings.EnableProfileLoading != incomingSettings.Powershell.EnableProfileLoading)
+            // Send telemetry if the user opted-out of Profile loading
+            if (!incomingSettings.Powershell.EnableProfileLoading &&
+                _configurationService.CurrentSettings.EnableProfileLoading != incomingSettings.Powershell.EnableProfileLoading)
             {
                 configChanges["ProfileLoading"] = incomingSettings.Powershell.EnableProfileLoading;
             }
 
-            if (_configurationService.CurrentSettings.Pester.UseLegacyCodeLens != incomingSettings.Powershell.Pester.UseLegacyCodeLens)
+            // Send telemetry if the user opted-in to Pester 5+ CodeLens
+            if (!incomingSettings.Powershell.Pester.UseLegacyCodeLens &&
+                _configurationService.CurrentSettings.Pester.UseLegacyCodeLens != incomingSettings.Powershell.Pester.UseLegacyCodeLens)
             {
                 // From our perspective we want to see how many people are opting in to this so we flip the value
                 configChanges["Pester5CodeLens"] = !incomingSettings.Powershell.Pester.UseLegacyCodeLens;
@@ -189,7 +198,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 Data = new PsesTelemetryEvent
                 {
-                    EventName = "EnabledPsesFeatures",
+                    EventName = "NonDefaultPsesFeatureConfiguration",
                     Data = JObject.FromObject(configChanges)
                 }
             });

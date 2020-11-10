@@ -10,6 +10,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Logging;
+using Microsoft.PowerShell.EditorServices.Services.Configuration;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol;
@@ -29,7 +31,7 @@ namespace PowerShellEditorServices.Test.E2E
 
         public ILanguageClient PsesLanguageClient { get; private set; }
         public List<Diagnostic> Diagnostics { get; set; }
-
+        internal List<PsesTelemetryEvent> TelemetryEvents { get; set; }
         public ITestOutputHelper Output { get; set; }
 
         public async override Task CustomInitializeAsync(
@@ -38,6 +40,7 @@ namespace PowerShellEditorServices.Test.E2E
             Stream outputStream)
         {
             Diagnostics = new List<Diagnostic>();
+            TelemetryEvents = new List<PsesTelemetryEvent>();
             DirectoryInfo testdir =
                 Directory.CreateDirectory(Path.Combine(s_binDir, Path.GetRandomFileName()));
 
@@ -48,7 +51,13 @@ namespace PowerShellEditorServices.Test.E2E
                     .WithOutput(outputStream)
                     .WithRootUri(DocumentUri.FromFileSystemPath(testdir.FullName))
                     .OnPublishDiagnostics(diagnosticParams => Diagnostics.AddRange(diagnosticParams.Diagnostics.Where(d => d != null)))
-                    .OnLogMessage(logMessageParams => Output?.WriteLine($"{logMessageParams.Type.ToString()}: {logMessageParams.Message}"));
+                    .OnLogMessage(logMessageParams => Output?.WriteLine($"{logMessageParams.Type.ToString()}: {logMessageParams.Message}"))
+                    .OnTelemetryEvent(telemetryEventParams => TelemetryEvents.Add(
+                        new PsesTelemetryEvent
+                        {
+                            EventName = (string) telemetryEventParams.Data["eventName"],
+                            Data = telemetryEventParams.Data["data"] as JObject
+                        }));
 
                 // Enable all capabilities this this is for testing.
                 // This will be a built in feature of the Omnisharp client at some point.
@@ -63,18 +72,16 @@ namespace PowerShellEditorServices.Test.E2E
             await PsesLanguageClient.Initialize(CancellationToken.None).ConfigureAwait(false);
 
             // Make sure Script Analysis is enabled because we'll need it in the tests.
+            // This also makes sure the configuration is set to default values.
             PsesLanguageClient.Workspace.DidChangeConfiguration(
                 new DidChangeConfigurationParams
                 {
-                    Settings = JObject.Parse(@"
-{
-    ""powershell"": {
-        ""scriptAnalysis"": {
-            ""enable"": true
-        }
-    }
-}
-")
+                    Settings = JToken.FromObject(new LanguageServerSettingsWrapper
+                    {
+                        Files = new EditorFileSettings(),
+                        Search = new EditorSearchSettings(),
+                        Powershell = new LanguageServerSettings()
+                    })
                 });
         }
 
