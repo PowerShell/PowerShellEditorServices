@@ -13,7 +13,7 @@
   <ItemGroup>
     <PackageReference Include="NETStandard.Library" Version="2.0.3" />
     <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" PrivateAssets="all" />
-    <PackageReference Include="System.IO.Pipes.AccessControl" Version="4.5.1" />
+    <PackageReference Include="System.IO.Pipes.AccessControl" Version="5.0.0" />
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
   </ItemGroup>
 
