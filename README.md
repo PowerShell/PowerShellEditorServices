@@ -121,9 +121,11 @@ The types of PowerShell Editor Services can change at any moment and should not 
 
 ## Development
 
-### 1. Install PowerShell 6+
+> NOTE: The easiest way to manually test changes you've made in PowerShellEditorServices is to follow the [vscode-powershell development doc](https://github.com/PowerShell/vscode-powershell/blob/master/docs/development.md) to get a local build of the VS Code extension to use your local build of PowerShellEditorServices.
 
-Install PowerShell 6+ with [these instructions](https://github.com/PowerShell/PowerShell#get-powershell).
+### 1. Install PowerShell 7+
+
+Install PowerShell 7+ with [these instructions](https://github.com/PowerShell/PowerShell#get-powershell).
 
 ### 3. Clone the GitHub repository:
 
