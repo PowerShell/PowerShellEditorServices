@@ -139,6 +139,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 // We use .Name here instead of just passing in commandInfo because
                 // CommandInfo.ToString() duplicates the Prefix if one exists.
                 .AddParameter("Name", commandInfo.Name)
+                .AddParameter("Online", false)
                 .AddParameter("ErrorAction", "Ignore");
 
             var results = await powerShellContext.ExecuteCommandAsync<PSObject>(command, sendOutputToHost: false, sendErrorToHost: false).ConfigureAwait(false);
