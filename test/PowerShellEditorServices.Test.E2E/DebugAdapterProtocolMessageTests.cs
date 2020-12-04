@@ -166,9 +166,13 @@ namespace PowerShellEditorServices.Test.E2E
         }
 
         [Trait("Category", "DAP")]
-        [Fact]
+        [SkippableFact]
         public async Task CanSetBreakpointsAsync()
         {
+            Skip.If(
+                PsesStdioProcess.RunningInConstainedLanguageMode,
+                "You can't set breakpoints in ConstrainedLanguage mode.");
+
             string filePath = NewTestFile(GenerateScriptFromLoggingStatements(
                 "before breakpoint",
                 "at breakpoint",
