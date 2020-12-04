@@ -7,11 +7,11 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Handlers;
 using OmniSharp.Extensions.DebugAdapter.Client;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Models;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
@@ -23,6 +23,7 @@ namespace PowerShellEditorServices.Test.E2E
     public class DebugAdapterProtocolMessageTests : IAsyncLifetime
     {
         private const string s_testOutputFileName = "__dapTestOutputFile.txt";
+        private readonly static bool s_isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
         private readonly static string s_binDir =
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         private readonly static string s_testOutputPath = Path.Combine(s_binDir, s_testOutputFileName);
@@ -197,7 +198,7 @@ namespace PowerShellEditorServices.Test.E2E
 
             var breakpoint = setBreakpointsResponse.Breakpoints.First();
             Assert.True(breakpoint.Verified);
-            Assert.Equal(filePath, breakpoint.Source.Path);
+            Assert.Equal(filePath, breakpoint.Source.Path, ignoreCase: s_isWindows);
             Assert.Equal(2, breakpoint.Line);
 
             ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(false);
