@@ -5,16 +5,20 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
-using MediatR;
+using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using OmniSharp.Extensions.LanguageServer.Protocol.Window;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
-using System.IO;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -24,6 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly WorkspaceService _workspaceService;
         private readonly ConfigurationService _configurationService;
         private readonly PowerShellContextService _powerShellContextService;
+        private readonly ILanguageServerFacade _languageServer;
         private DidChangeConfigurationCapability _capability;
         private bool _profilesLoaded;
         private bool _consoleReplStarted;
@@ -34,13 +39,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             WorkspaceService workspaceService,
             AnalysisService analysisService,
             ConfigurationService configurationService,
-            PowerShellContextService powerShellContextService)
+            PowerShellContextService powerShellContextService,
+            ILanguageServerFacade languageServer)
         {
             _logger = factory.CreateLogger<PsesConfigurationHandler>();
             _workspaceService = workspaceService;
             _configurationService = configurationService;
             _powerShellContextService = powerShellContextService;
-
+            _languageServer = languageServer;
             ConfigurationUpdated += analysisService.OnConfigurationUpdated;
         }
 
@@ -56,6 +62,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 return await Unit.Task.ConfigureAwait(false);
             }
+
+            SendFeatureChangesTelemetry(incomingSettings);
 
             bool oldLoadProfiles = _configurationService.CurrentSettings.EnableProfileLoading;
             bool oldScriptAnalysisEnabled =
@@ -139,6 +147,61 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             return await Unit.Task.ConfigureAwait(false);
+        }
+
+        private void SendFeatureChangesTelemetry(LanguageServerSettingsWrapper incomingSettings)
+        {
+            var configChanges = new Dictionary<string, bool>();
+            // Send telemetry if the user opted-out of ScriptAnalysis
+            if (incomingSettings.Powershell.ScriptAnalysis.Enable == false &&
+                _configurationService.CurrentSettings.ScriptAnalysis.Enable != incomingSettings.Powershell.ScriptAnalysis.Enable)
+            {
+                configChanges["ScriptAnalysis"] = incomingSettings.Powershell.ScriptAnalysis.Enable ?? false;
+            }
+
+            // Send telemetry if the user opted-out of CodeFolding
+            if (!incomingSettings.Powershell.CodeFolding.Enable &&
+                _configurationService.CurrentSettings.CodeFolding.Enable != incomingSettings.Powershell.CodeFolding.Enable)
+            {
+                configChanges["CodeFolding"] = incomingSettings.Powershell.CodeFolding.Enable;
+            }
+
+            // Send telemetry if the user opted-out of the prompt to update PackageManagement
+            if (!incomingSettings.Powershell.PromptToUpdatePackageManagement &&
+                _configurationService.CurrentSettings.PromptToUpdatePackageManagement != incomingSettings.Powershell.PromptToUpdatePackageManagement)
+            {
+                configChanges["PromptToUpdatePackageManagement"] = incomingSettings.Powershell.PromptToUpdatePackageManagement;
+            }
+
+            // Send telemetry if the user opted-out of Profile loading
+            if (!incomingSettings.Powershell.EnableProfileLoading &&
+                _configurationService.CurrentSettings.EnableProfileLoading != incomingSettings.Powershell.EnableProfileLoading)
+            {
+                configChanges["ProfileLoading"] = incomingSettings.Powershell.EnableProfileLoading;
+            }
+
+            // Send telemetry if the user opted-in to Pester 5+ CodeLens
+            if (!incomingSettings.Powershell.Pester.UseLegacyCodeLens &&
+                _configurationService.CurrentSettings.Pester.UseLegacyCodeLens != incomingSettings.Powershell.Pester.UseLegacyCodeLens)
+            {
+                // From our perspective we want to see how many people are opting in to this so we flip the value
+                configChanges["Pester5CodeLens"] = !incomingSettings.Powershell.Pester.UseLegacyCodeLens;
+            }
+
+            // No need to send any telemetry since nothing changed
+            if (configChanges.Count == 0)
+            {
+                return;
+            }
+
+            _languageServer.Window.SendTelemetryEvent(new TelemetryEventParams
+            {
+                Data = new PsesTelemetryEvent
+                {
+                    EventName = "NonDefaultPsesFeatureConfiguration",
+                    Data = JObject.FromObject(configChanges)
+                }
+            });
         }
 
         public void SetCapability(DidChangeConfigurationCapability capability)
