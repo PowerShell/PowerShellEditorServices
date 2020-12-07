@@ -151,7 +151,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private void SendFeatureChangesTelemetry(LanguageServerSettingsWrapper incomingSettings)
         {
-            Dictionary<string, bool> configChanges = new Dictionary<string, bool>();
+            var configChanges = new Dictionary<string, bool>();
             // Send telemetry if the user opted-out of ScriptAnalysis
             if (incomingSettings.Powershell.ScriptAnalysis.Enable == false &&
                 _configurationService.CurrentSettings.ScriptAnalysis.Enable != incomingSettings.Powershell.ScriptAnalysis.Enable)
