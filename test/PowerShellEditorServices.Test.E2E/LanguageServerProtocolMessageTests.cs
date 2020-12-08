@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Handlers;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client;
@@ -23,6 +24,8 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models.Proposals;
 using Xunit;
 using Xunit.Abstractions;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
+using Microsoft.PowerShell.EditorServices.Logging;
+using Microsoft.PowerShell.EditorServices.Services.Configuration;
 
 namespace PowerShellEditorServices.Test.E2E
 {
@@ -35,6 +38,7 @@ namespace PowerShellEditorServices.Test.E2E
 
         private readonly ILanguageClient PsesLanguageClient;
         private readonly List<Diagnostic> Diagnostics;
+        private readonly List<PsesTelemetryEvent> TelemetryEvents;
         private readonly string PwshExe;
 
         public LanguageServerProtocolMessageTests(ITestOutputHelper output, LSPTestsFixture data)
@@ -43,6 +47,8 @@ namespace PowerShellEditorServices.Test.E2E
             PsesLanguageClient = data.PsesLanguageClient;
             Diagnostics = data.Diagnostics;
             Diagnostics.Clear();
+            TelemetryEvents = data.TelemetryEvents;
+            TelemetryEvents.Clear();
 
             PwshExe = PsesStdioProcess.PwshExe;
         }
@@ -50,6 +56,7 @@ namespace PowerShellEditorServices.Test.E2E
         public void Dispose()
         {
             Diagnostics.Clear();
+            TelemetryEvents.Clear();
         }
 
         private string NewTestFile(string script, bool isPester = false, string languageId = "powershell")
@@ -75,7 +82,7 @@ namespace PowerShellEditorServices.Test.E2E
             return filePath;
         }
 
-        private async Task WaitForDiagnostics()
+        private async Task WaitForDiagnosticsAsync()
         {
             // Wait for PSSA to finish.
             int i = 0;
@@ -84,6 +91,22 @@ namespace PowerShellEditorServices.Test.E2E
                 if(i >= 10)
                 {
                     throw new InvalidDataException("No diagnostics showed up after 20s.");
+                }
+
+                await Task.Delay(2000);
+                i++;
+            }
+        }
+
+        private async Task WaitForTelemetryEventsAsync()
+        {
+            // Wait for PSSA to finish.
+            int i = 0;
+            while(TelemetryEvents.Count == 0)
+            {
+                if(i >= 10)
+                {
+                    throw new InvalidDataException("No telemetry events showed up after 20s.");
                 }
 
                 await Task.Delay(2000);
@@ -143,7 +166,7 @@ function CanSendWorkspaceSymbolRequest {
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             NewTestFile("$a = 4");
-            await WaitForDiagnostics();
+            await WaitForDiagnosticsAsync();
 
             Diagnostic diagnostic = Assert.Single(Diagnostics);
             Assert.Equal("PSUseDeclaredVarsMoreThanAssignments", diagnostic.Code);
@@ -168,7 +191,7 @@ function CanSendWorkspaceSymbolRequest {
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string filePath = NewTestFile("$a = 4");
-            await WaitForDiagnostics();
+            await WaitForDiagnosticsAsync();
             Diagnostics.Clear();
 
             PsesLanguageClient.SendNotification("textDocument/didChange", new DidChangeTextDocumentParams
@@ -196,7 +219,7 @@ function CanSendWorkspaceSymbolRequest {
                 }
             });
 
-            await WaitForDiagnostics();
+            await WaitForDiagnosticsAsync();
             if (Diagnostics.Count > 1)
             {
                 StringBuilder errorBuilder = new StringBuilder().AppendLine("Multiple diagnostics found when there should be only 1:");
@@ -221,45 +244,56 @@ function CanSendWorkspaceSymbolRequest {
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             NewTestFile("gci | % { $_ }");
-            await WaitForDiagnostics();
+            await WaitForDiagnosticsAsync();
 
             // NewTestFile doesn't clear diagnostic notifications so we need to do that for this test.
             Diagnostics.Clear();
 
-            try
-            {
-                PsesLanguageClient.SendNotification("workspace/didChangeConfiguration",
+            PsesLanguageClient.SendNotification("workspace/didChangeConfiguration",
                 new DidChangeConfigurationParams
                 {
-                    Settings = JToken.Parse(@"
-{
-    ""powershell"": {
-        ""scriptAnalysis"": {
-            ""enable"": false
-        }
-    }
-}
-")
+                    Settings = JToken.FromObject(new LanguageServerSettingsWrapper
+                    {
+                        Files = new EditorFileSettings(),
+                        Search = new EditorSearchSettings(),
+                        Powershell = new LanguageServerSettings
+                        {
+                            ScriptAnalysis = new ScriptAnalysisSettings
+                            {
+                                Enable = false
+                            }
+                        }
+                    })
                 });
 
-                Assert.Empty(Diagnostics);
-            }
-            finally
-            {
-                PsesLanguageClient.SendNotification("workspace/didChangeConfiguration",
+            await WaitForTelemetryEventsAsync().ConfigureAwait(false);
+            var telemetryEvent = Assert.Single(TelemetryEvents);
+            Assert.Equal("NonDefaultPsesFeatureConfiguration", telemetryEvent.EventName);
+            Assert.False((bool)telemetryEvent.Data.GetValue("ScriptAnalysis"));
+
+            // We also shouldn't get any Diagnostics because ScriptAnalysis is disabled.
+            Assert.Empty(Diagnostics);
+
+            // Clear telemetry events so we can test to make sure telemetry doesn't
+            // come through with default settings.
+            TelemetryEvents.Clear();
+
+            // Restore default configuration
+            PsesLanguageClient.SendNotification("workspace/didChangeConfiguration",
                 new DidChangeConfigurationParams
                 {
-                    Settings = JToken.Parse(@"
-{
-    ""powershell"": {
-        ""scriptAnalysis"": {
-            ""enable"": true
-        }
-    }
-}
-")
+                    Settings = JToken.FromObject(new LanguageServerSettingsWrapper
+                    {
+                        Files = new EditorFileSettings(),
+                        Search = new EditorSearchSettings(),
+                        Powershell = new LanguageServerSettings()
+                    })
                 });
-            }
+
+            // Wait a bit to make sure no telemetry events came through
+            await Task.Delay(2000);
+            // Since we have default settings we should not get any telemetry events about
+            Assert.Empty(TelemetryEvents.Where(e => e.EventName == "NonDefaultPsesFeatureConfiguration"));
         }
 
         [Trait("Category", "LSP")]
@@ -840,7 +874,7 @@ CanSendReferencesCodeLensRequest
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string filePath = NewTestFile("gci");
-            await WaitForDiagnostics();
+            await WaitForDiagnosticsAsync();
 
             CommandOrCodeActionContainer commandOrCodeActions =
                 await PsesLanguageClient

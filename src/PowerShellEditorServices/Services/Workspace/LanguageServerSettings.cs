@@ -18,9 +18,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
     internal class LanguageServerSettings
     {
         private readonly object updateLock = new object();
-        public bool EnableProfileLoading { get; set; }
 
-        public bool PromptToUpdatePackageManagement { get; set; }
+        public bool EnableProfileLoading { get; set; } = true;
+
+        public bool PromptToUpdatePackageManagement { get; set; } = true;
 
         public ScriptAnalysisSettings ScriptAnalysis { get; set; }
 

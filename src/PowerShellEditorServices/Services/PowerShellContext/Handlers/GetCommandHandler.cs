@@ -14,7 +14,7 @@ using OmniSharp.Extensions.JsonRpc;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    [Serial, Method("powerShell/getCommand")]
+    [Serial, Method("powerShell/getCommand", Direction.ClientToServer)]
     internal interface IGetCommandHandler : IJsonRpcRequestHandler<GetCommandParams, List<PSCommandMessage>> { }
 
     internal class GetCommandParams : IRequest<List<PSCommandMessage>> { }
