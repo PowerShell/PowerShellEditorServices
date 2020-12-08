@@ -50,7 +50,7 @@ namespace PowerShellEditorServices.Test.E2E
             TelemetryEvents = data.TelemetryEvents;
             TelemetryEvents.Clear();
 
-            PwshExe = TestsFixture.PwshExe;
+            PwshExe = PsesStdioProcess.PwshExe;
         }
 
         public void Dispose()
@@ -114,6 +114,7 @@ namespace PowerShellEditorServices.Test.E2E
             }
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
         public async Task CanSendPowerShellGetVersionRequestAsync()
         {
@@ -132,8 +133,9 @@ namespace PowerShellEditorServices.Test.E2E
             }
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
-        public async Task CanSendWorkspaceSymbolRequest()
+        public async Task CanSendWorkspaceSymbolRequestAsync()
         {
 
             NewTestFile(@"
@@ -155,11 +157,12 @@ function CanSendWorkspaceSymbolRequest {
             Assert.Equal("CanSendWorkspaceSymbolRequest { }", symbol.Name);
         }
 
+        [Trait("Category", "LSP")]
         [SkippableFact]
-        public async Task CanReceiveDiagnosticsFromFileOpen()
+        public async Task CanReceiveDiagnosticsFromFileOpenAsync()
         {
             Skip.If(
-                TestsFixture.RunningInConstainedLanguageMode && TestsFixture.IsWindowsPowerShell,
+                PsesStdioProcess.RunningInConstainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             NewTestFile("$a = 4");
@@ -169,8 +172,9 @@ function CanSendWorkspaceSymbolRequest {
             Assert.Equal("PSUseDeclaredVarsMoreThanAssignments", diagnostic.Code);
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
-        public async Task WontReceiveDiagnosticsFromFileOpenThatIsNotPowerShell()
+        public async Task WontReceiveDiagnosticsFromFileOpenThatIsNotPowerShellAsync()
         {
             NewTestFile("$a = 4", languageId: "plaintext");
             await Task.Delay(2000);
@@ -178,11 +182,12 @@ function CanSendWorkspaceSymbolRequest {
             Assert.Empty(Diagnostics);
         }
 
+        [Trait("Category", "LSP")]
         [SkippableFact]
         public async Task CanReceiveDiagnosticsFromFileChangedAsync()
         {
             Skip.If(
-                TestsFixture.RunningInConstainedLanguageMode && TestsFixture.IsWindowsPowerShell,
+                PsesStdioProcess.RunningInConstainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string filePath = NewTestFile("$a = 4");
@@ -230,11 +235,12 @@ function CanSendWorkspaceSymbolRequest {
             Assert.Equal("PSUseDeclaredVarsMoreThanAssignments", diagnostic.Code);
         }
 
+        [Trait("Category", "LSP")]
         [SkippableFact]
         public async Task CanReceiveDiagnosticsFromConfigurationChangeAsync()
         {
             Skip.If(
-                TestsFixture.RunningInConstainedLanguageMode && TestsFixture.IsWindowsPowerShell,
+                PsesStdioProcess.RunningInConstainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             NewTestFile("gci | % { $_ }");
@@ -290,6 +296,7 @@ function CanSendWorkspaceSymbolRequest {
             Assert.Empty(TelemetryEvents.Where(e => e.EventName == "NonDefaultPsesFeatureConfiguration"));
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
         public async Task CanSendFoldingRangeRequestAsync()
         {
@@ -331,11 +338,12 @@ $_
                 });
         }
 
+        [Trait("Category", "LSP")]
         [SkippableFact]
         public async Task CanSendFormattingRequestAsync()
         {
             Skip.If(
-                TestsFixture.RunningInConstainedLanguageMode && TestsFixture.IsWindowsPowerShell,
+                PsesStdioProcess.RunningInConstainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string scriptPath = NewTestFile(@"
@@ -368,11 +376,12 @@ Get-Process
             Assert.Contains("\t", textEdit.NewText);
         }
 
+        [Trait("Category", "LSP")]
         [SkippableFact]
         public async Task CanSendRangeFormattingRequestAsync()
         {
             Skip.If(
-                TestsFixture.RunningInConstainedLanguageMode && TestsFixture.IsWindowsPowerShell,
+                PsesStdioProcess.RunningInConstainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string scriptPath = NewTestFile(@"
@@ -418,6 +427,7 @@ Get-Process
             Assert.Contains("\t", textEdit.NewText);
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
         public async Task CanSendDocumentSymbolRequestAsync()
         {
@@ -453,6 +463,7 @@ CanSendDocumentSymbolRequest
                 });
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
         public async Task CanSendReferencesRequestAsync()
         {
@@ -505,6 +516,7 @@ CanSendReferencesRequest
                 });
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
         public async Task CanSendDocumentHighlightRequestAsync()
         {
@@ -552,6 +564,7 @@ Write-Host 'Goodbye'
                 });
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
         public async Task CanSendPowerShellGetPSHostProcessesRequestAsync()
         {
@@ -593,6 +606,7 @@ Write-Host 'Goodbye'
             Assert.NotEmpty(pSHostProcessResponses);
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
         public async Task CanSendPowerShellGetRunspaceRequestAsync()
         {
@@ -636,6 +650,7 @@ Write-Host 'Goodbye'
             Assert.NotEmpty(runspaceResponses);
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
         public async Task CanSendPesterLegacyCodeLensRequestAsync()
         {
@@ -701,6 +716,7 @@ Describe 'DescribeName' {
                 });
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
         public async Task CanSendPesterCodeLensRequestAsync()
         {
@@ -810,6 +826,7 @@ Describe 'DescribeName' {
                 });
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
         public async Task CanSendReferencesCodeLensRequestAsync()
         {
@@ -848,11 +865,12 @@ CanSendReferencesCodeLensRequest
             Assert.Equal("1 reference", codeLensResolveResult.Command.Title);
         }
 
+        [Trait("Category", "LSP")]
         [SkippableFact]
         public async Task CanSendCodeActionRequestAsync()
         {
             Skip.If(
-                TestsFixture.RunningInConstainedLanguageMode && TestsFixture.IsWindowsPowerShell,
+                PsesStdioProcess.RunningInConstainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string filePath = NewTestFile("gci");
@@ -905,6 +923,7 @@ CanSendReferencesCodeLensRequest
                 });
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
         public async Task CanSendCompletionAndCompletionResolveRequestAsync()
         {
@@ -930,6 +949,7 @@ CanSendReferencesCodeLensRequest
             Assert.Contains("Writes customized output to a host", updatedCompletionItem.Documentation.String);
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
         public async Task CanSendCompletionResolveWithModulePrefixRequestAsync()
         {
@@ -964,6 +984,7 @@ CanSendReferencesCodeLensRequest
             Assert.Contains("Extracts files from a specified archive", updatedCompletionItem.Documentation.String);
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
         public async Task CanSendHoverRequestAsync()
         {
@@ -992,6 +1013,7 @@ CanSendReferencesCodeLensRequest
                 });
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
         public async Task CanSendSignatureHelpRequestAsync()
         {
@@ -1017,6 +1039,7 @@ CanSendReferencesCodeLensRequest
             Assert.Contains("Get-Date", signatureHelp.Signatures.First().Label);
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
         public async Task CanSendDefinitionRequestAsync()
         {
@@ -1055,10 +1078,11 @@ CanSendDefinitionRequest
             Assert.Equal(33, locationOrLocationLink.Location.Range.End.Character);
         }
 
+        [Trait("Category", "LSP")]
         [SkippableFact]
         public async Task CanSendGetProjectTemplatesRequestAsync()
         {
-            Skip.If(TestsFixture.RunningInConstainedLanguageMode, "Plaster doesn't work in ConstrainedLanguage mode.");
+            Skip.If(PsesStdioProcess.RunningInConstainedLanguageMode, "Plaster doesn't work in ConstrainedLanguage mode.");
 
             GetProjectTemplatesResponse getProjectTemplatesResponse =
                 await PsesLanguageClient
@@ -1081,11 +1105,12 @@ CanSendDefinitionRequest
                 });
         }
 
+        [Trait("Category", "LSP")]
         [SkippableFact]
         public async Task CanSendGetCommentHelpRequestAsync()
         {
             Skip.If(
-                TestsFixture.RunningInConstainedLanguageMode && TestsFixture.IsWindowsPowerShell,
+                PsesStdioProcess.RunningInConstainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string scriptPath = NewTestFile(@"
@@ -1121,6 +1146,7 @@ function CanSendGetCommentHelpRequest {
             Assert.Contains("myParam", commentHelpRequestResult.Content[7]);
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
         public async Task CanSendEvaluateRequestAsync()
         {
@@ -1139,6 +1165,7 @@ function CanSendGetCommentHelpRequest {
             Assert.Equal(0, evaluateResponseBody.VariablesReference);
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
         public async Task CanSendGetCommandRequestAsync()
         {
@@ -1152,11 +1179,12 @@ function CanSendGetCommentHelpRequest {
             Assert.True(pSCommandMessages.Count > 20);
         }
 
+        [Trait("Category", "LSP")]
         [SkippableFact]
         public async Task CanSendExpandAliasRequestAsync()
         {
             Skip.If(
-                TestsFixture.RunningInConstainedLanguageMode,
+                PsesStdioProcess.RunningInConstainedLanguageMode,
                 "This feature currently doesn't support ConstrainedLanguage Mode.");
 
             ExpandAliasResult expandAliasResult =
@@ -1172,6 +1200,7 @@ function CanSendGetCommentHelpRequest {
             Assert.Equal("Get-ChildItem", expandAliasResult.Text);
         }
 
+        [Trait("Category", "LSP")]
         [Fact]
         public async Task CanSendSemanticTokenRequestAsync()
         {

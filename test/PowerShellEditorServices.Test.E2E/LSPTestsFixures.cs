@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -21,24 +22,31 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Window;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace PowerShellEditorServices.Test.E2E
 {
-    public class LSPTestsFixture : TestsFixture
+    public class LSPTestsFixture : IAsyncLifetime
     {
-        public override bool IsDebugAdapterTests => false;
+        protected readonly static string s_binDir =
+            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+        private const bool IsDebugAdapterTests = false;
 
         public ILanguageClient PsesLanguageClient { get; private set; }
         public List<Diagnostic> Diagnostics { get; set; }
         internal List<PsesTelemetryEvent> TelemetryEvents { get; set; }
         public ITestOutputHelper Output { get; set; }
 
-        public async override Task CustomInitializeAsync(
-            ILoggerFactory factory,
-            Stream inputStream,
-            Stream outputStream)
+        protected PsesStdioProcess _psesProcess;
+
+        public async Task InitializeAsync()
         {
+            var factory = new LoggerFactory();
+            _psesProcess = new PsesStdioProcess(factory, IsDebugAdapterTests);
+            await _psesProcess.Start();
+
             Diagnostics = new List<Diagnostic>();
             TelemetryEvents = new List<PsesTelemetryEvent>();
             DirectoryInfo testdir =
@@ -47,8 +55,8 @@ namespace PowerShellEditorServices.Test.E2E
             PsesLanguageClient = LanguageClient.PreInit(options =>
             {
                 options
-                    .WithInput(inputStream)
-                    .WithOutput(outputStream)
+                    .WithInput(_psesProcess.OutputStream)
+                    .WithOutput(_psesProcess.InputStream)
                     .WithRootUri(DocumentUri.FromFileSystemPath(testdir.FullName))
                     .OnPublishDiagnostics(diagnosticParams => Diagnostics.AddRange(diagnosticParams.Diagnostics.Where(d => d != null)))
                     .OnLogMessage(logMessageParams => Output?.WriteLine($"{logMessageParams.Type.ToString()}: {logMessageParams.Message}"))
@@ -85,7 +93,7 @@ namespace PowerShellEditorServices.Test.E2E
                 });
         }
 
-        public override async Task DisposeAsync()
+        public async Task DisposeAsync()
         {
             try
             {
