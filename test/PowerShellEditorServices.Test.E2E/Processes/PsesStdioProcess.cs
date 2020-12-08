@@ -65,7 +65,7 @@ namespace PowerShellEditorServices.Test.E2E
                 FileName = PwshExe
             };
 
-            foreach (var arg in GeneratePsesArguments(isDebugAdapter))
+            foreach (string arg in GeneratePsesArguments(isDebugAdapter))
             {
                 processStartInfo.ArgumentList.Add(arg);
             }

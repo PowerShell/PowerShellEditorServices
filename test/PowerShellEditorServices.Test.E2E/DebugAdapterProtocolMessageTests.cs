@@ -22,11 +22,11 @@ namespace PowerShellEditorServices.Test.E2E
 {
     public class DebugAdapterProtocolMessageTests : IAsyncLifetime
     {
-        private const string s_testOutputFileName = "__dapTestOutputFile.txt";
+        private const string TestOutputFileName = "__dapTestOutputFile.txt";
         private readonly static bool s_isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
         private readonly static string s_binDir =
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        private readonly static string s_testOutputPath = Path.Combine(s_binDir, s_testOutputFileName);
+        private readonly static string s_testOutputPath = Path.Combine(s_binDir, TestOutputFileName);
 
         private readonly ITestOutputHelper _output;
         private DebugAdapterClient PsesDebugAdapterClient;
