@@ -23,6 +23,7 @@ steps:
   displayName: 'Package ES - Setup Build'
   inputs:
     productName: PowerShellEditorServices
+    useDfs: false
 
 - task: DownloadBuildArtifacts@0
   displayName: 'Download Build Artifacts'
