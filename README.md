@@ -161,6 +161,7 @@ contribute code, documentation, tests, or bug reports, please read our [Contribu
 
 -  [Patrick Meinecke](https://github.com/SeeminglyScience) - [@SeeminglyScienc](http://twitter.com/SeeminglyScienc)
 -  [Rob Holt](https://github.com/rjmholt) - [@rjmholt](https://twitter.com/rjmholt)
+-  [Andy Schwartzmeyer](https://github.com/andschwa) - [andschwa.com](https://andschwa.com/)
 
 ## License
 
