@@ -1,4 +1,6 @@
 steps:
+- checkout: self
+
 - powershell: |
     Write-Host "Installing pwsh..."
     if (Get-Command pwsh -ErrorAction Ignore)
@@ -19,12 +21,6 @@ steps:
   displayName: Capture environment
   condition: succeededOrFailed()
 
-- task: PkgESSetupBuild@10
-  displayName: 'Package ES - Setup Build'
-  inputs:
-    productName: PowerShellEditorServices
-    useDfs: false
-
 - task: DownloadBuildArtifacts@0
   displayName: 'Download Build Artifacts'
   inputs:
@@ -40,14 +36,25 @@ steps:
       $psesZip | Expand-Archive -DestinationPath $dest -Force -Verbose
       $psesZip | Remove-Item -Recurse -Force
 
-- task: PkgESCodeSign@10
-  displayName: 'CodeSign tools/releaseBuild/signing.xml'
-  env:
-    SYSTEM_ACCESSTOKEN: $(System.AccessToken)
-  inputs:
-    signConfigXml: tools/releaseBuild/signing.xml
-    inPathRoot: '$(Build.ArtifactStagingDirectory)'
-    outPathRoot: '$(Build.ArtifactStagingDirectory)\Signed'
+- checkout: ComplianceRepo
+
+- template: EsrpSign.yml@ComplianceRepo
+  displayName: 'Sign the scripts and libraries'
+  parameters:
+    buildOutputPath: '$(Build.ArtifactStagingDirectory)'
+    signOutputPath: '$(Build.ArtifactStagingDirectory)/Signed'
+    certificateId: 'CP-230012' # Authenticode certificate.
+    useMinimatch: true
+    pattern: |
+      # PowerShellEditorServices Script
+      release/out/PowerShellEditorServices/PowerShellEditorServices/*.{psd1,psm1,ps1xml}
+      release/out/PowerShellEditorServices/PowerShellEditorServices/Commands/**/*.{psd1,psm1,ps1xml}
+      # PowerShellEditorServices Binaries
+      release/out/**/Microsoft.PowerShell.EditorServices*.dll
+      # PowerShellEditorServices.VSCode Script
+      release/out/**/PowerShellEditorServices.VSCode.psd1
+      # PowerShellEditorServices.VSCode Binary
+      release/out/**/Microsoft.PowerShell.EditorServices.VSCode.dll
 
 - task: PowerShell@1
   displayName: 'Copy signed items into output'
@@ -100,7 +107,7 @@ steps:
     optionsXS: 0
     optionsPE: '1|2|3|4'
     optionsHMENABLE: 0
-    optionsFTPATH: '$(Build.SourcesDirectory)\tools\terms\FileTypeSet.xml'
+    optionsFTPATH: '$(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/FileTypeSet.xml'
     # toolVersion: 5.8.2.1
 
 - task: CredScan@2
