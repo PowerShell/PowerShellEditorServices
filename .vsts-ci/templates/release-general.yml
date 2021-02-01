@@ -26,12 +26,13 @@ steps:
   inputs:
     downloadType: specific
 
+# TODO: Use `ExtractFiles` task instead of script
 - task: PowerShell@1
   displayName: 'Extract build zip'
   inputs:
     scriptType: inlineScript
     inlineScript: |
-      $dest = New-Item -ItemType Directory $env:BUILD_ARTIFACTSTAGINGDIRECTORY/release/out/PowerShellEditorServices
+      $dest = New-Item -ItemType Directory $env:BUILD_ARTIFACTSTAGINGDIRECTORY/PowerShellEditorServices
       $psesZip = Get-ChildItem $env:BUILD_ARTIFACTSTAGINGDIRECTORY/PowerShellEditorServices-CI/PowerShellEditorServices*.zip -ErrorAction Stop
       $psesZip | Expand-Archive -DestinationPath $dest -Force -Verbose
       $psesZip | Remove-Item -Recurse -Force
@@ -39,52 +40,23 @@ steps:
 - checkout: ComplianceRepo
 
 - template: EsrpSign.yml@ComplianceRepo
-  displayName: 'Sign the scripts and libraries'
   parameters:
-    buildOutputPath: '$(Build.ArtifactStagingDirectory)'
+    buildOutputPath: '$(Build.ArtifactStagingDirectory)/PowerShellEditorServices'
     signOutputPath: '$(Build.ArtifactStagingDirectory)/Signed'
     certificateId: 'CP-230012' # Authenticode certificate.
     useMinimatch: true
     pattern: |
       # PowerShellEditorServices Script
-      release/out/PowerShellEditorServices/PowerShellEditorServices/*.{psd1,psm1,ps1xml}
-      release/out/PowerShellEditorServices/PowerShellEditorServices/Commands/**/*.{psd1,psm1,ps1xml}
+      PowerShellEditorServices/*.{ps1,psd1,psm1,ps1xml}
+      PowerShellEditorServices/Commands/**/*.{ps1,psd1,psm1,ps1xml}
       # PowerShellEditorServices Binaries
-      release/out/**/Microsoft.PowerShell.EditorServices*.dll
+      PowerShellEditorServices/**/Microsoft.PowerShell.EditorServices*.dll
       # PowerShellEditorServices.VSCode Script
-      release/out/**/PowerShellEditorServices.VSCode.psd1
+      PowerShellEditorServices.VSCode/PowerShellEditorServices.VSCode.psd1
       # PowerShellEditorServices.VSCode Binary
-      release/out/**/Microsoft.PowerShell.EditorServices.VSCode.dll
+      PowerShellEditorServices.VSCode/bin/Microsoft.PowerShell.EditorServices.VSCode.dll
 
-- task: PowerShell@1
-  displayName: 'Copy signed items into output'
-  inputs:
-    scriptType: inlineScript
-    inlineScript: |
-     $signed="$(Build.ArtifactStagingDirectory)\Signed\PowerShellEditorServices\*"
-     $notSigned="$(Build.ArtifactStagingDirectory)\release\out\PowerShellEditorServices"
-     Copy-Item $signed $notSigned -Recurse -Force
-
-- task: PowerShell@1
-  displayName: 'Create catalog files'
-  inputs:
-    scriptType: inlineScript
-    inlineScript: |
-     $dir = "$(Build.ArtifactStagingDirectory)\release\out\PowerShellEditorServices\PowerShellEditorServices"
-     New-FileCatalog -CatalogFilePath "$(Build.ArtifactStagingDirectory)\PowerShellEditorServices.cat" -Path $dir
-
-     $dir = "$(Build.ArtifactStagingDirectory)\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode"
-     New-FileCatalog -CatalogFilePath "$(Build.ArtifactStagingDirectory)\PowerShellEditorServices.VSCode.cat" -Path $dir
-
-- task: PkgESCodeSign@10
-  displayName: 'CodeSign tools/releaseBuild/FileCatalogSigning.xml'
-  env:
-    SYSTEM_ACCESSTOKEN: $(System.AccessToken)
-  inputs:
-    signConfigXml: tools/releaseBuild/FileCatalogSigning.xml
-    inPathRoot: '$(Build.ArtifactStagingDirectory)'
-    outPathRoot: '$(Build.ArtifactStagingDirectory)'
-
+# TODO: Use templates for compliance checks
 - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
   displayName: 'Component Detection'
 
@@ -149,8 +121,9 @@ steps:
     uploadTSLint: false
     uploadAsync: true
 
+# TODO: Use `publish` task instead of script
 - task: PowerShell@1
   displayName: 'Upload artifacts'
   inputs:
     scriptType: inlineScript
-    inlineScript: 'Write-Host "##vso[artifact.upload containerfolder=PowerShellEditorServices;artifactname=PowerShellEditorServices]$(Build.ArtifactStagingDirectory)\release\out\PowerShellEditorServices"'
+    inlineScript: 'Write-Host "##vso[artifact.upload containerfolder=PowerShellEditorServices;artifactname=PowerShellEditorServices]$(Build.ArtifactStagingDirectory)/Signed/PowerShellEditorServices"'
