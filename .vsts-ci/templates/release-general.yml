@@ -16,12 +16,10 @@ steps:
 
 - template: EsrpSign.yml@ComplianceRepo
   parameters:
-    # NOTE: All artifacts are copied to "Signed" even though only some are
-    # actually signed. We then publish this folder below.
     buildOutputPath: '$(Build.ArtifactStagingDirectory)/PowerShellEditorServices'
-    signOutputPath: '$(Build.ArtifactStagingDirectory)/Signed'
-    certificateId: 'CP-230012' # Authenticode certificate.
-    useMinimatch: true
+    signOutputPath: '$(Build.ArtifactStagingDirectory)/FirstPartySigned'
+    certificateId: 'CP-230012' # Authenticode certificate
+    useMinimatch: true # This enables the use of globbing
     pattern: |
       # PowerShellEditorServices Script
       PowerShellEditorServices/*.{ps1,psd1,psm1,ps1xml}
@@ -33,71 +31,39 @@ steps:
       # PowerShellEditorServices.VSCode Binary
       PowerShellEditorServices.VSCode/bin/Microsoft.PowerShell.EditorServices.VSCode.dll
 
-- publish: $(Build.ArtifactStagingDirectory)/Signed
+- template: EsrpSign.yml@ComplianceRepo
+  parameters:
+    buildOutputPath: '$(Build.ArtifactStagingDirectory)/FirstPartySigned'
+    signOutputPath: '$(Build.ArtifactStagingDirectory)/ThirdPartySigned'
+    certificateId: 'CP-231522' # Third-party certificate
+    useMinimatch: true # This enables the use of globbing
+    pattern: |
+      **/MediatR.dll
+      **/Nerdbank.Streams.dll
+      **/Newtonsoft.Json.dll
+      **/OmniSharp*.dll
+      **/Serilog*.dll
+      **/UnixConsoleEcho.dll
+
+- publish: $(Build.ArtifactStagingDirectory)/ThirdPartySigned
   artifact: PowerShellEditorServices
   displayName: 'Publish signed (and unsigned) artifacts'
 
-# TODO: Use templates for compliance checks
-- task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
-  displayName: 'Component Detection'
+- checkout: self
 
-- task: AntiMalware@3
-  inputs:
-    InputType: 'Basic'
-    ScanType: 'CustomScan'
-    FileDirPath: '$(Build.ArtifactStagingDirectory)'
-    EnableServices: false
-    SupportLogOnError: false
-    TreatSignatureUpdateFailureAs: 'Warning'
-    SignatureFreshness: 'UpToDate'
-    TreatStaleSignatureAs: 'Error'
-
-- task: PoliCheck@1
-  condition: succeededOrFailed()
-  inputs:
-    targetType: F
-    optionsFC: 0
-    optionsXS: 0
-    optionsPE: '1|2|3|4'
-    optionsHMENABLE: 0
-    optionsFTPATH: '$(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/FileTypeSet.xml'
-    # toolVersion: 5.8.2.1
-
-- task: CredScan@2
-  condition: succeededOrFailed()
-
-# - task: BinSkim@3
-#   condition: succeededOrFailed()
-#   inputs:
-#     InputType: 'Basic'
-#     Function: 'analyze'
-#     AnalyzeRecurse: true
-#     AnalyzeTarget: '$(Build.ArtifactStagingDirectory)\release;$(Build.ArtifactStagingDirectory)\OutGridView*.dll'
-
-# Publish results as artifacts
-- task: PublishSecurityAnalysisLogs@3
-  condition: succeededOrFailed()
-  inputs:
-    ArtifactName: 'CodeAnalysisLogs'
-    ArtifactType: 'Container'
-
-# Publish to TSA server
-- task: TSAUpload@1
-  condition: succeededOrFailed()
-  continueOnError: true
-  inputs:
-    tsaVersion: 'TsaV2'
-    codebase: 'Existing'
-    tsaEnvironment: 'PROD'
-    codeBaseName: 'PowerShell_PowerShellEditorServices_20190917'
-    uploadAPIScan: false
-    uploadBinSkim: false
-    uploadCredScan: true
-    uploadFortifySCA: false
-    uploadFxCop: false
-    uploadModernCop: false
-    uploadPoliCheck: true
-    uploadPREfast: false
-    uploadRoslyn: false
-    uploadTSLint: false
-    uploadAsync: true
+- template: assembly-module-compliance.yml@ComplianceRepo
+  parameters:
+    # binskim
+    AnalyzeTarget: '$(Build.ArtifactStagingDirectory)/*.dll'
+    AnalyzeSymPath: 'SRV*'
+    # component-governance
+    sourceScanPath: '$(Build.SourcesDirectory)/PowerShellEditorServices'
+    # credscan
+    suppressionsFile: ''
+    # TermCheck AKA PoliCheck
+    optionsRulesDBPath: ''
+    optionsFTPath: '$(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/FileTypeSet.xml'
+    # tsa-upload
+    codeBaseName: 'PowerShell_PowerShellEditorServices_20210201'
+    # selections
+    APIScan: false
