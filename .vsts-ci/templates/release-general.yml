@@ -1,46 +1,23 @@
 steps:
-- checkout: self
-
-- powershell: |
-    Write-Host "Installing pwsh..."
-    if (Get-Command pwsh -ErrorAction Ignore)
-    {
-        Write-Host "pwsh already installed, skipping"
-        return
-    }
-    $powerShellPath = Join-Path -Path $env:AGENT_TEMPDIRECTORY -ChildPath 'powershell'
-    Invoke-WebRequest -Uri https://raw.githubusercontent.com/PowerShell/PowerShell/master/tools/install-powershell.ps1 -outfile ./install-powershell.ps1
-    ./install-powershell.ps1 -Destination $powerShellPath
-    $vstsCommandString = "vso[task.setvariable variable=PATH]$powerShellPath;$env:PATH"
-    Write-Host "sending " + $vstsCommandString
-    Write-Host "##$vstsCommandString"
-  displayName: Install PowerShell Core
-
-- pwsh: |
-    Get-ChildItem -Path env:
-  displayName: Capture environment
-  condition: succeededOrFailed()
 
 - task: DownloadBuildArtifacts@0
   displayName: 'Download Build Artifacts'
   inputs:
     downloadType: specific
 
-# TODO: Use `ExtractFiles` task instead of script
-- task: PowerShell@1
-  displayName: 'Extract build zip'
+- task: ExtractFiles@1
+  displayName: 'Extract Build Zip'
   inputs:
-    scriptType: inlineScript
-    inlineScript: |
-      $dest = New-Item -ItemType Directory $env:BUILD_ARTIFACTSTAGINGDIRECTORY/PowerShellEditorServices
-      $psesZip = Get-ChildItem $env:BUILD_ARTIFACTSTAGINGDIRECTORY/PowerShellEditorServices-CI/PowerShellEditorServices*.zip -ErrorAction Stop
-      $psesZip | Expand-Archive -DestinationPath $dest -Force -Verbose
-      $psesZip | Remove-Item -Recurse -Force
+    archiveFilePatterns: '$(Build.ArtifactStagingDirectory)/PowerShellEditorServices-CI/PowerShellEditorServices*.zip'
+    destinationFolder: '$(Build.ArtifactStagingDirectory)/PowerShellEditorServices'
 
 - checkout: ComplianceRepo
+  displayName: 'Checkout the ComplianceRepo'
 
 - template: EsrpSign.yml@ComplianceRepo
   parameters:
+    # NOTE: All artifacts are copied to "Signed" even though only some are
+    # actually signed. We then publish this folder below.
     buildOutputPath: '$(Build.ArtifactStagingDirectory)/PowerShellEditorServices'
     signOutputPath: '$(Build.ArtifactStagingDirectory)/Signed'
     certificateId: 'CP-230012' # Authenticode certificate.
@@ -55,6 +32,10 @@ steps:
       PowerShellEditorServices.VSCode/PowerShellEditorServices.VSCode.psd1
       # PowerShellEditorServices.VSCode Binary
       PowerShellEditorServices.VSCode/bin/Microsoft.PowerShell.EditorServices.VSCode.dll
+
+- publish: $(Build.ArtifactStagingDirectory)/Signed
+  artifact: PowerShellEditorServices
+  displayName: 'Publish signed (and unsigned) artifacts'
 
 # TODO: Use templates for compliance checks
 - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
@@ -120,10 +101,3 @@ steps:
     uploadRoslyn: false
     uploadTSLint: false
     uploadAsync: true
-
-# TODO: Use `publish` task instead of script
-- task: PowerShell@1
-  displayName: 'Upload artifacts'
-  inputs:
-    scriptType: inlineScript
-    inlineScript: 'Write-Host "##vso[artifact.upload containerfolder=PowerShellEditorServices;artifactname=PowerShellEditorServices]$(Build.ArtifactStagingDirectory)/Signed/PowerShellEditorServices"'
