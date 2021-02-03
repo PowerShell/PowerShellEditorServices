@@ -635,7 +635,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 if (shouldCancelReadLine && PromptNest.IsReadLineBusy())
                 {
-                    // If a ReadLine pipeline is running in the debugger then we'll hang here
+                    // If a ReadLine pipeline is running in the debugger then we'll stop responding here
                     // if we don't cancel it. Typically we can rely on OnExecutionStatusChanged but
                     // the pipeline request won't even start without clearing the current task.
                     this.ConsoleReader?.StopCommandLoop();
@@ -1895,7 +1895,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
 
         // TODO: Refactor this, RunspaceDetails, PowerShellVersion, and PowerShellVersionDetails
-        // It's crazy that this is 4 different types.
+        // It's odd that this is 4 different types.
         // P.S. MinifiedRunspaceDetails use to be called RunspaceDetails... as in, there were 2 DIFFERENT
         // RunspaceDetails types in this codebase but I've changed it to be minified since the type is
         // slightly simpler than the other RunspaceDetails.
