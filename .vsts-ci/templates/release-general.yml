@@ -62,6 +62,7 @@ steps:
     suppressionsFile: ''
     # TermCheck AKA PoliCheck
     targetArgument: '$(Build.SourcesDirectory)/PowerShellEditorServices'
+    optionsUEPATH: '$(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/UserExclusions.xml'
     optionsRulesDBPath: ''
     optionsFTPath: '$(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/FileTypeSet.xml'
     # tsa-upload
