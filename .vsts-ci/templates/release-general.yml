@@ -61,6 +61,7 @@ steps:
     # credscan
     suppressionsFile: ''
     # TermCheck AKA PoliCheck
+    targetArgument: '$(Build.SourcesDirectory)/PowerShellEditorServices'
     optionsRulesDBPath: ''
     optionsFTPath: '$(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/FileTypeSet.xml'
     # tsa-upload
