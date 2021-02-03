@@ -18,6 +18,7 @@ steps:
   parameters:
     buildOutputPath: '$(Build.ArtifactStagingDirectory)/PowerShellEditorServices'
     signOutputPath: '$(Build.ArtifactStagingDirectory)/FirstPartySigned'
+    alwaysCopy: true # So publishing works
     certificateId: 'CP-230012' # Authenticode certificate
     useMinimatch: true # This enables the use of globbing
     pattern: |
@@ -35,6 +36,7 @@ steps:
   parameters:
     buildOutputPath: '$(Build.ArtifactStagingDirectory)/FirstPartySigned'
     signOutputPath: '$(Build.ArtifactStagingDirectory)/ThirdPartySigned'
+    alwaysCopy: true # So publishing works
     certificateId: 'CP-231522' # Third-party certificate
     useMinimatch: true # This enables the use of globbing
     pattern: |
