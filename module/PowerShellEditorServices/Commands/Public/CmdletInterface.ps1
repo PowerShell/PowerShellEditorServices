@@ -125,7 +125,15 @@ function New-EditorFile {
     end {
         # If editorContext is null, then we're in a Temp session and
         # this cmdlet won't work so return early.
-        $editorContext = $psEditor.GetEditorContext()
+        try {
+            $editorContext = $psEditor.GetEditorContext()
+        }
+        catch {
+            # If there's no editor, this throws an error. Create a new file, and grab the context here.
+            # This feels really hacky way to do it, but not sure if there's another way to detect editor context...
+            $psEditor.Workspace.NewFile()
+            $editorContext = $psEditor.GetEditorContext()
+        }
         if (!$editorContext) {
             return
         }
