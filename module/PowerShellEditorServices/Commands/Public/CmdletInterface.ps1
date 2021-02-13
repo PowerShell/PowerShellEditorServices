@@ -86,10 +86,10 @@ function Unregister-EditorCommand {
     Creates and opens a new foo.ps1 in your editor
 .EXAMPLE
     PS > Get-Process | New-EditorFile proc.txt
-    Creates and opens a new foo.ps1 in your editor with the contents of the call to Get-Process
+    Creates and opens a new proc.txt in your editor with the contents of the call to Get-Process
 .EXAMPLE
     PS > Get-Process | New-EditorFile proc.txt -Force
-    Creates and opens a new foo.ps1 in your editor with the contents of the call to Get-Process. Overwrites the file if it already exists
+    Creates and opens a new proc.txt in your editor with the contents of the call to Get-Process. Overwrites the file if it already exists
 .INPUTS
     Path
     an array of files you want to open in your editor
