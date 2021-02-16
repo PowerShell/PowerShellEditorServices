@@ -134,6 +134,7 @@ function New-EditorFile {
             $psEditor.Workspace.NewFile()
             $editorContext = $psEditor.GetEditorContext()
         }
+
         if (!$editorContext) {
             return
         }
