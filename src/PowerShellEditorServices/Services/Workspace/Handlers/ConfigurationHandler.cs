@@ -65,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             SendFeatureChangesTelemetry(incomingSettings);
 
-            bool oldLoadProfiles = _configurationService.CurrentSettings.EnableProfileLoading;
+            bool profileLoadingPreviouslyEnabled = _configurationService.CurrentSettings.EnableProfileLoading;
             bool oldScriptAnalysisEnabled =
                 _configurationService.CurrentSettings.ScriptAnalysis.Enable ?? false;
             string oldScriptAnalysisSettingsPath =
@@ -101,7 +101,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             //   - Profiles haven't been loaded before, OR
             //   - The profile loading configuration just changed
             if (_configurationService.CurrentSettings.EnableProfileLoading
-                && (!this._profilesLoaded || !oldLoadProfiles))
+                && (!this._profilesLoaded || !profileLoadingPreviouslyEnabled))
             {
                 await _powerShellContextService.LoadHostProfilesAsync().ConfigureAwait(false);
                 this._profilesLoaded = true;
