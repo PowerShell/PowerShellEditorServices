@@ -252,7 +252,7 @@ function DotNetTestFilter {
     if ($TestFilter) { @("--filter",$TestFilter) } else { "" }
 }
 
-task Test SetupHelpForTest,TestServer,TestE2E
+task Test SetupHelpForTests,TestServer,TestE2E
 
 task TestServer TestServerWinPS,TestServerPS7,TestServerPS71
 
