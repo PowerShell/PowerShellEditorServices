@@ -1,5 +1,25 @@
 # PowerShell Editor Services Release History
 
+## v2.3.0-preview.3
+### Friday, February 19, 2021
+
+- 👷 ✨ [PowerShellEditorServices #1408](https://github.com/PowerShell/PowerShellEditorServices/pull/1408) -
+  Rewrite release signing pipeline.
+- 🚨 ✨ [PowerShellEditorServices #1398](https://github.com/PowerShell/PowerShellEditorServices/pull/1398) -
+  Refactor e2e tests.
+- 🚂 ✨ [PowerShellEditorServices #1381](https://github.com/PowerShell/PowerShellEditorServices/pull/1381) -
+  Hook up Telemetry LSP event and add telemetry event when users opt-out/in to features.
+- 👷 🐛 [PowerShellEditorServices #1397](https://github.com/PowerShell/PowerShellEditorServices/pull/1397) -
+  More compliant NuGet.config.
+- 📺 🐛 [vscode-powershell #3071](https://github.com/PowerShell/PowerShellEditorServices/pull/1394) -
+  Fix #1393: Always use local help to return cmdlet help text. (Thanks @deadlydog!)
+- 🚂 ✨ [PowerShellEditorServices #1376](https://github.com/PowerShell/PowerShellEditorServices/pull/1376) -
+  Move to Omnisharp lib 0.18.x.
+- 🛫 🐛 [vscode-powershell #2965](https://github.com/PowerShell/PowerShellEditorServices/pull/1363) -
+  Fix error when started in low .NET versions.
+- 📖 🐛 [PowerShellEditorServices #1364](https://github.com/PowerShell/PowerShellEditorServices/pull/1364) -
+  Typos in README.md. (Thanks @robotboyfriend!)
+
 ## v2.3.0-preview.2
 ### Wednesday, September 16, 2020
 
