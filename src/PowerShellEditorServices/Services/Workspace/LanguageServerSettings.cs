@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
     {
         private readonly object updateLock = new object();
 
-        public bool EnableProfileLoading { get; set; } = true;
+        public bool EnableProfileLoading { get; set; } = false;
 
         public bool PromptToUpdatePackageManagement { get; set; } = true;
 

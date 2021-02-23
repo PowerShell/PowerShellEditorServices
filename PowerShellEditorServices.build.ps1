@@ -224,9 +224,14 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     Set-Content -LiteralPath $script:BuildInfoPath -Value $buildInfoContents -Force
 }
 
-task SetupHelpForTests -Before Test {
+task SetupHelpForTests {
     if (-not (Get-Help Write-Host).Examples) {
+        Write-Host "Updating help for tests"
         Update-Help -Module Microsoft.PowerShell.Utility -Force -Scope CurrentUser
+    }
+    else
+    {
+        Write-Host "Write-Host help found -- Update-Help skipped"
     }
 }
 
@@ -247,7 +252,7 @@ function DotNetTestFilter {
     if ($TestFilter) { @("--filter",$TestFilter) } else { "" }
 }
 
-task Test TestServer,TestE2E
+task Test SetupHelpForTests,TestServer,TestE2E
 
 task TestServer TestServerWinPS,TestServerPS7,TestServerPS71
 
