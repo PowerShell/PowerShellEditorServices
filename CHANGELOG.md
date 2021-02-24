@@ -1,5 +1,13 @@
 # PowerShell Editor Services Release History
 
+## v2.3.0-preview.4
+### Tuesday, February 23, 2021
+
+- 📖 🐛 [PowerShellEditorServices #1416](https://github.com/PowerShell/PowerShellEditorServices/pull/1416) -
+  Fix some markdownlint errors in README.
+- 🛫 🐛 [PowerShellEditorServices #1415](https://github.com/PowerShell/PowerShellEditorServices/pull/1415) -
+  Fix configuration processing to ensure that profiles are loaded.
+
 ## v2.3.0-preview.3
 ### Friday, February 19, 2021
 
