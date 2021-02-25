@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
-    <VersionPrefix>2.3.0</VersionPrefix>
-    <VersionSuffix></VersionSuffix>
+    <VersionPrefix>2.4.0</VersionPrefix>
+    <VersionSuffix>preview.1</VersionSuffix>
     <Company>Microsoft</Company>
     <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
     <PackageTags>PowerShell;editor;development;language;debugging</PackageTags>
