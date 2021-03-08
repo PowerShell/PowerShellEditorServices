@@ -55,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     Data = JToken.FromObject(new {
                         Uri = scriptFile.DocumentUri,
                         ProviderId = nameof(PesterCodeLensProvider)
-                    }, Serializer.Instance.JsonSerializer),
+                    }, LspSerializer.Instance.JsonSerializer),
                     Command = new Command()
                     {
                         Name = "PowerShell.RunPesterTests",
@@ -66,7 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                             false /* No debug */,
                             pesterSymbol.TestName,
                             pesterSymbol.ScriptRegion?.StartLineNumber
-                        }, Serializer.Instance.JsonSerializer)
+                        }, LspSerializer.Instance.JsonSerializer)
                     }
                 },
 
@@ -76,7 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     Data = JToken.FromObject(new {
                         Uri = scriptFile.DocumentUri,
                         ProviderId = nameof(PesterCodeLensProvider)
-                    }, Serializer.Instance.JsonSerializer),
+                    }, LspSerializer.Instance.JsonSerializer),
                     Command = new Command()
                     {
                         Name = "PowerShell.RunPesterTests",
@@ -88,7 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                             pesterSymbol.TestName,
                             pesterSymbol.ScriptRegion?.StartLineNumber
                         },
-                        Serializer.Instance.JsonSerializer)
+                        LspSerializer.Instance.JsonSerializer)
                     }
                 }
             };

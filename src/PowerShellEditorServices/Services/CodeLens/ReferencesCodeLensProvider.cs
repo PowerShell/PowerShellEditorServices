@@ -68,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                         {
                             Uri = scriptFile.DocumentUri,
                             ProviderId = nameof(ReferencesCodeLensProvider)
-                        }, Serializer.Instance.JsonSerializer),
+                        }, LspSerializer.Instance.JsonSerializer),
                         Range = sym.ScriptRegion.ToRange()
                     });
                 }
@@ -145,7 +145,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                         codeLens.Range.Start,
                         referenceLocations
                     },
-                    Serializer.Instance.JsonSerializer)
+                    LspSerializer.Instance.JsonSerializer)
                 }
             };
         }
