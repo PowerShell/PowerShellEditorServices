@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using OmniSharp.Extensions.LanguageServer.Protocol.Models.Proposals;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 {
