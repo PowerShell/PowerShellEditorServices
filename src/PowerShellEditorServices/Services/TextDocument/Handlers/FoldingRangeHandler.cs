@@ -16,30 +16,25 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class PsesFoldingRangeHandler : IFoldingRangeHandler
+    internal class PsesFoldingRangeHandler : FoldingRangeHandlerBase
     {
         private readonly ILogger _logger;
         private readonly ConfigurationService _configurationService;
         private readonly WorkspaceService _workspaceService;
 
-        private FoldingRangeCapability _capability;
-
         public PsesFoldingRangeHandler(ILoggerFactory factory, ConfigurationService configurationService, WorkspaceService workspaceService)
         {
-            _logger = factory.CreateLogger<FoldingRangeHandler>();
+            _logger = factory.CreateLogger<PsesFoldingRangeHandler>();
             _configurationService = configurationService;
             _workspaceService = workspaceService;
         }
 
-        public FoldingRangeRegistrationOptions GetRegistrationOptions()
+        protected override FoldingRangeRegistrationOptions CreateRegistrationOptions(FoldingRangeCapability capability, ClientCapabilities clientCapabilities) => new FoldingRangeRegistrationOptions
         {
-            return new FoldingRangeRegistrationOptions
-            {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector
-            };
-        }
+            DocumentSelector = LspUtils.PowerShellDocumentSelector
+        };
 
-        public Task<Container<FoldingRange>> Handle(FoldingRangeRequestParam request, CancellationToken cancellationToken)
+        public override Task<Container<FoldingRange>> Handle(FoldingRangeRequestParam request, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -74,11 +69,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             return Task.FromResult(new Container<FoldingRange>(result));
-        }
-
-        public void SetCapability(FoldingRangeCapability capability)
-        {
-            _capability = capability;
         }
     }
 }
