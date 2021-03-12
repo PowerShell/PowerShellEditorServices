@@ -13,6 +13,7 @@ using OmniSharp.Extensions.JsonRpc;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
+    // TODO: Inherit from ABCs instead of satisfying interfaces.
     internal class DebuggerActionHandlers : IContinueHandler, INextHandler, IPauseHandler, IStepInHandler, IStepOutHandler
     {
         private readonly ILogger _logger;
@@ -22,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             ILoggerFactory loggerFactory,
             DebugService debugService)
         {
-            _logger = loggerFactory.CreateLogger<ContinueHandler>();
+            _logger = loggerFactory.CreateLogger<ContinueHandlerBase>();
             _debugService = debugService;
         }
 
