@@ -17,17 +17,12 @@ using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class PsesDocumentHighlightHandler : IDocumentHighlightHandler
+    internal class PsesDocumentHighlightHandler : DocumentHighlightHandlerBase
     {
         private static readonly DocumentHighlightContainer s_emptyHighlightContainer = new DocumentHighlightContainer();
-
         private readonly ILogger _logger;
-
         private readonly WorkspaceService _workspaceService;
-
         private readonly SymbolsService _symbolsService;
-
-        private DocumentHighlightCapability _capability;
 
         public PsesDocumentHighlightHandler(
             ILoggerFactory loggerFactory,
@@ -40,15 +35,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _logger.LogInformation("highlight handler loaded");
         }
 
-        public DocumentHighlightRegistrationOptions GetRegistrationOptions()
+        protected override DocumentHighlightRegistrationOptions CreateRegistrationOptions(DocumentHighlightCapability capability, ClientCapabilities clientCapabilities) => new DocumentHighlightRegistrationOptions
         {
-            return new DocumentHighlightRegistrationOptions
-            {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector
-            };
-        }
+            DocumentSelector = LspUtils.PowerShellDocumentSelector
+        };
 
-        public Task<DocumentHighlightContainer> Handle(
+        public override Task<DocumentHighlightContainer> Handle(
             DocumentHighlightParams request,
             CancellationToken cancellationToken)
         {
@@ -75,11 +67,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             return Task.FromResult(new DocumentHighlightContainer(highlights));
-        }
-
-        public void SetCapability(DocumentHighlightCapability capability)
-        {
-            _capability = capability;
         }
     }
 }
