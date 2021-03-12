@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class PsesSemanticTokensHandler : SemanticTokensHandlerBase
     {
-        private static readonly SemanticTokensRegistrationOptions s_registrationOptions = new SemanticTokensRegistrationOptions
+        protected override SemanticTokensRegistrationOptions CreateRegistrationOptions(SemanticTokensCapability capability, ClientCapabilities clientCapabilities) => new SemanticTokensRegistrationOptions
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector,
             Legend = new SemanticTokensLegend(),
@@ -35,7 +35,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly WorkspaceService _workspaceService;
 
         public PsesSemanticTokensHandler(ILogger<PsesSemanticTokensHandler> logger, WorkspaceService workspaceService)
-            : base(s_registrationOptions)
         {
             _logger = logger;
             _workspaceService = workspaceService;
@@ -160,7 +159,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             ITextDocumentIdentifierParams @params,
             CancellationToken cancellationToken)
         {
-            return Task.FromResult(new SemanticTokensDocument(GetRegistrationOptions().Legend));
+            return Task.FromResult(new SemanticTokensDocument(RegistrationOptions.Legend));
         }
     }
 }
