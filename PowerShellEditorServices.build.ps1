@@ -24,14 +24,13 @@ $script:PsesCommonProps = [xml](Get-Content -Raw "$PSScriptRoot/PowerShellEditor
 $script:IsPreview = [bool]($script:PsesCommonProps.Project.PropertyGroup.VersionSuffix)
 
 $script:NetRuntime = @{
-    PS62 = 'netcoreapp2.1'
     PS7 = 'netcoreapp3.1'
-    PS71 = 'net5.0'
+    PS72 = 'net6.0'
     Desktop = 'net461'
     Standard = 'netstandard2.0'
 }
 
-$script:HostCoreOutput = "$PSScriptRoot/src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetRuntime.PS62)/publish"
+$script:HostCoreOutput = "$PSScriptRoot/src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetRuntime.PS7)/publish"
 $script:HostDeskOutput = "$PSScriptRoot/src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetRuntime.Desktop)/publish"
 $script:PsesOutput = "$PSScriptRoot/src/PowerShellEditorServices/bin/$Configuration/$($script:NetRuntime.Standard)/publish"
 $script:VSCodeOutput = "$PSScriptRoot/src/PowerShellEditorServices.VSCode/bin/$Configuration/$($script:NetRuntime.Standard)/publish"
@@ -103,7 +102,7 @@ function Install-Dotnet {
     Write-Host '.NET installation complete' -ForegroundColor Green
 }
 
-task SetupDotNet -Before Clean, Build, TestServerWinPS, TestServerPS7, TestServerPS71, TestE2E {
+task SetupDotNet -Before Clean, Build, TestServerWinPS, TestServerPS7, TestServerPS72, TestE2E {
 
     $dotnetPath = "$PSScriptRoot/.dotnet"
     $dotnetExePath = if ($script:IsUnix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
@@ -237,7 +236,7 @@ task SetupHelpForTests {
 
 task Build BinClean,{
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetRuntime.Standard }
-    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.PS62 }
+    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.PS7 }
     if (-not $script:IsUnix)
     {
         exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Desktop }
@@ -254,7 +253,7 @@ function DotNetTestFilter {
 
 task Test SetupHelpForTests,TestServer,TestE2E
 
-task TestServer TestServerWinPS,TestServerPS7,TestServerPS71
+task TestServer TestServerWinPS,TestServerPS7,TestServerPS72
 
 task TestServerWinPS -If (-not $script:IsUnix) {
     Set-Location .\test\PowerShellEditorServices.Test\
@@ -268,10 +267,10 @@ task TestServerPS7 {
     }
 }
 
-task TestServerPS71 {
+task TestServerPS72 {
     Set-Location .\test\PowerShellEditorServices.Test\
     Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
-        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS71 (DotNetTestFilter) }
+        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS72 (DotNetTestFilter) }
     }
 }
 
@@ -279,13 +278,13 @@ task TestE2E {
     Set-Location .\test\PowerShellEditorServices.Test.E2E\
 
     $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
-    exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS62 (DotNetTestFilter) }
+    exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS7 (DotNetTestFilter) }
 
     # Run E2E tests in ConstrainedLanguage mode.
     if (!$script:IsUnix) {
         try {
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", "0x80000007", [System.EnvironmentVariableTarget]::Machine);
-            exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS62 (DotNetTestFilter) }
+            exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS7 (DotNetTestFilter) }
         } finally {
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", $null, [System.EnvironmentVariableTarget]::Machine);
         }

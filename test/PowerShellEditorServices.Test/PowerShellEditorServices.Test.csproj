@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
   <PropertyGroup>
-    <TargetFrameworks>net5.0;netcoreapp3.1;net461</TargetFrameworks>
+    <TargetFrameworks>net6.0;netcoreapp3.1;net461</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices.Test</AssemblyName>
     <TargetPlatform>x64</TargetPlatform>
   </PropertyGroup>
@@ -13,14 +13,11 @@
     <ProjectReference Include="..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj" />
     <ProjectReference Include="..\PowerShellEditorServices.Test.Shared\PowerShellEditorServices.Test.Shared.csproj" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net5.0' ">
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.1.0-preview.3" />
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.0-preview.3" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.0.2" />
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="6.2.4" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.0.6" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
     <PackageReference Include="Microsoft.PowerShell.5.ReferenceAssemblies" Version="1.1.0" />
