@@ -193,7 +193,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             _languageServer.Window.SendTelemetryEvent(new TelemetryEventParams
             {
-                Data = new PsesTelemetryEvent
+                ExtensionData = new PsesTelemetryEvent
                 {
                     EventName = "NonDefaultPsesFeatureConfiguration",
                     Data = JObject.FromObject(configChanges)
