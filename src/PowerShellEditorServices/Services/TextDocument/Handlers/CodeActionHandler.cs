@@ -39,6 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             CodeActionKinds = new CodeActionKind[] { CodeActionKind.QuickFix }
         };
 
+        // TODO: Either fix or ignore "method lacks 'await'" warning.
         public override async Task<CodeAction> Handle(CodeAction request, CancellationToken cancellationToken)
         {
             // TODO: How on earth do we handle a CodeAction? This is new...
