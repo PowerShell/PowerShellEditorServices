@@ -182,7 +182,7 @@ namespace PowerShellEditorServices.Test.E2E
             await PsesDebugAdapterClient.LaunchScript(filePath, Started).ConfigureAwait(false);
 
             // {"command":"setBreakpoints","arguments":{"source":{"name":"dfsdfg.ps1","path":"/Users/tyleonha/Code/PowerShell/Misc/foo/dfsdfg.ps1"},"lines":[2],"breakpoints":[{"line":2}],"sourceModified":false},"type":"request","seq":3}
-            SetBreakpointsResponse setBreakpointsResponse = await PsesDebugAdapterClient.RequestSetBreakpoints(new SetBreakpointsArguments
+            SetBreakpointsResponse setBreakpointsResponse = await PsesDebugAdapterClient.SetBreakpoints(new SetBreakpointsArguments
             {
                 Source = new Source
                 {

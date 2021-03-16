@@ -215,7 +215,7 @@ function CanSendWorkspaceSymbolRequest {
                         Text = "$a = 7"
                     }
                 }),
-                TextDocument = new VersionedTextDocumentIdentifier
+                TextDocument = new OptionalVersionedTextDocumentIdentifier
                 {
                     Version = 4,
                     Uri = new Uri(filePath)
