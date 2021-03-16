@@ -7,17 +7,7 @@
     <Description>Provides common PowerShell editor capabilities as a .NET library.</Description>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices</AssemblyName>
-    <LangVersion>Latest</LangVersion>
     <Configurations>Debug;Release</Configurations>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <LangVersion>latest</LangVersion>
-    <CheckForOverflowUnderflow></CheckForOverflowUnderflow>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
