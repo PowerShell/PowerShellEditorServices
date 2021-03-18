@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,6 +32,9 @@ namespace PowerShellEditorServices.Test.E2E
 {
     public class LanguageServerProtocolMessageTests : IClassFixture<LSPTestsFixture>, IDisposable
     {
+        // Borrowed from `VersionUtils` which can't be used here due to an initialization problem.
+        private static bool IsLinux { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+
         private readonly static string s_binDir =
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
@@ -924,9 +928,10 @@ CanSendReferencesCodeLensRequest
         }
 
         [Trait("Category", "LSP")]
-        [Fact]
+        [SkippableFact]
         public async Task CanSendCompletionAndCompletionResolveRequestAsync()
         {
+            Skip.If(IsLinux, "This depends on the help system, which is flaky on Linux.");
             string filePath = NewTestFile("Write-H");
 
             CompletionList completionItems = await PsesLanguageClient.TextDocument.RequestCompletion(
@@ -950,9 +955,10 @@ CanSendReferencesCodeLensRequest
         }
 
         [Trait("Category", "LSP")]
-        [Fact]
+        [SkippableFact]
         public async Task CanSendCompletionResolveWithModulePrefixRequestAsync()
         {
+            Skip.If(IsLinux, "This depends on the help system, which is flaky on Linux.");
             await PsesLanguageClient
                 .SendRequest<EvaluateRequestArguments>(
                     "evaluate",
@@ -985,9 +991,10 @@ CanSendReferencesCodeLensRequest
         }
 
         [Trait("Category", "LSP")]
-        [Fact]
+        [SkippableFact]
         public async Task CanSendHoverRequestAsync()
         {
+            Skip.If(IsLinux, "This depends on the help system, which is flaky on Linux.");
             string filePath = NewTestFile("Write-Host");
 
             Hover hover = await PsesLanguageClient.TextDocument.RequestHover(

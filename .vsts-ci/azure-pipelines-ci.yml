@@ -32,33 +32,35 @@ trigger:
       - /LICENSE
       - /CODE_OF_CONDUCT.md
 
+# TODO: Setup matrix of image support.
 jobs:
 - job: 'PS51_Win10'
   displayName: PowerShell 5.1 | Windows 10
   pool:
+    # TODO: Update this image.
     vmImage: 'vs2017-win2016'
   steps:
   - template: templates/ci-general.yml
     parameters:
       pwsh: false
 
-- job: 'PS6_Win10'
-  displayName: PowerShell 6 | Windows 10
+- job: 'PS7_Win10'
+  displayName: PowerShell 7 | Windows 10
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-2019'
   steps:
   - template: templates/ci-general.yml
 
-- job: 'PS6_macOS'
-  displayName: PowerShell 6 | macOS
+- job: 'PS7_macOS'
+  displayName: PowerShell 7 | macOS
   pool:
-    vmImage: 'macOS-10.14'
+    vmImage: 'macOS-10.15'
   steps:
   - template: templates/ci-general.yml
 
-- job: 'PS6_Ubuntu'
-  displayName: PowerShell 6 | Ubuntu
+- job: 'PS7_Ubuntu'
+  displayName: PowerShell 7 | Ubuntu
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-20.04'
   steps:
   - template: templates/ci-general.yml

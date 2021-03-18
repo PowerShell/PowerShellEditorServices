@@ -50,17 +50,17 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         public static bool IsPS7OrGreater { get; } = PSVersion.Major >= 7;
 
         /// <summary>
-        /// True if we are running in on Windows, false otherwise.
+        /// True if we are running on Windows, false otherwise.
         /// </summary>
         public static bool IsWindows { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
         /// <summary>
-        /// True if we are running in on macOS, false otherwise.
+        /// True if we are running on macOS, false otherwise.
         /// </summary>
         public static bool IsMacOS { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
 
         /// <summary>
-        /// True if we are running in on Linux, false otherwise.
+        /// True if we are running on Linux, false otherwise.
         /// </summary>
         public static bool IsLinux { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
     }
