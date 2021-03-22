@@ -57,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 DocumentSelector = LspUtils.PowerShellDocumentSelector,
                 ResolveProvider = true,
-                TriggerCharacters = new[] { ".", "-", ":", "\\" }
+                TriggerCharacters = new[] { ".", "-", ":", "\\", "$" }
             };
         }
 
