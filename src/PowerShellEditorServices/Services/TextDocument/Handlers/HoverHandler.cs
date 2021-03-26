@@ -17,13 +17,11 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class PsesHoverHandler : IHoverHandler
+    internal class PsesHoverHandler : HoverHandlerBase
     {
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
-
-        private HoverCapability _capability;
 
         public PsesHoverHandler(
             ILoggerFactory factory,
@@ -35,15 +33,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspaceService;
         }
 
-        public HoverRegistrationOptions GetRegistrationOptions()
+        protected override HoverRegistrationOptions CreateRegistrationOptions(HoverCapability capability, ClientCapabilities clientCapabilities) => new HoverRegistrationOptions
         {
-            return new HoverRegistrationOptions
-            {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector
-            };
-        }
+            DocumentSelector = LspUtils.PowerShellDocumentSelector
+        };
 
-        public async Task<Hover> Handle(HoverParams request, CancellationToken cancellationToken)
+        public override async Task<Hover> Handle(HoverParams request, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -79,11 +74,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 Contents = new MarkedStringsOrMarkupContent(symbolInfo),
                 Range = symbolRange
             };
-        }
-
-        public void SetCapability(HoverCapability capability)
-        {
-            _capability = capability;
         }
 
         private static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)

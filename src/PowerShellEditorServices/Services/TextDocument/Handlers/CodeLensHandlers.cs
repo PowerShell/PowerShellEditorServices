@@ -15,22 +15,21 @@ using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
-using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
+    // TODO: Use ABCs.
     internal class PsesCodeLensHandlers : ICodeLensHandler, ICodeLensResolveHandler
     {
-        private readonly Guid _id = new Guid();
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
-
         private CodeLensCapability _capability;
-        public Guid Id => _id;
+        private readonly Guid _id = Guid.NewGuid();
+        Guid ICanBeIdentifiedHandler.Id => _id;
 
         public PsesCodeLensHandlers(ILoggerFactory factory, SymbolsService symbolsService, WorkspaceService workspaceService, ConfigurationService configurationService)
         {
@@ -39,13 +38,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _symbolsService = symbolsService;
         }
 
-        CodeLensRegistrationOptions IRegistration<CodeLensRegistrationOptions>.GetRegistrationOptions()
+        public CodeLensRegistrationOptions GetRegistrationOptions(CodeLensCapability capability, ClientCapabilities clientCapabilities) => new CodeLensRegistrationOptions
         {
-            return new CodeLensRegistrationOptions
-            {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector,
-                ResolveProvider = true
-            };
+            DocumentSelector = LspUtils.PowerShellDocumentSelector,
+            ResolveProvider = true
+        };
+
+        public void SetCapability(CodeLensCapability capability, ClientCapabilities clientCapabilities)
+        {
+            _capability = capability;
         }
 
         public Task<CodeLensContainer> Handle(CodeLensParams request, CancellationToken cancellationToken)
@@ -55,14 +56,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             CodeLens[] codeLensResults = ProvideCodeLenses(scriptFile);
 
             return Task.FromResult(new CodeLensContainer(codeLensResults));
-        }
-
-        public TextDocumentRegistrationOptions GetRegistrationOptions()
-        {
-            return new TextDocumentRegistrationOptions
-            {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector,
-            };
         }
 
         public bool CanResolve(CodeLens value)

@@ -63,8 +63,8 @@ namespace PowerShellEditorServices.Test.E2E
                     .OnTelemetryEvent(telemetryEventParams => TelemetryEvents.Add(
                         new PsesTelemetryEvent
                         {
-                            EventName = (string) telemetryEventParams.Data["eventName"],
-                            Data = telemetryEventParams.Data["data"] as JObject
+                            EventName = (string)telemetryEventParams.ExtensionData["eventName"],
+                            Data = telemetryEventParams.ExtensionData["data"] as JObject
                         }));
 
                 // Enable all capabilities this this is for testing.

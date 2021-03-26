@@ -67,7 +67,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         .AddPsesLanguageServices(_hostDetails))
                     .ConfigureLogging(builder => builder
                         .AddSerilog(Log.Logger)
-                        .AddLanguageProtocolLogging(_minimumLogLevel)
+                        .AddLanguageProtocolLogging()
                         .SetMinimumLevel(_minimumLogLevel))
                     .WithHandler<PsesWorkspaceSymbolsHandler>()
                     .WithHandler<PsesTextDocumentHandler>()
@@ -94,6 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<ExpandAliasHandler>()
                     .WithHandler<PsesSemanticTokensHandler>()
                     .OnInitialize(
+                        // TODO: Either fix or ignore "method lacks 'await'" warning.
                         async (languageServer, request, cancellationToken) =>
                         {
                             var serviceProvider = languageServer.Services;

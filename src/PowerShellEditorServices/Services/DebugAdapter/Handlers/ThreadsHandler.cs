@@ -16,13 +16,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             return Task.FromResult(new ThreadsResponse
             {
-                // TODO: What do I do with these?
-                Threads = new Container<OmniSharp.Extensions.DebugAdapter.Protocol.Models.Thread>(
-                    new OmniSharp.Extensions.DebugAdapter.Protocol.Models.Thread
-                    {
-                        Id = 1,
-                        Name = "Main Thread"
-                    })
+                // TODO: This is an empty container of threads...do we need to make a thread?
+                Threads = new Container<System.Threading.Thread>()
             });
         }
     }

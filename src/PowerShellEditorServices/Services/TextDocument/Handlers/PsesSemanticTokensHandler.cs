@@ -13,15 +13,14 @@ using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
-using OmniSharp.Extensions.LanguageServer.Protocol.Document.Proposals;
+using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Models.Proposals;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class PsesSemanticTokensHandler : SemanticTokensHandlerBase
     {
-        private static readonly SemanticTokensRegistrationOptions s_registrationOptions = new SemanticTokensRegistrationOptions
+        protected override SemanticTokensRegistrationOptions CreateRegistrationOptions(SemanticTokensCapability capability, ClientCapabilities clientCapabilities) => new SemanticTokensRegistrationOptions
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector,
             Legend = new SemanticTokensLegend(),
@@ -36,7 +35,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly WorkspaceService _workspaceService;
 
         public PsesSemanticTokensHandler(ILogger<PsesSemanticTokensHandler> logger, WorkspaceService workspaceService)
-            : base(s_registrationOptions)
         {
             _logger = logger;
             _workspaceService = workspaceService;
@@ -161,7 +159,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             ITextDocumentIdentifierParams @params,
             CancellationToken cancellationToken)
         {
-            return Task.FromResult(new SemanticTokensDocument(GetRegistrationOptions().Legend));
+            return Task.FromResult(new SemanticTokensDocument(RegistrationOptions.Legend));
         }
     }
 }

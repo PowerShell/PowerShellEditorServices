@@ -21,7 +21,6 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
-using OmniSharp.Extensions.LanguageServer.Protocol.Models.Proposals;
 using Xunit;
 using Xunit.Abstractions;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
@@ -216,7 +215,7 @@ function CanSendWorkspaceSymbolRequest {
                         Text = "$a = 7"
                     }
                 }),
-                TextDocument = new VersionedTextDocumentIdentifier
+                TextDocument = new OptionalVersionedTextDocumentIdentifier
                 {
                     Version = 4,
                     Uri = new Uri(filePath)

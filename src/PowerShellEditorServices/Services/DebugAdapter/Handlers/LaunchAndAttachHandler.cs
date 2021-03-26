@@ -22,7 +22,7 @@ using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class PsesLaunchRequestArguments : LaunchRequestArguments
+    internal record PsesLaunchRequestArguments : LaunchRequestArguments
     {
         /// <summary>
         /// Gets or sets the absolute path to the script to debug.
@@ -70,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public Dictionary<string, string> Env { get; set; }
     }
 
-    internal class PsesAttachRequestArguments : AttachRequestArguments
+    internal record PsesAttachRequestArguments : AttachRequestArguments
     {
         public string ComputerName { get; set; }
 

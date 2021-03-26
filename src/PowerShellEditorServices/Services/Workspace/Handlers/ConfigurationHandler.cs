@@ -22,14 +22,13 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class PsesConfigurationHandler : IDidChangeConfigurationHandler
+    internal class PsesConfigurationHandler : DidChangeConfigurationHandlerBase
     {
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
         private readonly ConfigurationService _configurationService;
         private readonly PowerShellContextService _powerShellContextService;
         private readonly ILanguageServerFacade _languageServer;
-        private DidChangeConfigurationCapability _capability;
         private bool _profilesLoaded;
         private bool _consoleReplStarted;
         private bool _cwdSet;
@@ -50,12 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             ConfigurationUpdated += analysisService.OnConfigurationUpdated;
         }
 
-        public object GetRegistrationOptions()
-        {
-            return null;
-        }
-
-        public async Task<Unit> Handle(DidChangeConfigurationParams request, CancellationToken cancellationToken)
+        public override async Task<Unit> Handle(DidChangeConfigurationParams request, CancellationToken cancellationToken)
         {
             LanguageServerSettingsWrapper incomingSettings = request.Settings.ToObject<LanguageServerSettingsWrapper>();
             if(incomingSettings == null)
@@ -199,17 +193,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             _languageServer.Window.SendTelemetryEvent(new TelemetryEventParams
             {
-                Data = new PsesTelemetryEvent
+                ExtensionData = new PsesTelemetryEvent
                 {
                     EventName = "NonDefaultPsesFeatureConfiguration",
                     Data = JObject.FromObject(configChanges)
                 }
             });
-        }
-
-        public void SetCapability(DidChangeConfigurationCapability capability)
-        {
-            _capability = capability;
         }
 
         public event EventHandler<LanguageServerSettings> ConfigurationUpdated;

@@ -21,25 +21,22 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
+    // TODO: Use ABCs.
     internal class PsesCompletionHandler : ICompletionHandler, ICompletionResolveHandler
     {
         const int DefaultWaitTimeoutMilliseconds = 5000;
         private readonly SemaphoreSlim _completionLock = AsyncUtils.CreateSimpleLockingSemaphore();
         private readonly SemaphoreSlim _completionResolveLock = AsyncUtils.CreateSimpleLockingSemaphore();
-
         private readonly ILogger _logger;
         private readonly PowerShellContextService _powerShellContextService;
         private readonly WorkspaceService _workspaceService;
-
         private CompletionResults _mostRecentCompletions;
-
         private int _mostRecentRequestLine;
-
         private int _mostRecentRequestOffest;
-
         private string _mostRecentRequestFile;
-
         private CompletionCapability _capability;
+        private readonly Guid _id = Guid.NewGuid();
+        Guid ICanBeIdentifiedHandler.Id => _id;
 
         public PsesCompletionHandler(
             ILoggerFactory factory,
@@ -51,15 +48,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspaceService;
         }
 
-        public CompletionRegistrationOptions GetRegistrationOptions()
+        public CompletionRegistrationOptions GetRegistrationOptions(CompletionCapability capability, ClientCapabilities clientCapabilities) => new CompletionRegistrationOptions
         {
-            return new CompletionRegistrationOptions
-            {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector,
-                ResolveProvider = true,
-                TriggerCharacters = new[] { ".", "-", ":", "\\", "$" }
-            };
-        }
+            DocumentSelector = LspUtils.PowerShellDocumentSelector,
+            ResolveProvider = true,
+            TriggerCharacters = new[] { ".", "-", ":", "\\", "$" }
+        };
 
         public async Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
         {
@@ -145,10 +139,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 if (commandInfo != null)
                 {
-                    request.Documentation =
-                        await CommandHelpers.GetCommandSynopsisAsync(
-                            commandInfo,
-                            _powerShellContextService).ConfigureAwait(false);
+                    request = request with
+                    {
+                        Documentation = await CommandHelpers.GetCommandSynopsisAsync(commandInfo, _powerShellContextService).ConfigureAwait(false)
+                    };
                 }
 
                 // Send back the updated CompletionItem
@@ -160,7 +154,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
         }
 
-        public void SetCapability(CompletionCapability capability)
+        public void SetCapability(CompletionCapability capability, ClientCapabilities clientCapabilities)
         {
             _capability = capability;
         }

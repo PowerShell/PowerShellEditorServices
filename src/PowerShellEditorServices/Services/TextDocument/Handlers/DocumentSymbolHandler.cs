@@ -23,14 +23,11 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class PsesDocumentSymbolHandler : IDocumentSymbolHandler
+    internal class PsesDocumentSymbolHandler : DocumentSymbolHandlerBase
     {
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
-
         private readonly IDocumentSymbolProvider[] _providers;
-
-        private DocumentSymbolCapability _capability;
 
         public PsesDocumentSymbolHandler(ILoggerFactory factory, ConfigurationService configurationService, WorkspaceService workspaceService)
         {
@@ -44,15 +41,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             };
         }
 
-        public DocumentSymbolRegistrationOptions GetRegistrationOptions()
+        protected override DocumentSymbolRegistrationOptions CreateRegistrationOptions(DocumentSymbolCapability capability, ClientCapabilities clientCapabilities) => new DocumentSymbolRegistrationOptions
         {
-            return new DocumentSymbolRegistrationOptions
-            {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector
-            };
-        }
+            DocumentSelector = LspUtils.PowerShellDocumentSelector
+        };
 
-        public Task<SymbolInformationOrDocumentSymbolContainer> Handle(DocumentSymbolParams request, CancellationToken cancellationToken)
+        public override Task<SymbolInformationOrDocumentSymbolContainer> Handle(DocumentSymbolParams request, CancellationToken cancellationToken)
         {
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
@@ -90,11 +84,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
 
             return Task.FromResult(new SymbolInformationOrDocumentSymbolContainer(symbols));
-        }
-
-        public void SetCapability(DocumentSymbolCapability capability)
-        {
-            _capability = capability;
         }
 
         private IEnumerable<ISymbolReference> ProvideDocumentSymbols(

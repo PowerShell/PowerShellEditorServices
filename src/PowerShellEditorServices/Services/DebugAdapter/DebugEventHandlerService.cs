@@ -146,7 +146,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     break;
             }
 
-            OmniSharp.Extensions.DebugAdapter.Protocol.Models.Breakpoint breakpoint;
+            var breakpoint = new OmniSharp.Extensions.DebugAdapter.Protocol.Models.Breakpoint
+            {
+                Verified = e.UpdateType != BreakpointUpdateType.Disabled
+            };
+
             if (e.Breakpoint is LineBreakpoint)
             {
                 breakpoint = LspDebugUtils.CreateBreakpoint(BreakpointDetails.Create(e.Breakpoint));
@@ -161,8 +165,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 _logger.LogError($"Unrecognized breakpoint type {e.Breakpoint.GetType().FullName}");
                 return;
             }
-
-            breakpoint.Verified = e.UpdateType != BreakpointUpdateType.Disabled;
 
             _debugAdapterServer.SendNotification(EventNames.Breakpoint,
                 new BreakpointEvent

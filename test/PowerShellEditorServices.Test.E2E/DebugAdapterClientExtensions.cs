@@ -4,19 +4,11 @@
 //
 
 using System;
-using System.IO;
-using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Handlers;
-using Xunit;
 using OmniSharp.Extensions.DebugAdapter.Client;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 using System.Threading;
-using System.Text;
-using System.Linq;
-using Xunit.Abstractions;
-using Microsoft.Extensions.Logging;
-using OmniSharp.Extensions.DebugAdapter.Protocol.Models;
 
 namespace PowerShellEditorServices.Test.E2E
 {
@@ -24,7 +16,7 @@ namespace PowerShellEditorServices.Test.E2E
     {
         public static async Task LaunchScript(this DebugAdapterClient debugAdapterClient, string filePath, TaskCompletionSource<object> started)
         {
-            LaunchResponse launchResponse = await debugAdapterClient.RequestLaunch(new PsesLaunchRequestArguments
+            LaunchResponse launchResponse = await debugAdapterClient.Launch(new PsesLaunchRequestArguments
             {
                 NoDebug = false,
                 Script = filePath,

@@ -19,46 +19,38 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class PsesCodeActionHandler : ICodeActionHandler
+    internal class PsesCodeActionHandler : CodeActionHandlerBase
     {
-        private static readonly CodeActionKind[] s_supportedCodeActions = new[]
-        {
-            CodeActionKind.QuickFix
-        };
-
-        private readonly CodeActionRegistrationOptions _registrationOptions;
-
         private readonly ILogger _logger;
-
         private readonly AnalysisService _analysisService;
-
         private readonly WorkspaceService _workspaceService;
-
-        private CodeActionCapability _capability;
 
         public PsesCodeActionHandler(ILoggerFactory factory, AnalysisService analysisService, WorkspaceService workspaceService)
         {
             _logger = factory.CreateLogger<PsesCodeActionHandler>();
             _analysisService = analysisService;
             _workspaceService = workspaceService;
-            _registrationOptions = new CodeActionRegistrationOptions
+        }
+
+        protected override CodeActionRegistrationOptions CreateRegistrationOptions(CodeActionCapability capability, ClientCapabilities clientCapabilities) => new CodeActionRegistrationOptions
             {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector,
-                CodeActionKinds = s_supportedCodeActions
-            };
-        }
+            // TODO: What do we do with the arguments?
+            DocumentSelector = LspUtils.PowerShellDocumentSelector,
+            CodeActionKinds = new CodeActionKind[] { CodeActionKind.QuickFix }
+        };
 
-        public CodeActionRegistrationOptions GetRegistrationOptions()
+        // TODO: Either fix or ignore "method lacks 'await'" warning.
+        public override async Task<CodeAction> Handle(CodeAction request, CancellationToken cancellationToken)
         {
-            return _registrationOptions;
+            // TODO: How on earth do we handle a CodeAction? This is new...
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogDebug("CodeAction request canceled for: {0}", request.Title);
+            }
+            return request;
         }
 
-        public void SetCapability(CodeActionCapability capability)
-        {
-            _capability = capability;
-        }
-
-        public async Task<CommandOrCodeActionContainer> Handle(CodeActionParams request, CancellationToken cancellationToken)
+        public override async Task<CommandOrCodeActionContainer> Handle(CodeActionParams request, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -101,7 +93,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                                 new WorkspaceEditDocumentChange(
                                     new TextDocumentEdit
                                     {
-                                        TextDocument = new VersionedTextDocumentIdentifier
+                                        TextDocument = new OptionalVersionedTextDocumentIdentifier
                                         {
                                             Uri = request.TextDocument.Uri
                                         },

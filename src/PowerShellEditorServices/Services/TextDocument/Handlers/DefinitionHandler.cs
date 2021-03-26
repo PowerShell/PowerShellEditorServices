@@ -18,13 +18,11 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class PsesDefinitionHandler : IDefinitionHandler
+    internal class PsesDefinitionHandler : DefinitionHandlerBase
     {
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
-
-        private DefinitionCapability _capability;
 
         public PsesDefinitionHandler(
             ILoggerFactory factory,
@@ -36,15 +34,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspaceService;
         }
 
-        public DefinitionRegistrationOptions GetRegistrationOptions()
+        protected override DefinitionRegistrationOptions CreateRegistrationOptions(DefinitionCapability capability, ClientCapabilities clientCapabilities) => new DefinitionRegistrationOptions
         {
-            return new DefinitionRegistrationOptions
-            {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector
-            };
-        }
+            DocumentSelector = LspUtils.PowerShellDocumentSelector
+        };
 
-        public async Task<LocationOrLocationLinks> Handle(DefinitionParams request, CancellationToken cancellationToken)
+        public override async Task<LocationOrLocationLinks> Handle(DefinitionParams request, CancellationToken cancellationToken)
         {
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
@@ -74,11 +69,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             return new LocationOrLocationLinks(definitionLocations);
-        }
-
-        public void SetCapability(DefinitionCapability capability)
-        {
-            _capability = capability;
         }
 
         private static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)
