@@ -86,10 +86,10 @@ function Unregister-EditorCommand {
     Creates and opens a new foo.ps1 in your editor
 .EXAMPLE
     PS > Get-Process | New-EditorFile proc.txt
-    Creates and opens a new foo.ps1 in your editor with the contents of the call to Get-Process
+    Creates and opens a new proc.txt in your editor with the contents of the call to Get-Process
 .EXAMPLE
     PS > Get-Process | New-EditorFile proc.txt -Force
-    Creates and opens a new foo.ps1 in your editor with the contents of the call to Get-Process. Overwrites the file if it already exists
+    Creates and opens a new proc.txt in your editor with the contents of the call to Get-Process. Overwrites the file if it already exists
 .INPUTS
     Path
     an array of files you want to open in your editor
@@ -125,7 +125,16 @@ function New-EditorFile {
     end {
         # If editorContext is null, then we're in a Temp session and
         # this cmdlet won't work so return early.
-        $editorContext = $psEditor.GetEditorContext()
+        try {
+            $editorContext = $psEditor.GetEditorContext()
+        }
+        catch {
+            # If there's no editor, this throws an error. Create a new file, and grab the context here.
+            # This feels really hacky way to do it, but not sure if there's another way to detect editor context...
+            $psEditor.Workspace.NewFile()
+            $editorContext = $psEditor.GetEditorContext()
+        }
+
         if (!$editorContext) {
             return
         }
