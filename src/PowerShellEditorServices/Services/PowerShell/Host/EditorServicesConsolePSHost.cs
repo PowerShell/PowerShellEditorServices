@@ -44,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public EditorServicesConsolePSHost(
             ILoggerFactory loggerFactory,
-            ILanguageServer languageServer,
+            ILanguageServerFacade languageServer,
             HostStartupInfo hostInfo)
         {
             _logger = loggerFactory.CreateLogger<EditorServicesConsolePSHost>();

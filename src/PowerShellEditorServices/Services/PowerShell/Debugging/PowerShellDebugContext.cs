@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
     {
         private readonly ILogger _logger;
 
-        private readonly ILanguageServer _languageServer;
+        private readonly ILanguageServerFacade _languageServer;
 
         private readonly EditorServicesConsolePSHost _psesHost;
 
@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         public PowerShellDebugContext(
             ILoggerFactory loggerFactory,
-            ILanguageServer languageServer,
+            ILanguageServerFacade languageServer,
             EditorServicesConsolePSHost psesHost,
             ConsoleReplRunner consoleReplRunner)
         {
@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         }
 
         private CancellationTokenSource _debugLoopCancellationSource;
-        
+
         public bool IsStopped { get; private set; }
 
         public DscBreakpointCapability DscBreakpointCapability => throw new NotImplementedException();
