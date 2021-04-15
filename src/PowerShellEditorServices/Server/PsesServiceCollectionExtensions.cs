@@ -47,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                             provider.GetService<EditorOperationsService>(),
                             provider.GetService<PowerShellExecutionService>());
 
-                        extensionService.InitializeAsync().GetAwaiter().GetResult();
+                        extensionService.InitializeAsync();
 
                         return extensionService;
                     })
