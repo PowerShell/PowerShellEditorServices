@@ -62,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             param()
             end {{
                 $module = Get-Module -ListAvailable PSReadLine |
-                    Where-Object {{ $_.Version -ge '2.0.2' }} |
+                    Where-Object {{ $_.Version -ge '2.2.1' }} |
                     Sort-Object -Descending Version |
                     Select-Object -First 1
                 if (-not $module) {{
@@ -103,11 +103,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                 ReadLineMethodName,
                 new[] { typeof(Runspace), typeof(EngineIntrinsics), typeof(CancellationToken) })
                 ?.CreateDelegate(typeof(Func<Runspace, EngineIntrinsics, CancellationToken, string>));
-
-            ForcePSEventHandling = (Action)psConsoleReadLine.GetMethod(
-                ForcePSEventHandlingMethodName,
-                BindingFlags.Static | BindingFlags.NonPublic)
-                ?.CreateDelegate(typeof(Action));
 
             AddToHistory = (Action<string>)psConsoleReadLine.GetMethod(
                 AddToHistoryMethodName,
@@ -154,14 +149,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                 throw NewInvalidPSReadLineVersionException(
                     MethodMemberType,
                     AddToHistoryMethodName,
-                    _logger);
-            }
-
-            if (ForcePSEventHandling == null)
-            {
-                throw NewInvalidPSReadLineVersionException(
-                    MethodMemberType,
-                    ForcePSEventHandlingMethodName,
                     _logger);
             }
         }
