@@ -137,7 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         internal void SetAsStaticInstance()
         {
             EditorObject.Instance = this;
-            s_editorObjectReady.SetResult(true);
+            s_editorObjectReady.TrySetResult(true);
         }
     }
 }

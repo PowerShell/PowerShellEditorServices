@@ -65,7 +65,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
             PsesDebugServer psesDebugServer,
             bool useTempSession)
         {
-            return collection.AddSingleton(languageServiceProvider.GetService<PowerShellExecutionService>())
+            return collection
+                .AddSingleton(languageServiceProvider.GetService<PowerShellExecutionService>())
                 .AddSingleton(languageServiceProvider.GetService<WorkspaceService>())
                 .AddSingleton(languageServiceProvider.GetService<RemoteFileManagerService>())
                 .AddSingleton<PsesDebugServer>(psesDebugServer)
