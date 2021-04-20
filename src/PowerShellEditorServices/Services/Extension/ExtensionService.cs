@@ -27,6 +27,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 
         private readonly ILanguageServerFacade _languageServer;
 
+        private int _initialized = 0;
+
         #endregion
 
         #region Properties
@@ -91,16 +93,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         /// </summary>
         /// <param name="editorOperations">An IEditorOperations implementation.</param>
         /// <returns>A Task that can be awaited for completion.</returns>
-        internal async Task InitializeAsync()
+        internal Task InitializeAsync()
         {
+            if (Interlocked.Exchange(ref _initialized, 1) != 0)
+            {
+                return Task.CompletedTask;
+            }
+
             // Assign the new EditorObject to be the static instance available to binary APIs
             EditorObject.SetAsStaticInstance();
 
             // Register the editor object in the runspace
-            await ExecutionService.ExecuteDelegateAsync((pwsh, cancellationToken) =>
-            {
-                pwsh.Runspace.SessionStateProxy.PSVariable.Set("psEditor", EditorObject);
-            }, representation: "Set PSEditor",  CancellationToken.None);
+            return ExecutionService.ExecuteDelegateAsync((pwsh, cancellationToken) =>
+                {
+                    pwsh.Runspace.SessionStateProxy.PSVariable.Set("psEditor", EditorObject);
+                }, representation: "Set PSEditor",  CancellationToken.None);
         }
 
         /// <summary>
