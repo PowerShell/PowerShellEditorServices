@@ -43,6 +43,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         private readonly ConsoleReplRunner _consoleRepl;
 
+        private CancellationTokenSource _debugLoopCancellationSource;
+
         public PowerShellDebugContext(
             ILoggerFactory loggerFactory,
             ILanguageServerFacade languageServer,
@@ -55,11 +57,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
             _consoleRepl = consoleReplRunner;
         }
 
-        private CancellationTokenSource _debugLoopCancellationSource;
-
         public bool IsStopped { get; private set; }
 
-        public DscBreakpointCapability DscBreakpointCapability => throw new NotImplementedException();
+        public bool IsDebugServerActive { get; set; }
 
         public DebuggerStopEventArgs LastStopEventArgs { get; private set; }
 
@@ -152,6 +152,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         private void RaiseDebuggerStoppedEvent()
         {
             // TODO: Send language server message to start debugger
+            if (!IsDebugServerActive)
+            {
+                _languageServer.SendNotification("powerShell/startDebugger");
+            }
+
             DebuggerStopped?.Invoke(this, LastStopEventArgs);
         }
 

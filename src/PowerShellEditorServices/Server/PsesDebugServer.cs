@@ -11,12 +11,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
-using Microsoft.PowerShell.EditorServices.Utility;
-using OmniSharp.Extensions.DebugAdapter.Protocol;
-using OmniSharp.Extensions.DebugAdapter.Protocol.Serialization;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using OmniSharp.Extensions.DebugAdapter.Server;
-using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.LanguageServer.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Server
@@ -46,6 +43,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
         private DebugAdapterServer _debugAdapterServer;
 
         private PowerShellExecutionService _executionService;
+
+        private EditorServicesConsolePSHost _psesHost;
 
         protected readonly ILoggerFactory _loggerFactory;
 
@@ -78,6 +77,9 @@ namespace Microsoft.PowerShell.EditorServices.Server
             {
                 // We need to let the PowerShell Context Service know that we are in a debug session
                 // so that it doesn't send the powerShell/startDebugger message.
+                _psesHost = ServiceProvider.GetService<EditorServicesConsolePSHost>();
+                _psesHost.DebugContext.IsDebugServerActive = true;
+
                 _executionService = ServiceProvider.GetService<PowerShellExecutionService>();
 
                 /*
@@ -99,10 +101,14 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 options
                     .WithInput(_inputStream)
                     .WithOutput(_outputStream)
-                    .WithServices(serviceCollection => serviceCollection
-                        .AddLogging()
-                        .AddOptions()
-                        .AddPsesDebugServices(ServiceProvider, this, _useTempSession))
+                    .WithServices(serviceCollection => {
+                        serviceCollection
+                            .AddLogging()
+                            .AddOptions()
+                            .AddPsesDebugServices(ServiceProvider, this, _useTempSession);
+
+                        Console.WriteLine("Services configured");
+                    })
                     // TODO: Consider replacing all WithHandler with AddSingleton
                     .WithHandler<LaunchAndAttachHandler>()
                     .WithHandler<DisconnectHandler>()
@@ -141,6 +147,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
         public void Dispose()
         {
             // TODO: If the debugger has stopped, should we clear the breakpoints?
+            _psesHost.DebugContext.IsDebugServerActive = false;
             _debugAdapterServer.Dispose();
             _inputStream.Dispose();
             _outputStream.Dispose();
