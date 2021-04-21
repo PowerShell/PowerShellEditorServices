@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal bool NoDebug { get; set; }
 
-        internal string Arguments { get; set; }
+        internal string[] Arguments { get; set; }
 
         internal bool IsRemoteAttach { get; set; }
 

@@ -101,14 +101,11 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 options
                     .WithInput(_inputStream)
                     .WithOutput(_outputStream)
-                    .WithServices(serviceCollection => {
+                    .WithServices(serviceCollection =>
                         serviceCollection
                             .AddLogging()
                             .AddOptions()
-                            .AddPsesDebugServices(ServiceProvider, this, _useTempSession);
-
-                        Console.WriteLine("Services configured");
-                    })
+                            .AddPsesDebugServices(ServiceProvider, this, _useTempSession))
                     // TODO: Consider replacing all WithHandler with AddSingleton
                     .WithHandler<LaunchAndAttachHandler>()
                     .WithHandler<DisconnectHandler>()
