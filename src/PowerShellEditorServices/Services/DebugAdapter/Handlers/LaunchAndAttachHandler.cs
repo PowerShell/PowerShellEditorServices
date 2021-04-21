@@ -172,17 +172,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             // Prepare arguments to the script - if specified
-            string arguments = null;
             if (request.Args?.Length > 0)
             {
-                arguments = string.Join(" ", request.Args);
-                _logger.LogTrace("Script arguments are: " + arguments);
+                _logger.LogTrace($"Script arguments are: {string.Join(" ", request.Args)}");
             }
 
             // Store the launch parameters so that they can be used later
             _debugStateService.NoDebug = request.NoDebug;
             _debugStateService.ScriptToLaunch = request.Script;
-            _debugStateService.Arguments = arguments;
+            _debugStateService.Arguments = request.Args;
             _debugStateService.IsUsingTempIntegratedConsole = request.CreateTemporaryIntegratedConsole;
 
             if (request.CreateTemporaryIntegratedConsole

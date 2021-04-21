@@ -1,8 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System.Collections.Generic;
 using System.Management.Automation;
 using System.Management.Automation.Language;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -118,11 +120,66 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
             else
             {
-                //await _powerShellContextService
-                //    .ExecuteScriptWithArgsAsync(scriptToLaunch, _debugStateService.Arguments, writeInputToHost: true).ConfigureAwait(false);
+                await _executionService
+                    .ExecutePSCommandAsync(
+                        BuildPSCommandFromArguments(scriptToLaunch, _debugStateService.Arguments),
+                        new PowerShellExecutionOptions { WriteInputToHost = true, WriteOutputToHost = true, AddToHistory = true },
+                        CancellationToken.None)
+                    .ConfigureAwait(false);
             }
 
             _debugAdapterServer.SendNotification(EventNames.Terminated);
+        }
+
+        private PSCommand BuildPSCommandFromArguments(string command, IReadOnlyList<string> arguments)
+        {
+            if (arguments is null
+                || arguments.Count == 0)
+            {
+                return new PSCommand().AddCommand(command);
+            }
+
+            // We are forced to use a hack here so that we can reuse PowerShell's parameter binding
+            var sb = new StringBuilder()
+                .Append("& '")
+                .Append(command.Replace("'", "''"))
+                .Append("'");
+
+            foreach (string arg in arguments)
+            {
+                sb.Append(' ');
+
+                if (ArgumentNeedsEscaping(arg))
+                {
+                    sb.Append('\'').Append(arg.Replace("'", "''")).Append('\'');
+                }
+                else
+                {
+                    sb.Append(arg);
+                }
+            }
+
+            return new PSCommand().AddScript(sb.ToString());
+        }
+
+        private bool ArgumentNeedsEscaping(string argument)
+        {
+            foreach (char c in argument)
+            {
+                switch (c)
+                {
+                    case '\'':
+                    case '"':
+                    case '|':
+                    case '&':
+                    case ';':
+                    case ':':
+                    case char w when char.IsWhiteSpace(w):
+                        return true;
+                }
+            }
+
+            return false;
         }
     }
 }
