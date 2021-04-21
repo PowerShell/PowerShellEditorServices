@@ -186,9 +186,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             }
 
             // If we've been asked for a PSObject, no need to allocate a new collection
-            if (typeof(TResult) == typeof(PSObject))
+            if (typeof(TResult) == typeof(PSObject)
+                && outputCollection is IReadOnlyList<TResult> resultCollection)
             {
-                return (IReadOnlyList<TResult>)outputCollection;
+                return resultCollection;
             }
 
             // Otherwise, convert things over
