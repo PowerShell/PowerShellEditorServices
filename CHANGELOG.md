@@ -1,12 +1,17 @@
 # PowerShell Editor Services Release History
 
+## v2.4.1-preview.1
+### Monday, April 26, 2021
+
+- 🔍🐛 [PowerShellEditorServices #1460](https://github.com/PowerShell/PowerShellEditorServices/pull/1460) - Bump OmniSharp package to `0.19.2-beta0001`.
+- 👷🐛 [PowerShellEditorServices #1455](https://github.com/PowerShell/PowerShellEditorServices/pull/1456) - Fix version in module definition file.
+
 ## v2.4.0-preview.1
 ### Friday, April 02, 2021
 
 - 🧠✨ [PowerShellEditorServices #1176](https://github.com/PowerShell/PowerShellEditorServices/pull/1427) - Add '$' as trigger character for completion. (Thanks @MartinGC94!)
 - 👷🚨✨ [PowerShellEditorServices #1426](https://github.com/PowerShell/PowerShellEditorServices/pull/1426) - Bump CI images and enable tests on Apple M1.
 - ✨ [PowerShellEditorServices #1424](https://github.com/PowerShell/PowerShellEditorServices/pull/1424) - Update to use OmniSharp 0.19.0.
-- #️⃣ 🙏 [PowerShellEditorServices #1418](https://github.com/PowerShell/PowerShellEditorServices/pull/1418) - Update CHANGELOG for v2.3.0.
 - #️⃣ 🙏 [vscode-powershell #3180](https://github.com/PowerShell/PowerShellEditorServices/pull/1411) - Fix New-EditorFile failing when no Editor window open. (Thanks @corbob!)
 
 ## v2.3.0
