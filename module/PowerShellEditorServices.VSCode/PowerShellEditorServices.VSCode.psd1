@@ -27,7 +27,7 @@ Author = 'Microsoft'
 CompanyName = 'Microsoft'
 
 # Copyright statement for this module
-Copyright = '(c) 2017 Microsoft. All rights reserved.'
+Copyright = '(c) 2021 Microsoft Corporation.'
 
 # Description of the functionality provided by this module
 Description = 'Provides added functionality to PowerShell Editor Services for the Visual Studio Code editor.'

@@ -1,9 +1,7 @@
-// TODO: Fix these tests which cause the test runner to stop responding...
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
-// //
-// // Copyright (c) Microsoft. All rights reserved.
-// // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-// //
+// TODO: Fix these tests which cause the test runner to stop responding...
 
 // using Microsoft.PowerShell.EditorServices.Utility;
 // using Microsoft.PowerShell.EditorServices.Test.Shared;

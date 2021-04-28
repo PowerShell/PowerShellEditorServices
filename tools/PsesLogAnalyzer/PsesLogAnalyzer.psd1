@@ -27,7 +27,7 @@ Author = 'Microsoft'
 CompanyName = 'Microsoft'
 
 # Copyright statement for this module
-Copyright = '(c) 2018 Microsoft. All rights reserved.'
+Copyright = '(c) 2021 Microsoft Corporation.'
 
 # Description of the functionality provided by this module
 Description = 'PowerShellEditorServices log file parser and analysis commands.'
