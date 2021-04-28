@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 param($buildVersion = $null)
 
 $releasePath = [System.IO.Path]::GetFullPath("$PSScriptRoot\..\release")

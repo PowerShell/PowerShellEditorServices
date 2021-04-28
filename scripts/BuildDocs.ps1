@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 param([switch]$Serve, [switch]$Clean, [switch]$Publish)
 
 $toolsPath = [System.IO.Path]::GetFullPath("$PSScriptRoot\..\tools")
