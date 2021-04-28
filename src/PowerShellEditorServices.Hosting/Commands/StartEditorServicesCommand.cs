@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
     public sealed class StartEditorServicesCommand : PSCmdlet
     {
         // TODO: Remove this when we drop support for PS6.
-        private static bool s_isWindows =
+        private readonly static bool s_isWindows =
 #if CoreCLR
         RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 #else
