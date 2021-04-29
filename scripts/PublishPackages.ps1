@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 
 $releasePath = [System.IO.Path]::GetFullPath("$PSScriptRoot\..\release")
 $finalPackagePath = [System.IO.Path]::GetFullPath("$releasePath\FinalPackages")
@@ -15,7 +17,7 @@ foreach ($package in $packages) {
     }
     else
     {
-        Write-Output "Pushed package $package.FullName"   
+        Write-Output "Pushed package $package.FullName"
     }
 }
 

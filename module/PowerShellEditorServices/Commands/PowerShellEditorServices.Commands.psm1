@@ -1,7 +1,5 @@
-#
-# Copyright (c) Microsoft. All rights reserved.
-# Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 
 Microsoft.PowerShell.Utility\Import-LocalizedData -BindingVariable Strings -FileName Strings -ErrorAction Ignore
 

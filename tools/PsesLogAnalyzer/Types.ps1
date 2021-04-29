@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 enum PsesLogLevel {
     Diagnostic
     Verbose
@@ -72,7 +75,7 @@ class PsesNotificationMessage {
         if (($this.Name -eq '$/cancelRequest') -and ($this.Data -ne $null)) {
             return "Name: $($this.Name) Source: $($this.Source), Id: $($this.Data.params.id)"
         }
-    
+
         return "Name: $($this.Name) Source: $($this.Source), DataSize: $($this.DataSize)"
     }
 }

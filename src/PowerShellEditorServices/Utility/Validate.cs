@@ -1,7 +1,5 @@
-//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.Collections.Generic;
@@ -28,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         }
 
         /// <summary>
-        /// Throws ArgumentOutOfRangeException if the value is outside 
+        /// Throws ArgumentOutOfRangeException if the value is outside
         /// of the given lower and upper limits.
         /// </summary>
         /// <param name="parameterName">The name of the parameter being validated.</param>
@@ -38,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         public static void IsWithinRange(
             string parameterName,
             int valueToCheck,
-            int lowerLimit, 
+            int lowerLimit,
             int upperLimit)
         {
             // TODO: Debug assert here if lowerLimit >= upperLimit
@@ -56,7 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         }
 
         /// <summary>
-        /// Throws ArgumentOutOfRangeException if the value is greater than or equal 
+        /// Throws ArgumentOutOfRangeException if the value is greater than or equal
         /// to the given upper limit.
         /// </summary>
         /// <param name="parameterName">The name of the parameter being validated.</param>
@@ -79,7 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         }
 
         /// <summary>
-        /// Throws ArgumentOutOfRangeException if the value is less than or equal 
+        /// Throws ArgumentOutOfRangeException if the value is less than or equal
         /// to the given lower limit.
         /// </summary>
         /// <param name="parameterName">The name of the parameter being validated.</param>
@@ -102,7 +100,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         }
 
         /// <summary>
-        /// Throws ArgumentException if the value is equal to the undesired value. 
+        /// Throws ArgumentException if the value is equal to the undesired value.
         /// </summary>
         /// <typeparam name="TValue">The type of value to be validated.</typeparam>
         /// <param name="parameterName">The name of the parameter being validated.</param>

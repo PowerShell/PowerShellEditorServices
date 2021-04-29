@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 Register-EditorCommand `
     -Name 'PowerShellEditorServices.OpenEditorProfile' `
     -DisplayName 'Open Editor Profile' `

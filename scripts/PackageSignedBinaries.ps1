@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 # This script assumes the FetchBuildBinaries.ps1 has been run and
 # the binaries in 'release\BinariesToSign' have been signed and
 # replaced.

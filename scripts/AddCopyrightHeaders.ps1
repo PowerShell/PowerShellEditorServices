@@ -1,14 +1,10 @@
-#
-# Copyright (c) Microsoft. All rights reserved.
-# Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 
 $copyrightHeaderString =
 @'
-//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 '@
 
 $global:updateCount = 0;
@@ -25,7 +21,7 @@ function Add-CopyrightHeaders($basePath)
 		if ($fileContent.StartsWith($copyrightHeaderString) -eq $false)
 		{
 			# Add the copyright header to the file
-			Set-Content $sourceFile.FullName ($copyrightHeaderString + "`r`n`r`n" + $fileContent)
+			Set-Content $sourceFile.FullName ($copyrightHeaderString + [Environment]::NewLine + [Environment]::NewLine + $fileContent)
 			Write-Output ("Updated {0}" -f (Resolve-Path $sourceFile.FullName -Relative))
 			$global:updateCount++
 		}

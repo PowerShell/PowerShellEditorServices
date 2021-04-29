@@ -24,7 +24,7 @@ Author = 'Microsoft'
 CompanyName = 'Microsoft'
 
 # Copyright statement for this module
-Copyright = '(c) 2017 Microsoft. All rights reserved.'
+Copyright = '(c) 2021 Microsoft Corporation.'
 
 # Description of the functionality provided by this module
 Description = 'Provides internal commands for PowerShell Editor Services that only work in an editor session.'
