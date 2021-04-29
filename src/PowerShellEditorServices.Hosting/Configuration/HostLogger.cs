@@ -286,7 +286,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _messageQueue = new BlockingCollection<string>();
 
             // Start writer listening to queue
-            _writerThread = new Thread(RunWriter);
+            _writerThread = new Thread(RunWriter)
+            {
+                Name = "PSES Stream Logger Thread",
+            };
             _writerThread.Start();
         }
 
@@ -306,6 +309,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _fileWriter.Flush();
             _fileWriter.Close();
             _fileWriter.Dispose();
+            _cancellationSource.Dispose();
+            _messageQueue.Dispose();
         }
 
         public void OnError(Exception error)
