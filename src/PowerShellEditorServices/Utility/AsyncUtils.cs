@@ -1,7 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.PowerShell.EditorServices.Utility
 {
@@ -18,6 +22,36 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         internal static SemaphoreSlim CreateSimpleLockingSemaphore()
         {
             return new SemaphoreSlim(initialCount: 1, maxCount: 1);
+        }
+
+        internal static Task HandleErrorsAsync(
+            this Task task,
+            ILogger logger,
+            [CallerMemberName] string callerName = null,
+            [CallerFilePath] string callerSourceFile = null,
+            [CallerLineNumber] int callerLineNumber = -1)
+        {
+            return task.IsCompleted && !(task.IsFaulted || task.IsCanceled)
+                ? task
+                : LogTaskErrors(task, logger, callerName, callerSourceFile, callerLineNumber);
+        }
+
+        private static async Task LogTaskErrors(Task task, ILogger logger, string callerName, string callerSourceFile, int callerLineNumber)
+        {
+            try
+            {
+                await task.ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                logger.LogDebug($"Task canceled in '{callerName}' in file '{callerSourceFile}' line {callerLineNumber}");
+                throw;
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, $"Exception thrown running task in '{callerName}' in file '{callerSourceFile}' line {callerLineNumber}");
+                throw;
+            }
         }
     }
 }
