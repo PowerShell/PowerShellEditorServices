@@ -14,6 +14,7 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
@@ -65,9 +66,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (!string.IsNullOrEmpty(_debugStateService.ScriptToLaunch))
             {
-                // TODO: ContinueWith on this task so that any errors can be handled
                 LaunchScriptAsync(_debugStateService.ScriptToLaunch)
-                        .ConfigureAwait(continueOnCapturedContext: false);
+                    .HandleErrorsAsync(_logger);
             }
 
             if (_debugStateService.IsInteractiveDebugSession)

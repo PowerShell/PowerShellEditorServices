@@ -11,6 +11,7 @@ using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -46,11 +47,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (isFromRepl)
             {
-                // TODO: Await this or handle errors from it
                 _executionService.ExecutePSCommandAsync(
                     new PSCommand().AddScript(request.Expression),
                     new PowerShellExecutionOptions { WriteOutputToHost = true },
-                    CancellationToken.None);
+                    CancellationToken.None).HandleErrorsAsync(_logger);
             }
             else
             {
