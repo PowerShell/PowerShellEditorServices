@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
@@ -29,6 +30,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly PowerShellExecutionService _executionService;
         private readonly WorkspaceService _workspaceService;
 
+        private readonly IPowerShellDebugContext _debugContext;
+
         public ConfigurationDoneHandler(
             ILoggerFactory loggerFactory,
             IDebugAdapterServerFacade debugAdapterServer,
@@ -36,7 +39,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             DebugStateService debugStateService,
             DebugEventHandlerService debugEventHandlerService,
             PowerShellExecutionService executionService,
-            WorkspaceService workspaceService)
+            WorkspaceService workspaceService,
+            IPowerShellDebugContext debugContext)
         {
             _logger = loggerFactory.CreateLogger<ConfigurationDoneHandler>();
             _debugAdapterServer = debugAdapterServer;
@@ -45,6 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _debugEventHandlerService = debugEventHandlerService;
             _executionService = executionService;
             _workspaceService = workspaceService;
+            _debugContext = debugContext;
         }
 
         public Task<ConfigurationDoneResponse> Handle(ConfigurationDoneArguments request, CancellationToken cancellationToken)
@@ -79,7 +84,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     {
                         // If this is an interactive session and there's a pending breakpoint that has not been propagated through
                         // the debug service, fire the debug service's OnDebuggerStop event.
-                        //_debugService.OnDebuggerStopAsync(null, _powerShellContextService.CurrentDebuggerStopEventArgs);
+                        _debugService.OnDebuggerStopAsync(null, _debugContext.LastStopEventArgs);
                     }
                 }
             }

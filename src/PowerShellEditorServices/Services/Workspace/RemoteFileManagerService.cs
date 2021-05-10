@@ -258,7 +258,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             this.logger = factory.CreateLogger<RemoteFileManagerService>();
             _runspaceContext = runspaceContext;
             _executionService = executionService;
-            //this.powerShellContext.RunspaceChanged += HandleRunspaceChangedAsync;
+            _executionService.RunspaceChanged += HandleRunspaceChangedAsync;
 
             this.editorOperations = editorOperations;
 
@@ -272,6 +272,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // Delete existing temporary file cache path if it already exists
             this.TryDeleteTemporaryPath();
 
+            // TODO: Do this somewhere other than the constructor and make it async
             // Register the psedit function in the current runspace
             //this.RegisterPSEditFunction(this.powerShellContext.CurrentRunspace);
         }
@@ -366,7 +367,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             string remoteFilePath =
                 this.GetMappedPath(
                     localFilePath,
-                    null); //_startupService.EditorServicesHost.Runspace);
+                    _runspaceContext.CurrentRunspace);
 
             this.logger.LogTrace(
                 $"Saving remote file {remoteFilePath} (local path: {localFilePath})");
@@ -633,8 +634,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 runspaceInfo.Runspace.Events.ReceivedEvents.PSEventReceived += HandlePSEventReceivedAsync;
 
-                PSCommand createCommand = new PSCommand();
-                createCommand
+                PSCommand createCommand = new PSCommand()
                     .AddScript(CreatePSEditFunctionScript)
                     .AddParameter("PSEditModule", PSEditModule);
 
