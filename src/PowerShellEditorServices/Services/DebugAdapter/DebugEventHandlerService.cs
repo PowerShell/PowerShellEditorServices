@@ -3,8 +3,10 @@
 
 using System.Management.Automation;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
@@ -20,18 +22,22 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly DebugStateService _debugStateService;
         private readonly IDebugAdapterServerFacade _debugAdapterServer;
 
+        private readonly IPowerShellDebugContext _debugContext;
+
         public DebugEventHandlerService(
             ILoggerFactory factory,
             PowerShellExecutionService executionService,
             DebugService debugService,
             DebugStateService debugStateService,
-            IDebugAdapterServerFacade debugAdapterServer)
+            IDebugAdapterServerFacade debugAdapterServer,
+            IPowerShellDebugContext debugContext)
         {
             _logger = factory.CreateLogger<DebugEventHandlerService>();
             _executionService = executionService;
             _debugService = debugService;
             _debugStateService = debugStateService;
             _debugAdapterServer = debugAdapterServer;
+            _debugContext = debugContext;
         }
 
         internal void RegisterEventHandlers()
@@ -88,28 +94,33 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void ExecutionService_RunspaceChanged(object sender, RunspaceChangedEventArgs e)
         {
-            if (_debugStateService.WaitingForAttach &&
-                e.ChangeAction == RunspaceChangeAction.Enter &&
-                e.NewRunspace.RunspaceOrigin == RunspaceOrigin.DebuggedRunspace)
+            switch (e.ChangeAction)
             {
-                // Sends the InitializedEvent so that the debugger will continue
-                // sending configuration requests
-                _debugStateService.WaitingForAttach = false;
-                _debugStateService.ServerStarted.SetResult(true);
-            }
-            else if (
-                e.ChangeAction == RunspaceChangeAction.Exit && false)
-            //    _powerShellContextService.IsDebuggerStopped)
-            {
-                // Exited the session while the debugger is stopped,
-                // send a ContinuedEvent so that the client changes the
-                // UI to appear to be running again
-                _debugAdapterServer.SendNotification(EventNames.Continued,
-                    new ContinuedEvent
+                case RunspaceChangeAction.Enter:
+                    if (_debugStateService.WaitingForAttach
+                        && e.NewRunspace.RunspaceOrigin == RunspaceOrigin.DebuggedRunspace)
                     {
-                        ThreadId = 1,
-                        AllThreadsContinued = true
-                    });
+                        // Sends the InitializedEvent so that the debugger will continue
+                        // sending configuration requests
+                        _debugStateService.WaitingForAttach = false;
+                        _debugStateService.ServerStarted.SetResult(true);
+                    }
+                    return;
+
+                case RunspaceChangeAction.Exit:
+                    if (_debugContext.IsStopped)
+                    {
+                        // Exited the session while the debugger is stopped,
+                        // send a ContinuedEvent so that the client changes the
+                        // UI to appear to be running again
+                        _debugAdapterServer.SendNotification(
+                            EventNames.Continued,
+                            new ContinuedEvent
+                            {
+                                ThreadId = ThreadsHandler.PipelineThread.Id,
+                            });
+                    }
+                    return;
             }
         }
 

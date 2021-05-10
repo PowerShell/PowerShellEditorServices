@@ -129,6 +129,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         new PowerShellExecutionOptions { WriteInputToHost = true, WriteOutputToHost = true, AddToHistory = true },
                         CancellationToken.None).ConfigureAwait(false);
 
+                    // TODO: Error handling here
+
                     /*
                     if (errors.Length == 0)
                     {
