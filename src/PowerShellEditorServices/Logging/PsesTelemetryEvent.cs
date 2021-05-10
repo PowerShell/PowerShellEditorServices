@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Microsoft.PowerShell.EditorServices.Logging
 {
-    // This inheirits from Dictionary so that it can be passed in to SendTelemetryEvent()
+    // This inherits from Dictionary so that it can be passed in to SendTelemetryEvent()
     // which takes in an IDictionary<string, object>
     // However, I wanted creation to be easy so you can do
     // new PsesTelemetryEvent { EventName = "eventName", Data = data }
