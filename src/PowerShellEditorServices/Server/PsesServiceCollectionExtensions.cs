@@ -24,9 +24,13 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     (provider) =>
                         PowerShellContextService.Create(
                             provider.GetService<ILoggerFactory>(),
+                            // NOTE: Giving the context service access to the language server this
+                            // early is dangerous because it allows it to start sending
+                            // notifications etc. before it has initialized, potentially resulting
+                            // in deadlocks. We're working on a solution to this.
                             provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade>(),
                             hostStartupInfo))
-                .AddSingleton<TemplateService>()
+                .AddSingleton<TemplateService>() // TODO: What's the difference between this and the TemplateHandler?
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<RemoteFileManagerService>()
                 .AddSingleton<ExtensionService>(
@@ -34,6 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     {
                         var extensionService = new ExtensionService(
                             provider.GetService<PowerShellContextService>(),
+                            // NOTE: See above warning.
                             provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade>());
                         extensionService.InitializeAsync(
                             serviceProvider: provider,
