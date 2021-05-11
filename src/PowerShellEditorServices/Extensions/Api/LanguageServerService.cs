@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using MediatR;
+using Microsoft.PowerShell.EditorServices.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System.Threading;
 using System.Threading.Tasks;
@@ -64,9 +65,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 
     internal class LanguageServerService : ILanguageServerService
     {
-        private readonly ILanguageServerFacade _languageServer;
+        private readonly ISafeLanguageServer _languageServer;
 
-        internal LanguageServerService(ILanguageServerFacade languageServer)
+        internal LanguageServerService(ISafeLanguageServer languageServer)
         {
             _languageServer = languageServer;
         }

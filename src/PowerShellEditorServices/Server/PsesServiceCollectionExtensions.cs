@@ -17,14 +17,16 @@ namespace Microsoft.PowerShell.EditorServices.Server
             this IServiceCollection collection,
             HostStartupInfo hostStartupInfo)
         {
-            return collection.AddSingleton<WorkspaceService>()
+            return collection
+                .AddSingleton<ISafeLanguageServer, SafeLanguageServer>()
+                .AddSingleton<WorkspaceService>()
                 .AddSingleton<SymbolsService>()
                 .AddSingleton<ConfigurationService>()
                 .AddSingleton<PowerShellContextService>(
                     (provider) =>
                         PowerShellContextService.Create(
                             provider.GetService<ILoggerFactory>(),
-                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade>(),
+                            provider.GetService<ISafeLanguageServer>(),
                             hostStartupInfo))
                 .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
@@ -34,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     {
                         var extensionService = new ExtensionService(
                             provider.GetService<PowerShellContextService>(),
-                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade>());
+                            provider.GetService<ISafeLanguageServer>());
                         extensionService.InitializeAsync(
                             serviceProvider: provider,
                             editorOperations: provider.GetService<EditorOperationsService>())

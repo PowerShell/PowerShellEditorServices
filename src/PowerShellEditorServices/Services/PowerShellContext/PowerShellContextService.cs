@@ -24,6 +24,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 namespace Microsoft.PowerShell.EditorServices.Services
 {
     using System.Management.Automation;
+    using Microsoft.PowerShell.EditorServices.Server;
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
@@ -67,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly SemaphoreSlim resumeRequestHandle = AsyncUtils.CreateSimpleLockingSemaphore();
         private readonly SessionStateLock sessionStateLock = new SessionStateLock();
 
-        private readonly OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade _languageServer;
+        private readonly ISafeLanguageServer _languageServer;
         private readonly bool isPSReadLineEnabled;
         private readonly ILogger logger;
 
@@ -171,7 +172,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </param>
         public PowerShellContextService(
             ILogger logger,
-            OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade languageServer,
+            ISafeLanguageServer languageServer,
             bool isPSReadLineEnabled)
         {
             _languageServer = languageServer;
@@ -185,7 +186,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Checked by Validate call")]
         public static PowerShellContextService Create(
             ILoggerFactory factory,
-            OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade languageServer,
+            ISafeLanguageServer languageServer,
             HostStartupInfo hostStartupInfo)
         {
             Validate.IsNotNull(nameof(hostStartupInfo), hostStartupInfo);

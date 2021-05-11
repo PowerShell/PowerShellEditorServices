@@ -3,6 +3,7 @@
 
 using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Handlers;
+using Microsoft.PowerShell.EditorServices.Server;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -17,12 +18,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly WorkspaceService _workspaceService;
         private readonly PowerShellContextService _powerShellContextService;
-        private readonly ILanguageServerFacade _languageServer;
+        private readonly ISafeLanguageServer _languageServer;
 
         public EditorOperationsService(
             WorkspaceService workspaceService,
             PowerShellContextService powerShellContextService,
-            ILanguageServerFacade languageServer)
+            ISafeLanguageServer languageServer)
         {
             _workspaceService = workspaceService;
             _powerShellContextService = powerShellContextService;

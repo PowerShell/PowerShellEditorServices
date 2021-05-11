@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Server;
 using Microsoft.PowerShell.EditorServices.Services.Analysis;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -82,7 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly ILogger _logger;
 
-        private readonly ILanguageServerFacade _languageServer;
+        private readonly ISafeLanguageServer _languageServer;
 
         private readonly ConfigurationService _configurationService;
 
@@ -107,7 +108,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="workspaceService">The workspace service for file handling within a workspace.</param>
         public AnalysisService(
             ILoggerFactory loggerFactory,
-            ILanguageServerFacade languageServer,
+            ISafeLanguageServer languageServer,
             ConfigurationService configurationService,
             WorkspaceService workspaceService)
         {

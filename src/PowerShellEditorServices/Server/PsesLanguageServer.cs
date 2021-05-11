@@ -93,7 +93,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<PsesSemanticTokensHandler>()
                     .OnInitialize(
                         // TODO: Either fix or ignore "method lacks 'await'" warning.
-                        async (languageServer, request, cancellationToken) =>
+                        (languageServer, request, cancellationToken) =>
                         {
                             var serviceProvider = languageServer.Services;
                             var workspaceService = serviceProvider.GetService<WorkspaceService>();
@@ -113,6 +113,12 @@ namespace Microsoft.PowerShell.EditorServices.Server
                                     break;
                                 }
                             }
+
+                            // Allow services to send requests and notifications now
+                            var safeLanguageServer = (SafeLanguageServer)serviceProvider.GetService<ISafeLanguageServer>();
+                            safeLanguageServer.SetReady();
+
+                            return Task.CompletedTask;
                         });
             }).ConfigureAwait(false);
 

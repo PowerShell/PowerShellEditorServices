@@ -5,6 +5,7 @@ using System;
 using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.PowerShell.EditorServices.Server;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -41,12 +42,13 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         internal EditorExtensionServiceProvider(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
-            LanguageServer = new LanguageServerService(_serviceProvider.GetService<ILanguageServerFacade>());
+            var languageServer = _serviceProvider.GetService<ISafeLanguageServer>();
+            LanguageServer = new LanguageServerService(languageServer);
             //DocumentSymbols = new DocumentSymbolService(_serviceProvider.GetService<SymbolsService>());
             ExtensionCommands = new ExtensionCommandService(_serviceProvider.GetService<ExtensionService>());
             Workspace = new WorkspaceService(_serviceProvider.GetService<InternalServices.WorkspaceService>());
-            EditorContext = new EditorContextService(_serviceProvider.GetService<ILanguageServerFacade>());
-            EditorUI = new EditorUIService(_serviceProvider.GetService<ILanguageServerFacade>());
+            EditorContext = new EditorContextService(languageServer);
+            EditorUI = new EditorUIService(languageServer);
         }
 
         /// <summary>

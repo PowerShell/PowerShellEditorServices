@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Server;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
@@ -101,9 +102,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
     {
         private static string[] s_choiceResponseLabelSeparators = new[] { ", " };
 
-        private readonly ILanguageServerFacade _languageServer;
+        private readonly ISafeLanguageServer _languageServer;
 
-        public EditorUIService(ILanguageServerFacade languageServer)
+        public EditorUIService(ISafeLanguageServer languageServer)
         {
             _languageServer = languageServer;
         }

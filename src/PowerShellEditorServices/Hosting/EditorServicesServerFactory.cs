@@ -123,6 +123,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 .AddSingleton<ILanguageServerFacade>(provider => null)
                 .AddPsesLanguageServices(hostStartupInfo)
                 // For a Temp session, there is no LanguageServer so just set it to null
+                // TODO: Why are we doing this twice?
                 .AddSingleton(
                     typeof(ILanguageServerFacade),
                     _ => null)

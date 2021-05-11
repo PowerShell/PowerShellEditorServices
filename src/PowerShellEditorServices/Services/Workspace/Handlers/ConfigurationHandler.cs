@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Logging;
+using Microsoft.PowerShell.EditorServices.Server;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
 using Newtonsoft.Json.Linq;
@@ -26,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly WorkspaceService _workspaceService;
         private readonly ConfigurationService _configurationService;
         private readonly PowerShellContextService _powerShellContextService;
-        private readonly ILanguageServerFacade _languageServer;
+        private readonly ISafeLanguageServer _languageServer;
         private bool _profilesLoaded;
         private bool _consoleReplStarted;
         private bool _cwdSet;
@@ -37,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             AnalysisService analysisService,
             ConfigurationService configurationService,
             PowerShellContextService powerShellContextService,
-            ILanguageServerFacade languageServer)
+            ISafeLanguageServer languageServer)
         {
             _logger = factory.CreateLogger<PsesConfigurationHandler>();
             _workspaceService = workspaceService;

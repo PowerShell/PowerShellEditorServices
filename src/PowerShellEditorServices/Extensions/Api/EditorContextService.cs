@@ -5,6 +5,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Handlers;
+using Microsoft.PowerShell.EditorServices.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Extensions.Services
@@ -82,10 +83,10 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 
     internal class EditorContextService : IEditorContextService
     {
-        private readonly ILanguageServerFacade _languageServer;
+        private readonly ISafeLanguageServer _languageServer;
 
         internal EditorContextService(
-            ILanguageServerFacade languageServer)
+            ISafeLanguageServer languageServer)
         {
             _languageServer = languageServer;
         }

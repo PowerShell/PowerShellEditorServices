@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Management.Automation;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Extensions;
+using Microsoft.PowerShell.EditorServices.Server;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -23,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly Dictionary<string, EditorCommand> editorCommands =
             new Dictionary<string, EditorCommand>();
 
-        private readonly ILanguageServerFacade _languageServer;
+        private readonly ISafeLanguageServer _languageServer;
 
         #endregion
 
@@ -55,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// PowerShellContext for loading and executing extension code.
         /// </summary>
         /// <param name="powerShellContext">A PowerShellContext used to execute extension code.</param>
-        internal ExtensionService(PowerShellContextService powerShellContext, ILanguageServerFacade languageServer)
+        internal ExtensionService(PowerShellContextService powerShellContext, ISafeLanguageServer languageServer)
         {
             this.PowerShellContext = powerShellContext;
             _languageServer = languageServer;

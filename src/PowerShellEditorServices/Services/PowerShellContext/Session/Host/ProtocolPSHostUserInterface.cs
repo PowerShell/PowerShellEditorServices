@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System;
 using System.Threading;
@@ -13,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     {
         #region Private Fields
 
-        private readonly ILanguageServerFacade _languageServer;
+        private readonly ISafeLanguageServer _languageServer;
 
         #endregion
 
@@ -25,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </summary>
         /// <param name="powerShellContext"></param>
         public ProtocolPSHostUserInterface(
-            ILanguageServerFacade languageServer,
+            ISafeLanguageServer languageServer,
             PowerShellContextService powerShellContext,
             ILogger logger)
             : base (

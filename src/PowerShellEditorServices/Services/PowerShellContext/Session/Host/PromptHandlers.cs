@@ -7,17 +7,18 @@ using System.Threading;
 using System.Security;
 using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using Microsoft.PowerShell.EditorServices.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 {
     internal class ProtocolChoicePromptHandler : ConsoleChoicePromptHandler
     {
-        private readonly ILanguageServerFacade _languageServer;
+        private readonly ISafeLanguageServer _languageServer;
         private readonly IHostInput _hostInput;
         private TaskCompletionSource<string> _readLineTask;
 
         public ProtocolChoicePromptHandler(
-            ILanguageServerFacade languageServer,
+            ISafeLanguageServer languageServer,
             IHostInput hostInput,
             IHostOutput hostOutput,
             ILogger logger)
@@ -94,12 +95,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
     internal class ProtocolInputPromptHandler : ConsoleInputPromptHandler
     {
-        private readonly ILanguageServerFacade _languageServer;
+        private readonly ISafeLanguageServer _languageServer;
         private readonly IHostInput hostInput;
         private TaskCompletionSource<string> readLineTask;
 
         public ProtocolInputPromptHandler(
-            ILanguageServerFacade languageServer,
+            ISafeLanguageServer languageServer,
             IHostInput hostInput,
             IHostOutput hostOutput,
             ILogger logger)
