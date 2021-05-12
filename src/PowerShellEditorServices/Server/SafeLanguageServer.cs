@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -10,6 +12,10 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Server
 {
+    /// <summary>
+    /// An LSP server that ensures that client/server initialization has occurred
+    /// before sending or receiving any other notifications or requests.
+    /// </summary>
     internal interface ISafeLanguageServer : IResponseRouter
     {
         ITextDocumentLanguageServer TextDocument { get; }
@@ -23,11 +29,24 @@ namespace Microsoft.PowerShell.EditorServices.Server
         IWorkspaceLanguageServer Workspace { get; }
     }
 
+    /// <summary>
+    /// An implementation around Omnisharp's LSP server to ensure
+    /// messages are not sent before initialization has completed.
+    /// </summary>
     internal class SafeLanguageServer : ISafeLanguageServer
     {
         private readonly ILanguageServerFacade _languageServer;
 
         private readonly AsyncLatch _serverReady;
+
+        private readonly ConcurrentQueue<Action> _notificationQueue;
+
+        public SafeLanguageServer(ILanguageServerFacade languageServer)
+        {
+            _languageServer = languageServer;
+            _serverReady = new AsyncLatch();
+            _notificationQueue = new ConcurrentQueue<Action>();
+        }
 
         public ITextDocumentLanguageServer TextDocument
         {
@@ -77,29 +96,44 @@ namespace Microsoft.PowerShell.EditorServices.Server
         public void SetReady()
         {
             _serverReady.Open();
-        }
 
-        public SafeLanguageServer(ILanguageServerFacade languageServer)
-        {
-            _languageServer = languageServer;
-            _serverReady = new AsyncLatch();
+            // Send any pending notifications now
+            while (_notificationQueue.TryDequeue(out Action notifcationAction))
+            {
+                notifcationAction();
+            }
         }
 
         public void SendNotification(string method)
         {
-            _serverReady.Wait();
+            if (!_serverReady.IsReady)
+            {
+                _notificationQueue.Enqueue(() => _languageServer.SendNotification(method));
+                return;
+            }
+
             _languageServer.SendNotification(method);
         }
 
         public void SendNotification<T>(string method, T @params)
         {
-            _serverReady.Wait();
+            if (!_serverReady.IsReady)
+            {
+                _notificationQueue.Enqueue(() => _languageServer.SendNotification(method, @params));
+                return;
+            }
+
             _languageServer.SendNotification(method, @params);
         }
 
         public void SendNotification(IRequest request)
         {
-            _serverReady.Wait();
+            if (!_serverReady.IsReady)
+            {
+                _notificationQueue.Enqueue(() => _languageServer.SendNotification(request));
+                return;
+            }
+
             _languageServer.SendNotification(request);
         }
 
@@ -123,7 +157,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
         public bool TryGetRequest(long id, out string method, out TaskCompletionSource<JToken> pendingTask)
         {
-            if (!_serverReady.TryWait())
+            if (!_serverReady.IsReady)
             {
                 method = default;
                 pendingTask = default;
@@ -133,6 +167,10 @@ namespace Microsoft.PowerShell.EditorServices.Server
             return _languageServer.TryGetRequest(id, out method, out pendingTask);
         }
 
+        /// <summary>
+        /// Implements a latch (a monotonic manual reset event that starts in the blocking state)
+        /// that can be waited on synchronously or asynchronously without wasting thread resources.
+        /// </summary>
         private class AsyncLatch
         {
             private readonly ManualResetEvent _resetEvent;
@@ -148,11 +186,11 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 _isOpen = false;
             }
 
+            public bool IsReady => _isOpen;
+
             public void Wait() => _resetEvent.WaitOne();
 
             public Task WaitAsync() => _awaitLatchOpened;
-
-            public bool TryWait() => _isOpen;
 
             public void Open()
             {
