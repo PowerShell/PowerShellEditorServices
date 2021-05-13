@@ -28,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Logging
             [CallerFilePath] string callerSourceFile = null,
             [CallerLineNumber] int callerLineNumber = -1)
         {
-            logger.LogError(message, exception);
+            logger.LogWarning(message, exception);
         }
     }
 }
