@@ -99,6 +99,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         .AddLogging()
                         .AddOptions()
                         .AddPsesDebugServices(ServiceProvider, this, _useTempSession))
+                    // TODO: Consider replacing all WithHandler with AddSingleton
                     .WithHandler<LaunchAndAttachHandler>()
                     .WithHandler<DisconnectHandler>()
                     .WithHandler<BreakpointHandlers>()

@@ -9,9 +9,12 @@ using System.Management.Automation.Host;
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
     /// <summary>
-    /// Contains details about the host as well as any other information
-    /// needed by Editor Services at startup time.
+    /// Contains details about the host as well as any other information needed by Editor Services
+    /// at startup time.
     /// </summary>
+    /// <remarks>
+    /// TODO: Simplify this as a <see langword="record"/>.
+    /// </remarks>
     public sealed class HostStartupInfo
     {
         #region Constants
@@ -97,6 +100,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <summary>
         /// The minimum log level of log events to be logged.
         /// </summary>
+        /// <remarks>
+        /// This is cast to all of <see cref="PsesLogLevel"/>, <see
+        /// cref="Microsoft.Extensions.Logging.LogLevel"/>, and <see
+        /// cref="Serilog.Events.LogEventLevel"/>, hence it is an <c>int</c>.
+        /// </remarks>
         public int LogLevel { get; }
 
         #endregion
@@ -158,6 +166,13 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         #endregion
     }
 
+    /// <summary>
+    /// This is a strange class that is generally <c>null</c> or otherwise just has a single path
+    /// set. It is eventually parsed one-by-one when setting up the PowerShell runspace.
+    /// </summary>
+    /// <remarks>
+    /// TODO: Simplify this as a <see langword="record"/>.
+    /// </remarks>
     public sealed class ProfilePathInfo
     {
         public ProfilePathInfo(

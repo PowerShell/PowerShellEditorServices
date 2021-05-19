@@ -32,10 +32,16 @@ namespace Microsoft.PowerShell.EditorServices.Server
         /// <summary>
         /// Create a new language server instance.
         /// </summary>
+        /// <remarks>
+        /// This class is only ever instantiated via <see
+        /// cref="EditorServicesServerFactory.CreateLanguageServer"/>. It is essentially a
+        /// singleton. The factory hides the logger.
+        /// </remarks>
         /// <param name="factory">Factory to create loggers with.</param>
         /// <param name="inputStream">Protocol transport input stream.</param>
         /// <param name="outputStream">Protocol transport output stream.</param>
-        /// <param name="hostStartupInfo">Host configuration to instantiate the server and services with.</param>
+        /// <param name="hostStartupInfo">Host configuration to instantiate the server and services
+        /// with.</param>
         public PsesLanguageServer(
             ILoggerFactory factory,
             Stream inputStream,
@@ -53,6 +59,11 @@ namespace Microsoft.PowerShell.EditorServices.Server
         /// <summary>
         /// Start the server listening for input.
         /// </summary>
+        /// <remarks>
+        /// For the services (including the <see cref="PowerShellContextService">
+        /// context wrapper around PowerShell itself) see <see
+        /// cref="PsesServiceCollectionExtensions.AddPsesLanguageServices"/>.
+        /// </remarks>
         /// <returns>A task that completes when the server is ready and listening.</returns>
         public async Task StartAsync()
         {
@@ -62,11 +73,12 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithInput(_inputStream)
                     .WithOutput(_outputStream)
                     .WithServices(serviceCollection => serviceCollection
-                        .AddPsesLanguageServices(_hostDetails))
+                        .AddPsesLanguageServices(_hostDetails)) // NOTE: This adds a lot of services!
                     .ConfigureLogging(builder => builder
-                        .AddSerilog(Log.Logger)
+                        .AddSerilog(Log.Logger) // TODO: Set dispose to true?
                         .AddLanguageProtocolLogging()
                         .SetMinimumLevel(_minimumLogLevel))
+                    // TODO: Consider replacing all WithHandler with AddSingleton
                     .WithHandler<PsesWorkspaceSymbolsHandler>()
                     .WithHandler<PsesTextDocumentHandler>()
                     .WithHandler<GetVersionHandler>()
@@ -91,10 +103,15 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<ShowHelpHandler>()
                     .WithHandler<ExpandAliasHandler>()
                     .WithHandler<PsesSemanticTokensHandler>()
+                    // NOTE: The OnInitialize delegate gets run when we first receive the
+                    // _Initialize_ request:
+                    // https://microsoft.github.io/language-server-protocol/specifications/specification-current/#initialize
                     .OnInitialize(
                         // TODO: Either fix or ignore "method lacks 'await'" warning.
                         async (languageServer, request, cancellationToken) =>
                         {
+                            Log.Logger.Debug("Initializing OmniSharp Language Server");
+
                             var serviceProvider = languageServer.Services;
                             var workspaceService = serviceProvider.GetService<WorkspaceService>();
 
@@ -125,6 +142,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
         /// <returns>A task that completes when the server is shut down.</returns>
         public async Task WaitForShutdown()
         {
+            Log.Logger.Debug("Shutting down OmniSharp Language Server");
             await _serverStart.Task.ConfigureAwait(false);
             await LanguageServer.WaitForExit.ConfigureAwait(false);
         }

@@ -174,6 +174,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade languageServer,
             bool isPSReadLineEnabled)
         {
+            logger.LogTrace("Instantiating PowerShellContextService and adding event handlers");
             _languageServer = languageServer;
             this.logger = logger;
             this.isPSReadLineEnabled = isPSReadLineEnabled;
@@ -212,9 +213,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     hostUserInterface,
                     logger);
 
+            logger.LogTrace("Creating initial PowerShell runspace");
             Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.LanguageMode);
             powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
-
             powerShellContext.ImportCommandsModuleAsync();
 
             // TODO: This can be moved to the point after the $psEditor object
@@ -325,6 +326,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             IHostOutput consoleHost)
         {
             Validate.IsNotNull("initialRunspace", initialRunspace);
+            this.logger.LogTrace($"Initializing PowerShell context with runspace {initialRunspace.Name}");
 
             this.ownsInitialRunspace = ownsInitialRunspace;
             this.SessionState = PowerShellContextState.NotStarted;
@@ -351,11 +353,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             this.CurrentRunspace = this.initialRunspace;
 
             // Write out the PowerShell version for tracking purposes
-            this.logger.LogInformation(
-                string.Format(
-                    "PowerShell runtime version: {0}, edition: {1}",
-                    this.LocalPowerShellVersion.Version,
-                    this.LocalPowerShellVersion.Edition));
+            this.logger.LogInformation($"PowerShell Version: {this.LocalPowerShellVersion.Version}, Edition: {this.LocalPowerShellVersion.Edition}");
 
             Version powerShellVersion = this.LocalPowerShellVersion.Version;
             if (powerShellVersion >= new Version(5, 0))
@@ -441,6 +439,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public Task ImportCommandsModuleAsync(string path)
         {
+            this.logger.LogTrace($"Importing PowershellEditorServices commands from {path}");
+
             PSCommand importCommand = new PSCommand()
                 .AddCommand("Import-Module")
                 .AddArgument(path);
@@ -463,6 +463,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void ConfigureRunspace(RunspaceDetails runspaceDetails)
         {
+            this.logger.LogTrace("Configuring Runspace");
             runspaceDetails.Runspace.StateChanged += this.HandleRunspaceStateChanged;
             if (runspaceDetails.Runspace.Debugger != null)
             {
@@ -475,6 +476,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void CleanupRunspace(RunspaceDetails runspaceDetails)
         {
+            this.logger.LogTrace("Cleaning Up Runspace");
             runspaceDetails.Runspace.StateChanged -= this.HandleRunspaceStateChanged;
             if (runspaceDetails.Runspace.Debugger != null)
             {
@@ -596,6 +598,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             Validate.IsNotNull(nameof(psCommand), psCommand);
             Validate.IsNotNull(nameof(executionOptions), executionOptions);
 
+            this.logger.LogTrace($"Attempting to execute command(s): {GetStringForPSCommand(psCommand)}");
+
             // Add history to PSReadLine before cancelling, otherwise it will be restored as the
             // cancelled prompt when it's called again.
             if (executionOptions.AddToHistory)
@@ -629,7 +633,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.ShouldExecuteWithEventing(executionOptions) ||
                 (PromptNest.IsRemote && executionOptions.IsReadLine)))
             {
-                this.logger.LogTrace("Passing command execution to pipeline thread.");
+                this.logger.LogTrace("Passing command execution to pipeline thread");
 
                 if (shouldCancelReadLine && PromptNest.IsReadLineBusy())
                 {
@@ -714,8 +718,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     }
                     catch (Exception e)
                     {
-                        logger.LogError(
-                            "Exception occurred while executing debugger command:\r\n\r\n" + e.ToString());
+                        this.logger.LogException("Exception occurred while executing debugger command", e);
                     }
                     finally
                     {
@@ -736,11 +739,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     AddToHistory = executionOptions.AddToHistory
                 };
 
-                this.logger.LogTrace(
-                    string.Format(
-                        "Attempting to execute command(s):\r\n\r\n{0}",
-                        GetStringForPSCommand(psCommand)));
-
+                this.logger.LogTrace("Passing to PowerShell");
 
                 PowerShell shell = this.PromptNest.GetPowerShell(executionOptions.IsReadLine);
 
@@ -818,29 +817,23 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     }
                     else
                     {
-                        this.logger.LogTrace(
-                            "Execution completed successfully.");
+                        this.logger.LogTrace("Execution completed successfully");
                     }
                 }
             }
             catch (PSRemotingDataStructureException e)
             {
-                this.logger.LogError(
-                    "Pipeline stopped while executing command:\r\n\r\n" + e.ToString());
-
+                this.logger.LogHandledException("Pipeline stopped while executing command", e);
                 errorMessages?.Append(e.Message);
             }
             catch (PipelineStoppedException e)
             {
-                this.logger.LogError(
-                    "Pipeline stopped while executing command:\r\n\r\n" + e.ToString());
-
+                this.logger.LogHandledException("Pipeline stopped while executing command", e);
                 errorMessages?.Append(e.Message);
             }
             catch (RuntimeException e)
             {
-                this.logger.LogWarning(
-                    "Runtime exception occurred while executing command:\r\n\r\n" + e.ToString());
+                this.logger.LogHandledException("Runtime exception occurred while executing command", e);
 
                 hadErrors = true;
                 errorMessages?.Append(e.Message);
@@ -1078,8 +1071,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 }
                 catch (System.Management.Automation.DriveNotFoundException e)
                 {
-                    this.logger.LogError(
-                        "Could not determine current filesystem location:\r\n\r\n" + e.ToString());
+                    this.logger.LogHandledException("Could not determine current filesystem location", e);
                 }
 
                 var strBld = new StringBuilder();
@@ -1250,9 +1242,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (this.SessionState == PowerShellContextState.Aborting
                 || this.SessionState == PowerShellContextState.Disposed)
             {
-                this.logger.LogTrace(
-                    string.Format(
-                        $"Execution abort requested when already aborted (SessionState = {this.SessionState})"));
+                this.logger.LogTrace($"Execution abort requested when already aborted (SessionState = {this.SessionState})");
                 return;
             }
 
@@ -1539,8 +1529,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 if (exitException != null)
                 {
-                    this.logger.LogError(
-                        $"Caught {exitException.GetType().Name} while exiting {runspaceDetails.Location} runspace:\r\n{exitException.ToString()}");
+                    this.logger.LogHandledException(
+                        $"Caught {exitException.GetType().Name} while exiting {runspaceDetails.Location} runspace", exitException);
                 }
             }
         }
@@ -1582,6 +1572,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         internal void EnterNestedPrompt()
         {
+            this.logger.LogTrace("Entering nested prompt");
+
             if (this.IsCurrentRunspaceOutOfProcess())
             {
                 throw new NotSupportedException();
@@ -1884,8 +1876,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     hadErrors));
         }
 
+        /// <remarks>
+        /// TODO: This should somehow check if the server has actually started because we are
+        /// currently sending this notification before it has initialized, which is not allowed.
+        /// This might be the cause of our deadlock!
+        /// </remarks>
         private void PowerShellContext_RunspaceChangedAsync(object sender, RunspaceChangedEventArgs e)
         {
+            this.logger.LogTrace("Sending runspaceChanged notification");
+
             _languageServer?.SendNotification(
                 "powerShell/runspaceChanged",
                 new MinifiedRunspaceDetails(e.NewRunspace));
@@ -1922,10 +1921,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         /// Event hook on the PowerShell context to listen for changes in script execution status
         /// </summary>
+        /// <remarks>
+        /// TODO: This should somehow check if the server has actually started because we are
+        /// currently sending this notification before it has initialized, which is not allowed.
+        /// </remarks>
         /// <param name="sender">the PowerShell context sending the execution event</param>
         /// <param name="e">details of the execution status change</param>
         private void PowerShellContext_ExecutionStatusChangedAsync(object sender, ExecutionStatusChangedEventArgs e)
         {
+            this.logger.LogTrace("Sending executionStatusChanged notification");
+
             // The cancelling of the prompt (PSReadLine) causes an ExecutionStatus.Aborted to be sent after every
             // actual execution (ExecutionStatus.Running) on the pipeline. We ignore that event since it's counterintuitive to
             // the goal of this method which is to send updates when the pipeline is actually running something.
@@ -1945,10 +1950,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private IEnumerable<TResult> ExecuteCommandInDebugger<TResult>(PSCommand psCommand, bool sendOutputToHost)
         {
-            this.logger.LogTrace(
-                string.Format(
-                    "Attempting to execute command(s) in the debugger:\r\n\r\n{0}",
-                    GetStringForPSCommand(psCommand)));
+            this.logger.LogTrace($"Attempting to execute command(s)a in the debugger: {GetStringForPSCommand(psCommand)}");
 
             IEnumerable<TResult> output =
                 this.versionSpecificOperations.ExecuteCommandInDebugger<TResult>(
@@ -2144,6 +2146,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void SetExecutionPolicy()
         {
+            this.logger.LogTrace("Setting execution policy...");
+
             // We want to get the list hierarchy of execution policies
             // Calling the cmdlet is the simplest way to do that
             IReadOnlyList<PSObject> policies = this.powerShell
@@ -2188,7 +2192,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             // Finally set the inherited execution policy
-            this.logger.LogTrace("Setting execution policy to {Policy}", policyToSet);
+            this.logger.LogTrace($"Setting execution policy to {policyToSet}");
             try
             {
                 this.powerShell
@@ -2200,7 +2204,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
             catch (CmdletInvocationException e)
             {
-                this.logger.LogError(e, "Error occurred calling 'Set-ExecutionPolicy -Scope Process -ExecutionPolicy {Policy} -Force'", policyToSet);
+                this.logger.LogHandledException(
+                    $"Error occurred calling 'Set-ExecutionPolicy -Scope Process -ExecutionPolicy {policyToSet} -Force'", e);
             }
             finally
             {
@@ -2221,13 +2226,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
             catch (RuntimeException e)
             {
-                this.logger.LogTrace(
-                    "Runtime exception occurred while gathering runspace info:\r\n\r\n" + e.ToString());
+                this.logger.LogHandledException("Runtime exception occurred while gathering runspace info", e);
             }
             catch (ArgumentNullException)
             {
-                this.logger.LogError(
-                    "Could not retrieve session details but no exception was thrown.");
+                this.logger.LogError("Could not retrieve session details but no exception was thrown.");
             }
 
             // TODO: Return a harmless object if necessary
@@ -2320,9 +2323,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     profilePaths.CurrentUserCurrentHost));
 
             this.logger.LogTrace(
-                string.Format(
-                    "Setting $profile variable in runspace.  Current user host profile path: {0}",
-                    profilePaths.CurrentUserCurrentHost));
+                    $"Setting $profile variable in runspace. Current user host profile path: {profilePaths.CurrentUserCurrentHost}");
 
             // Set the variable in the runspace
             this.powerShell.Commands.Clear();
@@ -2545,6 +2546,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 else
                 {
                     // TODO: How to handle this?
+                    this.logger.LogError($"Unhandled TaskIndex: {taskIndex}");
                 }
             }
 

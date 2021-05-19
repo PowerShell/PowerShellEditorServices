@@ -50,8 +50,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public override async Task<Unit> Handle(DidChangeConfigurationParams request, CancellationToken cancellationToken)
         {
             LanguageServerSettingsWrapper incomingSettings = request.Settings.ToObject<LanguageServerSettingsWrapper>();
-            if(incomingSettings == null)
+            this._logger.LogTrace("Handling DidChangeConfiguration");
+            if (incomingSettings == null)
             {
+                this._logger.LogTrace("Incoming settings were null");
                 return await Unit.Task.ConfigureAwait(false);
             }
 
@@ -73,6 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 if (!string.IsNullOrEmpty(_configurationService.CurrentSettings.Cwd)
                     && Directory.Exists(_configurationService.CurrentSettings.Cwd))
                 {
+                    this._logger.LogTrace($"Setting CWD (from config) to {_configurationService.CurrentSettings.Cwd}");
                     await _powerShellContextService.SetWorkingDirectoryAsync(
                         _configurationService.CurrentSettings.Cwd,
                         isPathAlreadyEscaped: false).ConfigureAwait(false);
@@ -80,9 +83,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 } else if (_workspaceService.WorkspacePath != null
                     && Directory.Exists(_workspaceService.WorkspacePath))
                 {
+                    this._logger.LogTrace($"Setting CWD (from workspace) to {_workspaceService.WorkspacePath}");
                     await _powerShellContextService.SetWorkingDirectoryAsync(
                         _workspaceService.WorkspacePath,
                         isPathAlreadyEscaped: false).ConfigureAwait(false);
+                } else {
+                    this._logger.LogTrace("Tried to set CWD but in bad state");
                 }
 
                 this._cwdSet = true;
@@ -95,8 +101,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (_configurationService.CurrentSettings.EnableProfileLoading
                 && (!this._profilesLoaded || !profileLoadingPreviouslyEnabled))
             {
+                this._logger.LogTrace("Loading profiles...");
                 await _powerShellContextService.LoadHostProfilesAsync().ConfigureAwait(false);
                 this._profilesLoaded = true;
+                this._logger.LogTrace("Loaded!");
             }
 
             // Wait until after profiles are loaded (or not, if that's the
@@ -104,11 +112,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (!this._consoleReplStarted)
             {
                 // Start the interactive terminal
+                this._logger.LogTrace("Starting command loop");
                 _powerShellContextService.ConsoleReader.StartCommandLoop();
                 this._consoleReplStarted = true;
             }
 
             // Run any events subscribed to configuration updates
+            this._logger.LogTrace("Running configuration update event handlers");
             ConfigurationUpdated(this, _configurationService.CurrentSettings);
 
             // Convert the editor file glob patterns into an array for the Workspace

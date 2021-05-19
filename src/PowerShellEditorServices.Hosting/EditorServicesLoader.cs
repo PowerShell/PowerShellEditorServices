@@ -263,11 +263,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private void LogHostInformation()
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Logging host information");
-
-_logger.Log(PsesLogLevel.Diagnostic, $@"
-PID: {System.Diagnostics.Process.GetCurrentProcess().Id}
-");
+            _logger.Log(PsesLogLevel.Verbose, $"PID: {System.Diagnostics.Process.GetCurrentProcess().Id}");
 
             _logger.Log(PsesLogLevel.Verbose, $@"
 == Build Details ==
