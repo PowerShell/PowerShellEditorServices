@@ -1,5 +1,14 @@
 # PowerShell Editor Services Release History
 
+## v2.4.2-preview.1
+### Friday, May 21, 2021
+
+- 🛫🐛 [vscode-powershell #3306](https://github.com/PowerShell/PowerShellEditorServices/pull/1481) - Bump OmniSharp to `v0.19.2-beta0002`.
+- 💭✨ [PowerShellEditorServices #1474](https://github.com/PowerShell/PowerShellEditorServices/pull/1474) - Add more logging and internal documentation.
+- 🚂✨ [PowerShellEditorServices #1467](https://github.com/PowerShell/PowerShellEditorServices/pull/1467) - Make code more explicit.
+- 📖🐛 [PowerShellEditorServices #1465](https://github.com/PowerShell/PowerShellEditorServices/pull/1466) - Remove "All Rights Reserved" from copyright notices.
+- 👷✨ [PowerShellEditorServices #1463](https://github.com/PowerShell/PowerShellEditorServices/pull/1464) - Enable CodeQL with `codeql-analysis.yml`.
+
 ## v2.4.1-preview.1
 ### Monday, April 26, 2021
 
