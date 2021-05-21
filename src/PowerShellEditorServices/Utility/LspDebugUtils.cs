@@ -1,4 +1,7 @@
-﻿using System;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+using System;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Models;
 

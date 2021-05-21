@@ -1,7 +1,5 @@
-//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.Reflection;
@@ -17,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <summary>
         /// True if we are running on .NET Core, false otherwise.
         /// </summary>
-        public static bool IsNetCore { get; } = RuntimeInformation.FrameworkDescription.StartsWith(".NET Core", StringComparison.Ordinal);
+        public static bool IsNetCore { get; } = !RuntimeInformation.FrameworkDescription.StartsWith(".NET Framework", StringComparison.Ordinal);
 
         /// <summary>
         /// Gets the Version of PowerShell being used.
@@ -50,17 +48,17 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         public static bool IsPS7OrGreater { get; } = PSVersion.Major >= 7;
 
         /// <summary>
-        /// True if we are running in on Windows, false otherwise.
+        /// True if we are running on Windows, false otherwise.
         /// </summary>
         public static bool IsWindows { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
         /// <summary>
-        /// True if we are running in on macOS, false otherwise.
+        /// True if we are running on macOS, false otherwise.
         /// </summary>
         public static bool IsMacOS { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
 
         /// <summary>
-        /// True if we are running in on Linux, false otherwise.
+        /// True if we are running on Linux, false otherwise.
         /// </summary>
         public static bool IsLinux { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
     }

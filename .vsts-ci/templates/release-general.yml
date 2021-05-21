@@ -1,148 +1,73 @@
 steps:
-- powershell: |
-    Write-Host "Installing pwsh..."
-    if (Get-Command pwsh -ErrorAction Ignore)
-    {
-        Write-Host "pwsh already installed, skipping"
-        return
-    }
-    $powerShellPath = Join-Path -Path $env:AGENT_TEMPDIRECTORY -ChildPath 'powershell'
-    Invoke-WebRequest -Uri https://raw.githubusercontent.com/PowerShell/PowerShell/master/tools/install-powershell.ps1 -outfile ./install-powershell.ps1
-    ./install-powershell.ps1 -Destination $powerShellPath
-    $vstsCommandString = "vso[task.setvariable variable=PATH]$powerShellPath;$env:PATH"
-    Write-Host "sending " + $vstsCommandString
-    Write-Host "##$vstsCommandString"
-  displayName: Install PowerShell Core
-
-- pwsh: |
-    Get-ChildItem -Path env:
-  displayName: Capture environment
-  condition: succeededOrFailed()
-
-- task: PkgESSetupBuild@10
-  displayName: 'Package ES - Setup Build'
-  inputs:
-    productName: PowerShellEditorServices
 
 - task: DownloadBuildArtifacts@0
   displayName: 'Download Build Artifacts'
   inputs:
     downloadType: specific
 
-- task: PowerShell@1
-  displayName: 'Extract build zip'
+- task: ExtractFiles@1
+  displayName: 'Extract Build Zip'
   inputs:
-    scriptType: inlineScript
-    inlineScript: |
-      $dest = New-Item -ItemType Directory $env:BUILD_ARTIFACTSTAGINGDIRECTORY/release/out/PowerShellEditorServices
-      $psesZip = Get-ChildItem $env:BUILD_ARTIFACTSTAGINGDIRECTORY/PowerShellEditorServices-CI/PowerShellEditorServices*.zip -ErrorAction Stop
-      $psesZip | Expand-Archive -DestinationPath $dest -Force -Verbose
-      $psesZip | Remove-Item -Recurse -Force
+    archiveFilePatterns: '$(Build.ArtifactStagingDirectory)/PowerShellEditorServices-CI/PowerShellEditorServices*.zip'
+    destinationFolder: '$(Build.ArtifactStagingDirectory)/PowerShellEditorServices'
 
-- task: PkgESCodeSign@10
-  displayName: 'CodeSign tools/releaseBuild/signing.xml'
-  env:
-    SYSTEM_ACCESSTOKEN: $(System.AccessToken)
-  inputs:
-    signConfigXml: tools/releaseBuild/signing.xml
-    inPathRoot: '$(Build.ArtifactStagingDirectory)'
-    outPathRoot: '$(Build.ArtifactStagingDirectory)\Signed'
+- checkout: ComplianceRepo
+  displayName: 'Checkout the ComplianceRepo'
 
-- task: PowerShell@1
-  displayName: 'Copy signed items into output'
-  inputs:
-    scriptType: inlineScript
-    inlineScript: |
-     $signed="$(Build.ArtifactStagingDirectory)\Signed\PowerShellEditorServices\*"
-     $notSigned="$(Build.ArtifactStagingDirectory)\release\out\PowerShellEditorServices"
-     Copy-Item $signed $notSigned -Recurse -Force
+- template: EsrpSign.yml@ComplianceRepo
+  parameters:
+    buildOutputPath: '$(Build.ArtifactStagingDirectory)/PowerShellEditorServices'
+    signOutputPath: '$(Build.ArtifactStagingDirectory)/FirstPartySigned'
+    alwaysCopy: true # So publishing works
+    certificateId: 'CP-230012' # Authenticode certificate
+    useMinimatch: true # This enables the use of globbing
+    pattern: |
+      # PowerShellEditorServices Script
+      PowerShellEditorServices/*.{ps1,psd1,psm1,ps1xml}
+      PowerShellEditorServices/Commands/**/*.{ps1,psd1,psm1,ps1xml}
+      # PowerShellEditorServices Binaries
+      PowerShellEditorServices/**/Microsoft.PowerShell.EditorServices*.dll
+      # PowerShellEditorServices.VSCode Script
+      PowerShellEditorServices.VSCode/PowerShellEditorServices.VSCode.psd1
+      # PowerShellEditorServices.VSCode Binary
+      PowerShellEditorServices.VSCode/bin/Microsoft.PowerShell.EditorServices.VSCode.dll
 
-- task: PowerShell@1
-  displayName: 'Create catalog files'
-  inputs:
-    scriptType: inlineScript
-    inlineScript: |
-     $dir = "$(Build.ArtifactStagingDirectory)\release\out\PowerShellEditorServices\PowerShellEditorServices"
-     New-FileCatalog -CatalogFilePath "$(Build.ArtifactStagingDirectory)\PowerShellEditorServices.cat" -Path $dir
+- template: EsrpSign.yml@ComplianceRepo
+  parameters:
+    buildOutputPath: '$(Build.ArtifactStagingDirectory)/FirstPartySigned'
+    signOutputPath: '$(Build.ArtifactStagingDirectory)/ThirdPartySigned'
+    alwaysCopy: true # So publishing works
+    certificateId: 'CP-231522' # Third-party certificate
+    useMinimatch: true # This enables the use of globbing
+    pattern: |
+      **/MediatR.dll
+      **/Nerdbank.Streams.dll
+      **/Newtonsoft.Json.dll
+      **/OmniSharp*.dll
+      **/Serilog*.dll
+      **/UnixConsoleEcho.dll
 
-     $dir = "$(Build.ArtifactStagingDirectory)\release\out\PowerShellEditorServices\PowerShellEditorServices.VSCode"
-     New-FileCatalog -CatalogFilePath "$(Build.ArtifactStagingDirectory)\PowerShellEditorServices.VSCode.cat" -Path $dir
+- publish: $(Build.ArtifactStagingDirectory)/ThirdPartySigned
+  artifact: PowerShellEditorServices
+  displayName: 'Publish signed (and unsigned) artifacts'
 
-- task: PkgESCodeSign@10
-  displayName: 'CodeSign tools/releaseBuild/FileCatalogSigning.xml'
-  env:
-    SYSTEM_ACCESSTOKEN: $(System.AccessToken)
-  inputs:
-    signConfigXml: tools/releaseBuild/FileCatalogSigning.xml
-    inPathRoot: '$(Build.ArtifactStagingDirectory)'
-    outPathRoot: '$(Build.ArtifactStagingDirectory)'
+- checkout: self
 
-- task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
-  displayName: 'Component Detection'
-
-- task: AntiMalware@3
-  inputs:
-    InputType: 'Basic'
-    ScanType: 'CustomScan'
-    FileDirPath: '$(Build.ArtifactStagingDirectory)'
-    EnableServices: false
-    SupportLogOnError: false
-    TreatSignatureUpdateFailureAs: 'Warning'
-    SignatureFreshness: 'UpToDate'
-    TreatStaleSignatureAs: 'Error'
-
-- task: PoliCheck@1
-  condition: succeededOrFailed()
-  inputs:
-    targetType: F
-    optionsFC: 0
-    optionsXS: 0
-    optionsPE: '1|2|3|4'
-    optionsHMENABLE: 0
-    optionsFTPATH: '$(Build.SourcesDirectory)\tools\terms\FileTypeSet.xml'
-    # toolVersion: 5.8.2.1
-
-- task: CredScan@2
-  condition: succeededOrFailed()
-
-# - task: BinSkim@3
-#   condition: succeededOrFailed()
-#   inputs:
-#     InputType: 'Basic'
-#     Function: 'analyze'
-#     AnalyzeRecurse: true
-#     AnalyzeTarget: '$(Build.ArtifactStagingDirectory)\release;$(Build.ArtifactStagingDirectory)\OutGridView*.dll'
-
-# Publish results as artifacts
-- task: PublishSecurityAnalysisLogs@3
-  condition: succeededOrFailed()
-  inputs:
-    ArtifactName: 'CodeAnalysisLogs'
-    ArtifactType: 'Container'
-
-# Publish to TSA server
-- task: TSAUpload@1
-  condition: succeededOrFailed()
-  continueOnError: true
-  inputs:
-    tsaVersion: 'TsaV2'
-    codebase: 'Existing'
-    tsaEnvironment: 'PROD'
-    codeBaseName: 'PowerShell_PowerShellEditorServices_20190917'
-    uploadAPIScan: false
-    uploadBinSkim: false
-    uploadCredScan: true
-    uploadFortifySCA: false
-    uploadFxCop: false
-    uploadModernCop: false
-    uploadPoliCheck: true
-    uploadPREfast: false
-    uploadRoslyn: false
-    uploadTSLint: false
-    uploadAsync: true
-
-- task: PowerShell@1
-  displayName: 'Upload artifacts'
-  inputs:
-    scriptType: inlineScript
-    inlineScript: 'Write-Host "##vso[artifact.upload containerfolder=PowerShellEditorServices;artifactname=PowerShellEditorServices]$(Build.ArtifactStagingDirectory)\release\out\PowerShellEditorServices"'
+- template: assembly-module-compliance.yml@ComplianceRepo
+  parameters:
+    # binskim
+    AnalyzeTarget: '$(Build.ArtifactStagingDirectory)/*.dll'
+    AnalyzeSymPath: 'SRV*'
+    # component-governance
+    sourceScanPath: '$(Build.SourcesDirectory)/PowerShellEditorServices'
+    # credscan
+    suppressionsFile: ''
+    # TermCheck AKA PoliCheck
+    targetArgument: '$(Build.SourcesDirectory)/PowerShellEditorServices'
+    optionsUEPATH: '$(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/UserExclusions.xml'
+    optionsRulesDBPath: ''
+    optionsFTPath: '$(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/FileTypeSet.xml'
+    # tsa-upload
+    codeBaseName: 'PowerShell_PowerShellEditorServices_20210201'
+    # selections
+    APIScan: false

@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.IO;
@@ -272,11 +270,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private void LogHostInformation()
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Logging host information");
-
-_logger.Log(PsesLogLevel.Diagnostic, $@"
-PID: {System.Diagnostics.Process.GetCurrentProcess().Id}
-");
+            _logger.Log(PsesLogLevel.Verbose, $"PID: {System.Diagnostics.Process.GetCurrentProcess().Id}");
 
             _logger.Log(PsesLogLevel.Verbose, $@"
 == Build Details ==
@@ -405,7 +399,7 @@ PID: {System.Diagnostics.Process.GetCurrentProcess().Id}
             return typeof(PSObject).Assembly
                 .GetType("System.Management.Automation.PSVersionInfo")
                 .GetMethod("get_PSVersion", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
-                .Invoke(null, Array.Empty<object>());
+                .Invoke(null, new object[0] /* Cannot use Array.Empty, since it must work in net452 */);
         }
     }
 }

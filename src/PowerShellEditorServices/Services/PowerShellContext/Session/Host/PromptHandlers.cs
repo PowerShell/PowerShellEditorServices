@@ -1,7 +1,5 @@
-//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.Threading.Tasks;
@@ -14,12 +12,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 {
     internal class ProtocolChoicePromptHandler : ConsoleChoicePromptHandler
     {
-        private readonly ILanguageServer _languageServer;
+        private readonly ILanguageServerFacade _languageServer;
         private readonly IHostInput _hostInput;
         private TaskCompletionSource<string> _readLineTask;
 
         public ProtocolChoicePromptHandler(
-            ILanguageServer languageServer,
+            ILanguageServerFacade languageServer,
             IHostInput hostInput,
             IHostOutput hostOutput,
             ILogger logger)
@@ -96,12 +94,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
     internal class ProtocolInputPromptHandler : ConsoleInputPromptHandler
     {
-        private readonly ILanguageServer _languageServer;
+        private readonly ILanguageServerFacade _languageServer;
         private readonly IHostInput hostInput;
         private TaskCompletionSource<string> readLineTask;
 
         public ProtocolInputPromptHandler(
-            ILanguageServer languageServer,
+            ILanguageServerFacade languageServer,
             IHostInput hostInput,
             IHostOutput hostOutput,
             ILogger logger)

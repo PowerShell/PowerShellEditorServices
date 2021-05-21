@@ -1,20 +1,23 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
-using Microsoft.PowerShell.EditorServices.Server;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
     /// <summary>
     /// Class to manage the startup of PowerShell Editor Services.
-    /// This should be called by <see cref="EditorServicesLoader"/> only after Editor Services has been loaded.
     /// </summary>
+    /// <remarks>
+    /// This should be called by <see cref="EditorServicesLoader"/> only after Editor Services has
+    /// been loaded. It relies on <see cref="EditorServicesServerFactory"/> to indirectly load <see
+    /// cref="Microsoft.Extensions.Logging"/> and <see
+    /// cref="Microsoft.Extensions.DependencyInjection"/>.
+    /// </remarks>
     internal class EditorServicesRunner : IDisposable
     {
         private readonly HostLogger _logger;
@@ -38,6 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _logger = logger;
             _config = config;
             _sessionFileWriter = sessionFileWriter;
+            // NOTE: This factory helps to isolate `Microsoft.Extensions.Logging/DependencyInjection`.
             _serverFactory = EditorServicesServerFactory.Create(_config.LogPath, (int)_config.LogLevel, logger);
             _alreadySubscribedDebug = false;
             _loggersToUnsubscribe = loggersToUnsubscribe;
@@ -46,10 +50,13 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <summary>
         /// Start and run Editor Services and then wait for shutdown.
         /// </summary>
+        /// <remarks>
+        /// TODO: Use "Async" suffix in names of methods that return an awaitable type.
+        /// </remarks>
         /// <returns>A task that ends when Editor Services shuts down.</returns>
         public Task RunUntilShutdown()
         {
-            // Start Editor Services
+            // Start Editor Services (see function below)
             Task runAndAwaitShutdown = CreateEditorServicesAndRunUntilShutdown();
 
             // Now write the session file
@@ -61,14 +68,60 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             return runAndAwaitShutdown;
         }
 
+        /// <remarks>
+        /// TODO: This class probably should not be <see cref="IDisposable"/> as the primary
+        /// intention of that interface is to provide cleanup of unmanaged resources, which the
+        /// logger certainly is not. Nor is this class used with a <see langword="using"/>. It is
+        /// only because of the use of <see cref="_serverFactory"/> that this class is also
+        /// disposable, and instead that class should be fixed.
+        /// </remarks>
         public void Dispose()
         {
             _serverFactory.Dispose();
         }
 
         /// <summary>
-        /// Master method for instantiating, running and waiting for the LSP and debug servers at the heart of Editor Services.
+        /// This is the servers' entry point, e.g. <c>main</c>, as it instantiates, runs and waits
+        /// for the LSP and debug servers at the heart of Editor Services. Uses <see
+        /// cref="HostStartupInfo"/>.
         /// </summary>
+        /// <remarks>
+        /// The logical stack of the program is:
+        /// <list type="number">
+        /// <listheader>
+        ///     <term>Symbol</term>
+        ///     <description>Description</description>
+        /// </listheader>
+        /// <item>
+        ///     <term><see cref="Microsoft.PowerShell.EditorServices.Commands.StartEditorServicesCommand"/></term>
+        ///     <description>
+        ///     The StartEditorServicesCommand PSCmdlet, our PowerShell cmdlet written in C# and
+        ///     shipped in the module.
+        ///     </description>
+        /// </item>
+        /// <item>
+        ///     <term><see cref="Microsoft.PowerShell.EditorServices.Commands.StartEditorServicesCommand.EndProcessing"/></term>
+        ///     <description>
+        ///     As a cmdlet, this is the end of its "process" block, and it instantiates <see
+        ///     cref="EditorServicesLoader"/>.
+        ///     </description>
+        /// </item>
+        /// <item>
+        ///     <term><see cref="EditorServicesLoader.LoadAndRunEditorServicesAsync"></term>
+        ///     <description>
+        ///     Loads isolated dependencies then runs and returns the next task.
+        ///     </description>
+        /// </item>
+        /// <item>
+        ///     <term><see cref="RunUntilShutdown"></term>
+        ///     <description>Task which opens a logfile then returns this task.</description>
+        /// </item>
+        /// <item>
+        ///     <term><see cref="CreateEditorServicesAndRunUntilShutdown"></term>
+        ///     <description>This task!</description>
+        /// </item>
+        /// </list>
+        /// </remarks>
         /// <returns>A task that ends when Editor Services shuts down.</returns>
         private async Task CreateEditorServicesAndRunUntilShutdown()
         {
@@ -118,19 +171,20 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                     debugServerCreation = CreateDebugServerWithLanguageServerAsync(languageServer, usePSReadLine: _config.ConsoleRepl == ConsoleReplKind.PSReadLine);
                 }
 
-#pragma warning disable CS4014
-                // We don't need to wait for this to start, since we instead wait for it to complete later
-                languageServer.StartAsync();
-#pragma warning restore CS4014
+                Task languageServerStart = languageServer.StartAsync();
 
+                Task debugServerStart = null;
                 if (creatingDebugServer)
                 {
-#pragma warning disable CS4014
                     // We don't need to wait for this to start, since we instead wait for it to complete later
-                    StartDebugServer(debugServerCreation);
-#pragma warning restore CS4014
+                    debugServerStart = StartDebugServer(debugServerCreation);
                 }
 
+                await languageServerStart.ConfigureAwait(false);
+                if (debugServerStart != null)
+                {
+                    await debugServerStart.ConfigureAwait(false);
+                }
                 await languageServer.WaitForShutdown().ConfigureAwait(false);
             }
             finally
@@ -165,10 +219,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             _logger.Log(PsesLogLevel.Diagnostic, "Starting debug server");
 
-#pragma warning disable CS4014
-            // No need to await, since we just want to kick it off
-            debugServer.StartAsync();
-#pragma warning restore CS4014
+            await debugServer.StartAsync().ConfigureAwait(false);
         }
 
         private Task RestartDebugServerAsync(PsesDebugServer debugServer, bool usePSReadLine)

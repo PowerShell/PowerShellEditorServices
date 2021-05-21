@@ -1,5 +1,3 @@
-name: PR-$(System.PullRequest.PullRequestNumber)-$(Date:yyyyMMdd)$(Rev:.rr)
-
 variables:
   # Don't download unneeded packages
   - name: DOTNET_SKIP_FIRST_TIME_EXPERIENCE
@@ -9,31 +7,21 @@ variables:
     value: 'true'
 
 trigger:
-  batch: true
   branches:
     include:
-      - master
-      - legacy/1.x
-  paths:
-    exclude:
-      - /.dependabot/*
-      - /.poshchan/*
-      - /.github/**/*
-      - /.vscode/**/*
-      - /.vsts-ci/misc-analysis.yml
-      - /tools/**/*
-      - .editorconfig
-      - .gitattributes
-      - .gitignore
-      - /docs/**/*
-      - /CHANGELOG.md
-      - /CONTRIBUTING.md
-      - /README.md
-      - /LICENSE
-      - /CODE_OF_CONDUCT.md
+      - release/*
+  tags:
+    include:
+    - v*
+
+resources:
+  repositories:
+  - repository: ComplianceRepo
+    type: github
+    endpoint: ComplianceGHRepo
+    name: PowerShell/compliance
 
 jobs:
-
 - job: 'ReleaseBuild'
   displayName: 'Build release'
   pool:
@@ -45,7 +33,9 @@ jobs:
   displayName: Signing Build
   dependsOn: 'ReleaseBuild'
   pool:
-    name: 'Package ES CodeHub Lab E'
+    name: 'Package ES Standard Build'
     demands: DotNetFramework
+  variables:
+  - group: ESRP
   steps:
   - template: templates/release-general.yml

@@ -1,7 +1,5 @@
-//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.Threading;
@@ -19,7 +17,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    class PsesTextDocumentHandler : ITextDocumentSyncHandler
+    class PsesTextDocumentHandler : TextDocumentSyncHandlerBase
     {
         private static readonly Uri s_fakeUri = new Uri("Untitled:fake");
 
@@ -27,7 +25,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly AnalysisService _analysisService;
         private readonly WorkspaceService _workspaceService;
         private readonly RemoteFileManagerService _remoteFileManagerService;
-        private SynchronizationCapability _capability;
 
         public TextDocumentSyncKind Change => TextDocumentSyncKind.Incremental;
 
@@ -43,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _remoteFileManagerService = remoteFileManagerService;
         }
 
-        public Task<Unit> Handle(DidChangeTextDocumentParams notification, CancellationToken token)
+        public override Task<Unit> Handle(DidChangeTextDocumentParams notification, CancellationToken token)
         {
             ScriptFile changedFile = _workspaceService.GetFile(notification.TextDocument.Uri);
 
@@ -62,21 +59,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return Unit.Task;
         }
 
-        TextDocumentChangeRegistrationOptions IRegistration<TextDocumentChangeRegistrationOptions>.GetRegistrationOptions()
+        protected override TextDocumentSyncRegistrationOptions CreateRegistrationOptions(SynchronizationCapability capability, ClientCapabilities clientCapabilities) => new TextDocumentSyncRegistrationOptions()
         {
-            return new TextDocumentChangeRegistrationOptions()
-            {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector,
-                SyncKind = Change
-            };
-        }
+            DocumentSelector = LspUtils.PowerShellDocumentSelector,
+            Change = Change,
+            Save = new SaveOptions { IncludeText = true }
+        };
 
-        public void SetCapability(SynchronizationCapability capability)
-        {
-            _capability = capability;
-        }
-
-        public Task<Unit> Handle(DidOpenTextDocumentParams notification, CancellationToken token)
+        public override Task<Unit> Handle(DidOpenTextDocumentParams notification, CancellationToken token)
         {
             ScriptFile openedFile =
                 _workspaceService.GetFileBuffer(
@@ -98,15 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return Unit.Task;
         }
 
-        TextDocumentRegistrationOptions IRegistration<TextDocumentRegistrationOptions>.GetRegistrationOptions()
-        {
-            return new TextDocumentRegistrationOptions()
-            {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector,
-            };
-        }
-
-        public Task<Unit> Handle(DidCloseTextDocumentParams notification, CancellationToken token)
+        public override Task<Unit> Handle(DidCloseTextDocumentParams notification, CancellationToken token)
         {
             // Find and close the file in the current session
             var fileToClose = _workspaceService.GetFile(notification.TextDocument.Uri);
@@ -121,7 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return Unit.Task;
         }
 
-        public async Task<Unit> Handle(DidSaveTextDocumentParams notification, CancellationToken token)
+        public override async Task<Unit> Handle(DidSaveTextDocumentParams notification, CancellationToken token)
         {
             ScriptFile savedFile = _workspaceService.GetFile(notification.TextDocument.Uri);
 
@@ -135,18 +117,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return Unit.Value;
         }
 
-        TextDocumentSaveRegistrationOptions IRegistration<TextDocumentSaveRegistrationOptions>.GetRegistrationOptions()
-        {
-            return new TextDocumentSaveRegistrationOptions()
-            {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector,
-                IncludeText = true
-            };
-        }
-        public TextDocumentAttributes GetTextDocumentAttributes(DocumentUri uri)
-        {
-            return new TextDocumentAttributes(uri, "powershell");
-        }
+        public override TextDocumentAttributes GetTextDocumentAttributes(DocumentUri uri) => new TextDocumentAttributes(uri, "powershell");
 
         private static FileChange GetFileChangeDetails(Range changeRange, string insertString)
         {

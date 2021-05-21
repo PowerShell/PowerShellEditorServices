@@ -1,5 +1,104 @@
 # PowerShell Editor Services Release History
 
+## v2.4.1-preview.1
+### Monday, April 26, 2021
+
+- 🔍🐛 [PowerShellEditorServices #1460](https://github.com/PowerShell/PowerShellEditorServices/pull/1460) - Bump OmniSharp package to `0.19.2-beta0001`.
+- 👷🐛 [PowerShellEditorServices #1455](https://github.com/PowerShell/PowerShellEditorServices/pull/1456) - Fix version in module definition file.
+
+## v2.4.0-preview.1
+### Friday, April 02, 2021
+
+- 🧠✨ [PowerShellEditorServices #1176](https://github.com/PowerShell/PowerShellEditorServices/pull/1427) - Add '$' as trigger character for completion. (Thanks @MartinGC94!)
+- 👷🚨✨ [PowerShellEditorServices #1426](https://github.com/PowerShell/PowerShellEditorServices/pull/1426) - Bump CI images and enable tests on Apple M1.
+- ✨ [PowerShellEditorServices #1424](https://github.com/PowerShell/PowerShellEditorServices/pull/1424) - Update to use OmniSharp 0.19.0.
+- #️⃣ 🙏 [vscode-powershell #3180](https://github.com/PowerShell/PowerShellEditorServices/pull/1411) - Fix New-EditorFile failing when no Editor window open. (Thanks @corbob!)
+
+## v2.3.0
+### Wednesday, February 24, 2021
+
+- 👷 ✨ No changes, just releasing a stable version.
+
+## v2.3.0-preview.4
+### Tuesday, February 23, 2021
+
+- 📖 🐛 [PowerShellEditorServices #1416](https://github.com/PowerShell/PowerShellEditorServices/pull/1416) -
+  Fix some markdownlint errors in README.
+- 🛫 🐛 [PowerShellEditorServices #1415](https://github.com/PowerShell/PowerShellEditorServices/pull/1415) -
+  Fix configuration processing to ensure that profiles are loaded.
+
+## v2.3.0-preview.3
+### Friday, February 19, 2021
+
+- 👷 ✨ [PowerShellEditorServices #1408](https://github.com/PowerShell/PowerShellEditorServices/pull/1408) -
+  Rewrite release signing pipeline.
+- 🚨 ✨ [PowerShellEditorServices #1398](https://github.com/PowerShell/PowerShellEditorServices/pull/1398) -
+  Refactor e2e tests.
+- 🚂 ✨ [PowerShellEditorServices #1381](https://github.com/PowerShell/PowerShellEditorServices/pull/1381) -
+  Hook up Telemetry LSP event and add telemetry event when users opt-out/in to features.
+- 👷 🐛 [PowerShellEditorServices #1397](https://github.com/PowerShell/PowerShellEditorServices/pull/1397) -
+  More compliant NuGet.config.
+- 📺 🐛 [vscode-powershell #3071](https://github.com/PowerShell/PowerShellEditorServices/pull/1394) -
+  Fix #1393: Always use local help to return cmdlet help text. (Thanks @deadlydog!)
+- 🚂 ✨ [PowerShellEditorServices #1376](https://github.com/PowerShell/PowerShellEditorServices/pull/1376) -
+  Move to Omnisharp lib 0.18.x.
+- 🛫 🐛 [vscode-powershell #2965](https://github.com/PowerShell/PowerShellEditorServices/pull/1363) -
+  Fix error when started in low .NET versions.
+- 📖 🐛 [PowerShellEditorServices #1364](https://github.com/PowerShell/PowerShellEditorServices/pull/1364) -
+  Typos in README.md. (Thanks @robotboyfriend!)
+
+## v2.3.0-preview.2
+### Wednesday, September 16, 2020
+
+- 🧠 ✨ [vscode-powershell #2898](https://github.com/PowerShell/PowerShellEditorServices/pull/1352) -
+  Type and Namespace completions now have tooltips. (Thanks @AspenForester!)
+- 🛫 🐛 [vscode-powershell #2719](https://github.com/PowerShell/PowerShellEditorServices/pull/1349) -
+  Fix startup assembly version loading issue in PowerShell 6 and up.
+- 🔗 🐛 [vscode-powershell #2810](https://github.com/PowerShell/PowerShellEditorServices/pull/1348) -
+  Fix reference number on Windows due to directory separator difference on Windows.
+- [PowerShellEditorServices #1343](https://github.com/PowerShell/PowerShellEditorServices/pull/1343) -
+  Updated Semantic Handler to work with new LSP APIs. (Thanks @justinytchen!)
+- [PowerShellEditorServices #1337](https://github.com/PowerShell/PowerShellEditorServices/pull/1337) -
+  Treat `Member`s as `Properties` in Semantic Highlighting for better accuracy.
+
+## v2.3.0-preview.1
+### Thursday, July 30, 2020
+
+- 📺✨ [PowerShellEditorServices #1328](https://github.com/PowerShell/PowerShellEditorServices/pull/1328) -
+  Enable handlers for Semantic Highlighting for better highlighting accuracy.
+- 👮✨ [PowerShellEditorServices #1333](https://github.com/PowerShell/PowerShellEditorServices/pull/1333) -
+  Expose new rule PSAvoidUsingDoubleQuotesForConstantString added in PSScriptAnalyzer 1.19.1. (Thanks @bergmeister!)
+- 📺✨ [PowerShellEditorServices #1321](https://github.com/PowerShell/PowerShellEditorServices/pull/1321) -
+  Needed changes for Notebook UI Support.
+- 🛫✨ [PowerShellEditorServices #1323](https://github.com/PowerShell/PowerShellEditorServices/pull/1323) -
+  Add cwd property to settings. (Thanks @jwfx!)
+- 🛫🐛 [PowerShellEditorServices #1317](https://github.com/PowerShell/PowerShellEditorServices/pull/1318) -
+  Move tests to PS7 and PS7.1 and fix IsNetCore check.
+- 🔗✨ [PowerShellEditorServices #1316](https://github.com/PowerShell/PowerShellEditorServices/pull/1316) -
+  Return null when Hover request is cancelled or no symbol details. (Thanks @ralish!)
+- 🛫🐛 [vscode-powershell #2763](https://github.com/PowerShell/PowerShellEditorServices/pull/1315) -
+  TLS 1.2 Support When Installing PackageManagement Module. (Thanks @serkanz!)
+
+## v2.2.0
+### Thursday, June 11, 2020
+
+- ⚡️🧠 Better performance of overall.
+- ✨🛫 Support for ConstrainedLanguage mode.
+- 🐛 Many squashed bugs
+- ✨👮 Updated PSScriptAnalyzer to 1.19.0.
+      - More formatting settings! (Thanks @bergmeister!)
+- 📟 ✨ Updated PSReadLine to 2.0.2.
+(From now on,
+the stable extension will have the latest stable version of PSReadLine and the PowerShell Preview extension will have the latest preview of PSReadLine)
+
+## v2.2.0-preview.4
+### Monday, June 08, 2020
+
+- 🔗 🐛 [PowerShellEditorServices #1304](https://github.com/PowerShell/PowerShellEditorServices/pull/1304) -
+  Use From instead of FromFileSystem fixing CodeLens references.
+- 📟 ✨ [PowerShellEditorServices #1290](https://github.com/PowerShell/PowerShellEditorServices/pull/1290) -
+  Allow PSReadLine to work in ConstrainedLanguage mode.
+
 ## v2.2.0-preview.3
 ### Monday, June 01, 2020
 

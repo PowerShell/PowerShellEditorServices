@@ -1,18 +1,24 @@
-﻿using System;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Xunit;
 
 namespace PowerShellEditorServices.Test.E2E
 {
-    public abstract class TestsFixture : IAsyncLifetime
+    /// <summary>
+    ///     A <see cref="ServerProcess"/> is responsible for launching or attaching to a language server, providing access to its input and output streams, and tracking its lifetime.
+    /// </summary>
+    public class PsesStdioProcess : StdioServerProcess
     {
         protected readonly static string s_binDir =
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+        #region private static or constants members
 
         private readonly static string s_bundledModulePath = new FileInfo(Path.Combine(
             s_binDir,
@@ -32,30 +38,46 @@ namespace PowerShellEditorServices.Test.E2E
         const string s_hostName = "TestHost";
         const string s_hostProfileId = "TestHost";
         const string s_hostVersion = "1.0.0";
-        readonly static string[] s_additionalModules = { "PowerShellEditorServices.VSCode" };
+        private readonly static string[] s_additionalModules = { "PowerShellEditorServices.VSCode" };
 
-        protected StdioServerProcess _psesProcess;
+        #endregion
+
+        #region public static properties
 
         public static string PwshExe { get; } = Environment.GetEnvironmentVariable("PWSH_EXE_NAME") ?? "pwsh";
-
         public static bool IsWindowsPowerShell { get; } = PwshExe.Contains("powershell");
         public static bool RunningInConstainedLanguageMode { get; } =
             Environment.GetEnvironmentVariable("__PSLockdownPolicy", EnvironmentVariableTarget.Machine) != null;
 
-        public virtual bool IsDebugAdapterTests { get; set; }
+        #endregion
 
-        public async Task InitializeAsync()
+        #region ctor
+
+        public PsesStdioProcess(ILoggerFactory loggerFactory, bool isDebugAdapter) : base(loggerFactory, GeneratePsesStartInfo(isDebugAdapter))
         {
-            var factory = new LoggerFactory();
+        }
 
+        #endregion
+
+        #region helper private methods
+
+        private static ProcessStartInfo GeneratePsesStartInfo(bool isDebugAdapter)
+        {
             ProcessStartInfo processStartInfo = new ProcessStartInfo
             {
                 FileName = PwshExe
             };
-            processStartInfo.ArgumentList.Add("-NoLogo");
-            processStartInfo.ArgumentList.Add("-NoProfile");
-            processStartInfo.ArgumentList.Add("-EncodedCommand");
 
+            foreach (string arg in GeneratePsesArguments(isDebugAdapter))
+            {
+                processStartInfo.ArgumentList.Add(arg);
+            }
+
+            return processStartInfo;
+        }
+
+        private static string[] GeneratePsesArguments(bool isDebugAdapter)
+        {
             List<string> args = new List<string>
             {
                 "&",
@@ -72,7 +94,7 @@ namespace PowerShellEditorServices.Test.E2E
                 "-Stdio"
             };
 
-            if (IsDebugAdapterTests)
+            if (isDebugAdapter)
             {
                 args.Add("-DebugServiceOnly");
             }
@@ -80,27 +102,20 @@ namespace PowerShellEditorServices.Test.E2E
             string base64Str = Convert.ToBase64String(
                 System.Text.Encoding.Unicode.GetBytes(string.Join(' ', args)));
 
-            processStartInfo.ArgumentList.Add(base64Str);
-
-            _psesProcess = new StdioServerProcess(factory, processStartInfo);
-            await _psesProcess.Start();
-
-            await CustomInitializeAsync(factory, _psesProcess.OutputStream, _psesProcess.InputStream).ConfigureAwait(false);
+            return new string[]
+            {
+                "-NoLogo",
+                "-NoProfile",
+                "-EncodedCommand",
+                base64Str
+            };
         }
-
-        public virtual async Task DisposeAsync()
-        {
-            await _psesProcess.Stop();
-        }
-
-        public abstract Task CustomInitializeAsync(
-            ILoggerFactory factory,
-            Stream inputStream,
-            Stream outputStream);
 
         private static string SingleQuoteEscape(string str)
         {
             return $"'{str.Replace("'", "''")}'";
         }
+
+        #endregion
     }
 }

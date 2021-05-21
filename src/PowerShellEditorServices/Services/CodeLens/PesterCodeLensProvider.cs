@@ -1,7 +1,5 @@
-//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System.Collections.Generic;
 using Microsoft.PowerShell.EditorServices.Services;
@@ -55,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     Data = JToken.FromObject(new {
                         Uri = scriptFile.DocumentUri,
                         ProviderId = nameof(PesterCodeLensProvider)
-                    }, Serializer.Instance.JsonSerializer),
+                    }, LspSerializer.Instance.JsonSerializer),
                     Command = new Command()
                     {
                         Name = "PowerShell.RunPesterTests",
@@ -66,7 +64,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                             false /* No debug */,
                             pesterSymbol.TestName,
                             pesterSymbol.ScriptRegion?.StartLineNumber
-                        }, Serializer.Instance.JsonSerializer)
+                        }, LspSerializer.Instance.JsonSerializer)
                     }
                 },
 
@@ -76,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     Data = JToken.FromObject(new {
                         Uri = scriptFile.DocumentUri,
                         ProviderId = nameof(PesterCodeLensProvider)
-                    }, Serializer.Instance.JsonSerializer),
+                    }, LspSerializer.Instance.JsonSerializer),
                     Command = new Command()
                     {
                         Name = "PowerShell.RunPesterTests",
@@ -88,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                             pesterSymbol.TestName,
                             pesterSymbol.ScriptRegion?.StartLineNumber
                         },
-                        Serializer.Instance.JsonSerializer)
+                        LspSerializer.Instance.JsonSerializer)
                     }
                 }
             };

@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.Collections.Generic;
@@ -195,6 +193,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // List supported schemes here
                 case "file":
                 case "untitled":
+                case "vscode-notebook-cell":
                     break;
 
                 default:
@@ -405,7 +404,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var fileMatchResult = matcher.Execute(fsFactory.RootDirectory);
             foreach (FilePatternMatch item in fileMatchResult.Files)
             {
-                yield return Path.Combine(WorkspacePath, item.Path);
+                // item.Path always contains forward slashes in paths when it should be backslashes on Windows.
+                // Since we're returning strings here, it's important to use the correct directory separator.
+                var path = VersionUtils.IsWindows ? item.Path.Replace('/', Path.DirectorySeparatorChar) : item.Path;
+                yield return Path.Combine(WorkspacePath, path);
             }
         }
 

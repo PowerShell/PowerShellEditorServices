@@ -1,7 +1,5 @@
-//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.Collections;
@@ -18,9 +16,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
     internal class LanguageServerSettings
     {
         private readonly object updateLock = new object();
-        public bool EnableProfileLoading { get; set; }
 
-        public bool PromptToUpdatePackageManagement { get; set; }
+        public bool EnableProfileLoading { get; set; } = false;
+
+        public bool PromptToUpdatePackageManagement { get; set; } = true;
 
         public ScriptAnalysisSettings ScriptAnalysis { get; set; }
 
@@ -29,6 +28,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         public CodeFoldingSettings CodeFolding { get; set; }
 
         public PesterSettings Pester { get; set; }
+
+        public string Cwd { get; set; }
 
         public LanguageServerSettings()
         {
@@ -56,6 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     this.CodeFormatting = new CodeFormattingSettings(settings.CodeFormatting);
                     this.CodeFolding.Update(settings.CodeFolding, logger);
                     this.Pester = new PesterSettings(settings.Pester);
+                    this.Cwd = settings.Cwd;
                 }
             }
         }
@@ -213,6 +215,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
 
         public bool AddWhitespaceAroundPipe { get; set; }
         public bool AutoCorrectAliases { get; set; }
+        public bool UseConstantStrings { get; set; }
         public CodeFormattingPreset Preset { get; set; }
         public bool OpenBraceOnSameLine { get; set; }
         public bool NewLineAfterOpenBrace { get; set; }
@@ -312,6 +315,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                 { "PSUseCorrectCasing", new Hashtable {
                     { "Enable", UseCorrectCasing }
                 }},
+                { "PSAvoidUsingDoubleQuotesForConstantString", new Hashtable {
+                    { "Enable", UseConstantStrings }
+                }},
             };
 
             if (AutoCorrectAliases)
@@ -328,7 +334,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                         "PSPlaceOpenBrace",
                         "PSUseConsistentWhitespace",
                         "PSUseConsistentIndentation",
-                        "PSAlignAssignmentStatement"
+                        "PSAlignAssignmentStatement",
+                        "PSAvoidUsingDoubleQuotesForConstantString",
                 }},
                 {
                     "Rules", ruleConfigurations

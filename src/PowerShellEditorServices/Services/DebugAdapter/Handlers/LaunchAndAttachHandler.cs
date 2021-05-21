@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.Collections.Generic;
@@ -15,30 +13,19 @@ using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
-using MediatR;
 using OmniSharp.Extensions.JsonRpc;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
+using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    [Serial, Method("launch")]
-    internal interface IPsesLaunchHandler : IJsonRpcRequestHandler<PsesLaunchRequestArguments> { }
-
-    [Serial, Method("attach")]
-    internal interface IPsesAttachHandler : IJsonRpcRequestHandler<PsesAttachRequestArguments> { }
-
-    internal class PsesLaunchRequestArguments : IRequest
+    internal record PsesLaunchRequestArguments : LaunchRequestArguments
     {
         /// <summary>
         /// Gets or sets the absolute path to the script to debug.
         /// </summary>
         public string Script { get; set; }
-
-        /// <summary>
-        /// Gets or sets a boolean value that indicates whether the script should be
-        /// run with (false) or without (true) debugging support.
-        /// </summary>
-        public bool NoDebug { get; set; }
 
         /// <summary>
         /// Gets or sets a boolean value that determines whether to automatically stop
@@ -53,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         /// <summary>
         /// Gets or sets the working directory of the launched debuggee (specified as an absolute path).
-        /// If omitted the debuggee is lauched in its own directory.
+        /// If omitted the debuggee is launched in its own directory.
         /// </summary>
         public string Cwd { get; set; }
 
@@ -81,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public Dictionary<string, string> Env { get; set; }
     }
 
-    internal class PsesAttachRequestArguments : IRequest
+    internal record PsesAttachRequestArguments : AttachRequestArguments
     {
         public string ComputerName { get; set; }
 
@@ -94,35 +81,40 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public string CustomPipeName { get; set; }
     }
 
-    internal class LaunchHandler : IPsesLaunchHandler
+    internal class LaunchAndAttachHandler : ILaunchHandler<PsesLaunchRequestArguments>, IAttachHandler<PsesAttachRequestArguments>, IOnDebugAdapterServerStarted
     {
-        private readonly ILogger<LaunchHandler> _logger;
+        private static readonly Version s_minVersionForCustomPipeName = new Version(6, 2);
+        private readonly ILogger<LaunchAndAttachHandler> _logger;
+        private readonly BreakpointService _breakpointService;
         private readonly DebugService _debugService;
         private readonly PowerShellContextService _powerShellContextService;
         private readonly DebugStateService _debugStateService;
         private readonly DebugEventHandlerService _debugEventHandlerService;
-        private readonly IJsonRpcServer _jsonRpcServer;
+        private readonly IDebugAdapterServerFacade _debugAdapterServer;
         private readonly RemoteFileManagerService _remoteFileManagerService;
 
-        public LaunchHandler(
+        public LaunchAndAttachHandler(
             ILoggerFactory factory,
-            IJsonRpcServer jsonRpcServer,
-            DebugService debugService,
-            PowerShellContextService powerShellContextService,
-            DebugStateService debugStateService,
+            IDebugAdapterServerFacade debugAdapterServer,
+            BreakpointService breakpointService,
             DebugEventHandlerService debugEventHandlerService,
+            DebugService debugService,
+            DebugStateService debugStateService,
+            PowerShellContextService powerShellContextService,
             RemoteFileManagerService remoteFileManagerService)
         {
-            _logger = factory.CreateLogger<LaunchHandler>();
-            _jsonRpcServer = jsonRpcServer;
-            _debugService = debugService;
-            _powerShellContextService = powerShellContextService;
-            _debugStateService = debugStateService;
+            _logger = factory.CreateLogger<LaunchAndAttachHandler>();
+            _debugAdapterServer = debugAdapterServer;
+            _breakpointService = breakpointService;
             _debugEventHandlerService = debugEventHandlerService;
+            _debugService = debugService;
+            _debugStateService = debugStateService;
+            _debugStateService.ServerStarted = new TaskCompletionSource<bool>();
+            _powerShellContextService = powerShellContextService;
             _remoteFileManagerService = remoteFileManagerService;
         }
 
-        public async Task<Unit> Handle(PsesLaunchRequestArguments request, CancellationToken cancellationToken)
+        public async Task<LaunchResponse> Handle(PsesLaunchRequestArguments request, CancellationToken cancellationToken)
         {
             _debugEventHandlerService.RegisterEventHandlers();
 
@@ -168,12 +160,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     await _powerShellContextService.SetWorkingDirectoryAsync(workingDir, isPathAlreadyEscaped: false).ConfigureAwait(false);
                 }
 
-                _logger.LogTrace($"Working dir " + (string.IsNullOrEmpty(workingDir) ? "not set." : $"set to '{workingDir}'"));
+                _logger.LogTrace("Working dir " + (string.IsNullOrEmpty(workingDir) ? "not set." : $"set to '{workingDir}'"));
             }
 
             // Prepare arguments to the script - if specified
             string arguments = null;
-            if ((request.Args != null) && (request.Args.Length > 0))
+            if (request.Args?.Length > 0)
             {
                 arguments = string.Join(" ", request.Args);
                 _logger.LogTrace("Script arguments are: " + arguments);
@@ -207,45 +199,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // debugging session
             _debugStateService.IsInteractiveDebugSession = string.IsNullOrEmpty(_debugStateService.ScriptToLaunch);
 
-            // Send the InitializedEvent so that the debugger will continue
+            // Sends the InitializedEvent so that the debugger will continue
             // sending configuration requests
-            _jsonRpcServer.SendNotification(EventNames.Initialized);
+            _debugStateService.ServerStarted.SetResult(true);
 
-            return Unit.Value;
-        }
-    }
-
-    internal class AttachHandler : IPsesAttachHandler
-    {
-        private static readonly Version s_minVersionForCustomPipeName = new Version(6, 2);
-
-        private readonly ILogger<AttachHandler> _logger;
-        private readonly DebugService _debugService;
-        private readonly BreakpointService _breakpointService;
-        private readonly PowerShellContextService _powerShellContextService;
-        private readonly DebugStateService _debugStateService;
-        private readonly DebugEventHandlerService _debugEventHandlerService;
-        private readonly IJsonRpcServer _jsonRpcServer;
-
-        public AttachHandler(
-            ILoggerFactory factory,
-            IJsonRpcServer jsonRpcServer,
-            DebugService debugService,
-            PowerShellContextService powerShellContextService,
-            DebugStateService debugStateService,
-            BreakpointService breakpointService,
-            DebugEventHandlerService debugEventHandlerService)
-        {
-            _logger = factory.CreateLogger<AttachHandler>();
-            _jsonRpcServer = jsonRpcServer;
-            _debugService = debugService;
-            _breakpointService = breakpointService;
-            _powerShellContextService = powerShellContextService;
-            _debugStateService = debugStateService;
-            _debugEventHandlerService = debugEventHandlerService;
+            return new LaunchResponse();
         }
 
-        public async Task<Unit> Handle(PsesAttachRequestArguments request, CancellationToken cancellationToken)
+        public async Task<AttachResponse> Handle(PsesAttachRequestArguments request, CancellationToken cancellationToken)
         {
             _debugStateService.IsAttachSession = true;
 
@@ -279,7 +240,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
                 else if (_powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Remote)
                 {
-                    throw new RpcErrorException(0, $"Cannot attach to a process in a remote session when already in a remote session.");
+                    throw new RpcErrorException(0, "Cannot attach to a process in a remote session when already in a remote session.");
                 }
 
                 await _powerShellContextService.ExecuteScriptStringAsync(
@@ -303,7 +264,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 await _powerShellContextService.ExecuteScriptStringAsync(
                     $"Enter-PSHostProcess -Id {processId}",
-                    errorMessages).ConfigureAwait(false);
+                    errorMessages);
 
                 if (errorMessages.Length > 0)
                 {
@@ -319,7 +280,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 await _powerShellContextService.ExecuteScriptStringAsync(
                     $"Enter-PSHostProcess -CustomPipeName {request.CustomPipeName}",
-                    errorMessages).ConfigureAwait(false);
+                    errorMessages);
 
                 if (errorMessages.Length > 0)
                 {
@@ -385,9 +346,29 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (runspaceVersion.Version.Major >= 7)
             {
-                _jsonRpcServer.SendNotification(EventNames.Initialized);
+                _debugStateService.ServerStarted.SetResult(true);
             }
-            return Unit.Value;
+            return new AttachResponse();
+        }
+
+        // PSES follows the following flow:
+        // Receive a Initialize request
+        // Run Initialize handler and send response back
+        // Receive a Launch/Attach request
+        // Run Launch/Attach handler and send response back
+        // PSES sends the initialized event at the end of the Launch/Attach handler
+
+        // The way that the Omnisharp server works is that this OnStarted handler runs after OnInitialized
+        // (after the Initialize DAP response is sent to the client) but before the _Initalized_ DAP event
+        // gets sent to the client. Because of the way PSES handles breakpoints,
+        // we can't send the Initialized event until _after_ we finish the Launch/Attach handler.
+        // The flow above depicts this. To achieve this, we wait until _debugStateService.ServerStarted
+        // is set, which will be done by the Launch/Attach handlers.
+        public async Task OnStarted(IDebugAdapterServer server, CancellationToken cancellationToken)
+        {
+            // We wait for this task to be finished before triggering the initialized message to
+            // be sent to the client.
+            await _debugStateService.ServerStarted.Task.ConfigureAwait(false);
         }
 
         private async Task OnExecutionCompletedAsync(Task executeTask)
@@ -431,7 +412,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             _debugService.IsClientAttached = false;
-            _jsonRpcServer.SendNotification(EventNames.Terminated);
+            _debugAdapterServer.SendNotification(EventNames.Terminated);
         }
     }
 }

@@ -1,17 +1,17 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using MediatR;
 using OmniSharp.Extensions.JsonRpc;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    [Serial, Method("powerShell/getProjectTemplates")]
+    [Serial]
+    [Method("powerShell/getProjectTemplates", Direction.ClientToServer)]
     internal interface IGetProjectTemplatesHandler : IJsonRpcRequestHandler<GetProjectTemplatesRequest, GetProjectTemplatesResponse> { }
 
-    [Serial, Method("powerShell/newProjectFromTemplate")]
+    [Serial]
+    [Method("powerShell/newProjectFromTemplate", Direction.ClientToServer)]
     internal interface INewProjectFromTemplateHandler : IJsonRpcRequestHandler<NewProjectFromTemplateRequest, NewProjectFromTemplateResponse> { }
 
     internal class GetProjectTemplatesRequest : IRequest<GetProjectTemplatesResponse>

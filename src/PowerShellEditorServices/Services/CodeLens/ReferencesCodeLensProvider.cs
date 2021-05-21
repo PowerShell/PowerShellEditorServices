@@ -1,7 +1,5 @@
-//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.Collections.Generic;
@@ -68,7 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                         {
                             Uri = scriptFile.DocumentUri,
                             ProviderId = nameof(ReferencesCodeLensProvider)
-                        }, Serializer.Instance.JsonSerializer),
+                        }, LspSerializer.Instance.JsonSerializer),
                         Range = sym.ScriptRegion.ToRange()
                     });
                 }
@@ -113,9 +111,18 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                         continue;
                     }
 
+                    DocumentUri uri = DocumentUri.From(foundReference.FilePath);
+                    // For any vscode-notebook-cell, we need to ignore the backing file on disk.
+                    if (uri.Scheme == "file" &&
+                        scriptFile.DocumentUri.Scheme == "vscode-notebook-cell" &&
+                        uri.Path == scriptFile.DocumentUri.Path)
+                    {
+                        continue;
+                    }
+
                     acc.Add(new Location
                     {
-                        Uri = DocumentUri.FromFileSystemPath(foundReference.FilePath),
+                        Uri = uri,
                         Range = foundReference.ScriptRegion.ToRange()
                     });
                 }
@@ -136,7 +143,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                         codeLens.Range.Start,
                         referenceLocations
                     },
-                    Serializer.Instance.JsonSerializer)
+                    LspSerializer.Instance.JsonSerializer)
                 }
             };
         }

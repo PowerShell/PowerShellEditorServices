@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,6 +35,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         internal bool IsSetBreakpointInProgress => _setBreakpointInProgressHandle.CurrentCount == 0;
 
         internal bool IsUsingTempIntegratedConsole { get; set; }
+
+        // This gets set at the end of the Launch/Attach handler which set debug state.
+        internal TaskCompletionSource<bool> ServerStarted { get; set; }
 
         internal void ReleaseSetBreakpointHandle()
         {

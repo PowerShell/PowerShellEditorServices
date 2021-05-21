@@ -1,7 +1,5 @@
-//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.Runtime.CompilerServices;
@@ -30,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Logging
             [CallerFilePath] string callerSourceFile = null,
             [CallerLineNumber] int callerLineNumber = -1)
         {
-            logger.LogError(message, exception);
+            logger.LogWarning(message, exception);
         }
     }
 }

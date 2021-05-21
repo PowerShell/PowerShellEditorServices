@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using Microsoft.PowerShell.Commands;
 using System;
@@ -38,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
     public sealed class StartEditorServicesCommand : PSCmdlet
     {
         // TODO: Remove this when we drop support for PS6.
-        private static bool s_isWindows =
+        private readonly static bool s_isWindows =
 #if CoreCLR
         RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 #else

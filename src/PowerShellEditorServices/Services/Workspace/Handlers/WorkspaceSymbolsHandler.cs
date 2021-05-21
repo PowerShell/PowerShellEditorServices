@@ -1,7 +1,5 @@
-//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.Collections.Generic;
@@ -19,12 +17,11 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class PsesWorkspaceSymbolsHandler : IWorkspaceSymbolsHandler
+    internal class PsesWorkspaceSymbolsHandler : WorkspaceSymbolsHandlerBase
     {
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
-        private WorkspaceSymbolCapability _capability;
 
         public PsesWorkspaceSymbolsHandler(ILoggerFactory loggerFactory, SymbolsService symbols, WorkspaceService workspace) {
             _logger = loggerFactory.CreateLogger<PsesWorkspaceSymbolsHandler>();
@@ -32,12 +29,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspace;
         }
 
-        public WorkspaceSymbolRegistrationOptions GetRegistrationOptions()
-        {
-            return new WorkspaceSymbolRegistrationOptions();
-        }
+        protected override WorkspaceSymbolRegistrationOptions CreateRegistrationOptions(WorkspaceSymbolCapability capability, ClientCapabilities clientCapabilities) => new WorkspaceSymbolRegistrationOptions { };
 
-        public Task<Container<SymbolInformation>> Handle(WorkspaceSymbolParams request, CancellationToken cancellationToken)
+        public override Task<Container<SymbolInformation>> Handle(WorkspaceSymbolParams request, CancellationToken cancellationToken)
         {
             var symbols = new List<SymbolInformation>();
 
@@ -59,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                     var location = new Location
                     {
-                        Uri = DocumentUri.FromFileSystemPath(foundOccurrence.FilePath),
+                        Uri = DocumentUri.From(foundOccurrence.FilePath),
                         Range = GetRangeFromScriptRegion(foundOccurrence.ScriptRegion)
                     };
 
@@ -75,11 +69,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _logger.LogWarning("Logging in a handler works now.");
 
             return Task.FromResult(new Container<SymbolInformation>(symbols));
-        }
-
-        public void SetCapability(WorkspaceSymbolCapability capability)
-        {
-            _capability = capability;
         }
 
         #region private Methods

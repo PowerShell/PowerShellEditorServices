@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -139,6 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 // We use .Name here instead of just passing in commandInfo because
                 // CommandInfo.ToString() duplicates the Prefix if one exists.
                 .AddParameter("Name", commandInfo.Name)
+                .AddParameter("Online", false)
                 .AddParameter("ErrorAction", "Ignore");
 
             var results = await powerShellContext.ExecuteCommandAsync<PSObject>(command, sendOutputToHost: false, sendErrorToHost: false).ConfigureAwait(false);

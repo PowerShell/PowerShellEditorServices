@@ -1,8 +1,18 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.PowerShell.EditorServices.Handlers;
+using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.Symbols;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Completion;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Definition;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Occurrences;
@@ -10,18 +20,9 @@ using Microsoft.PowerShell.EditorServices.Test.Shared.ParameterHint;
 using Microsoft.PowerShell.EditorServices.Test.Shared.References;
 using Microsoft.PowerShell.EditorServices.Test.Shared.SymbolDetails;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Symbols;
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Utility;
 using Xunit;
-using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Services.Symbols;
-using System.Collections.Generic;
-using Microsoft.PowerShell.EditorServices.Handlers;
-using System.Runtime.InteropServices;
+using Xunit.Abstractions;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Language
 {
@@ -33,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         private readonly PowerShellContextService powerShellContext;
         private static readonly string s_baseSharedScriptPath =
             Path.Combine(
-                    Path.GetDirectoryName(RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    Path.GetDirectoryName(VersionUtils.IsWindows
                         // On non-Windows platforms, CodeBase has file:// in it.
                         // On Windows, Location points to a temp directory.
                         ? typeof(LanguageServiceTests).Assembly.CodeBase
@@ -78,9 +79,72 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                     CompleteCommandFromModule.SourceDetails);
 
             Assert.NotEmpty(completionResults.Completions);
+
             Assert.Equal(
-                CompleteCommandFromModule.ExpectedCompletion,
-                completionResults.Completions[0]);
+                CompleteCommandFromModule.ExpectedCompletion.CompletionText,
+                completionResults.Completions[0].CompletionText
+            );
+
+            Assert.Equal(
+                CompleteCommandFromModule.ExpectedCompletion.CompletionType,
+                completionResults.Completions[0].CompletionType
+            );
+
+            Assert.NotNull(completionResults.Completions[0].ToolTipText);
+        }
+
+        [Trait("Category", "Completions")]
+        [SkippableFact]
+        public async Task LanguageServiceCompletesTypeName()
+        {
+            Skip.If(
+                !VersionUtils.IsNetCore,
+                "Windows PowerShell return no results from CommandCompletion in the test harness. Since it works in PS7 and works manually when I run the extension, I'm skipping this  test");
+
+            CompletionResults completionResults =
+                await this.GetCompletionResults(
+                    CompleteTypeName.SourceDetails);
+
+            Assert.NotEmpty(completionResults.Completions);
+
+            Assert.Equal(
+                CompleteTypeName.ExpectedCompletion.CompletionText,
+                completionResults.Completions[0].CompletionText
+            );
+
+            Assert.Equal(
+                CompleteTypeName.ExpectedCompletion.CompletionType,
+                completionResults.Completions[0].CompletionType
+            );
+
+            Assert.NotNull(completionResults.Completions[0].ToolTipText);
+        }
+
+        [Trait("Category", "Completions")]
+        [SkippableFact]
+        public async Task LanguageServiceCompletesNamespace()
+        {
+            Skip.If(
+                !VersionUtils.IsNetCore,
+                "Windows PowerShell return no results from CommandCompletion in the test harness. Since it works in PS7 and works manually when I run the extension, I'm skipping this  test");
+
+            CompletionResults completionResults =
+                await this.GetCompletionResults(
+                    CompleteNamespace.SourceDetails);
+
+            Assert.NotEmpty(completionResults.Completions);
+
+            Assert.Equal(
+                CompleteNamespace.ExpectedCompletion.CompletionText,
+                completionResults.Completions[0].CompletionText
+            );
+
+            Assert.Equal(
+                CompleteNamespace.ExpectedCompletion.CompletionType,
+                completionResults.Completions[0].CompletionType
+            );
+
+            Assert.NotNull(completionResults.Completions[0].ToolTipText);
         }
 
         [Trait("Category", "Completions")]

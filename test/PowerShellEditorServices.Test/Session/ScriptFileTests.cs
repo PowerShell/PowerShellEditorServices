@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.IO;
@@ -657,6 +655,18 @@ First line
                 scriptFile = new ScriptFile(DocumentUri.FromFileSystemPath(path), emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///home/JamesHolden/projects/Rocinate/Proto%3AMole%5Ccule.ps1", scriptFile.DocumentUri);
             }
+        }
+
+        [Trait("Category", "ScriptFile")]
+        [Theory]
+        [InlineData("C:\\Users\\me\\Documents\\test.ps1", false)]
+        [InlineData("/Users/me/Documents/test.ps1", false)]
+        [InlineData("vscode-notebook-cell:/Users/me/Documents/test.ps1#0001", true)]
+        [InlineData("https://microsoft.com", true)]
+        [InlineData("Untitled:Untitled-1", true)]
+        public void IsUntitledFileIsCorrect(string path, bool expected)
+        {
+            Assert.Equal(expected, ScriptFile.IsUntitledPath(path));
         }
     }
 }

@@ -1,7 +1,5 @@
-//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +15,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     // TODO: Add IDocumentOnTypeFormatHandler to support on-type formatting.
+    // TODO: Use ABCs.
     internal class PsesDocumentFormattingHandlers : IDocumentFormattingHandler, IDocumentRangeFormattingHandler
     {
         private readonly ILogger _logger;
@@ -39,21 +38,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspaceService;
         }
 
-        public DocumentFormattingRegistrationOptions GetRegistrationOptions()
+        public DocumentFormattingRegistrationOptions GetRegistrationOptions(DocumentFormattingCapability capability, ClientCapabilities clientCapabilities) => new DocumentFormattingRegistrationOptions
         {
-            return new DocumentFormattingRegistrationOptions
-            {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector
-            };
-        }
+            DocumentSelector = LspUtils.PowerShellDocumentSelector
+        };
 
-        DocumentRangeFormattingRegistrationOptions IRegistration<DocumentRangeFormattingRegistrationOptions>.GetRegistrationOptions()
+        public DocumentRangeFormattingRegistrationOptions GetRegistrationOptions(DocumentRangeFormattingCapability capability, ClientCapabilities clientCapabilities) => new DocumentRangeFormattingRegistrationOptions
         {
-            return new DocumentRangeFormattingRegistrationOptions
-            {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector
-            };
-        }
+            DocumentSelector = LspUtils.PowerShellDocumentSelector
+        };
 
         public async Task<TextEditContainer> Handle(DocumentFormattingParams request, CancellationToken cancellationToken)
         {

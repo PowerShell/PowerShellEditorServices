@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.Collections.Concurrent;
@@ -16,9 +14,12 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 {
     /// <summary>
     /// User-facing log level for editor services configuration.
-    /// The underlying values of this enum align to both Microsoft.Logging.Extensions.LogLevel
-    /// and Serilog.Events.LogEventLevel.
     /// </summary>
+    /// <remarks>
+    /// The underlying values of this enum attempt to align to both <see
+    /// cref="Microsoft.Logging.Extensions.LogLevel"</see> and <see
+    /// cref="Serilog.Events.LogEventLevel"</see>.
+    /// </remarks>
     public enum PsesLogLevel
     {
         Diagnostic = 0,
@@ -29,9 +30,14 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     }
 
     /// <summary>
-    /// A logging front-end for host startup allowing handover to the backend
-    /// and decoupling from the host's particular logging sink.
+    /// A logging front-end for host startup allowing handover to the backend and decoupling from
+    /// the host's particular logging sink.
     /// </summary>
+    /// <remarks>
+    /// This custom logger exists to allow us to log during startup, which is vital information for
+    /// debugging, but happens before we can load any logger library. This is because startup
+    /// happens in our isolated assembly environment. See #2292 for more information.
+    /// </remarks>
     public sealed class HostLogger :
         IObservable<(PsesLogLevel logLevel, string message)>,
         IObservable<(int logLevel, string message)>
@@ -288,7 +294,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _messageQueue = new BlockingCollection<string>();
 
             // Start writer listening to queue
-            _writerThread = new Thread(RunWriter);
+            _writerThread = new Thread(RunWriter)
+            {
+                Name = "PSES Stream Logger Thread",
+            };
             _writerThread.Start();
         }
 
@@ -308,6 +317,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _fileWriter.Flush();
             _fileWriter.Close();
             _fileWriter.Dispose();
+            _cancellationSource.Dispose();
+            _messageQueue.Dispose();
         }
 
         public void OnError(Exception error)

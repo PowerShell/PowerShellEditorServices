@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System.Collections.Generic;
 using System.Management.Automation;
@@ -14,7 +12,7 @@ using OmniSharp.Extensions.JsonRpc;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    [Serial, Method("powerShell/getCommand")]
+    [Serial, Method("powerShell/getCommand", Direction.ClientToServer)]
     internal interface IGetCommandHandler : IJsonRpcRequestHandler<GetCommandParams, List<PSCommandMessage>> { }
 
     internal class GetCommandParams : IRequest<List<PSCommandMessage>> { }

@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using MediatR;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -66,9 +64,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 
     internal class LanguageServerService : ILanguageServerService
     {
-        private readonly ILanguageServer _languageServer;
+        private readonly ILanguageServerFacade _languageServer;
 
-        internal LanguageServerService(ILanguageServer languageServer)
+        internal LanguageServerService(ILanguageServerFacade languageServer)
         {
             _languageServer = languageServer;
         }

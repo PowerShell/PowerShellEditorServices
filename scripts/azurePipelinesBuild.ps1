@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 $ErrorActionPreference = 'Stop'
 
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted | Out-Null

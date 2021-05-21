@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.Collections;
@@ -84,7 +82,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly ILogger _logger;
 
-        private readonly ILanguageServer _languageServer;
+        private readonly ILanguageServerFacade _languageServer;
 
         private readonly ConfigurationService _configurationService;
 
@@ -109,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="workspaceService">The workspace service for file handling within a workspace.</param>
         public AnalysisService(
             ILoggerFactory loggerFactory,
-            ILanguageServer languageServer,
+            ILanguageServerFacade languageServer,
             ConfigurationService configurationService,
             WorkspaceService workspaceService)
         {

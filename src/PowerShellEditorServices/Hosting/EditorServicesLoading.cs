@@ -1,7 +1,5 @@
-//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
@@ -13,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     {
         internal static void LoadEditorServicesForHost()
         {
-            // No op that forces loading this assembly
+            // No-op that forces loading this assembly
         }
     }
 }

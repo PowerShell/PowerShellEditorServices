@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.Diagnostics;
@@ -23,16 +21,25 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 {
     /// <summary>
     /// Factory class for hiding dependencies of Editor Services.
-    /// In particular, dependency injection and logging are wrapped by factory methods on this class
-    /// so that the host assembly can construct the LSP and debug servers
-    /// without taking logging or dependency injection dependencies directly.
     /// </summary>
+    /// <remarks>
+    /// Dependency injection and logging are wrapped by factory methods on this class so that the
+    /// host assembly can construct the LSP and debug servers without directly depending on <see
+    /// cref="Microsoft.Extensions.Logging"/> and <see
+    /// cref="Microsoft.Extensions.DependencyInjection"/>.
+    /// </remarks>
     internal class EditorServicesServerFactory : IDisposable
     {
         /// <summary>
-        /// Create a new Editor Services factory.
-        /// This method will instantiate logging.
+        /// Create a new Editor Services factory. This method will instantiate logging.
         /// </summary>
+        /// <remarks>
+        /// This can only be called once because it sets global state (the logger) and that call is
+        /// in <see cref="EditorServicesRunner"/>.
+        ///
+        /// TODO: Why is this a static function wrapping a constructor instead of just a
+        /// constructor? In the end it returns an instance (albeit a "singleton").
+        /// </remarks>
         /// <param name="logPath">The path of the log file to use.</param>
         /// <param name="minimumLogLevel">The minimum log level to use.</param>
         /// <returns></returns>
@@ -56,6 +63,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             return new EditorServicesServerFactory(loggerFactory, (LogLevel)minimumLogLevel);
         }
 
+        // TODO: Can we somehow refactor this member so the language and debug servers can be
+        // instantiated using their constructors instead of tying them to this factory with `Create`
+        // methods?
         private readonly ILoggerFactory _loggerFactory;
 
         private readonly Microsoft.Extensions.Logging.ILogger _logger;
@@ -72,9 +82,13 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <summary>
         /// Create the LSP server.
         /// </summary>
+        /// <remarks>
+        /// This is only called once and that's in <see cref="EditorServicesRunner"/>.
+        /// </remarks>
         /// <param name="inputStream">The protocol transport input stream.</param>
         /// <param name="outputStream">The protocol transport output stream.</param>
-        /// <param name="hostStartupInfo">The host details configuration for Editor Services instantation.</param>
+        /// <param name="hostStartupInfo">The host details configuration for Editor Services
+        /// instantation.</param>
         /// <returns>A new, unstarted language server instance.</returns>
         public PsesLanguageServer CreateLanguageServer(
             Stream inputStream,
@@ -87,25 +101,51 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <summary>
         /// Create the debug server given a language server instance.
         /// </summary>
+        /// <remarks>
+        /// This is only called once and that's in <see cref="EditorServicesRunner"/>.
+        /// </remarks>
         /// <param name="inputStream">The protocol transport input stream.</param>
         /// <param name="outputStream">The protocol transport output stream.</param>
         /// <param name="languageServer"></param>
         /// <returns>A new, unstarted debug server instance.</returns>
-        public PsesDebugServer CreateDebugServerWithLanguageServer(Stream inputStream, Stream outputStream, PsesLanguageServer languageServer, bool usePSReadLine)
+        public PsesDebugServer CreateDebugServerWithLanguageServer(
+            Stream inputStream,
+            Stream outputStream,
+            PsesLanguageServer languageServer,
+            bool usePSReadLine)
         {
-            return new PsesDebugServer(_loggerFactory, inputStream, outputStream, languageServer.LanguageServer.Services, useTempSession: false, usePSReadLine);
+            return new PsesDebugServer(
+                _loggerFactory,
+                inputStream,
+                outputStream,
+                languageServer.LanguageServer.Services,
+                useTempSession: false,
+                usePSReadLine);
         }
 
         /// <summary>
         /// Create a new debug server based on an old one in an ended session.
         /// </summary>
+        /// <remarks>
+        /// This is only called once and that's in <see cref="EditorServicesRunner"/>.
+        /// </remarks>
         /// <param name="inputStream">The protocol transport input stream.</param>
         /// <param name="outputStream">The protocol transport output stream.</param>
         /// <param name="debugServer">The old debug server to recreate.</param>
         /// <returns></returns>
-        public PsesDebugServer RecreateDebugServer(Stream inputStream, Stream outputStream, PsesDebugServer debugServer, bool usePSReadLine)
+        public PsesDebugServer RecreateDebugServer(
+            Stream inputStream,
+            Stream outputStream,
+            PsesDebugServer debugServer,
+            bool usePSReadLine)
         {
-            return new PsesDebugServer(_loggerFactory, inputStream, outputStream, debugServer.ServiceProvider, useTempSession: false, usePSReadLine);
+            return new PsesDebugServer(
+                _loggerFactory,
+                inputStream,
+                outputStream,
+                debugServer.ServiceProvider,
+                useTempSession: false,
+                usePSReadLine);
         }
 
         /// <summary>
@@ -115,18 +155,21 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <param name="outputStream">The protocol transport output stream.</param>
         /// <param name="hostStartupInfo">The host startup configuration to create the server session with.</param>
         /// <returns></returns>
-        public PsesDebugServer CreateDebugServerForTempSession(Stream inputStream, Stream outputStream, HostStartupInfo hostStartupInfo)
+        public PsesDebugServer CreateDebugServerForTempSession(
+            Stream inputStream,
+            Stream outputStream,
+            HostStartupInfo hostStartupInfo)
         {
             var serviceProvider = new ServiceCollection()
                 .AddLogging(builder => builder
                     .ClearProviders()
                     .AddSerilog()
-                    .SetMinimumLevel(LogLevel.Trace))
-                .AddSingleton<ILanguageServer>(provider => null)
+                    .SetMinimumLevel(LogLevel.Trace)) // TODO: Why randomly set to trace?
+                .AddSingleton<ILanguageServerFacade>(provider => null)
                 .AddPsesLanguageServices(hostStartupInfo)
                 // For a Temp session, there is no LanguageServer so just set it to null
                 .AddSingleton(
-                    typeof(ILanguageServer),
+                    typeof(ILanguageServerFacade),
                     _ => null)
                 .BuildServiceProvider();
 
@@ -145,6 +188,14 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 usePSReadLine: hostStartupInfo.ConsoleReplEnabled && !hostStartupInfo.UsesLegacyReadLine);
         }
 
+        /// <remarks>
+        /// TODO: This class probably should not be <see cref="IDisposable"/> as the primary
+        /// intention of that interface is to provide cleanup of unmanaged resources, which the
+        /// logger certainly is not. Nor is this class used with a <see langword="using"/>. Instead,
+        /// this class should call <see cref="Serilog.Log.CloseAndFlush()"/> in a finalizer. This
+        /// could potentially even be done with <see
+        /// cref="SerilogLoggerFactoryExtensions.AddSerilog"</> by passing <c>dispose=true</c>.
+        /// </remarks>
         public void Dispose()
         {
             Log.CloseAndFlush();

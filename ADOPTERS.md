@@ -11,3 +11,7 @@ Example entry:
 -->
 
 This is a list of adopters of using PowerShell Editor Services in production or in their products (in alphabetical order):
+
+* [vscode-powershell](https://github.com/PowerShell/vscode-powershell) - Provides rich PowerShell language support for Visual Studio Code. You can write and debug PowerShell scripts using the excellent IDE-like interface that Visual Studio Code provides.
+
+* [coc-powershell](https://github.com/coc-extensions/coc-powershell) - A Vim and NeoVim plugin powered by PowerShellEditorServices and [coc.nvim](https://github.com/neoclide/coc.nvim) to provide a rich PowerShell editing experience.

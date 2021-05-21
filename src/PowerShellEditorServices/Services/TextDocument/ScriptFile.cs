@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.Collections.Generic;
@@ -217,8 +215,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         internal static bool IsUntitledPath(string path)
         {
             Validate.IsNotNull(nameof(path), path);
-
-            return path.ToLower().StartsWith("untitled:");
+            return !string.Equals(
+                DocumentUri.From(path).Scheme,
+                Uri.UriSchemeFile,
+                StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>

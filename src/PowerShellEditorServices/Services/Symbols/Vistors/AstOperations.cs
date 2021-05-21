@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.Collections.Generic;
@@ -25,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     {
         // TODO: When netstandard is upgraded to 2.0, see if
         //       Delegate.CreateDelegate can be used here instead
-        private static readonly MethodInfo s_extentCloneWithNewOffset = typeof(PSObject).GetTypeInfo().Assembly
+        private static readonly MethodInfo s_extentCloneWithNewOffset = typeof(PSObject).Assembly
            .GetType("System.Management.Automation.Language.InternalScriptPosition")
            .GetMethod("CloneWithNewOffset", BindingFlags.Instance | BindingFlags.NonPublic);
 

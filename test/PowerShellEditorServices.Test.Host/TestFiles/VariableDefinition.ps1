@@ -1,1 +1,0 @@
-$variableInOtherFile = "some value"

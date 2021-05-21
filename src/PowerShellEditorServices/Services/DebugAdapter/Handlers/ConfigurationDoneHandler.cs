@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System.Management.Automation;
 using System.Management.Automation.Language;
@@ -14,14 +12,14 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
-using OmniSharp.Extensions.JsonRpc;
+using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class ConfigurationDoneHandler : IConfigurationDoneHandler
     {
         private readonly ILogger _logger;
-        private readonly IJsonRpcServer _jsonRpcServer;
+        private readonly IDebugAdapterServerFacade _debugAdapterServer;
         private readonly DebugService _debugService;
         private readonly DebugStateService _debugStateService;
         private readonly DebugEventHandlerService _debugEventHandlerService;
@@ -30,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public ConfigurationDoneHandler(
             ILoggerFactory loggerFactory,
-            IJsonRpcServer jsonRpcServer,
+            IDebugAdapterServerFacade debugAdapterServer,
             DebugService debugService,
             DebugStateService debugStateService,
             DebugEventHandlerService debugEventHandlerService,
@@ -38,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             WorkspaceService workspaceService)
         {
             _logger = loggerFactory.CreateLogger<ConfigurationDoneHandler>();
-            _jsonRpcServer = jsonRpcServer;
+            _debugAdapterServer = debugAdapterServer;
             _debugService = debugService;
             _debugStateService = debugStateService;
             _debugEventHandlerService = debugEventHandlerService;
@@ -127,7 +125,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     .ExecuteScriptWithArgsAsync(scriptToLaunch, _debugStateService.Arguments, writeInputToHost: true).ConfigureAwait(false);
             }
 
-            _jsonRpcServer.SendNotification(EventNames.Terminated);
+            _debugAdapterServer.SendNotification(EventNames.Terminated);
         }
     }
 }

@@ -7,8 +7,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{F594E7FD-1E7
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{422E561A-8118-4BE7-A54F-9309E4F03AAE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PowerShellEditorServices.Test.Host", "test\PowerShellEditorServices.Test.Host\PowerShellEditorServices.Test.Host.csproj", "{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PowerShellEditorServices.Test", "test\PowerShellEditorServices.Test\PowerShellEditorServices.Test.csproj", "{8ED116F4-9DDF-4C49-AB96-AE462E3D64C3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PowerShellEditorServices.Test.Shared", "test\PowerShellEditorServices.Test.Shared\PowerShellEditorServices.Test.Shared.csproj", "{6A20B9E9-DE66-456E-B4F5-ACFD1A95C3CA}"
@@ -39,24 +37,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028}.CoreCLR|Any CPU.ActiveCfg = Release|Any CPU
-		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028}.CoreCLR|Any CPU.Build.0 = Release|Any CPU
-		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028}.CoreCLR|x64.ActiveCfg = Release|Any CPU
-		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028}.CoreCLR|x64.Build.0 = Release|Any CPU
-		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028}.CoreCLR|x86.ActiveCfg = Release|Any CPU
-		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028}.CoreCLR|x86.Build.0 = Release|Any CPU
-		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028}.Debug|x64.Build.0 = Debug|Any CPU
-		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028}.Debug|x86.Build.0 = Debug|Any CPU
-		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028}.Release|x64.ActiveCfg = Release|Any CPU
-		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028}.Release|x64.Build.0 = Release|Any CPU
-		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028}.Release|x86.ActiveCfg = Release|Any CPU
-		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028}.Release|x86.Build.0 = Release|Any CPU
 		{8ED116F4-9DDF-4C49-AB96-AE462E3D64C3}.CoreCLR|Any CPU.ActiveCfg = Release|Any CPU
 		{8ED116F4-9DDF-4C49-AB96-AE462E3D64C3}.CoreCLR|Any CPU.Build.0 = Release|Any CPU
 		{8ED116F4-9DDF-4C49-AB96-AE462E3D64C3}.CoreCLR|x64.ActiveCfg = Release|Any CPU
@@ -170,7 +150,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{3A5DDD20-5BD0-42F4-89F4-ACC0CE554028} = {422E561A-8118-4BE7-A54F-9309E4F03AAE}
 		{8ED116F4-9DDF-4C49-AB96-AE462E3D64C3} = {422E561A-8118-4BE7-A54F-9309E4F03AAE}
 		{6A20B9E9-DE66-456E-B4F5-ACFD1A95C3CA} = {422E561A-8118-4BE7-A54F-9309E4F03AAE}
 		{3B38E8DA-8BFF-4264-AF16-47929E6398A3} = {F594E7FD-1E72-4E51-A496-B019C2BA3180}

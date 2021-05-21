@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -328,7 +326,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 
         private PowerShellResult InvokePowerShell(PSCommand command)
         {
-            using (var powerShell = System.Management.Automation.PowerShell.Create())
+            using (var powerShell = System.Management.Automation.PowerShell.Create(RunspaceMode.NewRunspace))
             {
                 powerShell.RunspacePool = _analysisRunspacePool;
                 powerShell.Commands = command;
@@ -443,7 +441,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         /// <returns>A runspace pool with PSScriptAnalyzer loaded for running script analysis tasks.</returns>
         private static RunspacePool CreatePssaRunspacePool(out PSModuleInfo pssaModuleInfo)
         {
-            using (var ps = System.Management.Automation.PowerShell.Create())
+            using (var ps = System.Management.Automation.PowerShell.Create(RunspaceMode.NewRunspace))
             {
                 // Run `Get-Module -ListAvailable -Name "PSScriptAnalyzer"`
                 ps.AddCommand("Get-Module")

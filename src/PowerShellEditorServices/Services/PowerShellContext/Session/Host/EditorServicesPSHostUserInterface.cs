@@ -1,7 +1,5 @@
-//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.Collections.Concurrent;
@@ -729,7 +727,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             {
             }
 
-            PSCommand promptCommand = new PSCommand().AddScript("prompt");
+            PSCommand promptCommand = new PSCommand().AddCommand("prompt");
 
             cancellationToken.ThrowIfCancellationRequested();
             string promptString =

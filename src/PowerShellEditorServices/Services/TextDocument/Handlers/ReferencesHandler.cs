@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System.Collections.Generic;
 using System.Threading;
@@ -18,12 +16,11 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    class PsesReferencesHandler : IReferencesHandler
+    class PsesReferencesHandler : ReferencesHandlerBase
     {
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
-        private ReferenceCapability _capability;
 
         public PsesReferencesHandler(ILoggerFactory factory, SymbolsService symbolsService, WorkspaceService workspaceService)
         {
@@ -32,15 +29,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspaceService;
         }
 
-        public ReferenceRegistrationOptions GetRegistrationOptions()
+        protected override ReferenceRegistrationOptions CreateRegistrationOptions(ReferenceCapability capability, ClientCapabilities clientCapabilities) => new ReferenceRegistrationOptions
         {
-            return new ReferenceRegistrationOptions
-            {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector
-            };
-        }
+            DocumentSelector = LspUtils.PowerShellDocumentSelector
+        };
 
-        public Task<LocationContainer> Handle(ReferenceParams request, CancellationToken cancellationToken)
+        public override Task<LocationContainer> Handle(ReferenceParams request, CancellationToken cancellationToken)
         {
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
@@ -64,18 +58,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 {
                     locations.Add(new Location
                     {
-                        Uri = DocumentUri.FromFileSystemPath(foundReference.FilePath),
+                        Uri = DocumentUri.From(foundReference.FilePath),
                         Range = GetRangeFromScriptRegion(foundReference.ScriptRegion)
                     });
                 }
             }
 
             return Task.FromResult(new LocationContainer(locations));
-        }
-
-        public void SetCapability(ReferenceCapability capability)
-        {
-            _capability = capability;
         }
 
         private static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)

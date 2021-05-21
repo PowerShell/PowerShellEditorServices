@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System.Collections.Generic;
 using System.Threading;
@@ -17,14 +15,12 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class PsesSignatureHelpHandler : ISignatureHelpHandler
+    internal class PsesSignatureHelpHandler : SignatureHelpHandlerBase
     {
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
         private readonly PowerShellContextService _powerShellContextService;
-
-        private SignatureHelpCapability _capability;
 
         public PsesSignatureHelpHandler(
             ILoggerFactory factory,
@@ -38,17 +34,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _powerShellContextService = powerShellContextService;
         }
 
-        public SignatureHelpRegistrationOptions GetRegistrationOptions()
+        protected override SignatureHelpRegistrationOptions CreateRegistrationOptions(SignatureHelpCapability capability, ClientCapabilities clientCapabilities) => new SignatureHelpRegistrationOptions
         {
-            return new SignatureHelpRegistrationOptions
-            {
-                DocumentSelector = LspUtils.PowerShellDocumentSelector,
-                // A sane default of " ". We may be able to include others like "-".
-                TriggerCharacters = new Container<string>(" ")
-            };
-        }
+            DocumentSelector = LspUtils.PowerShellDocumentSelector,
+            // A sane default of " ". We may be able to include others like "-".
+            TriggerCharacters = new Container<string>(" ")
+        };
 
-        public async Task<SignatureHelp> Handle(SignatureHelpParams request, CancellationToken cancellationToken)
+        public override async Task<SignatureHelp> Handle(SignatureHelpParams request, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -93,11 +86,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 ActiveParameter = null,
                 ActiveSignature = 0
             };
-        }
-
-        public void SetCapability(SignatureHelpCapability capability)
-        {
-            _capability = capability;
         }
 
         private static ParameterInformation CreateParameterInfo(ParameterInfo parameterInfo)

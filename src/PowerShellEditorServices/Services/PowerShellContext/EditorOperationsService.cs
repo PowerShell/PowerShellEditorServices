@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Handlers;
@@ -19,12 +17,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly WorkspaceService _workspaceService;
         private readonly PowerShellContextService _powerShellContextService;
-        private readonly ILanguageServer _languageServer;
+        private readonly ILanguageServerFacade _languageServer;
 
         public EditorOperationsService(
             WorkspaceService workspaceService,
             PowerShellContextService powerShellContextService,
-            ILanguageServer languageServer)
+            ILanguageServerFacade languageServer)
         {
             _workspaceService = workspaceService;
             _powerShellContextService = powerShellContextService;

@@ -1,7 +1,5 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System.Management.Automation;
 using Microsoft.Extensions.Logging;
@@ -9,7 +7,7 @@ using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
-using OmniSharp.Extensions.JsonRpc;
+using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -19,20 +17,20 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly PowerShellContextService _powerShellContextService;
         private readonly DebugService _debugService;
         private readonly DebugStateService _debugStateService;
-        private readonly IJsonRpcServer _jsonRpcServer;
+        private readonly IDebugAdapterServerFacade _debugAdapterServer;
 
         public DebugEventHandlerService(
             ILoggerFactory factory,
             PowerShellContextService powerShellContextService,
             DebugService debugService,
             DebugStateService debugStateService,
-            IJsonRpcServer jsonRpcServer)
+            IDebugAdapterServerFacade debugAdapterServer)
         {
             _logger = factory.CreateLogger<DebugEventHandlerService>();
             _powerShellContextService = powerShellContextService;
             _debugService = debugService;
             _debugStateService = debugStateService;
-            _jsonRpcServer = jsonRpcServer;
+            _debugAdapterServer = debugAdapterServer;
         }
 
         internal void RegisterEventHandlers()
@@ -79,7 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         : "breakpoint";
             }
 
-            _jsonRpcServer.SendNotification(EventNames.Stopped,
+            _debugAdapterServer.SendNotification(EventNames.Stopped,
                 new StoppedEvent
                 {
                     ThreadId = 1,
@@ -93,10 +91,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 e.ChangeAction == RunspaceChangeAction.Enter &&
                 e.NewRunspace.Context == RunspaceContext.DebuggedRunspace)
             {
-                // Send the InitializedEvent so that the debugger will continue
+                // Sends the InitializedEvent so that the debugger will continue
                 // sending configuration requests
                 _debugStateService.WaitingForAttach = false;
-                _jsonRpcServer.SendNotification(EventNames.Initialized);
+                _debugStateService.ServerStarted.SetResult(true);
             }
             else if (
                 e.ChangeAction == RunspaceChangeAction.Exit &&
@@ -105,7 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // Exited the session while the debugger is stopped,
                 // send a ContinuedEvent so that the client changes the
                 // UI to appear to be running again
-                _jsonRpcServer.SendNotification(EventNames.Continued,
+                _debugAdapterServer.SendNotification(EventNames.Continued,
                     new ContinuedEvent
                     {
                         ThreadId = 1,
@@ -116,7 +114,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void PowerShellContext_DebuggerResumed(object sender, DebuggerResumeAction e)
         {
-            _jsonRpcServer.SendNotification(EventNames.Continued,
+            _debugAdapterServer.SendNotification(EventNames.Continued,
                 new ContinuedEvent
                 {
                     AllThreadsContinued = true,
@@ -146,7 +144,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     break;
             }
 
-            OmniSharp.Extensions.DebugAdapter.Protocol.Models.Breakpoint breakpoint;
+            var breakpoint = new OmniSharp.Extensions.DebugAdapter.Protocol.Models.Breakpoint
+            {
+                Verified = e.UpdateType != BreakpointUpdateType.Disabled
+            };
+
             if (e.Breakpoint is LineBreakpoint)
             {
                 breakpoint = LspDebugUtils.CreateBreakpoint(BreakpointDetails.Create(e.Breakpoint));
@@ -162,9 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             }
 
-            breakpoint.Verified = e.UpdateType != BreakpointUpdateType.Disabled;
-
-            _jsonRpcServer.SendNotification(EventNames.Breakpoint,
+            _debugAdapterServer.SendNotification(EventNames.Breakpoint,
                 new BreakpointEvent
                 {
                     Reason = reason,
