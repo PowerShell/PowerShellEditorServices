@@ -117,6 +117,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return request;
             }
 
+            // No details means the module hasn't been imported yet and Intellisense shouldn't import the module to get this info.
+            if (request.Detail is null)
+            {
+                return request;
+            }
+
             try
             {
                 await _completionResolveLock.WaitAsync(cancellationToken).ConfigureAwait(false);
