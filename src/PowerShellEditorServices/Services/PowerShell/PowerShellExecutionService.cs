@@ -41,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             string representation,
             CancellationToken cancellationToken)
         {
-            return QueueTask(new SynchronousPSDelegateTask<TResult>(_logger, _psesHost, func, representation, cancellationToken));
+            return RunTaskAsync(new SynchronousPSDelegateTask<TResult>(_logger, _psesHost, func, representation, cancellationToken));
         }
 
         public Task ExecuteDelegateAsync(
@@ -49,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             string representation,
             CancellationToken cancellationToken)
         {
-            return QueueTask(new SynchronousPSDelegateTask(_logger, _psesHost, action, representation, cancellationToken));
+            return RunTaskAsync(new SynchronousPSDelegateTask(_logger, _psesHost, action, representation, cancellationToken));
         }
 
         public Task<TResult> ExecuteDelegateAsync<TResult>(
@@ -57,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             string representation,
             CancellationToken cancellationToken)
         {
-            return QueueTask(new SynchronousDelegateTask<TResult>(_logger, func, representation, cancellationToken));
+            return RunTaskAsync(new SynchronousDelegateTask<TResult>(_logger, func, representation, cancellationToken));
         }
 
         public Task ExecuteDelegateAsync(
@@ -65,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             string representation,
             CancellationToken cancellationToken)
         {
-            return QueueTask(new SynchronousDelegateTask(_logger, action, representation, cancellationToken));
+            return RunTaskAsync(new SynchronousDelegateTask(_logger, action, representation, cancellationToken));
         }
 
         public Task<IReadOnlyList<TResult>> ExecutePSCommandAsync<TResult>(
@@ -73,19 +73,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             PowerShellExecutionOptions executionOptions,
             CancellationToken cancellationToken)
         {
-            Task<IReadOnlyList<TResult>> result = QueueTask(new SynchronousPowerShellTask<TResult>(
+            if (executionOptions.InterruptCommandPrompt)
+            {
+                return CancelCurrentAndRunTaskNowAsync(new SynchronousPowerShellTask<TResult>(
+                    _logger,
+                    _psesHost,
+                    psCommand,
+                    executionOptions,
+                    cancellationToken));
+            }
+
+            return RunTaskAsync(new SynchronousPowerShellTask<TResult>(
                 _logger,
                 _psesHost,
                 psCommand,
                 executionOptions,
                 cancellationToken));
-
-            if (executionOptions.InterruptCommandPrompt)
-            {
-                _psesHost.CancelCurrentPrompt();
-            }
-
-            return result;
         }
 
         public Task ExecutePSCommandAsync(
@@ -98,6 +101,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
             _pipelineExecutor.CancelCurrentTask();
         }
 
-        private Task<T> QueueTask<T>(SynchronousTask<T> task) => _pipelineExecutor.QueueTask(task);
+        private Task<T> RunTaskAsync<T>(SynchronousTask<T> task) => _pipelineExecutor.RunTaskAsync(task);
+
+        private Task<T> CancelCurrentAndRunTaskNowAsync<T>(SynchronousTask<T> task) => _pipelineExecutor.CancelCurrentAndRunTaskNowAsync(task);
     }
 }
