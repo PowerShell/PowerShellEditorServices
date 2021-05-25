@@ -319,17 +319,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         {
             if (!runspaceStateEventArgs.RunspaceStateInfo.IsUsable())
             {
-                PopOrReinitializeRunspace();
+                PopOrReinitializeRunspaceAsync();
             }
         }
 
-        private void PopOrReinitializeRunspace()
+        private Task PopOrReinitializeRunspaceAsync()
         {
             _consoleReplRunner?.SetReplPop();
-            _pipelineExecutor.CancelCurrentTask();
-
             RunspaceStateInfo oldRunspaceState = CurrentPowerShell.Runspace.RunspaceStateInfo;
-            using (_pipelineExecutor.TakeTaskWriterLock())
+
+            // Rather than try to lock the PowerShell executor while we alter its state,
+            // we simply run this on its thread, guaranteeing that no other action can occur
+            return _pipelineExecutor.RunTaskNextAsync(new SynchronousDelegateTask(_logger, (cancellationToken) =>
             {
                 while (_psFrameStack.Count > 0
                     && !_psFrameStack.Peek().PowerShell.Runspace.RunspaceStateInfo.IsUsable())
@@ -355,7 +356,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                         + " If this occurred when using Ctrl+C in a Windows PowerShell remoting session, this is expected behavior."
                         + " The session is now returning to the previous runspace.");
                 }
-            }
+            }, nameof(PopOrReinitializeRunspaceAsync), CancellationToken.None));
         }
 
     }
