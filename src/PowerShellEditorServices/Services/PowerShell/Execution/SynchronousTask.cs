@@ -20,7 +20,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private bool _executionCanceled;
 
-        protected SynchronousTask(ILogger logger, CancellationToken cancellationToken)
+        protected SynchronousTask(
+            ILogger logger,
+            CancellationToken cancellationToken)
         {
             Logger = logger;
             _taskCompletionSource = new TaskCompletionSource<TResult>();

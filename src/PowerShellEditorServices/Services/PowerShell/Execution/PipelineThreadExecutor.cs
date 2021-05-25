@@ -11,6 +11,9 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
+using PowerShellEditorServices.Services.PowerShell.Utility;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using System.Runtime.CompilerServices;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 {
@@ -33,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private readonly HostStartupInfo _hostInfo;
 
-        private readonly BlockingCollection<ISynchronousTask> _executionQueue;
+        private readonly ConcurrentBlockablePriorityQueue<ISynchronousTask> _executionQueue;
 
         private readonly CancellationTokenSource _consumerThreadCancellationSource;
 
@@ -43,7 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private readonly CancellationContext _commandCancellationContext;
 
-        private readonly ReaderWriterLockSlim _taskProcessingLock;
+        private readonly ManualResetEventSlim _taskProcessingAllowed;
 
         private bool _runIdleLoop;
 
@@ -58,10 +61,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             _psesHost = psesHost;
             _readLineProvider = readLineProvider;
             _consumerThreadCancellationSource = new CancellationTokenSource();
-            _executionQueue = new BlockingCollection<ISynchronousTask>();
+            _executionQueue = new ConcurrentBlockablePriorityQueue<ISynchronousTask>();
             _loopCancellationContext = new CancellationContext();
             _commandCancellationContext = new CancellationContext();
-            _taskProcessingLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+            _taskProcessingAllowed = new ManualResetEventSlim(initialState: true);
 
             _pipelineThread = new Thread(Run)
             {
@@ -72,10 +75,40 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public bool IsExiting { get; set; }
 
-        public Task<TResult> QueueTask<TResult>(SynchronousTask<TResult> synchronousTask)
+        public Task<TResult> RunTaskAsync<TResult>(SynchronousTask<TResult> synchronousTask)
         {
-            _executionQueue.Add(synchronousTask);
+            _executionQueue.Enqueue(synchronousTask);
             return synchronousTask.Task;
+        }
+
+        public Task<TResult> RunTaskNextAsync<TResult>(SynchronousTask<TResult> synchronousTask)
+        {
+            _executionQueue.EnqueueNext(synchronousTask);
+            return synchronousTask.Task;
+        }
+
+        public Task<TResult> CancelCurrentAndRunTaskNowAsync<TResult>(SynchronousTask<TResult> synchronousTask)
+        {
+            // We need to ensure that we don't:
+            // - Add this command to the queue and immediately cancel it
+            // - Allow a consumer to dequeue and run another command after cancellation and before we add this command
+            //
+            // To ensure that, we need the following sequence:
+            // - Stop queue consumption progressing
+            // - Cancel any current processing
+            // - Add our task to the front of the queue
+            // - Recommence processing
+
+            using (_executionQueue.BlockConsumers())
+            {
+                CancelCurrentTask();
+
+                // NOTE:
+                // This must not be awaited
+                // We only need to block consumers while we add to the queue
+                // Awaiting this will deadlock, since the runner can't progress while we block consumers
+                return RunTaskNextAsync(synchronousTask);
+            }
         }
 
         public void Start()
@@ -97,11 +130,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         public void Dispose()
         {
             Stop();
-        }
-
-        public IDisposable TakeTaskWriterLock()
-        {
-            return TaskProcessingWriterLockLifetime.TakeLock(_taskProcessingLock);
         }
 
         private void Run()
@@ -150,9 +178,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             {
                 try
                 {
-                    foreach (ISynchronousTask task in _executionQueue.GetConsumingEnumerable(cancellationScope.CancellationToken))
+                    while (true)
                     {
-                        RunTaskSynchronously(task, cancellationScope.CancellationToken);
+                        RunNextTaskSynchronously(cancellationScope.CancellationToken);
                     }
                 }
                 catch (OperationCanceledException)
@@ -166,9 +194,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         {
             try
             {
-                foreach (ISynchronousTask task in _executionQueue.GetConsumingEnumerable(cancellationScope.CancellationToken))
+                while (true)
                 {
-                    RunTaskSynchronously(task, cancellationScope.CancellationToken);
+                    RunNextTaskSynchronously(cancellationScope.CancellationToken);
 
                     if (IsExiting)
                     {
@@ -188,8 +216,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             try
             {
                 // Run commands, but cancelling our blocking wait if the debugger resumes
-                foreach (ISynchronousTask task in _executionQueue.GetConsumingEnumerable(_psesHost.DebugContext.OnResumeCancellationToken))
+                while (true)
                 {
+                    ISynchronousTask task = _executionQueue.Take(_psesHost.DebugContext.OnResumeCancellationToken);
+
                     // We don't want to cancel the current command when the debugger resumes,
                     // since that command will be resuming the debugger.
                     // Instead let it complete and check the cancellation afterward.
@@ -215,17 +245,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         {
             try
             {
-                while (_executionQueue.TryTake(out ISynchronousTask task))
+                while (!cancellationScope.CancellationToken.IsCancellationRequested
+                        && _executionQueue.TryTake(out ISynchronousTask task))
                 {
                     RunTaskSynchronously(task, cancellationScope.CancellationToken);
                 }
+
+                // TODO: Handle engine events here using a nested pipeline
             }
             catch (OperationCanceledException)
             {
 
             }
+        }
 
-            // TODO: Run nested pipeline here for engine event handling
+        private void RunNextTaskSynchronously(CancellationToken loopCancellationToken)
+        {
+            ISynchronousTask task = _executionQueue.Take(loopCancellationToken);
+            RunTaskSynchronously(task, loopCancellationToken);
         }
 
         private void RunTaskSynchronously(ISynchronousTask task, CancellationToken loopCancellationToken)
@@ -237,15 +274,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
             using (CancellationScope commandCancellationScope = _commandCancellationContext.EnterScope(loopCancellationToken))
             {
-                _taskProcessingLock.EnterReadLock();
-                try
-                {
-                    task.ExecuteSynchronously(commandCancellationScope.CancellationToken);
-                }
-                finally
-                {
-                    _taskProcessingLock.ExitReadLock();
-                }
+                task.ExecuteSynchronously(commandCancellationScope.CancellationToken);
             }
         }
 
@@ -258,27 +287,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
             _runIdleLoop = true;
             _psesHost.PushNonInteractivePowerShell();
-        }
-
-        private struct TaskProcessingWriterLockLifetime : IDisposable
-        {
-            private readonly ReaderWriterLockSlim _rwLock;
-
-            public static TaskProcessingWriterLockLifetime TakeLock(ReaderWriterLockSlim rwLock)
-            {
-                rwLock.EnterWriteLock();
-                return new TaskProcessingWriterLockLifetime(rwLock);
-            }
-
-            private TaskProcessingWriterLockLifetime(ReaderWriterLockSlim rwLock)
-            {
-                _rwLock = rwLock;
-            }
-
-            public void Dispose()
-            {
-                _rwLock.ExitWriteLock();
-            }
         }
     }
 }
