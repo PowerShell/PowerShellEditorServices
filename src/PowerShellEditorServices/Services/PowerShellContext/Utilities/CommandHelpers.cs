@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Threading.Tasks;
@@ -15,38 +14,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     /// </summary>
     internal static class CommandHelpers
     {
-        private static readonly HashSet<string> s_nounExclusionList = new HashSet<string>
-            {
-                // PowerShellGet v2 nouns
-                "CredsFromCredentialProvider",
-                "DscResource",
-                "InstalledModule",
-                "InstalledScript",
-                "PSRepository",
-                "RoleCapability",
-                "Script",
-                "ScriptFileInfo",
-
-                // PackageManagement nouns
-                "Package",
-                "PackageProvider",
-                "PackageSource",
-            };
-
-        // This is used when a noun exists in multiple modules (for example, "Command" is used in Microsoft.PowerShell.Core and also PowerShellGet)
-        private static readonly HashSet<string> s_cmdletExclusionList = new HashSet<string>
-            {
-                // Commands in PowerShellGet with conflicting nouns
-                "Find-Command",
-                "Find-Module",
-                "Install-Module",
-                "Publish-Module",
-                "Save-Module",
-                "Uninstall-Module",
-                "Update-Module",
-                "Update-ModuleManifest",
-            };
-
         private static readonly ConcurrentDictionary<string, CommandInfo> s_commandInfoCache =
             new ConcurrentDictionary<string, CommandInfo>();
 
@@ -70,17 +37,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             if (s_commandInfoCache.TryGetValue(commandName, out CommandInfo cmdInfo))
             {
                 return cmdInfo;
-            }
-
-            // Make sure the command's noun or command's name isn't in the exclusion lists.
-            // This is currently necessary to make sure that Get-Command doesn't
-            // load PackageManagement or PowerShellGet v2 because they cause
-            // a major slowdown in IntelliSense.
-            var commandParts = commandName.Split('-');
-            if ((commandParts.Length == 2 && s_nounExclusionList.Contains(commandParts[1]))
-                    || s_cmdletExclusionList.Contains(commandName))
-            {
-                return null;
             }
 
             PSCommand command = new PSCommand();
