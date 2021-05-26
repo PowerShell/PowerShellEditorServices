@@ -1,5 +1,22 @@
 # PowerShell Editor Services Release History
 
+## v2.4.3
+### Wednesday, May 26, 2021
+
+This stable release includes all the changes in the previews since v2.3.0, plus the following:
+
+- ✨👷 [PowerShellEditorServices #1491](https://github.com/PowerShell/PowerShellEditorServices/pull/1491) - Bump OmniSharp to `v0.19.2`.
+- 🧠🐛 [vscode-powershell #715](https://github.com/PowerShell/PowerShellEditorServices/pull/1484) - Fix unintentional module import. (Thanks @MartinGC94!)
+
+The most significant change is the update to [OmniSharp
+v0.19.2](https://github.com/OmniSharp/csharp-language-server-protocol/releases/tag/v0.19.2),
+from the previous version v0.18.3, released in November 2020. OmniSharp is the underlying
+Language Server Protocol and Debug Adapter Protocol server library, and as such is our
+biggest dependency. This update brings us to the LSP 3.16 and DAP 1.48.x specifications,
+enabling us to start incorporating all the latest LSP changes, and it includes numerous
+bug fixes and enhancements resulting in a faster and more stable server and extension
+experience.
+
 ## v2.4.2-preview.1
 ### Friday, May 21, 2021
 
