@@ -57,10 +57,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             // On Windows, VSCode still gives us file URIs like "file:///c%3a/...", so we need to escape them
-            IReadOnlyDictionary<string, MarkerCorrection> corrections = await _analysisService.GetMostRecentCodeActionsForFileAsync(
-                _workspaceService.GetFile(request.TextDocument.Uri)).ConfigureAwait(false);
-
-            if (corrections == null)
+            IReadOnlyDictionary<string, MarkerCorrection> corrections = null;
+            try
+            {
+                corrections = await _analysisService.GetMostRecentCodeActionsForFileAsync(
+                    _workspaceService.GetFile(request.TextDocument.Uri)).ConfigureAwait(false);
+            }
+            catch (Exception ex) //if (corrections == null)
             {
                 return Array.Empty<CommandOrCodeAction>();
             }

@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public override Task<Container<FoldingRange>> Handle(FoldingRangeRequestParam request, CancellationToken cancellationToken)
         {
-            if (cancellationToken.IsCancellationRequested)
+         if (cancellationToken.IsCancellationRequested)
             {
                 _logger.LogDebug("FoldingRange request canceled for file: {0}", request.TextDocument.Uri);
                 return Task.FromResult(new Container<FoldingRange>());

@@ -380,6 +380,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             foreach (ScriptFile scriptFile in filesToAnalyze)
             {
+                if (string.IsNullOrWhiteSpace(scriptFile.Contents))
+                    continue;
                 ScriptFileMarker[] semanticMarkers = await AnalysisEngine.AnalyzeScriptAsync(scriptFile.Contents).ConfigureAwait(false);
 
                 scriptFile.DiagnosticMarkers.AddRange(semanticMarkers);

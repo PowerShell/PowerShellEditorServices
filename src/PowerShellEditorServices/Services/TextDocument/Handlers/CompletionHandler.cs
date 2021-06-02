@@ -58,6 +58,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             int cursorLine = request.Position.Line + 1;
             int cursorColumn = request.Position.Character + 1;
 
+            
+            
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
             try

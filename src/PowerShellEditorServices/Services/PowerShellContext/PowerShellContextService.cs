@@ -20,10 +20,12 @@ using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Utility;
+using Microsoft.PowerShell.Commands;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
     using System.Management.Automation;
+    using Microsoft.PowerShell.Commands;
     using Microsoft.PowerShell.EditorServices.Handlers;
     using Microsoft.PowerShell.EditorServices.Hosting;
     using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
@@ -271,7 +273,7 @@ End
                     logger);
 
             logger.LogTrace("Creating initial PowerShell runspace");
-            powerShellContext.ImportCommandsModuleAsync();
+
             if (hostStartupInfo.InitialSessionState.LanguageMode != PSLanguageMode.FullLanguage)
             {
                 // Loading modules with ImportPSModule into the InitialSessionState because in constrained language mode there is no file system access.
@@ -280,18 +282,20 @@ End
                 {
                     hostStartupInfo.InitialSessionState.ImportPSModule(hostStartupInfo.AdditionalModules as string[]);
                 }
-                 
-                hostStartupInfo.InitialSessionState.ImportPSModule(new [] { s_commandsModulePath });
-                if(!hostStartupInfo.InitialSessionState.Commands.Any(a=> a.Name.ToLower() == "tabexpansion2"))
+
+                hostStartupInfo.InitialSessionState.ImportPSModule(new[] { s_commandsModulePath });
+                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name.ToLower() == "tabexpansion2"))
                 {
                     hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateFunctionEntry("TabExpansion2", tabExpansionFunctionText));
                 }
             }
+
+            // DO NOT MOVE THIS. The initialization above has to get done before we create the initial runspace.
             Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
             powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
             // TODO: This can be moved to the point after the $psEditor object
             // gets initialized when that is done earlier than LanguageServer.Initialize
-            if (hostStartupInfo.InitialSessionState.LanguageMode == PSLanguageMode.FullLanguage)
+            if (hostStartupInfo.InitialSessionState.LanguageMode == PSLanguageMode.FullLanguage || true)
             {
                 powerShellContext.ImportCommandsModuleAsync();
                 foreach (string module in hostStartupInfo.AdditionalModules)
@@ -300,7 +304,7 @@ End
                         new PSCommand()
                             .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
                             .AddParameter("Name", module);
-
+                    
 #pragma warning disable CS4014
                     // This call queues the loading on the pipeline thread, so no need to await
                     powerShellContext.ExecuteCommandAsync<PSObject>(
@@ -707,7 +711,7 @@ End
             //    via PowerShell eventing
             // 4. The command cannot be for a PSReadLine pipeline while we
             //    are currently in a out of process runspace
-            var threadController = PromptNest.GetThreadController();
+            var threadController = PromptNest?.GetThreadController();
             if (!(threadController == null ||
                 !threadController.IsPipelineThread ||
                 threadController.IsCurrentThread() ||
@@ -826,7 +830,7 @@ End
 
                 // Due to the following PowerShell bug, we can't just assign shell.Commands to psCommand
                 // because PowerShell strips out CommandInfo:
-                // https://github.com/PowerShell/PowerShell/issues/12297
+                // https://github.com/PowerShell/PowerShell/hostStartupInfo.InitialSessionStateues/12297
                 shell.Commands.Clear();
                 foreach (Command command in psCommand.Commands)
                 {
@@ -1163,7 +1167,7 @@ End
                 // <space>.  Any embedded single quotes are escaped.
                 // If the provided path is already quoted, then File.Exists will not find it.
                 // This keeps us from quoting an already quoted path.
-                // Related to issue #123.
+                // Related to hostStartupInfo.InitialSessionStateue #123.
                 if (File.Exists(script) || File.Exists(scriptAbsPath))
                 {
                     // Dot-source the launched script path and single quote the path in case it includes
