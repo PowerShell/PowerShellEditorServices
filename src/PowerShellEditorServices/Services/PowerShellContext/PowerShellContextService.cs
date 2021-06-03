@@ -277,13 +277,16 @@ End
             if (hostStartupInfo.InitialSessionState.LanguageMode != PSLanguageMode.FullLanguage)
             {
                 // Loading modules with ImportPSModule into the InitialSessionState because in constrained language mode there is no file system access.
-                // This may not be entirely true and needs to be tested.
                 if (hostStartupInfo.AdditionalModules.Count > 0)
                 {
                     hostStartupInfo.InitialSessionState.ImportPSModule(hostStartupInfo.AdditionalModules as string[]);
                 }
 
-                hostStartupInfo.InitialSessionState.ImportPSModule(new[] { s_commandsModulePath });
+                // ImportPSModule throws System.Management.Automation.DriveNotFoundException: 'Cannot find drive. A drive with the name 'C' does not exist.'
+                // ImportPSModulesFromPath loads the module fine
+                hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(s_commandsModulePath); //C:\Users\dkattan\Source\Repos\immybot\core\backend\Immybot.Backend.Web\bin\Commands\PowerShellEditorServices.Commands.psd1
+                hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(@"%UserProfile%\Source\Repos\immybot\core\backend\Immybot.Backend.Web\bin\Debug\net5.0\vendor\PSES\module\PSScriptAnalyzer");
+
                 if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name.ToLower() == "tabexpansion2"))
                 {
                     hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateFunctionEntry("TabExpansion2", tabExpansionFunctionText));
@@ -295,7 +298,8 @@ End
             powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
             // TODO: This can be moved to the point after the $psEditor object
             // gets initialized when that is done earlier than LanguageServer.Initialize
-            if (hostStartupInfo.InitialSessionState.LanguageMode == PSLanguageMode.FullLanguage || true)
+            // When importing modules like this in a Constrained Runspace it fails with System.Management.Automation.DriveNotFoundException: 'Cannot find drive. A drive with the name 'C' does not exist.'
+            if (hostStartupInfo.InitialSessionState.LanguageMode == PSLanguageMode.FullLanguage)
             {
                 powerShellContext.ImportCommandsModuleAsync();
                 foreach (string module in hostStartupInfo.AdditionalModules)
