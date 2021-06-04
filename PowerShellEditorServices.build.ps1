@@ -174,6 +174,7 @@ task GetProductVersion -Before PackageModule, UploadArtifacts {
 task CreateBuildInfo -Before Build {
     $buildVersion = "<development-build>"
     $buildOrigin = "Development"
+    $buildCommit = git rev-parse HEAD
 
     # Set build info fields on build platforms
     if ($env:TF_BUILD) {
@@ -215,6 +216,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     {
         public static readonly string BuildVersion = "$buildVersion";
         public static readonly string BuildOrigin = "$buildOrigin";
+        public static readonly string BuildCommit= "$buildCommit";
         public static readonly System.DateTime? BuildTime = System.DateTime.Parse("$buildTime", CultureInfo.InvariantCulture.DateTimeFormat);
     }
 }
