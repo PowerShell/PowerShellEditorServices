@@ -284,8 +284,7 @@ End
 
                 // ImportPSModule throws System.Management.Automation.DriveNotFoundException: 'Cannot find drive. A drive with the name 'C' does not exist.'
                 // ImportPSModulesFromPath loads the module fine
-                hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(s_commandsModulePath); //C:\Users\dkattan\Source\Repos\immybot\core\backend\Immybot.Backend.Web\bin\Commands\PowerShellEditorServices.Commands.psd1
-                hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(@"%UserProfile%\Source\Repos\immybot\core\backend\Immybot.Backend.Web\bin\Debug\net5.0\vendor\PSES\module\PSScriptAnalyzer");
+                hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(s_commandsModulePath);
 
                 if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name.ToLower() == "tabexpansion2"))
                 {
