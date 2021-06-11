@@ -6,6 +6,18 @@
     <AssemblyName>Microsoft.PowerShell.EditorServices.Hosting</AssemblyName>
   </PropertyGroup>
 
+  <!-- HACK: This is a temporary workaround of `dotnet publish` -->
+  <Target Name="InjectNetStandardFacadesToPublishDirectory"
+          BeforeTargets="ComputeResolvedFilesToPublishList"
+          Condition="'@(_NETStandardLibraryNETFrameworkLib)' != ''">
+    <ItemGroup>
+      <_ResolvedCopyLocalPublishAssets
+        Include="@(_NETStandardLibraryNETFrameworkLib)"
+        Condition="'%(_NETStandardLibraryNETFrameworkLib.FileName)' != 'netfx.force.conflicts'"
+      />
+    </ItemGroup>
+  </Target>
+
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
     <DefineConstants>$(DefineConstants);CoreCLR</DefineConstants>
   </PropertyGroup>
