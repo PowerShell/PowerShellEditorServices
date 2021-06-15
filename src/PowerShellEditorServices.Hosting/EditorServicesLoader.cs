@@ -269,6 +269,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 == Build Details ==
 - Editor Services version: {BuildInfo.BuildVersion}
 - Build origin:            {BuildInfo.BuildOrigin}
+- Build commit:            {BuildInfo.BuildCommit}
 - Build time:              {BuildInfo.BuildTime}
 ");
 
