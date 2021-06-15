@@ -56,8 +56,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return Array.Empty<CommandOrCodeAction>();
             }
 
-            IReadOnlyDictionary<string, MarkerCorrection> corrections = await
-                _analysisService.GetMostRecentCodeActionsForFileAsync(request.TextDocument.Uri).ConfigureAwait(false);
+            IReadOnlyDictionary<string, MarkerCorrection> corrections = await _analysisService.GetMostRecentCodeActionsForFileAsync(
+                request.TextDocument.Uri)
+                .ConfigureAwait(false);
 
             if (corrections == null)
             {
