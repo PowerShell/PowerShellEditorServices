@@ -223,9 +223,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="documentUri">The URI string of the file to get code actions for.</param>
         /// <returns>A threadsafe readonly dictionary of the code actions of the particular file.</returns>
-        public async Task<IReadOnlyDictionary<string, MarkerCorrection>> GetMostRecentCodeActionsForFileAsync(ScriptFile scriptFile)
+        public async Task<IReadOnlyDictionary<string, MarkerCorrection>> GetMostRecentCodeActionsForFileAsync(DocumentUri uri)
         {
-            if (!_mostRecentCorrectionsByFile.TryGetValue(scriptFile, out CorrectionTableEntry corrections))
+            ScriptFile file = null;
+            if (!_workspaceService.TryGetFile(uri, out file))
+            {
+                return null;
+            }
+
+            if (!_mostRecentCorrectionsByFile.TryGetValue(file, out CorrectionTableEntry corrections))
             {
                 return null;
             }
