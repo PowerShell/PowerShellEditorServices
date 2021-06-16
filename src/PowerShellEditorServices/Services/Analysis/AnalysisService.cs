@@ -86,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly ConfigurationService _configurationService;
 
-        private readonly WorkspaceService _workplaceService;
+        private readonly WorkspaceService _workspaceService;
 
         private readonly int _analysisDelayMillis;
 
@@ -115,7 +115,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _logger = loggerFactory.CreateLogger<AnalysisService>();
             _languageServer = languageServer;
             _configurationService = configurationService;
-            _workplaceService = workspaceService;
+            _workspaceService = workspaceService;
             _analysisDelayMillis = 750;
             _mostRecentCorrectionsByFile = new ConcurrentDictionary<ScriptFile, CorrectionTableEntry>();
             _analysisEngineLazy = new Lazy<PssaCmdletAnalysisEngine>(InstantiateAnalysisEngine);
@@ -223,9 +223,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="documentUri">The URI string of the file to get code actions for.</param>
         /// <returns>A threadsafe readonly dictionary of the code actions of the particular file.</returns>
-        public async Task<IReadOnlyDictionary<string, MarkerCorrection>> GetMostRecentCodeActionsForFileAsync(ScriptFile scriptFile)
+        public async Task<IReadOnlyDictionary<string, MarkerCorrection>> GetMostRecentCodeActionsForFileAsync(DocumentUri uri)
         {
-            if (!_mostRecentCorrectionsByFile.TryGetValue(scriptFile, out CorrectionTableEntry corrections))
+            if (!_workspaceService.TryGetFile(uri, out ScriptFile file)
+                || !_mostRecentCorrectionsByFile.TryGetValue(file, out CorrectionTableEntry corrections))
             {
                 return null;
             }
@@ -334,7 +335,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return false;
             }
 
-            settingsFilePath = _workplaceService.ResolveWorkspacePath(configuredPath);
+            settingsFilePath = _workspaceService.ResolveWorkspacePath(configuredPath);
 
             if (settingsFilePath == null
                 || !File.Exists(settingsFilePath))
@@ -349,7 +350,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void ClearOpenFileMarkers()
         {
-            foreach (ScriptFile file in _workplaceService.GetOpenedFiles())
+            foreach (ScriptFile file in _workspaceService.GetOpenedFiles())
             {
                 ClearMarkers(file);
             }

@@ -216,7 +216,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     {
         public static readonly string BuildVersion = "$buildVersion";
         public static readonly string BuildOrigin = "$buildOrigin";
-        public static readonly string BuildCommit= "$buildCommit";
+        public static readonly string BuildCommit = "$buildCommit";
         public static readonly System.DateTime? BuildTime = System.DateTime.Parse("$buildTime", CultureInfo.InvariantCulture.DateTimeFormat);
     }
 }

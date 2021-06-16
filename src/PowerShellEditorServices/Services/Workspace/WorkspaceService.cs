@@ -192,6 +192,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 // List supported schemes here
                 case "file":
+                case "inmemory":
                 case "untitled":
                 case "vscode-notebook-cell":
                     break;
