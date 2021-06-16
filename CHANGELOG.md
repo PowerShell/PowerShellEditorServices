@@ -1,5 +1,11 @@
 # PowerShell Editor Services Release History
 
+## v2.4.4
+### Wednesday, June 16, 2021
+
+- 🐛 [PowerShellEditorServices #1495](https://github.com/PowerShell/PowerShellEditorServices/pull/1500) - Prevent some exceptions.
+- #️⃣ 🙏 [vscode-powershell #3395](https://github.com/PowerShell/PowerShellEditorServices/pull/1494) - Work around `dotnet publish` bug.
+
 ## v2.4.3
 ### Wednesday, May 26, 2021
 
