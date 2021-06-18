@@ -358,7 +358,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 AdditionalModules = AdditionalModules,
                 LanguageServiceTransport = GetLanguageServiceTransport(),
                 DebugServiceTransport = GetDebugServiceTransport(),
-                InitialSessionState = initialSessionState,                
+                InitialSessionState = initialSessionState,
                 ProfilePaths = new ProfilePathConfig
                 {
                     AllUsersAllHosts = GetProfilePathFromProfileObject(profile, ProfileUserKind.AllUsers, ProfileHostKind.AllHosts),
