@@ -378,7 +378,8 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         private string GetProfilePathFromProfileObject(PSObject profileObject, ProfileUserKind userKind, ProfileHostKind hostKind)
         {
             string profilePathName = $"{userKind}{hostKind}";
-
+            if (profileObject is null)
+                return null;
             string pwshProfilePath = (string)profileObject.Properties[profilePathName].Value;
 
             if (hostKind == ProfileHostKind.AllHosts)
