@@ -43,6 +43,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Extensions\Api\DocumentSymbolService.cs" />
+    <Compile Remove="Extensions\Api\DocumentSymbolService.cs"/>
   </ItemGroup>
 </Project>

@@ -359,19 +359,14 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 LanguageServiceTransport = GetLanguageServiceTransport(),
                 DebugServiceTransport = GetDebugServiceTransport(),
                 InitialSessionState = initialSessionState,
-                
-            };
-
-            if(profile != null)
-            {
-                editorServicesConfig.ProfilePaths = new ProfilePathConfig
+                ProfilePaths = new ProfilePathConfig
                 {
                     AllUsersAllHosts = GetProfilePathFromProfileObject(profile, ProfileUserKind.AllUsers, ProfileHostKind.AllHosts),
                     AllUsersCurrentHost = GetProfilePathFromProfileObject(profile, ProfileUserKind.AllUsers, ProfileHostKind.CurrentHost),
                     CurrentUserAllHosts = GetProfilePathFromProfileObject(profile, ProfileUserKind.CurrentUser, ProfileHostKind.AllHosts),
                     CurrentUserCurrentHost = GetProfilePathFromProfileObject(profile, ProfileUserKind.CurrentUser, ProfileHostKind.CurrentHost),
-                };
-            }
+                },
+            };
 
             if (StartupBanner != null)
             {

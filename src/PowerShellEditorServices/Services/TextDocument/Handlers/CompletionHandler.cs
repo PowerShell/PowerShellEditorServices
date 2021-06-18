@@ -58,6 +58,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             int cursorLine = request.Position.Line + 1;
             int cursorColumn = request.Position.Character + 1;
 
+            
+            
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
             try
@@ -113,6 +115,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             // We currently only support this request for anything that returns a CommandInfo: functions, cmdlets, aliases.
             if (request.Kind != CompletionItemKind.Function)
+            {
+                return request;
+            }
+
+            // No details means the module hasn't been imported yet and Intellisense shouldn't import the module to get this info.
+            if (request.Detail is null)
             {
                 return request;
             }
