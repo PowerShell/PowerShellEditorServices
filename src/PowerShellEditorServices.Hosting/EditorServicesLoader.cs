@@ -254,7 +254,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 return;
             }
 
-            string psModulePath = Environment.GetEnvironmentVariable("PSModulePath").TrimEnd(Path.PathSeparator);            
+            string psModulePath = Environment.GetEnvironmentVariable("PSModulePath").TrimEnd(Path.PathSeparator);
             psModulePath = $"{psModulePath}{Path.PathSeparator}{_hostConfig.BundledModulePath}";
             Environment.SetEnvironmentVariable("PSModulePath", psModulePath);
 
