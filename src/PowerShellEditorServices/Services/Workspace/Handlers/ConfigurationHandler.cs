@@ -51,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             LanguageServerSettingsWrapper incomingSettings = request.Settings.ToObject<LanguageServerSettingsWrapper>();
             this._logger.LogTrace("Handling DidChangeConfiguration");
-            if (incomingSettings == null)
+            if (incomingSettings is null || incomingSettings.Powershell is null)
             {
                 this._logger.LogTrace("Incoming settings were null");
                 return await Unit.Task.ConfigureAwait(false);
