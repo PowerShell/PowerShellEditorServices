@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         }
 
         protected override CodeActionRegistrationOptions CreateRegistrationOptions(CodeActionCapability capability, ClientCapabilities clientCapabilities) => new CodeActionRegistrationOptions
-            {
+        {
             // TODO: What do we do with the arguments?
             DocumentSelector = LspUtils.PowerShellDocumentSelector,
             CodeActionKinds = new CodeActionKind[] { CodeActionKind.QuickFix }
@@ -52,18 +52,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                _logger.LogDebug("CodeAction request canceled at range: {0}", request.Range);
+                _logger.LogDebug($"CodeAction request canceled at range: {request.Range}");
                 return Array.Empty<CommandOrCodeAction>();
             }
 
-            // On Windows, VSCode still gives us file URIs like "file:///c%3a/...", so we need to escape them
-            IReadOnlyDictionary<string, MarkerCorrection> corrections = null;
-            try
-            {
-                corrections = await _analysisService.GetMostRecentCodeActionsForFileAsync(
-                    _workspaceService.GetFile(request.TextDocument.Uri)).ConfigureAwait(false);
-            }
-            catch (Exception ex) //if (corrections == null)
+            IReadOnlyDictionary<string, MarkerCorrection> corrections = await _analysisService.GetMostRecentCodeActionsForFileAsync(
+                request.TextDocument.Uri)
+                .ConfigureAwait(false);
+
+            if (corrections == null)
             {
                 return Array.Empty<CommandOrCodeAction>();
             }

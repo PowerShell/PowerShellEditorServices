@@ -68,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             Ast commandNameAst = commandAst.CommandElements[0];
             string commandName = commandNameAst.Extent.Text;
 
-            if (symbolRef.SymbolType.Equals(SymbolType.Function))
+            if(symbolRef.SymbolType.Equals(SymbolType.Function))
             {
                 if (needsAliases)
                 {
@@ -171,7 +171,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
         {
-            if (symbolRef.SymbolType.Equals(SymbolType.Variable) &&
+            if(symbolRef.SymbolType.Equals(SymbolType.Variable) &&
                 variableExpressionAst.Extent.Text.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
                 this.FoundReferences.Add(new SymbolReference(
