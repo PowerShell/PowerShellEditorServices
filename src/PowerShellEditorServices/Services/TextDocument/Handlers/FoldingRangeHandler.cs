@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public override Task<Container<FoldingRange>> Handle(FoldingRangeRequestParam request, CancellationToken cancellationToken)
         {
-         if (cancellationToken.IsCancellationRequested)
+            if (cancellationToken.IsCancellationRequested)
             {
                 _logger.LogDebug("FoldingRange request canceled for file: {0}", request.TextDocument.Uri);
                 return Task.FromResult(new Container<FoldingRange>());
@@ -57,12 +57,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             foreach (FoldingReference fold in TokenOperations.FoldableReferences(scriptFile.ScriptTokens).References)
             {
-                result.Add(new FoldingRange {
-                    EndCharacter   = fold.EndCharacter,
-                    EndLine        = fold.EndLine + endLineOffset,
-                    Kind           = fold.Kind,
+                result.Add(new FoldingRange
+                {
+                    EndCharacter = fold.EndCharacter,
+                    EndLine = fold.EndLine + endLineOffset,
+                    Kind = fold.Kind,
                     StartCharacter = fold.StartCharacter,
-                    StartLine      = fold.StartLine
+                    StartLine = fold.StartLine
                 });
             }
 
