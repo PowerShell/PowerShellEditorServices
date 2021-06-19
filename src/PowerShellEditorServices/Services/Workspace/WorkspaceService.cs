@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         };
 
         // An array of globs which includes everything.
-        private static readonly string[] s_psIncludeAllGlob = new []
+        private static readonly string[] s_psIncludeAllGlob = new[]
         {
             "**/*"
         };
@@ -195,6 +195,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 case "inmemory":
                 case "untitled":
                 case "vscode-notebook-cell":
+                case "inmemory":
                     break;
 
                 default:
