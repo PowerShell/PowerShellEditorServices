@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         }
 
         protected override CodeActionRegistrationOptions CreateRegistrationOptions(CodeActionCapability capability, ClientCapabilities clientCapabilities) => new CodeActionRegistrationOptions
-        {
+            {
             // TODO: What do we do with the arguments?
             DocumentSelector = LspUtils.PowerShellDocumentSelector,
             CodeActionKinds = new CodeActionKind[] { CodeActionKind.QuickFix }
