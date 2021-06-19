@@ -20,10 +20,15 @@ using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Utility;
+using Microsoft.PowerShell.Commands;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
     using System.Management.Automation;
+    using Microsoft.PowerShell.Commands;
+    using Microsoft.PowerShell.EditorServices.Handlers;
+    using Microsoft.PowerShell.EditorServices.Hosting;
+    using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
@@ -83,7 +88,61 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly Stack<RunspaceDetails> runspaceStack = new Stack<RunspaceDetails>();
 
         private int isCommandLoopRestarterSet;
+        /// <summary>
+        /// This is the default function to use for tab expansion.
+        /// </summary>
+        private static string tabExpansionFunctionText = @"
+<# Options include:
+     RelativeFilePaths - [bool]
+         Always resolve file paths using Resolve-Path -Relative.
+         The default is to use some heuristics to guess if relative or absolute is better.
 
+   To customize your own custom options, pass a hashtable to CompleteInput, e.g.
+         return [System.Management.Automation.CommandCompletion]::CompleteInput($inputScript, $cursorColumn,
+             @{ RelativeFilePaths=$false }
+#>
+
+[CmdletBinding(DefaultParameterSetName = 'ScriptInputSet')]
+Param(
+    [Parameter(ParameterSetName = 'ScriptInputSet', Mandatory = $true, Position = 0)]
+    [string] $inputScript,
+
+    [Parameter(ParameterSetName = 'ScriptInputSet', Position = 1)]
+    [int] $cursorColumn = $inputScript.Length,
+
+    [Parameter(ParameterSetName = 'AstInputSet', Mandatory = $true, Position = 0)]
+    [System.Management.Automation.Language.Ast] $ast,
+
+    [Parameter(ParameterSetName = 'AstInputSet', Mandatory = $true, Position = 1)]
+    [System.Management.Automation.Language.Token[]] $tokens,
+
+    [Parameter(ParameterSetName = 'AstInputSet', Mandatory = $true, Position = 2)]
+    [System.Management.Automation.Language.IScriptPosition] $positionOfCursor,
+
+    [Parameter(ParameterSetName = 'ScriptInputSet', Position = 2)]
+    [Parameter(ParameterSetName = 'AstInputSet', Position = 3)]
+    [Hashtable] $options = $null
+)
+
+End
+{
+    if ($psCmdlet.ParameterSetName -eq 'ScriptInputSet')
+    {
+        return [System.Management.Automation.CommandCompletion]::CompleteInput(
+            <#inputScript#>  $inputScript,
+            <#cursorColumn#> $cursorColumn,
+            <#options#>      $options)
+    }
+    else
+    {
+        return [System.Management.Automation.CommandCompletion]::CompleteInput(
+            <#ast#>              $ast,
+            <#tokens#>           $tokens,
+            <#positionOfCursor#> $positionOfCursor,
+            <#options#>          $options)
+    }
+}
+        ";
         #endregion
 
         #region Properties
@@ -214,26 +273,76 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     logger);
 
             logger.LogTrace("Creating initial PowerShell runspace");
-            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.LanguageMode);
-            powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
-            powerShellContext.ImportCommandsModuleAsync();
 
+            if (hostStartupInfo.InitialSessionState.LanguageMode != PSLanguageMode.FullLanguage)
+            {
+                // Loading modules with ImportPSModule into the InitialSessionState because in constrained language mode there is no file system access.
+                // Import-Module provides the user with better errors, but may not be allowed within a constrained runspace
+                // ImportPSModule throws System.Management.Automation.DriveNotFoundException: 'Cannot find drive. A drive with the name 'C' does not exist.'
+                // ImportPSModulesFromPath loads the modules fine
+                if (hostStartupInfo.AdditionalModules.Count > 0)
+                    hostStartupInfo.InitialSessionState.ImportPSModule(hostStartupInfo.AdditionalModules as string[]);
+                hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(s_commandsModulePath);
+                // Autocomplete will fail if there isn't an implementation of TabExpansion2
+                // The default TabExpansion2 implementation may not be available in a Constrained Runspace, therefore we check and add it if not.
+                // Note: Attempting to set the visibility of these commands to Private will cause Autocomplete to fail
+                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name.ToLower() == "tabexpansion2"))
+                {
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateFunctionEntry("TabExpansion2", tabExpansionFunctionText));
+                }
+                hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(s_commandsModulePath);
+                // Autocomplete will fail if there isn't an implementation of TabExpansion2
+                // The default TabExpansion2 implementation may not be available in a Constrained Runspace, therefore we check and add it if not.
+                // Note: Attempting to set the visibility of these commands to Private will cause Autocomplete to fail
+                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name.ToLower() == "tabexpansion2"))
+                {
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Command", typeof(GetCommandCommand), null));
+                    // PSES called Get-Command by its Module Qualified Syntax "Microsoft.PowerShell.Core\Get-Command", but this fails in a Constrained Runspace
+                    // Adding an alias to Get-Command by its module qualified syntax allows PSES to call it by "Microsoft.PowerShell.Core\Get-Command".
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Command", "Get-Command", null));
+                }
+                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == "Get-Help"))
+                {
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Help", typeof(GetHelpCommand), null));
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Help", "Get-Help", null));
+                }
+                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == "Get-Command"))
+                {
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Command", typeof(GetCommandCommand), null));
+                    // PSES called Get-Command by its Module Qualified Syntax "Microsoft.PowerShell.Core\Get-Command", but this fails in a Constrained Runspace
+                    // Adding an alias to Get-Command by its module qualified syntax allows PSES to call it by "Microsoft.PowerShell.Core\Get-Command".
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Command", "Get-Command", null));
+                }
+                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == "Get-Help"))
+                {
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Help", typeof(GetHelpCommand), null));
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Help", "Get-Help", null));
+                }
+            }
+
+            // DO NOT MOVE THIS. The initialization above has to get done before we create the initial runspace.
+            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
+            powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
             // TODO: This can be moved to the point after the $psEditor object
             // gets initialized when that is done earlier than LanguageServer.Initialize
-            foreach (string module in hostStartupInfo.AdditionalModules)
+            // When importing modules like this in a Constrained Runspace it fails with System.Management.Automation.DriveNotFoundException: 'Cannot find drive. A drive with the name 'C' does not exist.'
+            if (hostStartupInfo.InitialSessionState.LanguageMode == PSLanguageMode.FullLanguage)
             {
-                var command =
-                    new PSCommand()
-                        .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
-                        .AddParameter("Name", module);
-
+                foreach (string module in hostStartupInfo.AdditionalModules)
+                {
+                    var command =
+                        new PSCommand()
+                            .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                            .AddParameter("Name", module);
+                    
 #pragma warning disable CS4014
-                // This call queues the loading on the pipeline thread, so no need to await
-                powerShellContext.ExecuteCommandAsync<PSObject>(
-                    command,
-                    sendOutputToHost: false,
-                    sendErrorToHost: true);
+                    // This call queues the loading on the pipeline thread, so no need to await
+                    powerShellContext.ExecuteCommandAsync<PSObject>(
+                        command,
+                        sendOutputToHost: false,
+                        sendErrorToHost: true);
 #pragma warning restore CS4014
+                }
             }
 
             return powerShellContext;
@@ -258,29 +367,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var psHost = new EditorServicesPSHost(powerShellContext, hostDetails, hostUserInterface, logger);
             powerShellContext.ConsoleWriter = hostUserInterface;
             powerShellContext.ConsoleReader = hostUserInterface;
-            return CreateRunspace(psHost, hostDetails.LanguageMode);
+            return CreateRunspace(psHost, hostDetails.InitialSessionState);
         }
 
         /// <summary>
         ///
         /// </summary>
         /// <param name="psHost">The PSHost that will be used for this Runspace.</param>
-        /// <param name="languageMode">The language mode inherited from the orginal PowerShell process. This will be used when creating runspaces so that we honor the same language mode.</param>
+        /// <param name="initialSessionState">The initialSessionState inherited from the orginal PowerShell process. This will be used when creating runspaces so that we honor the same initialSessionState including allowed modules, cmdlets and language mode.</param>
         /// <returns></returns>
-        public static Runspace CreateRunspace(PSHost psHost, PSLanguageMode languageMode)
+        internal static Runspace CreateRunspace(PSHost psHost, InitialSessionState initialSessionState)
         {
-            InitialSessionState initialSessionState;
-            if (Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1") {
-                initialSessionState = InitialSessionState.CreateDefault();
-            } else {
-                initialSessionState = InitialSessionState.CreateDefault2();
-            }
-
-            // Create and initialize a new Runspace while honoring the LanguageMode of the original runspace
-            // that started PowerShell Editor Services. This is because the PowerShell Integrated Console
-            // should have the same LanguageMode of whatever is set by the system.
-            initialSessionState.LanguageMode = languageMode;
-
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
 
             // Windows PowerShell must be hosted in STA mode
@@ -424,7 +521,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.PromptContext = new LegacyReadLineContext(this);
             }
 
-            if (VersionUtils.IsWindows)
+            if (VersionUtils.IsWindows && initialRunspace.InitialSessionState.LanguageMode == PSLanguageMode.FullLanguage)
             {
                 this.SetExecutionPolicy();
             }
@@ -626,7 +723,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             //    via PowerShell eventing
             // 4. The command cannot be for a PSReadLine pipeline while we
             //    are currently in a out of process runspace
-            var threadController = PromptNest.GetThreadController();
+            var threadController = PromptNest?.GetThreadController();
             if (!(threadController == null ||
                 !threadController.IsPipelineThread ||
                 threadController.IsCurrentThread() ||
@@ -745,7 +842,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 // Due to the following PowerShell bug, we can't just assign shell.Commands to psCommand
                 // because PowerShell strips out CommandInfo:
-                // https://github.com/PowerShell/PowerShell/issues/12297
+                // https://github.com/PowerShell/PowerShell/hostStartupInfo.InitialSessionStateues/12297
                 shell.Commands.Clear();
                 foreach (Command command in psCommand.Commands)
                 {
@@ -1082,7 +1179,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // <space>.  Any embedded single quotes are escaped.
                 // If the provided path is already quoted, then File.Exists will not find it.
                 // This keeps us from quoting an already quoted path.
-                // Related to issue #123.
+                // Related to hostStartupInfo.InitialSessionState Issue #123.
                 if (File.Exists(script) || File.Exists(scriptAbsPath))
                 {
                     // Dot-source the launched script path and single quote the path in case it includes
@@ -2723,7 +2820,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             get
             {
-                return this.CurrentRunspace.Runspace;
+                return this.CurrentRunspace?.Runspace;
             }
         }
 

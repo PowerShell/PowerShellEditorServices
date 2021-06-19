@@ -381,6 +381,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             foreach (ScriptFile scriptFile in filesToAnalyze)
             {
+                if (string.IsNullOrWhiteSpace(scriptFile.Contents))
+                    continue;
                 ScriptFileMarker[] semanticMarkers = await AnalysisEngine.AnalyzeScriptAsync(scriptFile.Contents).ConfigureAwait(false);
 
                 scriptFile.DiagnosticMarkers.AddRange(semanticMarkers);
@@ -456,10 +458,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             switch (markerLevel)
             {
-                case ScriptFileMarkerLevel.Error:       return DiagnosticSeverity.Error;
-                case ScriptFileMarkerLevel.Warning:     return DiagnosticSeverity.Warning;
+                case ScriptFileMarkerLevel.Error: return DiagnosticSeverity.Error;
+                case ScriptFileMarkerLevel.Warning: return DiagnosticSeverity.Warning;
                 case ScriptFileMarkerLevel.Information: return DiagnosticSeverity.Information;
-                default:                                return DiagnosticSeverity.Error;
+                default: return DiagnosticSeverity.Error;
             };
         }
 
