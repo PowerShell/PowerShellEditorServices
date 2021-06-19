@@ -281,9 +281,7 @@ End
                 // ImportPSModule throws System.Management.Automation.DriveNotFoundException: 'Cannot find drive. A drive with the name 'C' does not exist.'
                 // ImportPSModulesFromPath loads the modules fine
                 if (hostStartupInfo.AdditionalModules.Count > 0)
-                {
                     hostStartupInfo.InitialSessionState.ImportPSModule(hostStartupInfo.AdditionalModules as string[]);
-                }
                 hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(s_commandsModulePath);
                 // Autocomplete will fail if there isn't an implementation of TabExpansion2
                 // The default TabExpansion2 implementation may not be available in a Constrained Runspace, therefore we check and add it if not.
@@ -291,6 +289,22 @@ End
                 if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name.ToLower() == "tabexpansion2"))
                 {
                     hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateFunctionEntry("TabExpansion2", tabExpansionFunctionText));
+                }
+                hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(s_commandsModulePath);
+                // Autocomplete will fail if there isn't an implementation of TabExpansion2
+                // The default TabExpansion2 implementation may not be available in a Constrained Runspace, therefore we check and add it if not.
+                // Note: Attempting to set the visibility of these commands to Private will cause Autocomplete to fail
+                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name.ToLower() == "tabexpansion2"))
+                {
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Command", typeof(GetCommandCommand), null));
+                    // PSES called Get-Command by its Module Qualified Syntax "Microsoft.PowerShell.Core\Get-Command", but this fails in a Constrained Runspace
+                    // Adding an alias to Get-Command by its module qualified syntax allows PSES to call it by "Microsoft.PowerShell.Core\Get-Command".
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Command", "Get-Command", null));
+                }
+                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == "Get-Help"))
+                {
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Help", typeof(GetHelpCommand), null));
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Help", "Get-Help", null));
                 }
                 if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == "Get-Command"))
                 {
