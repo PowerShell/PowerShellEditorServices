@@ -269,52 +269,21 @@ End
                     logger);
 
             logger.LogTrace("Creating initial PowerShell runspace");
-
-            if (hostStartupInfo.InitialSessionState.LanguageMode != PSLanguageMode.FullLanguage)
+            Runspace initialRunspace;
+            if (hostStartupInfo.InitialSessionState.Providers.Any(a => a.Name == "FileSystem"))
             {
-                // Loading modules with ImportPSModule into the InitialSessionState because in constrained language mode there is no file system access.
-                // Import-Module provides the user with better errors, but may not be allowed within a constrained runspace
-                // ImportPSModule throws System.Management.Automation.DriveNotFoundException: 'Cannot find drive. A drive with the name 'C' does not exist.'
-                // ImportPSModulesFromPath loads the modules fine
-                if (hostStartupInfo.AdditionalModules.Count > 0)
-                    hostStartupInfo.InitialSessionState.ImportPSModule(hostStartupInfo.AdditionalModules as string[]);
-                // Autocomplete will fail if there isn't an implementation of TabExpansion2
-                // The default TabExpansion2 implementation may not be available in a Constrained Runspace, therefore we check and add it if not.
-                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name.ToLower() == "tabexpansion2"))
-                {
-                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateFunctionEntry("TabExpansion2", tabExpansionFunctionText));
-                }
-                // Note: Attempting to set the visibility of these commands to Private will cause Autocomplete to fail
-                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name.ToLower() == "Get-Command"))
-                {
-                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Command", typeof(GetCommandCommand), null));
-                    // PSES called Get-Command by its Module Qualified Syntax "Microsoft.PowerShell.Core\Get-Command", but this fails in a Constrained Runspace
-                    // Adding an alias to Get-Command by its module qualified syntax allows PSES to call it by "Microsoft.PowerShell.Core\Get-Command".
-                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Command", "Get-Command", null));
-                }
-                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == "Get-Help"))
-                {
-                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Help", typeof(GetHelpCommand), null));
-                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Help", "Get-Help", null));
-                }
-                hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(s_commandsModulePath);
-            }
-            // DO NOT MOVE THIS. The initialization above has to get done before we create the initial runspace.
-            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
-            powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
-            // TODO: This can be moved to the point after the $psEditor object
-            // gets initialized when that is done earlier than LanguageServer.Initialize
-            // When importing modules like this in a Constrained Runspace it fails with System.Management.Automation.DriveNotFoundException: 'Cannot find drive. A drive with the name 'C' does not exist.'
-            if (hostStartupInfo.InitialSessionState.LanguageMode == PSLanguageMode.FullLanguage)
-            {
-                ImportCommandsModuleAsync();
+                initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
+                powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
+                powerShellContext.ImportCommandsModuleAsync();
+                // TODO: This can be moved to the point after the $psEditor object
+                // gets initialized when that is done earlier than LanguageServer.Initialize
                 foreach (string module in hostStartupInfo.AdditionalModules)
                 {
                     var command =
                         new PSCommand()
                             .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
                             .AddParameter("Name", module);
-                    
+
 #pragma warning disable CS4014
                     // This call queues the loading on the pipeline thread, so no need to await
                     powerShellContext.ExecuteCommandAsync<PSObject>(
@@ -323,8 +292,45 @@ End
                         sendErrorToHost: true);
 #pragma warning restore CS4014
                 }
-            }
 
+                return powerShellContext;
+            }
+            else
+            {
+                // Loading modules with ImportPSModulesFromPath into the InitialSessionState because in a Constrained Runspace there may not be a FileSystem provider.
+                // Import-Module provides the user with better errors, but may not be allowed within a constrained runspace
+                // ImportPSModule throws System.Management.Automation.DriveNotFoundException: 'Cannot find drive. A drive with the name 'C' does not exist.'
+                // ImportPSModulesFromPath loads the modules fine
+                foreach(var module in hostStartupInfo.AdditionalModules)
+                {
+                    hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(module);
+                }
+                // Autocomplete will fail if there isn't an implementation of TabExpansion2
+                // The default TabExpansion2 implementation may not be available in a Constrained Runspace, therefore we check and add it if not.
+                // Note: Attempting to set the visibility of these commands to Private will cause Autocomplete to fail
+                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name.ToLower() == "tabexpansion2"))
+                {
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateFunctionEntry("TabExpansion2", tabExpansionFunctionText));
+                }
+                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name.ToLower() == "Get-Command"))
+                {
+                    // Adding Get-Command to the Runspace in case the calling runspace didn't add it.
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Command", typeof(GetCommandCommand), null));
+                    // PSES calls Get-Command by its Module Qualified Syntax "Microsoft.PowerShell.Core\Get-Command"
+                    // This fails in a Constrained Runspace.
+                    // To work around it without modifying PSES code, we add Microsoft.PowerShell.Core\Get-Command as an alias to Get-Command.
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Command", "Get-Command", null));
+                }
+                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == "Get-Help"))
+                {
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Help", typeof(GetHelpCommand), null));
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Help", "Get-Help", null));
+                }
+                //hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(s_commandsModulePath);
+                initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
+                powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
+            }
+            
             return powerShellContext;
         }
 
@@ -351,13 +357,18 @@ End
         }
 
         /// <summary>
-        /// Internal Runspace Creator that accepts an initialSessionState
+        ///
         /// </summary>
         /// <param name="psHost">The PSHost that will be used for this Runspace.</param>
-        /// <param name="initialSessionState">The initialSessionState inherited from the orginal PowerShell process. This will be used when creating runspaces so that we honor the same initialSessionState including allowed modules, cmdlets and language mode.</param>
+        /// <param name="languageMode">The language mode inherited from the orginal PowerShell process. This will be used when creating runspaces so that we honor the same language mode.</param>
         /// <returns></returns>
-        internal static Runspace CreateRunspace(PSHost psHost, InitialSessionState initialSessionState)
+        public static Runspace CreateRunspace(PSHost psHost, InitialSessionState initialSessionState)
         {
+            if (Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1")
+            {
+                initialSessionState = InitialSessionState.CreateDefault();
+            }
+            
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
 
             // Windows PowerShell must be hosted in STA mode
