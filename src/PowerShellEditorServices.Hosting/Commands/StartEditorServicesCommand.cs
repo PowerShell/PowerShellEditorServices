@@ -379,7 +379,9 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         {
             string profilePathName = $"{userKind}{hostKind}";
             if (profileObject is null)
+            {
                 return null;
+            }
             string pwshProfilePath = (string)profileObject.Properties[profilePathName].Value;
 
             if (hostKind == ProfileHostKind.AllHosts)
