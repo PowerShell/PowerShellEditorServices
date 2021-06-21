@@ -10,6 +10,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         bool IsCanceled { get; }
 
         void ExecuteSynchronously(CancellationToken threadCancellationToken);
+
+        ExecutionOptions ExecutionOptions { get; }
     }
 
     internal abstract class SynchronousTask<TResult> : ISynchronousTask
@@ -35,6 +37,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         public Task<TResult> Task => _taskCompletionSource.Task;
 
         public bool IsCanceled => _executionCanceled || _taskRequesterCancellationToken.IsCancellationRequested;
+
+        public abstract ExecutionOptions ExecutionOptions { get; }
 
         public abstract TResult Run(CancellationToken cancellationToken);
 

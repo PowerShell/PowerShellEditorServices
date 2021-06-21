@@ -110,7 +110,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     // This seems to be the simplest way to invoke a script block (which contains breakpoint information) via the PowerShell API.
                     var cmd = new PSCommand().AddScript(". $args[0]").AddArgument(ast.GetScriptBlock());
                     await _executionService
-                        .ExecutePSCommandAsync<object>(cmd, new PowerShellExecutionOptions { WriteOutputToHost = true }, CancellationToken.None)
+                        .ExecutePSCommandAsync<object>(cmd, CancellationToken.None, new PowerShellExecutionOptions { WriteOutputToHost = true })
                         .ConfigureAwait(false);
                 }
                 else
@@ -118,8 +118,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     await _executionService
                         .ExecutePSCommandAsync(
                             new PSCommand().AddScript(untitledScript.Contents),
-                            new PowerShellExecutionOptions { WriteOutputToHost = true },
-                            CancellationToken.None)
+                            CancellationToken.None,
+                            new PowerShellExecutionOptions { WriteOutputToHost = true})
                         .ConfigureAwait(false);
                 }
             }
@@ -128,8 +128,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 await _executionService
                     .ExecutePSCommandAsync(
                         BuildPSCommandFromArguments(scriptToLaunch, _debugStateService.Arguments),
-                        new PowerShellExecutionOptions { WriteInputToHost = true, WriteOutputToHost = true, AddToHistory = true },
-                        CancellationToken.None)
+                        CancellationToken.None,
+                        new PowerShellExecutionOptions { WriteOutputToHost = true, WriteInputToHost = true, AddToHistory = true })
                     .ConfigureAwait(false);
             }
 

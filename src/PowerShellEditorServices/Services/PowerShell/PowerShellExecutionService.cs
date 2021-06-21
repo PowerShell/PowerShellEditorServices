@@ -37,64 +37,58 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         public Action<object, RunspaceChangedEventArgs> RunspaceChanged;
 
         public Task<TResult> ExecuteDelegateAsync<TResult>(
-            Func<SMA.PowerShell, CancellationToken, TResult> func,
             string representation,
-            CancellationToken cancellationToken)
+            ExecutionOptions executionOptions,
+            CancellationToken cancellationToken,
+            Func<SMA.PowerShell, CancellationToken, TResult> func)
         {
-            return RunTaskAsync(new SynchronousPSDelegateTask<TResult>(_logger, _psesHost, func, representation, cancellationToken));
+            return RunTaskAsync(new SynchronousPSDelegateTask<TResult>(_logger, _psesHost, representation, executionOptions ?? ExecutionOptions.Default, cancellationToken, func));
         }
 
         public Task ExecuteDelegateAsync(
-            Action<SMA.PowerShell, CancellationToken> action,
             string representation,
-            CancellationToken cancellationToken)
+            ExecutionOptions executionOptions,
+            CancellationToken cancellationToken,
+            Action<SMA.PowerShell, CancellationToken> action)
         {
-            return RunTaskAsync(new SynchronousPSDelegateTask(_logger, _psesHost, action, representation, cancellationToken));
+            return RunTaskAsync(new SynchronousPSDelegateTask(_logger, _psesHost, representation, executionOptions ?? ExecutionOptions.Default, cancellationToken, action));
         }
 
         public Task<TResult> ExecuteDelegateAsync<TResult>(
-            Func<CancellationToken, TResult> func,
             string representation,
-            CancellationToken cancellationToken)
+            ExecutionOptions executionOptions,
+            CancellationToken cancellationToken,
+            Func<CancellationToken, TResult> func)
         {
-            return RunTaskAsync(new SynchronousDelegateTask<TResult>(_logger, func, representation, cancellationToken));
+            return RunTaskAsync(new SynchronousDelegateTask<TResult>(_logger, representation, executionOptions ?? ExecutionOptions.Default, cancellationToken, func));
         }
 
         public Task ExecuteDelegateAsync(
-            Action<CancellationToken> action,
             string representation,
-            CancellationToken cancellationToken)
+            ExecutionOptions executionOptions,
+            CancellationToken cancellationToken,
+            Action<CancellationToken> action)
         {
-            return RunTaskAsync(new SynchronousDelegateTask(_logger, action, representation, cancellationToken));
+            return RunTaskAsync(new SynchronousDelegateTask(_logger, representation, executionOptions ?? ExecutionOptions.Default, cancellationToken, action));
         }
 
         public Task<IReadOnlyList<TResult>> ExecutePSCommandAsync<TResult>(
             PSCommand psCommand,
-            PowerShellExecutionOptions executionOptions,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            PowerShellExecutionOptions executionOptions = null)
         {
-            if (executionOptions.InterruptCommandPrompt)
-            {
-                return CancelCurrentAndRunTaskNowAsync(new SynchronousPowerShellTask<TResult>(
-                    _logger,
-                    _psesHost,
-                    psCommand,
-                    executionOptions,
-                    cancellationToken));
-            }
-
             return RunTaskAsync(new SynchronousPowerShellTask<TResult>(
                 _logger,
                 _psesHost,
                 psCommand,
-                executionOptions,
+                executionOptions ?? PowerShellExecutionOptions.Default,
                 cancellationToken));
         }
 
         public Task ExecutePSCommandAsync(
             PSCommand psCommand,
-            PowerShellExecutionOptions executionOptions,
-            CancellationToken cancellationToken) => ExecutePSCommandAsync<PSObject>(psCommand, executionOptions, cancellationToken);
+            CancellationToken cancellationToken,
+            PowerShellExecutionOptions executionOptions = null) => ExecutePSCommandAsync<PSObject>(psCommand, cancellationToken, executionOptions);
 
         public void CancelCurrentTask()
         {
@@ -102,7 +96,5 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         }
 
         private Task<T> RunTaskAsync<T>(SynchronousTask<T> task) => _pipelineExecutor.RunTaskAsync(task);
-
-        private Task<T> CancelCurrentAndRunTaskNowAsync<T>(SynchronousTask<T> task) => _pipelineExecutor.CancelCurrentAndRunTaskNowAsync(task);
     }
 }

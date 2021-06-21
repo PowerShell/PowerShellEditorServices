@@ -71,7 +71,7 @@ function __Expand-Alias {
                 .AddStatement()
                 .AddCommand("__Expand-Alias")
                 .AddArgument(request.Text);
-            var result = await _executionService.ExecutePSCommandAsync<string>(psCommand, new PowerShellExecutionOptions(), cancellationToken).ConfigureAwait(false);
+            var result = await _executionService.ExecutePSCommandAsync<string>(psCommand, cancellationToken).ConfigureAwait(false);
 
             return new ExpandAliasResult
             {

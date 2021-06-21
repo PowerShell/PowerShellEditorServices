@@ -54,7 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // Legacy behavior
             PSCommand psCommand = new PSCommand();
             psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
-            IEnumerable<Breakpoint> breakpoints = await _executionService.ExecutePSCommandAsync<Breakpoint>(psCommand, new PowerShellExecutionOptions(), CancellationToken.None);
+            IEnumerable<Breakpoint> breakpoints = await _executionService.ExecutePSCommandAsync<Breakpoint>(psCommand, CancellationToken.None);
             return breakpoints.ToList();
         }
 
@@ -140,7 +140,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (psCommand != null)
             {
                 IEnumerable<Breakpoint> setBreakpoints =
-                    await _executionService.ExecutePSCommandAsync<Breakpoint>(psCommand, new PowerShellExecutionOptions(), CancellationToken.None);
+                    await _executionService.ExecutePSCommandAsync<Breakpoint>(psCommand, CancellationToken.None);
                 configuredBreakpoints.AddRange(
                     setBreakpoints.Select(BreakpointDetails.Create));
             }
@@ -217,7 +217,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (psCommand != null)
             {
                 IEnumerable<Breakpoint> setBreakpoints =
-                    await _executionService.ExecutePSCommandAsync<Breakpoint>(psCommand, new PowerShellExecutionOptions(), CancellationToken.None);
+                    await _executionService.ExecutePSCommandAsync<Breakpoint>(psCommand, CancellationToken.None);
                 configuredBreakpoints.AddRange(
                     setBreakpoints.Select(CommandBreakpointDetails.Create));
             }
@@ -262,7 +262,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint");
 
-                await _executionService.ExecutePSCommandAsync<object>(psCommand, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false);
+                await _executionService.ExecutePSCommandAsync<object>(psCommand, CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -308,7 +308,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint");
                 psCommand.AddParameter("Id", breakpoints.Select(b => b.Id).ToArray());
 
-                await _executionService.ExecutePSCommandAsync<object>(psCommand, new PowerShellExecutionOptions(), CancellationToken.None);
+                await _executionService.ExecutePSCommandAsync<object>(psCommand, CancellationToken.None);
             }
         }
 

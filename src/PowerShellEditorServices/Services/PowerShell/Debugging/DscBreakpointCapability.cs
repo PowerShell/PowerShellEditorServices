@@ -67,7 +67,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
             await executionService.ExecutePSCommandAsync(
                 dscCommand,
-                new PowerShellExecutionOptions(),
                 CancellationToken.None);
 
             // Verify all the breakpoints and return them
@@ -103,6 +102,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
             Func<SMA.PowerShell, CancellationToken, DscBreakpointCapability> getDscBreakpointCapabilityFunc = (pwsh, cancellationToken) =>
             {
+                var invocationSettings = new PSInvocationSettings
+                {
+                    AddToHistory = false,
+                    ErrorActionPreference = ActionPreference.Stop
+                };
+
                 PSModuleInfo dscModule = null;
                 try
                 {
@@ -110,7 +115,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                         .AddArgument(@"C:\Program Files\DesiredStateConfiguration\1.0.0.0\Modules\PSDesiredStateConfiguration\PSDesiredStateConfiguration.psd1")
                         .AddParameter("PassThru")
                         .AddParameter("ErrorAction", "Ignore")
-                        .InvokeAndClear<PSModuleInfo>()
+                        .InvokeAndClear<PSModuleInfo>(invocationSettings)
                         .FirstOrDefault();
                 }
                 catch (RuntimeException e)
@@ -131,7 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
                 pwsh.AddCommand("Microsoft.PowerShell.Utility\\Write-Host")
                     .AddArgument("Gathering DSC resource paths, this may take a while...")
-                    .InvokeAndClear();
+                    .InvokeAndClear(invocationSettings);
 
                 Collection<string> resourcePaths = null;
                 try
@@ -140,7 +145,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                     resourcePaths = pwsh.AddCommand("Get-DscResource")
                         .AddCommand("Select-Object")
                         .AddParameter("ExpandProperty", "ParentPath")
-                        .InvokeAndClear<string>();
+                        .InvokeAndClear<string>(invocationSettings);
                 }
                 catch (CmdletInvocationException e)
                 {
@@ -161,9 +166,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
             };
 
             return await executionService.ExecuteDelegateAsync<DscBreakpointCapability>(
-                getDscBreakpointCapabilityFunc,
                 nameof(getDscBreakpointCapabilityFunc),
-                cancellationToken);
+                ExecutionOptions.Default,
+                cancellationToken,
+                getDscBreakpointCapabilityFunc);
 
         }
     }

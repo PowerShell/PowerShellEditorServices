@@ -48,6 +48,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             }
         }
 
+        public void CancelCurrentTaskStack()
+        {
+            foreach (CancellationTokenSource cancellationSource in _cancellationSourceStack)
+            {
+                cancellationSource.Cancel();
+            }
+        }
+
         private CancellationScope EnterScope(CancellationTokenSource cancellationFrameSource)
         {
             _cancellationSourceStack.Push(cancellationFrameSource);

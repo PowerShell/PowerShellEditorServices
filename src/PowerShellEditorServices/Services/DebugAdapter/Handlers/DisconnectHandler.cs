@@ -62,7 +62,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         {
                             await _executionService.ExecutePSCommandAsync(
                                 new PSCommand().AddCommand("Exit-PSHostProcess"),
-                                new PowerShellExecutionOptions(),
                                 CancellationToken.None).ConfigureAwait(false);
 
                             if (_debugStateService.IsRemoteAttach &&
@@ -70,7 +69,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                             {
                                 await _executionService.ExecutePSCommandAsync(
                                     new PSCommand().AddCommand("Exit-PSSession"),
-                                    new PowerShellExecutionOptions(),
                                     CancellationToken.None).ConfigureAwait(false);
                             }
                         }

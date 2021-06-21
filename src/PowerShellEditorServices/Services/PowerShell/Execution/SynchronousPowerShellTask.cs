@@ -19,8 +19,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private readonly PSCommand _psCommand;
 
-        private readonly PowerShellExecutionOptions _executionOptions;
-
         private SMA.PowerShell _pwsh;
 
         public SynchronousPowerShellTask(
@@ -34,19 +32,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             _logger = logger;
             _psesHost = psesHost;
             _psCommand = command;
-            _executionOptions = executionOptions;
+            PowerShellExecutionOptions = executionOptions;
         }
+
+        public PowerShellExecutionOptions PowerShellExecutionOptions { get; }
+
+        public override ExecutionOptions ExecutionOptions => PowerShellExecutionOptions;
 
         public override IReadOnlyList<TResult> Run(CancellationToken cancellationToken)
         {
             _pwsh = _psesHost.CurrentPowerShell;
 
-            if (_executionOptions.WriteInputToHost)
+            if (PowerShellExecutionOptions.WriteInputToHost)
             {
                 _psesHost.UI.WriteLine(_psCommand.GetInvocationText());
             }
 
-            return !_executionOptions.NoDebuggerExecution && _pwsh.Runspace.Debugger.InBreakpoint
+            return _pwsh.Runspace.Debugger.InBreakpoint
                 ? ExecuteInDebugger(cancellationToken)
                 : ExecuteNormally(cancellationToken);
         }
@@ -58,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private IReadOnlyList<TResult> ExecuteNormally(CancellationToken cancellationToken)
         {
-            if (_executionOptions.WriteOutputToHost)
+            if (PowerShellExecutionOptions.WriteOutputToHost)
             {
                 _psCommand.AddOutputCommand();
             }
@@ -68,7 +70,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             Collection<TResult> result = null;
             try
             {
-                result = _pwsh.InvokeCommand<TResult>(_psCommand);
+                var invocationSettings = new PSInvocationSettings
+                {
+                    AddToHistory = PowerShellExecutionOptions.AddToHistory,
+                };
+
+                if (!PowerShellExecutionOptions.WriteErrorsToHost)
+                {
+                    invocationSettings.ErrorActionPreference = ActionPreference.Stop;
+                }
+
+                result = _pwsh.InvokeCommand<TResult>(_psCommand, invocationSettings);
                 cancellationToken.ThrowIfCancellationRequested();
             }
             // Test if we've been cancelled. If we're remoting, PSRemotingDataStructureException effectively means the pipeline was stopped.
@@ -82,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             {
                 Logger.LogWarning($"Runtime exception occurred while executing command:{Environment.NewLine}{Environment.NewLine}{e}");
 
-                if (!_executionOptions.WriteOutputToHost)
+                if (!PowerShellExecutionOptions.WriteErrorsToHost)
                 {
                     throw;
                 }
@@ -113,7 +125,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             // Out-Default doesn't work as needed in the debugger
             // Instead we add Out-String to the command and collect results in a PSDataCollection
             // and use the event handler to print output to the UI as its added to that collection
-            if (_executionOptions.WriteOutputToHost)
+            if (PowerShellExecutionOptions.WriteOutputToHost)
             {
                 _psCommand.AddDebugOutputCommand();
 
@@ -149,7 +161,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             {
                 Logger.LogWarning($"Runtime exception occurred while executing command:{Environment.NewLine}{Environment.NewLine}{e}");
 
-                if (!_executionOptions.WriteOutputToHost)
+                if (!PowerShellExecutionOptions.WriteErrorsToHost)
                 {
                     throw;
                 }
@@ -180,7 +192,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             _psesHost.DebugContext.ProcessDebuggerResult(debuggerResult);
 
             // Optimisation to save wasted computation if we're going to throw the output away anyway
-            if (_executionOptions.WriteOutputToHost)
+            if (PowerShellExecutionOptions.WriteOutputToHost)
             {
                 return Array.Empty<TResult>();
             }

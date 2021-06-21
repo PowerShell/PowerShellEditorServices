@@ -85,7 +85,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private async Task CheckPackageManagement()
         {
             PSCommand getModule = new PSCommand().AddCommand("Get-Module").AddParameter("ListAvailable").AddParameter("Name", "PackageManagement");
-            foreach (PSModuleInfo module in await _executionService.ExecutePSCommandAsync<PSModuleInfo>(getModule, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false))
+            foreach (PSModuleInfo module in await _executionService.ExecutePSCommandAsync<PSModuleInfo>(getModule, CancellationToken.None).ConfigureAwait(false))
             {
                 // The user has a good enough version of PackageManagement
                 if (module.Version >= s_desiredPackageManagementVersion)
@@ -126,8 +126,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                     await _executionService.ExecutePSCommandAsync(
                         command,
-                        new PowerShellExecutionOptions { WriteInputToHost = true, WriteOutputToHost = true, AddToHistory = true },
-                        CancellationToken.None).ConfigureAwait(false);
+                        CancellationToken.None,
+                        new PowerShellExecutionOptions { WriteInputToHost = true, WriteOutputToHost = true, AddToHistory = true }).ConfigureAwait(false);
 
                     // TODO: Error handling here
 

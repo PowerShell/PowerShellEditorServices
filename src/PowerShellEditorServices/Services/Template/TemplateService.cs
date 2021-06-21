@@ -72,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
 
                 this._logger.LogTrace("Checking if Plaster is installed...");
 
-                PSObject moduleObject = (await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false)).First();
+                PSObject moduleObject = (await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, CancellationToken.None).ConfigureAwait(false)).First();
 
                 this.isPlasterInstalled = moduleObject != null;
                 string installedQualifier =
@@ -92,7 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
                         .AddParameter("ModuleInfo", (PSModuleInfo)moduleObject.ImmediateBaseObject)
                         .AddParameter("PassThru");
 
-                    IReadOnlyList<PSModuleInfo> importResult = await _executionService.ExecutePSCommandAsync<PSModuleInfo>(psCommand, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false);
+                    IReadOnlyList<PSModuleInfo> importResult = await _executionService.ExecutePSCommandAsync<PSModuleInfo>(psCommand, CancellationToken.None).ConfigureAwait(false);
 
                     this.isPlasterLoaded = importResult.Any();
                     string loadedQualifier =
@@ -133,7 +133,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
 
             IReadOnlyList<PSObject> templateObjects = await _executionService.ExecutePSCommandAsync<PSObject>(
                 psCommand,
-                new PowerShellExecutionOptions(),
                 CancellationToken.None).ConfigureAwait(false);
 
             this._logger.LogTrace($"Found {templateObjects.Count()} Plaster templates");
@@ -166,8 +165,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
 
             await _executionService.ExecutePSCommandAsync(
                 command,
-                new PowerShellExecutionOptions { WriteOutputToHost = true, InterruptCommandPrompt = true },
-                CancellationToken.None).ConfigureAwait(false);
+                CancellationToken.None,
+                new PowerShellExecutionOptions { WriteOutputToHost = true, InterruptCurrentForeground = true }).ConfigureAwait(false);
 
             // If any errors were written out, creation was not successful
             return true;

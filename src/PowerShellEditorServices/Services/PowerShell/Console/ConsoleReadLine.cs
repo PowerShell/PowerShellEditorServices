@@ -165,7 +165,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private Task<string> ReadLineAsync(bool isCommandLine, CancellationToken cancellationToken)
         {
-            return _executionService.ExecuteDelegateAsync(InvokePSReadLine, representation: "ReadLine", cancellationToken);
+            return _executionService.ExecuteDelegateAsync(representation: "ReadLine", new ExecutionOptions { MustRunInForeground = true }, cancellationToken, InvokePSReadLine);
         }
 
         private string InvokePSReadLine(CancellationToken cancellationToken)
@@ -366,7 +366,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
                             currentHistory = await _executionService.ExecutePSCommandAsync<PSObject>(
                                 command,
-                                new PowerShellExecutionOptions(),
                                 cancellationToken).ConfigureAwait(false);
 
                             if (currentHistory != null)

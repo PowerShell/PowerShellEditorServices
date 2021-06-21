@@ -88,7 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 var psCommand = new PSCommand().AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace");
                 // returns (not deserialized) Runspaces. For simpler code, we use PSObject and rely on dynamic later.
-                runspaces = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, new PowerShellExecutionOptions(), cancellationToken).ConfigureAwait(false);
+                runspaces = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, cancellationToken).ConfigureAwait(false);
             }
 
             var runspaceResponses = new List<RunspaceResponse>();
