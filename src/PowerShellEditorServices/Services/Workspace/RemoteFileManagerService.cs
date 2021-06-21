@@ -327,7 +327,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             }
 
                             byte[] fileContent =
-                                (await this._executionService.ExecutePSCommandAsync<byte[]>(command, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false))
+                                (await this._executionService.ExecutePSCommandAsync<byte[]>(command, CancellationToken.None).ConfigureAwait(false))
                                     .FirstOrDefault();
 
                             if (fileContent != null)
@@ -394,7 +394,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             await _executionService.ExecutePSCommandAsync<object>(
                 saveCommand,
-                new PowerShellExecutionOptions(),
                 CancellationToken.None).ConfigureAwait(false);
 
             /*
@@ -640,7 +639,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 if (runspaceInfo.RunspaceOrigin == RunspaceOrigin.DebuggedRunspace)
                 {
-                    _executionService.ExecutePSCommandAsync(createCommand, new PowerShellExecutionOptions(), CancellationToken.None).GetAwaiter().GetResult();
+                    _executionService.ExecutePSCommandAsync(createCommand, CancellationToken.None).GetAwaiter().GetResult();
                 }
                 else
                 {

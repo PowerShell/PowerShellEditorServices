@@ -408,7 +408,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // Evaluate the expression to get back a PowerShell object from the expression string.
             // This may throw, in which case the exception is propagated to the caller
             PSCommand evaluateExpressionCommand = new PSCommand().AddScript(value);
-            object expressionResult = (await _executionService.ExecutePSCommandAsync<object>(evaluateExpressionCommand, new PowerShellExecutionOptions(), CancellationToken.None)).FirstOrDefault();
+            object expressionResult = (await _executionService.ExecutePSCommandAsync<object>(evaluateExpressionCommand, CancellationToken.None)).FirstOrDefault();
 
             // If PowerShellContext.ExecuteCommand returns an ErrorRecord as output, the expression failed evaluation.
             // Ideally we would have a separate means from communicating error records apart from normal output.
@@ -468,7 +468,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 .AddParameter("Name", name.TrimStart('$'))
                 .AddParameter("Scope", scope);
 
-            PSVariable psVariable = (await _executionService.ExecutePSCommandAsync<PSVariable>(getVariableCommand, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false)).FirstOrDefault();
+            PSVariable psVariable = (await _executionService.ExecutePSCommandAsync<PSVariable>(getVariableCommand, CancellationToken.None).ConfigureAwait(false)).FirstOrDefault();
             if (psVariable == null)
             {
                 throw new Exception($"Failed to retrieve PSVariable object for '{name}' from scope '{scope}'.");
@@ -494,15 +494,20 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 _logger.LogTrace($"Setting variable '{name}' using conversion to value: {expressionResult ?? "<null>"}");
 
-                psVariable.Value = await _executionService.ExecuteDelegateAsync<object>((pwsh, cancellationToken) =>
-                {
-                    var engineIntrinsics = (EngineIntrinsics)pwsh.Runspace.SessionStateProxy.GetVariable("ExecutionContext");
+                psVariable.Value = await _executionService.ExecuteDelegateAsync<object>(
+                    "PS debugger argument converter",
+                    ExecutionOptions.Default,
+                    CancellationToken.None,
+                    (pwsh, cancellationToken) =>
+                    {
+                        var engineIntrinsics = (EngineIntrinsics)pwsh.Runspace.SessionStateProxy.GetVariable("ExecutionContext");
 
-                    // TODO: This is almost (but not quite) the same as LanguagePrimitives.Convert(), which does not require the pipeline thread.
-                    //       We should investigate changing it.
-                    return argTypeConverterAttr.Transform(engineIntrinsics, expressionResult);
+                        // TODO: This is almost (but not quite) the same as LanguagePrimitives.Convert(), which does not require the pipeline thread.
+                        //       We should investigate changing it.
+                        return argTypeConverterAttr.Transform(engineIntrinsics, expressionResult);
 
-                }, "PS debugger argument converter", CancellationToken.None).ConfigureAwait(false);
+                    }).ConfigureAwait(false);
+
             }
             else
             {
@@ -537,8 +542,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var command = new PSCommand().AddScript(expressionString);
             IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(
                 command,
-                new PowerShellExecutionOptions { WriteOutputToHost = writeResultAsOutput },
-                CancellationToken.None).ConfigureAwait(false);
+                CancellationToken.None,
+                new PowerShellExecutionOptions { WriteOutputToHost = true }).ConfigureAwait(false);
 
             // Since this method should only be getting invoked in the debugger,
             // we can assume that Out-String will be getting used to format results
@@ -685,7 +690,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var scopeVariableContainer = new VariableContainerDetails(this.nextVariableId++, "Scope: " + scope);
             this.variables.Add(scopeVariableContainer);
 
-            IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, new PowerShellExecutionOptions(), CancellationToken.None)
+            IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, CancellationToken.None)
                 .ConfigureAwait(false);
 
             if (results != null)
@@ -791,7 +796,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var callStackVarName = $"$global:{PsesGlobalVariableNamePrefix}CallStack";
             psCommand.AddScript($"{callStackVarName} = Get-PSCallStack; {callStackVarName}");
 
-            var results = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false);
+            var results = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, CancellationToken.None).ConfigureAwait(false);
 
             var callStackFrames = results.ToArray();
 
@@ -876,7 +881,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 IReadOnlyList<PSObject> scriptListingLines =
                     await _executionService.ExecutePSCommandAsync<PSObject>(
-                        command, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false);
+                        command, CancellationToken.None).ConfigureAwait(false);
 
                 if (scriptListingLines != null)
                 {

@@ -11,6 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
     using System.IO;
     using System.Management.Automation;
     using System.Runtime.CompilerServices;
+    using UnixConsoleEcho;
 
     internal static class PowerShellExtensions
     {
@@ -35,11 +36,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 typeof(PowerShell).GetMethod("ResumeIncomingData", BindingFlags.Instance | BindingFlags.NonPublic));
         }
 
-        public static Collection<TResult> InvokeAndClear<TResult>(this PowerShell pwsh)
+        public static Collection<TResult> InvokeAndClear<TResult>(this PowerShell pwsh, PSInvocationSettings invocationSettings = null)
         {
             try
             {
-                return pwsh.Invoke<TResult>();
+                return pwsh.Invoke<TResult>(input: null, invocationSettings);
             }
             finally
             {
@@ -47,11 +48,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             }
         }
 
-        public static void InvokeAndClear(this PowerShell pwsh)
+        public static void InvokeAndClear(this PowerShell pwsh, PSInvocationSettings invocationSettings = null)
         {
             try
             {
-                pwsh.Invoke();
+                pwsh.Invoke(input: null, invocationSettings);
             }
             finally
             {
@@ -59,16 +60,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             }
         }
 
-        public static Collection<TResult> InvokeCommand<TResult>(this PowerShell pwsh, PSCommand psCommand)
+        public static Collection<TResult> InvokeCommand<TResult>(this PowerShell pwsh, PSCommand psCommand, PSInvocationSettings invocationSettings = null)
         {
             pwsh.Commands = psCommand;
-            return pwsh.InvokeAndClear<TResult>();
+            return pwsh.InvokeAndClear<TResult>(invocationSettings);
         }
 
-        public static void InvokeCommand(this PowerShell pwsh, PSCommand psCommand)
+        public static void InvokeCommand(this PowerShell pwsh, PSCommand psCommand, PSInvocationSettings invocationSettings = null)
         {
             pwsh.Commands = psCommand;
-            pwsh.InvokeAndClear();
+            pwsh.InvokeAndClear(invocationSettings);
         }
 
         /// <summary>

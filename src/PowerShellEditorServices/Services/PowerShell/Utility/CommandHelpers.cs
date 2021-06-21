@@ -98,7 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 .AddArgument(commandName)
                 .AddParameter("ErrorAction", "Ignore");
 
-            CommandInfo commandInfo = (await executionService.ExecutePSCommandAsync<CommandInfo>(command, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false)).FirstOrDefault();
+            CommandInfo commandInfo = (await executionService.ExecutePSCommandAsync<CommandInfo>(command, CancellationToken.None).ConfigureAwait(false)).FirstOrDefault();
 
             // Only cache CmdletInfos since they're exposed in binaries they are likely to not change throughout the session.
             if (commandInfo?.CommandType == CommandTypes.Cmdlet)
@@ -147,7 +147,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 .AddParameter("Online", false)
                 .AddParameter("ErrorAction", "Ignore");
 
-            IReadOnlyList<PSObject> results = await executionService.ExecutePSCommandAsync<PSObject>(command, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false);
+            IReadOnlyList<PSObject> results = await executionService.ExecutePSCommandAsync<PSObject>(command, CancellationToken.None).ConfigureAwait(false);
             PSObject helpObject = results.FirstOrDefault();
 
             // Extract the synopsis string from the object
