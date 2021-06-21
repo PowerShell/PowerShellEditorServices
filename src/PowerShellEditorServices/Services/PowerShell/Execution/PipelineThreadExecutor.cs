@@ -1,19 +1,15 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using System;
-using System.Collections.Concurrent;
 using System.Management.Automation;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
 using PowerShellEditorServices.Services.PowerShell.Utility;
-using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using System.Runtime.CompilerServices;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 {
@@ -36,7 +32,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private readonly HostStartupInfo _hostInfo;
 
-        private readonly ConcurrentBlockablePriorityQueue<ISynchronousTask> _executionQueue;
+        private readonly BlockableConcurrentPriorityQueue<ISynchronousTask> _foregroundExecutionQueue;
+
+        private readonly ConcurrentPriorityQueue<ISynchronousTask> _backgroundExecutionQueue;
 
         private readonly CancellationTokenSource _consumerThreadCancellationSource;
 
@@ -61,7 +59,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             _psesHost = psesHost;
             _readLineProvider = readLineProvider;
             _consumerThreadCancellationSource = new CancellationTokenSource();
-            _executionQueue = new ConcurrentBlockablePriorityQueue<ISynchronousTask>();
+            _foregroundExecutionQueue = new BlockableConcurrentPriorityQueue<ISynchronousTask>();
+            _backgroundExecutionQueue = new ConcurrentPriorityQueue<ISynchronousTask>();
             _loopCancellationContext = new CancellationContext();
             _commandCancellationContext = new CancellationContext();
             _taskProcessingAllowed = new ManualResetEventSlim(initialState: true);
@@ -77,38 +76,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public Task<TResult> RunTaskAsync<TResult>(SynchronousTask<TResult> synchronousTask)
         {
-            _executionQueue.Enqueue(synchronousTask);
-            return synchronousTask.Task;
-        }
-
-        public Task<TResult> RunTaskNextAsync<TResult>(SynchronousTask<TResult> synchronousTask)
-        {
-            _executionQueue.EnqueueNext(synchronousTask);
-            return synchronousTask.Task;
-        }
-
-        public Task<TResult> CancelCurrentAndRunTaskNowAsync<TResult>(SynchronousTask<TResult> synchronousTask)
-        {
-            // We need to ensure that we don't:
-            // - Add this command to the queue and immediately cancel it
-            // - Allow a consumer to dequeue and run another command after cancellation and before we add this command
-            //
-            // To ensure that, we need the following sequence:
-            // - Stop queue consumption progressing
-            // - Cancel any current processing
-            // - Add our task to the front of the queue
-            // - Recommence processing
-
-            using (_executionQueue.BlockConsumers())
+            if (synchronousTask.ExecutionOptions.InterruptCurrentForeground)
             {
-                CancelCurrentTask();
-
-                // NOTE:
-                // This must not be awaited
-                // We only need to block consumers while we add to the queue
-                // Awaiting this will deadlock, since the runner can't progress while we block consumers
-                return RunTaskNextAsync(synchronousTask);
+                return CancelCurrentAndRunTaskNowAsync(synchronousTask);
             }
+
+            ConcurrentPriorityQueue<ISynchronousTask> executionQueue = synchronousTask.ExecutionOptions.MustRunInForeground
+                ? _foregroundExecutionQueue
+                : _backgroundExecutionQueue;
+
+            switch (synchronousTask.ExecutionOptions.Priority)
+            {
+                case ExecutionPriority.Next:
+                    executionQueue.Prepend(synchronousTask);
+                    break;
+
+                case ExecutionPriority.Normal:
+                    executionQueue.Append(synchronousTask);
+                    break;
+            }
+
+            return synchronousTask.Task;
         }
 
         public void Start()
@@ -130,6 +118,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         public void Dispose()
         {
             Stop();
+        }
+
+        private Task<TResult> CancelCurrentAndRunTaskNowAsync<TResult>(SynchronousTask<TResult> synchronousTask)
+        {
+            // We need to ensure that we don't:
+            // - Add this command to the queue and immediately cancel it
+            // - Allow a consumer to dequeue and run another command after cancellation and before we add this command
+            //
+            // To ensure that, we need the following sequence:
+            // - Stop queue consumption progressing
+            // - Cancel any current processing
+            // - Add our task to the front of the queue
+            // - Recommence processing
+
+            using (_foregroundExecutionQueue.BlockConsumers())
+            {
+                _commandCancellationContext.CancelCurrentTaskStack();
+
+                _foregroundExecutionQueue.Prepend(synchronousTask);
+                return synchronousTask.Task;
+            }
         }
 
         private void Run()
@@ -180,7 +189,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 {
                     while (true)
                     {
-                        RunNextTaskSynchronously(cancellationScope.CancellationToken);
+                        RunNextForegroundTaskSynchronously(cancellationScope.CancellationToken);
                     }
                 }
                 catch (OperationCanceledException)
@@ -196,7 +205,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             {
                 while (true)
                 {
-                    RunNextTaskSynchronously(cancellationScope.CancellationToken);
+                    RunNextForegroundTaskSynchronously(cancellationScope.CancellationToken);
 
                     if (IsExiting)
                     {
@@ -218,7 +227,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 // Run commands, but cancelling our blocking wait if the debugger resumes
                 while (true)
                 {
-                    ISynchronousTask task = _executionQueue.Take(_psesHost.DebugContext.OnResumeCancellationToken);
+                    ISynchronousTask task = _foregroundExecutionQueue.Take(_psesHost.DebugContext.OnResumeCancellationToken);
 
                     // We don't want to cancel the current command when the debugger resumes,
                     // since that command will be resuming the debugger.
@@ -246,7 +255,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             try
             {
                 while (!cancellationScope.CancellationToken.IsCancellationRequested
-                        && _executionQueue.TryTake(out ISynchronousTask task))
+                        && _backgroundExecutionQueue.TryTake(out ISynchronousTask task))
                 {
                     RunTaskSynchronously(task, cancellationScope.CancellationToken);
                 }
@@ -259,9 +268,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             }
         }
 
-        private void RunNextTaskSynchronously(CancellationToken loopCancellationToken)
+        private void RunNextForegroundTaskSynchronously(CancellationToken loopCancellationToken)
         {
-            ISynchronousTask task = _executionQueue.Take(loopCancellationToken);
+            ISynchronousTask task = _foregroundExecutionQueue.Take(loopCancellationToken);
             RunTaskSynchronously(task, loopCancellationToken);
         }
 
@@ -280,7 +289,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public void OnPowerShellIdle()
         {
-            if (_executionQueue.Count == 0)
+            if (_backgroundExecutionQueue.Count == 0)
             {
                 return;
             }

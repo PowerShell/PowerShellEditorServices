@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
@@ -87,16 +88,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             var stopwatch = new Stopwatch();
 
             CommandCompletion commandCompletion = null;
-            await executionService.ExecuteDelegateAsync((pwsh, cancellationToken) =>
-            {
-                stopwatch.Start();
-                commandCompletion = CommandCompletion.CompleteInput(
-                    scriptAst,
-                    currentTokens,
-                    cursorPosition,
-                    options: null,
-                    powershell: pwsh);
-            }, representation: "CompleteInput", cancellationToken);
+            await executionService.ExecuteDelegateAsync(
+                representation: "CompleteInput",
+                new ExecutionOptions { Priority = ExecutionPriority.Next },
+                cancellationToken,
+                (pwsh, cancellationToken) =>
+                {
+                    stopwatch.Start();
+                    commandCompletion = CommandCompletion.CompleteInput(
+                        scriptAst,
+                        currentTokens,
+                        cursorPosition,
+                        options: null,
+                        powershell: pwsh);
+                });
 
             stopwatch.Stop();
             logger.LogTrace($"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");

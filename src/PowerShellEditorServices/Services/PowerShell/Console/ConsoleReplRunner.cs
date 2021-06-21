@@ -180,7 +180,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
             return _executionService.ExecutePSCommandAsync<string>(
                 promptCommand,
-                new PowerShellExecutionOptions(),
                 cancellationToken);
         }
 
@@ -203,7 +202,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                 AddToHistory = true,
             };
 
-            return _executionService.ExecutePSCommandAsync(command, executionOptions, cancellationToken);
+            return _executionService.ExecutePSCommandAsync(command, cancellationToken, executionOptions);
         }
 
         public void SetReplPop()

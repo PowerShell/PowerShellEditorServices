@@ -15,14 +15,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public SynchronousDelegateTask(
             ILogger logger,
-            Action<CancellationToken> action,
             string representation,
-            CancellationToken cancellationToken)
+            ExecutionOptions executionOptions,
+            CancellationToken cancellationToken,
+            Action<CancellationToken> action)
             : base(logger, cancellationToken)
         {
-            _action = action;
+            ExecutionOptions = executionOptions;
             _representation = representation;
+            _action = action;
         }
+
+        public override ExecutionOptions ExecutionOptions { get; }
 
         public override object Run(CancellationToken cancellationToken)
         {
@@ -44,14 +48,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public SynchronousDelegateTask(
             ILogger logger,
-            Func<CancellationToken, TResult> func,
             string representation,
-            CancellationToken cancellationToken)
+            ExecutionOptions executionOptions,
+            CancellationToken cancellationToken,
+            Func<CancellationToken, TResult> func)
             : base(logger, cancellationToken)
         {
             _func = func;
             _representation = representation;
+            ExecutionOptions = executionOptions;
         }
+
+        public override ExecutionOptions ExecutionOptions { get; }
 
         public override TResult Run(CancellationToken cancellationToken)
         {
@@ -75,15 +83,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         public SynchronousPSDelegateTask(
             ILogger logger,
             EditorServicesConsolePSHost psesHost,
-            Action<SMA.PowerShell, CancellationToken> action,
             string representation,
-            CancellationToken cancellationToken)
+            ExecutionOptions executionOptions,
+            CancellationToken cancellationToken,
+            Action<SMA.PowerShell, CancellationToken> action)
             : base(logger, cancellationToken)
         {
             _psesHost = psesHost;
             _action = action;
             _representation = representation;
+            ExecutionOptions = executionOptions;
         }
+
+        public override ExecutionOptions ExecutionOptions { get; }
 
         public override object Run(CancellationToken cancellationToken)
         {
@@ -108,15 +120,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         public SynchronousPSDelegateTask(
             ILogger logger,
             EditorServicesConsolePSHost psesHost,
-            Func<SMA.PowerShell, CancellationToken, TResult> func,
             string representation,
-            CancellationToken cancellationToken)
+            ExecutionOptions executionOptions,
+            CancellationToken cancellationToken,
+            Func<SMA.PowerShell, CancellationToken, TResult> func)
             : base(logger, cancellationToken)
         {
             _psesHost = psesHost;
             _func = func;
             _representation = representation;
+            ExecutionOptions = executionOptions;
         }
+
+        public override ExecutionOptions ExecutionOptions { get; }
 
         public override TResult Run(CancellationToken cancellationToken)
         {

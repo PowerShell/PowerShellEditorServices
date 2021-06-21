@@ -49,8 +49,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 _executionService.ExecutePSCommandAsync(
                     new PSCommand().AddScript(request.Expression),
-                    new PowerShellExecutionOptions { WriteOutputToHost = true },
-                    CancellationToken.None).HandleErrorsAsync(_logger);
+                    CancellationToken.None,
+                    new PowerShellExecutionOptions { WriteOutputToHost = true }).HandleErrorsAsync(_logger);
             }
             else
             {

@@ -165,7 +165,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 if (!string.IsNullOrEmpty(workingDir))
                 {
                     var setDirCommand = new PSCommand().AddCommand("Set-Location").AddParameter("LiteralPath", workingDir);
-                    await _executionService.ExecutePSCommandAsync(setDirCommand, new PowerShellExecutionOptions(), cancellationToken);
+                    await _executionService.ExecutePSCommandAsync(setDirCommand, cancellationToken);
                 }
 
                 _logger.LogTrace("Working dir " + (string.IsNullOrEmpty(workingDir) ? "not set." : $"set to '{workingDir}'"));
@@ -252,7 +252,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 try
                 {
-                    await _executionService.ExecutePSCommandAsync(enterPSSessionCommand, new PowerShellExecutionOptions(), cancellationToken).ConfigureAwait(false);
+                    await _executionService.ExecutePSCommandAsync(enterPSSessionCommand, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -277,7 +277,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 try
                 {
-                    await _executionService.ExecutePSCommandAsync(enterPSHostProcessCommand, new PowerShellExecutionOptions(), cancellationToken).ConfigureAwait(false);
+                    await _executionService.ExecutePSCommandAsync(enterPSHostProcessCommand, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -299,7 +299,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 try
                 {
-                    await _executionService.ExecutePSCommandAsync(enterPSHostProcessCommand, new PowerShellExecutionOptions(), cancellationToken);
+                    await _executionService.ExecutePSCommandAsync(enterPSHostProcessCommand, cancellationToken);
                 }
                 catch (Exception e)
                 {
@@ -330,7 +330,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     .AddCommand("Microsoft.PowerShell.Utility\\Select-Object")
                         .AddParameter("ExpandProperty", "Id");
 
-                IEnumerable<int?> ids = await _executionService.ExecutePSCommandAsync<int?>(getRunspaceIdCommand, new PowerShellExecutionOptions(), cancellationToken).ConfigureAwait(false);
+                IEnumerable<int?> ids = await _executionService.ExecutePSCommandAsync<int?>(getRunspaceIdCommand, cancellationToken).ConfigureAwait(false);
                 foreach (var id in ids)
                 {
                     _debugStateService.RunspaceId = id;
@@ -368,7 +368,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             _debugStateService.WaitingForAttach = true;
             Task nonAwaitedTask = _executionService
-                .ExecutePSCommandAsync(debugRunspaceCmd, new PowerShellExecutionOptions(), CancellationToken.None)
+                .ExecutePSCommandAsync(debugRunspaceCmd, CancellationToken.None)
                 .ContinueWith(OnExecutionCompletedAsync);
 
             if (runspaceVersion.Version.Major >= 7)
@@ -423,12 +423,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 {
                     try
                     {
-                        await _executionService.ExecutePSCommandAsync(new PSCommand().AddCommand("Exit-PSHostProcess"), new PowerShellExecutionOptions(), CancellationToken.None);
+                        await _executionService.ExecutePSCommandAsync(new PSCommand().AddCommand("Exit-PSHostProcess"), CancellationToken.None);
 
                         if (_debugStateService.IsRemoteAttach &&
                             _runspaceContext.CurrentRunspace.RunspaceOrigin != RunspaceOrigin.Local)
                         {
-                            await _executionService.ExecutePSCommandAsync(new PSCommand().AddCommand("Exit-PSSession"), new PowerShellExecutionOptions(), CancellationToken.None);
+                            await _executionService.ExecutePSCommandAsync(new PSCommand().AddCommand("Exit-PSSession"), CancellationToken.None);
                         }
                     }
                     catch (Exception e)

@@ -104,10 +104,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             EditorObject.SetAsStaticInstance();
 
             // Register the editor object in the runspace
-            return ExecutionService.ExecuteDelegateAsync((pwsh, cancellationToken) =>
+            return ExecutionService.ExecuteDelegateAsync(
+                "Create $psEditorObject",
+                ExecutionOptions.Default,
+                CancellationToken.None,
+                (pwsh, cancellationToken) =>
                 {
                     pwsh.Runspace.SessionStateProxy.PSVariable.Set("psEditor", EditorObject);
-                }, representation: "Set PSEditor",  CancellationToken.None);
+                });
         }
 
         /// <summary>
@@ -128,8 +132,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 
                 await ExecutionService.ExecutePSCommandAsync(
                     executeCommand,
-                    new PowerShellExecutionOptions { WriteOutputToHost = !editorCommand.SuppressOutput, },
-                    CancellationToken.None).ConfigureAwait(false);
+                    CancellationToken.None,
+                    new PowerShellExecutionOptions { WriteOutputToHost = !editorCommand.SuppressOutput })
+                    .ConfigureAwait(false);
             }
             else
             {

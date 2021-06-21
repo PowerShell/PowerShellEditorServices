@@ -173,7 +173,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             return ExecutionService.ExecutePSCommandAsync(
                 new PSCommand().AddCommand("Set-Location").AddParameter("LiteralPath", path),
-                new PowerShellExecutionOptions(),
                 cancellationToken);
         }
 
@@ -190,10 +189,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             if (hostStartOptions.LoadProfiles)
             {
-                await ExecutionService.ExecuteDelegateAsync((pwsh, delegateCancellation) =>
-                {
-                    pwsh.LoadProfiles(_hostInfo.ProfilePaths);
-                }, "LoadProfiles", cancellationToken).ConfigureAwait(false);
+                await ExecutionService.ExecuteDelegateAsync(
+                   "LoadProfiles",
+                   ExecutionOptions.Default,
+                   cancellationToken,
+                    (pwsh, delegateCancellation) =>
+                    {
+                        pwsh.LoadProfiles(_hostInfo.ProfilePaths);
+                    }).ConfigureAwait(false);
 
                 _logger.LogInformation("Profiles loaded");
             }
@@ -330,33 +333,38 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             // Rather than try to lock the PowerShell executor while we alter its state,
             // we simply run this on its thread, guaranteeing that no other action can occur
-            return _pipelineExecutor.RunTaskNextAsync(new SynchronousDelegateTask(_logger, (cancellationToken) =>
-            {
-                while (_psFrameStack.Count > 0
-                    && !_psFrameStack.Peek().PowerShell.Runspace.RunspaceStateInfo.IsUsable())
+            return _pipelineExecutor.RunTaskAsync(new SynchronousDelegateTask(
+                _logger,
+                nameof(PopOrReinitializeRunspaceAsync),
+                new ExecutionOptions { InterruptCurrentForeground = true },
+                CancellationToken.None,
+                (cancellationToken) =>
                 {
-                    PopPowerShell();
-                }
+                    while (_psFrameStack.Count > 0
+                        && !_psFrameStack.Peek().PowerShell.Runspace.RunspaceStateInfo.IsUsable())
+                    {
+                        PopPowerShell();
+                    }
 
-                if (_psFrameStack.Count == 0)
-                {
-                    // If our main runspace was corrupted,
-                    // we must re-initialize our state.
-                    // TODO: Use runspace.ResetRunspaceState() here instead
-                    PushInitialPowerShell();
+                    if (_psFrameStack.Count == 0)
+                    {
+                        // If our main runspace was corrupted,
+                        // we must re-initialize our state.
+                        // TODO: Use runspace.ResetRunspaceState() here instead
+                        PushInitialPowerShell();
 
-                    _logger.LogError($"Top level runspace entered state '{oldRunspaceState.State}' for reason '{oldRunspaceState.Reason}' and was reinitialized."
-                        + " Please report this issue in the PowerShell/vscode-PowerShell GitHub repository with these logs.");
-                    UI.WriteErrorLine("The main runspace encountered an error and has been reinitialized. See the PowerShell extension logs for more details.");
-                }
-                else
-                {
-                    _logger.LogError($"Current runspace entered state '{oldRunspaceState.State}' for reason '{oldRunspaceState.Reason}' and was popped.");
-                    UI.WriteErrorLine($"The current runspace entered state '{oldRunspaceState.State}' for reason '{oldRunspaceState.Reason}'."
-                        + " If this occurred when using Ctrl+C in a Windows PowerShell remoting session, this is expected behavior."
-                        + " The session is now returning to the previous runspace.");
-                }
-            }, nameof(PopOrReinitializeRunspaceAsync), CancellationToken.None));
+                        _logger.LogError($"Top level runspace entered state '{oldRunspaceState.State}' for reason '{oldRunspaceState.Reason}' and was reinitialized."
+                            + " Please report this issue in the PowerShell/vscode-PowerShell GitHub repository with these logs.");
+                        UI.WriteErrorLine("The main runspace encountered an error and has been reinitialized. See the PowerShell extension logs for more details.");
+                    }
+                    else
+                    {
+                        _logger.LogError($"Current runspace entered state '{oldRunspaceState.State}' for reason '{oldRunspaceState.Reason}' and was popped.");
+                        UI.WriteErrorLine($"The current runspace entered state '{oldRunspaceState.State}' for reason '{oldRunspaceState.Reason}'."
+                            + " If this occurred when using Ctrl+C in a Windows PowerShell remoting session, this is expected behavior."
+                            + " The session is now returning to the previous runspace.");
+                    }
+                }));
         }
 
     }
