@@ -1,5 +1,10 @@
 # PowerShell Editor Services Release History
 
+## v2.4.5
+### Wednesday, June 23, 2021
+
+- Fix signing of files in release.
+
 ## v2.4.4
 ### Wednesday, June 16, 2021
 
