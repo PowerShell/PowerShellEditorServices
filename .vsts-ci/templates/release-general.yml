@@ -21,6 +21,7 @@ steps:
     alwaysCopy: true # So publishing works
     certificateId: 'CP-230012' # Authenticode certificate
     useMinimatch: true # This enables the use of globbing
+    shouldSign: true # We always want to sign
     pattern: |
       # PowerShellEditorServices Script
       PowerShellEditorServices/*.{ps1,psd1,psm1,ps1xml}
