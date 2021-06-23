@@ -25,6 +25,10 @@ using Microsoft.PowerShell.Commands;
 namespace Microsoft.PowerShell.EditorServices.Services
 {
     using System.Management.Automation;
+    using Microsoft.PowerShell.Commands;
+    using Microsoft.PowerShell.EditorServices.Handlers;
+    using Microsoft.PowerShell.EditorServices.Hosting;
+    using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
@@ -84,61 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly Stack<RunspaceDetails> runspaceStack = new Stack<RunspaceDetails>();
 
         private int isCommandLoopRestarterSet;
-        /// <summary>
-        /// This is the default function to use for tab expansion.
-        /// </summary>
-        private static string tabExpansionFunctionText = @"
-<# Options include:
-     RelativeFilePaths - [bool]
-         Always resolve file paths using Resolve-Path -Relative.
-         The default is to use some heuristics to guess if relative or absolute is better.
-
-   To customize your own custom options, pass a hashtable to CompleteInput, e.g.
-         return [System.Management.Automation.CommandCompletion]::CompleteInput($inputScript, $cursorColumn,
-             @{ RelativeFilePaths=$false }
-#>
-
-[CmdletBinding(DefaultParameterSetName = 'ScriptInputSet')]
-Param(
-    [Parameter(ParameterSetName = 'ScriptInputSet', Mandatory = $true, Position = 0)]
-    [string] $inputScript,
-
-    [Parameter(ParameterSetName = 'ScriptInputSet', Position = 1)]
-    [int] $cursorColumn = $inputScript.Length,
-
-    [Parameter(ParameterSetName = 'AstInputSet', Mandatory = $true, Position = 0)]
-    [System.Management.Automation.Language.Ast] $ast,
-
-    [Parameter(ParameterSetName = 'AstInputSet', Mandatory = $true, Position = 1)]
-    [System.Management.Automation.Language.Token[]] $tokens,
-
-    [Parameter(ParameterSetName = 'AstInputSet', Mandatory = $true, Position = 2)]
-    [System.Management.Automation.Language.IScriptPosition] $positionOfCursor,
-
-    [Parameter(ParameterSetName = 'ScriptInputSet', Position = 2)]
-    [Parameter(ParameterSetName = 'AstInputSet', Position = 3)]
-    [Hashtable] $options = $null
-)
-
-End
-{
-    if ($psCmdlet.ParameterSetName -eq 'ScriptInputSet')
-    {
-        return [System.Management.Automation.CommandCompletion]::CompleteInput(
-            <#inputScript#>  $inputScript,
-            <#cursorColumn#> $cursorColumn,
-            <#options#>      $options)
-    }
-    else
-    {
-        return [System.Management.Automation.CommandCompletion]::CompleteInput(
-            <#ast#>              $ast,
-            <#tokens#>           $tokens,
-            <#positionOfCursor#> $positionOfCursor,
-            <#options#>          $options)
-    }
-}
-        ";
+       
         #endregion
 
         #region Properties
@@ -258,7 +208,7 @@ End
 
             EditorServicesPSHostUserInterface hostUserInterface =
                 hostStartupInfo.ConsoleReplEnabled
-                    ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, hostStartupInfo.PSHost, logger)
+                    ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, hostStartupInfo.PSHost, logger)
                     : new ProtocolPSHostUserInterface(languageServer, powerShellContext, logger);
 
             EditorServicesPSHost psHost =
@@ -278,14 +228,18 @@ End
                 // ImportPSModulesFromPath loads the modules fine
                 if (hostStartupInfo.AdditionalModules.Count > 0)
                     hostStartupInfo.InitialSessionState.ImportPSModule(hostStartupInfo.AdditionalModules as string[]);
+                hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(s_commandsModulePath);
                 // Autocomplete will fail if there isn't an implementation of TabExpansion2
                 // The default TabExpansion2 implementation may not be available in a Constrained Runspace, therefore we check and add it if not.
+                // Note: Attempting to set the visibility of these commands to Private will cause Autocomplete to fail
                 if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name.ToLower() == "tabexpansion2"))
                 {
-                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateFunctionEntry("TabExpansion2", tabExpansionFunctionText));
+                    var defaultSessionState = InitialSessionState.CreateDefault2();
+                    var defaultTabExpansionFunctionEntry = defaultSessionState.Commands.FirstOrDefault(a => a.Name.ToLower() == "tabexpansion2");
+                    hostStartupInfo.InitialSessionState.Commands.Add(defaultTabExpansionFunctionEntry);
                 }
-                // Note: Attempting to set the visibility of these commands to Private will cause Autocomplete to fail
-                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name.ToLower() == "Get-Command"))
+                hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(s_commandsModulePath);                
+                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == "Get-Command"))
                 {
                     hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Command", typeof(GetCommandCommand), null));
                     // PSES called Get-Command by its Module Qualified Syntax "Microsoft.PowerShell.Core\Get-Command", but this fails in a Constrained Runspace
@@ -297,8 +251,8 @@ End
                     hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Help", typeof(GetHelpCommand), null));
                     hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Help", "Get-Help", null));
                 }
-                hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(s_commandsModulePath);
             }
+
             // DO NOT MOVE THIS. The initialization above has to get done before we create the initial runspace.
             Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
             powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
@@ -307,14 +261,13 @@ End
             // When importing modules like this in a Constrained Runspace it fails with System.Management.Automation.DriveNotFoundException: 'Cannot find drive. A drive with the name 'C' does not exist.'
             if (hostStartupInfo.InitialSessionState.LanguageMode == PSLanguageMode.FullLanguage)
             {
-                ImportCommandsModuleAsync();
                 foreach (string module in hostStartupInfo.AdditionalModules)
                 {
                     var command =
                         new PSCommand()
                             .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
                             .AddParameter("Name", module);
-                    
+
 #pragma warning disable CS4014
                     // This call queues the loading on the pipeline thread, so no need to await
                     powerShellContext.ExecuteCommandAsync<PSObject>(
@@ -351,7 +304,7 @@ End
         }
 
         /// <summary>
-        /// Internal Runspace Creator that accepts an initialSessionState
+        ///
         /// </summary>
         /// <param name="psHost">The PSHost that will be used for this Runspace.</param>
         /// <param name="initialSessionState">The initialSessionState inherited from the orginal PowerShell process. This will be used when creating runspaces so that we honor the same initialSessionState including allowed modules, cmdlets and language mode.</param>
@@ -387,8 +340,6 @@ End
         {
             this.Initialize(profilePaths, initialRunspace, ownsInitialRunspace, consoleHost: null);
         }
-
-        
 
         /// <summary>
         /// Initializes a new instance of the PowerShellContext class using
@@ -1085,7 +1036,7 @@ End
             Validate.IsNotNull(nameof(scriptString), scriptString);
 
             PSCommand command = null;
-            if(CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
+            if (CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
             {
                 try
                 {
@@ -1100,7 +1051,7 @@ End
             }
 
             // fall back to old behavior
-            if(command == null)
+            if (command == null)
             {
                 command = new PSCommand().AddScript(scriptString.Trim());
             }
@@ -2440,7 +2391,7 @@ End
                 yield break;
             }
 
-            foreach (string path in new [] { profilePaths.AllUsersAllHosts, profilePaths.AllUsersCurrentHost, profilePaths.CurrentUserAllHosts, profilePaths.CurrentUserCurrentHost })
+            foreach (string path in new[] { profilePaths.AllUsersAllHosts, profilePaths.AllUsersCurrentHost, profilePaths.CurrentUserAllHosts, profilePaths.CurrentUserCurrentHost })
             {
                 if (path != null && File.Exists(path))
                 {
