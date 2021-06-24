@@ -88,7 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly Stack<RunspaceDetails> runspaceStack = new Stack<RunspaceDetails>();
 
         private int isCommandLoopRestarterSet;
-       
+
         #endregion
 
         #region Properties
@@ -277,7 +277,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Help", typeof(GetHelpCommand), null));
                     hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Help", "Get-Help", null));
                 }
-                //hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(s_commandsModulePath);
+                if(hostStartupInfo.ConsoleReplEnabled)
+                {
+                    string _psReadLineModulePath = Path.Combine(
+                        Path.GetDirectoryName(typeof(PSReadLinePromptContext).Assembly.Location),
+                        "..",
+                        "..",
+                        "..",
+                        "PSReadLine");
+                    hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(_psReadLineModulePath);
+
+                }
                 initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
                 powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
             }
@@ -665,7 +675,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             //    via PowerShell eventing
             // 4. The command cannot be for a PSReadLine pipeline while we
             //    are currently in a out of process runspace
-            var threadController = PromptNest?.GetThreadController();
+            var threadController = PromptNest.GetThreadController();
             if (!(threadController == null ||
                 !threadController.IsPipelineThread ||
                 threadController.IsCurrentThread() ||
@@ -1045,7 +1055,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             Validate.IsNotNull(nameof(scriptString), scriptString);
 
             PSCommand command = null;
-            if (CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
+            if(CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
             {
                 try
                 {
@@ -2400,9 +2410,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 yield break;
             }
 
-            foreach (string path in new[] { profilePaths.AllUsersAllHosts, profilePaths.AllUsersCurrentHost, profilePaths.CurrentUserAllHosts, profilePaths.CurrentUserCurrentHost })
+            foreach(string path in new [] { profilePaths.AllUsersAllHosts, profilePaths.AllUsersCurrentHost, profilePaths.CurrentUserAllHosts, profilePaths.CurrentUserCurrentHost })
             {
-                if (path != null && File.Exists(path))
+                if(path != null && File.Exists(path))
                 {
                     yield return path;
                 }
@@ -2762,7 +2772,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             get
             {
-                return this.CurrentRunspace?.Runspace;
+                return this.CurrentRunspace.Runspace;
             }
         }
 
