@@ -277,7 +277,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Help", typeof(GetHelpCommand), null));
                     hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Help", "Get-Help", null));
                 }
-                //hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(s_commandsModulePath);
+                if(hostStartupInfo.ConsoleReplEnabled)
+                {
+                    string _psReadLineModulePath = Path.Combine(
+                        Path.GetDirectoryName(typeof(PSReadLinePromptContext).Assembly.Location),
+                        "..",
+                        "..",
+                        "..",
+                        "PSReadLine");
+                    hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(_psReadLineModulePath);
+
+                }
                 initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
                 powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
             }
