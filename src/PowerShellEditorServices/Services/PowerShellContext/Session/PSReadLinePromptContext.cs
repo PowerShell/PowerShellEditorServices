@@ -24,21 +24,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             "..",
             "PSReadLine");
 
+        // TODO: Does this have to be done in an inline script?
         private static readonly string ReadLineInitScript = $@"
             [System.Diagnostics.DebuggerHidden()]
             [System.Diagnostics.DebuggerStepThrough()]
             param()
             end {{
-                $module = Get-Module -ListAvailable PSReadLine |
-                    Where-Object {{ $_.Version -ge '2.0.2' }} |
-                    Sort-Object -Descending Version |
-                    Select-Object -First 1
-                if (-not $module) {{
-                    Import-Module '{_psReadLineModulePath.Replace("'", "''")}'
-                    return [Microsoft.PowerShell.PSConsoleReadLine]
-                }}
-
-                Import-Module -ModuleInfo $module
+                Import-Module '{_psReadLineModulePath.Replace("'", "''")}'
                 return [Microsoft.PowerShell.PSConsoleReadLine]
             }}";
 
