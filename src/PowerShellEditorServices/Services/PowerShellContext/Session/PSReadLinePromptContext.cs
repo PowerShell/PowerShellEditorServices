@@ -24,24 +24,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             "..",
             "PSReadLine");
 
-        private static readonly string ReadLineInitScript = $@"
-            [System.Diagnostics.DebuggerHidden()]
-            [System.Diagnostics.DebuggerStepThrough()]
-            param()
-            end {{
-                $module = Get-Module -ListAvailable PSReadLine |
-                    Where-Object {{ $_.Version -ge '2.0.2' }} |
-                    Sort-Object -Descending Version |
-                    Select-Object -First 1
-                if (-not $module) {{
-                    Import-Module '{_psReadLineModulePath.Replace("'", "''")}'
-                    return [Microsoft.PowerShell.PSConsoleReadLine]
-                }}
-
-                Import-Module -ModuleInfo $module
-                return [Microsoft.PowerShell.PSConsoleReadLine]
-            }}";
-
         private static readonly Lazy<CmdletInfo> s_lazyInvokeReadLineForEditorServicesCmdletInfo = new Lazy<CmdletInfo>(() =>
         {
             var type = Type.GetType("Microsoft.PowerShell.EditorServices.Commands.InvokeReadLineForEditorServicesCommand, Microsoft.PowerShell.EditorServices.Hosting");
@@ -98,7 +80,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             {
                 pwsh.Runspace = runspace;
                 var psReadLineType = pwsh
-                    .AddScript(ReadLineInitScript, useLocalScope: true)
+                    .AddCommand("Import-Module")
+                        .AddParameter("Name", _psReadLineModulePath.Replace("'", "''"))
+                        .AddParameter("PassThru")
                     .Invoke<Type>()
                     .FirstOrDefault();
 
@@ -169,7 +153,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             WaitForReadLineExit();
         }
 
-        public async Task AbortReadLineAsync() {
+        public async Task AbortReadLineAsync()
+        {
             if (_readLineCancellationSource == null)
             {
                 return;
@@ -186,7 +171,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             { }
         }
 
-        public async Task WaitForReadLineExitAsync() {
+        public async Task WaitForReadLineExitAsync()
+        {
             using (await _promptNest.GetRunspaceHandleAsync(CancellationToken.None, isReadLine: true).ConfigureAwait(false))
             { }
         }

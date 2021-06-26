@@ -220,6 +220,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             logger.LogTrace("Creating initial PowerShell runspace");
             Runspace initialRunspace;
+            var modulesToImport = new List<string>();
             if (hostStartupInfo.ConsoleReplEnabled)
             {
                 string _psReadLineModulePath = Path.Combine(
@@ -228,17 +229,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     "..",
                     "..",
                     "PSReadLine");
-                hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(_psReadLineModulePath);
-
+                modulesToImport.Add(_psReadLineModulePath);
             }
+            modulesToImport.Add(s_commandsModulePath);
+            modulesToImport.AddRange(hostStartupInfo.AdditionalModules);
             if (hostStartupInfo.InitialSessionState.Providers.Any(a => a.Name == "FileSystem"))
             {
                 initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
-                powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
-                powerShellContext.ImportCommandsModuleAsync();
+                powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);                
                 // TODO: This can be moved to the point after the $psEditor object
                 // gets initialized when that is done earlier than LanguageServer.Initialize
-                foreach (string module in hostStartupInfo.AdditionalModules)
+                foreach (string module in modulesToImport)
                 {
                     var command =
                         new PSCommand()
@@ -260,7 +261,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // Import-Module provides the user with better errors, but may not be allowed within a constrained runspace
                 // ImportPSModule throws System.Management.Automation.DriveNotFoundException: 'Cannot find drive. A drive with the name 'C' does not exist.'
                 // ImportPSModulesFromPath loads the modules fine
-                foreach(var module in hostStartupInfo.AdditionalModules)
+                foreach(var module in modulesToImport)
                 {
                     hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(module);
                 }
@@ -273,7 +274,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     var defaultTabExpansionFunctionEntry = defaultSessionState.Commands.FirstOrDefault(a => a.Name.ToLower() == "tabexpansion2");
                     hostStartupInfo.InitialSessionState.Commands.Add(defaultTabExpansionFunctionEntry);
                 }
-                hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(s_commandsModulePath);                
                 if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == "Get-Command"))
                 {
                     // Adding Get-Command to the Runspace in case the calling runspace didn't add it.
@@ -478,24 +478,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 this.SetExecutionPolicy();
             }
-        }
-
-        /// <summary>
-        /// Imports the PowerShellEditorServices.Commands module into
-        /// the runspace.  This method will be moved somewhere else soon.
-        /// </summary>
-        /// <returns></returns>
-        public Task ImportCommandsModuleAsync() => ImportCommandsModuleAsync(s_commandsModulePath);
-
-        public Task ImportCommandsModuleAsync(string path)
-        {
-            this.logger.LogTrace($"Importing PowershellEditorServices commands from {path}");
-
-            PSCommand importCommand = new PSCommand()
-                .AddCommand("Import-Module")
-                .AddArgument(path);
-
-            return this.ExecuteCommandAsync<PSObject>(importCommand, sendOutputToHost: false, sendErrorToHost: false);
         }
 
         private static bool CheckIfRunspaceNeedsEventHandlers(RunspaceDetails runspaceDetails)
