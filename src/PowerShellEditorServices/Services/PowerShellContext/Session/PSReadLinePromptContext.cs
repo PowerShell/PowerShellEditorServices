@@ -17,13 +17,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
     internal class PSReadLinePromptContext : IPromptContext
     {
-        private static readonly string _psReadLineModulePath = Path.Combine(
-            Path.GetDirectoryName(typeof(PSReadLinePromptContext).Assembly.Location),
-            "..",
-            "..",
-            "..",
-            "PSReadLine");
-
         private static readonly Lazy<CmdletInfo> s_lazyInvokeReadLineForEditorServicesCmdletInfo = new Lazy<CmdletInfo>(() =>
         {
             var type = Type.GetType("Microsoft.PowerShell.EditorServices.Commands.InvokeReadLineForEditorServicesCommand, Microsoft.PowerShell.EditorServices.Hosting");
@@ -71,39 +64,35 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         internal static bool TryGetPSReadLineProxy(
             ILogger logger,
-            Runspace runspace,
             out PSReadLineProxy readLineProxy)
         {
             readLineProxy = null;
             logger.LogTrace("Attempting to load PSReadLine");
-            using (var pwsh = PowerShell.Create())
+            var psReadLineAssembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName.Contains("Microsoft.PowerShell.PSReadLine2"));
+            if(psReadLineAssembly is null)
             {
-                pwsh.Runspace = runspace;
-                var psReadLineType = pwsh
-                    .AddCommand("Import-Module")
-                        .AddParameter("Name", _psReadLineModulePath.Replace("'", "''"))
-                        .AddParameter("PassThru")
-                    .Invoke<Type>()
-                    .FirstOrDefault();
+                logger.LogWarning("Microsoft.PowerShell.PSReadLine2 not found in loaded assemblies");
+                return false;
+            }
+            var psReadLineType = psReadLineAssembly?.ExportedTypes?.FirstOrDefault(a => a.Name == "PSConsoleReadLine");
 
-                if (psReadLineType == null)
-                {
-                    logger.LogWarning("PSReadLine unable to be loaded: {Reason}", pwsh.HadErrors ? pwsh.Streams.Error[0].ToString() : "<Unknown reason>");
-                    return false;
-                }
+            if (psReadLineType == null)
+            {
+                logger.LogWarning("PSConsoleReadLine type not found in Microsoft.PowerShell.PSReadLine2");
+                return false;
+            }
 
-                try
-                {
-                    readLineProxy = new PSReadLineProxy(psReadLineType, logger);
-                }
-                catch (InvalidOperationException e)
-                {
-                    // The Type we got back from PowerShell doesn't have the members we expected.
-                    // Could be an older version, a custom build, or something a newer version with
-                    // breaking changes.
-                    logger.LogWarning("PSReadLine unable to be loaded: {Reason}", e);
-                    return false;
-                }
+            try
+            {
+                readLineProxy = new PSReadLineProxy(psReadLineType, logger);
+            }
+            catch (InvalidOperationException e)
+            {
+                // The Type we got back from PowerShell doesn't have the members we expected.
+                // Could be an older version, a custom build, or something a newer version with
+                // breaking changes.
+                logger.LogWarning("PSReadLine unable to be loaded: {Reason}", e);
+                return false;
             }
 
             return true;

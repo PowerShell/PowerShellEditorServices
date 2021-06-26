@@ -49,7 +49,8 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 null,
                 0,
                 consoleReplEnabled: false,
-                usesLegacyReadLine: false);
+                usesLegacyReadLine: false,
+                bundledModulePath: null);
 
 
             powerShellContext.Initialize(

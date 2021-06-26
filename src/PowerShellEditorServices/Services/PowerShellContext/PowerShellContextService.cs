@@ -37,10 +37,18 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// </summary>
     internal class PowerShellContextService : IHostSupportsInteractiveSession
     {
-        private static readonly string s_commandsModulePath = Path.GetFullPath(
+        private static string s_bundledModulesPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "..", "..");
+
+        private static string s_commandsModulePath => Path.GetFullPath(
             Path.Combine(
-                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                "../../Commands/PowerShellEditorServices.Commands.psd1"));
+                s_bundledModulesPath,
+                "PowerShellEditorServices",
+                "Commands",
+                "PowerShellEditorServices.Commands.psd1"));
+        private static string _psReadLineModulePath => Path.GetFullPath(
+            Path.Combine(
+                s_bundledModulesPath,
+                "PSReadLine"));
 
         private static readonly Action<Runspace, ApartmentState> s_runspaceApartmentStateSetter;
         private static readonly PropertyInfo s_writeStreamProperty;
@@ -195,6 +203,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             HostStartupInfo hostStartupInfo)
         {
             Validate.IsNotNull(nameof(hostStartupInfo), hostStartupInfo);
+            if(!string.IsNullOrEmpty(hostStartupInfo.BundledModulePath))
+            {
+                s_bundledModulesPath = hostStartupInfo.BundledModulePath;
+            }
 
             var logger = factory.CreateLogger<PowerShellContextService>();
 
@@ -223,12 +235,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var modulesToImport = new List<string>();
             if (hostStartupInfo.ConsoleReplEnabled)
             {
-                string _psReadLineModulePath = Path.Combine(
-                    Path.GetDirectoryName(typeof(PSReadLinePromptContext).Assembly.Location),
-                    "..",
-                    "..",
-                    "..",
-                    "PSReadLine");
+                
                 modulesToImport.Add(_psReadLineModulePath);
             }
             modulesToImport.Add(s_commandsModulePath);
@@ -260,10 +267,19 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // Loading modules with ImportPSModulesFromPath into the InitialSessionState because in a Constrained Runspace there may not be a FileSystem provider.
                 // Import-Module provides the user with better errors, but may not be allowed within a constrained runspace
                 // ImportPSModule throws System.Management.Automation.DriveNotFoundException: 'Cannot find drive. A drive with the name 'C' does not exist.'
-                // ImportPSModulesFromPath loads the modules fine
-                foreach(var module in modulesToImport)
+                // ImportPSModulesFromPath loads the modules fine                
+                foreach(var module in modulesToImport.Where(a=> !string.IsNullOrEmpty(a)))
                 {
+                    if (!File.Exists(module) && !Directory.Exists(module))
+                    {
+                        logger.LogWarning($"{module} not found");
+                    }
                     hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(module);
+                    var loadedModule = hostStartupInfo.InitialSessionState.Modules.FirstOrDefault(a => a.Name.StartsWith(module));
+                    if (loadedModule is null)
+                    {
+                        logger.LogWarning($"Error loading {module}");
+                    }
                 }
                 // Autocomplete will fail if there isn't an implementation of TabExpansion2
                 // The default TabExpansion2 implementation may not be available in a Constrained Runspace, therefore we check and add it if not.
@@ -287,6 +303,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Help", typeof(GetHelpCommand), null));
                     hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Help", "Get-Help", null));
+                }
+                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == "Get-Module"))
+                {
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Module", typeof(GetModuleCommand), null));
+                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Module", "Get-Module", null));
                 }
                 
                 initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
@@ -461,7 +482,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (powerShellVersion.Major >= 5 &&
                 this.isPSReadLineEnabled &&
-                PSReadLinePromptContext.TryGetPSReadLineProxy(logger, initialRunspace, out PSReadLineProxy proxy))
+                PSReadLinePromptContext.TryGetPSReadLineProxy(logger, out PSReadLineProxy proxy))
             {
                 this.PromptContext = new PSReadLinePromptContext(
                     this,
