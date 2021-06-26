@@ -152,14 +152,14 @@ namespace PowerShellEditorServices.Test.E2E
             string filePath = NewTestFile(GenerateScriptFromLoggingStatements("works"));
 
             await PsesDebugAdapterClient.LaunchScript(filePath, Started).ConfigureAwait(false);
-
             ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(false);
+            Console.WriteLine($"configDoneResponse\r\n{configDoneResponse}");
             Assert.NotNull(configDoneResponse);
-
             // At this point the script should be running so lets give it time
             await Task.Delay(2000).ConfigureAwait(false);
 
             string[] log = GetLog();
+            Console.WriteLine($"Log\r\n{string.Join("\r\n", log)}");
             Assert.Equal("works", log[0]);
         }
 
