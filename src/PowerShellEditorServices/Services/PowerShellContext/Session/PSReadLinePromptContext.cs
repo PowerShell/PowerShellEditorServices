@@ -19,8 +19,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     {
         private static readonly Lazy<CmdletInfo> s_lazyInvokeReadLineForEditorServicesCmdletInfo = new Lazy<CmdletInfo>(() =>
         {
-            var type = Type.GetType("Microsoft.PowerShell.EditorServices.Commands.InvokeReadLineForEditorServicesCommand, Microsoft.PowerShell.EditorServices.Hosting");
-            return new CmdletInfo("__Invoke-ReadLineForEditorServices", type);
+            var allAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+            var assemblies = allAssemblies.FirstOrDefault(a => a.FullName.Contains("Microsoft.PowerShell.EditorServices"));
+            var type = assemblies?.ExportedTypes?.FirstOrDefault(a => a.Name == "InvokeReadLineForEditorServicesCommand");
+            return new CmdletInfo("__Invoke-ReadLineForEditorServices", type ?? typeof(PSCmdlet));
         });
 
         private static ExecutionOptions s_psrlExecutionOptions = new ExecutionOptions

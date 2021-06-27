@@ -290,6 +290,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     var defaultTabExpansionFunctionEntry = defaultSessionState.Commands.FirstOrDefault(a => a.Name.ToLower() == "tabexpansion2");
                     hostStartupInfo.InitialSessionState.Commands.Add(defaultTabExpansionFunctionEntry);
                 }
+                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name.ToLower() == "prompt"))
+                {
+                    var defaultSessionState = InitialSessionState.CreateDefault2();
+                    var defaultTabExpansionFunctionEntry = defaultSessionState.Commands.FirstOrDefault(a => a.Name.ToLower() == "prompt");
+                    hostStartupInfo.InitialSessionState.Commands.Add(defaultTabExpansionFunctionEntry);
+                }
                 if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == "Get-Command"))
                 {
                     // Adding Get-Command to the Runspace in case the calling runspace didn't add it.
@@ -319,7 +325,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Module", "Get-Module", null));
                 }
 
-                initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
+                initialRunspace = PowerShellContextService.CreateRunspace(hostStartupInfo.PSHost, hostStartupInfo.InitialSessionState);
                 powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
             }
             
