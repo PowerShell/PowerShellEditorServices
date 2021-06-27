@@ -240,7 +240,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
             modulesToImport.Add(s_commandsModulePath);
             modulesToImport.AddRange(hostStartupInfo.AdditionalModules);
-            if (hostStartupInfo.InitialSessionState.Providers.Any(a => a.Name == "FileSystem"))
+            if (hostStartupInfo.InitialSessionState.Providers.Any(a => a.Name == "FileSystem" && a.Visibility == SessionStateEntryVisibility.Public))
             {
                 initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
                 powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);                
@@ -297,19 +297,28 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     // PSES calls Get-Command by its Module Qualified Syntax "Microsoft.PowerShell.Core\Get-Command"
                     // This fails in a Constrained Runspace.
                     // To work around it without modifying PSES code, we add Microsoft.PowerShell.Core\Get-Command as an alias to Get-Command.
+                }
+                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == @"Microsoft.PowerShell.Core\Get-Command"))
+                {
                     hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Command", "Get-Command", null));
                 }
                 if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == "Get-Help"))
                 {
                     hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Help", typeof(GetHelpCommand), null));
+                }
+                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == @"Microsoft.PowerShell.Core\Get-Help"))
+                {
                     hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Help", "Get-Help", null));
                 }
                 if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == "Get-Module"))
                 {
                     hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Module", typeof(GetModuleCommand), null));
+                }
+                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == @"Microsoft.PowerShell.Core\Get-Module"))
+                {
                     hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Module", "Get-Module", null));
                 }
-                
+
                 initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
                 powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
             }
@@ -624,7 +633,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     {
                         WriteOutputToHost = sendOutputToHost,
                         WriteErrorsToHost = sendErrorToHost,
-                        AddToHistory = addToHistory
+                        AddToHistory = addToHistory                        
                     });
         }
 
