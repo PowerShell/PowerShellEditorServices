@@ -106,7 +106,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// cref="Serilog.Events.LogEventLevel"/>, hence it is an <c>int</c>.
         /// </remarks>
         public int LogLevel { get; }
-
+        /// <summary>
+        /// The path to find the Bundled Modules        /// 
+        /// </summary>
+        public string BundledModulePath { get; }
         #endregion
 
         #region Constructors
@@ -135,6 +138,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <param name="logLevel">The minimum log event level.</param>
         /// <param name="consoleReplEnabled">Enable console if true.</param>
         /// <param name="usesLegacyReadLine">Use PSReadLine if false, otherwise use the legacy readline implementation.</param>
+        /// <param name="bundledModulePath">The path to the Modules folder, helps with loading the bundled PSReadLine and other included modules</param>
         public HostStartupInfo(
             string name,
             string profileId,
@@ -147,7 +151,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             string logPath,
             int logLevel,
             bool consoleReplEnabled,
-            bool usesLegacyReadLine)
+            bool usesLegacyReadLine,
+            string bundledModulePath
+            )
         {
             Name = name ?? DefaultHostName;
             ProfileId = profileId ?? DefaultHostProfileId;

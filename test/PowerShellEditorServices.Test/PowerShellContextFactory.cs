@@ -31,6 +31,9 @@ namespace Microsoft.PowerShell.EditorServices.Test
                         TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Test.PowerShellEditorServices_profile.ps1")),
                     Path.GetFullPath(
                         TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/ProfileTest.ps1")));
+        public static readonly string BundledModulesPath = 
+            Path.GetFullPath(
+                        TestUtilities.NormalizePath("../../../../../module"));
 
         public static PowerShellContextService Create(ILogger logger)
         {
@@ -48,7 +51,8 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 null,
                 0,
                 consoleReplEnabled: false,
-                usesLegacyReadLine: false);
+                usesLegacyReadLine: false,
+                bundledModulePath: BundledModulesPath);
 
 
             powerShellContext.Initialize(

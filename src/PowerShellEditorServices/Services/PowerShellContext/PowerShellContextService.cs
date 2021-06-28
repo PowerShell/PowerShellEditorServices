@@ -32,10 +32,18 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// </summary>
     internal class PowerShellContextService : IHostSupportsInteractiveSession
     {
-        private static readonly string s_commandsModulePath = Path.GetFullPath(
+        private static string s_bundledModulesPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "..", "..");
+
+        private static string s_commandsModulePath => Path.GetFullPath(
             Path.Combine(
-                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                "../../Commands/PowerShellEditorServices.Commands.psd1"));
+                s_bundledModulesPath,
+                "PowerShellEditorServices",
+                "Commands",
+                "PowerShellEditorServices.Commands.psd1"));
+        private static string _psReadLineModulePath => Path.GetFullPath(
+            Path.Combine(
+                s_bundledModulesPath,
+                "PSReadLine"));
 
         private static readonly Action<Runspace, ApartmentState> s_runspaceApartmentStateSetter;
         private static readonly PropertyInfo s_writeStreamProperty;
@@ -190,7 +198,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             HostStartupInfo hostStartupInfo)
         {
             Validate.IsNotNull(nameof(hostStartupInfo), hostStartupInfo);
-
+            s_bundledModulesPath = !string.IsNullOrEmpty(hostStartupInfo.BundledModulePath) && Directory.Exists(hostStartupInfo.BundledModulePath) 
+                ? hostStartupInfo.BundledModulePath
+                : s_bundledModulesPath = hostStartupInfo.BundledModulePath;
+            
             var logger = factory.CreateLogger<PowerShellContextService>();
 
             bool shouldUsePSReadLine = hostStartupInfo.ConsoleReplEnabled
@@ -220,7 +231,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // TODO: This can be moved to the point after the $psEditor object
             // gets initialized when that is done earlier than LanguageServer.Initialize
-            foreach (string module in hostStartupInfo.AdditionalModules)
+            var modulesToImport = new List<string>();
+            if(hostStartupInfo.ConsoleReplEnabled)
+            {
+                modulesToImport.Add(_psReadLineModulePath);
+            }
+            modulesToImport.AddRange(hostStartupInfo.AdditionalModules);
+            foreach (string module in modulesToImport)
             {
                 var command =
                     new PSCommand()
