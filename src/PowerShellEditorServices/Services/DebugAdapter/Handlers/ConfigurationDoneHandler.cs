@@ -23,6 +23,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class ConfigurationDoneHandler : IConfigurationDoneHandler
     {
+        private readonly PowerShellExecutionOptions s_debuggerExecutionOptions = new()
+        {
+            MustRunInForeground = true,
+            WriteInputToHost = true,
+            WriteOutputToHost = true,
+            AddToHistory = true,
+        };
+
         private readonly ILogger _logger;
         private readonly IDebugAdapterServerFacade _debugAdapterServer;
         private readonly DebugService _debugService;
@@ -110,7 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     // This seems to be the simplest way to invoke a script block (which contains breakpoint information) via the PowerShell API.
                     var cmd = new PSCommand().AddScript(". $args[0]").AddArgument(ast.GetScriptBlock());
                     await _executionService
-                        .ExecutePSCommandAsync<object>(cmd, CancellationToken.None, new PowerShellExecutionOptions { WriteOutputToHost = true })
+                        .ExecutePSCommandAsync<object>(cmd, CancellationToken.None, s_debuggerExecutionOptions)
                         .ConfigureAwait(false);
                 }
                 else
@@ -119,7 +127,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         .ExecutePSCommandAsync(
                             new PSCommand().AddScript(untitledScript.Contents),
                             CancellationToken.None,
-                            new PowerShellExecutionOptions { WriteOutputToHost = true})
+                            s_debuggerExecutionOptions)
                         .ConfigureAwait(false);
                 }
             }
@@ -129,7 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     .ExecutePSCommandAsync(
                         BuildPSCommandFromArguments(scriptToLaunch, _debugStateService.Arguments),
                         CancellationToken.None,
-                        new PowerShellExecutionOptions { WriteOutputToHost = true, WriteInputToHost = true, AddToHistory = true })
+                        s_debuggerExecutionOptions)
                     .ConfigureAwait(false);
             }
 

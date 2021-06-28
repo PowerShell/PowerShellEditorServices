@@ -2,6 +2,12 @@
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 {
+    public enum TaskKind
+    {
+        Foreground,
+        Background,
+    }
+
     public enum ExecutionPriority
     {
         Normal,

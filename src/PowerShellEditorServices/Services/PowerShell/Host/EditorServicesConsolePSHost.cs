@@ -191,7 +191,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             {
                 await ExecutionService.ExecuteDelegateAsync(
                    "LoadProfiles",
-                   ExecutionOptions.Default,
+                   new PowerShellExecutionOptions { MustRunInForeground = true },
                    cancellationToken,
                     (pwsh, delegateCancellation) =>
                     {

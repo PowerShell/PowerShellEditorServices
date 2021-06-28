@@ -63,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         }
     }
 
-    internal struct CancellationScope : IDisposable
+    internal class CancellationScope : IDisposable
     {
         private readonly ConcurrentStack<CancellationTokenSource> _cancellationStack;
 
