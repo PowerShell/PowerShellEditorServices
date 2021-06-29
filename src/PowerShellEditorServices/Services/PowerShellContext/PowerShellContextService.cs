@@ -235,7 +235,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var modulesToImport = new List<string>();
             if (hostStartupInfo.ConsoleReplEnabled)
             {
-                
                 modulesToImport.Add(_psReadLineModulePath);
             }
             modulesToImport.Add(s_commandsModulePath);
@@ -273,12 +272,33 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     if (!File.Exists(module) && !Directory.Exists(module))
                     {
                         logger.LogWarning($"{module} not found");
+                        continue;
                     }
-                    hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(module);
-                    var loadedModule = hostStartupInfo.InitialSessionState.Modules.FirstOrDefault(a => a.Name.StartsWith(module));
+                    var moduleFolderPath = module;
+                    if(File.Exists(module))
+                    {
+                        var extension = Path.GetExtension(module);
+                        if(extension == ".psd1")
+                        {
+                            // ImportPSModulesFromPath doesn't like the direct path to the .psd1 file
+                            // It only works when given a path to a folder that contains a .psd1 file with the same name as the enclosing folder
+                            // To fix this, we make a copy of the psd1 file and give it the name of the parent folder
+                            var parentFolder = Directory.GetParent(module);
+                            var destinationPath = Path.Combine(parentFolder.FullName, parentFolder.Name + ".psd1");
+                            if(!File.Exists(destinationPath))
+                            {
+                                File.Move(module, destinationPath);
+                                logger.LogDebug($"Corrected path to {module}");
+                            }
+                            moduleFolderPath = parentFolder.FullName;
+                        }
+                    }
+                    
+                    hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(moduleFolderPath);
+                    var loadedModule = hostStartupInfo.InitialSessionState.Modules.FirstOrDefault(a => a.Name.StartsWith(moduleFolderPath));
                     if (loadedModule is null)
                     {
-                        logger.LogWarning($"Error loading {module}");
+                        logger.LogWarning($"Error loading {module} from {moduleFolderPath}");
                     }
                 }
                 // Autocomplete will fail if there isn't an implementation of TabExpansion2
