@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 TestProfilePaths,
                 new List<string>(),
                 new List<string>(),
-                InitialSessionState.CreateDefault(),
+                InitialSessionState.CreateDefault2(),
                 null,
                 0,
                 consoleReplEnabled: false,

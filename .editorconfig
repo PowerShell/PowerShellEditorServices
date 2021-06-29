@@ -6,12 +6,14 @@ root = true
 [*]
 indent_style = space
 insert_final_newline = true
+csharp_space_between_method_declaration_name_and_open_parenthesis=false
+csharp_space_after_keywords_in_control_flow_statements=true
 
 [*.{cs}]
 indent_size = 4
 trim_trailing_whitespace = true
 csharp_space_before_open_square_brackets = true
-csharp_space_after_keywords_in_control_flow_statements = false
+csharp_space_after_keywords_in_control_flow_statements = true
 
 [*.{json}]
 indent_size = 2

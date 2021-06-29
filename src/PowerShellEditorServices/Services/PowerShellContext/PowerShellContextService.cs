@@ -25,10 +25,7 @@ using Microsoft.PowerShell.Commands;
 namespace Microsoft.PowerShell.EditorServices.Services
 {
     using System.Management.Automation;
-    using Microsoft.PowerShell.Commands;
-    using Microsoft.PowerShell.EditorServices.Handlers;
-    using Microsoft.PowerShell.EditorServices.Hosting;
-    using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+    
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
@@ -659,7 +656,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     {
                         WriteOutputToHost = sendOutputToHost,
                         WriteErrorsToHost = sendErrorToHost,
-                        AddToHistory = addToHistory                        
+                        AddToHistory = addToHistory
                     });
         }
 
@@ -833,7 +830,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 // Due to the following PowerShell bug, we can't just assign shell.Commands to psCommand
                 // because PowerShell strips out CommandInfo:
-                // https://github.com/PowerShell/PowerShell/hostStartupInfo.InitialSessionStateues/12297
+                // https://github.com/PowerShell/PowerShell/issues/12297
                 shell.Commands.Clear();
                 foreach (Command command in psCommand.Commands)
                 {
@@ -1170,7 +1167,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // <space>.  Any embedded single quotes are escaped.
                 // If the provided path is already quoted, then File.Exists will not find it.
                 // This keeps us from quoting an already quoted path.
-                // Related to hostStartupInfo.InitialSessionState Issue #123.
+                // Related to issue #123.
                 if (File.Exists(script) || File.Exists(scriptAbsPath))
                 {
                     // Dot-source the launched script path and single quote the path in case it includes
@@ -2449,9 +2446,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 yield break;
             }
 
-            foreach(string path in new [] { profilePaths.AllUsersAllHosts, profilePaths.AllUsersCurrentHost, profilePaths.CurrentUserAllHosts, profilePaths.CurrentUserCurrentHost })
+            foreach (string path in new [] { profilePaths.AllUsersAllHosts, profilePaths.AllUsersCurrentHost, profilePaths.CurrentUserAllHosts, profilePaths.CurrentUserCurrentHost })
             {
-                if(path != null && File.Exists(path))
+                if (path != null && File.Exists(path))
                 {
                     yield return path;
                 }

@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 request.Expression,
                 writeInputToHost: true,
                 writeOutputToHost: true,
-                addToHistory: false);
+                addToHistory: true);
 
             return Task.FromResult(new EvaluateResponseBody
             {
