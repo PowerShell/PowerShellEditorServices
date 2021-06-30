@@ -522,7 +522,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.PromptContext = new LegacyReadLineContext(this);
             }
 
-            if (VersionUtils.IsWindows && initialRunspace.InitialSessionState.LanguageMode == PSLanguageMode.FullLanguage)
+            if (VersionUtils.IsWindows)
             {
                 this.SetExecutionPolicy();
             }
