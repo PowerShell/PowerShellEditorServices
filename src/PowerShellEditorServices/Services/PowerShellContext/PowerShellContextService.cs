@@ -200,7 +200,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             Validate.IsNotNull(nameof(hostStartupInfo), hostStartupInfo);
             s_bundledModulesPath = !string.IsNullOrEmpty(hostStartupInfo.BundledModulePath) && Directory.Exists(hostStartupInfo.BundledModulePath) 
                 ? hostStartupInfo.BundledModulePath
-                : s_bundledModulesPath = hostStartupInfo.BundledModulePath;
+                : s_bundledModulesPath;
             
             var logger = factory.CreateLogger<PowerShellContextService>();
 
