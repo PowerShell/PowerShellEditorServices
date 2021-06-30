@@ -86,10 +86,10 @@ namespace PowerShellEditorServices.Test.E2E
             try
             {
                 await PsesDebugAdapterClient.RequestDisconnect(new DisconnectArguments
-                {
-                    Restart = false,
-                    TerminateDebuggee = true
-                }).ConfigureAwait(false);
+                    {
+                        Restart = false,
+                        TerminateDebuggee = true
+                    }).ConfigureAwait(false);
                 await _psesProcess.Stop().ConfigureAwait(false);
                 PsesDebugAdapterClient?.Dispose();
             }

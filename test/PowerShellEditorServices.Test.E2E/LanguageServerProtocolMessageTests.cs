@@ -87,9 +87,9 @@ namespace PowerShellEditorServices.Test.E2E
         {
             // Wait for PSSA to finish.
             int i = 0;
-            while (Diagnostics.Count == 0)
+            while(Diagnostics.Count == 0)
             {
-                if (i >= 10)
+                if(i >= 10)
                 {
                     throw new InvalidDataException("No diagnostics showed up after 20s.");
                 }
@@ -103,9 +103,9 @@ namespace PowerShellEditorServices.Test.E2E
         {
             // Wait for PSSA to finish.
             int i = 0;
-            while (TelemetryEvents.Count == 0)
+            while(TelemetryEvents.Count == 0)
             {
-                if (i >= 10)
+                if(i >= 10)
                 {
                     throw new InvalidDataException("No telemetry events showed up after 20s.");
                 }
@@ -124,7 +124,7 @@ namespace PowerShellEditorServices.Test.E2E
                     .SendRequest<GetVersionParams>("powerShell/getVersion", new GetVersionParams())
                     .Returning<PowerShellVersion>(CancellationToken.None);
 
-            if (PwshExe == "powershell")
+            if(PwshExe == "powershell")
             {
                 Assert.Equal("Desktop", details.Edition);
             }
@@ -198,7 +198,7 @@ function CanSendWorkspaceSymbolRequest {
             PsesLanguageClient.SendNotification("textDocument/didChange", new DidChangeTextDocumentParams
             {
                 // Include several content changes to test against duplicate Diagnostics showing up.
-                ContentChanges = new Container<TextDocumentContentChangeEvent>(new[]
+                ContentChanges = new Container<TextDocumentContentChangeEvent>(new []
                 {
                     new TextDocumentContentChangeEvent
                     {
@@ -270,7 +270,7 @@ function CanSendWorkspaceSymbolRequest {
             await WaitForTelemetryEventsAsync().ConfigureAwait(false);
             var telemetryEvent = Assert.Single(TelemetryEvents);
             Assert.Equal("NonDefaultPsesFeatureConfiguration", telemetryEvent.EventName);
-            Assert.False((bool) telemetryEvent.Data.GetValue("ScriptAnalysis"));
+            Assert.False((bool)telemetryEvent.Data.GetValue("ScriptAnalysis"));
 
             // We also shouldn't get any Diagnostics because ScriptAnalysis is disabled.
             Assert.Empty(Diagnostics);
@@ -399,16 +399,16 @@ Get-Process
                     {
                         Range = new Range
                         {
-                            Start = new Position
-                            {
-                                Line = 2,
-                                Character = 0
-                            },
-                            End = new Position
-                            {
-                                Line = 3,
-                                Character = 0
-                            }
+                        Start = new Position
+                        {
+                            Line = 2,
+                            Character = 0
+                        },
+                        End = new Position
+                        {
+                            Line = 3,
+                            Character = 0
+                        }
                         },
                         TextDocument = new TextDocumentIdentifier
                         {
