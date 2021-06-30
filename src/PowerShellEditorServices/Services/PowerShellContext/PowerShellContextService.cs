@@ -1084,7 +1084,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             // fall back to old behavior
-            if (command == null)
+            if(command == null)
             {
                 command = new PSCommand().AddScript(scriptString.Trim());
             }

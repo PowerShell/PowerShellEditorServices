@@ -27,7 +27,6 @@ using Microsoft.PowerShell.EditorServices.Services.Configuration;
 
 namespace PowerShellEditorServices.Test.E2E
 {
-    [DisplayTestMethodName]
     public class LanguageServerProtocolMessageTests : IClassFixture<LSPTestsFixture>, IDisposable
     {
         // Borrowed from `VersionUtils` which can't be used here due to an initialization problem.
@@ -42,18 +41,7 @@ namespace PowerShellEditorServices.Test.E2E
         private readonly List<Diagnostic> Diagnostics;
         private readonly List<PsesTelemetryEvent> TelemetryEvents;
         private readonly string PwshExe;
-        private class DisplayTestMethodNameAttribute : Xunit.Sdk.BeforeAfterTestAttribute
-        {
-            public override void Before(MethodInfo methodUnderTest)
-            {
-                Console.WriteLine("Setup for test '{0}.'", methodUnderTest.Name);
-            }
 
-            public override void After(MethodInfo methodUnderTest)
-            {
-                Console.WriteLine("TearDown for test '{0}.'", methodUnderTest.Name);
-            }
-        }
         public LanguageServerProtocolMessageTests(ITestOutputHelper output, LSPTestsFixture data)
         {
             data.Output = output;
@@ -99,9 +87,9 @@ namespace PowerShellEditorServices.Test.E2E
         {
             // Wait for PSSA to finish.
             int i = 0;
-            while(Diagnostics.Count == 0)
+            while (Diagnostics.Count == 0)
             {
-                if(i >= 10)
+                if (i >= 10)
                 {
                     throw new InvalidDataException("No diagnostics showed up after 20s.");
                 }
@@ -115,9 +103,9 @@ namespace PowerShellEditorServices.Test.E2E
         {
             // Wait for PSSA to finish.
             int i = 0;
-            while(TelemetryEvents.Count == 0)
+            while (TelemetryEvents.Count == 0)
             {
-                if(i >= 10)
+                if (i >= 10)
                 {
                     throw new InvalidDataException("No telemetry events showed up after 20s.");
                 }
@@ -136,7 +124,7 @@ namespace PowerShellEditorServices.Test.E2E
                     .SendRequest<GetVersionParams>("powerShell/getVersion", new GetVersionParams())
                     .Returning<PowerShellVersion>(CancellationToken.None);
 
-            if(PwshExe == "powershell")
+            if (PwshExe == "powershell")
             {
                 Assert.Equal("Desktop", details.Edition);
             }
@@ -210,7 +198,7 @@ function CanSendWorkspaceSymbolRequest {
             PsesLanguageClient.SendNotification("textDocument/didChange", new DidChangeTextDocumentParams
             {
                 // Include several content changes to test against duplicate Diagnostics showing up.
-                ContentChanges = new Container<TextDocumentContentChangeEvent>(new []
+                ContentChanges = new Container<TextDocumentContentChangeEvent>(new[]
                 {
                     new TextDocumentContentChangeEvent
                     {
@@ -282,7 +270,7 @@ function CanSendWorkspaceSymbolRequest {
             await WaitForTelemetryEventsAsync().ConfigureAwait(false);
             var telemetryEvent = Assert.Single(TelemetryEvents);
             Assert.Equal("NonDefaultPsesFeatureConfiguration", telemetryEvent.EventName);
-            Assert.False((bool)telemetryEvent.Data.GetValue("ScriptAnalysis"));
+            Assert.False((bool) telemetryEvent.Data.GetValue("ScriptAnalysis"));
 
             // We also shouldn't get any Diagnostics because ScriptAnalysis is disabled.
             Assert.Empty(Diagnostics);
@@ -411,16 +399,16 @@ Get-Process
                     {
                         Range = new Range
                         {
-                        Start = new Position
-                        {
-                            Line = 2,
-                            Character = 0
-                        },
-                        End = new Position
-                        {
-                            Line = 3,
-                            Character = 0
-                        }
+                            Start = new Position
+                            {
+                                Line = 2,
+                                Character = 0
+                            },
+                            End = new Position
+                            {
+                                Line = 3,
+                                Character = 0
+                            }
                         },
                         TextDocument = new TextDocumentIdentifier
                         {
@@ -623,7 +611,6 @@ Write-Host 'Goodbye'
         [Fact]
         public async Task CanSendPowerShellGetRunspaceRequestAsync()
         {
-            
             var process = new Process();
             process.StartInfo.FileName = PwshExe;
             process.StartInfo.ArgumentList.Add("-NoProfile");

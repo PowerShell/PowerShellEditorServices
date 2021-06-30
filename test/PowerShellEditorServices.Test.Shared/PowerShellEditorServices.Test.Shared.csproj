@@ -17,8 +17,4 @@
       <_Parameter1>Microsoft.PowerShell.EditorServices.Test</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="OmniSharp.Extensions.JsonRpc.Testing" Version="0.19.2" />
-    <PackageReference Include="OmniSharp.Extensions.LanguageProtocol.Testing" Version="0.19.2" />
-  </ItemGroup>
 </Project>
