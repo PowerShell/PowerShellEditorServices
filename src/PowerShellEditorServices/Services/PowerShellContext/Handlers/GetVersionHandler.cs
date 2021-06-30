@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Linq;
 using System.Management.Automation;
 using System.Text;
 using System.Threading;
@@ -10,7 +9,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Utility;
-using OmniSharp.Extensions.JsonRpc.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Window;
@@ -86,23 +84,23 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 {
                     break;
                 }
-                var message = $"You have {module.Name} version {module.Version} of PackageManagement \r\n{module.Path}\r\n. Versions below {s_desiredPackageManagementVersion} are known to cause issues with the PowerShell extension. Please run the following command in a new Windows PowerShell session and then restart the PowerShell extension: `Install-Module PackageManagement -Force -AllowClobber -MinimumVersion 1.4.6`";
-                var confirmPackageManagementUpdate = false;
-                try
+
+                _logger.LogDebug("Old version of PackageManagement detected.");
+
+                if (_powerShellContextService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
                 {
-                    throw new Exception(message);
-                    _languageServer.Window.ShowInfo(message);
-                    if (_powerShellContextService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
+                    var message = $"LanguageMode: {_powerShellContextService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode}\r\nYou have an older version of PackageManagement known to cause issues with the PowerShell extension. Please run the following command in a new Windows PowerShell session and then restart the PowerShell extension: `Install-Module PackageManagement -Force -AllowClobber -MinimumVersion 1.4.6`";
+                    _languageServer.Window.ShowWarning(message);
+                    throw new NotSupportedException(message);
+                }
+
+                var takeActionText = "Yes";
+                MessageActionItem messageAction = await _languageServer.Window.ShowMessageRequest(new ShowMessageRequestParams
+                {
+                    Message = "You have an older version of PackageManagement known to cause issues with the PowerShell extension. Would you like to update PackageManagement (You will need to restart the PowerShell extension after)?",
+                    Type = MessageType.Warning,
+                    Actions = new[]
                     {
-                        return;
-                    }
-                    var takeActionText = "Yes";
-                    MessageActionItem messageAction = await _languageServer.Window.ShowMessageRequest(new ShowMessageRequestParams
-                    {
-                        Message = "Would you like to update PackageManagement (You will need to restart the PowerShell extension after)?",
-                        Type = MessageType.Warning,
-                        Actions = new[]
-                        {
                         new MessageActionItem
                         {
                             Title = takeActionText
@@ -112,16 +110,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                             Title = "Not now"
                         }
                     }
-                    });
-                    confirmPackageManagementUpdate = messageAction?.Title == takeActionText;
-                }
-                catch (MethodNotSupportedException ex)
-                {
-                    confirmPackageManagementUpdate = true;
-                }
+                });
 
                 // If the user chose "Not now" ignore it for the rest of the session.
-                if (confirmPackageManagementUpdate)
+                if (messageAction?.Title == takeActionText)
                 {
                     StringBuilder errors = new StringBuilder();
                     await _powerShellContextService.ExecuteScriptStringAsync(
@@ -151,16 +143,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         });
                     }
                 }
-
-                message += $"{message}\r\nLanguageMode: {_powerShellContextService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode}\r\n";
-                var envvars = Environment.GetEnvironmentVariables();
-                var envinfo = $"";
-                foreach (var envvar in envvars.Keys)
-                {
-                    envinfo += $"{envvar} = {envvars[envvar]}\r\n";
-                }
-                message += envinfo;
-                _logger.LogDebug(message);                
             }
         }
     }
