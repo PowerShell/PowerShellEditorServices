@@ -27,6 +27,7 @@ using Microsoft.PowerShell.EditorServices.Services.Configuration;
 
 namespace PowerShellEditorServices.Test.E2E
 {
+    [DisplayTestMethodName]
     public class LanguageServerProtocolMessageTests : IClassFixture<LSPTestsFixture>, IDisposable
     {
         // Borrowed from `VersionUtils` which can't be used here due to an initialization problem.
@@ -41,7 +42,18 @@ namespace PowerShellEditorServices.Test.E2E
         private readonly List<Diagnostic> Diagnostics;
         private readonly List<PsesTelemetryEvent> TelemetryEvents;
         private readonly string PwshExe;
+        private class DisplayTestMethodNameAttribute : Xunit.Sdk.BeforeAfterTestAttribute
+        {
+            public override void Before(MethodInfo methodUnderTest)
+            {
+                Console.WriteLine("Setup for test '{0}.'", methodUnderTest.Name);
+            }
 
+            public override void After(MethodInfo methodUnderTest)
+            {
+                Console.WriteLine("TearDown for test '{0}.'", methodUnderTest.Name);
+            }
+        }
         public LanguageServerProtocolMessageTests(ITestOutputHelper output, LSPTestsFixture data)
         {
             data.Output = output;
@@ -611,6 +623,7 @@ Write-Host 'Goodbye'
         [Fact]
         public async Task CanSendPowerShellGetRunspaceRequestAsync()
         {
+            
             var process = new Process();
             process.StartInfo.FileName = PwshExe;
             process.StartInfo.ArgumentList.Add("-NoProfile");

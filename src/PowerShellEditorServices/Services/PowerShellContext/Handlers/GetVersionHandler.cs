@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Linq;
 using System.Management.Automation;
 using System.Text;
 using System.Threading;
@@ -76,6 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private async Task CheckPackageManagement()
         {
+            var isInteractive = (await _powerShellContextService.ExecuteCommandAsync<bool>(new PSCommand().AddScript("if ([Environment]::UserInteractive) { foreach ($arg in [Environment]::GetCommandLineArgs()) { if ($arg -like '-NonI*') { return $true } } }"))).FirstOrDefault();
             PSCommand getModule = new PSCommand().AddCommand("Get-Module").AddParameter("ListAvailable").AddParameter("Name", "PackageManagement");
             foreach (PSModuleInfo module in await _powerShellContextService.ExecuteCommandAsync<PSModuleInfo>(getModule))
             {
@@ -84,17 +86,21 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 {
                     break;
                 }
-
-                Console.WriteLine($"Name: {module.Name}");
-                Console.WriteLine($"Version: {module.Version}");
-                Console.WriteLine($"ModuleBase: {module.ModuleBase}");
-                Console.WriteLine($"Path: {module.Path}");
-
+                
                 _logger.LogDebug("Old version of PackageManagement detected.");
+
+                _languageServer.Window.ShowInfo($"LanguageMode: {_powerShellContextService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode}");
+                _languageServer.Window.ShowInfo($"You have {module.Name} version {module.Version} of PackageManagement \r\n{module.Path}\r\n. Versions below {s_desiredPackageManagementVersion} are known to cause issues with the PowerShell extension. Please run the following command in a new Windows PowerShell session and then restart the PowerShell extension: `Install-Module PackageManagement -Force -AllowClobber -MinimumVersion 1.4.6`");
+                var envvars = Environment.GetEnvironmentVariables();
+                var envinfo = $"IsInteractive: {isInteractive}";
+                foreach (var envvar in envvars.Keys)
+                {
+                    envinfo += $"{envvar} = {envvars[envvar]}";
+                }
+                _languageServer.Window.ShowInfo(envinfo);
 
                 if (_powerShellContextService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
                 {
-                    _languageServer.Window.ShowWarning("You have an older version of PackageManagement known to cause issues with the PowerShell extension. Please run the following command in a new Windows PowerShell session and then restart the PowerShell extension: `Install-Module PackageManagement -Force -AllowClobber -MinimumVersion 1.4.6`");
                     return;
                 }
 

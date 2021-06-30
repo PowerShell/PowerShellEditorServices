@@ -217,7 +217,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             EditorServicesPSHostUserInterface hostUserInterface =
                 hostStartupInfo.ConsoleReplEnabled
-                    ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, hostStartupInfo.PSHost, logger)
+                    ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, hostStartupInfo.PSHost, logger)
                     : new ProtocolPSHostUserInterface(languageServer, powerShellContext, logger);
 
             EditorServicesPSHost psHost =
@@ -230,11 +230,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             logger.LogTrace("Creating initial PowerShell runspace");
             Runspace initialRunspace;
             var modulesToImport = new List<string>();
+            modulesToImport.Add(s_commandsModulePath);
             if (hostStartupInfo.ConsoleReplEnabled)
             {
                 modulesToImport.Add(_psReadLineModulePath);
             }
-            modulesToImport.Add(s_commandsModulePath);
             modulesToImport.AddRange(hostStartupInfo.AdditionalModules);
             if (hostStartupInfo.InitialSessionState.Providers.Any(a => a.Name == "FileSystem" && a.Visibility == SessionStateEntryVisibility.Public))
             {
