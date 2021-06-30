@@ -58,11 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (VersionUtils.IsPS5 && _configurationService.CurrentSettings.PromptToUpdatePackageManagement)
             {
                 await CheckPackageManagement().ConfigureAwait(false);
-            }
-            else
-            {
-                throw new Exception($"Not checking PackageManagement: PromptToUpdatePackageManagement -> {_configurationService.CurrentSettings.PromptToUpdatePackageManagement}");
-            }
+            }            
 
             return new PowerShellVersion
             {
@@ -82,7 +78,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private async Task CheckPackageManagement()
         {
-            var isInteractive = (await _powerShellContextService.ExecuteCommandAsync<bool>(new PSCommand().AddScript("if ([Environment]::UserInteractive) { foreach ($arg in [Environment]::GetCommandLineArgs()) { if ($arg -like '-NonI*') { return $true } } }"))).FirstOrDefault();
             PSCommand getModule = new PSCommand().AddCommand("Get-Module").AddParameter("ListAvailable").AddParameter("Name", "PackageManagement");
             foreach (PSModuleInfo module in await _powerShellContextService.ExecuteCommandAsync<PSModuleInfo>(getModule))
             {
