@@ -192,7 +192,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             HostStartupInfo hostStartupInfo)
         {
             Validate.IsNotNull(nameof(hostStartupInfo), hostStartupInfo);
-            
+
             var logger = factory.CreateLogger<PowerShellContextService>();
             bool shouldUsePSReadLine = hostStartupInfo.ConsoleReplEnabled
                 && !hostStartupInfo.UsesLegacyReadLine;
