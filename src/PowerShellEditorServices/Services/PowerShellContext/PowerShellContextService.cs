@@ -43,10 +43,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private static readonly PropertyInfo s_writeStreamProperty;
         private static readonly object s_errorStreamValue;
 
-        private static readonly Action<Runspace, ApartmentState> s_runspaceApartmentStateSetter;
-        private static readonly PropertyInfo s_writeStreamProperty;
-        private static readonly object s_errorStreamValue;
-
         [SuppressMessage("Performance", "CA1810:Initialize reference type static fields inline", Justification = "cctor needed for version specific initialization")]
         static PowerShellContextService()
         {
@@ -196,13 +192,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             HostStartupInfo hostStartupInfo)
         {
             Validate.IsNotNull(nameof(hostStartupInfo), hostStartupInfo);
-            if(!string.IsNullOrEmpty(hostStartupInfo.BundledModulePath))
-            {
-                s_bundledModulesPath = hostStartupInfo.BundledModulePath;
-            }
-
+            
             var logger = factory.CreateLogger<PowerShellContextService>();
-
             bool shouldUsePSReadLine = hostStartupInfo.ConsoleReplEnabled
                 && !hostStartupInfo.UsesLegacyReadLine;
 
@@ -226,11 +217,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             logger.LogTrace("Creating initial PowerShell runspace");
             Runspace initialRunspace;
             var modulesToImport = new List<string>();
-            modulesToImport.Add(s_commandsModulePath);
-            if (hostStartupInfo.ConsoleReplEnabled)
-            {
-                modulesToImport.Add(_psReadLineModulePath);
-            }
+            modulesToImport.Add(s_commandsModulePath);            
             modulesToImport.AddRange(hostStartupInfo.AdditionalModules);
             if (hostStartupInfo.InitialSessionState.Providers.Any(a => a.Name == "FileSystem" && a.Visibility == SessionStateEntryVisibility.Public))
             {
