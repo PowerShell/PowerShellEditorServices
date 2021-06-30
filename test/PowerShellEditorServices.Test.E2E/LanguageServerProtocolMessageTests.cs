@@ -119,18 +119,26 @@ namespace PowerShellEditorServices.Test.E2E
         [Fact]
         public async Task CanSendPowerShellGetVersionRequestAsync()
         {
-            PowerShellVersion details
+            PowerShellVersion details = null; ;
+            try
+            {
+                details
                 = await PsesLanguageClient
                     .SendRequest<GetVersionParams>("powerShell/getVersion", new GetVersionParams())
                     .Returning<PowerShellVersion>(CancellationToken.None);
+            }
+            catch(ApplicationException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
 
             if(PwshExe == "powershell")
             {
-                Assert.Equal("Desktop", details.Edition);
+                Assert.Equal("Desktop", details?.Edition);
             }
             else
             {
-                Assert.Equal("Core", details.Edition);
+                Assert.Equal("Core", details?.Edition);
             }
         }
 

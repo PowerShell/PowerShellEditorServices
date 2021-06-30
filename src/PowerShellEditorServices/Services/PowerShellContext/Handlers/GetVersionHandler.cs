@@ -87,6 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     break;
                 }
                 var message = $"You have {module.Name} version {module.Version} of PackageManagement \r\n{module.Path}\r\n. Versions below {s_desiredPackageManagementVersion} are known to cause issues with the PowerShell extension. Please run the following command in a new Windows PowerShell session and then restart the PowerShell extension: `Install-Module PackageManagement -Force -AllowClobber -MinimumVersion 1.4.6`";
+                var confirmPackageManagementUpdate = false;
                 try
                 {
                     throw new Exception(message);
@@ -112,52 +113,54 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         }
                     }
                     });
-
-                    // If the user chose "Not now" ignore it for the rest of the session.
-                    if (messageAction?.Title == takeActionText)
-                    {
-                        StringBuilder errors = new StringBuilder();
-                        await _powerShellContextService.ExecuteScriptStringAsync(
-                            "powershell.exe -NoLogo -NoProfile -Command '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Install-Module -Name PackageManagement -Force -MinimumVersion 1.4.6 -Scope CurrentUser -AllowClobber -Repository PSGallery'",
-                            errors,
-                            writeInputToHost: true,
-                            writeOutputToHost: true,
-                            addToHistory: true).ConfigureAwait(false);
-
-                        if (errors.Length == 0)
-                        {
-                            _logger.LogDebug("PackageManagement is updated.");
-                            _languageServer.Window.ShowMessage(new ShowMessageParams
-                            {
-                                Type = MessageType.Info,
-                                Message = "PackageManagement updated, If you already had PackageManagement loaded in your session, please restart the PowerShell extension."
-                            });
-                        }
-                        else
-                        {
-                            // There were errors installing PackageManagement.
-                            _logger.LogError($"PackageManagement installation had errors: {errors.ToString()}");
-                            _languageServer.Window.ShowMessage(new ShowMessageParams
-                            {
-                                Type = MessageType.Error,
-                                Message = "PackageManagement update failed. This might be due to PowerShell Gallery using TLS 1.2. More info can be found at https://aka.ms/psgallerytls"
-                            });
-                        }
-                    }
+                    confirmPackageManagementUpdate = messageAction?.Title == takeActionText;
                 }
-                catch (Exception ex)
+                catch (MethodNotSupportedException ex)
                 {
-                    var debugInfo = $"{message}\r\nLanguageMode: {_powerShellContextService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode}\r\n";
-                    var envvars = Environment.GetEnvironmentVariables();
-                    var envinfo = $"";
-                    foreach (var envvar in envvars.Keys)
-                    {
-                        envinfo += $"{envvar} = {envvars[envvar]}\r\n";
-                    }
-                    message += envinfo;
-                    _logger.LogDebug(message);
-                    throw new NotSupportedException(message);
+                    confirmPackageManagementUpdate = true;
                 }
+
+                // If the user chose "Not now" ignore it for the rest of the session.
+                if (confirmPackageManagementUpdate)
+                {
+                    StringBuilder errors = new StringBuilder();
+                    await _powerShellContextService.ExecuteScriptStringAsync(
+                        "powershell.exe -NoLogo -NoProfile -Command '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Install-Module -Name PackageManagement -Force -MinimumVersion 1.4.6 -Scope CurrentUser -AllowClobber -Repository PSGallery'",
+                        errors,
+                        writeInputToHost: true,
+                        writeOutputToHost: true,
+                        addToHistory: true).ConfigureAwait(false);
+
+                    if (errors.Length == 0)
+                    {
+                        _logger.LogDebug("PackageManagement is updated.");
+                        _languageServer.Window.ShowMessage(new ShowMessageParams
+                        {
+                            Type = MessageType.Info,
+                            Message = "PackageManagement updated, If you already had PackageManagement loaded in your session, please restart the PowerShell extension."
+                        });
+                    }
+                    else
+                    {
+                        // There were errors installing PackageManagement.
+                        _logger.LogError($"PackageManagement installation had errors: {errors.ToString()}");
+                        _languageServer.Window.ShowMessage(new ShowMessageParams
+                        {
+                            Type = MessageType.Error,
+                            Message = "PackageManagement update failed. This might be due to PowerShell Gallery using TLS 1.2. More info can be found at https://aka.ms/psgallerytls"
+                        });
+                    }
+                }
+
+                message += $"{message}\r\nLanguageMode: {_powerShellContextService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode}\r\n";
+                var envvars = Environment.GetEnvironmentVariables();
+                var envinfo = $"";
+                foreach (var envvar in envvars.Keys)
+                {
+                    envinfo += $"{envvar} = {envvars[envvar]}\r\n";
+                }
+                message += envinfo;
+                _logger.LogDebug(message);                
             }
         }
     }
