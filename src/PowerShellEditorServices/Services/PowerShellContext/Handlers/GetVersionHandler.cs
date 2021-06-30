@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Utility;
+using OmniSharp.Extensions.JsonRpc.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Window;
@@ -86,31 +87,21 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 {
                     break;
                 }
-                
-                _logger.LogDebug("Old version of PackageManagement detected.");
-
-                _languageServer.Window.ShowInfo($"LanguageMode: {_powerShellContextService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode}");
-                _languageServer.Window.ShowInfo($"You have {module.Name} version {module.Version} of PackageManagement \r\n{module.Path}\r\n. Versions below {s_desiredPackageManagementVersion} are known to cause issues with the PowerShell extension. Please run the following command in a new Windows PowerShell session and then restart the PowerShell extension: `Install-Module PackageManagement -Force -AllowClobber -MinimumVersion 1.4.6`");
-                var envvars = Environment.GetEnvironmentVariables();
-                var envinfo = $"IsInteractive: {isInteractive}";
-                foreach (var envvar in envvars.Keys)
+                var message = $"You have {module.Name} version {module.Version} of PackageManagement \r\n{module.Path}\r\n. Versions below {s_desiredPackageManagementVersion} are known to cause issues with the PowerShell extension. Please run the following command in a new Windows PowerShell session and then restart the PowerShell extension: `Install-Module PackageManagement -Force -AllowClobber -MinimumVersion 1.4.6`";
+                try
                 {
-                    envinfo += $"{envvar} = {envvars[envvar]}";
-                }
-                _languageServer.Window.ShowInfo(envinfo);
-
-                if (_powerShellContextService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
-                {
-                    return;
-                }
-
-                var takeActionText = "Yes";
-                MessageActionItem messageAction = await _languageServer.Window.ShowMessageRequest(new ShowMessageRequestParams
-                {
-                    Message = "You have an older version of PackageManagement known to cause issues with the PowerShell extension. Would you like to update PackageManagement (You will need to restart the PowerShell extension after)?",
-                    Type = MessageType.Warning,
-                    Actions = new[]
+                    _languageServer.Window.ShowInfo(message);
+                    if (_powerShellContextService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
                     {
+                        return;
+                    }
+                    var takeActionText = "Yes";
+                    MessageActionItem messageAction = await _languageServer.Window.ShowMessageRequest(new ShowMessageRequestParams
+                    {
+                        Message = "Would you like to update PackageManagement (You will need to restart the PowerShell extension after)?",
+                        Type = MessageType.Warning,
+                        Actions = new[]
+                        {
                         new MessageActionItem
                         {
                             Title = takeActionText
@@ -120,38 +111,52 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                             Title = "Not now"
                         }
                     }
-                });
+                    });
 
-                // If the user chose "Not now" ignore it for the rest of the session.
-                if (messageAction?.Title == takeActionText)
+                    // If the user chose "Not now" ignore it for the rest of the session.
+                    if (messageAction?.Title == takeActionText)
+                    {
+                        StringBuilder errors = new StringBuilder();
+                        await _powerShellContextService.ExecuteScriptStringAsync(
+                            "powershell.exe -NoLogo -NoProfile -Command '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Install-Module -Name PackageManagement -Force -MinimumVersion 1.4.6 -Scope CurrentUser -AllowClobber -Repository PSGallery'",
+                            errors,
+                            writeInputToHost: true,
+                            writeOutputToHost: true,
+                            addToHistory: true).ConfigureAwait(false);
+
+                        if (errors.Length == 0)
+                        {
+                            _logger.LogDebug("PackageManagement is updated.");
+                            _languageServer.Window.ShowMessage(new ShowMessageParams
+                            {
+                                Type = MessageType.Info,
+                                Message = "PackageManagement updated, If you already had PackageManagement loaded in your session, please restart the PowerShell extension."
+                            });
+                        }
+                        else
+                        {
+                            // There were errors installing PackageManagement.
+                            _logger.LogError($"PackageManagement installation had errors: {errors.ToString()}");
+                            _languageServer.Window.ShowMessage(new ShowMessageParams
+                            {
+                                Type = MessageType.Error,
+                                Message = "PackageManagement update failed. This might be due to PowerShell Gallery using TLS 1.2. More info can be found at https://aka.ms/psgallerytls"
+                            });
+                        }
+                    }
+                }
+                catch (MethodNotSupportedException ex)
                 {
-                    StringBuilder errors = new StringBuilder();
-                    await _powerShellContextService.ExecuteScriptStringAsync(
-                        "powershell.exe -NoLogo -NoProfile -Command '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Install-Module -Name PackageManagement -Force -MinimumVersion 1.4.6 -Scope CurrentUser -AllowClobber -Repository PSGallery'",
-                        errors,
-                        writeInputToHost: true,
-                        writeOutputToHost: true,
-                        addToHistory: true).ConfigureAwait(false);
-
-                    if (errors.Length == 0)
+                    var debugInfo = $"{message}\r\nLanguageMode: {_powerShellContextService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode}\r\n";
+                    var envvars = Environment.GetEnvironmentVariables();
+                    var envinfo = $"IsInteractive: {isInteractive}\r\n";
+                    foreach (var envvar in envvars.Keys)
                     {
-                        _logger.LogDebug("PackageManagement is updated.");
-                        _languageServer.Window.ShowMessage(new ShowMessageParams
-                        {
-                            Type = MessageType.Info,
-                            Message = "PackageManagement updated, If you already had PackageManagement loaded in your session, please restart the PowerShell extension."
-                        });
+                        envinfo += $"{envvar} = {envvars[envvar]}";
                     }
-                    else
-                    {
-                        // There were errors installing PackageManagement.
-                        _logger.LogError($"PackageManagement installation had errors: {errors.ToString()}");
-                        _languageServer.Window.ShowMessage(new ShowMessageParams
-                        {
-                            Type = MessageType.Error,
-                            Message = "PackageManagement update failed. This might be due to PowerShell Gallery using TLS 1.2. More info can be found at https://aka.ms/psgallerytls"
-                        });
-                    }
+                    message += envinfo;
+                    _logger.LogDebug(message);
+                    throw new NotSupportedException(message);
                 }
             }
         }
