@@ -357,7 +357,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="hostUserInterface">The EditorServicesPSHostUserInterface to use for this instance.</param>
         /// <param name="logger">An ILogger implementation to use for this instance.</param>
         /// <returns></returns>
-        public static Runspace CreateRunspace(
+        public static Runspace CreateTestRunspace(
             HostStartupInfo hostDetails,
             PowerShellContextService powerShellContext,
             EditorServicesPSHostUserInterface hostUserInterface,
@@ -379,11 +379,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns></returns>
         public static Runspace CreateRunspace(PSHost psHost, InitialSessionState initialSessionState)
         {
-            if (Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1")
-            {
-                initialSessionState = InitialSessionState.CreateDefault();
-            }
-            
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
 
             // Windows PowerShell must be hosted in STA mode

@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 TestProfilePaths,
                 new List<string>(),
                 new List<string>(),
-                InitialSessionState.CreateDefault2(),
+                Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1" ? InitialSessionState.CreateDefault() : InitialSessionState.CreateDefault2(),
                 null,
                 0,
                 consoleReplEnabled: false,
@@ -55,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
 
             powerShellContext.Initialize(
                 TestProfilePaths,
-                PowerShellContextService.CreateRunspace(
+                PowerShellContextService.CreateTestRunspace(
                     testHostDetails,
                     powerShellContext,
                     new TestPSHostUserInterface(powerShellContext, logger),
