@@ -78,7 +78,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private async Task CheckPackageManagement()
         {
-            var isInteractive = (await _powerShellContextService.ExecuteCommandAsync<bool>(new PSCommand().AddScript("if ([Environment]::UserInteractive) { foreach ($arg in [Environment]::GetCommandLineArgs()) { if ($arg -like '-NonI*') { return $true } } }"))).FirstOrDefault();
             PSCommand getModule = new PSCommand().AddCommand("Get-Module").AddParameter("ListAvailable").AddParameter("Name", "PackageManagement");
             foreach (PSModuleInfo module in await _powerShellContextService.ExecuteCommandAsync<PSModuleInfo>(getModule))
             {
@@ -90,6 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 var message = $"You have {module.Name} version {module.Version} of PackageManagement \r\n{module.Path}\r\n. Versions below {s_desiredPackageManagementVersion} are known to cause issues with the PowerShell extension. Please run the following command in a new Windows PowerShell session and then restart the PowerShell extension: `Install-Module PackageManagement -Force -AllowClobber -MinimumVersion 1.4.6`";
                 try
                 {
+                    throw new Exception(message);
                     _languageServer.Window.ShowInfo(message);
                     if (_powerShellContextService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
                     {
@@ -145,14 +145,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         }
                     }
                 }
-                catch (MethodNotSupportedException ex)
+                catch (Exception ex)
                 {
                     var debugInfo = $"{message}\r\nLanguageMode: {_powerShellContextService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode}\r\n";
                     var envvars = Environment.GetEnvironmentVariables();
-                    var envinfo = $"IsInteractive: {isInteractive}\r\n";
+                    var envinfo = $"";
                     foreach (var envvar in envvars.Keys)
                     {
-                        envinfo += $"{envvar} = {envvars[envvar]}";
+                        envinfo += $"{envvar} = {envvars[envvar]}\r\n";
                     }
                     message += envinfo;
                     _logger.LogDebug(message);
