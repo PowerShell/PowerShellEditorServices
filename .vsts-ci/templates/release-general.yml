@@ -21,6 +21,7 @@ steps:
     alwaysCopy: true # So publishing works
     certificateId: 'CP-230012' # Authenticode certificate
     useMinimatch: true # This enables the use of globbing
+    shouldSign: true # We always want to sign
     pattern: |
       # PowerShellEditorServices Script
       PowerShellEditorServices/*.{ps1,psd1,psm1,ps1xml}
@@ -39,6 +40,7 @@ steps:
     alwaysCopy: true # So publishing works
     certificateId: 'CP-231522' # Third-party certificate
     useMinimatch: true # This enables the use of globbing
+    shouldSign: true # We always want to sign
     pattern: |
       **/MediatR.dll
       **/Nerdbank.Streams.dll
