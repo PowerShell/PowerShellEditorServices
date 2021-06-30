@@ -85,6 +85,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     break;
                 }
 
+                Console.WriteLine($"Name: {module.Name}");
+                Console.WriteLine($"Version: {module.Version}");
+                Console.WriteLine($"ModuleBase: {module.ModuleBase}");
+                Console.WriteLine($"Path: {module.Path}");
+
                 _logger.LogDebug("Old version of PackageManagement detected.");
 
                 if (_powerShellContextService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
