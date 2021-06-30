@@ -58,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (VersionUtils.IsPS5 && _configurationService.CurrentSettings.PromptToUpdatePackageManagement)
             {
                 await CheckPackageManagement().ConfigureAwait(false);
-            }            
+            }
 
             return new PowerShellVersion
             {
@@ -152,7 +152,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     var envinfo = $"";
                     foreach (var envvar in envvars.Keys)
                     {
-                        envinfo += $"{envvar} = {envvars[envvar]}";
+                        envinfo += $"{envvar} = {envvars[envvar]}\r\n";
                     }
                     message += envinfo;
                     _logger.LogDebug(message);
