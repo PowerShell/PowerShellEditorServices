@@ -34,18 +34,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// </summary>
     internal class PowerShellContextService : IHostSupportsInteractiveSession
     {
-        private static string s_bundledModulesPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "..", "..");
+        private static readonly string s_commandsModulePath = Path.GetFullPath(
+            Path.Combine(
+                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                "../../Commands/PowerShellEditorServices.Commands.psd1"));
 
-        private static string s_commandsModulePath => Path.GetFullPath(
-            Path.Combine(
-                s_bundledModulesPath,
-                "PowerShellEditorServices",
-                "Commands",
-                "PowerShellEditorServices.Commands.psd1"));
-        private static string _psReadLineModulePath => Path.GetFullPath(
-            Path.Combine(
-                s_bundledModulesPath,
-                "PSReadLine"));
+        private static readonly Action<Runspace, ApartmentState> s_runspaceApartmentStateSetter;
+        private static readonly PropertyInfo s_writeStreamProperty;
+        private static readonly object s_errorStreamValue;
 
         private static readonly Action<Runspace, ApartmentState> s_runspaceApartmentStateSetter;
         private static readonly PropertyInfo s_writeStreamProperty;
