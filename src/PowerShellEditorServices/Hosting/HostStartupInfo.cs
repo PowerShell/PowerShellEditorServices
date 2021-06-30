@@ -108,8 +108,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// </remarks>
         public int LogLevel { get; }
 
-        public string BundledModulePath { get; }
-
         #endregion
 
         #region Constructors
@@ -150,8 +148,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             string logPath,
             int logLevel,
             bool consoleReplEnabled,
-            bool usesLegacyReadLine,
-            string bundledModulePath)
+            bool usesLegacyReadLine)
         {
             Name = name ?? DefaultHostName;
             ProfileId = profileId ?? DefaultHostProfileId;
@@ -165,7 +162,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             LogLevel = logLevel;
             ConsoleReplEnabled = consoleReplEnabled;
             UsesLegacyReadLine = usesLegacyReadLine;
-            BundledModulePath = bundledModulePath;
         }
 
         #endregion
