@@ -58,7 +58,8 @@ namespace Microsoft.PowerShell.EditorServices.Test
                     powerShellContext,
                     new TestPSHostUserInterface(powerShellContext, logger),
                     logger),
-                true);
+                ownsInitialRunspace: true,
+                consoleHost: null);
 
             return powerShellContext;
         }
