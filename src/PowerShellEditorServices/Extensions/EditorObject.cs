@@ -5,7 +5,7 @@ using System;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Extensions.Services;
-using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.Extension;
 
 namespace Microsoft.PowerShell.EditorServices.Extensions
 {

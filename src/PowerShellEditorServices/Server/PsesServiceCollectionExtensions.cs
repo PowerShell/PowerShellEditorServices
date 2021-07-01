@@ -8,6 +8,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.Extension;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
+using Microsoft.PowerShell.EditorServices.Services.Template;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Server
 {
@@ -17,33 +24,31 @@ namespace Microsoft.PowerShell.EditorServices.Server
             this IServiceCollection collection,
             HostStartupInfo hostStartupInfo)
         {
-            return collection.AddSingleton<WorkspaceService>()
+            return collection
+                .AddSingleton<HostStartupInfo>(hostStartupInfo)
+                .AddSingleton<WorkspaceService>()
                 .AddSingleton<SymbolsService>()
+                .AddSingleton<EditorServicesConsolePSHost>()
+                .AddSingleton<IRunspaceContext>(
+                    (provider) => provider.GetService<EditorServicesConsolePSHost>())
+                .AddSingleton<PowerShellExecutionService>(
+                    (provider) => provider.GetService<EditorServicesConsolePSHost>().ExecutionService)
                 .AddSingleton<ConfigurationService>()
-                .AddSingleton<PowerShellContextService>(
-                    (provider) =>
-                        PowerShellContextService.Create(
-                            provider.GetService<ILoggerFactory>(),
-                            // NOTE: Giving the context service access to the language server this
-                            // early is dangerous because it allows it to start sending
-                            // notifications etc. before it has initialized, potentially resulting
-                            // in deadlocks. We're working on a solution to this.
-                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade>(),
-                            hostStartupInfo))
-                .AddSingleton<TemplateService>() // TODO: What's the difference between this and the TemplateHandler?
+                .AddSingleton<IPowerShellDebugContext>(
+                    (provider) => provider.GetService<EditorServicesConsolePSHost>().DebugContext)
+                .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<RemoteFileManagerService>()
-                .AddSingleton<ExtensionService>(
-                    (provider) =>
+                .AddSingleton<ExtensionService>((provider) =>
                     {
                         var extensionService = new ExtensionService(
-                            provider.GetService<PowerShellContextService>(),
-                            // NOTE: See above warning.
-                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade>());
-                        extensionService.InitializeAsync(
-                            serviceProvider: provider,
-                            editorOperations: provider.GetService<EditorOperationsService>())
-                            .Wait();
+                            provider.GetService<ILanguageServerFacade>(),
+                            provider,
+                            provider.GetService<EditorOperationsService>(),
+                            provider.GetService<PowerShellExecutionService>());
+
+                        extensionService.InitializeAsync();
+
                         return extensionService;
                     })
                 .AddSingleton<AnalysisService>();
@@ -55,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
             PsesDebugServer psesDebugServer,
             bool useTempSession)
         {
-            return collection.AddSingleton(languageServiceProvider.GetService<PowerShellContextService>())
+            return collection.AddSingleton(languageServiceProvider.GetService<PowerShellExecutionService>())
                 .AddSingleton(languageServiceProvider.GetService<WorkspaceService>())
                 .AddSingleton(languageServiceProvider.GetService<RemoteFileManagerService>())
                 .AddSingleton<PsesDebugServer>(psesDebugServer)

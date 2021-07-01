@@ -1,13 +1,19 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System;
 using System.IO;
+using System.Management.Automation;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.Extension;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+using Microsoft.PowerShell.EditorServices.Services.Template;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Server;
 using Serilog;
@@ -108,11 +114,12 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     // https://microsoft.github.io/language-server-protocol/specifications/specification-current/#initialize
                     .OnInitialize(
                         // TODO: Either fix or ignore "method lacks 'await'" warning.
-                        async (languageServer, request, cancellationToken) =>
+                        (languageServer, request, cancellationToken) =>
                         {
                             Log.Logger.Debug("Initializing OmniSharp Language Server");
 
-                            var serviceProvider = languageServer.Services;
+                            IServiceProvider serviceProvider = languageServer.Services;
+
                             var workspaceService = serviceProvider.GetService<WorkspaceService>();
 
                             // Grab the workspace path from the parameters
@@ -130,6 +137,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
                                     break;
                                 }
                             }
+
+                            return Task.CompletedTask;
                         });
             }).ConfigureAwait(false);
 

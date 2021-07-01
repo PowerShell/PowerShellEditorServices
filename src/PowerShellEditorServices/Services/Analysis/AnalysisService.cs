@@ -14,7 +14,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.Analysis;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -133,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="filesToAnalyze">The files to run script analysis on.</param>
         /// <param name="cancellationToken">A cancellation token to cancel this call with.</param>
         /// <returns>A task that finishes when script diagnostics have been published.</returns>
-        public void RunScriptDiagnostics(
+        public void StartScriptDiagnostics(
             ScriptFile[] filesToAnalyze)
         {
             if (_configurationService.CurrentSettings.ScriptAnalysis.Enable == false)

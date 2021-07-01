@@ -7,14 +7,17 @@ using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -28,12 +31,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private const string PsesGlobalVariableNamePrefix = "__psEditorServices_";
         private const string TemporaryScriptFileName = "Script Listing.ps1";
-        private readonly BreakpointDetails[] s_emptyBreakpointDetailsArray = new BreakpointDetails[0];
 
-        private readonly ILogger logger;
-        private readonly PowerShellContextService powerShellContext;
+        private readonly BreakpointDetails[] s_emptyBreakpointDetailsArray = Array.Empty<BreakpointDetails>();
+
+        private readonly ILogger _logger;
+        private readonly PowerShellExecutionService _executionService;
         private readonly BreakpointService _breakpointService;
-        private RemoteFileManagerService remoteFileManager;
+        private readonly RemoteFileManagerService remoteFileManager;
+
+        private readonly EditorServicesConsolePSHost _psesHost;
+
+        private readonly IPowerShellDebugContext _debugContext;
 
         private int nextVariableId;
         private string temporaryScriptListingPath;
@@ -60,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// Gets a boolean that indicates whether the debugger is currently
         /// stopped at a breakpoint.
         /// </summary>
-        public bool IsDebuggerStopped => this.powerShellContext.IsDebuggerStopped;
+        public bool IsDebuggerStopped => _debugContext.IsStopped;
 
         /// <summary>
         /// Gets the current DebuggerStoppedEventArgs when the debugger
@@ -97,20 +105,23 @@ namespace Microsoft.PowerShell.EditorServices.Services
         //// </param>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public DebugService(
-            PowerShellContextService powerShellContext,
+            PowerShellExecutionService executionService,
+            IPowerShellDebugContext debugContext,
             RemoteFileManagerService remoteFileManager,
             BreakpointService breakpointService,
+            EditorServicesConsolePSHost psesHost,
             ILoggerFactory factory)
         {
-            Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
+            Validate.IsNotNull(nameof(executionService), executionService);
 
-            this.logger = factory.CreateLogger<DebugService>();
-            this.powerShellContext = powerShellContext;
+            this._logger = factory.CreateLogger<DebugService>();
+            _executionService = executionService;
             _breakpointService = breakpointService;
-            this.powerShellContext.DebuggerStop += this.OnDebuggerStopAsync;
-            this.powerShellContext.DebuggerResumed += this.OnDebuggerResumed;
-
-            this.powerShellContext.BreakpointUpdated += this.OnBreakpointUpdated;
+            _psesHost = psesHost;
+            _debugContext = debugContext;
+            _debugContext.DebuggerStopped += OnDebuggerStopAsync;
+            _debugContext.DebuggerResuming += OnDebuggerResuming;
+            _debugContext.BreakpointUpdated += OnBreakpointUpdated;
 
             this.remoteFileManager = remoteFileManager;
 
@@ -137,19 +148,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
             BreakpointDetails[] breakpoints,
             bool clearExisting = true)
         {
-            var dscBreakpoints =
-                this.powerShellContext
-                    .CurrentRunspace
-                    .GetCapability<DscBreakpointCapability>();
+            DscBreakpointCapability dscBreakpoints = await _debugContext.GetDscBreakpointCapabilityAsync(CancellationToken.None);
 
             string scriptPath = scriptFile.FilePath;
             // Make sure we're using the remote script path
-            if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
-                this.remoteFileManager != null)
+            if (_psesHost.CurrentRunspace.IsOnRemoteMachine
+                && this.remoteFileManager != null)
             {
                 if (!this.remoteFileManager.IsUnderRemoteTempPath(scriptPath))
                 {
-                    this.logger.LogTrace(
+                    this._logger.LogTrace(
                         $"Could not set breakpoints for local path '{scriptPath}' in a remote session.");
 
                     return s_emptyBreakpointDetailsArray;
@@ -158,7 +166,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 string mappedPath =
                     this.remoteFileManager.GetMappedPath(
                         scriptPath,
-                        this.powerShellContext.CurrentRunspace);
+                        _psesHost.CurrentRunspace);
 
                 scriptPath = mappedPath;
             }
@@ -166,7 +174,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.temporaryScriptListingPath != null &&
                 this.temporaryScriptListingPath.Equals(scriptPath, StringComparison.CurrentCultureIgnoreCase))
             {
-                this.logger.LogTrace(
+                this._logger.LogTrace(
                     $"Could not set breakpoint on temporary script listing path '{scriptPath}'.");
 
                 return s_emptyBreakpointDetailsArray;
@@ -174,8 +182,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // Fix for issue #123 - file paths that contain wildcard chars [ and ] need to
             // quoted and have those wildcard chars escaped.
-            string escapedScriptPath =
-                PowerShellContextService.WildcardEscapePath(scriptPath);
+            string escapedScriptPath = PathUtils.WildcardEscape(scriptPath);
 
             if (dscBreakpoints == null || !dscBreakpoints.IsDscResourcePath(escapedScriptPath))
             {
@@ -188,7 +195,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             return await dscBreakpoints.SetLineBreakpointsAsync(
-                this.powerShellContext,
+                _executionService,
                 escapedScriptPath,
                 breakpoints);
         }
@@ -224,8 +231,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public void Continue()
         {
-            this.powerShellContext.ResumeDebugger(
-                DebuggerResumeAction.Continue);
+            _debugContext.Continue();
         }
 
         /// <summary>
@@ -233,8 +239,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public void StepOver()
         {
-            this.powerShellContext.ResumeDebugger(
-                DebuggerResumeAction.StepOver);
+            _debugContext.StepOver();
         }
 
         /// <summary>
@@ -242,8 +247,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public void StepIn()
         {
-            this.powerShellContext.ResumeDebugger(
-                DebuggerResumeAction.StepInto);
+            _debugContext.StepInto();
         }
 
         /// <summary>
@@ -251,8 +255,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public void StepOut()
         {
-            this.powerShellContext.ResumeDebugger(
-                DebuggerResumeAction.StepOut);
+            _debugContext.StepOut();
         }
 
         /// <summary>
@@ -262,8 +265,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public void Break()
         {
-            // Break execution in the debugger
-            this.powerShellContext.BreakExecution();
+            _debugContext.BreakExecution();
         }
 
         /// <summary>
@@ -272,7 +274,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public void Abort()
         {
-            this.powerShellContext.AbortExecution(shouldAbortDebugSession: true);
+            _debugContext.Abort();
         }
 
         /// <summary>
@@ -289,14 +291,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 if ((variableReferenceId < 0) || (variableReferenceId >= this.variables.Count))
                 {
-                    logger.LogWarning($"Received request for variableReferenceId {variableReferenceId} that is out of range of valid indices.");
+                    _logger.LogWarning($"Received request for variableReferenceId {variableReferenceId} that is out of range of valid indices.");
                     return Array.Empty<VariableDetailsBase>();
                 }
 
                 VariableDetailsBase parentVariable = this.variables[variableReferenceId];
                 if (parentVariable.IsExpandable)
                 {
-                    childVariables = parentVariable.GetChildren(this.logger);
+                    childVariables = parentVariable.GetChildren(this._logger);
                     foreach (var child in childVariables)
                     {
                         // Only add child if it hasn't already been added.
@@ -395,7 +397,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             Validate.IsNotNull(nameof(name), name);
             Validate.IsNotNull(nameof(value), value);
 
-            this.logger.LogTrace($"SetVariableRequest for '{name}' to value string (pre-quote processing): '{value}'");
+            this._logger.LogTrace($"SetVariableRequest for '{name}' to value string (pre-quote processing): '{value}'");
 
             // An empty or whitespace only value is not a valid expression for SetVariable.
             if (value.Trim().Length == 0)
@@ -404,26 +406,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             // Evaluate the expression to get back a PowerShell object from the expression string.
-            PSCommand psCommand = new PSCommand();
-            psCommand.AddScript(value);
-            var errorMessages = new StringBuilder();
-            var results =
-                await this.powerShellContext.ExecuteCommandAsync<object>(
-                    psCommand,
-                    errorMessages,
-                    false,
-                    false).ConfigureAwait(false);
-
-            // Check if PowerShell's evaluation of the expression resulted in an error.
-            object psobject = results.FirstOrDefault();
-            if ((psobject == null) && (errorMessages.Length > 0))
-            {
-                throw new InvalidPowerShellExpressionException(errorMessages.ToString());
-            }
+            // This may throw, in which case the exception is propagated to the caller
+            PSCommand evaluateExpressionCommand = new PSCommand().AddScript(value);
+            object expressionResult = (await _executionService.ExecutePSCommandAsync<object>(evaluateExpressionCommand, new PowerShellExecutionOptions(), CancellationToken.None)).FirstOrDefault();
 
             // If PowerShellContext.ExecuteCommand returns an ErrorRecord as output, the expression failed evaluation.
             // Ideally we would have a separate means from communicating error records apart from normal output.
-            if (psobject is ErrorRecord errorRecord)
+            if (expressionResult is ErrorRecord errorRecord)
             {
                 throw new InvalidPowerShellExpressionException(errorRecord.ToString());
             }
@@ -474,14 +463,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             // Now that we have the scope, get the associated PSVariable object for the variable to be set.
-            psCommand.Commands.Clear();
-            psCommand = new PSCommand();
-            psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-Variable");
-            psCommand.AddParameter("Name", name.TrimStart('$'));
-            psCommand.AddParameter("Scope", scope);
+            var getVariableCommand = new PSCommand()
+                .AddCommand(@"Microsoft.PowerShell.Utility\Get-Variable")
+                .AddParameter("Name", name.TrimStart('$'))
+                .AddParameter("Scope", scope);
 
-            IEnumerable<PSVariable> result = await this.powerShellContext.ExecuteCommandAsync<PSVariable>(psCommand, sendErrorToHost: false).ConfigureAwait(false);
-            PSVariable psVariable = result.FirstOrDefault();
+            PSVariable psVariable = (await _executionService.ExecutePSCommandAsync<PSVariable>(getVariableCommand, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false)).FirstOrDefault();
             if (psVariable == null)
             {
                 throw new Exception($"Failed to retrieve PSVariable object for '{name}' from scope '{scope}'.");
@@ -492,47 +479,42 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // If it is not strongly typed, we simply assign the object directly to the PSVariable potentially changing its type.
             // Turns out ArgumentTypeConverterAttribute is not public. So we call the attribute through it's base class -
             // ArgumentTransformationAttribute.
-            var argTypeConverterAttr =
-                psVariable.Attributes
-                          .OfType<ArgumentTransformationAttribute>()
-                          .FirstOrDefault(a => a.GetType().Name.Equals("ArgumentTypeConverterAttribute"));
+            ArgumentTransformationAttribute argTypeConverterAttr = null;
+            foreach (Attribute variableAttribute in psVariable.Attributes)
+            {
+                if (variableAttribute is ArgumentTransformationAttribute argTransformAttr
+                    && argTransformAttr.GetType().Name.Equals("ArgumentTypeConverterAttribute"))
+                {
+                    argTypeConverterAttr = argTransformAttr;
+                    break;
+                }
+            }
 
             if (argTypeConverterAttr != null)
             {
-                // PSVariable is strongly typed. Need to apply the conversion/transform to the new value.
-                psCommand.Commands.Clear();
-                psCommand = new PSCommand();
-                psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-Variable");
-                psCommand.AddParameter("Name", "ExecutionContext");
-                psCommand.AddParameter("ValueOnly");
+                _logger.LogTrace($"Setting variable '{name}' using conversion to value: {expressionResult ?? "<null>"}");
 
-                errorMessages.Clear();
+                psVariable.Value = await _executionService.ExecuteDelegateAsync<object>((pwsh, cancellationToken) =>
+                {
+                    var engineIntrinsics = (EngineIntrinsics)pwsh.Runspace.SessionStateProxy.GetVariable("ExecutionContext");
 
-                var getExecContextResults =
-                    await this.powerShellContext.ExecuteCommandAsync<object>(
-                        psCommand,
-                        errorMessages,
-                        sendErrorToHost: false).ConfigureAwait(false);
+                    // TODO: This is almost (but not quite) the same as LanguagePrimitives.Convert(), which does not require the pipeline thread.
+                    //       We should investigate changing it.
+                    return argTypeConverterAttr.Transform(engineIntrinsics, expressionResult);
 
-                EngineIntrinsics executionContext = getExecContextResults.OfType<EngineIntrinsics>().FirstOrDefault();
-
-                var msg = $"Setting variable '{name}' using conversion to value: {psobject ?? "<null>"}";
-                this.logger.LogTrace(msg);
-
-                psVariable.Value = argTypeConverterAttr.Transform(executionContext, psobject);
+                }, "PS debugger argument converter", CancellationToken.None).ConfigureAwait(false);
             }
             else
             {
                 // PSVariable is *not* strongly typed. In this case, whack the old value with the new value.
-                var msg = $"Setting variable '{name}' directly to value: {psobject ?? "<null>"} - previous type was {psVariable.Value?.GetType().Name ?? "<unknown>"}";
-                this.logger.LogTrace(msg);
-                psVariable.Value = psobject;
+                _logger.LogTrace($"Setting variable '{name}' directly to value: {expressionResult ?? "<null>"} - previous type was {psVariable.Value?.GetType().Name ?? "<unknown>"}");
+                psVariable.Value = expressionResult;
             }
 
             // Use the VariableDetails.ValueString functionality to get the string representation for client debugger.
             // This makes the returned string consistent with the strings normally displayed for variables in the debugger.
             var tempVariable = new VariableDetails(psVariable);
-            this.logger.LogTrace($"Set variable '{name}' to: {tempVariable.ValueString ?? "<null>"}");
+            _logger.LogTrace($"Set variable '{name}' to: {tempVariable.ValueString ?? "<null>"}");
             return tempVariable.ValueString;
         }
 
@@ -552,29 +534,26 @@ namespace Microsoft.PowerShell.EditorServices.Services
             int stackFrameId,
             bool writeResultAsOutput)
         {
-            var results =
-                await this.powerShellContext.ExecuteScriptStringAsync(
-                    expressionString,
-                    false,
-                    writeResultAsOutput).ConfigureAwait(false);
+            var command = new PSCommand().AddScript(expressionString);
+            IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(
+                command,
+                new PowerShellExecutionOptions { WriteOutputToHost = writeResultAsOutput },
+                CancellationToken.None).ConfigureAwait(false);
 
             // Since this method should only be getting invoked in the debugger,
             // we can assume that Out-String will be getting used to format results
             // of command executions into string output.  However, if null is returned
             // then return null so that no output gets displayed.
-            string outputString =
-                results != null && results.Any() ?
-                    string.Join(Environment.NewLine, results) :
-                    null;
+            if (writeResultAsOutput || results == null || results.Count == 0)
+            {
+                return null;
+            }
 
-            // If we've written the result as output, don't return a
-            // VariableDetails instance.
-            return
-                writeResultAsOutput ?
-                    null :
-                    new VariableDetails(
-                        expressionString,
-                        outputString);
+            // If we didn't write output,
+            // return a VariableDetails instance.
+            return new VariableDetails(
+                    expressionString,
+                    string.Join(Environment.NewLine, results));
         }
 
         /// <summary>
@@ -699,15 +678,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
             string scope,
             VariableContainerDetails autoVariables)
         {
-            PSCommand psCommand = new PSCommand();
-            psCommand.AddCommand("Get-Variable");
-            psCommand.AddParameter("Scope", scope);
+            PSCommand psCommand = new PSCommand()
+                .AddCommand("Get-Variable")
+                .AddParameter("Scope", scope);
 
-            var scopeVariableContainer =
-                new VariableContainerDetails(this.nextVariableId++, "Scope: " + scope);
+            var scopeVariableContainer = new VariableContainerDetails(this.nextVariableId++, "Scope: " + scope);
             this.variables.Add(scopeVariableContainer);
 
-            var results = await this.powerShellContext.ExecuteCommandAsync<PSObject>(psCommand, sendErrorToHost: false).ConfigureAwait(false);
+            IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, new PowerShellExecutionOptions(), CancellationToken.None)
+                .ConfigureAwait(false);
+
             if (results != null)
             {
                 foreach (PSObject psVariableObject in results)
@@ -755,7 +735,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         optionsProperty.Value as string,
                         out variableScope))
                 {
-                    this.logger.LogWarning(
+                    this._logger.LogWarning(
                         $"Could not parse a variable's ScopedItemOptions value of '{optionsProperty.Value}'");
                 }
             }
@@ -811,7 +791,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var callStackVarName = $"$global:{PsesGlobalVariableNamePrefix}CallStack";
             psCommand.AddScript($"{callStackVarName} = Get-PSCallStack; {callStackVarName}");
 
-            var results = await this.powerShellContext.ExecuteCommandAsync<PSObject>(psCommand).ConfigureAwait(false);
+            var results = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false);
 
             var callStackFrames = results.ToArray();
 
@@ -831,7 +811,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 // When debugging, this is the best way I can find to get what is likely the workspace root.
                 // This is controlled by the "cwd:" setting in the launch config.
-                string workspaceRootPath = this.powerShellContext.InitialWorkingDirectory;
+                string workspaceRootPath = _psesHost.InitialWorkingDirectory;
 
                 this.stackFrameDetails[i] =
                     StackFrameDetails.Create(callStackFrames[i], autoVariables, localVariables, workspaceRootPath);
@@ -842,14 +822,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     this.stackFrameDetails[i].ScriptPath = scriptNameOverride;
                 }
-                else if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
-                    this.remoteFileManager != null &&
-                    !string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
+                else if (_psesHost.CurrentRunspace.IsOnRemoteMachine
+                    && this.remoteFileManager != null
+                    && !string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
                 {
                     this.stackFrameDetails[i].ScriptPath =
                         this.remoteFileManager.GetMappedPath(
                             stackFrameScriptPath,
-                            this.powerShellContext.CurrentRunspace);
+                            _psesHost.CurrentRunspace);
                 }
             }
         }
@@ -894,9 +874,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 PSCommand command = new PSCommand();
                 command.AddScript($"list 1 {int.MaxValue}");
 
-                IEnumerable<PSObject> scriptListingLines =
-                    await this.powerShellContext.ExecuteCommandAsync<PSObject>(
-                        command, false, false).ConfigureAwait(false);
+                IReadOnlyList<PSObject> scriptListingLines =
+                    await _executionService.ExecutePSCommandAsync<PSObject>(
+                        command, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false);
 
                 if (scriptListingLines != null)
                 {
@@ -911,9 +891,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                     this.temporaryScriptListingPath =
                         this.remoteFileManager.CreateTemporaryFile(
-                            $"[{this.powerShellContext.CurrentRunspace.SessionDetails.ComputerName}] {TemporaryScriptFileName}",
+                            $"[{_psesHost.CurrentRunspace.SessionDetails.ComputerName}] {TemporaryScriptFileName}",
                             scriptListing,
-                            this.powerShellContext.CurrentRunspace);
+                            _psesHost.CurrentRunspace);
 
                     localScriptPath =
                         this.temporaryScriptListingPath
@@ -923,7 +903,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 }
                 else
                 {
-                    this.logger.LogWarning($"Could not load script context");
+                    this._logger.LogWarning($"Could not load script context");
                 }
             }
 
@@ -933,14 +913,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // If this is a remote connection and the debugger stopped at a line
             // in a script file, get the file contents
-            if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
-                this.remoteFileManager != null &&
-                !noScriptName)
+            if (_psesHost.CurrentRunspace.IsOnRemoteMachine
+                && this.remoteFileManager != null
+                && !noScriptName)
             {
                 localScriptPath =
                     await this.remoteFileManager.FetchRemoteFileAsync(
                         e.InvocationInfo.ScriptName,
-                        powerShellContext.CurrentRunspace).ConfigureAwait(false);
+                        _psesHost.CurrentRunspace).ConfigureAwait(false);
             }
 
             if (this.stackFrameDetails.Length > 0)
@@ -960,7 +940,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             this.CurrentDebuggerStoppedEventArgs =
                 new DebuggerStoppedEventArgs(
                     e,
-                    this.powerShellContext.CurrentRunspace,
+                    _psesHost.CurrentRunspace,
                     localScriptPath);
 
             // Notify the host that the debugger is stopped
@@ -969,7 +949,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.CurrentDebuggerStoppedEventArgs);
         }
 
-        private void OnDebuggerResumed(object sender, DebuggerResumeAction e)
+        private void OnDebuggerResuming(object sender, DebuggerResumingEventArgs debuggerResumingEventArgs)
         {
             this.CurrentDebuggerStoppedEventArgs = null;
         }
@@ -989,17 +969,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (e.Breakpoint is LineBreakpoint lineBreakpoint)
             {
                 string scriptPath = lineBreakpoint.Script;
-                if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
-                    this.remoteFileManager != null)
+                if (_psesHost.CurrentRunspace.IsOnRemoteMachine
+                    && this.remoteFileManager != null)
                 {
                     string mappedPath =
                         this.remoteFileManager.GetMappedPath(
                             scriptPath,
-                            this.powerShellContext.CurrentRunspace);
+                            _psesHost.CurrentRunspace);
 
                     if (mappedPath == null)
                     {
-                        this.logger.LogError(
+                        this._logger.LogError(
                             $"Could not map remote path '{scriptPath}' to a local path.");
 
                         return;
