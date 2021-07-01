@@ -29,9 +29,7 @@ namespace PowerShellEditorServices.Test.E2E
             s_binDir,
             $"pses_test_sessiondetails_{Path.GetRandomFileName()}");
 
-        private readonly static string s_logPath = Path.Combine(
-            Environment.GetEnvironmentVariable("BUILD_ARTIFACTSTAGINGDIRECTORY") ?? s_binDir,
-            $"pses_test_logs_{Path.GetRandomFileName()}");
+        
 
         const string s_logLevel = "Diagnostic";
         readonly static string[] s_featureFlags = { "PSReadLine" };
@@ -78,7 +76,10 @@ namespace PowerShellEditorServices.Test.E2E
 
         private static string[] GeneratePsesArguments(bool isDebugAdapter)
         {
-            List<string> args = new List<string>
+            string s_logPath = Path.Combine(
+            Environment.GetEnvironmentVariable("BUILD_ARTIFACTSTAGINGDIRECTORY") ?? s_binDir,
+            $"pses_{(isDebugAdapter ? "debug_" : string.Empty)}test_logs_{Path.ChangeExtension(Path.GetRandomFileName(), ".log")}");
+        List<string> args = new List<string>
             {
                 "&",
                 SingleQuoteEscape(Path.Combine(s_bundledModulePath, "PowerShellEditorServices", "Start-EditorServices.ps1")),
