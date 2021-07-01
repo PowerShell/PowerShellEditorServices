@@ -108,19 +108,19 @@ namespace PowerShellEditorServices.Test.E2E
             return filePath;
         }
 
-        private string GenerateScriptFromLoggingStatements(params string[] logStatements)
+        private string GenerateScriptFromLoggingStatements(string[] logStatements, string outputFilePath = null)
         {
             if (logStatements.Length == 0)
             {
                 throw new ArgumentNullException("Expected at least one argument.");
             }
-
+            var outputPath = outputFilePath ?? s_testOutputPath;
             // Have script create/overwrite file first with `>`.
-            StringBuilder builder = new StringBuilder().Append('\'').Append(logStatements[0]).Append("' > '").Append(s_testOutputPath).AppendLine("'");
+            StringBuilder builder = new StringBuilder().Append('\'').Append(logStatements[0]).Append("' > '").Append(outputPath).AppendLine("'");
             for (int i = 1; i < logStatements.Length; i++)
             {
                 // Then append to that script with `>>`.
-                builder.Append('\'').Append(logStatements[i]).Append("' >> '").Append(s_testOutputPath).AppendLine("'");
+                builder.Append('\'').Append(logStatements[i]).Append("' >> '").Append(outputPath).AppendLine("'");
             }
 
             _output.WriteLine("Script is:");
@@ -128,9 +128,9 @@ namespace PowerShellEditorServices.Test.E2E
             return builder.ToString();
         }
 
-        private string[] GetLog()
+        private string[] GetLog(string filePath = null)
         {
-            return File.ReadLines(s_testOutputPath).ToArray();
+            return File.ReadLines(filePath ?? s_testOutputPath).ToArray();
         }
 
         [Trait("Category", "DAP")]
@@ -149,7 +149,8 @@ namespace PowerShellEditorServices.Test.E2E
         [Fact]
         public async Task CanLaunchScriptWithNoBreakpointsAsync()
         {
-            string filePath = NewTestFile(GenerateScriptFromLoggingStatements("works"));
+            string outFilePath = Path.GetTempFileName();
+            string filePath = NewTestFile(GenerateScriptFromLoggingStatements(new[] { "works" }, outFilePath));
 
             await PsesDebugAdapterClient.LaunchScript(filePath, Started).ConfigureAwait(false);
 
@@ -159,7 +160,7 @@ namespace PowerShellEditorServices.Test.E2E
             // At this point the script should be running so lets give it time
             await Task.Delay(2000).ConfigureAwait(false);
 
-            string[] log = GetLog();
+            string[] log = GetLog(outFilePath);
             Assert.Equal("works", log[0]);
         }
 
@@ -171,11 +172,11 @@ namespace PowerShellEditorServices.Test.E2E
                 PsesStdioProcess.RunningInConstainedLanguageMode,
                 "You can't set breakpoints in ConstrainedLanguage mode.");
 
-            string filePath = NewTestFile(GenerateScriptFromLoggingStatements(
+            string filePath = NewTestFile(GenerateScriptFromLoggingStatements(new[] {
                 "before breakpoint",
                 "at breakpoint",
                 "after breakpoint"
-            ));
+            }));
 
             await PsesDebugAdapterClient.LaunchScript(filePath, Started).ConfigureAwait(false);
 
