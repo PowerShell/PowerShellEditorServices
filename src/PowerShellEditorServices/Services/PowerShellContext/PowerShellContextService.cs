@@ -1171,10 +1171,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 command.AddCommand(script, false);
             }
 
-
+            StringBuilder sb = new StringBuilder();
             await this.ExecuteCommandAsync<object>(
                     command,
-                    errorMessages: null,
+                    errorMessages: sb,
                     new ExecutionOptions
                     {
                         WriteInputToHost = true,
@@ -1182,6 +1182,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         WriteErrorsToHost = true,
                         AddToHistory = true,
                     }).ConfigureAwait(false);
+            if (!string.IsNullOrEmpty(sb.ToString()))
+                logger.LogError(sb.ToString());
         }
 
         /// <summary>
