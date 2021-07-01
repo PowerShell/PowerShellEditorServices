@@ -31,7 +31,7 @@ namespace PowerShellEditorServices.Test.E2E
 
         private readonly static string s_logPath = Path.Combine(
             Environment.GetEnvironmentVariable("BUILD_ARTIFACTSTAGINGDIRECTORY") ?? s_binDir,
-            $"pses_test_logs_{Path.GetRandomFileName()}");
+            $"pses_test_logs_{Path.ChangeExtension(Path.GetRandomFileName(),".log")}");
 
         const string s_logLevel = "Diagnostic";
         readonly static string[] s_featureFlags = { "PSReadLine" };
