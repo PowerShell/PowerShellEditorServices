@@ -29,7 +29,6 @@ namespace PowerShellEditorServices.Test.E2E
             s_binDir,
             $"pses_test_sessiondetails_{Path.GetRandomFileName()}");
 
-        
 
         const string s_logLevel = "Diagnostic";
         readonly static string[] s_featureFlags = { "PSReadLine" };
