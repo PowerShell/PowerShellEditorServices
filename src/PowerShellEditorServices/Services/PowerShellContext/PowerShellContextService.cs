@@ -219,7 +219,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var modulesToImport = new List<string>();
             modulesToImport.Add(s_commandsModulePath);            
             modulesToImport.AddRange(hostStartupInfo.AdditionalModules);
-            if (hostStartupInfo.InitialSessionState.Providers.Any(a => a.Name == "FileSystem" && a.Visibility == SessionStateEntryVisibility.Public))
+            if (hostStartupInfo.InitialSessionState.Providers.Any(a => a.Name == "FileSystem" && a.Visibility == SessionStateEntryVisibility.Public) || true)
             {
                 initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
                 powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);                
