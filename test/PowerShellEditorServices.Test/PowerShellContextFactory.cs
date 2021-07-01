@@ -1,18 +1,18 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.PowerShell.EditorServices.Hosting;
-using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
-using Microsoft.PowerShell.EditorServices.Test.Shared;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.PowerShell.EditorServices.Hosting;
+using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 
 namespace Microsoft.PowerShell.EditorServices.Test
 {
@@ -32,6 +32,8 @@ namespace Microsoft.PowerShell.EditorServices.Test
                     Path.GetFullPath(
                         TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/ProfileTest.ps1")));
 
+        public static System.Management.Automation.Runspaces.Runspace initialRunspace;
+
         public static PowerShellContextService Create(ILogger logger)
         {
             PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, isPSReadLineEnabled: false);
@@ -50,14 +52,15 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 consoleReplEnabled: false,
                 usesLegacyReadLine: false);
 
-
-            powerShellContext.Initialize(
-                TestProfilePaths,
-                PowerShellContextService.CreateRunspace(
+            initialRunspace = PowerShellContextService.CreateRunspace(
                     testHostDetails,
                     powerShellContext,
                     new TestPSHostUserInterface(powerShellContext, logger),
-                    logger),
+                    logger);
+
+            powerShellContext.Initialize(
+                TestProfilePaths,
+                initialRunspace,
                 ownsInitialRunspace: true,
                 consoleHost: null);
 
