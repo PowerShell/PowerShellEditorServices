@@ -143,6 +143,16 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             Assert.Equal(expectedString, result.FirstOrDefault(), true);
         }
 
+        [Trait("Category", "PSReadLine")]
+        [Fact]
+        public async Task CanGetPSReadLineProxy()
+        {
+            Assert.True(PSReadLinePromptContext.TryGetPSReadLineProxy(
+                NullLogger.Instance,
+                PowerShellContextFactory.initialRunspace,
+                out PSReadLineProxy proxy));
+        }
+
         #region Helper Methods
 
         private async Task AssertStateChange(PowerShellContextState expectedState)

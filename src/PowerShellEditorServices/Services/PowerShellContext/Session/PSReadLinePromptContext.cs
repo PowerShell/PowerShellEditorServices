@@ -22,6 +22,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             "..",
             "..",
             "..",
+#if TEST
+            // When using xUnit (dotnet test) the assemblies are deployed to the
+            // test project folder, invalidating our relative path assumption.
+            "..",
+            "..",
+            "module",
+#endif
             "PSReadLine");
 
         private static readonly Lazy<CmdletInfo> s_lazyInvokeReadLineForEditorServicesCmdletInfo = new Lazy<CmdletInfo>(() =>
