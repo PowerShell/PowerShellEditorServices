@@ -1,12 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.PowerShell.EditorServices.Hosting;
-using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
-using Microsoft.PowerShell.EditorServices.Test.Shared;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,6 +8,12 @@ using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.PowerShell.EditorServices.Hosting;
+using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 
 namespace Microsoft.PowerShell.EditorServices.Test
 {
@@ -33,6 +33,8 @@ namespace Microsoft.PowerShell.EditorServices.Test
                     Path.GetFullPath(
                         TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/ProfileTest.ps1")));
 
+        public static System.Management.Automation.Runspaces.Runspace initialRunspace;
+
         public static PowerShellContextService Create(ILogger logger)
         {
             PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, isPSReadLineEnabled: false);
@@ -45,27 +47,29 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 TestProfilePaths,
                 new List<string>(),
                 new List<string>(),
-                Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1" ? InitialSessionState.CreateDefault() : InitialSessionState.CreateDefault2(),
+                InitialSessionState.CreateDefault(),
                 null,
                 0,
                 consoleReplEnabled: false,
                 usesLegacyReadLine: false);
 
-
-            powerShellContext.Initialize(
-                TestProfilePaths,
-                PowerShellContextService.CreateTestRunspace(
+            initialRunspace = PowerShellContextService.CreateRunspace(
                     testHostDetails,
                     powerShellContext,
                     new TestPSHostUserInterface(powerShellContext, logger),
-                    logger),
-                true);
+                    logger);
+
+            powerShellContext.Initialize(
+                TestProfilePaths,
+                initialRunspace,
+                ownsInitialRunspace: true,
+                consoleHost: null);
 
             return powerShellContext;
         }
     }
 
-    internal class TestPSHostUserInterface : EditorServicesPSHostUserInterface
+    internal class TestPSHostUserInterface: EditorServicesPSHostUserInterface
     {
         public TestPSHostUserInterface(
             PowerShellContextService powerShellContext,

@@ -1,6 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Handlers;
+using Microsoft.PowerShell.EditorServices.Hosting;
+using Microsoft.PowerShell.EditorServices.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -14,25 +20,17 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Handlers;
-using Microsoft.PowerShell.EditorServices.Hosting;
-using Microsoft.PowerShell.EditorServices.Logging;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
-using Microsoft.PowerShell.EditorServices.Utility;
-using Microsoft.PowerShell.Commands;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
     using System.Management.Automation;
-    
 
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
     /// Handles nested PowerShell prompts and also manages execution of
     /// commands whether inside or outside of the debugger.
     /// </summary>
-    internal class PowerShellContextService : IHostSupportsInteractiveSession
+    internal class PowerShellContextService: IHostSupportsInteractiveSession
     {
         private static readonly string s_commandsModulePath = Path.GetFullPath(
             Path.Combine(
@@ -194,6 +192,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             Validate.IsNotNull(nameof(hostStartupInfo), hostStartupInfo);
 
             var logger = factory.CreateLogger<PowerShellContextService>();
+
             bool shouldUsePSReadLine = hostStartupInfo.ConsoleReplEnabled
                 && !hostStartupInfo.UsesLegacyReadLine;
 
@@ -204,7 +203,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             EditorServicesPSHostUserInterface hostUserInterface =
                 hostStartupInfo.ConsoleReplEnabled
-                    ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, hostStartupInfo.PSHost, logger)
+                    ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, hostStartupInfo.PSHost, logger)
                     : new ProtocolPSHostUserInterface(languageServer, powerShellContext, logger);
 
             EditorServicesPSHost psHost =
@@ -215,120 +214,28 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     logger);
 
             logger.LogTrace("Creating initial PowerShell runspace");
-            Runspace initialRunspace;
-            var modulesToImport = new List<string>();
-            modulesToImport.Add(s_commandsModulePath);            
-            modulesToImport.AddRange(hostStartupInfo.AdditionalModules);
-            if (hostStartupInfo.InitialSessionState.Providers.Any(a => a.Name == "FileSystem" && a.Visibility == SessionStateEntryVisibility.Public) || true)
+            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState.LanguageMode);
+            powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
+            powerShellContext.ImportCommandsModuleAsync();
+
+            // TODO: This can be moved to the point after the $psEditor object
+            // gets initialized when that is done earlier than LanguageServer.Initialize
+            foreach (string module in hostStartupInfo.AdditionalModules)
             {
-                initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
-                powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);                
-                // TODO: This can be moved to the point after the $psEditor object
-                // gets initialized when that is done earlier than LanguageServer.Initialize
-                foreach (string module in modulesToImport)
-                {
-                    var command =
-                        new PSCommand()
-                            .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
-                            .AddParameter("Name", module);
+                var command =
+                    new PSCommand()
+                        .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                        .AddParameter("Name", module);
 
 #pragma warning disable CS4014
-                    // This call queues the loading on the pipeline thread, so no need to await
-                    powerShellContext.ExecuteCommandAsync<PSObject>(
-                        command,
-                        sendOutputToHost: false,
-                        sendErrorToHost: true);
+                // This call queues the loading on the pipeline thread, so no need to await
+                powerShellContext.ExecuteCommandAsync<PSObject>(
+                    command,
+                    sendOutputToHost: false,
+                    sendErrorToHost: true);
 #pragma warning restore CS4014
-                }
             }
-            else
-            {
-                // Loading modules with ImportPSModulesFromPath into the InitialSessionState because in a Constrained Runspace there may not be a FileSystem provider.
-                // Import-Module provides the user with better errors, but may not be allowed within a constrained runspace
-                // ImportPSModule throws System.Management.Automation.DriveNotFoundException: 'Cannot find drive. A drive with the name 'C' does not exist.'
-                // ImportPSModulesFromPath loads the modules fine                
-                foreach(var module in modulesToImport.Where(a=> !string.IsNullOrEmpty(a)))
-                {
-                    if (!File.Exists(module) && !Directory.Exists(module))
-                    {
-                        logger.LogWarning($"{module} not found");
-                        continue;
-                    }
-                    var moduleFolderPath = module;
-                    if(File.Exists(module))
-                    {
-                        var extension = Path.GetExtension(module);
-                        if(extension == ".psd1")
-                        {
-                            // ImportPSModulesFromPath doesn't like the direct path to the .psd1 file
-                            // It only works when given a path to a folder that contains a .psd1 file with the same name as the enclosing folder
-                            // To fix this, we make a copy of the psd1 file and give it the name of the parent folder
-                            var parentFolder = Directory.GetParent(module);
-                            var destinationPath = Path.Combine(parentFolder.FullName, parentFolder.Name + ".psd1");
-                            if(!File.Exists(destinationPath))
-                            {
-                                File.Move(module, destinationPath);
-                                logger.LogDebug($"Corrected path to {module}");
-                            }
-                            moduleFolderPath = parentFolder.FullName;
-                        }
-                    }
-                    
-                    hostStartupInfo.InitialSessionState.ImportPSModulesFromPath(moduleFolderPath);
-                    var loadedModule = hostStartupInfo.InitialSessionState.Modules.FirstOrDefault(a => a.Name.StartsWith(moduleFolderPath));
-                    if (loadedModule is null)
-                    {
-                        logger.LogWarning($"Error loading {module} from {moduleFolderPath}");
-                    }
-                }
-                // Autocomplete will fail if there isn't an implementation of TabExpansion2
-                // The default TabExpansion2 implementation may not be available in a Constrained Runspace, therefore we check and add it if not.
-                // Note: Attempting to set the visibility of these commands to Private will cause Autocomplete to fail
-                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name.ToLower() == "tabexpansion2"))
-                {
-                    var defaultSessionState = InitialSessionState.CreateDefault2();
-                    var defaultTabExpansionFunctionEntry = defaultSessionState.Commands.FirstOrDefault(a => a.Name.ToLower() == "tabexpansion2");
-                    hostStartupInfo.InitialSessionState.Commands.Add(defaultTabExpansionFunctionEntry);
-                }
-                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name.ToLower() == "prompt"))
-                {
-                    var defaultSessionState = InitialSessionState.CreateDefault2();
-                    var defaultTabExpansionFunctionEntry = defaultSessionState.Commands.FirstOrDefault(a => a.Name.ToLower() == "prompt");
-                    hostStartupInfo.InitialSessionState.Commands.Add(defaultTabExpansionFunctionEntry);
-                }
-                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == "Get-Command"))
-                {
-                    // Adding Get-Command to the Runspace in case the calling runspace didn't add it.
-                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Command", typeof(GetCommandCommand), null));
-                    // PSES calls Get-Command by its Module Qualified Syntax "Microsoft.PowerShell.Core\Get-Command"
-                    // This fails in a Constrained Runspace.
-                    // To work around it without modifying PSES code, we add Microsoft.PowerShell.Core\Get-Command as an alias to Get-Command.
-                }
-                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == @"Microsoft.PowerShell.Core\Get-Command"))
-                {
-                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Command", "Get-Command", null));
-                }
-                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == "Get-Help"))
-                {
-                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Help", typeof(GetHelpCommand), null));
-                }
-                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == @"Microsoft.PowerShell.Core\Get-Help"))
-                {
-                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Help", "Get-Help", null));
-                }
-                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == "Get-Module"))
-                {
-                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Module", typeof(GetModuleCommand), null));
-                }
-                if (!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == @"Microsoft.PowerShell.Core\Get-Module"))
-                {
-                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Module", "Get-Module", null));
-                }
 
-                initialRunspace = PowerShellContextService.CreateRunspace(hostStartupInfo.PSHost, hostStartupInfo.InitialSessionState);
-                powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
-            }
-            
             return powerShellContext;
         }
 
@@ -340,7 +247,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="hostUserInterface">The EditorServicesPSHostUserInterface to use for this instance.</param>
         /// <param name="logger">An ILogger implementation to use for this instance.</param>
         /// <returns></returns>
-        public static Runspace CreateTestRunspace(
+        public static Runspace CreateRunspace(
             HostStartupInfo hostDetails,
             PowerShellContextService powerShellContext,
             EditorServicesPSHostUserInterface hostUserInterface,
@@ -351,7 +258,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var psHost = new EditorServicesPSHost(powerShellContext, hostDetails, hostUserInterface, logger);
             powerShellContext.ConsoleWriter = hostUserInterface;
             powerShellContext.ConsoleReader = hostUserInterface;
-            return CreateRunspace(psHost, hostDetails.InitialSessionState);
+            return CreateRunspace(psHost, hostDetails.InitialSessionState.LanguageMode);
         }
 
         /// <summary>
@@ -360,8 +267,23 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="psHost">The PSHost that will be used for this Runspace.</param>
         /// <param name="languageMode">The language mode inherited from the orginal PowerShell process. This will be used when creating runspaces so that we honor the same language mode.</param>
         /// <returns></returns>
-        public static Runspace CreateRunspace(PSHost psHost, InitialSessionState initialSessionState)
+        public static Runspace CreateRunspace(PSHost psHost, PSLanguageMode languageMode)
         {
+            InitialSessionState initialSessionState;
+            if (Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1")
+            {
+                initialSessionState = InitialSessionState.CreateDefault();
+            }
+            else
+            {
+                initialSessionState = InitialSessionState.CreateDefault2();
+            }
+
+            // Create and initialize a new Runspace while honoring the LanguageMode of the original runspace
+            // that started PowerShell Editor Services. This is because the PowerShell Integrated Console
+            // should have the same LanguageMode of whatever is set by the system.
+            initialSessionState.LanguageMode = languageMode;
+
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
 
             // Windows PowerShell must be hosted in STA mode
@@ -375,21 +297,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             runspace.Open();
 
             return runspace;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the PowerShellContext class using
-        /// an existing runspace for the session.
-        /// </summary>
-        /// <param name="profilePaths">An object containing the profile paths for the session.</param>
-        /// <param name="initialRunspace">The initial runspace to use for this instance.</param>
-        /// <param name="ownsInitialRunspace">If true, the PowerShellContext owns this runspace.</param>
-        public void Initialize(
-            ProfilePathInfo profilePaths,
-            Runspace initialRunspace,
-            bool ownsInitialRunspace)
-        {
-            this.Initialize(profilePaths, initialRunspace, ownsInitialRunspace, consoleHost: null);
         }
 
         /// <summary>
@@ -505,10 +412,28 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.PromptContext = new LegacyReadLineContext(this);
             }
 
-            if (VersionUtils.IsWindows && initialRunspace.InitialSessionState.LanguageMode == PSLanguageMode.FullLanguage)
+            if (VersionUtils.IsWindows)
             {
                 this.SetExecutionPolicy();
             }
+        }
+
+        /// <summary>
+        /// Imports the PowerShellEditorServices.Commands module into
+        /// the runspace.  This method will be moved somewhere else soon.
+        /// </summary>
+        /// <returns></returns>
+        public Task ImportCommandsModuleAsync() => ImportCommandsModuleAsync(s_commandsModulePath);
+
+        public Task ImportCommandsModuleAsync(string path)
+        {
+            this.logger.LogTrace($"Importing PowershellEditorServices commands from {path}");
+
+            PSCommand importCommand = new PSCommand()
+                .AddCommand("Import-Module")
+                .AddArgument(path);
+
+            return this.ExecuteCommandAsync<PSObject>(importCommand, sendOutputToHost: false, sendErrorToHost: false);
         }
 
         private static bool CheckIfRunspaceNeedsEventHandlers(RunspaceDetails runspaceDetails)
@@ -667,7 +592,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // cancelled prompt when it's called again.
             if (executionOptions.AddToHistory)
             {
-                this.PromptContext.AddToHistory(executionOptions.InputString ?? psCommand.Commands[0].CommandText);
+                this.PromptContext.AddToHistory(executionOptions.InputString ?? psCommand.Commands [0].CommandText);
             }
 
             bool hadErrors = false;
@@ -721,7 +646,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // Instruct PowerShell to send output and errors to the host
                 if (executionOptions.WriteOutputToHost)
                 {
-                    psCommand.Commands[0].MergeMyResults(
+                    psCommand.Commands [0].MergeMyResults(
                         PipelineResultTypes.Error,
                         PipelineResultTypes.Output);
 
@@ -756,7 +681,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 if (executionOptions.WriteInputToHost)
                 {
                     this.WriteOutput(
-                        executionOptions.InputString ?? psCommand.Commands[0].CommandText,
+                        executionOptions.InputString ?? psCommand.Commands [0].CommandText,
                         includeNewLine: true);
                 }
 
@@ -1069,7 +994,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             Validate.IsNotNull(nameof(scriptString), scriptString);
 
             PSCommand command = null;
-            if(CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
+            if (CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
             {
                 try
                 {
@@ -1084,7 +1009,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             // fall back to old behavior
-            if(command == null)
+            if (command == null)
             {
                 command = new PSCommand().AddScript(scriptString.Trim());
             }
@@ -1171,10 +1096,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 command.AddCommand(script, false);
             }
 
-            StringBuilder sb = new StringBuilder();
+
             await this.ExecuteCommandAsync<object>(
                     command,
-                    errorMessages: sb,
+                    errorMessages: null,
                     new ExecutionOptions
                     {
                         WriteInputToHost = true,
@@ -1182,8 +1107,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         WriteErrorsToHost = true,
                         AddToHistory = true,
                     }).ConfigureAwait(false);
-            if (!string.IsNullOrEmpty(sb.ToString()))
-                logger.LogError(sb.ToString());
         }
 
         /// <summary>
@@ -1784,9 +1707,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         internal static string WildcardEscapePath(string path, bool escapeSpaces = false)
         {
             var sb = new StringBuilder();
-            for (int i = 0; i < path.Length; i++)
+            for (int i = 0;i < path.Length;i++)
             {
-                char curr = path[i];
+                char curr = path [i];
                 switch (curr)
                 {
                     // Escape '[', ']', '?' and '*' with '`'
@@ -1837,14 +1760,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             var sb = new StringBuilder(wildcardEscapedPath.Length);
-            for (int i = 0; i < wildcardEscapedPath.Length; i++)
+            for (int i = 0;i < wildcardEscapedPath.Length;i++)
             {
                 // If we see a backtick perform a lookahead
-                char curr = wildcardEscapedPath[i];
+                char curr = wildcardEscapedPath [i];
                 if (curr == '`' && i + 1 < wildcardEscapedPath.Length)
                 {
                     // If the next char is an escapable one, don't add this backtick to the new string
-                    char next = wildcardEscapedPath[i + 1];
+                    char next = wildcardEscapedPath [i + 1];
                     switch (next)
                     {
                         case '[':
@@ -2235,14 +2158,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // set to expected values, so we must sift through those.
 
             ExecutionPolicy policyToSet = ExecutionPolicy.Bypass;
-            var currentUserPolicy = (ExecutionPolicy)policies[policies.Count - 2].Members["ExecutionPolicy"].Value;
+            var currentUserPolicy = (ExecutionPolicy)policies [policies.Count - 2].Members ["ExecutionPolicy"].Value;
             if (currentUserPolicy != ExecutionPolicy.Undefined)
             {
                 policyToSet = currentUserPolicy;
             }
             else
             {
-                var localMachinePolicy = (ExecutionPolicy)policies[policies.Count - 1].Members["ExecutionPolicy"].Value;
+                var localMachinePolicy = (ExecutionPolicy)policies [policies.Count - 1].Members ["ExecutionPolicy"].Value;
                 if (localMachinePolicy != ExecutionPolicy.Undefined)
                 {
                     policyToSet = localMachinePolicy;
