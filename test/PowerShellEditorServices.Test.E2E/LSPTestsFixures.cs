@@ -20,13 +20,12 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Window;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
-using OmniSharp.Extensions.LanguageProtocol.Testing;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace PowerShellEditorServices.Test.E2E
 {
-    public class LSPTestsFixture : IAsyncLifetime
+    public class LSPTestsFixture: IAsyncLifetime
     {
         protected readonly static string s_binDir =
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -57,15 +56,23 @@ namespace PowerShellEditorServices.Test.E2E
                     .WithInput(_psesProcess.OutputStream)
                     .WithOutput(_psesProcess.InputStream)
                     .WithRootUri(DocumentUri.FromFileSystemPath(testdir.FullName))
-                    .EnableDynamicRegistration().EnableAllCapabilities()
                     .OnPublishDiagnostics(diagnosticParams => Diagnostics.AddRange(diagnosticParams.Diagnostics.Where(d => d != null)))
                     .OnLogMessage(logMessageParams => Output?.WriteLine($"{logMessageParams.Type.ToString()}: {logMessageParams.Message}"))
                     .OnTelemetryEvent(telemetryEventParams => TelemetryEvents.Add(
                         new PsesTelemetryEvent
                         {
-                            EventName = (string)telemetryEventParams.ExtensionData["eventName"],
-                            Data = telemetryEventParams.ExtensionData["data"] as JObject
+                            EventName = (string)telemetryEventParams.ExtensionData ["eventName"],
+                            Data = telemetryEventParams.ExtensionData ["data"] as JObject
                         }));
+
+                // Enable all capabilities this this is for testing.
+                // This will be a built in feature of the Omnisharp client at some point.
+                var capabilityTypes = typeof(ICapability).Assembly.GetExportedTypes()
+                    .Where(z => typeof(ICapability).IsAssignableFrom(z) && z.IsClass && !z.IsAbstract);
+                foreach (Type capabilityType in capabilityTypes)
+                {
+                    options.WithCapability(Activator.CreateInstance(capabilityType, Array.Empty<object>()) as ICapability);
+                }
             });
 
             await PsesLanguageClient.Initialize(CancellationToken.None).ConfigureAwait(false);

@@ -13,7 +13,7 @@ namespace PowerShellEditorServices.Test.E2E
     /// <summary>
     ///     A <see cref="ServerProcess"/> is responsible for launching or attaching to a language server, providing access to its input and output streams, and tracking its lifetime.
     /// </summary>
-    public class PsesStdioProcess : StdioServerProcess
+    public class PsesStdioProcess: StdioServerProcess
     {
         protected readonly static string s_binDir =
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -29,13 +29,16 @@ namespace PowerShellEditorServices.Test.E2E
             s_binDir,
             $"pses_test_sessiondetails_{Path.GetRandomFileName()}");
 
+        private readonly static string s_logPath = Path.Combine(
+            Environment.GetEnvironmentVariable("BUILD_ARTIFACTSTAGINGDIRECTORY") ?? s_binDir,
+            $"pses_test_logs_{Path.GetRandomFileName()}");
 
         const string s_logLevel = "Diagnostic";
-        readonly static string[] s_featureFlags = { "PSReadLine" };
+        readonly static string [] s_featureFlags = { "PSReadLine" };
         const string s_hostName = "TestHost";
         const string s_hostProfileId = "TestHost";
         const string s_hostVersion = "1.0.0";
-        private readonly static string[] s_additionalModules = { "PowerShellEditorServices.VSCode" };
+        private readonly static string [] s_additionalModules = { "PowerShellEditorServices.VSCode" };
 
         #endregion
 
@@ -73,12 +76,9 @@ namespace PowerShellEditorServices.Test.E2E
             return processStartInfo;
         }
 
-        private static string[] GeneratePsesArguments(bool isDebugAdapter)
+        private static string [] GeneratePsesArguments(bool isDebugAdapter)
         {
-            string s_logPath = Path.Combine(
-            Environment.GetEnvironmentVariable("BUILD_ARTIFACTSTAGINGDIRECTORY") ?? s_binDir,
-            $"pses_{(isDebugAdapter ? "debug_" : string.Empty)}test_logs_{Path.ChangeExtension(Path.GetRandomFileName(), ".log")}");
-        List<string> args = new List<string>
+            List<string> args = new List<string>
             {
                 "&",
                 SingleQuoteEscape(Path.Combine(s_bundledModulePath, "PowerShellEditorServices", "Start-EditorServices.ps1")),
@@ -102,7 +102,7 @@ namespace PowerShellEditorServices.Test.E2E
             string base64Str = Convert.ToBase64String(
                 System.Text.Encoding.Unicode.GetBytes(string.Join(' ', args)));
 
-            return new string[]
+            return new string []
             {
                 "-NoLogo",
                 "-NoProfile",

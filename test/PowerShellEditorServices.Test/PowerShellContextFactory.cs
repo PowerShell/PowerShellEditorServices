@@ -69,7 +69,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
         }
     }
 
-    internal class TestPSHostUserInterface: EditorServicesPSHostUserInterface
+    internal class TestPSHostUserInterface : EditorServicesPSHostUserInterface
     {
         public TestPSHostUserInterface(
             PowerShellContextService powerShellContext,

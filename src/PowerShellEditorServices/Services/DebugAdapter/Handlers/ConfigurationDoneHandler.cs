@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Threading;
@@ -17,7 +16,7 @@ using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    internal class ConfigurationDoneHandler : IConfigurationDoneHandler
+    internal class ConfigurationDoneHandler: IConfigurationDoneHandler
     {
         private readonly ILogger _logger;
         private readonly IDebugAdapterServerFacade _debugAdapterServer;
@@ -95,8 +94,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private async Task LaunchScriptAsync(string scriptToLaunch)
         {
             // Is this an untitled script?
-            _logger.LogInformation($"LaunchScriptAsync\r\nscriptToLaunch: {scriptToLaunch}");
-
             if (ScriptFile.IsUntitledPath(scriptToLaunch))
             {
                 ScriptFile untitledScript = _workspaceService.GetFile(scriptToLaunch);
@@ -107,10 +104,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     // By doing this, we light up the ability to debug Untitled files with breakpoints.
                     // This is only possible via the direct usage of the breakpoint APIs in PowerShell because
                     // Set-PSBreakpoint validates that paths are actually on the filesystem.
-                    ScriptBlockAst ast = Parser.ParseInput(untitledScript.Contents, untitledScript.DocumentUri.ToString(), out Token[] tokens, out ParseError[] errors);
+                    ScriptBlockAst ast = Parser.ParseInput(untitledScript.Contents, untitledScript.DocumentUri.ToString(), out Token [] tokens, out ParseError [] errors);
 
                     // This seems to be the simplest way to invoke a script block (which contains breakpoint information) via the PowerShell API.
-                    _logger.LogInformation("ExecuteCommandAsync");
                     var cmd = new PSCommand().AddScript(". $args[0]").AddArgument(ast.GetScriptBlock());
                     await _powerShellContextService
                         .ExecuteCommandAsync<object>(cmd, sendOutputToHost: true, sendErrorToHost: true)
@@ -118,7 +114,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
                 else
                 {
-                    _logger.LogInformation("ExecuteScriptStringAsync");
                     await _powerShellContextService
                         .ExecuteScriptStringAsync(untitledScript.Contents, writeInputToHost: true, writeOutputToHost: true)
                         .ConfigureAwait(false);
@@ -126,12 +121,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
             else
             {
-                _logger.LogInformation("ExecuteScriptWithArgsAsync");
                 await _powerShellContextService
                     .ExecuteScriptWithArgsAsync(scriptToLaunch, _debugStateService.Arguments, writeInputToHost: true).ConfigureAwait(false);
             }
 
-            _logger.LogInformation("_debugAdapterServer.SendNotification");
             _debugAdapterServer.SendNotification(EventNames.Terminated);
         }
     }
