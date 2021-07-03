@@ -1,23 +1,27 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
-using Microsoft.PowerShell.EditorServices.Test.Shared;
-using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
+using Microsoft.PowerShell.EditorServices.Utility;
 using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Console
 {
     public class PowerShellContextTests : IDisposable
     {
+        // Borrowed from `VersionUtils` which can't be used here due to an initialization problem.
+        private static bool IsWindows { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
         private PowerShellContextService powerShellContext;
         private AsyncQueue<SessionStateChangedEventArgs> stateChangeQueue;
 
@@ -141,6 +145,17 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                         expectedProfilePaths));
 
             Assert.Equal(expectedString, result.FirstOrDefault(), true);
+        }
+
+        [Trait("Category", "PSReadLine")]
+        [SkippableFact]
+        public async Task CanGetPSReadLineProxy()
+        {
+            Skip.If(IsWindows, "This test doesn't work on Windows for some reason.");
+            Assert.True(PSReadLinePromptContext.TryGetPSReadLineProxy(
+                NullLogger.Instance,
+                PowerShellContextFactory.initialRunspace,
+                out PSReadLineProxy proxy));
         }
 
         #region Helper Methods
