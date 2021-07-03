@@ -25,7 +25,7 @@ using Xunit.Abstractions;
 
 namespace PowerShellEditorServices.Test.E2E
 {
-    public class LSPTestsFixture: IAsyncLifetime
+    public class LSPTestsFixture : IAsyncLifetime
     {
         protected readonly static string s_binDir =
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -61,8 +61,8 @@ namespace PowerShellEditorServices.Test.E2E
                     .OnTelemetryEvent(telemetryEventParams => TelemetryEvents.Add(
                         new PsesTelemetryEvent
                         {
-                            EventName = (string)telemetryEventParams.ExtensionData ["eventName"],
-                            Data = telemetryEventParams.ExtensionData ["data"] as JObject
+                            EventName = (string)telemetryEventParams.ExtensionData["eventName"],
+                            Data = telemetryEventParams.ExtensionData["data"] as JObject
                         }));
 
                 // Enable all capabilities this this is for testing.

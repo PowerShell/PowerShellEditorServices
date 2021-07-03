@@ -18,7 +18,7 @@ using Xunit.Abstractions;
 
 namespace PowerShellEditorServices.Test.E2E
 {
-    public class DebugAdapterProtocolMessageTests: IAsyncLifetime
+    public class DebugAdapterProtocolMessageTests : IAsyncLifetime
     {
         private const string TestOutputFileName = "__dapTestOutputFile.txt";
         private readonly static bool s_isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
@@ -86,10 +86,10 @@ namespace PowerShellEditorServices.Test.E2E
             try
             {
                 await PsesDebugAdapterClient.RequestDisconnect(new DisconnectArguments
-                {
-                    Restart = false,
-                    TerminateDebuggee = true
-                }).ConfigureAwait(false);
+                    {
+                        Restart = false,
+                        TerminateDebuggee = true
+                    }).ConfigureAwait(false);
                 await _psesProcess.Stop().ConfigureAwait(false);
                 PsesDebugAdapterClient?.Dispose();
             }
@@ -108,7 +108,7 @@ namespace PowerShellEditorServices.Test.E2E
             return filePath;
         }
 
-        private string GenerateScriptFromLoggingStatements(params string [] logStatements)
+        private string GenerateScriptFromLoggingStatements(params string[] logStatements)
         {
             if (logStatements.Length == 0)
             {
@@ -116,11 +116,11 @@ namespace PowerShellEditorServices.Test.E2E
             }
 
             // Have script create/overwrite file first with `>`.
-            StringBuilder builder = new StringBuilder().Append('\'').Append(logStatements [0]).Append("' > '").Append(s_testOutputPath).AppendLine("'");
-            for (int i = 1;i < logStatements.Length;i++)
+            StringBuilder builder = new StringBuilder().Append('\'').Append(logStatements[0]).Append("' > '").Append(s_testOutputPath).AppendLine("'");
+            for (int i = 1; i < logStatements.Length; i++)
             {
                 // Then append to that script with `>>`.
-                builder.Append('\'').Append(logStatements [i]).Append("' >> '").Append(s_testOutputPath).AppendLine("'");
+                builder.Append('\'').Append(logStatements[i]).Append("' >> '").Append(s_testOutputPath).AppendLine("'");
             }
 
             _output.WriteLine("Script is:");
@@ -128,7 +128,7 @@ namespace PowerShellEditorServices.Test.E2E
             return builder.ToString();
         }
 
-        private string [] GetLog()
+        private string[] GetLog()
         {
             return File.ReadLines(s_testOutputPath).ToArray();
         }
@@ -159,8 +159,8 @@ namespace PowerShellEditorServices.Test.E2E
             // At this point the script should be running so lets give it time
             await Task.Delay(2000).ConfigureAwait(false);
 
-            string [] log = GetLog();
-            Assert.Equal("works", log [0]);
+            string[] log = GetLog();
+            Assert.Equal("works", log[0]);
         }
 
         [Trait("Category", "DAP")]
@@ -187,8 +187,8 @@ namespace PowerShellEditorServices.Test.E2E
                     Name = Path.GetFileName(filePath),
                     Path = filePath
                 },
-                Lines = new long [] { 2 },
-                Breakpoints = new SourceBreakpoint []
+                Lines = new long[] { 2 },
+                Breakpoints = new SourceBreakpoint[]
                 {
                     new SourceBreakpoint
                     {
@@ -209,7 +209,7 @@ namespace PowerShellEditorServices.Test.E2E
             // At this point the script should be running so lets give it time
             await Task.Delay(2000).ConfigureAwait(false);
 
-            string [] log = GetLog();
+            string[] log = GetLog();
             Assert.Single(log, (i) => i == "before breakpoint");
 
             ContinueResponse continueResponse = await PsesDebugAdapterClient.RequestContinue(new ContinueArguments
