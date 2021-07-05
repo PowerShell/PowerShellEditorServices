@@ -85,21 +85,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             logger.LogTrace("Attempting to load PSReadLine");
             using (var pwsh = PowerShell.Create())
             {
-                pwsh.Runspace = runspace;
-                pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
-                    .AddParameter("Name", _psReadLineModulePath)
-                    .Invoke();
-
-                var psReadLineType = Type.GetType("Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2");
-
-                if (psReadLineType == null)
-                {
-                    logger.LogWarning("PSConsoleReadline type not found: {Reason}", pwsh.HadErrors ? pwsh.Streams.Error[0].ToString() : "<Unknown reason>");
-                    return false;
-                }
-
                 try
                 {
+                    pwsh.Runspace = runspace;
+                    pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                        .AddParameter("Name", _psReadLineModulePath)
+                        .Invoke();
+
+                    var psReadLineType = Type.GetType("Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2");
+
+                    if (psReadLineType == null)
+                    {
+                        logger.LogWarning("PSConsoleReadline type not found: {Reason}", pwsh.HadErrors ? pwsh.Streams.Error[0].ToString() : "<Unknown reason>");
+                        return false;
+                    }
+
                     readLineProxy = new PSReadLineProxy(psReadLineType, logger);
                 }
                 catch (InvalidOperationException e)
@@ -107,6 +107,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     // The Type we got back from PowerShell doesn't have the members we expected.
                     // Could be an older version, a custom build, or something a newer version with
                     // breaking changes.
+                    logger.LogWarning("PSReadLineProxy unable to be initialized: {Reason}", e);
+                    return false;
+                }
+                catch(CommandNotFoundException e)
+                {
                     logger.LogWarning("PSReadLineProxy unable to be initialized: {Reason}", e);
                     return false;
                 }
