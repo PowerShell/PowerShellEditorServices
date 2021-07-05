@@ -11,5 +11,6 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/PowerShell/PowerShellEditorServices</RepositoryUrl>
     <DebugType>portable</DebugType>
+    <DefineConstants Condition=" '$(ExtraDefineConstants)' != '' ">$(DefineConstants);$(ExtraDefineConstants)</DefineConstants>
   </PropertyGroup>
 </Project>
