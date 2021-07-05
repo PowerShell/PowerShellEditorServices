@@ -259,20 +259,20 @@ task TestServer TestServerWinPS,TestServerPS7,TestServerPS72
 
 task TestServerWinPS -If (-not $script:IsNix) {
     Set-Location .\test\PowerShellEditorServices.Test\
-    exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Desktop (DotNetTestFilter) }
+    exec { & $script:dotnetExe test -p:ExtraDefineConstants=TEST --logger trx -f $script:NetRuntime.Desktop (DotNetTestFilter) }
 }
 
 task TestServerPS7 -If (-not $script:IsRosetta) {
     Set-Location .\test\PowerShellEditorServices.Test\
     Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
-        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS7 (DotNetTestFilter) }
+        exec { & $script:dotnetExe test -p:ExtraDefineConstants=TEST --logger trx -f $script:NetRuntime.PS7 (DotNetTestFilter) }
     }
 }
 
 task TestServerPS72 {
     Set-Location .\test\PowerShellEditorServices.Test\
     Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
-        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS72 (DotNetTestFilter) }
+        exec { & $script:dotnetExe test -p:ExtraDefineConstants=TEST --logger trx -f $script:NetRuntime.PS72 (DotNetTestFilter) }
     }
 }
 
@@ -281,13 +281,13 @@ task TestE2E {
 
     $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
     $NetRuntime = if ($IsRosetta) { $script:NetRuntime.PS72 } else { $script:NetRuntime.PS7 }
-    exec { & $script:dotnetExe test --logger trx -f $NetRuntime (DotNetTestFilter) }
+    exec { & $script:dotnetExe test -p:ExtraDefineConstants=TEST --logger trx -f $NetRuntime (DotNetTestFilter) }
 
     # Run E2E tests in ConstrainedLanguage mode.
     if (!$script:IsNix) {
         try {
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", "0x80000007", [System.EnvironmentVariableTarget]::Machine);
-            exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS7 (DotNetTestFilter) }
+            exec { & $script:dotnetExe test -p:ExtraDefineConstants=TEST --logger trx -f $script:NetRuntime.PS7 (DotNetTestFilter) }
         } finally {
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", $null, [System.EnvironmentVariableTarget]::Machine);
         }
