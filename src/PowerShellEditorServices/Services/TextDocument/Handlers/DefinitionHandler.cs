@@ -48,13 +48,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     request.Position.Character + 1);
 
             List<LocationOrLocationLink> definitionLocations = new List<LocationOrLocationLink>();
-            if (foundSymbol != null)
+            if(foundSymbol != null)
             {
                 SymbolReference foundDefinition = await _symbolsService.GetDefinitionOfSymbolAsync(
                         scriptFile,
                         foundSymbol).ConfigureAwait(false);
 
-                if (foundDefinition != null)
+                if(foundDefinition != null)
                 {
                     definitionLocations.Add(
                         new LocationOrLocationLink(

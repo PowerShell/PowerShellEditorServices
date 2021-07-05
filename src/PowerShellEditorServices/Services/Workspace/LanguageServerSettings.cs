@@ -44,9 +44,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
             string workspaceRootPath,
             ILogger logger)
         {
-            if (settings != null)
+            if(settings != null)
             {
-                lock (updateLock)
+                lock(updateLock)
                 {
                     this.EnableProfileLoading = settings.EnableProfileLoading;
                     this.PromptToUpdatePackageManagement = settings.PromptToUpdatePackageManagement;
@@ -81,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
             string workspaceRootPath,
             ILogger logger)
         {
-            if (settings != null)
+            if(settings != null)
             {
                 lock(updateLock)
                 {
@@ -91,13 +91,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
 
                     try
                     {
-                        if (string.IsNullOrWhiteSpace(settingsPath))
+                        if(string.IsNullOrWhiteSpace(settingsPath))
                         {
                             settingsPath = null;
                         }
-                        else if (!Path.IsPathRooted(settingsPath))
+                        else if(!Path.IsPathRooted(settingsPath))
                         {
-                            if (string.IsNullOrEmpty(workspaceRootPath))
+                            if(string.IsNullOrEmpty(workspaceRootPath))
                             {
                                 // The workspace root path could be an empty string
                                 // when the user has opened a PowerShell script file
@@ -117,7 +117,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                         this.SettingsPath = settingsPath;
                         logger.LogTrace($"Using Script Analyzer settings path - '{settingsPath ?? ""}'.");
                     }
-                    catch (Exception ex) when (
+                    catch(Exception ex) when(
                         ex is NotSupportedException ||
                         ex is PathTooLongException ||
                         ex is SecurityException)
@@ -202,12 +202,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         /// <param name="codeFormattingSettings">An instance of type CodeFormattingSettings.</param>
         public CodeFormattingSettings(CodeFormattingSettings codeFormattingSettings)
         {
-            if (codeFormattingSettings == null)
+            if(codeFormattingSettings == null)
             {
                 throw new ArgumentNullException(nameof(codeFormattingSettings));
             }
 
-            foreach (var prop in this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            foreach(var prop in this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
                 prop.SetValue(this, prop.GetValue(codeFormattingSettings));
             }
@@ -226,7 +226,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         public bool WhitespaceBeforeOpenParen { get; set; }
         public bool WhitespaceAroundOperator { get; set; }
         public bool WhitespaceAfterSeparator { get; set; }
-        public bool WhitespaceBetweenParameters  { get; set; }
+        public bool WhitespaceBetweenParameters { get; set; }
         public bool WhitespaceInsideBrace { get; set; }
         public bool IgnoreOneLineBlock { get; set; }
         public bool AlignPropertyValuePairs { get; set; }
@@ -245,27 +245,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
             ILogger logger)
         {
             var settings = GetCustomPSSASettingsHashtable(tabSize, insertSpaces);
-            var ruleSettings = (Hashtable)(settings["Rules"]);
-            var closeBraceSettings = (Hashtable)ruleSettings["PSPlaceCloseBrace"];
-            var openBraceSettings = (Hashtable)ruleSettings["PSPlaceOpenBrace"];
+            var ruleSettings = (Hashtable)(settings ["Rules"]);
+            var closeBraceSettings = (Hashtable)ruleSettings ["PSPlaceCloseBrace"];
+            var openBraceSettings = (Hashtable)ruleSettings ["PSPlaceOpenBrace"];
             switch(Preset)
             {
                 case CodeFormattingPreset.Allman:
-                    openBraceSettings["OnSameLine"] = false;
-                    openBraceSettings["NewLineAfter"] = true;
-                    closeBraceSettings["NewLineAfter"] = true;
+                    openBraceSettings ["OnSameLine"] = false;
+                    openBraceSettings ["NewLineAfter"] = true;
+                    closeBraceSettings ["NewLineAfter"] = true;
                     break;
 
                 case CodeFormattingPreset.OTBS:
-                    openBraceSettings["OnSameLine"] = true;
-                    openBraceSettings["NewLineAfter"] = true;
-                    closeBraceSettings["NewLineAfter"] = false;
+                    openBraceSettings ["OnSameLine"] = true;
+                    openBraceSettings ["NewLineAfter"] = true;
+                    closeBraceSettings ["NewLineAfter"] = false;
                     break;
 
                 case CodeFormattingPreset.Stroustrup:
-                    openBraceSettings["OnSameLine"] = true;
-                    openBraceSettings["NewLineAfter"] = true;
-                    closeBraceSettings["NewLineAfter"] = true;
+                    openBraceSettings ["OnSameLine"] = true;
+                    openBraceSettings ["NewLineAfter"] = true;
+                    closeBraceSettings ["NewLineAfter"] = true;
                     break;
 
                 default:
@@ -320,7 +320,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                 }},
             };
 
-            if (AutoCorrectAliases)
+            if(AutoCorrectAliases)
             {
                 // Empty hashtable required to activate the rule,
                 // since PSAvoidUsingCmdletAliases inherits from IScriptRule and not ConfigurableRule
@@ -366,12 +366,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
             CodeFoldingSettings settings,
             ILogger logger)
         {
-            if (settings != null) {
-                if (this.Enable != settings.Enable) {
+            if(settings != null)
+            {
+                if(this.Enable != settings.Enable)
+                {
                     this.Enable = settings.Enable;
                     logger.LogTrace(string.Format("Using Code Folding Enabled - {0}", this.Enable));
                 }
-                if (this.ShowLastLine != settings.ShowLastLine) {
+                if(this.ShowLastLine != settings.ShowLastLine)
+                {
                     this.ShowLastLine = settings.ShowLastLine;
                     logger.LogTrace(string.Format("Using Code Folding ShowLastLine - {0}", this.ShowLastLine));
                 }

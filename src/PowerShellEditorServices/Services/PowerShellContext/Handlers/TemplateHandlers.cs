@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             bool plasterInstalled = await _templateService.ImportPlasterIfInstalledAsync().ConfigureAwait(false);
 
-            if (plasterInstalled)
+            if(plasterInstalled)
             {
                 var availableTemplates =
                     await _templateService.GetAvailableTemplatesAsync(
@@ -56,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 await _templateService.CreateFromTemplateAsync(request.TemplatePath, request.DestinationPath).ConfigureAwait(false);
                 creationSuccessful = true;
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 // We don't really care if this worked or not but we report status.
                 _logger.LogException("New plaster template failed.", e);

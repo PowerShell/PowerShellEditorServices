@@ -38,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<SetBreakpointsResponse> Handle(SetBreakpointsArguments request, CancellationToken cancellationToken)
         {
-            if (!_workspaceService.TryGetFile(request.Source.Path, out ScriptFile scriptFile))
+            if(!_workspaceService.TryGetFile(request.Source.Path, out ScriptFile scriptFile))
             {
                 string message = _debugStateService.NoDebug ? string.Empty : "Source file could not be accessed, breakpoint not set.";
                 var srcBreakpoints = request.Breakpoints
@@ -55,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // Verify source file is a PowerShell script file.
             string fileExtension = Path.GetExtension(scriptFile?.FilePath ?? "")?.ToLower();
             bool isUntitledPath = ScriptFile.IsUntitledPath(request.Source.Path);
-            if ((!isUntitledPath && fileExtension != ".ps1" && fileExtension != ".psm1") ||
+            if((!isUntitledPath && fileExtension != ".ps1" && fileExtension != ".psm1") ||
                 (!BreakpointApiUtils.SupportsBreakpointApis && isUntitledPath))
             {
                 _logger.LogWarning(
@@ -75,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             // At this point, the source file has been verified as a PowerShell script.
-            BreakpointDetails[] breakpointDetails = request.Breakpoints
+            BreakpointDetails [] breakpointDetails = request.Breakpoints
                 .Select((srcBreakpoint) => BreakpointDetails.Create(
                     scriptFile.FilePath,
                     srcBreakpoint.Line,
@@ -86,8 +86,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 .ToArray();
 
             // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
-            BreakpointDetails[] updatedBreakpointDetails = breakpointDetails;
-            if (!_debugStateService.NoDebug)
+            BreakpointDetails [] updatedBreakpointDetails = breakpointDetails;
+            if(!_debugStateService.NoDebug)
             {
                 await _debugStateService.WaitForSetBreakpointHandleAsync().ConfigureAwait(false);
 
@@ -98,7 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                             scriptFile,
                             breakpointDetails).ConfigureAwait(false);
                 }
-                catch (Exception e)
+                catch(Exception e)
                 {
                     // Log whatever the error is
                     _logger.LogException($"Caught error while setting breakpoints in SetBreakpoints handler for file {scriptFile?.FilePath}", e);
@@ -118,7 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<SetFunctionBreakpointsResponse> Handle(SetFunctionBreakpointsArguments request, CancellationToken cancellationToken)
         {
-            CommandBreakpointDetails[] breakpointDetails = request.Breakpoints
+            CommandBreakpointDetails [] breakpointDetails = request.Breakpoints
                 .Select((funcBreakpoint) => CommandBreakpointDetails.Create(
                     funcBreakpoint.Name,
                     funcBreakpoint.Condition,
@@ -126,8 +126,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 .ToArray();
 
             // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
-            CommandBreakpointDetails[] updatedBreakpointDetails = breakpointDetails;
-            if (!_debugStateService.NoDebug)
+            CommandBreakpointDetails [] updatedBreakpointDetails = breakpointDetails;
+            if(!_debugStateService.NoDebug)
             {
                 await _debugStateService.WaitForSetBreakpointHandleAsync().ConfigureAwait(false);
 
@@ -137,7 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         await _debugService.SetCommandBreakpointsAsync(
                             breakpointDetails).ConfigureAwait(false);
                 }
-                catch (Exception e)
+                catch(Exception e)
                 {
                     // Log whatever the error is
                     _logger.LogException($"Caught error while setting command breakpoints", e);

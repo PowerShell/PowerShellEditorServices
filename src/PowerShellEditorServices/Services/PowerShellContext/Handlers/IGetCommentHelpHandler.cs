@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
     internal class CommentHelpRequestResult
     {
-        public string[] Content { get; set; }
+        public string [] Content { get; set; }
     }
 
     internal class CommentHelpRequestParams : IRequest<CommentHelpRequestResult>

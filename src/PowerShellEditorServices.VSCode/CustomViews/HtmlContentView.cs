@@ -65,11 +65,12 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
             );
         }
 
-        private string[] GetUriPaths(string[] filePaths)
+        private string [] GetUriPaths(string [] filePaths)
         {
             return
                 filePaths?
-                    .Select(p => {
+                    .Select(p =>
+                    {
                         return
                             new Uri(
                                 Path.GetFullPath(p),

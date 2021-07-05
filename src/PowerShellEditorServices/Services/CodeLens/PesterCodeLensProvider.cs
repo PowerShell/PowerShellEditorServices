@@ -42,10 +42,10 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// <param name="pesterSymbol">The Pester symbol to get CodeLenses for.</param>
         /// <param name="scriptFile">The script file the Pester symbol comes from.</param>
         /// <returns>All CodeLenses for the given Pester symbol.</returns>
-        private CodeLens[] GetPesterLens(PesterSymbolReference pesterSymbol, ScriptFile scriptFile)
+        private CodeLens [] GetPesterLens(PesterSymbolReference pesterSymbol, ScriptFile scriptFile)
         {
             string word = pesterSymbol.Command == PesterCommandType.It ? "test" : "tests";
-            var codeLensResults = new CodeLens[]
+            var codeLensResults = new CodeLens []
             {
                 new CodeLens()
                 {
@@ -99,17 +99,17 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// </summary>
         /// <param name="scriptFile">The script file to get Pester CodeLenses for.</param>
         /// <returns>All Pester CodeLenses for the given script file.</returns>
-        public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile)
+        public CodeLens [] ProvideCodeLenses(ScriptFile scriptFile)
         {
             var lenses = new List<CodeLens>();
-            foreach (SymbolReference symbol in _symbolProvider.ProvideDocumentSymbols(scriptFile))
+            foreach(SymbolReference symbol in _symbolProvider.ProvideDocumentSymbols(scriptFile))
             {
-                if (!(symbol is PesterSymbolReference pesterSymbol))
+                if(!(symbol is PesterSymbolReference pesterSymbol))
                 {
                     continue;
                 }
 
-                if (_configurationService.CurrentSettings.Pester.UseLegacyCodeLens
+                if(_configurationService.CurrentSettings.Pester.UseLegacyCodeLens
                         && pesterSymbol.Command != PesterCommandType.Describe)
                 {
                     continue;

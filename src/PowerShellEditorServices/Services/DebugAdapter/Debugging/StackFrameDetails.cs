@@ -100,9 +100,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             string moduleId = string.Empty;
             var isExternal = false;
 
-            var invocationInfo = callStackFrameObject.Properties["InvocationInfo"]?.Value as InvocationInfo;
-            string scriptPath = (callStackFrameObject.Properties["ScriptName"].Value as string) ?? NoFileScriptPath;
-            int startLineNumber = (int)(callStackFrameObject.Properties["ScriptLineNumber"].Value ?? 0);
+            var invocationInfo = callStackFrameObject.Properties ["InvocationInfo"]?.Value as InvocationInfo;
+            string scriptPath = (callStackFrameObject.Properties ["ScriptName"].Value as string) ?? NoFileScriptPath;
+            int startLineNumber = (int)(callStackFrameObject.Properties ["ScriptLineNumber"].Value ?? 0);
 
             // TODO: RKH 2019-03-07 Temporarily disable "external" code until I have a chance to add
             // settings to control this feature.
@@ -116,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             return new StackFrameDetails
             {
                 ScriptPath = scriptPath,
-                FunctionName = callStackFrameObject.Properties["FunctionName"].Value as string,
+                FunctionName = callStackFrameObject.Properties ["FunctionName"].Value as string,
                 StartLineNumber = startLineNumber,
                 EndLineNumber = startLineNumber, // End line number isn't given in PowerShell stack frames
                 StartColumnNumber = 0,   // Column number isn't given in PowerShell stack frames

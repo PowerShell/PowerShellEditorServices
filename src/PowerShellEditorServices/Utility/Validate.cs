@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <param name="valueToCheck">The value of the parameter being validated.</param>
         public static void IsNotNull(string parameterName, object valueToCheck)
         {
-            if (valueToCheck == null)
+            if(valueToCheck == null)
             {
                 throw new ArgumentNullException(parameterName);
             }
@@ -41,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         {
             // TODO: Debug assert here if lowerLimit >= upperLimit
 
-            if (valueToCheck < lowerLimit || valueToCheck > upperLimit)
+            if(valueToCheck < lowerLimit || valueToCheck > upperLimit)
             {
                 throw new ArgumentOutOfRangeException(
                     parameterName,
@@ -65,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             int valueToCheck,
             int upperLimit)
         {
-            if (valueToCheck >= upperLimit)
+            if(valueToCheck >= upperLimit)
             {
                 throw new ArgumentOutOfRangeException(
                     parameterName,
@@ -88,7 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             int valueToCheck,
             int lowerLimit)
         {
-            if (valueToCheck < lowerLimit)
+            if(valueToCheck < lowerLimit)
             {
                 throw new ArgumentOutOfRangeException(
                     parameterName,
@@ -111,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             TValue valueToCheck,
             TValue undesiredValue)
         {
-            if (EqualityComparer<TValue>.Default.Equals(valueToCheck, undesiredValue))
+            if(EqualityComparer<TValue>.Default.Equals(valueToCheck, undesiredValue))
             {
                 throw new ArgumentException(
                     string.Format(
@@ -130,7 +130,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <param name="valueToCheck">The value of the parameter being validated.</param>
         public static void IsNotNullOrEmptyString(string parameterName, string valueToCheck)
         {
-            if (string.IsNullOrWhiteSpace(valueToCheck))
+            if(string.IsNullOrWhiteSpace(valueToCheck))
             {
                 throw new ArgumentException(
                     "Parameter contains a null, empty, or whitespace string.",

@@ -56,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <returns>True if the positions are equal, false otherwise.</returns>
         public override bool Equals(object obj)
         {
-            if (!(obj is BufferPosition))
+            if(!(obj is BufferPosition))
             {
                 return false;
             }

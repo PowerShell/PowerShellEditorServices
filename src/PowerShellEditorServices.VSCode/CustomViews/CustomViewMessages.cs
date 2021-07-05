@@ -28,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         /// <summary>
         /// Gets or sets the view's type.
         /// </summary>
-        public CustomViewType ViewType { get; set;}
+        public CustomViewType ViewType { get; set; }
     }
 
     /// <summary>

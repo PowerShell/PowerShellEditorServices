@@ -119,7 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             };
 
             Range range = request.Range;
-            var rangeList = range == null ? null : new int[]
+            var rangeList = range == null ? null : new int []
             {
                 range.Start.Line + 1,
                 range.Start.Character + 1,
@@ -132,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 pssaSettings,
                 rangeList).ConfigureAwait(false);
 
-            if (formattedScript == null)
+            if(formattedScript == null)
             {
                 _logger.LogWarning("Formatting returned null. Returning original contents for file: {0}", scriptFile.DocumentUri);
                 formattedScript = scriptFile.Contents;

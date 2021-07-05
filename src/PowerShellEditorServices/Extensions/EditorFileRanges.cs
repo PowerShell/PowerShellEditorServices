@@ -18,7 +18,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             int offset = 0;
             int currLine = 1;
             string fileText = file.Ast.Extent.Text;
-            while (offset < fileText.Length && currLine < lineNumber)
+            while(offset < fileText.Length && currLine < lineNumber)
             {
                 offset = fileText.IndexOf('\n', offset);
                 currLine++;
@@ -35,15 +35,15 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             int line = 1;
             string fileText = file.Ast.Extent.Text;
 
-            if (offset >= fileText.Length)
+            if(offset >= fileText.Length)
             {
                 throw new ArgumentException(nameof(offset), "Offset greater than file length");
             }
 
             int lastLineOffset = -1;
-            for (int i = 0; i < offset; i++)
+            for(int i = 0; i < offset; i++)
             {
-                if (fileText[i] == '\n')
+                if(fileText [i] == '\n')
                 {
                     lastLineOffset = i;
                     line++;
@@ -60,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         internal FileScriptPosition(FileContext file, int lineNumber, int columnNumber, int offset)
         {
             _file = file;
-            Line = file.GetTextLines()[lineNumber - 1];
+            Line = file.GetTextLines() [lineNumber - 1];
             ColumnNumber = columnNumber;
             LineNumber = lineNumber;
             Offset = offset;

@@ -14,12 +14,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         private SymbolReference symbolRef;
         private string variableName;
 
-        public SymbolReference FoundDeclaration{ get; private set; }
+        public SymbolReference FoundDeclaration { get; private set; }
 
         public FindDeclarationVisitor(SymbolReference symbolRef)
         {
             this.symbolRef = symbolRef;
-            if (this.symbolRef.SymbolType == SymbolType.Variable)
+            if(this.symbolRef.SymbolType == SymbolType.Variable)
             {
                 // converts `$varName` to `varName` or of the form ${varName} to varName
                 variableName = symbolRef.SymbolName.TrimStart('$').Trim('{', '}');
@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 File = functionDefinitionAst.Extent.File
             };
 
-            if (symbolRef.SymbolType.Equals(SymbolType.Function) &&
+            if(symbolRef.SymbolType.Equals(SymbolType.Function) &&
                 nameExtent.Text.Equals(symbolRef.ScriptRegion.Text, StringComparison.CurrentCultureIgnoreCase))
             {
                 this.FoundDeclaration =
@@ -75,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitAssignmentStatement(AssignmentStatementAst assignmentStatementAst)
         {
-            if (variableName == null)
+            if(variableName == null)
             {
                 return AstVisitAction.Continue;
             }
@@ -84,7 +84,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             FindDeclarationVariableExpressionVisitor visitor = new FindDeclarationVariableExpressionVisitor(symbolRef);
             assignmentStatementAst.Left.Visit(visitor);
 
-            if (visitor.FoundDeclaration != null)
+            if(visitor.FoundDeclaration != null)
             {
                 FoundDeclaration = visitor.FoundDeclaration;
                 return AstVisitAction.StopVisit;
@@ -100,12 +100,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             private SymbolReference symbolRef;
             private string variableName;
 
-            public SymbolReference FoundDeclaration{ get; private set; }
+            public SymbolReference FoundDeclaration { get; private set; }
 
             public FindDeclarationVariableExpressionVisitor(SymbolReference symbolRef)
             {
                 this.symbolRef = symbolRef;
-                if (this.symbolRef.SymbolType == SymbolType.Variable)
+                if(this.symbolRef.SymbolType == SymbolType.Variable)
                 {
                     // converts `$varName` to `varName` or of the form ${varName} to varName
                     variableName = symbolRef.SymbolName.TrimStart('$').Trim('{', '}');
@@ -120,7 +120,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             /// or a decision to continue if it wasn't found</returns>
             public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
             {
-                if (variableExpressionAst.VariablePath.UserPath.Equals(variableName, StringComparison.OrdinalIgnoreCase))
+                if(variableExpressionAst.VariablePath.UserPath.Equals(variableName, StringComparison.OrdinalIgnoreCase))
                 {
                     // TODO also find instances of set-variable
                     FoundDeclaration = new SymbolReference(SymbolType.Variable, variableExpressionAst.Extent);

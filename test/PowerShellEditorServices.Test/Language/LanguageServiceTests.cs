@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                         // On Windows, Location points to a temp directory.
                         ? typeof(LanguageServiceTests).Assembly.CodeBase
                         : typeof(LanguageServiceTests).Assembly.Location),
-                    "..","..","..","..",
+                    "..", "..", "..", "..",
                     "PowerShellEditorServices.Test.Shared");
 
         public LanguageServiceTests()
@@ -67,7 +67,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             Assert.NotEmpty(completionResults.Completions);
             Assert.Equal(
                 CompleteCommandInFile.ExpectedCompletion,
-                completionResults.Completions[0]);
+                completionResults.Completions [0]);
         }
 
         [Trait("Category", "Completions")]
@@ -82,15 +82,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
             Assert.Equal(
                 CompleteCommandFromModule.ExpectedCompletion.CompletionText,
-                completionResults.Completions[0].CompletionText
+                completionResults.Completions [0].CompletionText
             );
 
             Assert.Equal(
                 CompleteCommandFromModule.ExpectedCompletion.CompletionType,
-                completionResults.Completions[0].CompletionType
+                completionResults.Completions [0].CompletionType
             );
 
-            Assert.NotNull(completionResults.Completions[0].ToolTipText);
+            Assert.NotNull(completionResults.Completions [0].ToolTipText);
         }
 
         [Trait("Category", "Completions")]
@@ -109,15 +109,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
             Assert.Equal(
                 CompleteTypeName.ExpectedCompletion.CompletionText,
-                completionResults.Completions[0].CompletionText
+                completionResults.Completions [0].CompletionText
             );
 
             Assert.Equal(
                 CompleteTypeName.ExpectedCompletion.CompletionType,
-                completionResults.Completions[0].CompletionType
+                completionResults.Completions [0].CompletionType
             );
 
-            Assert.NotNull(completionResults.Completions[0].ToolTipText);
+            Assert.NotNull(completionResults.Completions [0].ToolTipText);
         }
 
         [Trait("Category", "Completions")]
@@ -136,15 +136,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
             Assert.Equal(
                 CompleteNamespace.ExpectedCompletion.CompletionText,
-                completionResults.Completions[0].CompletionText
+                completionResults.Completions [0].CompletionText
             );
 
             Assert.Equal(
                 CompleteNamespace.ExpectedCompletion.CompletionType,
-                completionResults.Completions[0].CompletionType
+                completionResults.Completions [0].CompletionType
             );
 
-            Assert.NotNull(completionResults.Completions[0].ToolTipText);
+            Assert.NotNull(completionResults.Completions [0].ToolTipText);
         }
 
         [Trait("Category", "Completions")]
@@ -158,7 +158,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             Assert.Single(completionResults.Completions);
             Assert.Equal(
                 CompleteVariableInFile.ExpectedCompletion,
-                completionResults.Completions[0]);
+                completionResults.Completions [0]);
         }
 
         [Trait("Category", "Completions")]
@@ -325,10 +325,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 this.GetReferences(
                     FindsReferencesOnBuiltInCommandWithAlias.SourceDetails);
 
-            SymbolReference[] foundRefs = refsResult.ToArray();
+            SymbolReference [] foundRefs = refsResult.ToArray();
             Assert.Equal(4, foundRefs.Length);
-            Assert.Equal("gci", foundRefs[1].SymbolName);
-            Assert.Equal("Get-ChildItem", foundRefs[foundRefs.Length - 1].SymbolName);
+            Assert.Equal("gci", foundRefs [1].SymbolName);
+            Assert.Equal("Get-ChildItem", foundRefs [foundRefs.Length - 1].SymbolName);
         }
 
         [Trait("Category", "Symbols")]
@@ -340,7 +340,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                     FindsReferencesOnBuiltInCommandWithAlias.SourceDetails);
 
             Assert.Equal(4, refsResult.Count());
-            Assert.Equal("dir", refsResult.ToArray()[2].SymbolName);
+            Assert.Equal("dir", refsResult.ToArray() [2].SymbolName);
             Assert.Equal("Get-ChildItem", refsResult.Last().SymbolName);
         }
 

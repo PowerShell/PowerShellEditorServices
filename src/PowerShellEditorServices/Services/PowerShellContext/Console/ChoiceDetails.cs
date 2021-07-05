@@ -71,14 +71,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             this.HelpMessage = helpMessage;
 
             this.HotKeyIndex = label.IndexOf('&');
-            if (this.HotKeyIndex >= 0)
+            if(this.HotKeyIndex >= 0)
             {
                 this.Label = label.Remove(this.HotKeyIndex, 1);
 
-                if (this.HotKeyIndex < this.Label.Length)
+                if(this.HotKeyIndex < this.Label.Length)
                 {
-                    this.hotKeyString = this.Label[this.HotKeyIndex].ToString().ToUpper();
-                    this.HotKeyCharacter = this.hotKeyString[0];
+                    this.hotKeyString = this.Label [this.HotKeyIndex].ToString().ToUpper();
+                    this.HotKeyCharacter = this.hotKeyString [0];
                 }
             }
             else

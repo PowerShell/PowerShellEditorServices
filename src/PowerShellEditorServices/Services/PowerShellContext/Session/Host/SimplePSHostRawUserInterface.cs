@@ -170,9 +170,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </summary>
         /// <param name="rectangle">The rectangle inside which buffer contents will be accessed.</param>
         /// <returns>A BufferCell array with the requested buffer contents.</returns>
-        public override BufferCell[,] GetBufferContents(Rectangle rectangle)
+        public override BufferCell [,] GetBufferContents(Rectangle rectangle)
         {
-            return new BufferCell[0,0];
+            return new BufferCell [0, 0];
         }
 
         /// <summary>
@@ -212,7 +212,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <param name="contents">The new contents for the buffer at the given coordinate.</param>
         public override void SetBufferContents(
             Coordinates origin,
-            BufferCell[,] contents)
+            BufferCell [,] contents)
         {
             Logger.LogWarning(
                 "PSHostRawUserInterface.SetBufferContents was called");

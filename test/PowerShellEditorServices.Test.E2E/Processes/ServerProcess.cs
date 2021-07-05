@@ -23,7 +23,7 @@ namespace PowerShellEditorServices.Test.E2E
         /// </param>
         protected ServerProcess(ILoggerFactory loggerFactory)
         {
-            if (loggerFactory == null)
+            if(loggerFactory == null)
             {
                 throw new ArgumentNullException(nameof(loggerFactory));
             }

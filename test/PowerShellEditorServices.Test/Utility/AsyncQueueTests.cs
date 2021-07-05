@@ -35,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
                             // Wait for a bit and then add more items to the queue
                             await Task.Delay(250);
 
-                            foreach (var i in Enumerable.Range(100, 200))
+                            foreach(var i in Enumerable.Range(100, 200))
                             {
                                 await inputQueue.EnqueueAsync(i);
                             }
@@ -44,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
                             cancellationTokenSource.Cancel();
                         }));
             }
-            catch (TaskCanceledException)
+            catch(TaskCanceledException)
             {
                 // Do nothing, this is expected.
             }
@@ -82,7 +82,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
             ConcurrentBag<int> outputItems,
             CancellationToken cancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            while(!cancellationToken.IsCancellationRequested)
             {
                 int consumedItem = await inputQueue.DequeueAsync(cancellationToken);
                 outputItems.Add(consumedItem);

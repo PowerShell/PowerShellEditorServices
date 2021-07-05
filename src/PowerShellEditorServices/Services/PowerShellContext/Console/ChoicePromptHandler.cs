@@ -74,13 +74,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <summary>
         /// Gets the array of choices from which the user must select.
         /// </summary>
-        protected ChoiceDetails[] Choices { get; private set; }
+        protected ChoiceDetails [] Choices { get; private set; }
 
         /// <summary>
         /// Gets the index of the default choice so that the user
         /// interface can make it easy to select this option.
         /// </summary>
-        protected int[] DefaultChoices { get; private set; }
+        protected int [] DefaultChoices { get; private set; }
 
         #endregion
 
@@ -111,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         public Task<int> PromptForChoiceAsync(
             string promptCaption,
             string promptMessage,
-            ChoiceDetails[] choices,
+            ChoiceDetails [] choices,
             int defaultChoice,
             CancellationToken cancellationToken)
         {
@@ -124,7 +124,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             this.DefaultChoices =
                 defaultChoice == -1
                 ? Array.Empty<int>()
-                : new int[] { defaultChoice };
+                : new int [] { defaultChoice };
 
             // Cancel the TaskCompletionSource if the caller cancels the task
             cancellationToken.Register(this.CancelPrompt, true);
@@ -135,11 +135,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     .ContinueWith(
                         task =>
                         {
-                            if (task.IsFaulted)
+                            if(task.IsFaulted)
                             {
                                 throw task.Exception;
                             }
-                            else if (task.IsCanceled)
+                            else if(task.IsCanceled)
                             {
                                 throw new TaskCanceledException(task);
                             }
@@ -171,11 +171,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// A Task instance that can be monitored for completion to get
         /// the user's choices.
         /// </returns>
-        public Task<int[]> PromptForChoiceAsync(
+        public Task<int []> PromptForChoiceAsync(
             string promptCaption,
             string promptMessage,
-            ChoiceDetails[] choices,
-            int[] defaultChoices,
+            ChoiceDetails [] choices,
+            int [] defaultChoices,
             CancellationToken cancellationToken)
         {
             // TODO: Guard against multiple calls
@@ -198,7 +198,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             _ = await Task.WhenAny(cancelTask.Task, taskToWait).ConfigureAwait(false);
 
-            if (this.cancelTask.Task.IsCanceled)
+            if(this.cancelTask.Task.IsCanceled)
             {
                 throw new PipelineStoppedException();
             }
@@ -206,18 +206,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             return await taskToWait.ConfigureAwait(false);
         }
 
-        private async Task<int[]> StartPromptLoopAsync(
+        private async Task<int []> StartPromptLoopAsync(
             CancellationToken cancellationToken)
         {
-            int[] choiceIndexes = null;
+            int [] choiceIndexes = null;
 
             // Show the prompt to the user
             this.ShowPrompt(PromptStyle.Full);
 
-            while (!cancellationToken.IsCancellationRequested)
+            while(!cancellationToken.IsCancellationRequested)
             {
                 string responseString = await ReadInputStringAsync(cancellationToken).ConfigureAwait(false);
-                if (responseString == null)
+                if(responseString == null)
                 {
                     // If the response string is null, the prompt has been cancelled
                     break;
@@ -226,13 +226,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 choiceIndexes = this.HandleResponse(responseString);
 
                 // Return the default choice values if no choices were entered
-                if (choiceIndexes == null && string.IsNullOrEmpty(responseString))
+                if(choiceIndexes == null && string.IsNullOrEmpty(responseString))
                 {
                     choiceIndexes = this.DefaultChoices;
                 }
 
                 // If the user provided no choices, we should prompt again
-                if (choiceIndexes != null)
+                if(choiceIndexes != null)
                 {
                     break;
                 }
@@ -242,7 +242,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 this.ShowPrompt(PromptStyle.Minimal);
             }
 
-            if (cancellationToken.IsCancellationRequested)
+            if(cancellationToken.IsCancellationRequested)
             {
                 // Throw a TaskCanceledException to stop the pipeline
                 throw new TaskCanceledException();
@@ -259,27 +259,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// True if the prompt is complete, false if the prompt is
         /// still waiting for a valid response.
         /// </returns>
-        protected virtual int[] HandleResponse(string responseString)
+        protected virtual int [] HandleResponse(string responseString)
         {
             List<int> choiceIndexes = new List<int>();
 
             // Clean up the response string and split it
             var choiceStrings =
                 responseString.Trim().Split(
-                    new char[] { ',' },
+                    new char [] { ',' },
                     StringSplitOptions.RemoveEmptyEntries);
 
-            foreach (string choiceString in choiceStrings)
+            foreach(string choiceString in choiceStrings)
             {
-                for (int i = 0; i < this.Choices.Length; i++)
+                for(int i = 0; i < this.Choices.Length; i++)
                 {
-                    if (this.Choices[i].MatchesInput(choiceString))
+                    if(this.Choices [i].MatchesInput(choiceString))
                     {
                         choiceIndexes.Add(i);
 
                         // If this is a single-choice prompt, break out after
                         // the first matched choice
-                        if (!this.IsMultiChoice)
+                        if(!this.IsMultiChoice)
                         {
                             break;
                         }
@@ -287,7 +287,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 }
             }
 
-            if (choiceIndexes.Count == 0)
+            if(choiceIndexes.Count == 0)
             {
                 // The user did not respond with a valid choice,
                 // show the prompt again to give another chance
@@ -335,7 +335,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         #region Private Methods
 
-        private int GetSingleResult(int[] choiceArray)
+        private int GetSingleResult(int [] choiceArray)
         {
             return
                 choiceArray != null

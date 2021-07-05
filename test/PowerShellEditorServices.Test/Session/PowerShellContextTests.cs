@@ -111,8 +111,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public async Task CanResolveAndLoadProfilesForHostId()
         {
-            string[] expectedProfilePaths =
-                new string[]
+            string [] expectedProfilePaths =
+                new string []
                 {
                     PowerShellContextFactory.TestProfilePaths.AllUsersAllHosts,
                     PowerShellContextFactory.TestProfilePaths.AllUsersCurrentHost,

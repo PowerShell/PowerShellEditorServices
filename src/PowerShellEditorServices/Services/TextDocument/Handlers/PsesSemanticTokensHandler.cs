@@ -42,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             CancellationToken cancellationToken)
         {
             ScriptFile file = _workspaceService.GetFile(identifier.TextDocument.Uri);
-            foreach (Token token in file.ScriptTokens)
+            foreach(Token token in file.ScriptTokens)
             {
                 PushToken(token, builder);
             }
@@ -51,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private static void PushToken(Token token, SemanticTokensBuilder builder)
         {
-            foreach (SemanticToken sToken in ConvertToSemanticTokens(token))
+            foreach(SemanticToken sToken in ConvertToSemanticTokens(token))
             {
                 builder.Push(
                     sToken.Line,
@@ -64,14 +64,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         internal static IEnumerable<SemanticToken> ConvertToSemanticTokens(Token token)
         {
-            if (token is StringExpandableToken stringExpandableToken)
+            if(token is StringExpandableToken stringExpandableToken)
             {
                 // Try parsing tokens within the string
-                if (stringExpandableToken.NestedTokens != null)
+                if(stringExpandableToken.NestedTokens != null)
                 {
-                    foreach (Token t in stringExpandableToken.NestedTokens)
+                    foreach(Token t in stringExpandableToken.NestedTokens)
                     {
-                        foreach (SemanticToken subToken in ConvertToSemanticTokens(t))
+                        foreach(SemanticToken subToken in ConvertToSemanticTokens(t))
                             yield return subToken;
                     }
                     yield break;
@@ -79,7 +79,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             SemanticTokenType mappedType = MapSemanticTokenType(token);
-            if (mappedType == null)
+            if(mappedType == null)
             {
                 yield break;
             }
@@ -96,35 +96,35 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private static SemanticTokenType MapSemanticTokenType(Token token)
         {
             // First check token flags
-            if ((token.TokenFlags & TokenFlags.Keyword) != 0)
+            if((token.TokenFlags & TokenFlags.Keyword) != 0)
             {
                 return SemanticTokenType.Keyword;
             }
 
-            if ((token.TokenFlags & TokenFlags.CommandName) != 0)
+            if((token.TokenFlags & TokenFlags.CommandName) != 0)
             {
                 return SemanticTokenType.Function;
             }
 
-            if (token.Kind != TokenKind.Generic && (token.TokenFlags &
+            if(token.Kind != TokenKind.Generic && (token.TokenFlags &
                 (TokenFlags.BinaryOperator | TokenFlags.UnaryOperator | TokenFlags.AssignmentOperator)) != 0)
             {
                 return SemanticTokenType.Operator;
             }
 
-            if ((token.TokenFlags & TokenFlags.TypeName) != 0)
+            if((token.TokenFlags & TokenFlags.TypeName) != 0)
             {
                 return SemanticTokenType.Type;
             }
 
             // This represents keys in hashtables and also properties like `Foo` in `$myVar.Foo`
-            if ((token.TokenFlags & TokenFlags.MemberName) != 0)
+            if((token.TokenFlags & TokenFlags.MemberName) != 0)
             {
                 return SemanticTokenType.Property;
             }
 
             // Only check token kind after checking flags
-            switch (token.Kind)
+            switch(token.Kind)
             {
                 case TokenKind.Comment:
                     return SemanticTokenType.Comment;

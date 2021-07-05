@@ -75,12 +75,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <returns>A new FilePosition instance for the calculated position.</returns>
         public FilePosition GetLineStart()
         {
-            string scriptLine = scriptFile.FileLines[this.Line - 1];
+            string scriptLine = scriptFile.FileLines [this.Line - 1];
 
             int lineStartColumn = 1;
-            for (int i = 0; i < scriptLine.Length; i++)
+            for(int i = 0; i < scriptLine.Length; i++)
             {
-                if (!char.IsWhiteSpace(scriptLine[i]))
+                if(!char.IsWhiteSpace(scriptLine [i]))
                 {
                     lineStartColumn = i + 1;
                     break;
@@ -97,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <returns>A new FilePosition instance for the calculated position.</returns>
         public FilePosition GetLineEnd()
         {
-            string scriptLine = scriptFile.FileLines[this.Line - 1];
+            string scriptLine = scriptFile.FileLines [this.Line - 1];
             return new FilePosition(this.scriptFile, this.Line, scriptLine.Length + 1);
         }
 

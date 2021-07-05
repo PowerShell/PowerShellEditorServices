@@ -118,15 +118,15 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <returns>A disposable unsubscribe object.</returns>
         public IDisposable Subscribe(IObserver<(PsesLogLevel logLevel, string message)> observer)
         {
-            if (observer == null)
+            if(observer == null)
             {
                 throw new ArgumentNullException(nameof(observer));
             }
 
-            _observers[observer] = true;
+            _observers [observer] = true;
 
             // Catch up a late subscriber to messages already logged
-            foreach ((PsesLogLevel logLevel, string message) entry in _logMessages)
+            foreach((PsesLogLevel logLevel, string message) entry in _logMessages)
             {
                 observer.OnNext(entry);
             }
@@ -141,7 +141,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <returns>A disposable unsubscribe object.</returns>
         public IDisposable Subscribe(IObserver<(int logLevel, string message)> observer)
         {
-            if (observer == null)
+            if(observer == null)
             {
                 throw new ArgumentNullException(nameof(observer));
             }
@@ -157,7 +157,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public void Log(PsesLogLevel logLevel, string message)
         {
             // Do nothing if the severity is lower than the minimum
-            if (logLevel < _minimumLogLevel)
+            if(logLevel < _minimumLogLevel)
             {
                 return;
             }
@@ -166,7 +166,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _logMessages.Enqueue((logLevel, message));
 
             // Send this log to all observers
-            foreach (IObserver<(PsesLogLevel logLevel, string message)> observer in _observers.Keys)
+            foreach(IObserver<(PsesLogLevel logLevel, string message)> observer in _observers.Keys)
             {
                 observer.OnNext((logLevel, message));
             }
@@ -227,7 +227,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public void OnNext((PsesLogLevel logLevel, string message) value)
         {
-            switch (value.logLevel)
+            switch(value.logLevel)
             {
                 case PsesLogLevel.Diagnostic:
                     _ui.WriteDebugLine(value.message);
@@ -304,7 +304,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public void OnCompleted()
         {
             // Ensure we only complete once
-            if (Interlocked.Exchange(ref _hasCompleted, 1) != 0)
+            if(Interlocked.Exchange(ref _hasCompleted, 1) != 0)
             {
                 return;
             }
@@ -329,7 +329,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public void OnNext((PsesLogLevel logLevel, string message) value)
         {
             string message = null;
-            switch (value.logLevel)
+            switch(value.logLevel)
             {
                 case PsesLogLevel.Diagnostic:
                     message = $"[DBG]: {value.message}";
@@ -369,12 +369,12 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             try
             {
-                foreach (string logMessage in _messageQueue.GetConsumingEnumerable(_cancellationSource.Token))
+                foreach(string logMessage in _messageQueue.GetConsumingEnumerable(_cancellationSource.Token))
                 {
                     _fileWriter.WriteLine(logMessage);
                 }
             }
-            catch (OperationCanceledException)
+            catch(OperationCanceledException)
             {
             }
         }

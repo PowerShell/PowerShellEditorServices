@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task<EditorContext> GetEditorContextAsync()
         {
-            if (!TestHasLanguageServer())
+            if(!TestHasLanguageServer())
             {
                 return null;
             };
@@ -48,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task InsertTextAsync(string filePath, string text, BufferRange insertRange)
         {
-            if (!TestHasLanguageServer())
+            if(!TestHasLanguageServer())
             {
                 return;
             };
@@ -76,7 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task SetSelectionAsync(BufferRange selectionRange)
         {
-            if (!TestHasLanguageServer())
+            if(!TestHasLanguageServer())
             {
                 return;
             };
@@ -124,7 +124,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task NewFileAsync()
         {
-            if (!TestHasLanguageServer())
+            if(!TestHasLanguageServer())
             {
                 return;
             };
@@ -136,7 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task OpenFileAsync(string filePath)
         {
-            if (!TestHasLanguageServer())
+            if(!TestHasLanguageServer())
             {
                 return;
             };
@@ -150,7 +150,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task OpenFileAsync(string filePath, bool preview)
         {
-            if (!TestHasLanguageServer())
+            if(!TestHasLanguageServer())
             {
                 return;
             };
@@ -164,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task CloseFileAsync(string filePath)
         {
-            if (!TestHasLanguageServer())
+            if(!TestHasLanguageServer())
             {
                 return;
             };
@@ -181,7 +181,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task SaveFileAsync(string currentPath, string newSavePath)
         {
-            if (!TestHasLanguageServer())
+            if(!TestHasLanguageServer())
             {
                 return;
             };
@@ -205,7 +205,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task ShowInformationMessageAsync(string message)
         {
-            if (!TestHasLanguageServer())
+            if(!TestHasLanguageServer())
             {
                 return;
             };
@@ -217,7 +217,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task ShowErrorMessageAsync(string message)
         {
-            if (!TestHasLanguageServer())
+            if(!TestHasLanguageServer())
             {
                 return;
             };
@@ -229,7 +229,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task ShowWarningMessageAsync(string message)
         {
-            if (!TestHasLanguageServer())
+            if(!TestHasLanguageServer())
             {
                 return;
             };
@@ -241,7 +241,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task SetStatusBarMessageAsync(string message, int? timeout)
         {
-            if (!TestHasLanguageServer())
+            if(!TestHasLanguageServer())
             {
                 return;
             }
@@ -255,7 +255,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public void ClearTerminal()
         {
-            if (!TestHasLanguageServer(warnUser: false))
+            if(!TestHasLanguageServer(warnUser: false))
             {
                 return;
             };
@@ -265,12 +265,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private bool TestHasLanguageServer(bool warnUser = true)
         {
-            if (_languageServer != null)
+            if(_languageServer != null)
             {
                 return true;
             }
 
-            if (warnUser)
+            if(warnUser)
             {
                 _powerShellContextService.ExternalHost.UI.WriteWarningLine(
                     "Editor operations are not supported in temporary consoles. Re-run the command in the main PowerShell Intergrated Console.");

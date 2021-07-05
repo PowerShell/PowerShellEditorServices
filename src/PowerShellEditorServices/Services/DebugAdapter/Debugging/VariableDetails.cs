@@ -28,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         public const string DollarPrefix = "$";
 
         private object valueObject;
-        private VariableDetails[] cachedChildren;
+        private VariableDetails [] cachedChildren;
 
         #endregion
 
@@ -56,8 +56,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// </param>
         public VariableDetails(PSObject psVariableObject)
             : this(
-                  DollarPrefix + psVariableObject.Properties["Name"].Value as string,
-                  psVariableObject.Properties["Value"].Value)
+                  DollarPrefix + psVariableObject.Properties ["Name"].Value as string,
+                  psVariableObject.Properties ["Value"].Value)
         {
         }
 
@@ -101,13 +101,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// details of its children.  Otherwise it returns an empty array.
         /// </summary>
         /// <returns></returns>
-        public override VariableDetailsBase[] GetChildren(ILogger logger)
+        public override VariableDetailsBase [] GetChildren(ILogger logger)
         {
-            VariableDetails[] childVariables = null;
+            VariableDetails [] childVariables = null;
 
-            if (this.IsExpandable)
+            if(this.IsExpandable)
             {
-                if (this.cachedChildren == null)
+                if(this.cachedChildren == null)
                 {
                     this.cachedChildren = GetChildren(this.valueObject, logger);
                 }
@@ -128,14 +128,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
         private static bool GetIsExpandable(object valueObject)
         {
-            if (valueObject == null)
+            if(valueObject == null)
             {
                 return false;
             }
 
             // If a PSObject, unwrap it
             var psobject = valueObject as PSObject;
-            if (psobject != null)
+            if(psobject != null)
             {
                 valueObject = psobject.BaseObject;
             }
@@ -161,7 +161,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             string valueString = null;
             typeName = null;
 
-            if (value == null)
+            if(value == null)
             {
                 // Set to identifier recognized by PowerShell to make setVariable from the debug UI more natural.
                 return "$null";
@@ -170,16 +170,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             Type objType = value.GetType();
             typeName = $"[{objType.FullName}]";
 
-            if (value is bool)
+            if(value is bool)
             {
                 // Set to identifier recognized by PowerShell to make setVariable from the debug UI more natural.
-                valueString = (bool) value ? "$true" : "$false";
+                valueString = (bool)value ? "$true" : "$false";
             }
-            else if (isExpandable)
+            else if(isExpandable)
             {
 
                 // Get the "value" for an expandable object.
-                if (value is DictionaryEntry)
+                if(value is DictionaryEntry)
                 {
                     // For DictionaryEntry - display the key/value as the value.
                     var entry = (DictionaryEntry)value;
@@ -192,22 +192,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 else
                 {
                     string valueToString = value.SafeToString();
-                    if (valueToString == null || valueToString.Equals(objType.ToString()))
+                    if(valueToString == null || valueToString.Equals(objType.ToString()))
                     {
                         // If the ToString() matches the type name or is null, then display the type
                         // name in PowerShell format.
                         string shortTypeName = objType.Name;
 
                         // For arrays and ICollection, display the number of contained items.
-                        if (value is Array)
+                        if(value is Array)
                         {
                             var arr = value as Array;
-                            if (arr.Rank == 1)
+                            if(arr.Rank == 1)
                             {
                                 shortTypeName = InsertDimensionSize(shortTypeName, arr.Length);
                             }
                         }
-                        else if (value is ICollection)
+                        else if(value is ICollection)
                         {
                             var collection = (ICollection)value;
                             shortTypeName = InsertDimensionSize(shortTypeName, collection.Count);
@@ -224,7 +224,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             else
             {
                 // Value is a scalar (not expandable). If it's a string, display it directly otherwise use SafeToString()
-                if (value is string)
+                if(value is string)
                 {
                     valueString = "\"" + value + "\"";
                 }
@@ -242,7 +242,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             string result = value;
 
             int indexLastRBracket = value.LastIndexOf("]");
-            if (indexLastRBracket > 0)
+            if(indexLastRBracket > 0)
             {
                 result =
                     value.Substring(0, indexLastRBracket) +
@@ -259,11 +259,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             return result;
         }
 
-        private VariableDetails[] GetChildren(object obj, ILogger logger)
+        private VariableDetails [] GetChildren(object obj, ILogger logger)
         {
             List<VariableDetails> childVariables = new List<VariableDetails>();
 
-            if (obj == null)
+            if(obj == null)
             {
                 return childVariables.ToArray();
             }
@@ -272,8 +272,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             {
                 PSObject psObject = obj as PSObject;
 
-                if ((psObject != null) &&
-                    (psObject.TypeNames[0] == typeof(PSCustomObject).ToString()))
+                if((psObject != null) &&
+                    (psObject.TypeNames [0] == typeof(PSCustomObject).ToString()))
                 {
                     // PowerShell PSCustomObject's properties are completely defined by the ETS type system.
                     childVariables.AddRange(
@@ -284,7 +284,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 else
                 {
                     // If a PSObject other than a PSCustomObject, unwrap it.
-                    if (psObject != null)
+                    if(psObject != null)
                     {
                         // First add the PSObject's ETS propeties
                         childVariables.AddRange(
@@ -300,7 +300,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                     IEnumerable enumerable = obj as IEnumerable;
 
                     // We're in the realm of regular, unwrapped .NET objects
-                    if (dictionary != null)
+                    if(dictionary != null)
                     {
                         // Buckle up kids, this is a bit weird.  We could not use the LINQ
                         // operator OfType<DictionaryEntry>.  Even though R# will squiggle the
@@ -318,7 +318,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                         // If you open the $PSBoundParameters variable node in this scenario and see nothing,
                         // this code is broken.
                         int i = 0;
-                        foreach (DictionaryEntry entry in dictionary)
+                        foreach(DictionaryEntry entry in dictionary)
                         {
                             childVariables.Add(
                                 new VariableDetails(
@@ -326,10 +326,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                                     entry));
                         }
                     }
-                    else if (enumerable != null && !(obj is string))
+                    else if(enumerable != null && !(obj is string))
                     {
                         int i = 0;
-                        foreach (var item in enumerable)
+                        foreach(var item in enumerable)
                         {
                             childVariables.Add(
                                 new VariableDetails(
@@ -341,7 +341,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                     AddDotNetProperties(obj, childVariables);
                 }
             }
-            catch (GetValueInvocationException ex)
+            catch(GetValueInvocationException ex)
             {
                 // This exception occurs when accessing the value of a
                 // variable causes a script to be executed.  Right now
@@ -361,10 +361,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 objectType.GetProperties(
                     BindingFlags.Public | BindingFlags.Instance);
 
-            foreach (var property in properties)
+            foreach(var property in properties)
             {
                 // Don't display indexer properties, it causes an exception anyway.
-                if (property.GetIndexParameters().Length > 0)
+                if(property.GetIndexParameters().Length > 0)
                 {
                     continue;
                 }
@@ -376,11 +376,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                             property.Name,
                             property.GetValue(obj)));
                 }
-                catch (Exception ex)
+                catch(Exception ex)
                 {
                     // Some properties can throw exceptions, add the property
                     // name and info about the error.
-                    if (ex is TargetInvocationException)
+                    if(ex is TargetInvocationException)
                     {
                         ex = ex.InnerException;
                     }

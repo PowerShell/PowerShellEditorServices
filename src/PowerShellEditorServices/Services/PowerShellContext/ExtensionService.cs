@@ -91,7 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // Register the editor object in the runspace
             PSCommand variableCommand = new PSCommand();
-            using (RunspaceHandle handle = await this.PowerShellContext.GetRunspaceHandleAsync().ConfigureAwait(false))
+            using(RunspaceHandle handle = await this.PowerShellContext.GetRunspaceHandleAsync().ConfigureAwait(false))
             {
                 handle.Runspace.SessionStateProxy.PSVariable.Set(
                     "psEditor",
@@ -108,12 +108,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public async Task InvokeCommandAsync(string commandName, EditorContext editorContext)
         {
 
-            if (this.editorCommands.TryGetValue(commandName, out EditorCommand editorCommand))
+            if(this.editorCommands.TryGetValue(commandName, out EditorCommand editorCommand))
             {
                 PSCommand executeCommand = new PSCommand();
                 executeCommand.AddCommand("Invoke-Command");
                 executeCommand.AddParameter("ScriptBlock", editorCommand.ScriptBlock);
-                executeCommand.AddParameter("ArgumentList", new object[] { editorContext });
+                executeCommand.AddParameter("ArgumentList", new object [] { editorContext });
 
                 await this.PowerShellContext.ExecuteCommandAsync<object>(
                     executeCommand,
@@ -144,9 +144,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     editorCommand.Name);
 
             // Add or replace the editor command
-            this.editorCommands[editorCommand.Name] = editorCommand;
+            this.editorCommands [editorCommand.Name] = editorCommand;
 
-            if (!commandExists)
+            if(!commandExists)
             {
                 this.OnCommandAdded(editorCommand);
             }
@@ -164,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="commandName">The name of the command to be unregistered.</param>
         public void UnregisterCommand(string commandName)
         {
-            if (this.editorCommands.TryGetValue(commandName, out EditorCommand existingCommand))
+            if(this.editorCommands.TryGetValue(commandName, out EditorCommand existingCommand))
             {
                 this.editorCommands.Remove(commandName);
                 this.OnCommandRemoved(existingCommand);
@@ -182,10 +182,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// Returns all registered EditorCommands.
         /// </summary>
         /// <returns>An Array of all registered EditorCommands.</returns>
-        public EditorCommand[] GetCommands()
+        public EditorCommand [] GetCommands()
         {
-            EditorCommand[] commands = new EditorCommand[this.editorCommands.Count];
-            this.editorCommands.Values.CopyTo(commands,0);
+            EditorCommand [] commands = new EditorCommand [this.editorCommands.Count];
+            this.editorCommands.Values.CopyTo(commands, 0);
             return commands;
         }
 

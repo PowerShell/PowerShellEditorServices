@@ -158,7 +158,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             where TCapability : IRunspaceCapability
         {
             IRunspaceCapability capabilityAsInterface = default(TCapability);
-            if (this.capabilities.TryGetValue(typeof(TCapability), out capabilityAsInterface))
+            if(this.capabilities.TryGetValue(typeof(TCapability), out capabilityAsInterface))
             {
                 capability = (TCapability)capabilityAsInterface;
                 return true;
@@ -198,20 +198,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             string connectionString = null;
 
-            if (runspace.ConnectionInfo != null)
+            if(runspace.ConnectionInfo != null)
             {
                 // Use 'dynamic' to avoid missing NamedPipeRunspaceConnectionInfo
                 // on PS v3 and v4
                 try
                 {
                     dynamic connectionInfo = runspace.ConnectionInfo;
-                    if (connectionInfo.ProcessId != null)
+                    if(connectionInfo.ProcessId != null)
                     {
                         connectionString = connectionInfo.ProcessId.ToString();
                         runspaceContext = RunspaceContext.EnteredProcess;
                     }
                 }
-                catch (RuntimeBinderException)
+                catch(RuntimeBinderException)
                 {
                     // ProcessId property isn't on the object, move on.
                 }
@@ -228,7 +228,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 // ex. Enter-PSSession
                 // Attaching to process currently needs to be marked as a local session
                 // so we skip this if block if the runspace is from Enter-PSHostProcess
-                if (hostName.Equals("ServerRemoteHost", StringComparison.Ordinal)
+                if(hostName.Equals("ServerRemoteHost", StringComparison.Ordinal)
                     && runspace.OriginalConnectionInfo?.GetType().ToString() != "System.Management.Automation.Runspaces.NamedPipeConnectionInfo")
                 {
                     runspaceLocation = RunspaceLocation.Remote;

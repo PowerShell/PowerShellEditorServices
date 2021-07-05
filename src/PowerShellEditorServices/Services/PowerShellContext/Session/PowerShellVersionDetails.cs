@@ -100,10 +100,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             try
             {
                 var psVersionTable = PowerShellContextService.ExecuteScriptAndGetItem<Hashtable>("$PSVersionTable", runspace, useLocalScope: true);
-                if (psVersionTable != null)
+                if(psVersionTable != null)
                 {
-                    var edition = psVersionTable["PSEdition"] as string;
-                    if (edition != null)
+                    var edition = psVersionTable ["PSEdition"] as string;
+                    if(edition != null)
                     {
                         powerShellEdition = edition;
                     }
@@ -111,19 +111,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     // The PSVersion value will either be of Version or SemanticVersion.
                     // In the former case, take the value directly.  In the latter case,
                     // generate a Version from its string representation.
-                    var version = psVersionTable["PSVersion"];
-                    if (version is Version)
+                    var version = psVersionTable ["PSVersion"];
+                    if(version is Version)
                     {
                         powerShellVersion = (Version)version;
                     }
-                    else if (version != null)
+                    else if(version != null)
                     {
                         // Expected version string format is 6.0.0-alpha so build a simpler version from that
-                        powerShellVersion = new Version(version.ToString().Split('-')[0]);
+                        powerShellVersion = new Version(version.ToString().Split('-') [0]);
                     }
 
-                    var gitCommitId = psVersionTable["GitCommitId"] as string;
-                    if (gitCommitId != null)
+                    var gitCommitId = psVersionTable ["GitCommitId"] as string;
+                    if(gitCommitId != null)
                     {
                         versionString = gitCommitId;
                     }
@@ -133,20 +133,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     }
 
                     var arch = PowerShellContextService.ExecuteScriptAndGetItem<string>("$env:PROCESSOR_ARCHITECTURE", runspace, useLocalScope: true);
-                    if (arch != null)
+                    if(arch != null)
                     {
-                        if (string.Equals(arch, "AMD64", StringComparison.CurrentCultureIgnoreCase))
+                        if(string.Equals(arch, "AMD64", StringComparison.CurrentCultureIgnoreCase))
                         {
                             architecture = PowerShellProcessArchitecture.X64;
                         }
-                        else if (string.Equals(arch, "x86", StringComparison.CurrentCultureIgnoreCase))
+                        else if(string.Equals(arch, "x86", StringComparison.CurrentCultureIgnoreCase))
                         {
                             architecture = PowerShellProcessArchitecture.X86;
                         }
                     }
                 }
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 logger.LogWarning(
                     "Failed to look up PowerShell version, defaulting to version 5.\r\n\r\n" + ex.ToString());

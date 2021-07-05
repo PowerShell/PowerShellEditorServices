@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             this.DisplayVersion = $"{versionDetails.Version.Major}.{versionDetails.Version.Minor}";
             this.Edition = versionDetails.Edition;
 
-            switch (versionDetails.Architecture)
+            switch(versionDetails.Architecture)
             {
                 case PowerShellProcessArchitecture.X64:
                     this.Architecture = "x64";

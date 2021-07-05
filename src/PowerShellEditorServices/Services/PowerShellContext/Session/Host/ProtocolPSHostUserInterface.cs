@@ -28,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             ILanguageServerFacade languageServer,
             PowerShellContextService powerShellContext,
             ILogger logger)
-            : base (
+            : base(
                 powerShellContext,
                 new SimplePSHostRawUserInterface(logger),
                 logger)

@@ -130,7 +130,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
 
             var psCommand = new System.Management.Automation.PSCommand().AddScript($". {quotedPath}");
 
-            using (var pwsh = System.Management.Automation.PowerShell.Create())
+            using(var pwsh = System.Management.Automation.PowerShell.Create())
             {
                 pwsh.Commands = psCommand;
                 pwsh.Invoke();

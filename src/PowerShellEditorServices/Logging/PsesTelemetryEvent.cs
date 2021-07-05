@@ -16,11 +16,11 @@ namespace Microsoft.PowerShell.EditorServices.Logging
         {
             get
             {
-                return this["EventName"].ToString() ?? "PsesEvent";
+                return this ["EventName"].ToString() ?? "PsesEvent";
             }
             set
             {
-                this["EventName"] = value;
+                this ["EventName"] = value;
             }
         }
 
@@ -28,11 +28,11 @@ namespace Microsoft.PowerShell.EditorServices.Logging
         {
             get
             {
-                return this["Data"] as JObject ?? new JObject();
+                return this ["Data"] as JObject ?? new JObject();
             }
             set
             {
-                this["Data"] = value;
+                this ["Data"] = value;
             }
         }
     }

@@ -82,7 +82,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         {
             Validate.IsNotNull("breakpoint", breakpoint);
 
-            if (!(breakpoint is LineBreakpoint lineBreakpoint))
+            if(!(breakpoint is LineBreakpoint lineBreakpoint))
             {
                 throw new ArgumentException(
                     "Unexpected breakpoint type: " + breakpoint.GetType().Name);
@@ -98,7 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 Condition = lineBreakpoint.Action?.ToString()
             };
 
-            if (lineBreakpoint.Column > 0)
+            if(lineBreakpoint.Column > 0)
             {
                 breakpointDetails.ColumnNumber = lineBreakpoint.Column;
             }

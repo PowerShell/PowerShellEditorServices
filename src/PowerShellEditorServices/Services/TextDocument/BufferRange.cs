@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <param name="end">The end position of the range.</param>
         public BufferRange(BufferPosition start, BufferPosition end)
         {
-            if (start > end)
+            if(start > end)
             {
                 throw new ArgumentException(
                     string.Format(
@@ -94,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <returns>True if the ranges are equal, false otherwise.</returns>
         public override bool Equals(object obj)
         {
-            if (!(obj is BufferRange))
+            if(!(obj is BufferRange))
             {
                 return false;
             }

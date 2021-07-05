@@ -113,7 +113,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             var request = new InvocationRequest(pwsh =>
             {
-                using (_promptNest.GetRunspaceHandle(CancellationToken.None, isReadLine: false))
+                using(_promptNest.GetRunspaceHandle(CancellationToken.None, isReadLine: false))
                 {
                     pwsh.Runspace = _runspace;
                     invocationAction(pwsh);
@@ -138,7 +138,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             try
             {
                 existingRequest = _invocationRequest;
-                if (existingRequest == null || existingRequest.Task.IsCompleted)
+                if(existingRequest == null || existingRequest.Task.IsCompleted)
                 {
                     return;
                 }
@@ -169,7 +169,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private void OnPowerShellIdle(object sender, EventArgs e)
         {
-            if (!_lock.Wait(0))
+            if(!_lock.Wait(0))
             {
                 return;
             }
@@ -177,7 +177,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             InvocationRequest currentRequest = null;
             try
             {
-                if (_invocationRequest == null)
+                if(_invocationRequest == null)
                 {
                     return;
                 }
@@ -251,7 +251,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     // may take over the pipeline thread.
                     System.Threading.Tasks.Task.Run(() => SetResult(true));
                 }
-                catch (Exception e)
+                catch(Exception e)
                 {
                     System.Threading.Tasks.Task.Run(() => SetException(e));
                 }

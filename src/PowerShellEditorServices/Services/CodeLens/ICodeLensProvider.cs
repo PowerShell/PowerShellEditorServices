@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// The document for which CodeLenses should be provided.
         /// </param>
         /// <returns>An array of CodeLenses.</returns>
-        CodeLens[] ProvideCodeLenses(ScriptFile scriptFile);
+        CodeLens [] ProvideCodeLenses(ScriptFile scriptFile);
 
         /// <summary>
         /// Resolves a CodeLens that was created without a Command.

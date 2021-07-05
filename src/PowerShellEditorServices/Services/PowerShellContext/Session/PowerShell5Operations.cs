@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     {
         public void ConfigureDebugger(Runspace runspace)
         {
-            if (runspace.Debugger != null)
+            if(runspace.Debugger != null)
             {
                 runspace.Debugger.SetDebugMode(DebugModes.LocalScript | DebugModes.RemoteScript);
             }
@@ -21,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         public virtual void PauseDebugger(Runspace runspace)
         {
-            if (runspace.Debugger != null)
+            if(runspace.Debugger != null)
             {
                 runspace.Debugger.SetDebuggerStepMode(true);
             }
@@ -42,15 +42,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             debuggerResumeAction = null;
             PSDataCollection<PSObject> outputCollection = new PSDataCollection<PSObject>();
 
-            if (sendOutputToHost)
+            if(sendOutputToHost)
             {
                 outputCollection.DataAdded +=
                     (obj, e) =>
                     {
-                        for (int i = e.Index; i < outputCollection.Count; i++)
+                        for(int i = e.Index; i < outputCollection.Count; i++)
                         {
                             powerShellContext.WriteOutput(
-                                outputCollection[i].ToString(),
+                                outputCollection [i].ToString(),
                                 true);
                         }
                     };
@@ -66,7 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             debuggerResumeAction = commandResults.ResumeAction;
 
             IEnumerable<TResult> results = null;
-            if (typeof(TResult) != typeof(PSObject))
+            if(typeof(TResult) != typeof(PSObject))
             {
                 results =
                     outputCollection
@@ -84,7 +84,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         public void StopCommandInDebugger(PowerShellContextService powerShellContext)
         {
             // If the RunspaceAvailability is None, the runspace is dead and we should not try to run anything in it.
-            if (powerShellContext.CurrentRunspace.Runspace.RunspaceAvailability != RunspaceAvailability.None)
+            if(powerShellContext.CurrentRunspace.Runspace.RunspaceAvailability != RunspaceAvailability.None)
             {
                 powerShellContext.CurrentRunspace.Runspace.Debugger.StopProcessCommand();
             }
@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             {
                 host.ExitNestedPrompt();
             }
-            catch (FlowControlException)
+            catch(FlowControlException)
             {
             }
         }

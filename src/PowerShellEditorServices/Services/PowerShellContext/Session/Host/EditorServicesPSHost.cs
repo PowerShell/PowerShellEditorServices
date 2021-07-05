@@ -83,7 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             internal ConsoleColorProxy(EditorServicesPSHostUserInterface hostUserInterface)
             {
-                if (hostUserInterface == null) throw new ArgumentNullException("hostUserInterface");
+                if(hostUserInterface == null) throw new ArgumentNullException("hostUserInterface");
                 _hostUserInterface = hostUserInterface;
             }
 
@@ -228,7 +228,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             get
             {
-                if (hostUserInterface == null) return null;
+                if(hostUserInterface == null) return null;
                 return _consoleColorProxy ?? (_consoleColorProxy = PSObject.AsPSObject(new ConsoleColorProxy(hostUserInterface)));
             }
         }
@@ -308,7 +308,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <param name="exitCode"></param>
         public override void SetShouldExit(int exitCode)
         {
-            if (this.IsRunspacePushed)
+            if(this.IsRunspacePushed)
             {
                 this.PopRunspace();
             }
@@ -326,7 +326,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             get
             {
-                if (this.hostSupportsInteractiveSession != null)
+                if(this.hostSupportsInteractiveSession != null)
                 {
                     return this.hostSupportsInteractiveSession.IsRunspacePushed;
                 }
@@ -345,7 +345,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             get
             {
-                if (this.hostSupportsInteractiveSession != null)
+                if(this.hostSupportsInteractiveSession != null)
                 {
                     return this.hostSupportsInteractiveSession.Runspace;
                 }
@@ -362,7 +362,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <param name="runspace"></param>
         public void PushRunspace(Runspace runspace)
         {
-            if (this.hostSupportsInteractiveSession != null)
+            if(this.hostSupportsInteractiveSession != null)
             {
                 this.hostSupportsInteractiveSession.PushRunspace(runspace);
             }
@@ -377,7 +377,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </summary>
         public void PopRunspace()
         {
-            if (this.hostSupportsInteractiveSession != null)
+            if(this.hostSupportsInteractiveSession != null)
             {
                 this.hostSupportsInteractiveSession.PopRunspace();
             }

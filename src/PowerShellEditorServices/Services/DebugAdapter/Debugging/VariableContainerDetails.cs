@@ -70,9 +70,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// Returns the details of the variable container's children.  If empty, returns an empty array.
         /// </summary>
         /// <returns></returns>
-        public override VariableDetailsBase[] GetChildren(ILogger logger)
+        public override VariableDetailsBase [] GetChildren(ILogger logger)
         {
-            var variablesArray = new VariableDetailsBase[this.children.Count];
+            var variablesArray = new VariableDetailsBase [this.children.Count];
             this.children.Values.CopyTo(variablesArray, 0);
             return variablesArray;
         }
@@ -84,9 +84,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <returns>Returns true if this variable container directly contains the specified variableReferenceId, false otherwise.</returns>
         public bool ContainsVariable(int variableReferenceId)
         {
-            foreach (VariableDetailsBase value in this.children.Values)
+            foreach(VariableDetailsBase value in this.children.Values)
             {
-                if (value.Id == variableReferenceId)
+                if(value.Id == variableReferenceId)
                 {
                     return true;
                 }

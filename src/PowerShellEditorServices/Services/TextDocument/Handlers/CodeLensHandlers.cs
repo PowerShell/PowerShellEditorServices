@@ -51,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
-            CodeLens[] codeLensResults = ProvideCodeLenses(scriptFile);
+            CodeLens [] codeLensResults = ProvideCodeLenses(scriptFile);
 
             return Task.FromResult(new CodeLensContainer(codeLensResults));
         }
@@ -89,7 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         /// </summary>
         /// <param name="scriptFile">The PowerShell script file to get CodeLenses for.</param>
         /// <returns>All generated CodeLenses for the given script file.</returns>
-        private CodeLens[] ProvideCodeLenses(ScriptFile scriptFile)
+        private CodeLens [] ProvideCodeLenses(ScriptFile scriptFile)
         {
             return InvokeProviders(provider => provider.ProvideCodeLenses(scriptFile))
                 .SelectMany(codeLens => codeLens)
@@ -111,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             Stopwatch invokeTimer = new Stopwatch();
             List<TResult> providerResults = new List<TResult>();
 
-            foreach (ICodeLensProvider provider in _symbolsService.GetCodeLensProviders())
+            foreach(ICodeLensProvider provider in _symbolsService.GetCodeLensProviders())
             {
                 try
                 {
@@ -124,7 +124,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     this._logger.LogTrace(
                         $"Invocation of provider '{provider.GetType().Name}' completed in {invokeTimer.ElapsedMilliseconds}ms.");
                 }
-                catch (Exception e)
+                catch(Exception e)
                 {
                     this._logger.LogException(
                         $"Exception caught while invoking provider {provider.GetType().Name}:",

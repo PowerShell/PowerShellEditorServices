@@ -37,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task<List<Breakpoint>> GetBreakpointsAsync()
         {
-            if (BreakpointApiUtils.SupportsBreakpointApis)
+            if(BreakpointApiUtils.SupportsBreakpointApis)
             {
                 return BreakpointApiUtils.GetBreakpoints(
                     _powerShellContextService.CurrentRunspace.Runspace.Debugger,
@@ -53,9 +53,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task<IEnumerable<BreakpointDetails>> SetBreakpointsAsync(string escapedScriptPath, IEnumerable<BreakpointDetails> breakpoints)
         {
-            if (BreakpointApiUtils.SupportsBreakpointApis)
+            if(BreakpointApiUtils.SupportsBreakpointApis)
             {
-                foreach (BreakpointDetails breakpointDetails in breakpoints)
+                foreach(BreakpointDetails breakpointDetails in breakpoints)
                 {
                     try
                     {
@@ -74,12 +74,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // Legacy behavior
             PSCommand psCommand = null;
             List<BreakpointDetails> configuredBreakpoints = new List<BreakpointDetails>();
-            foreach (BreakpointDetails breakpoint in breakpoints)
+            foreach(BreakpointDetails breakpoint in breakpoints)
             {
                 ScriptBlock actionScriptBlock = null;
 
                 // Check if this is a "conditional" line breakpoint.
-                if (!string.IsNullOrWhiteSpace(breakpoint.Condition) ||
+                if(!string.IsNullOrWhiteSpace(breakpoint.Condition) ||
                     !string.IsNullOrWhiteSpace(breakpoint.HitCondition) ||
                     !string.IsNullOrWhiteSpace(breakpoint.LogMessage))
                 {
@@ -89,7 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         breakpoint.LogMessage,
                         out string errorMessage);
 
-                    if (!string.IsNullOrEmpty(errorMessage))
+                    if(!string.IsNullOrEmpty(errorMessage))
                     {
                         breakpoint.Verified = false;
                         breakpoint.Message = errorMessage;
@@ -100,7 +100,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 // On first iteration psCommand will be null, every subsequent
                 // iteration will need to start a new statement.
-                if (psCommand == null)
+                if(psCommand == null)
                 {
                     psCommand = new PSCommand();
                 }
@@ -115,7 +115,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     .AddParameter("Line", breakpoint.LineNumber);
 
                 // Check if the user has specified the column number for the breakpoint.
-                if (breakpoint.ColumnNumber.HasValue && breakpoint.ColumnNumber.Value > 0)
+                if(breakpoint.ColumnNumber.HasValue && breakpoint.ColumnNumber.Value > 0)
                 {
                     // It bums me out that PowerShell will silently ignore a breakpoint
                     // where either the line or the column is invalid.  I'd rather have an
@@ -123,14 +123,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     psCommand.AddParameter("Column", breakpoint.ColumnNumber.Value);
                 }
 
-                if (actionScriptBlock != null)
+                if(actionScriptBlock != null)
                 {
                     psCommand.AddParameter("Action", actionScriptBlock);
                 }
             }
 
             // If no PSCommand was created then there are no breakpoints to set.
-            if (psCommand != null)
+            if(psCommand != null)
             {
                 IEnumerable<Breakpoint> setBreakpoints =
                     await _powerShellContextService.ExecuteCommandAsync<Breakpoint>(psCommand);
@@ -143,9 +143,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task<IEnumerable<CommandBreakpointDetails>> SetCommandBreakpoints(IEnumerable<CommandBreakpointDetails> breakpoints)
         {
-            if (BreakpointApiUtils.SupportsBreakpointApis)
+            if(BreakpointApiUtils.SupportsBreakpointApis)
             {
-                foreach (CommandBreakpointDetails commandBreakpointDetails in breakpoints)
+                foreach(CommandBreakpointDetails commandBreakpointDetails in breakpoints)
                 {
                     try
                     {
@@ -164,11 +164,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // Legacy behavior
             PSCommand psCommand = null;
             List<CommandBreakpointDetails> configuredBreakpoints = new List<CommandBreakpointDetails>();
-            foreach (CommandBreakpointDetails breakpoint in breakpoints)
+            foreach(CommandBreakpointDetails breakpoint in breakpoints)
             {
                 // On first iteration psCommand will be null, every subsequent
                 // iteration will need to start a new statement.
-                if (psCommand == null)
+                if(psCommand == null)
                 {
                     psCommand = new PSCommand();
                 }
@@ -182,7 +182,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     .AddParameter("Command", breakpoint.Name);
 
                 // Check if this is a "conditional" line breakpoint.
-                if (!string.IsNullOrWhiteSpace(breakpoint.Condition) ||
+                if(!string.IsNullOrWhiteSpace(breakpoint.Condition) ||
                     !string.IsNullOrWhiteSpace(breakpoint.HitCondition))
                 {
                     ScriptBlock actionScriptBlock =
@@ -194,7 +194,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                     // If there was a problem with the condition string,
                     // move onto the next breakpoint.
-                    if (!string.IsNullOrEmpty(errorMessage))
+                    if(!string.IsNullOrEmpty(errorMessage))
                     {
                         breakpoint.Verified = false;
                         breakpoint.Message = errorMessage;
@@ -207,7 +207,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             // If no PSCommand was created then there are no breakpoints to set.
-            if (psCommand != null)
+            if(psCommand != null)
             {
                 IEnumerable<Breakpoint> setBreakpoints =
                     await _powerShellContextService.ExecuteCommandAsync<Breakpoint>(psCommand);
@@ -225,13 +225,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             try
             {
-                if (BreakpointApiUtils.SupportsBreakpointApis)
+                if(BreakpointApiUtils.SupportsBreakpointApis)
                 {
-                    foreach (Breakpoint breakpoint in BreakpointApiUtils.GetBreakpoints(
+                    foreach(Breakpoint breakpoint in BreakpointApiUtils.GetBreakpoints(
                             _powerShellContextService.CurrentRunspace.Runspace.Debugger,
                             _debugStateService.RunspaceId))
                     {
-                        if (scriptPath == null || scriptPath == breakpoint.Script)
+                        if(scriptPath == null || scriptPath == breakpoint.Script)
                         {
                             BreakpointApiUtils.RemoveBreakpoint(
                                 _powerShellContextService.CurrentRunspace.Runspace.Debugger,
@@ -248,7 +248,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 PSCommand psCommand = new PSCommand();
                 psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
 
-                if (!string.IsNullOrEmpty(scriptPath))
+                if(!string.IsNullOrEmpty(scriptPath))
                 {
                     psCommand.AddParameter("Script", scriptPath);
                 }
@@ -257,7 +257,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 await _powerShellContextService.ExecuteCommandAsync<object>(psCommand).ConfigureAwait(false);
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 _logger.LogException("Caught exception while clearing breakpoints from session", e);
             }
@@ -265,22 +265,22 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task RemoveBreakpointsAsync(IEnumerable<Breakpoint> breakpoints)
         {
-            if (BreakpointApiUtils.SupportsBreakpointApis)
+            if(BreakpointApiUtils.SupportsBreakpointApis)
             {
-                foreach (Breakpoint breakpoint in breakpoints)
+                foreach(Breakpoint breakpoint in breakpoints)
                 {
                     BreakpointApiUtils.RemoveBreakpoint(
                         _powerShellContextService.CurrentRunspace.Runspace.Debugger,
                         breakpoint,
                         _debugStateService.RunspaceId);
 
-                    switch (breakpoint)
+                    switch(breakpoint)
                     {
                         case CommandBreakpoint commandBreakpoint:
                             CommandBreakpoints.Remove(commandBreakpoint);
                             break;
                         case LineBreakpoint lineBreakpoint:
-                            if (BreakpointsPerFile.TryGetValue(lineBreakpoint.Script, out HashSet<Breakpoint> bps))
+                            if(BreakpointsPerFile.TryGetValue(lineBreakpoint.Script, out HashSet<Breakpoint> bps))
                             {
                                 bps.Remove(lineBreakpoint);
                             }

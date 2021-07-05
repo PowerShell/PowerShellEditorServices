@@ -34,11 +34,11 @@ namespace PowerShellEditorServices.Test.E2E
             $"pses_test_logs_{Path.GetRandomFileName()}");
 
         const string s_logLevel = "Diagnostic";
-        readonly static string[] s_featureFlags = { "PSReadLine" };
+        readonly static string [] s_featureFlags = { "PSReadLine" };
         const string s_hostName = "TestHost";
         const string s_hostProfileId = "TestHost";
         const string s_hostVersion = "1.0.0";
-        private readonly static string[] s_additionalModules = { "PowerShellEditorServices.VSCode" };
+        private readonly static string [] s_additionalModules = { "PowerShellEditorServices.VSCode" };
 
         #endregion
 
@@ -68,7 +68,7 @@ namespace PowerShellEditorServices.Test.E2E
                 FileName = PwshExe
             };
 
-            foreach (string arg in GeneratePsesArguments(isDebugAdapter))
+            foreach(string arg in GeneratePsesArguments(isDebugAdapter))
             {
                 processStartInfo.ArgumentList.Add(arg);
             }
@@ -76,7 +76,7 @@ namespace PowerShellEditorServices.Test.E2E
             return processStartInfo;
         }
 
-        private static string[] GeneratePsesArguments(bool isDebugAdapter)
+        private static string [] GeneratePsesArguments(bool isDebugAdapter)
         {
             List<string> args = new List<string>
             {
@@ -94,7 +94,7 @@ namespace PowerShellEditorServices.Test.E2E
                 "-Stdio"
             };
 
-            if (isDebugAdapter)
+            if(isDebugAdapter)
             {
                 args.Add("-DebugServiceOnly");
             }
@@ -102,7 +102,7 @@ namespace PowerShellEditorServices.Test.E2E
             string base64Str = Convert.ToBase64String(
                 System.Text.Encoding.Unicode.GetBytes(string.Join(' ', args)));
 
-            return new string[]
+            return new string []
             {
                 "-NoLogo",
                 "-NoProfile",

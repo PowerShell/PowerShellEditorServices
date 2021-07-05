@@ -85,9 +85,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 string pipeName = $"PSES_{Path.GetRandomFileName()}";
 
                 // In the simple prefix-less case, just test the pipe name
-                if (prefixes == null)
+                if(prefixes == null)
                 {
-                    if (!IsPipeNameValid(pipeName))
+                    if(!IsPipeNameValid(pipeName))
                     {
                         continue;
                     }
@@ -97,22 +97,22 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
                 // If we have prefixes, test that all prefix/pipename combinations are valid
                 bool allPipeNamesValid = true;
-                foreach (string prefix in prefixes)
+                foreach(string prefix in prefixes)
                 {
                     string prefixedPipeName = $"{prefix}_{pipeName}";
-                    if (!IsPipeNameValid(prefixedPipeName))
+                    if(!IsPipeNameValid(prefixedPipeName))
                     {
                         allPipeNamesValid = false;
                         break;
                     }
                 }
 
-                if (allPipeNamesValid)
+                if(allPipeNamesValid)
                 {
                     return pipeName;
                 }
 
-            } while (tries < 10);
+            } while(tries < 10);
 
             throw new IOException("Unable to create named pipe; no available names");
         }
@@ -124,7 +124,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <returns>True if the named pipe name is valid, false otherwise.</returns>
         public static bool IsPipeNameValid(string pipeName)
         {
-            if (string.IsNullOrEmpty(pipeName))
+            if(string.IsNullOrEmpty(pipeName))
             {
                 return false;
             }
@@ -140,7 +140,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public static string GetNamedPipePath(string pipeName)
         {
 #if CoreCLR
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if(!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 return Path.Combine(Path.GetTempPath(), $"CoreFxPipe_{pipeName}");
             }

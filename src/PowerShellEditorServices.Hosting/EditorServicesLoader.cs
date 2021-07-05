@@ -65,12 +65,12 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             ISessionFileWriter sessionFileWriter,
             IReadOnlyCollection<IDisposable> loggersToUnsubscribe)
         {
-            if (logger == null)
+            if(logger == null)
             {
                 throw new ArgumentNullException(nameof(logger));
             }
 
-            if (hostConfig == null)
+            if(hostConfig == null)
             {
                 throw new ArgumentNullException(nameof(hostConfig));
             }
@@ -81,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             var psesLoadContext = new PsesLoadContext(s_psesDependencyDirPath);
 
-            if (hostConfig.LogLevel == PsesLogLevel.Diagnostic)
+            if(hostConfig.LogLevel == PsesLogLevel.Diagnostic)
             {
                 AppDomain.CurrentDomain.AssemblyLoad += (object sender, AssemblyLoadEventArgs args) =>
                 {
@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {asmName}");
 
                 // We only want the Editor Services DLL; the new ALC will lazily load its dependencies automatically
-                if (!string.Equals(asmName.Name, "Microsoft.PowerShell.EditorServices", StringComparison.Ordinal))
+                if(!string.Equals(asmName.Name, "Microsoft.PowerShell.EditorServices", StringComparison.Ordinal))
                 {
                     return null;
                 }
@@ -248,7 +248,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private void UpdatePSModulePath()
         {
-            if (string.IsNullOrEmpty(_hostConfig.BundledModulePath))
+            if(string.IsNullOrEmpty(_hostConfig.BundledModulePath))
             {
                 _logger.Log(PsesLogLevel.Diagnostic, "BundledModulePath not set, skipping");
                 return;
@@ -310,9 +310,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private string GetPSOutputEncoding()
         {
-            using (var pwsh = SMA.PowerShell.Create())
+            using(var pwsh = SMA.PowerShell.Create())
             {
-                return pwsh.AddScript("$OutputEncoding.EncodingName", useLocalScope: true).Invoke<string>()[0];
+                return pwsh.AddScript("$OutputEncoding.EncodingName", useLocalScope: true).Invoke<string>() [0];
             }
         }
 
@@ -340,14 +340,14 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         private string GetOSArchitecture()
         {
 #if CoreCLR
-            if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+            if(Environment.OSVersion.Platform != PlatformID.Win32NT)
             {
                 return RuntimeInformation.OSArchitecture.ToString();
             }
 #endif
 
             // If on win7 (version 6.1.x), avoid System.Runtime.InteropServices.RuntimeInformation
-            if (Environment.OSVersion.Version < new Version(6, 2))
+            if(Environment.OSVersion.Version < new Version(6, 2))
             {
                 return Environment.Is64BitProcess
                     ? "X64"
@@ -366,18 +366,18 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             bool debugUsesStdio = _hostConfig.DebugServiceTransport is StdioTransportConfig;
 
             // Ensure LSP and Debug are not both Stdio
-            if (lspUsesStdio && debugUsesStdio)
+            if(lspUsesStdio && debugUsesStdio)
             {
                 throw new ArgumentException("LSP and Debug transports cannot both use Stdio");
             }
 
-            if (_hostConfig.ConsoleRepl != ConsoleReplKind.None
+            if(_hostConfig.ConsoleRepl != ConsoleReplKind.None
                 && (lspUsesStdio || debugUsesStdio))
             {
                 throw new ArgumentException("Cannot use the REPL with a Stdio protocol transport");
             }
 
-            if (_hostConfig.PSHost == null)
+            if(_hostConfig.PSHost == null)
             {
                 throw new ArgumentNullException(nameof(_hostConfig.PSHost));
             }
@@ -393,7 +393,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             return typeof(PSObject).Assembly
                 .GetType("System.Management.Automation.PSVersionInfo")
                 .GetMethod("get_PSVersion", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
-                .Invoke(null, new object[0] /* Cannot use Array.Empty, since it must work in net452 */);
+                .Invoke(null, new object [0] /* Cannot use Array.Empty, since it must work in net452 */);
         }
     }
 }

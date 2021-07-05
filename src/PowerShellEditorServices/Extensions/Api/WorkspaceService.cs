@@ -127,7 +127,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 
         public bool TryGetFile(Uri fileUri, out IEditorScriptFile file)
         {
-            if (!_workspaceService.TryGetFile(fileUri.LocalPath, out ScriptFile scriptFile))
+            if(!_workspaceService.TryGetFile(fileUri.LocalPath, out ScriptFile scriptFile))
             {
                 file = null;
                 return false;
@@ -140,7 +140,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         public IReadOnlyList<IEditorScriptFile> GetOpenedFiles()
         {
             var files = new List<IEditorScriptFile>();
-            foreach (ScriptFile openedFile in _workspaceService.GetOpenedFiles())
+            foreach(ScriptFile openedFile in _workspaceService.GetOpenedFiles())
             {
                 files.Add(GetEditorFileFromScriptFile(openedFile));
             }

@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// Gets the completions that were found during the
         /// completion request.
         /// </summary>
-        public CompletionDetails[] Completions { get; private set; }
+        public CompletionDetails [] Completions { get; private set; }
 
         /// <summary>
         /// Gets the range in the buffer that should be replaced by this
@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             BufferRange replacedRange = null;
 
             // Only calculate the replacement range if there are completion results
-            if (commandCompletion.CompletionMatches.Count > 0)
+            if(commandCompletion.CompletionMatches.Count > 0)
             {
                 replacedRange =
                     scriptFile.GetRangeBetweenOffsets(
@@ -69,7 +69,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
         #region Private Methods
 
-        private static CompletionDetails[] GetCompletionsArray(
+        private static CompletionDetails [] GetCompletionsArray(
             CommandCompletion commandCompletion)
         {
             IEnumerable<CompletionDetails> completionList =
@@ -197,7 +197,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
             // Some tooltips may have newlines or whitespace for unknown reasons
             string toolTipText = completionResult.ToolTip;
-            if (toolTipText != null)
+            if(toolTipText != null)
             {
                 toolTipText = toolTipText.Trim();
             }
@@ -242,7 +242,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <returns>True if the CompletionResults instances have the same details.</returns>
         public override bool Equals(object obj)
         {
-            if (!(obj is CompletionDetails otherDetails))
+            if(!(obj is CompletionDetails otherDetails))
             {
                 return false;
             }
@@ -277,7 +277,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         private static CompletionType ConvertCompletionResultType(
             CompletionResultType completionResultType)
         {
-            switch (completionResultType)
+            switch(completionResultType)
             {
                 case CompletionResultType.Command:
                     return CompletionType.Command;
@@ -325,10 +325,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             // brackets.  Attempt to extract such strings for further processing.
             var matches = Regex.Matches(toolTipText, @"^\[(.+)\]");
 
-            if (matches.Count > 0 && matches[0].Groups.Count > 1)
+            if(matches.Count > 0 && matches [0].Groups.Count > 1)
             {
                 // Return the symbol type name
-                return matches[0].Groups[1].Value;
+                return matches [0].Groups [1].Value;
             }
 
             return null;

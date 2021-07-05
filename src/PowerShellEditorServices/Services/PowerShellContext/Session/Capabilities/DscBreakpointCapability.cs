@@ -17,25 +17,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
     internal class DscBreakpointCapability : IRunspaceCapability
     {
-        private string[] dscResourceRootPaths = Array.Empty<string>();
+        private string [] dscResourceRootPaths = Array.Empty<string>();
 
-        private Dictionary<string, int[]> breakpointsPerFile =
-            new Dictionary<string, int[]>();
+        private Dictionary<string, int []> breakpointsPerFile =
+            new Dictionary<string, int []>();
 
-        public async Task<BreakpointDetails[]> SetLineBreakpointsAsync(
+        public async Task<BreakpointDetails []> SetLineBreakpointsAsync(
             PowerShellContextService powerShellContext,
             string scriptPath,
-            BreakpointDetails[] breakpoints)
+            BreakpointDetails [] breakpoints)
         {
             List<BreakpointDetails> resultBreakpointDetails =
                 new List<BreakpointDetails>();
 
             // We always get the latest array of breakpoint line numbers
             // so store that for future use
-            if (breakpoints.Length > 0)
+            if(breakpoints.Length > 0)
             {
                 // Set the breakpoints for this scriptPath
-                this.breakpointsPerFile[scriptPath] =
+                this.breakpointsPerFile [scriptPath] =
                     breakpoints.Select(b => b.LineNumber).ToArray();
             }
             else
@@ -61,7 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 false).ConfigureAwait(false);
 
             // Verify all the breakpoints and return them
-            foreach (var breakpoint in breakpoints)
+            foreach(var breakpoint in breakpoints)
             {
                 breakpoint.Verified = true;
             }
@@ -86,10 +86,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             DscBreakpointCapability capability = null;
 
             // DSC support is enabled only for Windows PowerShell.
-            if ((runspaceDetails.PowerShellVersion.Version.Major < 6) &&
+            if((runspaceDetails.PowerShellVersion.Version.Major < 6) &&
                 (runspaceDetails.Context != RunspaceContext.DebuggedRunspace))
             {
-                using (PowerShell powerShell = PowerShell.Create())
+                using(PowerShell powerShell = PowerShell.Create())
                 {
                     powerShell.Runspace = runspaceDetails.Runspace;
 
@@ -105,12 +105,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     {
                         moduleInfo = powerShell.Invoke().FirstOrDefault();
                     }
-                    catch (RuntimeException e)
+                    catch(RuntimeException e)
                     {
                         logger.LogException("Could not load the DSC module!", e);
                     }
 
-                    if (moduleInfo != null)
+                    if(moduleInfo != null)
                     {
                         logger.LogTrace("Side-by-side DSC module found, gathering DSC resource paths...");
 
@@ -137,12 +137,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         {
                             resourcePaths = powerShell.Invoke();
                         }
-                        catch (CmdletInvocationException e)
+                        catch(CmdletInvocationException e)
                         {
                             logger.LogException("Get-DscResource failed!", e);
                         }
 
-                        if (resourcePaths != null)
+                        if(resourcePaths != null)
                         {
                             capability.dscResourceRootPaths =
                                 resourcePaths

@@ -112,18 +112,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         protected virtual void Dispose(bool disposing)
         {
-            lock (_disposeSyncObject)
+            lock(_disposeSyncObject)
             {
-                if (_isDisposed || !disposing)
+                if(_isDisposed || !disposing)
                 {
                     return;
                 }
 
-                while (NestedPromptLevel > 1)
+                while(NestedPromptLevel > 1)
                 {
                     _consoleReader?.StopCommandLoop();
                     var currentFrame = CurrentFrame;
-                    if (currentFrame.FrameType.HasFlag(PromptNestFrameType.Debug))
+                    if(currentFrame.FrameType.HasFlag(PromptNestFrameType.Debug))
                     {
                         _versionSpecificOperations.StopCommandInDebugger(_powerShellContext);
                         currentFrame.ThreadController.StartThreadExit(DebuggerResumeAction.Stop);
@@ -131,7 +131,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         continue;
                     }
 
-                    if (currentFrame.FrameType.HasFlag(PromptNestFrameType.NestedPrompt))
+                    if(currentFrame.FrameType.HasFlag(PromptNestFrameType.NestedPrompt))
                     {
                         _powerShellContext.ExitAllNestedPrompts();
                         continue;
@@ -160,7 +160,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </returns>
         internal ThreadController GetThreadController()
         {
-            if (_isDisposed)
+            if(_isDisposed)
             {
                 return null;
             }
@@ -173,7 +173,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </summary>
         internal void PushPromptContext()
         {
-            if (_isDisposed)
+            if(_isDisposed)
             {
                 return;
             }
@@ -187,7 +187,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <param name="frameType">The frame type.</param>
         internal void PushPromptContext(PromptNestFrameType frameType)
         {
-            if (_isDisposed)
+            if(_isDisposed)
             {
                 return;
             }
@@ -207,9 +207,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         internal void PopPromptContext()
         {
             PromptNestFrame currentFrame;
-            lock (_syncObject)
+            lock(_syncObject)
             {
-                if (_isDisposed || _frameStack.Count == 1)
+                if(_isDisposed || _frameStack.Count == 1)
                 {
                     return;
                 }
@@ -228,7 +228,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <returns>The <see cref="PowerShell" /> instance for the current frame.</returns>
         internal PowerShell GetPowerShell(bool isReadLine = false)
         {
-            if (_isDisposed)
+            if(_isDisposed)
             {
                 return null;
             }
@@ -237,7 +237,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             // The exception is when the current frame is remote, in which
             // case we need to run it in it's own frame because we can't take
             // over a remote pipeline through event invocation.
-            if (NestedPromptLevel > 1 && !IsRemote)
+            if(NestedPromptLevel > 1 && !IsRemote)
             {
                 return CurrentFrame.PowerShell;
             }
@@ -255,14 +255,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <returns>The <see cref="RunspaceHandle" /> for the current frame.</returns>
         internal RunspaceHandle GetRunspaceHandle(CancellationToken cancellationToken, bool isReadLine)
         {
-            if (_isDisposed)
+            if(_isDisposed)
             {
                 return null;
             }
 
             // Also grab the main runspace handle if this is for a ReadLine pipeline and the runspace
             // is in process.
-            if (isReadLine && !_powerShellContext.IsCurrentRunspaceOutOfProcess())
+            if(isReadLine && !_powerShellContext.IsCurrentRunspaceOutOfProcess())
             {
                 GetRunspaceHandleImpl(cancellationToken, isReadLine: false);
             }
@@ -286,14 +286,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </returns>
         internal async Task<RunspaceHandle> GetRunspaceHandleAsync(CancellationToken cancellationToken, bool isReadLine)
         {
-            if (_isDisposed)
+            if(_isDisposed)
             {
                 return null;
             }
 
             // Also grab the main runspace handle if this is for a ReadLine pipeline and the runspace
             // is in process.
-            if (isReadLine && !_powerShellContext.IsCurrentRunspaceOutOfProcess())
+            if(isReadLine && !_powerShellContext.IsCurrentRunspaceOutOfProcess())
             {
                 await GetRunspaceHandleImplAsync(cancellationToken, isReadLine: false).ConfigureAwait(false);
             }
@@ -309,13 +309,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </param>
         internal void ReleaseRunspaceHandle(RunspaceHandle runspaceHandle)
         {
-            if (_isDisposed)
+            if(_isDisposed)
             {
                 return;
             }
 
             ReleaseRunspaceHandleImpl(runspaceHandle.IsReadLine);
-            if (runspaceHandle.IsReadLine && !_powerShellContext.IsCurrentRunspaceOutOfProcess())
+            if(runspaceHandle.IsReadLine && !_powerShellContext.IsCurrentRunspaceOutOfProcess())
             {
                 ReleaseRunspaceHandleImpl(isReadLine: false);
             }
@@ -333,13 +333,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </returns>
         internal async Task ReleaseRunspaceHandleAsync(RunspaceHandle runspaceHandle)
         {
-            if (_isDisposed)
+            if(_isDisposed)
             {
                 return;
             }
 
             await ReleaseRunspaceHandleImplAsync(runspaceHandle.IsReadLine).ConfigureAwait(false);
-            if (runspaceHandle.IsReadLine && !_powerShellContext.IsCurrentRunspaceOutOfProcess())
+            if(runspaceHandle.IsReadLine && !_powerShellContext.IsCurrentRunspaceOutOfProcess())
             {
                 await ReleaseRunspaceHandleImplAsync(isReadLine: false).ConfigureAwait(false);
             }
@@ -375,7 +375,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </param>
         internal void WaitForCurrentFrameExit(Action<PromptNestFrame> initiator)
         {
-            if (_isDisposed)
+            if(_isDisposed)
             {
                 return;
             }
@@ -396,7 +396,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </summary>
         internal void WaitForCurrentFrameExit()
         {
-            if (_isDisposed)
+            if(_isDisposed)
             {
                 return;
             }
@@ -413,7 +413,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </param>
         internal void WaitForCurrentFrameExit(CancellationToken cancellationToken)
         {
-            if (_isDisposed)
+            if(_isDisposed)
             {
                 return;
             }
@@ -432,7 +432,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </returns>
         internal async Task WaitForCurrentFrameExitAsync(Func<PromptNestFrame, Task> initiator)
         {
-            if (_isDisposed)
+            if(_isDisposed)
             {
                 return;
             }
@@ -459,7 +459,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </returns>
         internal async Task WaitForCurrentFrameExitAsync(Action<PromptNestFrame> initiator)
         {
-            if (_isDisposed)
+            if(_isDisposed)
             {
                 return;
             }
@@ -483,7 +483,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </returns>
         internal async Task WaitForCurrentFrameExitAsync()
         {
-            if (_isDisposed)
+            if(_isDisposed)
             {
                 return;
             }
@@ -502,7 +502,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </returns>
         internal async Task WaitForCurrentFrameExitAsync(CancellationToken cancellationToken)
         {
-            if (_isDisposed)
+            if(_isDisposed)
             {
                 return;
             }
@@ -519,7 +519,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private RunspaceHandle GetRunspaceHandleImpl(CancellationToken cancellationToken, bool isReadLine)
         {
-            if (isReadLine)
+            if(isReadLine)
             {
                 return _readLineFrame.Queue.Dequeue(cancellationToken);
             }
@@ -529,7 +529,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private async Task<RunspaceHandle> GetRunspaceHandleImplAsync(CancellationToken cancellationToken, bool isReadLine)
         {
-            if (isReadLine)
+            if(isReadLine)
             {
                 return await _readLineFrame.Queue.DequeueAsync(cancellationToken).ConfigureAwait(false);
             }
@@ -539,7 +539,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private void ReleaseRunspaceHandleImpl(bool isReadLine)
         {
-            if (isReadLine)
+            if(isReadLine)
             {
                 _readLineFrame.Queue.Enqueue(new RunspaceHandle(_powerShellContext, true));
                 return;
@@ -550,7 +550,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private async Task ReleaseRunspaceHandleImplAsync(bool isReadLine)
         {
-            if (isReadLine)
+            if(isReadLine)
             {
                 await _readLineFrame.Queue.EnqueueAsync(new RunspaceHandle(_powerShellContext, true)).ConfigureAwait(false);
                 return;

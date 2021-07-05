@@ -37,13 +37,13 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             // If we find the required assembly in $PSHOME, let another mechanism load the assembly
             string psHomeAsmPath = Path.Join(s_psHome, $"{assemblyName.Name}.dll");
-            if (IsSatisfyingAssembly(assemblyName, psHomeAsmPath))
+            if(IsSatisfyingAssembly(assemblyName, psHomeAsmPath))
             {
                 return null;
             }
 
             string asmPath = Path.Join(_dependencyDirPath, $"{assemblyName.Name}.dll");
-            if (IsSatisfyingAssembly(assemblyName, asmPath))
+            if(IsSatisfyingAssembly(assemblyName, asmPath))
             {
                 return LoadFromAssemblyPath(asmPath);
             }
@@ -61,7 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                     "_name",
                     BindingFlags.NonPublic | BindingFlags.Instance);
 
-                if (nameBackingField != null)
+                if(nameBackingField != null)
                 {
                     nameBackingField.SetValue(this, name);
                 }
@@ -74,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private static bool IsSatisfyingAssembly(AssemblyName requiredAssemblyName, string assemblyPath)
         {
-            if (!File.Exists(assemblyPath))
+            if(!File.Exists(assemblyPath))
             {
                 return false;
             }

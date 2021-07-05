@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             this.FieldType = typeof(object);
 
-            if (fieldType.IsArray)
+            if(fieldType.IsArray)
             {
                 this.isArray = true;
                 this.FieldType = fieldType.GetElementType();
@@ -72,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </returns>
         public override FieldDetails GetNextField()
         {
-            if (!this.isEntryComplete)
+            if(!this.isEntryComplete)
             {
                 // Get the next collection field
                 this.currentCollectionIndex++;
@@ -99,7 +99,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </param>
         public override void SetValue(object fieldValue, bool hasValue)
         {
-            if (hasValue)
+            if(hasValue)
             {
                 // Add the item to the collection
                 this.collectionItems.Add(fieldValue);
@@ -120,7 +120,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             object collection = this.collectionItems;
 
             // Should the result collection be an array?
-            if (this.isArray)
+            if(this.isArray)
             {
                 // Convert the ArrayList to an array
                 collection =

@@ -49,24 +49,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </param>
         protected override void ShowPrompt(PromptStyle promptStyle)
         {
-            if (promptStyle == PromptStyle.Full)
+            if(promptStyle == PromptStyle.Full)
             {
-                if (this.Caption != null)
+                if(this.Caption != null)
                 {
                     this.hostOutput.WriteOutput(this.Caption);
                 }
 
-                if (this.Message != null)
+                if(this.Message != null)
                 {
                     this.hostOutput.WriteOutput(this.Message);
                 }
             }
 
-            foreach (var choice in this.Choices)
+            foreach(var choice in this.Choices)
             {
                 string hotKeyString =
                     choice.HotKeyIndex > -1 ?
-                        choice.Label[choice.HotKeyIndex].ToString().ToUpper() :
+                        choice.Label [choice.HotKeyIndex].ToString().ToUpper() :
                         string.Empty;
 
                 this.hostOutput.WriteOutput(
@@ -83,13 +83,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 this.DefaultChoices.Where(
                     choice => choice > -1 && choice < this.Choices.Length);
 
-            if (validDefaultChoices.Any())
+            if(validDefaultChoices.Any())
             {
                 var choiceString =
                     string.Join(
                         ", ",
                         this.DefaultChoices
-                            .Select(choice => this.Choices[choice].Label));
+                            .Select(choice => this.Choices [choice].Label));
 
                 this.hostOutput.WriteOutput(
                     $" (default is \"{choiceString}\"): ",
@@ -106,12 +106,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// True if the prompt is complete, false if the prompt is
         /// still waiting for a valid response.
         /// </returns>
-        protected override int[] HandleResponse(string responseString)
+        protected override int [] HandleResponse(string responseString)
         {
-            if (responseString.Trim() == "?")
+            if(responseString.Trim() == "?")
             {
                 // Print help text
-                foreach (var choice in this.Choices)
+                foreach(var choice in this.Choices)
                 {
                     this.hostOutput.WriteOutput(
                         string.Format(

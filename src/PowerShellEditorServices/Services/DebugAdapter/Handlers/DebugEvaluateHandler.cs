@@ -37,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     "repl",
                     StringComparison.CurrentCultureIgnoreCase);
 
-            if (isFromRepl)
+            if(isFromRepl)
             {
                 var notAwaited =
                     _powerShellContextService
@@ -50,14 +50,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 // VS Code might send this request after the debugger
                 // has been resumed, return an empty result in this case.
-                if (_powerShellContextService.IsDebuggerStopped)
+                if(_powerShellContextService.IsDebuggerStopped)
                 {
                     // First check to see if the watch expression refers to a naked variable reference.
                     result =
                         _debugService.GetVariableFromExpression(request.Expression, request.FrameId);
 
                     // If the expression is not a naked variable reference, then evaluate the expression.
-                    if (result == null)
+                    if(result == null)
                     {
                         result =
                             await _debugService.EvaluateExpressionAsync(
@@ -67,7 +67,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     }
                 }
 
-                if (result != null)
+                if(result != null)
                 {
                     valueString = result.ValueString;
                     variableId =

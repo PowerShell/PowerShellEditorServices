@@ -31,17 +31,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         }
 
         protected override CodeActionRegistrationOptions CreateRegistrationOptions(CodeActionCapability capability, ClientCapabilities clientCapabilities) => new CodeActionRegistrationOptions
-            {
+        {
             // TODO: What do we do with the arguments?
             DocumentSelector = LspUtils.PowerShellDocumentSelector,
-            CodeActionKinds = new CodeActionKind[] { CodeActionKind.QuickFix }
+            CodeActionKinds = new CodeActionKind [] { CodeActionKind.QuickFix }
         };
 
         // TODO: Either fix or ignore "method lacks 'await'" warning.
         public override async Task<CodeAction> Handle(CodeAction request, CancellationToken cancellationToken)
         {
             // TODO: How on earth do we handle a CodeAction? This is new...
-            if (cancellationToken.IsCancellationRequested)
+            if(cancellationToken.IsCancellationRequested)
             {
                 _logger.LogDebug("CodeAction request canceled for: {0}", request.Title);
             }
@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public override async Task<CommandOrCodeActionContainer> Handle(CodeActionParams request, CancellationToken cancellationToken)
         {
-            if (cancellationToken.IsCancellationRequested)
+            if(cancellationToken.IsCancellationRequested)
             {
                 _logger.LogDebug($"CodeAction request canceled at range: {request.Range}");
                 return Array.Empty<CommandOrCodeAction>();
@@ -60,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 request.TextDocument.Uri)
                 .ConfigureAwait(false);
 
-            if (corrections == null)
+            if(corrections == null)
             {
                 return Array.Empty<CommandOrCodeAction>();
             }
@@ -68,9 +68,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             var codeActions = new List<CommandOrCodeAction>();
 
             // If there are any code fixes, send these commands first so they appear at top of "Code Fix" menu in the client UI.
-            foreach (Diagnostic diagnostic in request.Context.Diagnostics)
+            foreach(Diagnostic diagnostic in request.Context.Diagnostics)
             {
-                if (string.IsNullOrEmpty(diagnostic.Code?.String))
+                if(string.IsNullOrEmpty(diagnostic.Code?.String))
                 {
                     _logger.LogWarning(
                         $"textDocument/codeAction skipping diagnostic with empty Code field: {diagnostic.Source} {diagnostic.Message}");
@@ -79,7 +79,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
 
                 string diagnosticId = AnalysisService.GetUniqueIdFromDiagnostic(diagnostic);
-                if (corrections.TryGetValue(diagnosticId, out MarkerCorrection correction))
+                if(corrections.TryGetValue(diagnosticId, out MarkerCorrection correction))
                 {
                     codeActions.Add(new CodeAction
                     {
@@ -106,9 +106,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // These commands do not require code fixes. Sometimes we get a batch of diagnostics
             // to create commands for. No need to create multiple show doc commands for the same rule.
             var ruleNamesProcessed = new HashSet<string>();
-            foreach (Diagnostic diagnostic in request.Context.Diagnostics)
+            foreach(Diagnostic diagnostic in request.Context.Diagnostics)
             {
-                if (
+                if(
                     !diagnostic.Code.HasValue ||
                     !diagnostic.Code.Value.IsString ||
                     string.IsNullOrEmpty(diagnostic.Code?.String))
@@ -116,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     continue;
                 }
 
-                if (string.Equals(diagnostic.Source, "PSScriptAnalyzer", StringComparison.OrdinalIgnoreCase) &&
+                if(string.Equals(diagnostic.Source, "PSScriptAnalyzer", StringComparison.OrdinalIgnoreCase) &&
                     !ruleNamesProcessed.Contains(diagnostic.Code?.String))
                 {
                     ruleNamesProcessed.Add(diagnostic.Code?.String);
@@ -132,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         {
                             Title = title,
                             Name = "PowerShell.ShowCodeActionDocumentation",
-                            Arguments = JArray.FromObject(new[] { diagnostic.Code?.String })
+                            Arguments = JArray.FromObject(new [] { diagnostic.Code?.String })
                         }
                     });
                 }

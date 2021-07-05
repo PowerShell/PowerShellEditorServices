@@ -7,11 +7,11 @@ using OmniSharp.Extensions.JsonRpc;
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     [Serial, Method("powerShell/getRunspace")]
-    internal interface IGetRunspaceHandler : IJsonRpcRequestHandler<GetRunspaceParams, RunspaceResponse[]> { }
+    internal interface IGetRunspaceHandler : IJsonRpcRequestHandler<GetRunspaceParams, RunspaceResponse []> { }
 
-    internal class GetRunspaceParams : IRequest<RunspaceResponse[]>
+    internal class GetRunspaceParams : IRequest<RunspaceResponse []>
     {
-        public string ProcessId {get; set; }
+        public string ProcessId { get; set; }
     }
 
     internal class RunspaceResponse

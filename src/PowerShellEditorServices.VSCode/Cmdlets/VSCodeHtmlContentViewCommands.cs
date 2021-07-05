@@ -12,7 +12,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 namespace Microsoft.PowerShell.EditorServices.VSCode
 {
     ///
-    [Cmdlet(VerbsCommon.New,"VSCodeHtmlContentView")]
+    [Cmdlet(VerbsCommon.New, "VSCodeHtmlContentView")]
     [OutputType(typeof(IHtmlContentView))]
     public class NewVSCodeHtmlContentViewCommand : PSCmdlet
     {
@@ -36,9 +36,9 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
         ///
         protected override void BeginProcessing()
         {
-            if (_htmlContentViewsFeature == null)
+            if(_htmlContentViewsFeature == null)
             {
-                if (GetVariableValue("psEditor") is EditorObject psEditor)
+                if(GetVariableValue("psEditor") is EditorObject psEditor)
                 {
                     _htmlContentViewsFeature = new HtmlContentViewsFeature(
                         psEditor.GetExtensionServiceProvider().LanguageServer);
@@ -59,12 +59,13 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
                 .GetAwaiter()
                 .GetResult();
 
-            if (_showInColumn != null) {
+            if(_showInColumn != null)
+            {
                 try
                 {
                     view.Show(_showInColumn.Value).GetAwaiter().GetResult();
                 }
-                catch (Exception e)
+                catch(Exception e)
                 {
                     WriteError(
                         new ErrorRecord(
@@ -82,7 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
     }
 
     ///
-    [Cmdlet(VerbsCommon.Set,"VSCodeHtmlContentView")]
+    [Cmdlet(VerbsCommon.Set, "VSCodeHtmlContentView")]
     public class SetVSCodeHtmlContentViewCommand : PSCmdlet
     {
         ///
@@ -99,11 +100,11 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
 
         ///
         [Parameter(Position = 2)]
-        public string[] JavaScriptPaths { get; set; }
+        public string [] JavaScriptPaths { get; set; }
 
         ///
         [Parameter(Position = 3)]
-        public string[] StyleSheetPaths { get; set; }
+        public string [] StyleSheetPaths { get; set; }
 
         ///
         protected override void BeginProcessing()
@@ -116,7 +117,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
             {
                 HtmlContentView.SetContentAsync(htmlContent).GetAwaiter().GetResult();
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 WriteError(
                     new ErrorRecord(
@@ -129,7 +130,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
     }
 
     ///
-    [Cmdlet(VerbsCommon.Close,"VSCodeHtmlContentView")]
+    [Cmdlet(VerbsCommon.Close, "VSCodeHtmlContentView")]
     public class CloseVSCodeHtmlContentViewCommand : PSCmdlet
     {
         ///
@@ -145,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
             {
                 HtmlContentView.Close().GetAwaiter().GetResult();
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 WriteError(
                     new ErrorRecord(
@@ -158,7 +159,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
     }
 
     ///
-    [Cmdlet(VerbsCommon.Show,"VSCodeHtmlContentView")]
+    [Cmdlet(VerbsCommon.Show, "VSCodeHtmlContentView")]
     public class ShowVSCodeHtmlContentViewCommand : PSCmdlet
     {
         ///
@@ -180,7 +181,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
             {
                 HtmlContentView.Show(ViewColumn).GetAwaiter().GetResult();
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 WriteError(
                     new ErrorRecord(
@@ -193,7 +194,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
     }
 
     ///
-    [Cmdlet(VerbsCommunications.Write,"VSCodeHtmlContentView")]
+    [Cmdlet(VerbsCommunications.Write, "VSCodeHtmlContentView")]
     public class WriteVSCodeHtmlContentViewCommand : PSCmdlet
     {
         ///
@@ -215,7 +216,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
             {
                 HtmlContentView.AppendContentAsync(AppendedHtmlBodyContent).GetAwaiter().GetResult();
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 WriteError(
                     new ErrorRecord(

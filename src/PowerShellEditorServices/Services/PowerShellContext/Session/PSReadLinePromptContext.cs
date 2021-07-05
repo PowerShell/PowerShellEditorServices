@@ -83,7 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             readLineProxy = null;
             logger.LogTrace("Attempting to load PSReadLine");
-            using (var pwsh = PowerShell.Create())
+            using(var pwsh = PowerShell.Create())
             {
                 pwsh.Runspace = runspace;
                 pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
@@ -92,9 +92,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
                 var psReadLineType = Type.GetType("Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2");
 
-                if (psReadLineType == null)
+                if(psReadLineType == null)
                 {
-                    logger.LogWarning("PSConsoleReadline type not found: {Reason}", pwsh.HadErrors ? pwsh.Streams.Error[0].ToString() : "<Unknown reason>");
+                    logger.LogWarning("PSConsoleReadline type not found: {Reason}", pwsh.HadErrors ? pwsh.Streams.Error [0].ToString() : "<Unknown reason>");
                     return false;
                 }
 
@@ -102,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 {
                     readLineProxy = new PSReadLineProxy(psReadLineType, logger);
                 }
-                catch (InvalidOperationException e)
+                catch(InvalidOperationException e)
                 {
                     // The Type we got back from PowerShell doesn't have the members we expected.
                     // Could be an older version, a custom build, or something a newer version with
@@ -119,12 +119,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             _readLineCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             var localTokenSource = _readLineCancellationSource;
-            if (localTokenSource.Token.IsCancellationRequested)
+            if(localTokenSource.Token.IsCancellationRequested)
             {
                 throw new TaskCanceledException();
             }
 
-            if (!isCommandLine)
+            if(!isCommandLine)
             {
                 return await _consoleReadLine.InvokeLegacyReadLineAsync(
                     isCommandLine: false,
@@ -149,7 +149,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         public void AbortReadLine()
         {
-            if (_readLineCancellationSource == null)
+            if(_readLineCancellationSource == null)
             {
                 return;
             }
@@ -159,8 +159,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             WaitForReadLineExit();
         }
 
-        public async Task AbortReadLineAsync() {
-            if (_readLineCancellationSource == null)
+        public async Task AbortReadLineAsync()
+        {
+            if(_readLineCancellationSource == null)
             {
                 return;
             }
@@ -172,12 +173,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         public void WaitForReadLineExit()
         {
-            using (_promptNest.GetRunspaceHandle(CancellationToken.None, isReadLine: true))
+            using(_promptNest.GetRunspaceHandle(CancellationToken.None, isReadLine: true))
             { }
         }
 
-        public async Task WaitForReadLineExitAsync() {
-            using (await _promptNest.GetRunspaceHandleAsync(CancellationToken.None, isReadLine: true).ConfigureAwait(false))
+        public async Task WaitForReadLineExitAsync()
+        {
+            using(await _promptNest.GetRunspaceHandleAsync(CancellationToken.None, isReadLine: true).ConfigureAwait(false))
             { }
         }
 

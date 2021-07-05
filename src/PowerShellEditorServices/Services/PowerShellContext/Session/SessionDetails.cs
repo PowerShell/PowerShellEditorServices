@@ -40,9 +40,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             Hashtable innerHashtable = detailsObject.BaseObject as Hashtable;
 
-            this.ProcessId = (int)innerHashtable["processId"] as int?;
-            this.ComputerName = innerHashtable["computerName"] as string;
-            this.InstanceId = innerHashtable["instanceId"] as Guid?;
+            this.ProcessId = (int)innerHashtable ["processId"] as int?;
+            this.ComputerName = innerHashtable ["computerName"] as string;
+            this.InstanceId = innerHashtable ["instanceId"] as Guid?;
         }
 
         /// <summary>

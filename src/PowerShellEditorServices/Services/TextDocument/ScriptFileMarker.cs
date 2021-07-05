@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// Gets or sets the list of ScriptRegions that define the edits to be made by the correction.
         /// </summary>
-        public ScriptRegion[] Edits { get; set; }
+        public ScriptRegion [] Edits { get; set; }
     }
 
     /// <summary>
@@ -34,19 +34,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// Information: This warning is trivial, but may be useful. They are recommended by PowerShell best practice.
         /// </summary>
-        Information = 0,
+        Information = 0,
         /// <summary>
         /// WARNING: This warning may cause a problem or does not follow PowerShell's recommended guidelines.
         /// </summary>
-        Warning = 1,
+        Warning = 1,
         /// <summary>
         /// ERROR: This warning is likely to cause a problem or does not follow PowerShell's required guidelines.
         /// </summary>
-        Error = 2,
+        Error = 2,
         /// <summary>
         /// ERROR: This diagnostic is caused by an actual parsing error, and is generated only by the engine.
         /// </summary>
-        ParseError = 3
+        ParseError = 3
     };
 
     /// <summary>
@@ -113,7 +113,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             MarkerCorrection correction = null;
 
             // make sure psobject is of type DiagnosticRecord
-            if (!psObject.TypeNames.Contains(
+            if(!psObject.TypeNames.Contains(
                     "Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord",
                     StringComparer.OrdinalIgnoreCase))
             {
@@ -125,11 +125,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             // without having to go through PSObject's Members property.
             var diagnosticRecord = psObject as dynamic;
 
-            if (diagnosticRecord.SuggestedCorrections != null)
+            if(diagnosticRecord.SuggestedCorrections != null)
             {
                 var editRegions = new List<ScriptRegion>();
                 string correctionMessage = null;
-                foreach (dynamic suggestedCorrection in diagnosticRecord.SuggestedCorrections)
+                foreach(dynamic suggestedCorrection in diagnosticRecord.SuggestedCorrections)
                 {
                     editRegions.Add(
                         new ScriptRegion(
@@ -153,7 +153,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             }
 
             string severity = diagnosticRecord.Severity.ToString();
-            if (!Enum.TryParse(severity, out ScriptFileMarkerLevel level))
+            if(!Enum.TryParse(severity, out ScriptFileMarkerLevel level))
             {
                 throw new ArgumentException(
                     $"The provided DiagnosticSeverity value '{severity}' is unknown.",

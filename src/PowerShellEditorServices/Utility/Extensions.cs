@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             {
                 str = obj.ToString();
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 str = $"<Error converting property value to string - {ex.Message}>";
             }
@@ -39,19 +39,19 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <param name="elements">An enumerable object of type T</param>
         /// <param name="comparer">A comparer for ordering elements of type T. The comparer should handle null values.</param>
         /// <returns>An object of type T. If the enumerable is empty or has all null elements, then the method returns null.</returns>
-        public static T MaxElement<T>(this IEnumerable<T> elements, Func<T,T,int> comparer) where T:class
+        public static T MaxElement<T>(this IEnumerable<T> elements, Func<T, T, int> comparer) where T : class
         {
-            if (elements == null)
+            if(elements == null)
             {
                 throw new ArgumentNullException(nameof(elements));
             }
 
-            if (comparer == null)
+            if(comparer == null)
             {
                 throw new ArgumentNullException(nameof(comparer));
             }
 
-            if (!elements.Any())
+            if(!elements.Any())
             {
                 return null;
             }
@@ -59,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             var maxElement = elements.First();
             foreach(var element in elements.Skip(1))
             {
-                if (element != null && comparer(element, maxElement) > 0)
+                if(element != null && comparer(element, maxElement) > 0)
                 {
                     maxElement = element;
                 }
@@ -91,28 +91,28 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         public static int ExtentWidthComparer(this IScriptExtent extentX, IScriptExtent extentY)
         {
 
-            if (extentX == null && extentY == null)
+            if(extentX == null && extentY == null)
             {
                 return 0;
             }
 
-            if (extentX != null && extentY == null)
+            if(extentX != null && extentY == null)
             {
                 return 1;
             }
 
-            if (extentX == null)
+            if(extentX == null)
             {
                 return -1;
             }
 
             var extentWidthX = extentX.EndOffset - extentX.StartOffset;
             var extentWidthY = extentY.EndOffset - extentY.StartOffset;
-            if (extentWidthX > extentWidthY)
+            if(extentWidthX > extentWidthY)
             {
                 return 1;
             }
-            else if (extentWidthX < extentWidthY)
+            else if(extentWidthX < extentWidthY)
             {
                 return -1;
             }
@@ -131,17 +131,17 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <returns>True if the coordinates are wholly contained in the instance's extent, otherwise, false.</returns>
         public static bool Contains(this IScriptExtent scriptExtent, int line, int column)
         {
-            if (scriptExtent.StartLineNumber > line || scriptExtent.EndLineNumber < line)
+            if(scriptExtent.StartLineNumber > line || scriptExtent.EndLineNumber < line)
             {
                 return false;
             }
 
-            if (scriptExtent.StartLineNumber == line)
+            if(scriptExtent.StartLineNumber == line)
             {
                 return scriptExtent.StartColumnNumber <= column;
             }
 
-            if (scriptExtent.EndLineNumber == line)
+            if(scriptExtent.EndLineNumber == line)
             {
                 return scriptExtent.EndColumnNumber >= column;
             }

@@ -43,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public override async Task<SignatureHelp> Handle(SignatureHelpParams request, CancellationToken cancellationToken)
         {
-            if (cancellationToken.IsCancellationRequested)
+            if(cancellationToken.IsCancellationRequested)
             {
                 _logger.LogDebug("SignatureHelp request canceled for file: {0}", request.TextDocument.Uri);
                 return new SignatureHelp();
@@ -58,23 +58,23 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     request.Position.Character + 1,
                     _powerShellContextService).ConfigureAwait(false);
 
-            if (parameterSets == null)
+            if(parameterSets == null)
             {
                 return new SignatureHelp();
             }
 
-            var signatures = new SignatureInformation[parameterSets.Signatures.Length];
-            for (int i = 0; i < signatures.Length; i++)
+            var signatures = new SignatureInformation [parameterSets.Signatures.Length];
+            for(int i = 0; i < signatures.Length; i++)
             {
                 var parameters = new List<ParameterInformation>();
-                foreach (ParameterInfo param in parameterSets.Signatures[i].Parameters)
+                foreach(ParameterInfo param in parameterSets.Signatures [i].Parameters)
                 {
                     parameters.Add(CreateParameterInfo(param));
                 }
 
-                signatures[i] = new SignatureInformation
+                signatures [i] = new SignatureInformation
                 {
-                    Label = parameterSets.CommandName + " " + parameterSets.Signatures[i].SignatureText,
+                    Label = parameterSets.CommandName + " " + parameterSets.Signatures [i].SignatureText,
                     Documentation = null,
                     Parameters = parameters,
                 };

@@ -23,14 +23,14 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <param name="helpMessage">The message to display to users.</param>
         public PromptChoiceDetails(string label, string helpMessage)
         {
-            if (label == null)
+            if(label == null)
             {
                 throw new ArgumentNullException(nameof(label));
             }
 
             // Currently VSCode sends back selected labels as a single string concatenated with ','
             // When this is fixed, we'll be able to allow commas in labels
-            if (label.Contains(","))
+            if(label.Contains(","))
             {
                 throw new ArgumentException($"Labels may not contain ','. Label: '{label}'", nameof(label));
             }
@@ -99,7 +99,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 
     internal class EditorUIService : IEditorUIService
     {
-        private static string[] s_choiceResponseLabelSeparators = new[] { ", " };
+        private static string [] s_choiceResponseLabelSeparators = new [] { ", " };
 
         private readonly ILanguageServerFacade _languageServer;
 
@@ -118,7 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
                     Name = message,
                 }).Returning<ShowInputPromptResponse>(CancellationToken.None);
 
-            if (response.PromptCancelled)
+            if(response.PromptCancelled)
             {
                 return null;
             }
@@ -131,7 +131,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 
         public async Task<IReadOnlyList<string>> PromptMultipleSelectionAsync(string message, IReadOnlyList<PromptChoiceDetails> choices, IReadOnlyList<int> defaultChoiceIndexes)
         {
-            ChoiceDetails[] choiceDetails = GetChoiceDetails(choices);
+            ChoiceDetails [] choiceDetails = GetChoiceDetails(choices);
 
             ShowChoicePromptResponse response = await _languageServer.SendRequest<ShowChoicePromptRequest>(
                 "powerShell/showChoicePrompt",
@@ -144,7 +144,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
                     DefaultChoices = defaultChoiceIndexes?.ToArray(),
                 }).Returning<ShowChoicePromptResponse>(CancellationToken.None);
 
-            if (response.PromptCancelled)
+            if(response.PromptCancelled)
             {
                 return null;
             }
@@ -157,7 +157,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 
         public async Task<string> PromptSelectionAsync(string message, IReadOnlyList<PromptChoiceDetails> choices, int defaultChoiceIndex)
         {
-            ChoiceDetails[] choiceDetails = GetChoiceDetails(choices);
+            ChoiceDetails [] choiceDetails = GetChoiceDetails(choices);
 
             ShowChoicePromptResponse response = await _languageServer.SendRequest<ShowChoicePromptRequest>(
                 "powerShell/showChoicePrompt",
@@ -167,10 +167,10 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
                     Caption = string.Empty,
                     Message = message,
                     Choices = choiceDetails,
-                    DefaultChoices = defaultChoiceIndex > -1 ? new[] { defaultChoiceIndex } : null,
+                    DefaultChoices = defaultChoiceIndex > -1 ? new [] { defaultChoiceIndex } : null,
                 }).Returning<ShowChoicePromptResponse>(CancellationToken.None);
 
-            if (response.PromptCancelled)
+            if(response.PromptCancelled)
             {
                 return null;
             }
@@ -178,19 +178,19 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             return response.ResponseText;
         }
 
-        private static ChoiceDetails[] GetChoiceDetails(IReadOnlyList<PromptChoiceDetails> promptChoiceDetails)
+        private static ChoiceDetails [] GetChoiceDetails(IReadOnlyList<PromptChoiceDetails> promptChoiceDetails)
         {
-            var choices = new ChoiceDetails[promptChoiceDetails.Count];
-            for (int i = 0; i < promptChoiceDetails.Count; i++)
+            var choices = new ChoiceDetails [promptChoiceDetails.Count];
+            for(int i = 0; i < promptChoiceDetails.Count; i++)
             {
-                choices[i] = new ChoiceDetails
+                choices [i] = new ChoiceDetails
                 {
-                    Label           = promptChoiceDetails[i].Label,
-                    HelpMessage     = promptChoiceDetails[i].HelpMessage,
+                    Label = promptChoiceDetails [i].Label,
+                    HelpMessage = promptChoiceDetails [i].HelpMessage,
                     // There were intended to enable hotkey use for choice selections,
                     // but currently VSCode does not do anything with them.
                     // They can be exposed once VSCode supports them.
-                    HotKeyIndex     = -1,
+                    HotKeyIndex = -1,
                     HotKeyCharacter = null,
                 };
             }

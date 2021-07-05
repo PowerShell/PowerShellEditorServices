@@ -294,17 +294,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             string localFilePath = null;
 
-            if (!string.IsNullOrEmpty(remoteFilePath))
+            if(!string.IsNullOrEmpty(remoteFilePath))
             {
                 try
                 {
                     RemotePathMappings pathMappings = this.GetPathMappings(runspaceDetails);
                     localFilePath = this.GetMappedPath(remoteFilePath, runspaceDetails);
 
-                    if (!pathMappings.IsRemotePathOpened(remoteFilePath))
+                    if(!pathMappings.IsRemotePathOpened(remoteFilePath))
                     {
                         // Does the local file already exist?
-                        if (!File.Exists(localFilePath))
+                        if(!File.Exists(localFilePath))
                         {
                             // Load the file contents from the remote machine and create the buffer
                             PSCommand command = new PSCommand();
@@ -313,11 +313,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             command.AddParameter("Raw");
                             command.AddParameter("Encoding", "Byte");
 
-                            byte[] fileContent =
-                                (await this.powerShellContext.ExecuteCommandAsync<byte[]>(command, false, false).ConfigureAwait(false))
+                            byte [] fileContent =
+                                (await this.powerShellContext.ExecuteCommandAsync<byte []>(command, false, false).ConfigureAwait(false))
                                     .FirstOrDefault();
 
-                            if (fileContent != null)
+                            if(fileContent != null)
                             {
                                 this.StoreRemoteFile(localFilePath, fileContent, pathMappings);
                             }
@@ -329,7 +329,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         }
                     }
                 }
-                catch (IOException e)
+                catch(IOException e)
                 {
                     this.logger.LogError(
                         $"Caught {e.GetType().Name} while attempting to get remote file at path '{remoteFilePath}'\r\n\r\n{e.ToString()}");
@@ -359,12 +359,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
             this.logger.LogTrace(
                 $"Saving remote file {remoteFilePath} (local path: {localFilePath})");
 
-            byte[] localFileContents = null;
+            byte [] localFileContents = null;
             try
             {
                 localFileContents = File.ReadAllBytes(localFilePath);
             }
-            catch (IOException e)
+            catch(IOException e)
             {
                 this.logger.LogException(
                     "Failed to read contents of local copy of remote file",
@@ -387,7 +387,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 false,
                 false).ConfigureAwait(false);
 
-            if (errorMessages.Length > 0)
+            if(errorMessages.Length > 0)
             {
                 this.logger.LogError($"Remote file save failed due to an error:\r\n\r\n{errorMessages}");
             }
@@ -418,7 +418,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 RemotePathMappings pathMappings = this.GetPathMappings(runspaceDetails);
                 pathMappings.AddOpenedLocalPath(temporaryFilePath);
             }
-            catch (IOException e)
+            catch(IOException e)
             {
                 this.logger.LogError(
                     $"Caught {e.GetType().Name} while attempting to write temporary file at path '{temporaryFilePath}'\r\n\r\n{e.ToString()}");
@@ -469,7 +469,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private string StoreRemoteFile(
             string remoteFilePath,
-            byte[] fileContent,
+            byte [] fileContent,
             RunspaceDetails runspaceDetails)
         {
             RemotePathMappings pathMappings = this.GetPathMappings(runspaceDetails);
@@ -485,7 +485,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void StoreRemoteFile(
             string localFilePath,
-            byte[] fileContent,
+            byte [] fileContent,
             RemotePathMappings pathMappings)
         {
             File.WriteAllBytes(localFilePath, fileContent);
@@ -497,7 +497,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             RemotePathMappings remotePathMappings = null;
             string computerName = runspaceDetails.SessionDetails.ComputerName;
 
-            if (!this.filesPerComputer.TryGetValue(computerName, out remotePathMappings))
+            if(!this.filesPerComputer.TryGetValue(computerName, out remotePathMappings))
             {
                 remotePathMappings = new RemotePathMappings(runspaceDetails, this);
                 this.filesPerComputer.Add(computerName, remotePathMappings);
@@ -508,14 +508,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private async void HandleRunspaceChangedAsync(object sender, RunspaceChangedEventArgs e)
         {
-            if (e.ChangeAction == RunspaceChangeAction.Enter)
+            if(e.ChangeAction == RunspaceChangeAction.Enter)
             {
                 this.RegisterPSEditFunction(e.NewRunspace);
             }
             else
             {
                 // Close any remote files that were opened
-                if (e.PreviousRunspace.Location == RunspaceLocation.Remote &&
+                if(e.PreviousRunspace.Location == RunspaceLocation.Remote &&
                     (e.ChangeAction == RunspaceChangeAction.Shutdown ||
                      !string.Equals(
                          e.NewRunspace.SessionDetails.ComputerName,
@@ -523,16 +523,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
                          StringComparison.CurrentCultureIgnoreCase)))
                 {
                     RemotePathMappings remotePathMappings;
-                    if (this.filesPerComputer.TryGetValue(e.PreviousRunspace.SessionDetails.ComputerName, out remotePathMappings))
+                    if(this.filesPerComputer.TryGetValue(e.PreviousRunspace.SessionDetails.ComputerName, out remotePathMappings))
                     {
-                        foreach (string remotePath in remotePathMappings.OpenedPaths)
+                        foreach(string remotePath in remotePathMappings.OpenedPaths)
                         {
                             await (this.editorOperations?.CloseFileAsync(remotePath)).ConfigureAwait(false);
                         }
                     }
                 }
 
-                if (e.PreviousRunspace != null)
+                if(e.PreviousRunspace != null)
                 {
                     this.RemovePSEditFunction(e.PreviousRunspace);
                 }
@@ -541,35 +541,35 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private async void HandlePSEventReceivedAsync(object sender, PSEventArgs args)
         {
-            if (string.Equals(RemoteSessionOpenFile, args.SourceIdentifier, StringComparison.CurrentCultureIgnoreCase))
+            if(string.Equals(RemoteSessionOpenFile, args.SourceIdentifier, StringComparison.CurrentCultureIgnoreCase))
             {
                 try
                 {
-                    if (args.SourceArgs.Length >= 1)
+                    if(args.SourceArgs.Length >= 1)
                     {
                         string localFilePath = string.Empty;
-                        string remoteFilePath = args.SourceArgs[0] as string;
+                        string remoteFilePath = args.SourceArgs [0] as string;
 
                         // Is this a local process runspace?  Treat as a local file
-                        if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Local)
+                        if(this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Local)
                         {
                             localFilePath = remoteFilePath;
                         }
                         else
                         {
-                            byte[] fileContent = null;
+                            byte [] fileContent = null;
 
-                            if (args.SourceArgs.Length >= 2)
+                            if(args.SourceArgs.Length >= 2)
                             {
                                 // Try to cast as a PSObject to get the BaseObject, if not, then try to case as a byte[]
-                                PSObject sourceObj = args.SourceArgs[1] as PSObject;
-                                if (sourceObj != null)
+                                PSObject sourceObj = args.SourceArgs [1] as PSObject;
+                                if(sourceObj != null)
                                 {
-                                    fileContent = sourceObj.BaseObject as byte[];
+                                    fileContent = sourceObj.BaseObject as byte [];
                                 }
                                 else
                                 {
-                                    fileContent = args.SourceArgs[1] as byte[];
+                                    fileContent = args.SourceArgs [1] as byte [];
                                 }
                             }
 
@@ -578,7 +578,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             // array.
                             fileContent = fileContent ?? Array.Empty<byte>();
 
-                            if (remoteFilePath != null)
+                            if(remoteFilePath != null)
                             {
                                 localFilePath =
                                     this.StoreRemoteFile(
@@ -595,9 +595,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         }
 
                         bool preview = true;
-                        if (args.SourceArgs.Length >= 3)
+                        if(args.SourceArgs.Length >= 3)
                         {
-                            bool? previewCheck = args.SourceArgs[2] as bool?;
+                            bool? previewCheck = args.SourceArgs [2] as bool?;
                             preview = previewCheck ?? true;
                         }
 
@@ -605,7 +605,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         this.editorOperations?.OpenFileAsync(localFilePath, preview);
                     }
                 }
-                catch (NullReferenceException e)
+                catch(NullReferenceException e)
                 {
                     this.logger.LogException("Could not store null remote file content", e);
                 }
@@ -614,7 +614,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void RegisterPSEditFunction(RunspaceDetails runspaceDetails)
         {
-            if (runspaceDetails.Location == RunspaceLocation.Remote &&
+            if(runspaceDetails.Location == RunspaceLocation.Remote &&
                 runspaceDetails.Context == RunspaceContext.Original)
             {
                 try
@@ -626,13 +626,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         .AddScript(CreatePSEditFunctionScript)
                         .AddParameter("PSEditModule", PSEditModule);
 
-                    if (runspaceDetails.Context == RunspaceContext.DebuggedRunspace)
+                    if(runspaceDetails.Context == RunspaceContext.DebuggedRunspace)
                     {
                         this.powerShellContext.ExecuteCommandAsync(createCommand).Wait();
                     }
                     else
                     {
-                        using (var powerShell = System.Management.Automation.PowerShell.Create())
+                        using(var powerShell = System.Management.Automation.PowerShell.Create())
                         {
                             powerShell.Runspace = runspaceDetails.Runspace;
                             powerShell.Commands = createCommand;
@@ -640,7 +640,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         }
                     }
                 }
-                catch (RemoteException e)
+                catch(RemoteException e)
                 {
                     this.logger.LogException("Could not create psedit function.", e);
                 }
@@ -649,19 +649,19 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void RemovePSEditFunction(RunspaceDetails runspaceDetails)
         {
-            if (runspaceDetails.Location == RunspaceLocation.Remote &&
+            if(runspaceDetails.Location == RunspaceLocation.Remote &&
                 runspaceDetails.Context == RunspaceContext.Original)
             {
                 try
                 {
-                    if (runspaceDetails.Runspace.Events != null)
+                    if(runspaceDetails.Runspace.Events != null)
                     {
                         runspaceDetails.Runspace.Events.ReceivedEvents.PSEventReceived -= HandlePSEventReceivedAsync;
                     }
 
-                    if (runspaceDetails.Runspace.RunspaceStateInfo.State == RunspaceState.Opened)
+                    if(runspaceDetails.Runspace.RunspaceStateInfo.State == RunspaceState.Opened)
                     {
-                        using (var powerShell = System.Management.Automation.PowerShell.Create())
+                        using(var powerShell = System.Management.Automation.PowerShell.Create())
                         {
                             powerShell.Runspace = runspaceDetails.Runspace;
                             powerShell.Commands.AddScript(RemovePSEditFunctionScript);
@@ -669,7 +669,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         }
                     }
                 }
-                catch (Exception e) when (e is RemoteException || e is PSInvalidOperationException)
+                catch(Exception e) when(e is RemoteException || e is PSInvalidOperationException)
                 {
                     this.logger.LogException("Could not remove psedit function.", e);
                 }
@@ -680,14 +680,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             try
             {
-                if (Directory.Exists(this.processTempPath))
+                if(Directory.Exists(this.processTempPath))
                 {
                     Directory.Delete(this.processTempPath, true);
                 }
 
                 Directory.CreateDirectory(this.processTempPath);
             }
-            catch (IOException e)
+            catch(IOException e)
             {
                 this.logger.LogException(
                     $"Could not delete temporary folder for current process: {this.processTempPath}", e);
@@ -721,8 +721,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             public void AddPathMapping(string remotePath, string localPath)
             {
                 // Add mappings in both directions
-                this.pathMappings[localPath.ToLower()] = remotePath;
-                this.pathMappings[remotePath.ToLower()] = localPath;
+                this.pathMappings [localPath.ToLower()] = remotePath;
+                this.pathMappings [remotePath.ToLower()] = localPath;
             }
 
             public void AddOpenedLocalPath(string openedLocalPath)
@@ -739,10 +739,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 string mappedPath = filePath;
 
-                if (!this.pathMappings.TryGetValue(filePath.ToLower(), out mappedPath))
+                if(!this.pathMappings.TryGetValue(filePath.ToLower(), out mappedPath))
                 {
                     // If the path isn't mapped yet, generate it
-                    if (!filePath.StartsWith(this.remoteFileManager.remoteFilesPath))
+                    if(!filePath.StartsWith(this.remoteFileManager.remoteFilesPath))
                     {
                         mappedPath =
                             this.MapRemotePathToLocal(

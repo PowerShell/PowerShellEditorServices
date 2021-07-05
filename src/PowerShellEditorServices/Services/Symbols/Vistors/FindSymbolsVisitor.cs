@@ -29,7 +29,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
         {
-            IScriptExtent nameExtent = new ScriptExtent() {
+            IScriptExtent nameExtent = new ScriptExtent()
+            {
                 Text = functionDefinitionAst.Name,
                 StartLineNumber = functionDefinitionAst.Extent.StartLineNumber,
                 EndLineNumber = functionDefinitionAst.Extent.EndLineNumber,
@@ -58,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
         {
-            if (!IsAssignedAtScriptScope(variableExpressionAst))
+            if(!IsAssignedAtScriptScope(variableExpressionAst))
             {
                 return AstVisitAction.Continue;
             }
@@ -74,13 +75,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         private bool IsAssignedAtScriptScope(VariableExpressionAst variableExpressionAst)
         {
             Ast parent = variableExpressionAst.Parent;
-            if (!(parent is AssignmentStatementAst))
+            if(!(parent is AssignmentStatementAst))
             {
                 return false;
             }
 
             parent = parent.Parent;
-            if (parent == null || parent.Parent == null || parent.Parent.Parent == null)
+            if(parent == null || parent.Parent == null || parent.Parent.Parent == null)
             {
                 return true;
             }
@@ -112,14 +113,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// </summary>
         public override AstVisitAction VisitHashtable(HashtableAst hashtableAst)
         {
-            if (hashtableAst.KeyValuePairs == null)
+            if(hashtableAst.KeyValuePairs == null)
             {
                 return AstVisitAction.Continue;
             }
 
-            foreach (var kvp in hashtableAst.KeyValuePairs)
+            foreach(var kvp in hashtableAst.KeyValuePairs)
             {
-                if (kvp.Item1 is StringConstantExpressionAst keyStrConstExprAst)
+                if(kvp.Item1 is StringConstantExpressionAst keyStrConstExprAst)
                 {
                     IScriptExtent nameExtent = new ScriptExtent()
                     {

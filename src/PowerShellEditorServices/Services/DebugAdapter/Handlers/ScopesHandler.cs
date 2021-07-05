@@ -28,9 +28,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public Task<ScopesResponse> Handle(ScopesArguments request, CancellationToken cancellationToken)
         {
-            VariableScope[] variableScopes =
+            VariableScope [] variableScopes =
                 _debugService.GetVariableScopes(
-                    (int) request.FrameId);
+                    (int)request.FrameId);
 
             return Task.FromResult(new ScopesResponse
             {

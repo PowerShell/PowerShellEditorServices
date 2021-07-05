@@ -69,9 +69,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 { "reason", reason },
             };
 
-            if (details != null)
+            if(details != null)
             {
-                sessionObject["details"] = details;
+                sessionObject ["details"] = details;
             }
 
             WriteSessionObject(sessionObject);
@@ -91,28 +91,28 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 { "status", "started" },
             };
 
-            if (languageServiceTransport != null)
+            if(languageServiceTransport != null)
             {
-                sessionObject["languageServiceTransport"] = languageServiceTransport.SessionFileTransportName;
+                sessionObject ["languageServiceTransport"] = languageServiceTransport.SessionFileTransportName;
 
-                if (languageServiceTransport.SessionFileEntries != null)
+                if(languageServiceTransport.SessionFileEntries != null)
                 {
-                    foreach (KeyValuePair<string, object> sessionEntry in languageServiceTransport.SessionFileEntries)
+                    foreach(KeyValuePair<string, object> sessionEntry in languageServiceTransport.SessionFileEntries)
                     {
-                        sessionObject[$"languageService{sessionEntry.Key}"] = sessionEntry.Value;
+                        sessionObject [$"languageService{sessionEntry.Key}"] = sessionEntry.Value;
                     }
                 }
             }
 
-            if (debugAdapterTransport != null)
+            if(debugAdapterTransport != null)
             {
-                sessionObject["debugServiceTransport"] = debugAdapterTransport.SessionFileTransportName;
+                sessionObject ["debugServiceTransport"] = debugAdapterTransport.SessionFileTransportName;
 
-                if (debugAdapterTransport.SessionFileEntries != null)
+                if(debugAdapterTransport.SessionFileEntries != null)
                 {
-                    foreach (KeyValuePair<string, object> sessionEntry in debugAdapterTransport.SessionFileEntries)
+                    foreach(KeyValuePair<string, object> sessionEntry in debugAdapterTransport.SessionFileEntries)
                     {
-                        sessionObject[$"debugService{sessionEntry.Key}"] = sessionEntry.Value;
+                        sessionObject [$"debugService{sessionEntry.Key}"] = sessionEntry.Value;
                     }
                 }
             }
@@ -128,13 +128,13 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             string psModulePath = Environment.GetEnvironmentVariable("PSModulePath");
             string content = null;
-            using (var pwsh = SMA.PowerShell.Create(RunspaceMode.NewRunspace))
+            using(var pwsh = SMA.PowerShell.Create(RunspaceMode.NewRunspace))
             {
                 content = pwsh.AddCommand("ConvertTo-Json")
                     .AddParameter("InputObject", sessionObject)
                     .AddParameter("Depth", 10)
                     .AddParameter("Compress")
-                    .Invoke<string>()[0];
+                    .Invoke<string>() [0];
 
                 // Runspace creation has a bug where it resets the PSModulePath,
                 // which we must correct for
