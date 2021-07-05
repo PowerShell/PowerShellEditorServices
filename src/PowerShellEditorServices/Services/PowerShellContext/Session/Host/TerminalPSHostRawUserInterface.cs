@@ -146,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             bool includeUp = (options & ReadKeyOptions.IncludeKeyUp) != 0;
 
             // Key Up was requested and we have a cached key down we can return.
-            if (includeUp && this.lastKeyDown != null)
+            if(includeUp && this.lastKeyDown != null)
             {
                 KeyInfo info = this.lastKeyDown.Value;
                 this.lastKeyDown = null;
@@ -159,7 +159,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             bool intercept = (options & ReadKeyOptions.NoEcho) != 0;
             bool includeDown = (options & ReadKeyOptions.IncludeKeyDown) != 0;
-            if (!(includeDown || includeUp))
+            if(!(includeDown || includeUp))
             {
                 throw new PSArgumentException(
                     "Cannot read key options. To read options, set one or both of the following: IncludeKeyDown, IncludeKeyUp.",
@@ -174,10 +174,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 System.Console.TreatControlCAsInput = true;
                 ConsoleKeyInfo key = ConsoleProxy.ReadKey(intercept, default(CancellationToken));
 
-                if (IsCtrlC(key))
+                if(IsCtrlC(key))
                 {
                     // Caller wants CtrlC as input so return it.
-                    if ((options & ReadKeyOptions.AllowCtrlC) != 0)
+                    if((options & ReadKeyOptions.AllowCtrlC) != 0)
                     {
                         return ProcessKey(key, includeDown);
                     }
@@ -210,7 +210,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </summary>
         /// <param name="rectangle">The rectangle inside which buffer contents will be accessed.</param>
         /// <returns>A BufferCell array with the requested buffer contents.</returns>
-        public override BufferCell[,] GetBufferContents(Rectangle rectangle)
+        public override BufferCell [,] GetBufferContents(Rectangle rectangle)
         {
             return this.internalRawUI.GetBufferContents(rectangle);
         }
@@ -241,7 +241,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             BufferCell fill)
         {
             // If the rectangle is all -1s then it means clear the visible buffer
-            if (rectangle.Top == -1 &&
+            if(rectangle.Top == -1 &&
                 rectangle.Bottom == -1 &&
                 rectangle.Left == -1 &&
                 rectangle.Right == -1)
@@ -260,7 +260,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <param name="contents">The new contents for the buffer at the given coordinate.</param>
         public override void SetBufferContents(
             Coordinates origin,
-            BufferCell[,] contents)
+            BufferCell [,] contents)
         {
             this.internalRawUI.SetBufferContents(origin, contents);
         }
@@ -279,7 +279,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             // In the VSCode terminal Ctrl C is processed as virtual key code "3", which
             // is not a named value in the ConsoleKey enum.
-            if ((int)keyInfo.Key == 3)
+            if((int)keyInfo.Key == 3)
             {
                 return true;
             }
@@ -300,23 +300,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             // Translate ConsoleModifiers to ControlKeyStates
             ControlKeyStates states = default;
-            if ((key.Modifiers & ConsoleModifiers.Alt) != 0)
+            if((key.Modifiers & ConsoleModifiers.Alt) != 0)
             {
                 states |= ControlKeyStates.LeftAltPressed;
             }
 
-            if ((key.Modifiers & ConsoleModifiers.Control) != 0)
+            if((key.Modifiers & ConsoleModifiers.Control) != 0)
             {
                 states |= ControlKeyStates.LeftCtrlPressed;
             }
 
-            if ((key.Modifiers & ConsoleModifiers.Shift) != 0)
+            if((key.Modifiers & ConsoleModifiers.Shift) != 0)
             {
                 states |= ControlKeyStates.ShiftPressed;
             }
 
             var result = new KeyInfo((int)key.Key, key.KeyChar, states, isDown);
-            if (isDown)
+            if(isDown)
             {
                 this.lastKeyDown = result;
             }

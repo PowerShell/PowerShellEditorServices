@@ -41,19 +41,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             var architecture = PowerShellProcessArchitecture.Unknown;
             // This should be changed to using a .NET call sometime in the future... but it's just for logging purposes.
             string arch = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
-            if (arch != null)
+            if(arch != null)
             {
-                if (string.Equals(arch, "AMD64", StringComparison.CurrentCultureIgnoreCase))
+                if(string.Equals(arch, "AMD64", StringComparison.CurrentCultureIgnoreCase))
                 {
                     architecture = PowerShellProcessArchitecture.X64;
                 }
-                else if (string.Equals(arch, "x86", StringComparison.CurrentCultureIgnoreCase))
+                else if(string.Equals(arch, "x86", StringComparison.CurrentCultureIgnoreCase))
                 {
                     architecture = PowerShellProcessArchitecture.X86;
                 }
             }
 
-            if (VersionUtils.IsPS5 && _configurationService.CurrentSettings.PromptToUpdatePackageManagement)
+            if(VersionUtils.IsPS5 && _configurationService.CurrentSettings.PromptToUpdatePackageManagement)
             {
                 await CheckPackageManagement().ConfigureAwait(false);
             }
@@ -77,17 +77,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private async Task CheckPackageManagement()
         {
             PSCommand getModule = new PSCommand().AddCommand("Get-Module").AddParameter("ListAvailable").AddParameter("Name", "PackageManagement");
-            foreach (PSModuleInfo module in await _powerShellContextService.ExecuteCommandAsync<PSModuleInfo>(getModule))
+            foreach(PSModuleInfo module in await _powerShellContextService.ExecuteCommandAsync<PSModuleInfo>(getModule))
             {
                 // The user has a good enough version of PackageManagement
-                if (module.Version >= s_desiredPackageManagementVersion)
+                if(module.Version >= s_desiredPackageManagementVersion)
                 {
                     break;
                 }
 
                 _logger.LogDebug("Old version of PackageManagement detected.");
 
-                if (_powerShellContextService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
+                if(_powerShellContextService.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
                 {
                     _languageServer.Window.ShowWarning("You have an older version of PackageManagement known to cause issues with the PowerShell extension. Please run the following command in a new Windows PowerShell session and then restart the PowerShell extension: `Install-Module PackageManagement -Force -AllowClobber -MinimumVersion 1.4.6`");
                     return;
@@ -98,7 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 {
                     Message = "You have an older version of PackageManagement known to cause issues with the PowerShell extension. Would you like to update PackageManagement (You will need to restart the PowerShell extension after)?",
                     Type = MessageType.Warning,
-                    Actions = new[]
+                    Actions = new []
                     {
                         new MessageActionItem
                         {
@@ -112,7 +112,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 });
 
                 // If the user chose "Not now" ignore it for the rest of the session.
-                if (messageAction?.Title == takeActionText)
+                if(messageAction?.Title == takeActionText)
                 {
                     StringBuilder errors = new StringBuilder();
                     await _powerShellContextService.ExecuteScriptStringAsync(
@@ -122,7 +122,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         writeOutputToHost: true,
                         addToHistory: true).ConfigureAwait(false);
 
-                    if (errors.Length == 0)
+                    if(errors.Length == 0)
                     {
                         _logger.LogDebug("PackageManagement is updated.");
                         _languageServer.Window.ShowMessage(new ShowMessageParams

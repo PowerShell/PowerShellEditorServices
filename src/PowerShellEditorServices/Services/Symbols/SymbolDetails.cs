@@ -45,21 +45,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 SymbolReference = symbolReference
             };
 
-            switch (symbolReference.SymbolType)
+            switch(symbolReference.SymbolType)
             {
                 case SymbolType.Function:
                     CommandInfo commandInfo = await CommandHelpers.GetCommandInfoAsync(
                         symbolReference.SymbolName,
                         powerShellContext).ConfigureAwait(false);
 
-                    if (commandInfo != null)
+                    if(commandInfo != null)
                     {
                         symbolDetails.Documentation =
                             await CommandHelpers.GetCommandSynopsisAsync(
                                 commandInfo,
                                 powerShellContext).ConfigureAwait(false);
 
-                        if (commandInfo.CommandType == CommandTypes.Application)
+                        if(commandInfo.CommandType == CommandTypes.Application)
                         {
                             symbolDetails.DisplayString = "(application) " + symbolReference.SymbolName;
                             return symbolDetails;

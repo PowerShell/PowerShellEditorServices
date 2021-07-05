@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private const string ForcePSEventHandlingMethodName = "ForcePSEventHandling";
 
-        private static readonly Type[] s_setKeyHandlerTypes =
+        private static readonly Type [] s_setKeyHandlerTypes =
         {
             typeof(string[]),
             typeof(Action<ConsoleKeyInfo?, object>),
@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             typeof(string)
         };
 
-        private static readonly Type[] s_addToHistoryTypes = { typeof(string) };
+        private static readonly Type [] s_addToHistoryTypes = { typeof(string) };
 
         private readonly FieldInfo _readKeyOverrideField;
 
@@ -49,16 +49,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 ?.CreateDelegate(typeof(Action<string>));
 
             SetKeyHandler =
-                (Action<string[], Action<ConsoleKeyInfo?, object>, string, string>)psConsoleReadLine.GetMethod(
+                (Action<string [], Action<ConsoleKeyInfo?, object>, string, string>)psConsoleReadLine.GetMethod(
                     SetKeyHandlerMethodName,
                     s_setKeyHandlerTypes)
-                    ?.CreateDelegate(typeof(Action<string[], Action<ConsoleKeyInfo?, object>, string, string>));
+                    ?.CreateDelegate(typeof(Action<string [], Action<ConsoleKeyInfo?, object>, string, string>));
 
             _readKeyOverrideField = psConsoleReadLine.GetTypeInfo().Assembly
                 .GetType(VirtualTerminalTypeName)
                 ?.GetField(ReadKeyOverrideFieldName, BindingFlags.Static | BindingFlags.NonPublic);
 
-            if (_readKeyOverrideField == null)
+            if(_readKeyOverrideField == null)
             {
                 throw NewInvalidPSReadLineVersionException(
                     FieldMemberType,
@@ -66,7 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     logger);
             }
 
-            if (SetKeyHandler == null)
+            if(SetKeyHandler == null)
             {
                 throw NewInvalidPSReadLineVersionException(
                     MethodMemberType,
@@ -74,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     logger);
             }
 
-            if (AddToHistory == null)
+            if(AddToHistory == null)
             {
                 throw NewInvalidPSReadLineVersionException(
                     MethodMemberType,
@@ -82,7 +82,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     logger);
             }
 
-            if (ForcePSEventHandling == null)
+            if(ForcePSEventHandling == null)
             {
                 throw NewInvalidPSReadLineVersionException(
                     MethodMemberType,
@@ -93,7 +93,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         internal Action<string> AddToHistory { get; }
 
-        internal Action<string[], Action<Nullable<ConsoleKeyInfo>, object>, string, string> SetKeyHandler { get; }
+        internal Action<string [], Action<Nullable<ConsoleKeyInfo>, object>, string, string> SetKeyHandler { get; }
 
         internal Action ForcePSEventHandling { get; }
 

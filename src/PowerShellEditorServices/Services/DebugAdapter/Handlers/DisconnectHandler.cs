@@ -41,27 +41,27 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public async Task<DisconnectResponse> Handle(DisconnectArguments request, CancellationToken cancellationToken)
         {
             _debugEventHandlerService.UnregisterEventHandlers();
-            if (_debugStateService.ExecutionCompleted == false)
+            if(_debugStateService.ExecutionCompleted == false)
             {
                 _debugStateService.ExecutionCompleted = true;
                 _powerShellContextService.AbortExecution(shouldAbortDebugSession: true);
 
-                if (_debugStateService.IsInteractiveDebugSession && _debugStateService.IsAttachSession)
+                if(_debugStateService.IsInteractiveDebugSession && _debugStateService.IsAttachSession)
                 {
                     // Pop the sessions
-                    if (_powerShellContextService.CurrentRunspace.Context == RunspaceContext.EnteredProcess)
+                    if(_powerShellContextService.CurrentRunspace.Context == RunspaceContext.EnteredProcess)
                     {
                         try
                         {
                             await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSHostProcess").ConfigureAwait(false);
 
-                            if (_debugStateService.IsRemoteAttach &&
+                            if(_debugStateService.IsRemoteAttach &&
                                 _powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Remote)
                             {
                                 await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSSession").ConfigureAwait(false);
                             }
                         }
-                        catch (Exception e)
+                        catch(Exception e)
                         {
                             _logger.LogException("Caught exception while popping attached process after debugging", e);
                         }

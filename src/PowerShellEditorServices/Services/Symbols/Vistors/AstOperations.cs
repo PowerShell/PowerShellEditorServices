@@ -56,13 +56,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// </returns>
         public static async Task<CommandCompletion> GetCompletionsAsync(
             Ast scriptAst,
-            Token[] currentTokens,
+            Token [] currentTokens,
             int fileOffset,
             PowerShellContextService powerShellContext,
             ILogger logger,
             CancellationToken cancellationToken)
         {
-            if (!s_completionHandle.Wait(0))
+            if(!s_completionHandle.Wait(0))
             {
                 return null;
             }
@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             {
                 IScriptPosition cursorPosition = (IScriptPosition)s_extentCloneWithNewOffset.Invoke(
                 scriptAst.Extent.StartScriptPosition,
-                new object[] { fileOffset });
+                new object [] { fileOffset });
 
                 logger.LogTrace(
                     string.Format(
@@ -80,7 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                         cursorPosition.LineNumber,
                         cursorPosition.ColumnNumber));
 
-                if (!powerShellContext.IsAvailable)
+                if(!powerShellContext.IsAvailable)
                 {
                     return null;
                 }
@@ -90,10 +90,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 // If the current runspace is out of process we can use
                 // CommandCompletion.CompleteInput because PSReadLine won't be taking up the
                 // main runspace.
-                if (powerShellContext.IsCurrentRunspaceOutOfProcess())
+                if(powerShellContext.IsCurrentRunspaceOutOfProcess())
                 {
-                    using (RunspaceHandle runspaceHandle = await powerShellContext.GetRunspaceHandleAsync(cancellationToken).ConfigureAwait(false))
-                    using (System.Management.Automation.PowerShell powerShell = System.Management.Automation.PowerShell.Create())
+                    using(RunspaceHandle runspaceHandle = await powerShellContext.GetRunspaceHandleAsync(cancellationToken).ConfigureAwait(false))
+                    using(System.Management.Automation.PowerShell powerShell = System.Management.Automation.PowerShell.Create())
                     {
                         powerShell.Runspace = runspaceHandle.Runspace;
                         stopwatch.Start();
@@ -281,7 +281,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             // part of a psd1 file.
             return IsPowerShellDataFileAstNode(
                         new { Item = ast, Children = new List<dynamic>() },
-                        new Type[] {
+                        new Type [] {
                             typeof(ScriptBlockAst),
                             typeof(NamedBlockAst),
                             typeof(PipelineAst),
@@ -290,25 +290,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                         0);
         }
 
-        static private bool IsPowerShellDataFileAstNode(dynamic node, Type[] levelAstMap, int level)
+        static private bool IsPowerShellDataFileAstNode(dynamic node, Type [] levelAstMap, int level)
         {
-            var levelAstTypeMatch = node.Item.GetType().Equals(levelAstMap[level]);
-            if (!levelAstTypeMatch)
+            var levelAstTypeMatch = node.Item.GetType().Equals(levelAstMap [level]);
+            if(!levelAstTypeMatch)
             {
                 return false;
             }
 
-            if (level == levelAstMap.Length - 1)
+            if(level == levelAstMap.Length - 1)
             {
                 return levelAstTypeMatch;
             }
 
             var astsFound = (node.Item as Ast).FindAll(a => a is Ast, false);
-            if (astsFound != null)
+            if(astsFound != null)
             {
-                foreach (var astFound in astsFound)
+                foreach(var astFound in astsFound)
                 {
-                    if (!astFound.Equals(node.Item)
+                    if(!astFound.Equals(node.Item)
                         && node.Item.Equals(astFound.Parent)
                         && IsPowerShellDataFileAstNode(
                             new { Item = astFound, Children = new List<dynamic>() },
@@ -329,7 +329,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <param name="psScriptRoot">Pre-calculated value of $PSScriptRoot</param>
         /// <returns></returns>
-        public static string[] FindDotSourcedIncludes(Ast scriptAst, string psScriptRoot)
+        public static string [] FindDotSourcedIncludes(Ast scriptAst, string psScriptRoot)
         {
             FindDotSourcedVisitor dotSourcedVisitor = new FindDotSourcedVisitor(psScriptRoot);
             scriptAst.Visit(dotSourcedVisitor);

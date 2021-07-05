@@ -24,13 +24,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _powerShellContextService = powerShellContextService;
         }
 
-        public Task<PSHostProcessResponse[]> Handle(GetPSHostProcesssesParams request, CancellationToken cancellationToken)
+        public Task<PSHostProcessResponse []> Handle(GetPSHostProcesssesParams request, CancellationToken cancellationToken)
         {
             var psHostProcesses = new List<PSHostProcessResponse>();
 
             int processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-            using (var pwsh = PowerShell.Create())
+            using(var pwsh = PowerShell.Create())
             {
                 pwsh.AddCommand("Get-PSHostProcessInfo")
                     .AddCommand("Where-Object")
@@ -40,9 +40,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 var processes = pwsh.Invoke<PSObject>();
 
-                if (processes != null)
+                if(processes != null)
                 {
-                    foreach (dynamic p in processes)
+                    foreach(dynamic p in processes)
                     {
                         psHostProcesses.Add(
                             new PSHostProcessResponse
@@ -59,22 +59,22 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return Task.FromResult(psHostProcesses.ToArray());
         }
 
-        public async Task<RunspaceResponse[]> Handle(GetRunspaceParams request, CancellationToken cancellationToken)
+        public async Task<RunspaceResponse []> Handle(GetRunspaceParams request, CancellationToken cancellationToken)
         {
             IEnumerable<PSObject> runspaces = null;
 
-            if (request.ProcessId == null)
+            if(request.ProcessId == null)
             {
                 request.ProcessId = "current";
             }
 
             // If the processId is a valid int, we need to run Get-Runspace within that process
             // otherwise just use the current runspace.
-            if (int.TryParse(request.ProcessId, out int pid))
+            if(int.TryParse(request.ProcessId, out int pid))
             {
                 // Create a remote runspace that we will invoke Get-Runspace in.
-                using (var rs = RunspaceFactory.CreateRunspace(new NamedPipeConnectionInfo(pid)))
-                using (var ps = PowerShell.Create())
+                using(var rs = RunspaceFactory.CreateRunspace(new NamedPipeConnectionInfo(pid)))
+                using(var ps = PowerShell.Create())
                 {
                     rs.Open();
                     ps.Runspace = rs;
@@ -92,9 +92,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             var runspaceResponses = new List<RunspaceResponse>();
 
-            if (runspaces != null)
+            if(runspaces != null)
             {
-                foreach (dynamic runspace in runspaces)
+                foreach(dynamic runspace in runspaces)
                 {
                     runspaceResponses.Add(
                         new RunspaceResponse

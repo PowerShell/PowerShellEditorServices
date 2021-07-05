@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     {
         public bool NeedsModuleInstall { get; set; }
 
-        public TemplateDetails[] Templates { get; set; }
+        public TemplateDetails [] Templates { get; set; }
     }
 
     /// <summary>

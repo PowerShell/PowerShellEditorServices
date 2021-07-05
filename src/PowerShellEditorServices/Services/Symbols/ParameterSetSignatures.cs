@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <summary>
         /// Gets the collection of signatures for the command
         /// </summary>
-        public ParameterSetSignature[] Signatures { get; internal set; }
+        public ParameterSetSignature [] Signatures { get; internal set; }
 
         /// <summary>
         /// Gets the script extent of the command
@@ -41,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         public ParameterSetSignatures(IEnumerable<CommandParameterSetInfo> commandInfoSet, SymbolReference foundSymbol)
         {
             List<ParameterSetSignature> paramSetSignatures = new List<ParameterSetSignature>();
-            foreach (CommandParameterSetInfo setInfo in commandInfoSet)
+            foreach(CommandParameterSetInfo setInfo in commandInfoSet)
             {
                 paramSetSignatures.Add(new ParameterSetSignature(setInfo));
             }
@@ -93,9 +93,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         public ParameterSetSignature(CommandParameterSetInfo commandParamInfoSet)
         {
             List<ParameterInfo> parameterInfo = new List<ParameterInfo>();
-            foreach (CommandParameterInfo commandParameterInfo in commandParamInfoSet.Parameters)
+            foreach(CommandParameterInfo commandParameterInfo in commandParamInfoSet.Parameters)
             {
-                if (!commonParameterNames.ContainsKey(commandParameterInfo.Name))
+                if(!commonParameterNames.ContainsKey(commandParameterInfo.Name))
                 {
                     parameterInfo.Add(new ParameterInfo(commandParameterInfo));
                 }

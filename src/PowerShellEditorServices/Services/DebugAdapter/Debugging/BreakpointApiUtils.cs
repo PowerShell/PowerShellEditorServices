@@ -37,14 +37,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         {
             // If this version of PowerShell does not support the new Breakpoint APIs introduced in PowerShell 7.0.0,
             // do nothing as this class will not get used.
-            if (!SupportsBreakpointApis)
+            if(!SupportsBreakpointApis)
             {
                 return;
             }
 
             s_setLineBreakpointLazy = new Lazy<Func<Debugger, string, int, int, ScriptBlock, int?, LineBreakpoint>>(() =>
             {
-                Type[] setLineBreakpointParameters = new[] { typeof(string), typeof(int), typeof(int), typeof(ScriptBlock), typeof(int?) };
+                Type [] setLineBreakpointParameters = new [] { typeof(string), typeof(int), typeof(int), typeof(ScriptBlock), typeof(int?) };
                 MethodInfo setLineBreakpointMethod = typeof(Debugger).GetMethod("SetLineBreakpoint", setLineBreakpointParameters);
 
                 return (Func<Debugger, string, int, int, ScriptBlock, int?, LineBreakpoint>)Delegate.CreateDelegate(
@@ -55,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
             s_setCommandBreakpointLazy = new Lazy<Func<Debugger, string, ScriptBlock, string, int?, CommandBreakpoint>>(() =>
             {
-                Type[] setCommandBreakpointParameters = new[] { typeof(string), typeof(ScriptBlock), typeof(string), typeof(int?) };
+                Type [] setCommandBreakpointParameters = new [] { typeof(string), typeof(ScriptBlock), typeof(string), typeof(int?) };
                 MethodInfo setCommandBreakpointMethod = typeof(Debugger).GetMethod("SetCommandBreakpoint", setCommandBreakpointParameters);
 
                 return (Func<Debugger, string, ScriptBlock, string, int?, CommandBreakpoint>)Delegate.CreateDelegate(
@@ -66,7 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
             s_getBreakpointsLazy = new Lazy<Func<Debugger, int?, List<Breakpoint>>>(() =>
             {
-                Type[] getBreakpointsParameters = new[] { typeof(int?) };
+                Type [] getBreakpointsParameters = new [] { typeof(int?) };
                 MethodInfo getBreakpointsMethod = typeof(Debugger).GetMethod("GetBreakpoints", getBreakpointsParameters);
 
                 return (Func<Debugger, int?, List<Breakpoint>>)Delegate.CreateDelegate(
@@ -77,7 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
             s_removeBreakpointLazy = new Lazy<Func<Debugger, Breakpoint, int?, bool>>(() =>
             {
-                Type[] removeBreakpointParameters = new[] { typeof(Breakpoint), typeof(int?) };
+                Type [] removeBreakpointParameters = new [] { typeof(Breakpoint), typeof(int?) };
                 MethodInfo removeBreakpointMethod = typeof(Debugger).GetMethod("RemoveBreakpoint", removeBreakpointParameters);
 
                 return (Func<Debugger, Breakpoint, int?, bool>)Delegate.CreateDelegate(
@@ -116,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             ScriptBlock actionScriptBlock = null;
             string logMessage = breakpoint is BreakpointDetails bd ? bd.LogMessage : null;
             // Check if this is a "conditional" line breakpoint.
-            if (!string.IsNullOrWhiteSpace(breakpoint.Condition) ||
+            if(!string.IsNullOrWhiteSpace(breakpoint.Condition) ||
                 !string.IsNullOrWhiteSpace(breakpoint.HitCondition) ||
                 !string.IsNullOrWhiteSpace(logMessage))
             {
@@ -126,14 +126,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                     logMessage,
                     out string errorMessage);
 
-                if (!string.IsNullOrEmpty(errorMessage))
+                if(!string.IsNullOrEmpty(errorMessage))
                 {
                     // This is handled by the caller where it will set the 'Message' and 'Verified' on the BreakpointDetails
                     throw new InvalidOperationException(errorMessage);
                 }
             }
 
-            switch (breakpoint)
+            switch(breakpoint)
             {
                 case BreakpointDetails lineBreakpoint:
                     return SetLineBreakpointDelegate(debugger, lineBreakpoint.Source, lineBreakpoint.LineNumber, lineBreakpoint.ColumnNumber ?? 0, actionScriptBlock, runspaceId);
@@ -175,12 +175,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 StringBuilder builder = new StringBuilder(
                     string.IsNullOrEmpty(logMessage)
                         ? "break"
-                        : $"Microsoft.PowerShell.Utility\\Write-Host \"{logMessage.Replace("\"","`\"")}\"");
+                        : $"Microsoft.PowerShell.Utility\\Write-Host \"{logMessage.Replace("\"", "`\"")}\"");
 
                 // If HitCondition specified, parse and verify it.
-                if (!(string.IsNullOrWhiteSpace(hitCondition)))
+                if(!(string.IsNullOrWhiteSpace(hitCondition)))
                 {
-                    if (!int.TryParse(hitCondition, out int parsedHitCount))
+                    if(!int.TryParse(hitCondition, out int parsedHitCount))
                     {
                         throw new InvalidOperationException("Hit Count was not a valid integer.");
                     }
@@ -202,13 +202,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                         .Append(" }");
                 }
 
-                if (!string.IsNullOrWhiteSpace(condition))
+                if(!string.IsNullOrWhiteSpace(condition))
                 {
                     ScriptBlock parsed = ScriptBlock.Create(condition);
 
                     // Check for simple, common errors that ScriptBlock parsing will not catch
                     // e.g. $i == 3 and $i > 3
-                    if (!ValidateBreakpointConditionAst(parsed.Ast, out string message))
+                    if(!ValidateBreakpointConditionAst(parsed.Ast, out string message))
                     {
                         throw new InvalidOperationException(message);
                     }
@@ -216,8 +216,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                     // Check for "advanced" condition syntax i.e. if the user has specified
                     // a "break" or  "continue" statement anywhere in their scriptblock,
                     // pass their scriptblock through to the Action parameter as-is.
-                    if (parsed.Ast.Find(ast =>
-                        (ast is BreakStatementAst || ast is ContinueStatementAst), true) != null)
+                    if(parsed.Ast.Find(ast =>
+                       (ast is BreakStatementAst || ast is ContinueStatementAst), true) != null)
                     {
                         return parsed;
                     }
@@ -228,12 +228,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
                 return ScriptBlock.Create(builder.ToString());
             }
-            catch (ParseException e)
+            catch(ParseException e)
             {
                 errorMessage = ExtractAndScrubParseExceptionMessage(e, condition);
                 return null;
             }
-            catch (InvalidOperationException e)
+            catch(InvalidOperationException e)
             {
                 errorMessage = e.Message;
                 return null;
@@ -245,24 +245,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             message = string.Empty;
 
             // We are only inspecting a few simple scenarios in the EndBlock only.
-            if (conditionAst is ScriptBlockAst scriptBlockAst &&
+            if(conditionAst is ScriptBlockAst scriptBlockAst &&
                 scriptBlockAst.BeginBlock == null &&
                 scriptBlockAst.ProcessBlock == null &&
                 scriptBlockAst.EndBlock != null &&
                 scriptBlockAst.EndBlock.Statements.Count == 1)
             {
-                StatementAst statementAst = scriptBlockAst.EndBlock.Statements[0];
+                StatementAst statementAst = scriptBlockAst.EndBlock.Statements [0];
                 string condition = statementAst.Extent.Text;
 
-                if (statementAst is AssignmentStatementAst)
+                if(statementAst is AssignmentStatementAst)
                 {
                     message = FormatInvalidBreakpointConditionMessage(condition, "Use '-eq' instead of '=='.");
                     return false;
                 }
 
-                if (statementAst is PipelineAst pipelineAst
+                if(statementAst is PipelineAst pipelineAst
                     && pipelineAst.PipelineElements.Count == 1
-                    && pipelineAst.PipelineElements[0].Redirections.Count > 0)
+                    && pipelineAst.PipelineElements [0].Redirections.Count > 0)
                 {
                     message = FormatInvalidBreakpointConditionMessage(condition, "Use '-gt' instead of '>'.");
                     return false;
@@ -274,33 +274,33 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
         private static string ExtractAndScrubParseExceptionMessage(ParseException parseException, string condition)
         {
-            string[] messageLines = parseException.Message.Split('\n');
+            string [] messageLines = parseException.Message.Split('\n');
 
             // Skip first line - it is a location indicator "At line:1 char: 4"
-            for (int i = 1; i < messageLines.Length; i++)
+            for(int i = 1; i < messageLines.Length; i++)
             {
-                string line = messageLines[i];
-                if (line.StartsWith("+"))
+                string line = messageLines [i];
+                if(line.StartsWith("+"))
                 {
                     continue;
                 }
 
-                if (!string.IsNullOrWhiteSpace(line))
+                if(!string.IsNullOrWhiteSpace(line))
                 {
                     // Note '==' and '>" do not generate parse errors
-                    if (line.Contains("'!='"))
+                    if(line.Contains("'!='"))
                     {
                         line += " Use operator '-ne' instead of '!='.";
                     }
-                    else if (line.Contains("'<'") && condition.Contains("<="))
+                    else if(line.Contains("'<'") && condition.Contains("<="))
                     {
                         line += " Use operator '-le' instead of '<='.";
                     }
-                    else if (line.Contains("'<'"))
+                    else if(line.Contains("'<'"))
                     {
                         line += " Use operator '-lt' instead of '<'.";
                     }
-                    else if (condition.Contains(">="))
+                    else if(condition.Contains(">="))
                     {
                         line += " Use operator '-ge' instead of '>='.";
                     }

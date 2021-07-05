@@ -43,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <summary>
         /// Gets the array of fields for which the user must enter values.
         /// </summary>
-        protected FieldDetails[] Fields { get; private set; }
+        protected FieldDetails [] Fields { get; private set; }
 
         #endregion
 
@@ -63,24 +63,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 this.PromptForInputAsync(
                     null,
                     null,
-                    new FieldDetails[] { new FieldDetails("", "", typeof(string), false, "") },
+                    new FieldDetails [] { new FieldDetails("", "", typeof(string), false, "") },
                     cancellationToken);
 
             return
                 innerTask.ContinueWith<string>(
                     task =>
                     {
-                        if (task.IsFaulted)
+                        if(task.IsFaulted)
                         {
                             throw task.Exception;
                         }
-                        else if (task.IsCanceled)
+                        else if(task.IsCanceled)
                         {
                             throw new TaskCanceledException(task);
                         }
 
                         // Return the value of the sole field
-                        return (string)task.Result[""];
+                        return (string)task.Result [""];
                     });
         }
 
@@ -107,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         public async Task<Dictionary<string, object>> PromptForInputAsync(
             string promptCaption,
             string promptMessage,
-            FieldDetails[] fields,
+            FieldDetails [] fields,
             CancellationToken cancellationToken)
         {
             // Cancel the prompt if the caller cancels the task
@@ -122,7 +122,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             _ = await Task.WhenAny(cancelTask.Task, promptTask).ConfigureAwait(false);
 
-            if (this.cancelTask.Task.IsCanceled)
+            if(this.cancelTask.Task.IsCanceled)
             {
                 throw new PipelineStoppedException();
             }
@@ -144,24 +144,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 this.PromptForInputAsync(
                     null,
                     null,
-                    new FieldDetails[] { new FieldDetails("", "", typeof(SecureString), false, "") },
+                    new FieldDetails [] { new FieldDetails("", "", typeof(SecureString), false, "") },
                     cancellationToken);
 
             return
                 innerTask.ContinueWith(
                     task =>
                     {
-                        if (task.IsFaulted)
+                        if(task.IsFaulted)
                         {
                             throw task.Exception;
                         }
-                        else if (task.IsCanceled)
+                        else if(task.IsCanceled)
                         {
                             throw new TaskCanceledException(task);
                         }
 
                         // Return the value of the sole field
-                        return (SecureString)task.Result?[""];
+                        return (SecureString)task.Result? [""];
                     });
         }
 
@@ -238,7 +238,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             this.GetNextField();
 
             // Loop until there are no more prompts to process
-            while (this.currentField != null && !cancellationToken.IsCancellationRequested)
+            while(this.currentField != null && !cancellationToken.IsCancellationRequested)
             {
                 // Show current prompt
                 this.ShowFieldPrompt(this.currentField);
@@ -248,7 +248,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 string responseString = null;
 
                 // Read input depending on field type
-                if (this.currentField.FieldType == typeof(SecureString))
+                if(this.currentField.FieldType == typeof(SecureString))
                 {
                     SecureString secureString = await this.ReadSecureStringAsync(cancellationToken).ConfigureAwait(false);
                     responseValue = secureString;
@@ -268,7 +268,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                                 this.currentField.FieldType,
                                 CultureInfo.CurrentCulture);
                     }
-                    catch (PSInvalidCastException e)
+                    catch(PSInvalidCastException e)
                     {
                         this.ShowErrorMessage(e.InnerException ?? e);
                         continue;
@@ -280,7 +280,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 this.GetNextField();
             }
 
-            if (cancellationToken.IsCancellationRequested)
+            if(cancellationToken.IsCancellationRequested)
             {
                 // Throw a TaskCanceledException to stop the pipeline
                 throw new TaskCanceledException();
@@ -294,14 +294,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             FieldDetails nextField = this.currentField?.GetNextField();
 
-            if (nextField == null)
+            if(nextField == null)
             {
                 this.currentFieldIndex++;
 
                 // Have we shown all the prompts already?
-                if (this.currentFieldIndex < this.Fields.Length)
+                if(this.currentFieldIndex < this.Fields.Length)
                 {
-                    nextField = this.Fields[this.currentFieldIndex];
+                    nextField = this.Fields [this.currentFieldIndex];
                 }
             }
 
@@ -313,7 +313,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             Dictionary<string, object> fieldValues = new Dictionary<string, object>();
 
-            foreach (FieldDetails field in this.Fields)
+            foreach(FieldDetails field in this.Fields)
             {
                 fieldValues.Add(field.OriginalName, field.GetValue(this.Logger));
             }

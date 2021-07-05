@@ -31,10 +31,10 @@ function Get-Sum {
                 text,
                 Version.Parse("5.0"));
 
-            foreach (Token t in scriptFile.ScriptTokens)
+            foreach(Token t in scriptFile.ScriptTokens)
             {
                 List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokensHandler.ConvertToSemanticTokens(t));
-                switch (t.Text)
+                switch(t.Text)
                 {
                     case "function":
                     case "param":
@@ -68,11 +68,11 @@ function Get-Sum {
                 text,
                 Version.Parse("5.0"));
 
-            Token commandToken = scriptFile.ScriptTokens[0];
+            Token commandToken = scriptFile.ScriptTokens [0];
             List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokensHandler.ConvertToSemanticTokens(commandToken));
             Assert.Single(mappedTokens, sToken => SemanticTokenType.Function == sToken.Type);
 
-            Token stringExpandableToken = scriptFile.ScriptTokens[1];
+            Token stringExpandableToken = scriptFile.ScriptTokens [1];
             mappedTokens = new List<SemanticToken>(PsesSemanticTokensHandler.ConvertToSemanticTokens(stringExpandableToken));
             Assert.Collection(mappedTokens,
                 sToken => Assert.Equal(SemanticTokenType.Function, sToken.Type),
@@ -95,10 +95,10 @@ Get-A*A
                 text,
                 Version.Parse("5.0"));
 
-            foreach (Token t in scriptFile.ScriptTokens)
+            foreach(Token t in scriptFile.ScriptTokens)
             {
                 List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokensHandler.ConvertToSemanticTokens(t));
-                switch (t.Text)
+                switch(t.Text)
                 {
                     case "function":
                         Assert.Single(mappedTokens, sToken => SemanticTokenType.Keyword == sToken.Type);
@@ -120,10 +120,10 @@ Get-A*A
                 text,
                 Version.Parse("5.0"));
 
-            foreach (Token t in scriptFile.ScriptTokens)
+            foreach(Token t in scriptFile.ScriptTokens)
             {
                 List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokensHandler.ConvertToSemanticTokens(t));
-                switch (t.Text)
+                switch(t.Text)
                 {
                     case "$Array":
                         Assert.Single(mappedTokens, sToken => SemanticTokenType.Variable == sToken.Type);
@@ -145,14 +145,14 @@ Get-A*A
                 text,
                 Version.Parse("5.0"));
 
-            List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokensHandler.ConvertToSemanticTokens(scriptFile.ScriptTokens[0]));
+            List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokensHandler.ConvertToSemanticTokens(scriptFile.ScriptTokens [0]));
             Assert.Single(mappedTokens, sToken => SemanticTokenType.String == sToken.Type);
         }
 
         [Fact]
         public async Task RecognizeEnum()
         {
-            string text =  @"
+            string text = @"
 enum MyEnum{
     one
     two
@@ -165,10 +165,10 @@ enum MyEnum{
                 text,
                 Version.Parse("5.0"));
 
-            foreach (Token t in scriptFile.ScriptTokens)
+            foreach(Token t in scriptFile.ScriptTokens)
             {
                 List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokensHandler.ConvertToSemanticTokens(t));
-                switch (t.Text)
+                switch(t.Text)
                 {
                     case "enum":
                         Assert.Single(mappedTokens, sToken => SemanticTokenType.Keyword == sToken.Type);

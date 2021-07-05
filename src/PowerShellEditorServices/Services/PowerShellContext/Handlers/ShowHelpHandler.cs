@@ -64,7 +64,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 ";
 
             string helpParams = request.Text;
-            if (string.IsNullOrEmpty(helpParams)) { helpParams = "Get-Help"; }
+            if(string.IsNullOrEmpty(helpParams)) { helpParams = "Get-Help"; }
 
             PSCommand checkHelpPSCommand = new PSCommand()
                 .AddScript(CheckHelpScript, useLocalScope: true)

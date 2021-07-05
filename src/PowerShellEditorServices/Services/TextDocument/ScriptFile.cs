@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     {
         #region Private Fields
 
-        private static readonly string[] s_newlines = new[]
+        private static readonly string [] s_newlines = new []
         {
             "\r\n",
             "\n"
@@ -113,7 +113,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// Gets the array of Tokens representing the parsed script contents.
         /// </summary>
-        public Token[] ScriptTokens
+        public Token [] ScriptTokens
         {
             get;
             private set;
@@ -122,7 +122,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// Gets the array of filepaths dot sourced in this ScriptFile
         /// </summary>
-        public string[] ReferencedFiles
+        public string [] ReferencedFiles
         {
             get;
             private set;
@@ -198,7 +198,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <returns>The lines in the string.</returns>
         internal static List<string> GetLinesInternal(string text)
         {
-            if (text == null)
+            if(text == null)
             {
                 throw new ArgumentNullException(nameof(text));
             }
@@ -232,7 +232,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                 "lineNumber", lineNumber,
                 1, this.FileLines.Count + 1);
 
-            return this.FileLines[lineNumber - 1];
+            return this.FileLines [lineNumber - 1];
         }
 
         /// <summary>
@@ -240,7 +240,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// </summary>
         /// <param name="bufferRange">The buffer range from which lines will be extracted.</param>
         /// <returns>An array of strings from the specified range of the file.</returns>
-        public string[] GetLinesInRange(BufferRange bufferRange)
+        public string [] GetLinesInRange(BufferRange bufferRange)
         {
             this.ValidatePosition(bufferRange.Start);
             this.ValidatePosition(bufferRange.End);
@@ -250,9 +250,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             int startLine = bufferRange.Start.Line,
                 endLine = bufferRange.End.Line;
 
-            for (int line = startLine; line <= endLine; line++)
+            for(int line = startLine; line <= endLine; line++)
             {
-                string currentLine = this.FileLines[line - 1];
+                string currentLine = this.FileLines [line - 1];
                 int startColumn =
                     line == startLine
                     ? bufferRange.Start.Column
@@ -294,17 +294,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         public void ValidatePosition(int line, int column)
         {
             int maxLine = this.FileLines.Count;
-            if (line < 1 || line > maxLine)
+            if(line < 1 || line > maxLine)
             {
                 throw new ArgumentOutOfRangeException($"Position {line}:{column} is outside of the line range of 1 to {maxLine}.");
             }
 
             // The maximum column is either **one past** the length of the string
             // or 1 if the string is empty.
-            string lineString = this.FileLines[line - 1];
+            string lineString = this.FileLines [line - 1];
             int maxColumn = lineString.Length > 0 ? lineString.Length + 1 : 1;
 
-            if (column < 1 || column > maxColumn)
+            if(column < 1 || column > maxColumn)
             {
                 throw new ArgumentOutOfRangeException($"Position {line}:{column} is outside of the column range of 1 to {maxColumn}.");
             }
@@ -317,12 +317,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         public void ApplyChange(FileChange fileChange)
         {
             // Break up the change lines
-            string[] changeLines = fileChange.InsertString.Split('\n');
+            string [] changeLines = fileChange.InsertString.Split('\n');
 
-            if (fileChange.IsReload)
+            if(fileChange.IsReload)
             {
                 this.FileLines.Clear();
-                foreach (var changeLine in changeLines)
+                foreach(var changeLine in changeLines)
                 {
                     this.FileLines.Add(changeLine);
                 }
@@ -332,9 +332,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                 // VSCode sometimes likes to give the change start line as (FileLines.Count + 1).
                 // This used to crash EditorServices, but we now treat it as an append.
                 // See https://github.com/PowerShell/vscode-powershell/issues/1283
-                if (fileChange.Line == this.FileLines.Count + 1)
+                if(fileChange.Line == this.FileLines.Count + 1)
                 {
-                    foreach (string addedLine in changeLines)
+                    foreach(string addedLine in changeLines)
                     {
                         string finalLine = addedLine.TrimEnd('\r');
                         this.FileLines.Add(finalLine);
@@ -342,7 +342,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                 }
                 // Similarly, when lines are deleted from the end of the file,
                 // VSCode likes to give the end line as (FileLines.Count + 1).
-                else if (fileChange.EndLine == this.FileLines.Count + 1 && String.Empty.Equals(fileChange.InsertString))
+                else if(fileChange.EndLine == this.FileLines.Count + 1 && String.Empty.Equals(fileChange.InsertString))
                 {
                     int lineIndex = fileChange.Line - 1;
                     this.FileLines.RemoveRange(lineIndex, this.FileLines.Count - lineIndex);
@@ -355,37 +355,37 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
                     // Get the first fragment of the first line
                     string firstLineFragment =
-                    this.FileLines[fileChange.Line - 1]
+                    this.FileLines [fileChange.Line - 1]
                         .Substring(0, fileChange.Offset - 1);
 
                     // Get the last fragment of the last line
-                    string endLine = this.FileLines[fileChange.EndLine - 1];
+                    string endLine = this.FileLines [fileChange.EndLine - 1];
                     string lastLineFragment =
                     endLine.Substring(
                         fileChange.EndOffset - 1,
-                        (this.FileLines[fileChange.EndLine - 1].Length - fileChange.EndOffset) + 1);
+                        (this.FileLines [fileChange.EndLine - 1].Length - fileChange.EndOffset) + 1);
 
                     // Remove the old lines
-                    for (int i = 0; i <= fileChange.EndLine - fileChange.Line; i++)
+                    for(int i = 0; i <= fileChange.EndLine - fileChange.Line; i++)
                     {
                         this.FileLines.RemoveAt(fileChange.Line - 1);
                     }
 
                     // Build and insert the new lines
                     int currentLineNumber = fileChange.Line;
-                    for (int changeIndex = 0; changeIndex < changeLines.Length; changeIndex++)
+                    for(int changeIndex = 0; changeIndex < changeLines.Length; changeIndex++)
                     {
                         // Since we split the lines above using \n, make sure to
                         // trim the ending \r's off as well.
-                        string finalLine = changeLines[changeIndex].TrimEnd('\r');
+                        string finalLine = changeLines [changeIndex].TrimEnd('\r');
 
                         // Should we add first or last line fragments?
-                        if (changeIndex == 0)
+                        if(changeIndex == 0)
                         {
                             // Append the first line fragment
                             finalLine = firstLineFragment + finalLine;
                         }
-                        if (changeIndex == changeLines.Length - 1)
+                        if(changeIndex == changeLines.Length - 1)
                         {
                             // Append the last line fragment
                             finalLine = finalLine + lastLineFragment;
@@ -415,9 +415,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
             int offset = 0;
 
-            for (int i = 0; i < lineNumber; i++)
+            for(int i = 0; i < lineNumber; i++)
             {
-                if (i == lineNumber - 1)
+                if(i == lineNumber - 1)
                 {
                     // Subtract 1 to account for 1-based column numbering
                     offset += columnNumber - 1;
@@ -425,7 +425,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                 else
                 {
                     // Add an offset to account for the current platform's newline characters
-                    offset += this.FileLines[i].Length + Environment.NewLine.Length;
+                    offset += this.FileLines [i].Length + Environment.NewLine.Length;
                 }
             }
 
@@ -450,7 +450,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
             this.ValidatePosition(newLine, newColumn);
 
-            string scriptLine = this.FileLines[newLine - 1];
+            string scriptLine = this.FileLines [newLine - 1];
             newColumn = Math.Min(scriptLine.Length + 1, newColumn);
 
             return new FilePosition(this, newLine, newColumn);
@@ -488,14 +488,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             BufferPosition endPosition = startPosition;
 
             int line = 0;
-            while (line < this.FileLines.Count)
+            while(line < this.FileLines.Count)
             {
-                if (searchedOffset <= currentOffset + this.FileLines[line].Length)
+                if(searchedOffset <= currentOffset + this.FileLines [line].Length)
                 {
                     int column = searchedOffset - currentOffset;
 
                     // Have we already found the start position?
-                    if (foundStart)
+                    if(foundStart)
                     {
                         // Assign the end position and end the search
                         endPosition = new BufferPosition(line + 1, column + 1);
@@ -506,7 +506,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                         startPosition = new BufferPosition(line + 1, column + 1);
 
                         // Do we only need to find the start position?
-                        if (startOffset == endOffset)
+                        if(startOffset == endOffset)
                         {
                             endPosition = startPosition;
                             break;
@@ -524,7 +524,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                 }
 
                 // Increase the current offset and include newline length
-                currentOffset += this.FileLines[line].Length + Environment.NewLine.Length;
+                currentOffset += this.FileLines [line].Length + Environment.NewLine.Length;
                 line++;
             }
 
@@ -551,18 +551,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// </summary>
         private void ParseFileContents()
         {
-            ParseError[] parseErrors = null;
+            ParseError [] parseErrors = null;
 
             // First, get the updated file range
             int lineCount = this.FileLines.Count;
-            if (lineCount > 0)
+            if(lineCount > 0)
             {
                 this.FileRange =
                     new BufferRange(
                         new BufferPosition(1, 1),
                         new BufferPosition(
                             lineCount + 1,
-                            this.FileLines[lineCount - 1].Length + 1));
+                            this.FileLines [lineCount - 1].Length + 1));
             }
             else
             {
@@ -571,10 +571,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
             try
             {
-                Token[] scriptTokens;
+                Token [] scriptTokens;
 
                 // This overload appeared with Windows 10 Update 1
-                if (this.powerShellVersion.Major >= 6 ||
+                if(this.powerShellVersion.Major >= 6 ||
                     (this.powerShellVersion.Major == 5 && this.powerShellVersion.Build >= 10586))
                 {
                     // Include the file path so that module relative
@@ -597,7 +597,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
                 this.ScriptTokens = scriptTokens;
             }
-            catch (RuntimeException ex)
+            catch(RuntimeException ex)
             {
                 var parseError =
                     new ParseError(
@@ -605,7 +605,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                         ex.ErrorRecord.FullyQualifiedErrorId,
                         ex.Message);
 
-                parseErrors = new[] { parseError };
+                parseErrors = new [] { parseError };
                 this.ScriptTokens = Array.Empty<Token>();
                 this.ScriptAst = null;
             }
@@ -620,7 +620,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             // Discussed in https://github.com/PowerShell/PowerShellEditorServices/pull/815.
             // Rather than working hard to enable things for untitled files like a phantom directory,
             // users should save the file.
-            if (IsInMemory)
+            if(IsInMemory)
             {
                 // Need to initialize the ReferencedFiles property to an empty array.
                 this.ReferencedFiles = Array.Empty<string>();

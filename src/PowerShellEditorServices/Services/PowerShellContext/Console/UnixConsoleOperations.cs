@@ -47,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             // To work around this we wait for a key to be pressed before actually calling Console.ReadKey.
             // However, any pressed keys during this time will be echoed to the console. To get around
             // this we use the UnixConsoleEcho package to disable echo prior to waiting.
-            if (VersionUtils.IsPS6)
+            if(VersionUtils.IsPS6)
             {
                 InputEcho.Disable();
             }
@@ -57,11 +57,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 // The WaitForKeyAvailable delegate switches between a long delay between waits and
                 // a short timeout depending on how recently a key has been pressed. This allows us
                 // to let the CPU enter low power mode without compromising responsiveness.
-                while (!WaitForKeyAvailable(cancellationToken));
+                while(!WaitForKeyAvailable(cancellationToken)) ;
             }
             finally
             {
-                if (VersionUtils.IsPS6)
+                if(VersionUtils.IsPS6)
                 {
                     InputEcho.Disable();
                 }
@@ -87,18 +87,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             // I tried to replace this library with a call to `stty -echo`, but unfortunately
             // the library also sets up allowing backspace to trigger `Console.KeyAvailable`.
-            if (VersionUtils.IsPS6)
+            if(VersionUtils.IsPS6)
             {
                 InputEcho.Disable();
             }
 
             try
             {
-                while (!await WaitForKeyAvailableAsync(cancellationToken).ConfigureAwait(false)) ;
+                while(!await WaitForKeyAvailableAsync(cancellationToken).ConfigureAwait(false)) ;
             }
             finally
             {
-                if (VersionUtils.IsPS6)
+                if(VersionUtils.IsPS6)
                 {
                     InputEcho.Enable();
                 }
@@ -192,7 +192,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             // Wait for a key to be buffered (in other words, wait for Console.KeyAvailable to become
             // true) with a long delay between checks.
-            while (!IsKeyAvailable(cancellationToken))
+            while(!IsKeyAvailable(cancellationToken))
             {
                 s_waitHandle.Wait(LongWaitForKeySleepTime, cancellationToken);
             }
@@ -205,7 +205,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private async Task<bool> LongWaitForKeyAsync(CancellationToken cancellationToken)
         {
-            while (!await IsKeyAvailableAsync(cancellationToken).ConfigureAwait(false))
+            while(!await IsKeyAvailableAsync(cancellationToken).ConfigureAwait(false))
             {
                 await Task.Delay(LongWaitForKeySleepTime, cancellationToken).ConfigureAwait(false);
             }
@@ -217,7 +217,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         private bool ShortWaitForKey(CancellationToken cancellationToken)
         {
             // Check frequently for a new key to be buffered.
-            if (SpinUntilKeyAvailable(ShortWaitForKeyTimeout, cancellationToken))
+            if(SpinUntilKeyAvailable(ShortWaitForKeyTimeout, cancellationToken))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 return true;
@@ -232,7 +232,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private async Task<bool> ShortWaitForKeyAsync(CancellationToken cancellationToken)
         {
-            if (await SpinUntilKeyAvailableAsync(ShortWaitForKeyTimeout, cancellationToken).ConfigureAwait(false))
+            if(await SpinUntilKeyAvailableAsync(ShortWaitForKeyTimeout, cancellationToken).ConfigureAwait(false))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 return true;

@@ -18,14 +18,14 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             var ctor = typeof(Command).GetConstructor(
                 BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
                 binder: null,
-                new[] { typeof(CommandInfo) },
+                new [] { typeof(CommandInfo) },
                 modifiers: null);
 
             ParameterExpression commandInfo = Expression.Parameter(typeof(CommandInfo), nameof(commandInfo));
 
             s_commandCtor = Expression.Lambda<Func<CommandInfo, Command>>(
                 Expression.New(ctor, commandInfo),
-                new[] { commandInfo })
+                new [] { commandInfo })
                 .Compile();
         }
 

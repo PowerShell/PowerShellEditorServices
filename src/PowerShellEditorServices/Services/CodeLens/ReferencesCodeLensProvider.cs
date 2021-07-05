@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
     /// </summary>
     internal class ReferencesCodeLensProvider : ICodeLensProvider
     {
-        private static readonly Location[] s_emptyLocationArray = Array.Empty<Location>();
+        private static readonly Location [] s_emptyLocationArray = Array.Empty<Location>();
 
         /// <summary>
         /// The document symbol provider to supply symbols to generate the code lenses.
@@ -53,12 +53,12 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// </summary>
         /// <param name="scriptFile">The PowerShell script file to get code lenses for.</param>
         /// <returns>An array of CodeLenses describing all functions in the given script file.</returns>
-        public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile)
+        public CodeLens [] ProvideCodeLenses(ScriptFile scriptFile)
         {
             var acc = new List<CodeLens>();
-            foreach (SymbolReference sym in _symbolProvider.ProvideDocumentSymbols(scriptFile))
+            foreach(SymbolReference sym in _symbolProvider.ProvideDocumentSymbols(scriptFile))
             {
-                if (sym.SymbolType == SymbolType.Function)
+                if(sym.SymbolType == SymbolType.Function)
                 {
                     acc.Add(new CodeLens
                     {
@@ -83,7 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         public CodeLens ResolveCodeLens(CodeLens codeLens, ScriptFile scriptFile)
         {
 
-            ScriptFile[] references = _workspaceService.ExpandScriptReferences(
+            ScriptFile [] references = _workspaceService.ExpandScriptReferences(
                 scriptFile);
 
             SymbolReference foundSymbol = _symbolsService.FindFunctionDefinitionAtLocation(
@@ -96,24 +96,24 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                 references,
                 _workspaceService);
 
-            Location[] referenceLocations;
-            if (referencesResult == null)
+            Location [] referenceLocations;
+            if(referencesResult == null)
             {
                 referenceLocations = s_emptyLocationArray;
             }
             else
             {
                 var acc = new List<Location>();
-                foreach (SymbolReference foundReference in referencesResult)
+                foreach(SymbolReference foundReference in referencesResult)
                 {
-                    if (IsReferenceDefinition(foundSymbol, foundReference))
+                    if(IsReferenceDefinition(foundSymbol, foundReference))
                     {
                         continue;
                     }
 
                     DocumentUri uri = DocumentUri.From(foundReference.FilePath);
                     // For any vscode-notebook-cell, we need to ignore the backing file on disk.
-                    if (uri.Scheme == "file" &&
+                    if(uri.Scheme == "file" &&
                         scriptFile.DocumentUri.Scheme == "vscode-notebook-cell" &&
                         uri.Path == scriptFile.DocumentUri.Path)
                     {
@@ -137,7 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                 {
                     Name = "editor.action.showReferences",
                     Title = GetReferenceCountHeader(referenceLocations.Length),
-                    Arguments = JArray.FromObject(new object[]
+                    Arguments = JArray.FromObject(new object []
                     {
                         scriptFile.DocumentUri,
                         codeLens.Range.Start,
@@ -177,7 +177,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// <returns>The header string for the reference code lens.</returns>
         private static string GetReferenceCountHeader(int referenceCount)
         {
-            if (referenceCount == 1)
+            if(referenceCount == 1)
             {
                 return "1 reference";
             }

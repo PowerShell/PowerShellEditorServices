@@ -35,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 string updatedValue =
                     await _debugService.SetVariableAsync(
-                        (int) request.VariablesReference,
+                        (int)request.VariablesReference,
                         request.Name,
                         request.Value).ConfigureAwait(false);
 
@@ -45,15 +45,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 };
 
             }
-                catch (Exception ex) when(ex is ArgumentTransformationMetadataException ||
-                                           ex is InvalidPowerShellExpressionException ||
-                                           ex is SessionStateUnauthorizedAccessException)
+            catch(Exception ex) when(ex is ArgumentTransformationMetadataException ||
+                                       ex is InvalidPowerShellExpressionException ||
+                                       ex is SessionStateUnauthorizedAccessException)
             {
                 // Catch common, innocuous errors caused by the user supplying a value that can't be converted or the variable is not settable.
                 _logger.LogTrace($"Failed to set variable: {ex.Message}");
                 throw new RpcErrorException(0, ex.Message);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 _logger.LogError($"Unexpected error setting variable: {ex.Message}");
                 string msg =

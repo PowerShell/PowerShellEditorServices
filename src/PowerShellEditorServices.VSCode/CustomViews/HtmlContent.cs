@@ -18,12 +18,12 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         /// Gets or sets the array of JavaScript file paths
         /// to be used in the HTML content.
         /// </summary>
-        public string[] JavaScriptPaths { get; set; }
+        public string [] JavaScriptPaths { get; set; }
 
         /// <summary>
         /// Gets or sets the array of stylesheet (CSS) file
         /// paths to be used in the HTML content.
         /// </summary>
-        public string[] StyleSheetPaths { get; set; }
+        public string [] StyleSheetPaths { get; set; }
     }
 }

@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>A Task that can be awaited until the check is complete.  The result will be true if Plaster is installed.</returns>
         public async Task<bool> ImportPlasterIfInstalledAsync()
         {
-            if (!this.isPlasterInstalled.HasValue)
+            if(!this.isPlasterInstalled.HasValue)
             {
                 PSCommand psCommand = new PSCommand();
 
@@ -86,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.logger.LogTrace($"Plaster is {installedQualifier}installed!");
 
                 // Attempt to load plaster
-                if (this.isPlasterInstalled.Value && this.isPlasterLoaded == false)
+                if(this.isPlasterInstalled.Value && this.isPlasterLoaded == false)
                 {
                     this.logger.LogTrace("Loading Plaster...");
 
@@ -121,10 +121,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// included templates.
         /// </param>
         /// <returns>A Task which can be awaited for the TemplateDetails list to be returned.</returns>
-        public async Task<TemplateDetails[]> GetAvailableTemplatesAsync(
+        public async Task<TemplateDetails []> GetAvailableTemplatesAsync(
             bool includeInstalledModules)
         {
-            if (!this.isPlasterLoaded)
+            if(!this.isPlasterLoaded)
             {
                 throw new InvalidOperationException("Plaster is not loaded, templates cannot be accessed.");
             }
@@ -132,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             PSCommand psCommand = new PSCommand();
             psCommand.AddCommand("Get-PlasterTemplate");
 
-            if (includeInstalledModules)
+            if(includeInstalledModules)
             {
                 psCommand.AddParameter("IncludeModules");
             }
@@ -192,13 +192,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             return new TemplateDetails
             {
-                Title = psObject.Members["Title"].Value as string,
-                Author = psObject.Members["Author"].Value as string,
-                Version = psObject.Members["Version"].Value.ToString(),
-                Description = psObject.Members["Description"].Value as string,
-                TemplatePath = psObject.Members["TemplatePath"].Value as string,
+                Title = psObject.Members ["Title"].Value as string,
+                Author = psObject.Members ["Author"].Value as string,
+                Version = psObject.Members ["Version"].Value.ToString(),
+                Description = psObject.Members ["Description"].Value as string,
+                TemplatePath = psObject.Members ["TemplatePath"].Value as string,
                 Tags =
-                    psObject.Members["Tags"].Value is object[] tags
+                    psObject.Members ["Tags"].Value is object [] tags
                     ? string.Join(", ", tags)
                     : string.Empty
             };

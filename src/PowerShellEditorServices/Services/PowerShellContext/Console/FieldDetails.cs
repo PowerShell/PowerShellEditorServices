@@ -88,7 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             this.IsMandatory = isMandatory;
             this.DefaultValue = defaultValue;
 
-            if (fieldType.GetTypeInfo().IsGenericType)
+            if(fieldType.GetTypeInfo().IsGenericType)
             {
                 throw new PSArgumentException(
                     "Generic types are not supported for input fields at this time.");
@@ -108,7 +108,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </param>
         public virtual void SetValue(object fieldValue, bool hasValue)
         {
-            if (hasValue)
+            if(hasValue)
             {
                 this.fieldValue = fieldValue;
             }
@@ -123,9 +123,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             object fieldValue = this.OnGetValue();
 
-            if (fieldValue == null)
+            if(fieldValue == null)
             {
-                if (!this.IsMandatory)
+                if(!this.IsMandatory)
                 {
                     fieldValue = this.DefaultValue;
                 }
@@ -177,7 +177,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     fieldDescription.ParameterAssemblyFullName,
                     logger);
 
-            if (typeof(IList).GetTypeInfo().IsAssignableFrom(fieldType.GetTypeInfo()))
+            if(typeof(IList).GetTypeInfo().IsAssignableFrom(fieldType.GetTypeInfo()))
             {
                 return new CollectionFieldDetails(
                     fieldDescription.Name,
@@ -186,7 +186,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     fieldDescription.IsMandatory,
                     fieldDescription.DefaultValue);
             }
-            else if (typeof(PSCredential) == fieldType)
+            else if(typeof(PSCredential) == fieldType)
             {
                 return new CredentialFieldDetails(
                     fieldDescription.Name,
@@ -212,9 +212,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             Type fieldType = typeof(string);
 
-            if (!string.IsNullOrEmpty(assemblyFullName))
+            if(!string.IsNullOrEmpty(assemblyFullName))
             {
-                if (!LanguagePrimitives.TryConvertTo<Type>(assemblyFullName, out fieldType))
+                if(!LanguagePrimitives.TryConvertTo<Type>(assemblyFullName, out fieldType))
                 {
                     logger.LogWarning(
                         string.Format(

@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
     internal class WorkspaceFileSystemWrapperFactory
     {
         private readonly DirectoryInfoBase _rootDirectory;
-        private readonly string[] _allowedExtensions;
+        private readonly string [] _allowedExtensions;
         private readonly bool _ignoreReparsePoints;
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
         /// <param name="allowedExtensions">An array of file extensions that will be visible from the factory. For example [".ps1", ".psm1"]</param>
         /// <param name="ignoreReparsePoints">Whether objects which are Reparse Points should be ignored. https://docs.microsoft.com/en-us/windows/desktop/fileio/reparse-points</param>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
-        public WorkspaceFileSystemWrapperFactory(String rootPath, int recursionDepthLimit, string[] allowedExtensions, bool ignoreReparsePoints, ILogger logger)
+        public WorkspaceFileSystemWrapperFactory(String rootPath, int recursionDepthLimit, string [] allowedExtensions, bool ignoreReparsePoints, ILogger logger)
         {
             MaxRecursionDepth = recursionDepthLimit;
             _rootDirectory = new WorkspaceFileSystemDirectoryWrapper(this, new DirectoryInfo(rootPath), 0);
@@ -77,12 +77,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
         internal IEnumerable<FileSystemInfo> SafeEnumerateFileSystemInfos(DirectoryInfo dirInfo)
         {
             // Find the subdirectories
-            string[] subDirs;
+            string [] subDirs;
             try
             {
                 subDirs = Directory.GetDirectories(dirInfo.FullName, "*", SearchOption.TopDirectoryOnly);
             }
-            catch (DirectoryNotFoundException e)
+            catch(DirectoryNotFoundException e)
             {
                 Logger.LogHandledException(
                     $"Could not enumerate directories in the path '{dirInfo.FullName}' due to it being an invalid path",
@@ -90,7 +90,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
 
                 yield break;
             }
-            catch (PathTooLongException e)
+            catch(PathTooLongException e)
             {
                 Logger.LogHandledException(
                     $"Could not enumerate directories in the path '{dirInfo.FullName}' due to the path being too long",
@@ -98,7 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
 
                 yield break;
             }
-            catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
+            catch(Exception e) when(e is SecurityException || e is UnauthorizedAccessException)
             {
                 Logger.LogHandledException(
                     $"Could not enumerate directories in the path '{dirInfo.FullName}' due to the path not being accessible",
@@ -106,7 +106,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
 
                 yield break;
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 Logger.LogHandledException(
                     $"Could not enumerate directories in the path '{dirInfo.FullName}' due to an exception",
@@ -114,20 +114,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
 
                 yield break;
             }
-            foreach (string dirPath in subDirs)
+            foreach(string dirPath in subDirs)
             {
                 var subDirInfo = new DirectoryInfo(dirPath);
-                if (_ignoreReparsePoints && (subDirInfo.Attributes & FileAttributes.ReparsePoint) != 0) { continue; }
+                if(_ignoreReparsePoints && (subDirInfo.Attributes & FileAttributes.ReparsePoint) != 0) { continue; }
                 yield return subDirInfo;
             }
 
             // Find the files
-            string[] filePaths;
+            string [] filePaths;
             try
             {
                 filePaths = Directory.GetFiles(dirInfo.FullName, "*", SearchOption.TopDirectoryOnly);
             }
-            catch (DirectoryNotFoundException e)
+            catch(DirectoryNotFoundException e)
             {
                 Logger.LogHandledException(
                     $"Could not enumerate files in the path '{dirInfo.FullName}' due to it being an invalid path",
@@ -135,7 +135,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
 
                 yield break;
             }
-            catch (PathTooLongException e)
+            catch(PathTooLongException e)
             {
                 Logger.LogHandledException(
                     $"Could not enumerate files in the path '{dirInfo.FullName}' due to the path being too long",
@@ -143,7 +143,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
 
                 yield break;
             }
-            catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
+            catch(Exception e) when(e is SecurityException || e is UnauthorizedAccessException)
             {
                 Logger.LogHandledException(
                     $"Could not enumerate files in the path '{dirInfo.FullName}' due to the path not being accessible",
@@ -151,7 +151,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
 
                 yield break;
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 Logger.LogHandledException(
                     $"Could not enumerate files in the path '{dirInfo.FullName}' due to an exception",
@@ -159,14 +159,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
 
                 yield break;
             }
-            foreach (string filePath in filePaths)
+            foreach(string filePath in filePaths)
             {
                 var fileInfo = new FileInfo(filePath);
-                if (_allowedExtensions == null || _allowedExtensions.Length == 0) { yield return fileInfo; continue; }
-                if (_ignoreReparsePoints && (fileInfo.Attributes & FileAttributes.ReparsePoint) != 0) { continue; }
-                foreach (string extension in _allowedExtensions)
+                if(_allowedExtensions == null || _allowedExtensions.Length == 0) { yield return fileInfo; continue; }
+                if(_ignoreReparsePoints && (fileInfo.Attributes & FileAttributes.ReparsePoint) != 0) { continue; }
+                foreach(string extension in _allowedExtensions)
                 {
-                    if (fileInfo.Extension == extension) { yield return fileInfo; break; }
+                    if(fileInfo.Extension == extension) { yield return fileInfo; break; }
                 }
             }
         }
@@ -198,10 +198,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
         /// <inheritdoc />
         public override IEnumerable<FileSystemInfoBase> EnumerateFileSystemInfos()
         {
-            if (!_concreteDirectoryInfo.Exists || _depth >= _fsWrapperFactory.MaxRecursionDepth) { yield break; }
-            foreach (FileSystemInfo fileSystemInfo in _fsWrapperFactory.SafeEnumerateFileSystemInfos(_concreteDirectoryInfo))
+            if(!_concreteDirectoryInfo.Exists || _depth >= _fsWrapperFactory.MaxRecursionDepth) { yield break; }
+            foreach(FileSystemInfo fileSystemInfo in _fsWrapperFactory.SafeEnumerateFileSystemInfos(_concreteDirectoryInfo))
             {
-                switch (fileSystemInfo)
+                switch(fileSystemInfo)
                 {
                     case DirectoryInfo dirInfo:
                         yield return _fsWrapperFactory.CreateDirectoryInfoWrapper(dirInfo, _depth + 1);
@@ -228,12 +228,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
         {
             bool isParentPath = string.Equals(name, "..", StringComparison.Ordinal);
 
-            if (isParentPath) { return ParentDirectory; }
+            if(isParentPath) { return ParentDirectory; }
 
             var dirs = _concreteDirectoryInfo.GetDirectories(name);
 
-            if (dirs.Length == 1) { return _fsWrapperFactory.CreateDirectoryInfoWrapper(dirs[0], _depth + 1); }
-            if (dirs.Length == 0) { return null; }
+            if(dirs.Length == 1) { return _fsWrapperFactory.CreateDirectoryInfoWrapper(dirs [0], _depth + 1); }
+            if(dirs.Length == 0) { return null; }
             // This shouldn't happen. The parameter name isn't supposed to contain wild card.
             throw new InvalidOperationException(
                 string.Format(
@@ -262,25 +262,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
             {
                 return _fsWrapperFactory.CreateDirectoryInfoWrapper(_concreteDirectoryInfo.Parent, _depth - 1);
             }
-            catch (DirectoryNotFoundException e)
+            catch(DirectoryNotFoundException e)
             {
                 _fsWrapperFactory.Logger.LogHandledException(
                     $"Could not get parent of '{_concreteDirectoryInfo.FullName}' due to it being an invalid path",
                     e);
             }
-            catch (PathTooLongException e)
+            catch(PathTooLongException e)
             {
                 _fsWrapperFactory.Logger.LogHandledException(
                     $"Could not get parent of '{_concreteDirectoryInfo.FullName}' due to the path being too long",
                     e);
             }
-            catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
+            catch(Exception e) when(e is SecurityException || e is UnauthorizedAccessException)
             {
                 _fsWrapperFactory.Logger.LogHandledException(
                     $"Could not get parent of '{_concreteDirectoryInfo.FullName}' due to the path not being accessible",
                     e);
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 _fsWrapperFactory.Logger.LogHandledException(
                     $"Could not get parent of '{_concreteDirectoryInfo.FullName}' due to an exception",
@@ -339,25 +339,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
             {
                 return _fsWrapperFactory.CreateDirectoryInfoWrapper(_concreteFileInfo.Directory, _depth);
             }
-            catch (DirectoryNotFoundException e)
+            catch(DirectoryNotFoundException e)
             {
                 _fsWrapperFactory.Logger.LogHandledException(
                     $"Could not get parent of '{_concreteFileInfo.FullName}' due to it being an invalid path",
                     e);
             }
-            catch (PathTooLongException e)
+            catch(PathTooLongException e)
             {
                 _fsWrapperFactory.Logger.LogHandledException(
                     $"Could not get parent of '{_concreteFileInfo.FullName}' due to the path being too long",
                     e);
             }
-            catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
+            catch(Exception e) when(e is SecurityException || e is UnauthorizedAccessException)
             {
                 _fsWrapperFactory.Logger.LogHandledException(
                     $"Could not get parent of '{_concreteFileInfo.FullName}' due to the path not being accessible",
                     e);
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 _fsWrapperFactory.Logger.LogHandledException(
                     $"Could not get parent of '{_concreteFileInfo.FullName}' due to an exception",

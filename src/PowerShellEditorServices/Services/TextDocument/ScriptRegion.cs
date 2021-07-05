@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             {
                 scriptExtentText = scriptExtent.Text;
             }
-            catch (ArgumentOutOfRangeException)
+            catch(ArgumentOutOfRangeException)
             {
                 scriptExtentText = string.Empty;
             }

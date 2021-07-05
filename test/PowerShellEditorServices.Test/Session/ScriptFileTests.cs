@@ -180,13 +180,13 @@ namespace PSLanguageService.Test
         public void FindsDotSourcedFiles()
         {
             string exampleScriptContents = TestUtilities.PlatformNormalize(
-                ". ./athing.ps1\n"+
-                ". ./somefile.ps1\n"+
-                ". ./somefile.ps1\n"+
-                "Do-Stuff $uri\n"+
+                ". ./athing.ps1\n" +
+                ". ./somefile.ps1\n" +
+                ". ./somefile.ps1\n" +
+                "Do-Stuff $uri\n" +
                 ". simpleps.ps1");
 
-            using (StringReader stringReader = new StringReader(exampleScriptContents))
+            using(StringReader stringReader = new StringReader(exampleScriptContents))
             {
                 ScriptFile scriptFile =
                     new ScriptFile(
@@ -196,8 +196,8 @@ namespace PSLanguageService.Test
                         PowerShellVersion);
 
                 Assert.Equal(3, scriptFile.ReferencedFiles.Length);
-                System.Console.Write("a" + scriptFile.ReferencedFiles[0]);
-                Assert.Equal(TestUtilities.NormalizePath("./athing.ps1"), scriptFile.ReferencedFiles[0]);
+                System.Console.Write("a" + scriptFile.ReferencedFiles [0]);
+                Assert.Equal(TestUtilities.NormalizePath("./athing.ps1"), scriptFile.ReferencedFiles [0]);
             }
         }
 
@@ -242,7 +242,7 @@ namespace PSLanguageService.Test
 
         internal static ScriptFile CreateScriptFile(string initialString)
         {
-            using (StringReader stringReader = new StringReader(initialString))
+            using(StringReader stringReader = new StringReader(initialString))
             {
                 // Create an in-memory file from the StringReader
                 ScriptFile fileToChange =
@@ -278,11 +278,11 @@ namespace PSLanguageService.Test
         private static readonly string TestString_TrailingNewline = TestUtilities.NormalizeNewlines(
             TestString_NoTrailingNewline + "\n");
 
-        private static readonly string[] s_newLines = new string[] { Environment.NewLine };
+        private static readonly string [] s_newLines = new string [] { Environment.NewLine };
 
-        private static readonly string[] s_testStringLines_noTrailingNewline = TestString_NoTrailingNewline.Split(s_newLines, StringSplitOptions.None);
+        private static readonly string [] s_testStringLines_noTrailingNewline = TestString_NoTrailingNewline.Split(s_newLines, StringSplitOptions.None);
 
-        private static readonly string[] s_testStringLines_trailingNewline = TestString_TrailingNewline.Split(s_newLines, StringSplitOptions.None);
+        private static readonly string [] s_testStringLines_trailingNewline = TestString_TrailingNewline.Split(s_newLines, StringSplitOptions.None);
 
         private ScriptFile _scriptFile_trailingNewline;
 
@@ -301,19 +301,19 @@ namespace PSLanguageService.Test
         [Fact]
         public void CanGetWholeLine()
         {
-            string[] lines =
+            string [] lines =
                 _scriptFile_noTrailingNewline.GetLinesInRange(
                     new BufferRange(5, 1, 5, 10));
 
             Assert.Single(lines);
-            Assert.Equal("Line Five", lines[0]);
+            Assert.Equal("Line Five", lines [0]);
         }
 
         [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanGetMultipleWholeLines()
         {
-            string[] lines =
+            string [] lines =
                 _scriptFile_noTrailingNewline.GetLinesInRange(
                     new BufferRange(2, 1, 4, 10));
 
@@ -324,38 +324,38 @@ namespace PSLanguageService.Test
         [Fact]
         public void CanGetSubstringInSingleLine()
         {
-            string[] lines =
+            string [] lines =
                 _scriptFile_noTrailingNewline.GetLinesInRange(
                     new BufferRange(4, 3, 4, 8));
 
             Assert.Single(lines);
-            Assert.Equal("ne Fo", lines[0]);
+            Assert.Equal("ne Fo", lines [0]);
         }
 
         [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanGetEmptySubstringRange()
         {
-            string[] lines =
+            string [] lines =
                 _scriptFile_noTrailingNewline.GetLinesInRange(
                     new BufferRange(4, 3, 4, 3));
 
             Assert.Single(lines);
-            Assert.Equal("", lines[0]);
+            Assert.Equal("", lines [0]);
         }
 
         [Trait("Category", "ScriptFile")]
         [Fact]
         public void CanGetSubstringInMultipleLines()
         {
-            string[] expectedLines = new string[]
+            string [] expectedLines = new string []
             {
                 "Two",
                 "Line Three",
                 "Line Fou"
             };
 
-            string[] lines =
+            string [] lines =
                 _scriptFile_noTrailingNewline.GetLinesInRange(
                     new BufferRange(2, 6, 4, 9));
 
@@ -366,14 +366,14 @@ namespace PSLanguageService.Test
         [Fact]
         public void CanGetRangeAtLineBoundaries()
         {
-            string[] expectedLines = new string[]
+            string [] expectedLines = new string []
             {
                 "",
                 "Line Three",
                 ""
             };
 
-            string[] lines =
+            string [] lines =
                 _scriptFile_noTrailingNewline.GetLinesInRange(
                     new BufferRange(2, 9, 4, 1));
 
@@ -408,7 +408,7 @@ namespace PSLanguageService.Test
         {
             var emptyFile = ScriptFileChangeTests.CreateScriptFile(string.Empty);
             Assert.Single(emptyFile.FileLines);
-            Assert.Equal(string.Empty, emptyFile.FileLines[0]);
+            Assert.Equal(string.Empty, emptyFile.FileLines [0]);
         }
 
         [Trait("Category", "ScriptFile")]
@@ -417,7 +417,7 @@ namespace PSLanguageService.Test
         {
             var spaceFile = ScriptFileChangeTests.CreateScriptFile(" ");
             Assert.Single(spaceFile.FileLines);
-            Assert.Equal(" ", spaceFile.FileLines[0]);
+            Assert.Equal(" ", spaceFile.FileLines [0]);
         }
     }
 
@@ -596,7 +596,7 @@ First line
     'foo'
 }";
 
-            using (StringReader stringReader = new StringReader(script))
+            using(StringReader stringReader = new StringReader(script))
             {
                 // Create an in-memory file from the StringReader
                 var scriptFile = new ScriptFile(DocumentUri.From(path), stringReader, PowerShellVersion);
@@ -620,7 +620,7 @@ First line
             ScriptFile scriptFile;
             var emptyStringReader = new StringReader("");
 
-            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            if(Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
                 path = @"C:\Users\AmosBurton\projects\Rocinate\ProtoMolecule.ps1";
                 scriptFile = new ScriptFile(DocumentUri.FromFileSystemPath(path), emptyStringReader, PowerShellVersion);

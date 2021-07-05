@@ -57,24 +57,24 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _workspaceService = workspaceService;
 
             _codeLensProviders = new ConcurrentDictionary<string, ICodeLensProvider>();
-            var codeLensProviders = new ICodeLensProvider[]
+            var codeLensProviders = new ICodeLensProvider []
             {
                 new ReferencesCodeLensProvider(_workspaceService, this),
                 new PesterCodeLensProvider(configurationService),
             };
-            foreach (ICodeLensProvider codeLensProvider in codeLensProviders)
+            foreach(ICodeLensProvider codeLensProvider in codeLensProviders)
             {
                 _codeLensProviders.TryAdd(codeLensProvider.ProviderId, codeLensProvider);
             }
 
             _documentSymbolProviders = new ConcurrentDictionary<string, IDocumentSymbolProvider>();
-            var documentSymbolProviders = new IDocumentSymbolProvider[]
+            var documentSymbolProviders = new IDocumentSymbolProvider []
             {
                 new ScriptDocumentSymbolProvider(),
                 new PsdDocumentSymbolProvider(),
                 new PesterDocumentSymbolProvider(),
             };
-            foreach (IDocumentSymbolProvider documentSymbolProvider in documentSymbolProviders)
+            foreach(IDocumentSymbolProvider documentSymbolProvider in documentSymbolProviders)
             {
                 _documentSymbolProviders.TryAdd(documentSymbolProvider.ProviderId, documentSymbolProvider);
             }
@@ -122,9 +122,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             Validate.IsNotNull(nameof(scriptFile), scriptFile);
 
             var foundOccurrences = new List<SymbolReference>();
-            foreach (IDocumentSymbolProvider symbolProvider in GetDocumentSymbolProviders())
+            foreach(IDocumentSymbolProvider symbolProvider in GetDocumentSymbolProviders())
             {
-                foreach (SymbolReference reference in symbolProvider.ProvideDocumentSymbols(scriptFile))
+                foreach(SymbolReference reference in symbolProvider.ProvideDocumentSymbols(scriptFile))
                 {
                     reference.SourceLine = scriptFile.GetLine(reference.ScriptRegion.StartLineNumber);
                     reference.FilePath = scriptFile.FilePath;
@@ -155,7 +155,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     lineNumber,
                     columnNumber);
 
-            if (symbolReference != null)
+            if(symbolReference != null)
             {
                 symbolReference.FilePath = scriptFile.FilePath;
             }
@@ -172,10 +172,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>FindReferencesResult</returns>
         public List<SymbolReference> FindReferencesOfSymbol(
             SymbolReference foundSymbol,
-            ScriptFile[] referencedFiles,
+            ScriptFile [] referencedFiles,
             WorkspaceService workspace)
         {
-            if (foundSymbol == null)
+            if(foundSymbol == null)
             {
                 return null;
             }
@@ -188,42 +188,42 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 ? new OrderedDictionary()
                 : new OrderedDictionary(StringComparer.OrdinalIgnoreCase);
 
-            foreach (ScriptFile scriptFile in referencedFiles)
+            foreach(ScriptFile scriptFile in referencedFiles)
             {
-                fileMap[scriptFile.FilePath] = scriptFile;
+                fileMap [scriptFile.FilePath] = scriptFile;
             }
 
-            foreach (string filePath in workspace.EnumeratePSFiles())
+            foreach(string filePath in workspace.EnumeratePSFiles())
             {
-                if (!fileMap.Contains(filePath))
+                if(!fileMap.Contains(filePath))
                 {
-                    if (!workspace.TryGetFile(filePath, out ScriptFile scriptFile))
+                    if(!workspace.TryGetFile(filePath, out ScriptFile scriptFile))
                     {
                         // If we can't access the file for some reason, just ignore it
                         continue;
                     }
 
-                    fileMap[filePath] = scriptFile;
+                    fileMap [filePath] = scriptFile;
                 }
             }
 
             var symbolReferences = new List<SymbolReference>();
-            foreach (object fileName in fileMap.Keys)
+            foreach(object fileName in fileMap.Keys)
             {
-                var file = (ScriptFile)fileMap[fileName];
+                var file = (ScriptFile)fileMap [fileName];
 
                 IEnumerable<SymbolReference> references = AstOperations.FindReferencesOfSymbol(
                     file.ScriptAst,
                     foundSymbol,
                     needsAliases: false);
 
-                foreach (SymbolReference reference in references)
+                foreach(SymbolReference reference in references)
                 {
                     try
                     {
                         reference.SourceLine = file.GetLine(reference.ScriptRegion.StartLineNumber);
                     }
-                    catch (ArgumentOutOfRangeException e)
+                    catch(ArgumentOutOfRangeException e)
                     {
                         reference.SourceLine = string.Empty;
                         _logger.LogException("Found reference is out of range in script file", e);
@@ -253,7 +253,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 symbolLineNumber,
                 symbolColumnNumber);
 
-            if (foundSymbol == null)
+            if(foundSymbol == null)
             {
                 return null;
             }
@@ -285,7 +285,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     columnNumber,
                     includeFunctionDefinitions: true);
 
-            if (symbolReference != null)
+            if(symbolReference != null)
             {
                 symbolReference.FilePath = scriptFile.FilePath;
             }
@@ -311,7 +311,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     lineNumber,
                     columnNumber);
 
-            if (symbolReference == null)
+            if(symbolReference == null)
             {
                 return null;
             }
@@ -346,7 +346,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // If we are not possibly looking at a Function, we don't
             // need to continue because we won't be able to get the
             // CommandInfo object.
-            if (foundSymbol?.SymbolType != SymbolType.Function
+            if(foundSymbol?.SymbolType != SymbolType.Function
                 && foundSymbol?.SymbolType != SymbolType.Unknown)
             {
                 return null;
@@ -357,7 +357,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     foundSymbol.SymbolName,
                     powerShellContext).ConfigureAwait(false);
 
-            if (commandInfo == null)
+            if(commandInfo == null)
             {
                 return null;
             }
@@ -367,7 +367,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 IEnumerable<CommandParameterSetInfo> commandParamSets = commandInfo.ParameterSets;
                 return new ParameterSetSignatures(commandParamSets, foundSymbol);
             }
-            catch (RuntimeException e)
+            catch(RuntimeException e)
             {
                 // A RuntimeException will be thrown when an invalid attribute is
                 // on a parameter binding block and then that command/script has
@@ -376,7 +376,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 return null;
             }
-            catch (InvalidOperationException)
+            catch(InvalidOperationException)
             {
                 // For some commands there are no paramsets (like applications).  Until
                 // the valid command types are better understood, catch this exception
@@ -399,7 +399,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             Validate.IsNotNull(nameof(sourceFile), sourceFile);
             Validate.IsNotNull(nameof(foundSymbol), foundSymbol);
 
-            ScriptFile[] referencedFiles =
+            ScriptFile [] referencedFiles =
                 _workspaceService.ExpandScriptReferences(
                     sourceFile);
 
@@ -408,7 +408,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // look through the referenced files until definition is found
             // or there are no more file to look through
             SymbolReference foundDefinition = null;
-            foreach (ScriptFile scriptFile in referencedFiles)
+            foreach(ScriptFile scriptFile in referencedFiles)
             {
                 foundDefinition =
                     AstOperations.FindDefinitionOfSymbol(
@@ -416,17 +416,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         foundSymbol);
 
                 filesSearched.Add(scriptFile.FilePath);
-                if (foundDefinition != null)
+                if(foundDefinition != null)
                 {
                     foundDefinition.FilePath = scriptFile.FilePath;
                     break;
                 }
 
-                if (foundSymbol.SymbolType == SymbolType.Function)
+                if(foundSymbol.SymbolType == SymbolType.Function)
                 {
                     // Dot-sourcing is parsed as a "Function" Symbol.
                     string dotSourcedPath = GetDotSourcedPath(foundSymbol, scriptFile);
-                    if (scriptFile.FilePath == dotSourcedPath)
+                    if(scriptFile.FilePath == dotSourcedPath)
                     {
                         foundDefinition = new SymbolReference(SymbolType.Function, foundSymbol.SymbolName, scriptFile.ScriptAst.Extent, scriptFile.FilePath);
                         break;
@@ -436,24 +436,24 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // if the definition the not found in referenced files
             // look for it in all the files in the workspace
-            if (foundDefinition == null)
+            if(foundDefinition == null)
             {
                 // Get a list of all powershell files in the workspace path
                 IEnumerable<string> allFiles = _workspaceService.EnumeratePSFiles();
-                foreach (string file in allFiles)
+                foreach(string file in allFiles)
                 {
-                    if (filesSearched.Contains(file))
+                    if(filesSearched.Contains(file))
                     {
                         continue;
                     }
 
                     foundDefinition =
                         AstOperations.FindDefinitionOfSymbol(
-                            Parser.ParseFile(file, out Token[] tokens, out ParseError[] parseErrors),
+                            Parser.ParseFile(file, out Token [] tokens, out ParseError [] parseErrors),
                             foundSymbol);
 
                     filesSearched.Add(file);
-                    if (foundDefinition != null)
+                    if(foundDefinition != null)
                     {
                         foundDefinition.FilePath = file;
                         break;
@@ -464,7 +464,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // if the definition is not found in a file in the workspace
             // look for it in the builtin commands but only if the symbol
             // we are looking at is possibly a Function.
-            if (foundDefinition == null
+            if(foundDefinition == null
                 && (foundSymbol.SymbolType == SymbolType.Function
                     || foundSymbol.SymbolType == SymbolType.Unknown))
             {
@@ -500,23 +500,23 @@ namespace Microsoft.PowerShell.EditorServices.Services
             CommandInfo commandInfo,
             SymbolReference foundSymbol)
         {
-            if (commandInfo == null)
+            if(commandInfo == null)
             {
                 return null;
             }
 
-            ScriptFile[] nestedModuleFiles =
+            ScriptFile [] nestedModuleFiles =
                 GetBuiltinCommandScriptFiles(
                     commandInfo.Module);
 
             SymbolReference foundDefinition = null;
-            foreach (ScriptFile nestedModuleFile in nestedModuleFiles)
+            foreach(ScriptFile nestedModuleFile in nestedModuleFiles)
             {
                 foundDefinition = AstOperations.FindDefinitionOfSymbol(
                     nestedModuleFile.ScriptAst,
                     foundSymbol);
 
-                if (foundDefinition != null)
+                if(foundDefinition != null)
                 {
                     foundDefinition.FilePath = nestedModuleFile.FilePath;
                     break;
@@ -526,10 +526,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return foundDefinition;
         }
 
-        private ScriptFile[] GetBuiltinCommandScriptFiles(
+        private ScriptFile [] GetBuiltinCommandScriptFiles(
             PSModuleInfo moduleInfo)
         {
-            if (moduleInfo == null)
+            if(moduleInfo == null)
             {
                 return Array.Empty<ScriptFile>();
             }
@@ -540,7 +540,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // find any files where the moduleInfo's path ends with ps1 or psm1
             // and add it to allowed script files
-            if (modPath.EndsWith(@".ps1", StringComparison.OrdinalIgnoreCase) ||
+            if(modPath.EndsWith(@".ps1", StringComparison.OrdinalIgnoreCase) ||
                 modPath.EndsWith(@".psm1", StringComparison.OrdinalIgnoreCase))
             {
                 newFile = _workspaceService.GetFile(modPath);
@@ -548,12 +548,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 scriptFiles.Add(newFile);
             }
 
-            if (moduleInfo.NestedModules.Count > 0)
+            if(moduleInfo.NestedModules.Count > 0)
             {
-                foreach (PSModuleInfo nestedInfo in moduleInfo.NestedModules)
+                foreach(PSModuleInfo nestedInfo in moduleInfo.NestedModules)
                 {
                     string nestedModPath = nestedInfo.Path;
-                    if (nestedModPath.EndsWith(@".ps1", StringComparison.OrdinalIgnoreCase) ||
+                    if(nestedModPath.EndsWith(@".ps1", StringComparison.OrdinalIgnoreCase) ||
                         nestedModPath.EndsWith(@".psm1", StringComparison.OrdinalIgnoreCase))
                     {
                         newFile = _workspaceService.GetFile(nestedModPath);
@@ -580,7 +580,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             // check if the next line contains a function definition
             FunctionDefinitionAst funcDefnAst = GetFunctionDefinitionAtLine(scriptFile, lineNumber + 1);
-            if (funcDefnAst != null)
+            if(funcDefnAst != null)
             {
                 helpLocation = "before";
                 return funcDefnAst;
@@ -590,7 +590,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             IEnumerable<Ast> foundAsts = scriptFile.ScriptAst.FindAll(
                 ast =>
                 {
-                    if (!(ast is FunctionDefinitionAst fdAst))
+                    if(!(ast is FunctionDefinitionAst fdAst))
                     {
                         return false;
                     }
@@ -600,7 +600,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 },
                 true);
 
-            if (foundAsts == null || !foundAsts.Any())
+            if(foundAsts == null || !foundAsts.Any())
             {
                 helpLocation = null;
                 return null;
@@ -608,15 +608,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // of all the function definitions found, return the innermost function
             // definition that contains `lineNumber`
-            foreach (FunctionDefinitionAst foundAst in foundAsts.Cast<FunctionDefinitionAst>())
+            foreach(FunctionDefinitionAst foundAst in foundAsts.Cast<FunctionDefinitionAst>())
             {
-                if (funcDefnAst == null)
+                if(funcDefnAst == null)
                 {
                     funcDefnAst = foundAst;
                     continue;
                 }
 
-                if (funcDefnAst.Extent.StartOffset >= foundAst.Extent.StartOffset
+                if(funcDefnAst.Extent.StartOffset >= foundAst.Extent.StartOffset
                     && funcDefnAst.Extent.EndOffset <= foundAst.Extent.EndOffset)
                 {
                     funcDefnAst = foundAst;
@@ -624,13 +624,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             // TODO use tokens to check for non empty character instead of just checking for line offset
-            if (funcDefnAst.Body.Extent.StartLineNumber == lineNumber - 1)
+            if(funcDefnAst.Body.Extent.StartLineNumber == lineNumber - 1)
             {
                 helpLocation = "begin";
                 return funcDefnAst;
             }
 
-            if (funcDefnAst.Body.Extent.EndLineNumber == lineNumber + 1)
+            if(funcDefnAst.Body.Extent.EndLineNumber == lineNumber + 1)
             {
                 helpLocation = "end";
                 return funcDefnAst;

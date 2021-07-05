@@ -55,32 +55,32 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             try
             {
-                while (!cancellationToken.IsCancellationRequested)
+                while(!cancellationToken.IsCancellationRequested)
                 {
                     ConsoleKeyInfo keyInfo = await ReadKeyAsync(cancellationToken).ConfigureAwait(false);
 
-                    if ((int)keyInfo.Key == 3 ||
+                    if((int)keyInfo.Key == 3 ||
                         keyInfo.Key == ConsoleKey.C && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control))
                     {
                         throw new PipelineStoppedException();
                     }
-                    if (keyInfo.Key == ConsoleKey.Enter)
+                    if(keyInfo.Key == ConsoleKey.Enter)
                     {
                         // Break to return the completed string
                         break;
                     }
-                    if (keyInfo.Key == ConsoleKey.Tab)
+                    if(keyInfo.Key == ConsoleKey.Tab)
                     {
                         continue;
                     }
-                    if (keyInfo.Key == ConsoleKey.Backspace)
+                    if(keyInfo.Key == ConsoleKey.Backspace)
                     {
-                        if (secureString.Length > 0)
+                        if(secureString.Length > 0)
                         {
                             secureString.RemoveAt(secureString.Length - 1);
                         }
                     }
-                    else if (keyInfo.KeyChar != 0 && !char.IsControl(keyInfo.KeyChar))
+                    else if(keyInfo.KeyChar != 0 && !char.IsControl(keyInfo.KeyChar))
                     {
                         secureString.AppendChar(keyInfo.KeyChar);
                     }
@@ -89,18 +89,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     int currentInputLength = secureString.Length;
                     int consoleWidth = Console.WindowWidth;
 
-                    if (currentInputLength > previousInputLength)
+                    if(currentInputLength > previousInputLength)
                     {
                         Console.Write('*');
                     }
-                    else if (previousInputLength > 0 && currentInputLength < previousInputLength)
+                    else if(previousInputLength > 0 && currentInputLength < previousInputLength)
                     {
                         int row = await ConsoleProxy.GetCursorTopAsync(cancellationToken).ConfigureAwait(false);
                         int col = await ConsoleProxy.GetCursorLeftAsync(cancellationToken).ConfigureAwait(false);
 
                         // Back up the cursor before clearing the character
                         col--;
-                        if (col < 0)
+                        if(col < 0)
                         {
                             col = consoleWidth - 1;
                             row--;
@@ -176,7 +176,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             try
             {
-                while (!cancellationToken.IsCancellationRequested)
+                while(!cancellationToken.IsCancellationRequested)
                 {
                     ConsoleKeyInfo keyInfo = await ReadKeyAsync(cancellationToken).ConfigureAwait(false);
 
@@ -186,21 +186,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     int promptStartRow = initialCursorRow;
                     int consoleWidth = Console.WindowWidth;
 
-                    if ((int)keyInfo.Key == 3 ||
+                    if((int)keyInfo.Key == 3 ||
                         keyInfo.Key == ConsoleKey.C && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control))
                     {
                         throw new PipelineStoppedException();
                     }
-                    else if (keyInfo.Key == ConsoleKey.Tab && isCommandLine)
+                    else if(keyInfo.Key == ConsoleKey.Tab && isCommandLine)
                     {
-                        if (currentCompletion == null)
+                        if(currentCompletion == null)
                         {
                             inputBeforeCompletion = inputLine.ToString();
                             inputAfterCompletion = null;
 
                             // TODO: This logic should be moved to AstOperations or similar!
 
-                            if (this.powerShellContext.IsDebuggerStopped)
+                            if(this.powerShellContext.IsDebuggerStopped)
                             {
                                 PSCommand command = new PSCommand();
                                 command.AddCommand("TabExpansion2");
@@ -216,8 +216,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                             }
                             else
                             {
-                                using (RunspaceHandle runspaceHandle = await this.powerShellContext.GetRunspaceHandleAsync().ConfigureAwait(false))
-                                using (PowerShell powerShell = PowerShell.Create())
+                                using(RunspaceHandle runspaceHandle = await this.powerShellContext.GetRunspaceHandleAsync().ConfigureAwait(false))
+                                using(PowerShell powerShell = PowerShell.Create())
                                 {
                                     powerShell.Runspace = runspaceHandle.Runspace;
                                     currentCompletion =
@@ -227,7 +227,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                                             null,
                                             powerShell);
 
-                                    if (currentCompletion.CompletionMatches.Count > 0)
+                                    if(currentCompletion.CompletionMatches.Count > 0)
                                     {
                                         int replacementEndIndex =
                                                 currentCompletion.ReplacementIndex +
@@ -250,7 +250,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                             currentCompletion?.GetNextResult(
                                 !keyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift));
 
-                        if (completion != null)
+                        if(completion != null)
                         {
                             currentCursorIndex =
                                 this.InsertInput(
@@ -264,11 +264,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                                     finalCursorIndex: currentCompletion.ReplacementIndex + completion.CompletionText.Length);
                         }
                     }
-                    else if (keyInfo.Key == ConsoleKey.LeftArrow)
+                    else if(keyInfo.Key == ConsoleKey.LeftArrow)
                     {
                         currentCompletion = null;
 
-                        if (currentCursorIndex > 0)
+                        if(currentCursorIndex > 0)
                         {
                             currentCursorIndex =
                                 this.MoveCursorToIndex(
@@ -278,7 +278,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                                     currentCursorIndex - 1);
                         }
                     }
-                    else if (keyInfo.Key == ConsoleKey.Home)
+                    else if(keyInfo.Key == ConsoleKey.Home)
                     {
                         currentCompletion = null;
 
@@ -289,11 +289,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                                 consoleWidth,
                                 0);
                     }
-                    else if (keyInfo.Key == ConsoleKey.RightArrow)
+                    else if(keyInfo.Key == ConsoleKey.RightArrow)
                     {
                         currentCompletion = null;
 
-                        if (currentCursorIndex < inputLine.Length)
+                        if(currentCursorIndex < inputLine.Length)
                         {
                             currentCursorIndex =
                                 this.MoveCursorToIndex(
@@ -303,7 +303,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                                     currentCursorIndex + 1);
                         }
                     }
-                    else if (keyInfo.Key == ConsoleKey.End)
+                    else if(keyInfo.Key == ConsoleKey.End)
                     {
                         currentCompletion = null;
 
@@ -314,13 +314,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                                 consoleWidth,
                                 inputLine.Length);
                     }
-                    else if (keyInfo.Key == ConsoleKey.UpArrow && isCommandLine)
+                    else if(keyInfo.Key == ConsoleKey.UpArrow && isCommandLine)
                     {
                         currentCompletion = null;
 
                         // TODO: Ctrl+Up should allow navigation in multi-line input
 
-                        if (currentHistory == null)
+                        if(currentHistory == null)
                         {
                             historyIndex = -1;
 
@@ -331,13 +331,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                                 .ConfigureAwait(false)
                                 as Collection<PSObject>;
 
-                            if (currentHistory != null)
+                            if(currentHistory != null)
                             {
                                 historyIndex = currentHistory.Count;
                             }
                         }
 
-                        if (currentHistory != null && currentHistory.Count > 0 && historyIndex > 0)
+                        if(currentHistory != null && currentHistory.Count > 0 && historyIndex > 0)
                         {
                             historyIndex--;
 
@@ -346,37 +346,37 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                                     inputLine,
                                     promptStartCol,
                                     promptStartRow,
-                                    (string)currentHistory[historyIndex].Properties["CommandLine"].Value,
+                                    (string)currentHistory [historyIndex].Properties ["CommandLine"].Value,
                                     currentCursorIndex,
                                     insertIndex: 0,
                                     replaceLength: inputLine.Length);
                         }
                     }
-                    else if (keyInfo.Key == ConsoleKey.DownArrow && isCommandLine)
+                    else if(keyInfo.Key == ConsoleKey.DownArrow && isCommandLine)
                     {
                         currentCompletion = null;
 
                         // The down arrow shouldn't cause history to be loaded,
                         // it's only for navigating an active history array
 
-                        if (historyIndex > -1 && historyIndex < currentHistory.Count &&
+                        if(historyIndex > -1 && historyIndex < currentHistory.Count &&
                             currentHistory != null && currentHistory.Count > 0)
                         {
                             historyIndex++;
 
-                            if (historyIndex < currentHistory.Count)
+                            if(historyIndex < currentHistory.Count)
                             {
                                 currentCursorIndex =
                                     this.InsertInput(
                                         inputLine,
                                         promptStartCol,
                                         promptStartRow,
-                                        (string)currentHistory[historyIndex].Properties["CommandLine"].Value,
+                                        (string)currentHistory [historyIndex].Properties ["CommandLine"].Value,
                                         currentCursorIndex,
                                         insertIndex: 0,
                                         replaceLength: inputLine.Length);
                             }
-                            else if (historyIndex == currentHistory.Count)
+                            else if(historyIndex == currentHistory.Count)
                             {
                                 currentCursorIndex =
                                     this.InsertInput(
@@ -390,7 +390,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                             }
                         }
                     }
-                    else if (keyInfo.Key == ConsoleKey.Escape)
+                    else if(keyInfo.Key == ConsoleKey.Escape)
                     {
                         currentCompletion = null;
                         historyIndex = currentHistory != null ? currentHistory.Count : -1;
@@ -405,11 +405,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                                 insertIndex: 0,
                                 replaceLength: inputLine.Length);
                     }
-                    else if (keyInfo.Key == ConsoleKey.Backspace)
+                    else if(keyInfo.Key == ConsoleKey.Backspace)
                     {
                         currentCompletion = null;
 
-                        if (currentCursorIndex > 0)
+                        if(currentCursorIndex > 0)
                         {
                             currentCursorIndex =
                                 this.InsertInput(
@@ -423,11 +423,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                                     finalCursorIndex: currentCursorIndex - 1);
                         }
                     }
-                    else if (keyInfo.Key == ConsoleKey.Delete)
+                    else if(keyInfo.Key == ConsoleKey.Delete)
                     {
                         currentCompletion = null;
 
-                        if (currentCursorIndex < inputLine.Length)
+                        if(currentCursorIndex < inputLine.Length)
                         {
                             currentCursorIndex =
                                 this.InsertInput(
@@ -440,7 +440,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                                     finalCursorIndex: currentCursorIndex);
                         }
                     }
-                    else if (keyInfo.Key == ConsoleKey.Enter)
+                    else if(keyInfo.Key == ConsoleKey.Enter)
                     {
                         string completedInput = inputLine.ToString();
                         currentCompletion = null;
@@ -454,8 +454,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
                         Parser.ParseInput(
                             completedInput,
-                            out Token[] tokens,
-                            out ParseError[] parseErrors);
+                            out Token [] tokens,
+                            out ParseError [] parseErrors);
 
                         //if (parseErrors.Any(e => e.IncompleteInput))
                         //{
@@ -465,7 +465,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
                         return completedInput;
                     }
-                    else if (keyInfo.KeyChar != 0 && !char.IsControl(keyInfo.KeyChar))
+                    else if(keyInfo.KeyChar != 0 && !char.IsControl(keyInfo.KeyChar))
                     {
                         // Normal character input
                         currentCompletion = null;
@@ -526,7 +526,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             int consoleWidth = Console.WindowWidth;
             int previousInputLength = inputLine.Length;
 
-            if (insertIndex == -1)
+            if(insertIndex == -1)
             {
                 insertIndex = cursorIndex;
             }
@@ -539,9 +539,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 insertIndex);
 
             // Edit the input string based on the insertion
-            if (insertIndex < inputLine.Length)
+            if(insertIndex < inputLine.Length)
             {
-                if (replaceLength > 0)
+                if(replaceLength > 0)
                 {
                     inputLine.Remove(insertIndex, replaceLength);
                 }
@@ -559,7 +559,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     insertIndex,
                     inputLine.Length - insertIndex));
 
-            if (inputLine.Length < previousInputLength)
+            if(inputLine.Length < previousInputLength)
             {
                 Console.Write(
                     new string(
@@ -572,12 +572,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             // input string is longer than the new one and needed to have
             // its old contents overwritten.  This will position the cursor
             // back at the end of the new text
-            if (finalCursorIndex == -1 && inputLine.Length < previousInputLength)
+            if(finalCursorIndex == -1 && inputLine.Length < previousInputLength)
             {
                 finalCursorIndex = inputLine.Length;
             }
 
-            if (finalCursorIndex > -1)
+            if(finalCursorIndex > -1)
             {
                 // Move the cursor to the final position
                 return

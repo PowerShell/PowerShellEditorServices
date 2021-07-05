@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1810:Initialize reference type static fields inline", Justification = "Platform specific initialization")]
         static ConsoleProxy()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 s_consoleProxy = new WindowsConsoleOperations();
                 return;
@@ -185,7 +185,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             {
                 return s_consoleProxy.ReadKey(intercept, cancellationToken);
             }
-            catch (OperationCanceledException)
+            catch(OperationCanceledException)
             {
                 return new ConsoleKeyInfo(
                     keyChar: ' ',

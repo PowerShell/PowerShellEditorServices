@@ -24,15 +24,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 
         public override AstVisitAction VisitPipeline(PipelineAst pipelineAst)
         {
-            if (this.lineNumber == pipelineAst.Extent.StartLineNumber)
+            if(this.lineNumber == pipelineAst.Extent.StartLineNumber)
             {
                 // Which command is the cursor in?
-                foreach (var commandAst in pipelineAst.PipelineElements.OfType<CommandAst>())
+                foreach(var commandAst in pipelineAst.PipelineElements.OfType<CommandAst>())
                 {
                     int trueEndColumnNumber = commandAst.Extent.EndColumnNumber;
                     string currentLine = commandAst.Extent.StartScriptPosition.Line;
 
-                    if (currentLine.Length >= trueEndColumnNumber)
+                    if(currentLine.Length >= trueEndColumnNumber)
                     {
                         // Get the text left in the line after the command's extent
                         string remainingLine =
@@ -51,13 +51,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                             (preTrimLength - postTrimLength) + 1;
                     }
 
-                    if (commandAst.Extent.StartColumnNumber <= columnNumber &&
+                    if(commandAst.Extent.StartColumnNumber <= columnNumber &&
                         trueEndColumnNumber >= columnNumber)
                     {
                         this.FoundCommandReference =
                             new SymbolReference(
                                 SymbolType.Function,
-                                commandAst.CommandElements[0].Extent);
+                                commandAst.CommandElements [0].Extent);
 
                         return AstVisitAction.StopVisit;
                     }

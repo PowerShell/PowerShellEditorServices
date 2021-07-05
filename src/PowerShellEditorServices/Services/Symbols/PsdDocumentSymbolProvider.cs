@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         IEnumerable<ISymbolReference> IDocumentSymbolProvider.ProvideDocumentSymbols(
             ScriptFile scriptFile)
         {
-            if ((scriptFile.FilePath != null &&
+            if((scriptFile.FilePath != null &&
                  scriptFile.FilePath.EndsWith(".psd1", StringComparison.OrdinalIgnoreCase)) ||
                  IsPowerShellDataFileAst(scriptFile.ScriptAst))
             {
@@ -44,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             // part of a psd1 file.
             return IsPowerShellDataFileAstNode(
                         new { Item = ast, Children = new List<dynamic>() },
-                        new Type[] {
+                        new Type [] {
                             typeof(ScriptBlockAst),
                             typeof(NamedBlockAst),
                             typeof(PipelineAst),
@@ -53,25 +53,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                         0);
         }
 
-        static private bool IsPowerShellDataFileAstNode(dynamic node, Type[] levelAstMap, int level)
+        static private bool IsPowerShellDataFileAstNode(dynamic node, Type [] levelAstMap, int level)
         {
-            var levelAstTypeMatch = node.Item.GetType().Equals(levelAstMap[level]);
-            if (!levelAstTypeMatch)
+            var levelAstTypeMatch = node.Item.GetType().Equals(levelAstMap [level]);
+            if(!levelAstTypeMatch)
             {
                 return false;
             }
 
-            if (level == levelAstMap.Length - 1)
+            if(level == levelAstMap.Length - 1)
             {
                 return levelAstTypeMatch;
             }
 
             var astsFound = (node.Item as Ast).FindAll(a => a is Ast, false);
-            if (astsFound != null)
+            if(astsFound != null)
             {
-                foreach (var astFound in astsFound)
+                foreach(var astFound in astsFound)
                 {
-                    if (!astFound.Equals(node.Item)
+                    if(!astFound.Equals(node.Item)
                         && node.Item.Equals(astFound.Parent)
                         && IsPowerShellDataFileAstNode(
                             new { Item = astFound, Children = new List<dynamic>() },

@@ -116,15 +116,15 @@ namespace Microsoft.PowerShell.EditorServices.Server
                             var workspaceService = serviceProvider.GetService<WorkspaceService>();
 
                             // Grab the workspace path from the parameters
-                            if (request.RootUri != null)
+                            if(request.RootUri != null)
                             {
                                 workspaceService.WorkspacePath = request.RootUri.GetFileSystemPath();
                             }
-                            else if (request.WorkspaceFolders != null)
+                            else if(request.WorkspaceFolders != null)
                             {
                                 // If RootUri isn't set, try to use the first WorkspaceFolder.
                                 // TODO: Support multi-workspace.
-                                foreach (var workspaceFolder in request.WorkspaceFolders)
+                                foreach(var workspaceFolder in request.WorkspaceFolders)
                                 {
                                     workspaceService.WorkspacePath = workspaceFolder.Uri.GetFileSystemPath();
                                     break;

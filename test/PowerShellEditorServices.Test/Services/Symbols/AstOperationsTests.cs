@@ -36,7 +36,7 @@ function
 
     FunctionNameOnDifferentLine
 ";
-        private static ScriptBlockAst s_ast = (ScriptBlockAst) ScriptBlock.Create(s_scriptString).Ast;
+        private static ScriptBlockAst s_ast = (ScriptBlockAst)ScriptBlock.Create(s_scriptString).Ast;
 
         [Trait("Category", "AstOperations")]
         [Theory]
@@ -53,25 +53,25 @@ function
         [Trait("Category", "AstOperations")]
         [Theory]
         [MemberData(nameof(FindReferencesOfSymbolAtPostionData), parameters: 3)]
-        public void CanFindReferencesOfSymbolAtPostion(int lineNumber, int columnNumber, Position[] positions)
+        public void CanFindReferencesOfSymbolAtPostion(int lineNumber, int columnNumber, Position [] positions)
         {
             SymbolReference symbol = AstOperations.FindSymbolAtPosition(s_ast, lineNumber, columnNumber);
 
             IEnumerable<SymbolReference> references = AstOperations.FindReferencesOfSymbol(s_ast, symbol, needsAliases: false);
 
             int positionsIndex = 0;
-            foreach (SymbolReference reference in references)
+            foreach(SymbolReference reference in references)
             {
-                Assert.Equal(positions[positionsIndex].Line, reference.ScriptRegion.StartLineNumber);
-                Assert.Equal(positions[positionsIndex].Character, reference.ScriptRegion.StartColumnNumber);
+                Assert.Equal(positions [positionsIndex].Line, reference.ScriptRegion.StartLineNumber);
+                Assert.Equal(positions [positionsIndex].Character, reference.ScriptRegion.StartColumnNumber);
 
                 positionsIndex++;
             }
         }
 
-        public static object[][] FindReferencesOfSymbolAtPostionData => s_findReferencesOfSymbolAtPostionData;
+        public static object [] [] FindReferencesOfSymbolAtPostionData => s_findReferencesOfSymbolAtPostionData;
 
-        private static readonly object[][] s_findReferencesOfSymbolAtPostionData = new object[][]
+        private static readonly object [] [] s_findReferencesOfSymbolAtPostionData = new object [] []
         {
             new object[] { 2, 3, new[] { new Position(1, 10), new Position(2, 1) } },
             new object[] { 7, 18, new[] { new Position(4, 19), new Position(7, 3) } },

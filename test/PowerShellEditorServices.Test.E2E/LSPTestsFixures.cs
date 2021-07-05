@@ -61,15 +61,15 @@ namespace PowerShellEditorServices.Test.E2E
                     .OnTelemetryEvent(telemetryEventParams => TelemetryEvents.Add(
                         new PsesTelemetryEvent
                         {
-                            EventName = (string)telemetryEventParams.ExtensionData["eventName"],
-                            Data = telemetryEventParams.ExtensionData["data"] as JObject
+                            EventName = (string)telemetryEventParams.ExtensionData ["eventName"],
+                            Data = telemetryEventParams.ExtensionData ["data"] as JObject
                         }));
 
                 // Enable all capabilities this this is for testing.
                 // This will be a built in feature of the Omnisharp client at some point.
                 var capabilityTypes = typeof(ICapability).Assembly.GetExportedTypes()
                     .Where(z => typeof(ICapability).IsAssignableFrom(z) && z.IsClass && !z.IsAbstract);
-                foreach (Type capabilityType in capabilityTypes)
+                foreach(Type capabilityType in capabilityTypes)
                 {
                     options.WithCapability(Activator.CreateInstance(capabilityType, Array.Empty<object>()) as ICapability);
                 }
@@ -99,7 +99,7 @@ namespace PowerShellEditorServices.Test.E2E
                 await _psesProcess.Stop().ConfigureAwait(false);
                 PsesLanguageClient?.Dispose();
             }
-            catch (ObjectDisposedException)
+            catch(ObjectDisposedException)
             {
                 // Language client has a disposal bug in it
             }

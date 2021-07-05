@@ -11,9 +11,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         public string Message { get; set; }
 
-        public ChoiceDetails[] Choices { get; set; }
+        public ChoiceDetails [] Choices { get; set; }
 
-        public int[] DefaultChoices { get; set; }
+        public int [] DefaultChoices { get; set; }
     }
 
     internal class ShowChoicePromptResponse

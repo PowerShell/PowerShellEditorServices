@@ -68,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             // We need to make sure the user can't open the file associated with this stack frame.
             // It will generate a VSCode error in this case.
             Source source = null;
-            if (!stackFrame.ScriptPath.Contains("<"))
+            if(!stackFrame.ScriptPath.Contains("<"))
             {
                 source = new Source
                 {

@@ -81,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <returns>A new duplex named pipe transport configuration.</returns>
         public static DuplexNamedPipeTransportConfig Create(HostLogger logger, string pipeName)
         {
-            if (pipeName == null)
+            if(pipeName == null)
             {
                 return DuplexNamedPipeTransportConfig.Create(logger);
             }
@@ -97,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             _logger = logger;
             _pipeName = pipeName;
-            SessionFileEntries = new Dictionary<string, object>{ { "PipeName", NamedPipeUtils.GetNamedPipePath(pipeName) } };
+            SessionFileEntries = new Dictionary<string, object> { { "PipeName", NamedPipeUtils.GetNamedPipePath(pipeName) } };
         }
 
         public string EndpointDetails => $"InOut pipe: {_pipeName}";
@@ -131,7 +131,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <returns>A new simplex named pipe transport config.</returns>
         public static SimplexNamedPipeTransportConfig Create(HostLogger logger)
         {
-            return SimplexNamedPipeTransportConfig.Create(logger, NamedPipeUtils.GenerateValidNamedPipeName(new[] { InPipePrefix, OutPipePrefix }));
+            return SimplexNamedPipeTransportConfig.Create(logger, NamedPipeUtils.GenerateValidNamedPipeName(new [] { InPipePrefix, OutPipePrefix }));
         }
 
         /// <summary>
@@ -140,7 +140,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <returns>A new simplex named pipe transport config.</returns>
         public static SimplexNamedPipeTransportConfig Create(HostLogger logger, string pipeNameBase)
         {
-            if (pipeNameBase == null)
+            if(pipeNameBase == null)
             {
                 return SimplexNamedPipeTransportConfig.Create(logger);
             }

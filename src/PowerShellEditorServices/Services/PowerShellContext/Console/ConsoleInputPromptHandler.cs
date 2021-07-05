@@ -51,12 +51,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// <param name="message">The message string to be displayed.</param>
         protected override void ShowPromptMessage(string caption, string message)
         {
-            if (!string.IsNullOrEmpty(caption))
+            if(!string.IsNullOrEmpty(caption))
             {
                 this.hostOutput.WriteOutput(caption, true);
             }
 
-            if (!string.IsNullOrEmpty(message))
+            if(!string.IsNullOrEmpty(message))
             {
                 this.hostOutput.WriteOutput(message, true);
             }
@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             // For a simple prompt there won't be any field name.
             // In this case don't write anything
-            if (!string.IsNullOrEmpty(fieldDetails.Name))
+            if(!string.IsNullOrEmpty(fieldDetails.Name))
             {
                 this.hostOutput.WriteOutput(
                     fieldDetails.Name + ": ",

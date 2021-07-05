@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         /// <summary>
         /// Gets or sets optional arguments passed to the debuggee.
         /// </summary>
-        public string[] Args { get; set; }
+        public string [] Args { get; set; }
 
         /// <summary>
         /// Gets or sets the working directory of the launched debuggee (specified as an absolute path).
@@ -59,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         /// <summary>
         /// Gets or sets the optional arguments passed to the runtime executable.
         /// </summary>
-        public string[] RuntimeArgs { get; set; }
+        public string [] RuntimeArgs { get; set; }
 
         /// <summary>
         /// Gets or sets optional environment variables to pass to the debuggee. The string valued
@@ -119,7 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _debugEventHandlerService.RegisterEventHandlers();
 
             // Determine whether or not the working directory should be set in the PowerShellContext.
-            if ((_powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Local) &&
+            if((_powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Local) &&
                 !_debugService.IsDebuggerStopped)
             {
                 // Get the working directory that was passed via the debug config
@@ -128,16 +128,16 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 // Assuming we have a non-empty/null working dir, unescape the path and verify
                 // the path exists and is a directory.
-                if (!string.IsNullOrEmpty(workingDir))
+                if(!string.IsNullOrEmpty(workingDir))
                 {
                     try
                     {
-                        if ((File.GetAttributes(workingDir) & FileAttributes.Directory) != FileAttributes.Directory)
+                        if((File.GetAttributes(workingDir) & FileAttributes.Directory) != FileAttributes.Directory)
                         {
                             workingDir = Path.GetDirectoryName(workingDir);
                         }
                     }
-                    catch (Exception ex)
+                    catch(Exception ex)
                     {
                         workingDir = null;
                         _logger.LogError(
@@ -147,7 +147,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 // If we have no working dir by this point and we are running in a temp console,
                 // pick some reasonable default.
-                if (string.IsNullOrEmpty(workingDir) && request.CreateTemporaryIntegratedConsole)
+                if(string.IsNullOrEmpty(workingDir) && request.CreateTemporaryIntegratedConsole)
                 {
                     workingDir = Environment.CurrentDirectory;
                 }
@@ -155,7 +155,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 // At this point, we will either have a working dir that should be set to cwd in
                 // the PowerShellContext or the user has requested (via an empty/null cwd) that
                 // the working dir should not be changed.
-                if (!string.IsNullOrEmpty(workingDir))
+                if(!string.IsNullOrEmpty(workingDir))
                 {
                     await _powerShellContextService.SetWorkingDirectoryAsync(workingDir, isPathAlreadyEscaped: false).ConfigureAwait(false);
                 }
@@ -165,7 +165,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             // Prepare arguments to the script - if specified
             string arguments = null;
-            if (request.Args?.Length > 0)
+            if(request.Args?.Length > 0)
             {
                 arguments = string.Join(" ", request.Args);
                 _logger.LogTrace("Script arguments are: " + arguments);
@@ -177,7 +177,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _debugStateService.Arguments = arguments;
             _debugStateService.IsUsingTempIntegratedConsole = request.CreateTemporaryIntegratedConsole;
 
-            if (request.CreateTemporaryIntegratedConsole
+            if(request.CreateTemporaryIntegratedConsole
                 && !string.IsNullOrEmpty(request.Script)
                 && ScriptFile.IsUntitledPath(request.Script))
             {
@@ -186,7 +186,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             // If the current session is remote, map the script path to the remote
             // machine if necessary
-            if (_debugStateService.ScriptToLaunch != null &&
+            if(_debugStateService.ScriptToLaunch != null &&
                 _powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Remote)
             {
                 _debugStateService.ScriptToLaunch =
@@ -222,7 +222,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // This is not an error, just a request to stop the original "attach to" request.
             // Testing against "undefined" is a HACK because I don't know how to make "Cancel" on quick pick loading
             // to cancel on the VSCode side without sending an attachRequest with processId set to "undefined".
-            if (!processIdIsSet && !customPipeNameIsSet)
+            if(!processIdIsSet && !customPipeNameIsSet)
             {
                 _logger.LogInformation(
                     $"Attach request aborted, received {request.ProcessId} for processId.");
@@ -232,13 +232,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             StringBuilder errorMessages = new StringBuilder();
 
-            if (request.ComputerName != null)
+            if(request.ComputerName != null)
             {
-                if (runspaceVersion.Version.Major < 4)
+                if(runspaceVersion.Version.Major < 4)
                 {
                     throw new RpcErrorException(0, $"Remote sessions are only available with PowerShell 4 and higher (current session is {runspaceVersion.Version}).");
                 }
-                else if (_powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Remote)
+                else if(_powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Remote)
                 {
                     throw new RpcErrorException(0, "Cannot attach to a process in a remote session when already in a remote session.");
                 }
@@ -247,7 +247,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     $"Enter-PSSession -ComputerName \"{request.ComputerName}\"",
                     errorMessages).ConfigureAwait(false);
 
-                if (errorMessages.Length > 0)
+                if(errorMessages.Length > 0)
                 {
                     throw new RpcErrorException(0, $"Could not establish remote session to computer '{request.ComputerName}'");
                 }
@@ -255,9 +255,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 _debugStateService.IsRemoteAttach = true;
             }
 
-            if (processIdIsSet && int.TryParse(request.ProcessId, out int processId) && (processId > 0))
+            if(processIdIsSet && int.TryParse(request.ProcessId, out int processId) && (processId > 0))
             {
-                if (runspaceVersion.Version.Major < 5)
+                if(runspaceVersion.Version.Major < 5)
                 {
                     throw new RpcErrorException(0, $"Attaching to a process is only available with PowerShell 5 and higher (current session is {runspaceVersion.Version}).");
                 }
@@ -266,14 +266,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     $"Enter-PSHostProcess -Id {processId}",
                     errorMessages);
 
-                if (errorMessages.Length > 0)
+                if(errorMessages.Length > 0)
                 {
                     throw new RpcErrorException(0, $"Could not attach to process '{processId}'");
                 }
             }
-            else if (customPipeNameIsSet)
+            else if(customPipeNameIsSet)
             {
-                if (runspaceVersion.Version < s_minVersionForCustomPipeName)
+                if(runspaceVersion.Version < s_minVersionForCustomPipeName)
                 {
                     throw new RpcErrorException(0, $"Attaching to a process with CustomPipeName is only available with PowerShell 6.2 and higher (current session is {runspaceVersion.Version}).");
                 }
@@ -282,12 +282,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     $"Enter-PSHostProcess -CustomPipeName {request.CustomPipeName}",
                     errorMessages);
 
-                if (errorMessages.Length > 0)
+                if(errorMessages.Length > 0)
                 {
                     throw new RpcErrorException(0, $"Could not attach to process with CustomPipeName: '{request.CustomPipeName}'");
                 }
             }
-            else if (request.ProcessId != "current")
+            else if(request.ProcessId != "current")
             {
                 _logger.LogError(
                     $"Attach request failed, '{request.ProcessId}' is an invalid value for the processId.");
@@ -301,23 +301,23 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // event gets fired with the attached runspace.
 
             string debugRunspaceCmd;
-            if (request.RunspaceName != null)
+            if(request.RunspaceName != null)
             {
                 IEnumerable<int?> ids = await _powerShellContextService.ExecuteCommandAsync<int?>(new PSCommand()
                     .AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace")
                     .AddParameter("Name", request.RunspaceName)
                     .AddCommand("Microsoft.PowerShell.Utility\\Select-Object")
                     .AddParameter("ExpandProperty", "Id"));
-                foreach (var id in ids)
+                foreach(var id in ids)
                 {
                     _debugStateService.RunspaceId = id;
                     break;
                 }
                 debugRunspaceCmd = $"\nDebug-Runspace -Name '{request.RunspaceName}'";
             }
-            else if (request.RunspaceId != null)
+            else if(request.RunspaceId != null)
             {
-                if (!int.TryParse(request.RunspaceId, out int runspaceId) || runspaceId <= 0)
+                if(!int.TryParse(request.RunspaceId, out int runspaceId) || runspaceId <= 0)
                 {
                     _logger.LogError(
                         $"Attach request failed, '{request.RunspaceId}' is an invalid value for the processId.");
@@ -325,13 +325,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     throw new RpcErrorException(0, "A positive integer must be specified for the RunspaceId field.");
                 }
 
-                _debugStateService.RunspaceId =  runspaceId;
+                _debugStateService.RunspaceId = runspaceId;
 
                 debugRunspaceCmd = $"\nDebug-Runspace -Id {runspaceId}";
             }
             else
             {
-                _debugStateService.RunspaceId =  1;
+                _debugStateService.RunspaceId = 1;
 
                 debugRunspaceCmd = "\nDebug-Runspace -Id 1";
             }
@@ -344,7 +344,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 .ExecuteScriptStringAsync(debugRunspaceCmd)
                 .ContinueWith(OnExecutionCompletedAsync);
 
-            if (runspaceVersion.Version.Major >= 7)
+            if(runspaceVersion.Version.Major >= 7)
             {
                 _debugStateService.ServerStarted.SetResult(true);
             }
@@ -377,7 +377,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 await executeTask.ConfigureAwait(false);
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 _logger.LogError(
                     "Exception occurred while awaiting debug launch task.\n\n" + e.ToString());
@@ -389,26 +389,26 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             _debugEventHandlerService.UnregisterEventHandlers();
 
-            if (_debugStateService.IsAttachSession)
+            if(_debugStateService.IsAttachSession)
             {
-               // Pop the sessions
-               if (_powerShellContextService.CurrentRunspace.Context == RunspaceContext.EnteredProcess)
-               {
-                   try
-                   {
-                       await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSHostProcess");
+                // Pop the sessions
+                if(_powerShellContextService.CurrentRunspace.Context == RunspaceContext.EnteredProcess)
+                {
+                    try
+                    {
+                        await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSHostProcess");
 
-                       if (_debugStateService.IsRemoteAttach &&
-                           _powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Remote)
-                       {
-                           await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSSession");
-                       }
-                   }
-                   catch (Exception e)
-                   {
-                       _logger.LogException("Caught exception while popping attached process after debugging", e);
-                   }
-               }
+                        if(_debugStateService.IsRemoteAttach &&
+                            _powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Remote)
+                        {
+                            await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSSession");
+                        }
+                    }
+                    catch(Exception e)
+                    {
+                        _logger.LogException("Caught exception while popping attached process after debugging", e);
+                    }
+                }
             }
 
             _debugService.IsClientAttached = false;

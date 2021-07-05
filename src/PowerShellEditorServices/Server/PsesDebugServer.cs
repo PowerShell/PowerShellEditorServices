@@ -80,7 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
                 // Needed to make sure PSReadLine's static properties are initialized in the pipeline thread.
                 // This is only needed for Temp sessions who only have a debug server.
-                if (_usePSReadLine && _useTempSession && Interlocked.Exchange(ref s_hasRunPsrlStaticCtor, 1) == 0)
+                if(_usePSReadLine && _useTempSession && Interlocked.Exchange(ref s_hasRunPsrlStaticCtor, 1) == 0)
                 {
                     var command = new PSCommand()
                         .AddCommand(s_lazyInvokeReadLineConstructorCmdletInfo.Value);
@@ -114,14 +114,16 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<DebugEvaluateHandler>()
                     // The OnInitialize delegate gets run when we first receive the _Initialize_ request:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
-                    .OnInitialize(async (server, request, cancellationToken) => {
+                    .OnInitialize(async (server, request, cancellationToken) =>
+                    {
                         var breakpointService = server.GetService<BreakpointService>();
                         // Clear any existing breakpoints before proceeding
                         await breakpointService.RemoveAllBreakpointsAsync().ConfigureAwait(false);
                     })
                     // The OnInitialized delegate gets run right before the server responds to the _Initialize_ request:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
-                    .OnInitialized((server, request, response, cancellationToken) => {
+                    .OnInitialized((server, request, response, cancellationToken) =>
+                    {
                         response.SupportsConditionalBreakpoints = true;
                         response.SupportsConfigurationDoneRequest = true;
                         response.SupportsFunctionBreakpoints = true;

@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             ScriptFile changedFile = _workspaceService.GetFile(notification.TextDocument.Uri);
 
             // A text change notification can batch multiple change requests
-            foreach (TextDocumentContentChangeEvent textChange in notification.ContentChanges)
+            foreach(TextDocumentContentChangeEvent textChange in notification.ContentChanges)
             {
                 changedFile.ApplyChange(
                     GetFileChangeDetails(
@@ -55,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             // Kick off script diagnostics without blocking the response
             // TODO: Get all recently edited files in the workspace
-            _analysisService.RunScriptDiagnostics(new ScriptFile[] { changedFile });
+            _analysisService.RunScriptDiagnostics(new ScriptFile [] { changedFile });
             return Unit.Task;
         }
 
@@ -73,7 +73,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     notification.TextDocument.Uri,
                     notification.TextDocument.Text);
 
-            if (LspUtils.PowerShellDocumentSelector.IsMatch(new TextDocumentAttributes(
+            if(LspUtils.PowerShellDocumentSelector.IsMatch(new TextDocumentAttributes(
                 // We use a fake Uri because we only want to test the LanguageId here and not if the
                 // file ends in ps*1.
                 s_fakeUri,
@@ -81,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 // Kick off script diagnostics if we got a PowerShell file without blocking the response
                 // TODO: Get all recently edited files in the workspace
-                _analysisService.RunScriptDiagnostics(new ScriptFile[] { openedFile });
+                _analysisService.RunScriptDiagnostics(new ScriptFile [] { openedFile });
             }
 
             _logger.LogTrace("Finished opening document.");
@@ -93,7 +93,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // Find and close the file in the current session
             var fileToClose = _workspaceService.GetFile(notification.TextDocument.Uri);
 
-            if (fileToClose != null)
+            if(fileToClose != null)
             {
                 _workspaceService.CloseFile(fileToClose);
                 _analysisService.ClearMarkers(fileToClose);
@@ -107,9 +107,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             ScriptFile savedFile = _workspaceService.GetFile(notification.TextDocument.Uri);
 
-            if (savedFile != null)
+            if(savedFile != null)
             {
-                if (_remoteFileManagerService.IsUnderRemoteTempPath(savedFile.FilePath))
+                if(_remoteFileManagerService.IsUnderRemoteTempPath(savedFile.FilePath))
                 {
                     await _remoteFileManagerService.SaveRemoteFileAsync(savedFile.FilePath).ConfigureAwait(false);
                 }
@@ -123,7 +123,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             // The protocol's positions are zero-based so add 1 to all offsets
 
-            if (changeRange == null) return new FileChange { InsertString = insertString, IsReload = true };
+            if(changeRange == null) return new FileChange { InsertString = insertString, IsReload = true };
 
             return new FileChange
             {

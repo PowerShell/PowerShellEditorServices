@@ -48,16 +48,16 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             _debugService.IsClientAttached = true;
 
-            if (_debugStateService.OwnsEditorSession)
+            if(_debugStateService.OwnsEditorSession)
             {
                 // If this is a debug-only session, we need to start
                 // the command loop manually
                 _powerShellContextService.ConsoleReader.StartCommandLoop();
             }
 
-            if (!string.IsNullOrEmpty(_debugStateService.ScriptToLaunch))
+            if(!string.IsNullOrEmpty(_debugStateService.ScriptToLaunch))
             {
-                if (_powerShellContextService.SessionState == PowerShellContextState.Ready)
+                if(_powerShellContextService.SessionState == PowerShellContextState.Ready)
                 {
                     // Configuration is done, launch the script
                     var nonAwaitedTask = LaunchScriptAsync(_debugStateService.ScriptToLaunch)
@@ -69,11 +69,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
             }
 
-            if (_debugStateService.IsInteractiveDebugSession)
+            if(_debugStateService.IsInteractiveDebugSession)
             {
-                if (_debugService.IsDebuggerStopped)
+                if(_debugService.IsDebuggerStopped)
                 {
-                    if (_debugService.CurrentDebuggerStoppedEventArgs != null)
+                    if(_debugService.CurrentDebuggerStoppedEventArgs != null)
                     {
                         // If this is an interactive session and there's a pending breakpoint,
                         // send that information along to the debugger client
@@ -94,22 +94,22 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private async Task LaunchScriptAsync(string scriptToLaunch)
         {
             // Is this an untitled script?
-            if (ScriptFile.IsUntitledPath(scriptToLaunch))
+            if(ScriptFile.IsUntitledPath(scriptToLaunch))
             {
                 ScriptFile untitledScript = _workspaceService.GetFile(scriptToLaunch);
 
-                if (BreakpointApiUtils.SupportsBreakpointApis)
+                if(BreakpointApiUtils.SupportsBreakpointApis)
                 {
                     // Parse untitled files with their `Untitled:` URI as the file name which will cache the URI & contents within the PowerShell parser.
                     // By doing this, we light up the ability to debug Untitled files with breakpoints.
                     // This is only possible via the direct usage of the breakpoint APIs in PowerShell because
                     // Set-PSBreakpoint validates that paths are actually on the filesystem.
-                    ScriptBlockAst ast = Parser.ParseInput(untitledScript.Contents, untitledScript.DocumentUri.ToString(), out Token[] tokens, out ParseError[] errors);
+                    ScriptBlockAst ast = Parser.ParseInput(untitledScript.Contents, untitledScript.DocumentUri.ToString(), out Token [] tokens, out ParseError [] errors);
 
                     // This seems to be the simplest way to invoke a script block (which contains breakpoint information) via the PowerShell API.
                     var cmd = new PSCommand().AddScript(". $args[0]").AddArgument(ast.GetScriptBlock());
                     await _powerShellContextService
-                        .ExecuteCommandAsync<object>(cmd, sendOutputToHost: true, sendErrorToHost:true)
+                        .ExecuteCommandAsync<object>(cmd, sendOutputToHost: true, sendErrorToHost: true)
                         .ConfigureAwait(false);
                 }
                 else

@@ -56,11 +56,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         private void HandlePromptResponse(
             Task<ShowChoicePromptResponse> responseTask)
         {
-            if (responseTask.IsCompleted)
+            if(responseTask.IsCompleted)
             {
                 ShowChoicePromptResponse response = responseTask.Result;
 
-                if (!response.PromptCancelled)
+                if(!response.PromptCancelled)
                 {
                     this.hostOutput.WriteOutput(
                         response.ResponseText,
@@ -76,7 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             }
             else
             {
-                if (responseTask.IsFaulted)
+                if(responseTask.IsFaulted)
                 {
                     // Log the error
                     Logger.LogError(
@@ -134,11 +134,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         private void HandlePromptResponse(
             Task<ShowInputPromptResponse> responseTask)
         {
-            if (responseTask.IsCompleted)
+            if(responseTask.IsCompleted)
             {
                 ShowInputPromptResponse response = responseTask.Result;
 
-                if (!response.PromptCancelled)
+                if(!response.PromptCancelled)
                 {
                     this.hostOutput.WriteOutput(
                         response.ResponseText,
@@ -154,7 +154,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             }
             else
             {
-                if (responseTask.IsFaulted)
+                if(responseTask.IsFaulted)
                 {
                     // Log the error
                     Logger.LogError(

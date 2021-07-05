@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector,
             ResolveProvider = true,
-            TriggerCharacters = new[] { ".", "-", ":", "\\", "$" }
+            TriggerCharacters = new [] { ".", "-", ":", "\\", "$" }
         };
 
         public async Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
@@ -64,7 +64,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 await _completionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch(OperationCanceledException)
             {
                 _logger.LogDebug("Completion request canceled for file: {0}", request.TextDocument.Uri);
                 return Array.Empty<CompletionItem>();
@@ -72,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             try
             {
-                if (cancellationToken.IsCancellationRequested)
+                if(cancellationToken.IsCancellationRequested)
                 {
                     _logger.LogDebug("Completion request canceled for file: {0}", request.TextDocument.Uri);
                     return Array.Empty<CompletionItem>();
@@ -84,15 +84,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         cursorLine,
                         cursorColumn).ConfigureAwait(false);
 
-                if (completionResults == null)
+                if(completionResults == null)
                 {
                     return Array.Empty<CompletionItem>();
                 }
 
-                CompletionItem[] completionItems = new CompletionItem[completionResults.Completions.Length];
-                for (int i = 0; i < completionItems.Length; i++)
+                CompletionItem [] completionItems = new CompletionItem [completionResults.Completions.Length];
+                for(int i = 0; i < completionItems.Length; i++)
                 {
-                    completionItems[i] = CreateCompletionItem(completionResults.Completions[i], completionResults.ReplacedRange, i + 1);
+                    completionItems [i] = CreateCompletionItem(completionResults.Completions [i], completionResults.ReplacedRange, i + 1);
                 }
 
                 return completionItems;
@@ -112,13 +112,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public async Task<CompletionItem> Handle(CompletionItem request, CancellationToken cancellationToken)
         {
             // We currently only support this request for anything that returns a CommandInfo: functions, cmdlets, aliases.
-            if (request.Kind != CompletionItemKind.Function)
+            if(request.Kind != CompletionItemKind.Function)
             {
                 return request;
             }
 
             // No details means the module hasn't been imported yet and Intellisense shouldn't import the module to get this info.
-            if (request.Detail is null)
+            if(request.Detail is null)
             {
                 return request;
             }
@@ -127,7 +127,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 await _completionResolveLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch(OperationCanceledException)
             {
                 _logger.LogDebug("CompletionItemResolve request canceled for item: {0}", request.Label);
                 return request;
@@ -141,7 +141,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         request.Label,
                         _powerShellContextService).ConfigureAwait(false);
 
-                if (commandInfo != null)
+                if(commandInfo != null)
                 {
                     request = request with
                     {
@@ -194,7 +194,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     columnNumber);
 
             CommandCompletion commandCompletion = null;
-            using (var cts = new CancellationTokenSource(DefaultWaitTimeoutMilliseconds))
+            using(var cts = new CancellationTokenSource(DefaultWaitTimeoutMilliseconds))
             {
                 commandCompletion =
                     await AstOperations.GetCompletionsAsync(
@@ -206,7 +206,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         cts.Token).ConfigureAwait(false);
             }
 
-            if (commandCompletion == null)
+            if(commandCompletion == null)
             {
                 return new CompletionResults();
             }
@@ -226,7 +226,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 return completionResults;
             }
-            catch (ArgumentException e)
+            catch(ArgumentException e)
             {
                 // Bad completion results could return an invalid
                 // replacement range, catch that here
@@ -247,7 +247,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             string completionText = completionDetails.CompletionText;
             InsertTextFormat insertTextFormat = InsertTextFormat.PlainText;
 
-            switch (completionDetails.CompletionType)
+            switch(completionDetails.CompletionType)
             {
                 case CompletionType.Type:
                 case CompletionType.Namespace:
@@ -262,13 +262,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     // Display PowerShell type names in [] to be consistent with PowerShell syntax
                     // and how the debugger displays type names.
                     var matches = Regex.Matches(completionDetails.ToolTipText, @"^(\[.+\])");
-                    if ((matches.Count > 0) && (matches[0].Groups.Count > 1))
+                    if((matches.Count > 0) && (matches [0].Groups.Count > 1))
                     {
-                        detailString = matches[0].Groups[1].Value;
+                        detailString = matches [0].Groups [1].Value;
                     }
                     // The comparison operators (-eq, -not, -gt, etc) are unfortunately fall into ParameterName
                     // but they don't have a type associated to them. This allows those tooltips to show up.
-                    else if (!string.IsNullOrEmpty(completionDetails.ToolTipText))
+                    else if(!string.IsNullOrEmpty(completionDetails.ToolTipText))
                     {
                         detailString = completionDetails.ToolTipText;
                     }
@@ -276,14 +276,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 case CompletionType.Command:
                     // For Commands, let's extract the resolved command or the path for an exe
                     // from the ToolTipText - if there is any ToolTipText.
-                    if (completionDetails.ToolTipText != null)
+                    if(completionDetails.ToolTipText != null)
                     {
                         // Fix for #240 - notepad++.exe in tooltip text caused regex parser to throw.
                         string escapedToolTipText = Regex.Escape(completionDetails.ToolTipText);
 
                         // Don't display ToolTipText if it is the same as the ListItemText.
                         // Reject command syntax ToolTipText - it's too much to display as a detailString.
-                        if (!completionDetails.ListItemText.Equals(
+                        if(!completionDetails.ListItemText.Equals(
                                 completionDetails.ToolTipText,
                                 StringComparison.OrdinalIgnoreCase) &&
                             !Regex.IsMatch(completionDetails.ToolTipText,
@@ -303,7 +303,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     // https://microsoft.github.io/language-server-protocol/specification#textDocument_completion
 
                     // Since we want to use a "tab stop" we need to escape a few things for Textmate to render properly.
-                    if (EndsWithQuote(completionText))
+                    if(EndsWithQuote(completionText))
                     {
                         var sb = new StringBuilder(completionDetails.CompletionText)
                             .Replace(@"\", @"\\")
@@ -355,7 +355,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private static CompletionItemKind MapCompletionKind(CompletionType completionType)
         {
-            switch (completionType)
+            switch(completionType)
             {
                 case CompletionType.Command:
                     return CompletionItemKind.Function;
@@ -383,12 +383,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private static bool EndsWithQuote(string text)
         {
-            if (string.IsNullOrEmpty(text))
+            if(string.IsNullOrEmpty(text))
             {
                 return false;
             }
 
-            char lastChar = text[text.Length - 1];
+            char lastChar = text [text.Length - 1];
             return lastChar == '"' || lastChar == '\'';
         }
     }

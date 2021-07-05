@@ -52,9 +52,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             var locations = new List<Location>();
 
-            if (referencesResult != null)
+            if(referencesResult != null)
             {
-                foreach (SymbolReference foundReference in referencesResult)
+                foreach(SymbolReference foundReference in referencesResult)
                 {
                     locations.Add(new Location
                     {

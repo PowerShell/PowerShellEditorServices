@@ -37,7 +37,7 @@ namespace PowerShellEditorServices.Test.E2E
         public StdioServerProcess(ILoggerFactory loggerFactory, ProcessStartInfo serverStartInfo)
             : base(loggerFactory)
         {
-            if (serverStartInfo == null)
+            if(serverStartInfo == null)
             {
                 throw new ArgumentNullException(nameof(serverStartInfo));
             }
@@ -53,12 +53,12 @@ namespace PowerShellEditorServices.Test.E2E
         /// </param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
+            if(disposing)
             {
                 Process serverProcess = Interlocked.Exchange(ref _serverProcess, null);
-                if (serverProcess != null)
+                if(serverProcess != null)
                 {
-                    if (!serverProcess.HasExited)
+                    if(!serverProcess.HasExited)
                     {
                         serverProcess.Kill();
                     }
@@ -102,7 +102,7 @@ namespace PowerShellEditorServices.Test.E2E
             };
             serverProcess.Exited += ServerProcess_Exit;
 
-            if (!serverProcess.Start())
+            if(!serverProcess.Start())
             {
                 throw new InvalidOperationException("Failed to launch language server .");
             }
@@ -118,7 +118,7 @@ namespace PowerShellEditorServices.Test.E2E
         public override async Task Stop()
         {
             Process serverProcess = Interlocked.Exchange(ref _serverProcess, null);
-            if (serverProcess != null && !serverProcess.HasExited)
+            if(serverProcess != null && !serverProcess.HasExited)
             {
                 serverProcess.Kill();
             }

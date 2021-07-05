@@ -106,7 +106,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         internal void StartThreadExit(DebuggerResumeAction action, bool waitForExit)
         {
             Task.Run(() => FrameExitTask.TrySetResult(action));
-            if (!waitForExit)
+            if(!waitForExit)
             {
                 return;
             }

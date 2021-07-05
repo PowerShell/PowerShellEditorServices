@@ -48,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 {
                     WriteOutputToHost = sendOutputToHost
                 })
-            { }
+        { }
 
 
         public PipelineExecutionRequest(

@@ -49,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         internal PromptNestFrame(PowerShell powerShell, AsyncQueue<RunspaceHandle> handleQueue)
             : this(powerShell, handleQueue, PromptNestFrameType.Normal)
-            { }
+        { }
 
         internal PromptNestFrame(
             PowerShell powerShell,
@@ -60,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             Queue = handleQueue;
             FrameType = frameType;
             IsThreadController = (frameType & (PromptNestFrameType.Debug | PromptNestFrameType.NestedPrompt)) != 0;
-            if (!IsThreadController)
+            if(!IsThreadController)
             {
                 return;
             }
@@ -75,14 +75,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         protected virtual void Dispose(bool disposing)
         {
-            if (_isDisposed)
+            if(_isDisposed)
             {
                 return;
             }
 
-            if (disposing)
+            if(disposing)
             {
-                if (IndisposableStates.HasFlag(PowerShell.InvocationStateInfo.State))
+                if(IndisposableStates.HasFlag(PowerShell.InvocationStateInfo.State))
                 {
                     PowerShell.BeginStop(
                         asyncResult =>

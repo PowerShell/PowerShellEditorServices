@@ -11,8 +11,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 {
     public class ChoicePromptHandlerTests
     {
-        private readonly ChoiceDetails[] Choices =
-            new ChoiceDetails[]
+        private readonly ChoiceDetails [] Choices =
+            new ChoiceDetails []
             {
                 new ChoiceDetails("&Apple", ""),
                 new ChoiceDetails("Ba&nana", ""),

@@ -49,18 +49,18 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 request.Position.Line + 1,
                 request.Position.Character + 1);
 
-            if (symbolOccurrences == null)
+            if(symbolOccurrences == null)
             {
                 return Task.FromResult(s_emptyHighlightContainer);
             }
 
-            var highlights = new DocumentHighlight[symbolOccurrences.Count];
-            for (int i = 0; i < symbolOccurrences.Count; i++)
+            var highlights = new DocumentHighlight [symbolOccurrences.Count];
+            for(int i = 0; i < symbolOccurrences.Count; i++)
             {
-                highlights[i] = new DocumentHighlight
+                highlights [i] = new DocumentHighlight
                 {
                     Kind = DocumentHighlightKind.Write, // TODO: Which symbol types are writable?
-                    Range = symbolOccurrences[i].ScriptRegion.ToRange()
+                    Range = symbolOccurrences [i].ScriptRegion.ToRange()
                 };
             }
 

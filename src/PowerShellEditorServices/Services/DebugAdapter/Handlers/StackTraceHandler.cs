@@ -29,12 +29,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public Task<StackTraceResponse> Handle(StackTraceArguments request, CancellationToken cancellationToken)
         {
-            StackFrameDetails[] stackFrameDetails =
+            StackFrameDetails [] stackFrameDetails =
                 _debugService.GetStackFrames();
 
             // Handle a rare race condition where the adapter requests stack frames before they've
             // begun building.
-            if (stackFrameDetails == null)
+            if(stackFrameDetails == null)
             {
                 return Task.FromResult(new StackTraceResponse
                 {
@@ -51,12 +51,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // If the number of requested levels == 0 (or null), that means get all stack frames
             // after the specified startFrame index. Otherwise get all the stack frames.
             long requestedFrameCount = (request.Levels ?? 0);
-            if (requestedFrameCount > 0)
+            if(requestedFrameCount > 0)
             {
                 maxFrameCount = Math.Min(maxFrameCount, startFrameIndex + requestedFrameCount);
             }
 
-            for (long i = startFrameIndex; i < maxFrameCount; i++)
+            for(long i = startFrameIndex; i < maxFrameCount; i++)
             {
                 // Create the new StackFrame object with an ID that can
                 // be referenced back to the current list of stack frames
@@ -65,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 //        stackFrameDetails[i],
                 //        i));
                 newStackFrames.Add(
-                    LspDebugUtils.CreateStackFrame(stackFrameDetails[i], id: i));
+                    LspDebugUtils.CreateStackFrame(stackFrameDetails [i], id: i));
             }
 
             return Task.FromResult(new StackTraceResponse

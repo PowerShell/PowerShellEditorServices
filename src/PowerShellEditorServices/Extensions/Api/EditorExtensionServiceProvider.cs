@@ -118,9 +118,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         public object GetServiceByAssemblyQualifiedName(string asmQualifiedTypeName)
         {
             Type serviceType;
-            if (VersionUtils.IsNetCore)
+            if(VersionUtils.IsNetCore)
             {
-                using (EnterPsesAlcReflectionContext())
+                using(EnterPsesAlcReflectionContext())
                 {
                     serviceType = s_psesAsm.GetType(asmQualifiedTypeName);
                 }
@@ -158,7 +158,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <returns>The assembly load context used for loading PSES, or null in .NET Framework.</returns>
         public object GetPsesAssemblyLoadContext()
         {
-            if (!VersionUtils.IsNetCore)
+            if(!VersionUtils.IsNetCore)
             {
                 return null;
             }
@@ -174,7 +174,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <returns>The loaded assembly object.</returns>
         public Assembly LoadAssemblyInPsesLoadContext(string assemblyPath)
         {
-            if (!VersionUtils.IsNetCore)
+            if(!VersionUtils.IsNetCore)
             {
                 return Assembly.LoadFrom(assemblyPath);
             }
@@ -200,14 +200,14 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 
         private static object GetPsesAsmLoadContext()
         {
-            if (!VersionUtils.IsNetCore)
+            if(!VersionUtils.IsNetCore)
             {
                 return null;
             }
 
             Type alcType = Type.GetType("System.Runtime.Loader.AssemblyLoadContext");
             MethodInfo getAlcMethod = alcType.GetMethod("GetLoadContext", BindingFlags.Public | BindingFlags.Static);
-            return getAlcMethod.Invoke(obj: null, new object[] { s_psesAsm });
+            return getAlcMethod.Invoke(obj: null, new object [] { s_psesAsm });
         }
     }
 }

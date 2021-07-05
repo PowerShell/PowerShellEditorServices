@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             Validate.IsNotNull(nameof(originalEvent), originalEvent);
             Validate.IsNotNull(nameof(runspaceDetails), runspaceDetails);
 
-            if (!string.IsNullOrEmpty(localScriptPath))
+            if(!string.IsNullOrEmpty(localScriptPath))
             {
                 this.ScriptPath = localScriptPath;
                 this.RemoteScriptPath = originalEvent.InvocationInfo.ScriptName;

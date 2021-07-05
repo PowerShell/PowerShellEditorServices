@@ -121,7 +121,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </summary>
         public void StartCommandLoop()
         {
-            if (!this.IsCommandLoopRunning)
+            if(!this.IsCommandLoopRunning)
             {
                 this.IsCommandLoopRunning = true;
                 this.ShowCommandPrompt();
@@ -133,7 +133,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </summary>
         public void StopCommandLoop()
         {
-            if (this.IsCommandLoopRunning)
+            if(this.IsCommandLoopRunning)
             {
                 this.IsCommandLoopRunning = false;
                 this.CancelCommandPrompt();
@@ -142,7 +142,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private void ShowCommandPrompt()
         {
-            if (this.commandLoopCancellationToken == null)
+            if(this.commandLoopCancellationToken == null)
             {
                 this.commandLoopCancellationToken = new CancellationTokenSource();
                 Task.Run(() => this.StartReplLoopAsync(this.commandLoopCancellationToken.Token));
@@ -155,7 +155,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private void CancelCommandPrompt()
         {
-            if (this.commandLoopCancellationToken != null)
+            if(this.commandLoopCancellationToken != null)
             {
                 // Set this to false so that Ctrl+C isn't trapped by any
                 // lingering ReadKey
@@ -172,7 +172,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </summary>
         public void SendControlC()
         {
-            if (this.activePromptHandler != null)
+            if(this.activePromptHandler != null)
             {
                 this.activePromptHandler.CancelPrompt();
             }
@@ -268,7 +268,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             string promptMessage,
             Collection<FieldDescription> fieldDescriptions)
         {
-            FieldDetails[] fields =
+            FieldDetails [] fields =
                 fieldDescriptions
                     .Select(f => { return FieldDetails.Create(f, this.Logger); })
                     .ToArray();
@@ -292,10 +292,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             var psObjectDict = new Dictionary<string, PSObject>();
 
             // The result will be null if the prompt was cancelled
-            if (promptTask.Result != null)
+            if(promptTask.Result != null)
             {
                 // Convert all values to PSObjects
-                foreach (var keyValuePair in promptTask.Result)
+                foreach(var keyValuePair in promptTask.Result)
                 {
                     psObjectDict.Add(
                         keyValuePair.Key,
@@ -321,7 +321,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             Collection<ChoiceDescription> choiceDescriptions,
             int defaultChoice)
         {
-            ChoiceDetails[] choices =
+            ChoiceDetails [] choices =
                 choiceDescriptions
                     .Select(ChoiceDetails.Create)
                     .ToArray();
@@ -371,24 +371,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     .PromptForInputAsync(
                         promptCaption,
                         promptMessage,
-                        new FieldDetails[] { new CredentialFieldDetails("Credential", "Credential", userName) },
+                        new FieldDetails [] { new CredentialFieldDetails("Credential", "Credential", userName) },
                         cancellationToken.Token);
 
             Task<PSCredential> unpackTask =
                 promptTask.ContinueWith(
                     task =>
                     {
-                        if (task.IsFaulted)
+                        if(task.IsFaulted)
                         {
                             throw task.Exception;
                         }
-                        else if (task.IsCanceled)
+                        else if(task.IsCanceled)
                         {
                             throw new TaskCanceledException(task);
                         }
 
                         // Return the value of the sole field
-                        return (PSCredential)task.Result?["Credential"];
+                        return (PSCredential)task.Result? ["Credential"];
                     });
 
             // Run the prompt task and wait for it to return
@@ -571,7 +571,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             // PowerShell's ConsoleHost also skips over empty lines:
             // https://github.com/PowerShell/PowerShell/blob/8e683972284a5a7f773ea6d027d9aac14d7e7524/src/Microsoft.PowerShell.ConsoleHost/host/msh/ConsoleHostUserInterface.cs#L1334-L1337
-            if (string.IsNullOrEmpty(value))
+            if(string.IsNullOrEmpty(value))
             {
                 return;
             }
@@ -600,7 +600,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             ProgressRecord record)
         {
             // Maintain old behavior if this isn't overridden.
-            if (!this.SupportsWriteProgress)
+            if(!this.SupportsWriteProgress)
             {
                 this.UpdateProgress(sourceId, ProgressDetails.Create(record));
                 return;
@@ -608,7 +608,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             // Keep a list of progress records we write so we can automatically
             // clean them up after the pipeline ends.
-            if (record.RecordType == ProgressRecordType.Completed)
+            if(record.RecordType == ProgressRecordType.Completed)
             {
                 this.currentProgressMessages.TryRemove(new ProgressKey(sourceId, record), out _);
             }
@@ -640,12 +640,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         internal void ClearProgress()
         {
             const string nonEmptyString = "noop";
-            if (!this.SupportsWriteProgress)
+            if(!this.SupportsWriteProgress)
             {
                 return;
             }
 
-            foreach (ProgressKey key in this.currentProgressMessages.Keys)
+            foreach(ProgressKey key in this.currentProgressMessages.Keys)
             {
                 // This constructor throws if the activity description is empty even
                 // with completed records.
@@ -679,13 +679,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             Collection<ChoiceDescription> choiceDescriptions,
             IEnumerable<int> defaultChoices)
         {
-            ChoiceDetails[] choices =
+            ChoiceDetails [] choices =
                 choiceDescriptions
                     .Select(ChoiceDetails.Create)
                     .ToArray();
 
             CancellationTokenSource cancellationToken = new CancellationTokenSource();
-            Task<int[]> promptTask =
+            Task<int []> promptTask =
                 this.CreateChoicePromptHandler()
                     .PromptForChoiceAsync(
                         promptCaption,
@@ -714,7 +714,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             try
             {
-                if (this.lastPromptLocation != null &&
+                if(this.lastPromptLocation != null &&
                     this.lastPromptLocation.X == await ConsoleProxy.GetCursorLeftAsync(cancellationToken).ConfigureAwait(false) &&
                     this.lastPromptLocation.Y == await ConsoleProxy.GetCursorTopAsync(cancellationToken).ConfigureAwait(false))
                 {
@@ -723,7 +723,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             }
             // When output is redirected (like when running tests) attempting to get
             // the cursor position will throw.
-            catch (System.IO.IOException)
+            catch(System.IO.IOException)
             {
             }
 
@@ -737,7 +737,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     .FirstOrDefault() ?? "PS> ";
 
             // Add the [DBG] prefix if we're stopped in the debugger and the prompt doesn't already have [DBG] in it
-            if (this.powerShellContext.IsDebuggerStopped && !promptString.Contains("[DBG]"))
+            if(this.powerShellContext.IsDebuggerStopped && !promptString.Contains("[DBG]"))
             {
                 promptString =
                     string.Format(
@@ -747,7 +747,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             }
 
             // Update the stored prompt string if the session is remote
-            if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote)
+            if(this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote)
             {
                 promptString =
                     string.Format(
@@ -772,11 +772,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             // TODO: What do we display when we don't know why we stopped?
 
-            if (eventArgs.Breakpoints.Count > 0)
+            if(eventArgs.Breakpoints.Count > 0)
             {
                 // The breakpoint classes have nice ToString output so use that
                 this.WriteOutput(
-                    Environment.NewLine + $"Hit {eventArgs.Breakpoints[0].ToString()}\n",
+                    Environment.NewLine + $"Hit {eventArgs.Breakpoints [0].ToString()}\n",
                     true,
                     OutputType.Normal,
                     ConsoleColor.Blue);
@@ -805,7 +805,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private async Task StartReplLoopAsync(CancellationToken cancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            while(!cancellationToken.IsCancellationRequested)
             {
                 string commandString = null;
 
@@ -813,7 +813,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 {
                     await this.WritePromptStringToHostAsync(cancellationToken).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException)
+                catch(OperationCanceledException)
                 {
                     break;
                 }
@@ -822,7 +822,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 {
                     commandString = await this.ReadCommandLineAsync(cancellationToken).ConfigureAwait(false);
                 }
-                catch (PipelineStoppedException)
+                catch(PipelineStoppedException)
                 {
                     this.WriteOutput(
                         "^C",
@@ -831,11 +831,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         foregroundColor: ConsoleColor.Red);
                 }
                 // Do nothing here, the while loop condition will exit.
-                catch (TaskCanceledException)
+                catch(TaskCanceledException)
                 { }
-                catch (OperationCanceledException)
+                catch(OperationCanceledException)
                 { }
-                catch (Exception e) // Narrow this if possible
+                catch(Exception e) // Narrow this if possible
                 {
                     this.WriteOutput(
                         $"\n\nAn error occurred while reading input:\n\n{e.ToString()}\n",
@@ -853,13 +853,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     // TODO: This still gives an extra newline when you hit ENTER in the PSReadLine experience. We should figure
                     // out if there's any way to avoid that... but unfortunately, in both scenarios, we only see that empty
                     // string is returned.
-                    if (!cancellationToken.IsCancellationRequested)
+                    if(!cancellationToken.IsCancellationRequested)
                     {
                         this.WriteLine();
                     }
                 }
 
-                if (!string.IsNullOrWhiteSpace(commandString))
+                if(!string.IsNullOrWhiteSpace(commandString))
                 {
                     var unusedTask =
                         this.powerShellContext
@@ -877,7 +877,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private InputPromptHandler CreateInputPromptHandler()
         {
-            if (this.activePromptHandler != null)
+            if(this.activePromptHandler != null)
             {
                 Logger.LogError(
                     "Prompt handler requested while another prompt is already active.");
@@ -892,7 +892,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private ChoicePromptHandler CreateChoicePromptHandler()
         {
-            if (this.activePromptHandler != null)
+            if(this.activePromptHandler != null)
             {
                 Logger.LogError(
                     "Prompt handler requested while another prompt is already active.");
@@ -922,7 +922,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 // method which gets run on another thread.
                 promptTask.Wait();
 
-                if (promptTask.Status == TaskStatus.WaitingForActivation)
+                if(promptTask.Status == TaskStatus.WaitingForActivation)
                 {
                     // The Wait() call has timed out, cancel the prompt
                     cancellationToken.Cancel();
@@ -931,22 +931,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     throw new PipelineStoppedException();
                 }
             }
-            catch (AggregateException e)
+            catch(AggregateException e)
             {
                 // Find the right InnerException
                 Exception innerException = e.InnerException;
-                while (innerException is AggregateException)
+                while(innerException is AggregateException)
                 {
                     innerException = innerException.InnerException;
                 }
 
                 // Was the task cancelled?
-                if (innerException is TaskCanceledException)
+                if(innerException is TaskCanceledException)
                 {
                     // Stop the pipeline if the prompt was cancelled
                     throw new PipelineStoppedException();
                 }
-                else if (innerException is PipelineStoppedException)
+                else if(innerException is PipelineStoppedException)
                 {
                     // The prompt is being cancelled, rethrow the exception
                     throw innerException;
@@ -965,7 +965,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         private void PowerShellContext_DebuggerStop(object sender, System.Management.Automation.DebuggerStopEventArgs e)
         {
-            if (!this.IsCommandLoopRunning)
+            if(!this.IsCommandLoopRunning)
             {
                 StartCommandLoop();
                 return;
@@ -986,24 +986,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         private void PowerShellContext_ExecutionStatusChanged(object sender, ExecutionStatusChangedEventArgs eventArgs)
         {
             // The command loop should only be manipulated if it's already started
-            if (eventArgs.ExecutionStatus == ExecutionStatus.Aborted)
+            if(eventArgs.ExecutionStatus == ExecutionStatus.Aborted)
             {
                 this.ClearProgress();
 
                 // When aborted, cancel any lingering prompts
-                if (this.activePromptHandler != null)
+                if(this.activePromptHandler != null)
                 {
                     this.activePromptHandler.CancelPrompt();
                     this.WriteOutput(string.Empty);
                 }
             }
-            else if (
+            else if(
                 eventArgs.ExecutionOptions.WriteOutputToHost ||
                 eventArgs.ExecutionOptions.InterruptCommandPrompt)
             {
                 // Any command which writes output to the host will affect
                 // the display of the prompt
-                if (eventArgs.ExecutionStatus != ExecutionStatus.Running)
+                if(eventArgs.ExecutionStatus != ExecutionStatus.Running)
                 {
                     this.ClearProgress();
 
@@ -1018,7 +1018,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     this.CancelCommandPrompt();
                 }
             }
-            else if (
+            else if(
                 eventArgs.ExecutionOptions.WriteErrorsToHost &&
                 (eventArgs.ExecutionStatus == ExecutionStatus.Failed ||
                     eventArgs.HadErrors))

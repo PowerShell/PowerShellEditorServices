@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             string userName)
             : this(name, label, typeof(PSCredential), true, null)
         {
-            if (!string.IsNullOrEmpty(userName))
+            if(!string.IsNullOrEmpty(userName))
             {
                 // Call GetNextField to prepare the password field
                 this.userName = userName;
@@ -69,12 +69,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </returns>
         public override FieldDetails GetNextField()
         {
-            if (this.password != null)
+            if(this.password != null)
             {
                 // No more fields to display
                 return null;
             }
-            else if (this.userName != null)
+            else if(this.userName != null)
             {
                 this.Name = $"Password for user {this.userName}";
                 this.FieldType = typeof(SecureString);
@@ -92,9 +92,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </param>
         public override void SetValue(object fieldValue, bool hasValue)
         {
-            if (hasValue)
+            if(hasValue)
             {
-                if (this.userName == null)
+                if(this.userName == null)
                 {
                     this.userName = (string)fieldValue;
                 }

@@ -41,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             // if a command name does not exists (if the symbol isn't an alias to a command)
             // set symbolRefCommandName to and empty string value
             AliasToCmdletDictionary.TryGetValue(symbolReference.ScriptRegion.Text, out symbolRefCommandName);
-            if (symbolRefCommandName == null) { symbolRefCommandName = string.Empty; }
+            if(symbolRefCommandName == null) { symbolRefCommandName = string.Empty; }
 
         }
 
@@ -65,12 +65,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitCommand(CommandAst commandAst)
         {
-            Ast commandNameAst = commandAst.CommandElements[0];
+            Ast commandNameAst = commandAst.CommandElements [0];
             string commandName = commandNameAst.Extent.Text;
 
             if(symbolRef.SymbolType.Equals(SymbolType.Function))
             {
-                if (needsAliases)
+                if(needsAliases)
                 {
                     // Try to get the commandAst's name and aliases,
                     // if a command does not exists (if the symbol isn't an alias to a command)
@@ -81,15 +81,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                     List<string> alaises;
                     CmdletToAliasDictionary.TryGetValue(commandName, out alaises);
                     AliasToCmdletDictionary.TryGetValue(commandName, out command);
-                    if (alaises == null) { alaises = new List<string>(); }
-                    if (command == null) { command = string.Empty; }
+                    if(alaises == null) { alaises = new List<string>(); }
+                    if(command == null) { command = string.Empty; }
 
-                    if (symbolRef.SymbolType.Equals(SymbolType.Function))
+                    if(symbolRef.SymbolType.Equals(SymbolType.Function))
                     {
                         // Check if the found symbol's name is the same as the commandAst's name OR
                         // if the symbol's name is an alias for this commandAst's name (commandAst is a cmdlet) OR
                         // if the symbol's name is the same as the commandAst's cmdlet name (commandAst is a alias)
-                        if (commandName.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase) ||
+                        if(commandName.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase) ||
                         alaises.Contains(symbolRef.ScriptRegion.Text.ToLower()) ||
                         command.Equals(symbolRef.ScriptRegion.Text, StringComparison.CurrentCultureIgnoreCase) ||
                         (!string.IsNullOrEmpty(command) && command.Equals(symbolRefCommandName, StringComparison.CurrentCultureIgnoreCase)))
@@ -103,7 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 }
                 else // search does not include aliases
                 {
-                    if (commandName.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+                    if(commandName.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
                     {
                         this.FoundReferences.Add(new SymbolReference(
                             SymbolType.Function,
@@ -135,7 +135,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 File = functionDefinitionAst.Extent.File
             };
 
-            if (symbolRef.SymbolType.Equals(SymbolType.Function) &&
+            if(symbolRef.SymbolType.Equals(SymbolType.Function) &&
                 nameExtent.Text.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
                 this.FoundReferences.Add(new SymbolReference(
@@ -153,7 +153,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitCommandParameter(CommandParameterAst commandParameterAst)
         {
-            if (symbolRef.SymbolType.Equals(SymbolType.Parameter) &&
+            if(symbolRef.SymbolType.Equals(SymbolType.Parameter) &&
                 commandParameterAst.Extent.Text.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
                 this.FoundReferences.Add(new SymbolReference(
@@ -188,11 +188,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             int startLineNumber = ast.Extent.StartLineNumber;
             int astOffset = 0;
 
-            if (ast.IsFilter)
+            if(ast.IsFilter)
             {
                 astOffset = "filter".Length;
             }
-            else if (ast.IsWorkflow)
+            else if(ast.IsWorkflow)
             {
                 astOffset = "workflow".Length;
             }
@@ -205,21 +205,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             // The line offset represents the offset on the line that we're on where as
             // astOffset is the offset on the entire text of the AST.
             int lineOffset = astOffset;
-            for (; astOffset < astText.Length; astOffset++, lineOffset++)
+            for(; astOffset < astText.Length; astOffset++, lineOffset++)
             {
-                if (astText[astOffset] == '\n')
+                if(astText [astOffset] == '\n')
                 {
                     // reset numbers since we are operating on a different line and increment the line number.
                     startColumnNumber = 0;
                     startLineNumber++;
                     lineOffset = 0;
                 }
-                else if (astText[astOffset] == '\r')
+                else if(astText [astOffset] == '\r')
                 {
                     // Do nothing with carriage returns... we only look for line feeds since those
                     // are used on every platform.
                 }
-                else if (!char.IsWhiteSpace(astText[astOffset]))
+                else if(!char.IsWhiteSpace(astText [astOffset]))
                 {
                     // This is the start of the function name so we've found our start column and line number.
                     break;

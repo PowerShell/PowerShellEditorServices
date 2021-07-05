@@ -22,7 +22,7 @@ namespace PowerShellEditorServices.Test.E2E
                 CreateTemporaryIntegratedConsole = false,
             }).ConfigureAwait(false);
 
-            if (launchResponse == null)
+            if(launchResponse == null)
             {
                 throw new Exception("Launch response was null.");
             }

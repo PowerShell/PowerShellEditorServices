@@ -49,21 +49,21 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // Get-Command -CommandType Function,Cmdlet,ExternalScript | Sort-Object -Property Name
             psCommand
                 .AddCommand("Microsoft.PowerShell.Core\\Get-Command")
-                    .AddParameter("CommandType", new[] { "Function", "Cmdlet", "ExternalScript" })
+                    .AddParameter("CommandType", new [] { "Function", "Cmdlet", "ExternalScript" })
                 .AddCommand("Microsoft.PowerShell.Utility\\Sort-Object")
                     .AddParameter("Property", "Name");
 
             IEnumerable<CommandInfo> result = await _powerShellContextService.ExecuteCommandAsync<CommandInfo>(psCommand).ConfigureAwait(false);
 
             var commandList = new List<PSCommandMessage>();
-            if (result != null)
+            if(result != null)
             {
-                foreach (CommandInfo command in result)
+                foreach(CommandInfo command in result)
                 {
                     // Some info objects have a quicker way to get the DefaultParameterSet. These
                     // are also the most likely to show up so win-win.
                     string defaultParameterSet = null;
-                    switch (command)
+                    switch(command)
                     {
                         case CmdletInfo info:
                             defaultParameterSet = info.DefaultParameterSet;
@@ -73,12 +73,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                             break;
                     }
 
-                    if (defaultParameterSet == null)
+                    if(defaultParameterSet == null)
                     {
                         // Try to get the default ParameterSet if it isn't streamlined (ExternalScriptInfo for example)
-                        foreach (CommandParameterSetInfo parameterSetInfo in command.ParameterSets)
+                        foreach(CommandParameterSetInfo parameterSetInfo in command.ParameterSets)
                         {
-                            if (parameterSetInfo.IsDefault)
+                            if(parameterSetInfo.IsDefault)
                             {
                                 defaultParameterSet = parameterSetInfo.Name;
                                 break;

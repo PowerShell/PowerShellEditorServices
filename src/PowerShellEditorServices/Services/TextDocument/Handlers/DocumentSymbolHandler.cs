@@ -25,13 +25,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     {
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
-        private readonly IDocumentSymbolProvider[] _providers;
+        private readonly IDocumentSymbolProvider [] _providers;
 
         public PsesDocumentSymbolHandler(ILoggerFactory factory, ConfigurationService configurationService, WorkspaceService workspaceService)
         {
             _logger = factory.CreateLogger<PsesDocumentSymbolHandler>();
             _workspaceService = workspaceService;
-            _providers = new IDocumentSymbolProvider[]
+            _providers = new IDocumentSymbolProvider []
             {
                 new ScriptDocumentSymbolProvider(),
                 new PsdDocumentSymbolProvider(),
@@ -51,11 +51,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             IEnumerable<ISymbolReference> foundSymbols =
                 this.ProvideDocumentSymbols(scriptFile);
 
-            SymbolInformationOrDocumentSymbol[] symbols = null;
+            SymbolInformationOrDocumentSymbol [] symbols = null;
 
             string containerName = Path.GetFileNameWithoutExtension(scriptFile.FilePath);
 
-            if (foundSymbols != null)
+            if(foundSymbols != null)
             {
                 symbols =
                     foundSymbols
@@ -107,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             Stopwatch invokeTimer = new Stopwatch();
             List<TResult> providerResults = new List<TResult>();
 
-            foreach (var provider in this._providers)
+            foreach(var provider in this._providers)
             {
                 try
                 {
@@ -120,7 +120,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     this._logger.LogTrace(
                         $"Invocation of provider '{provider.GetType().Name}' completed in {invokeTimer.ElapsedMilliseconds}ms.");
                 }
-                catch (Exception e)
+                catch(Exception e)
                 {
                     this._logger.LogException(
                         $"Exception caught while invoking provider {provider.GetType().Name}:",
@@ -133,7 +133,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private static SymbolKind GetSymbolKind(SymbolType symbolType)
         {
-            switch (symbolType)
+            switch(symbolType)
             {
                 case SymbolType.Configuration:
                 case SymbolType.Function:
@@ -149,7 +149,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             string name = symbolReference.SymbolName;
 
-            if (symbolReference.SymbolType == SymbolType.Configuration ||
+            if(symbolReference.SymbolType == SymbolType.Configuration ||
                 symbolReference.SymbolType == SymbolType.Function ||
                 symbolReference.SymbolType == SymbolType.Workflow)
             {

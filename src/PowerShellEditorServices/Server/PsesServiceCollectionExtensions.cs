@@ -63,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 .AddSingleton<BreakpointService>()
                 .AddSingleton<DebugStateService>(new DebugStateService
                 {
-                     OwnsEditorSession = useTempSession
+                    OwnsEditorSession = useTempSession
                 })
                 .AddSingleton<DebugEventHandlerService>();
         }

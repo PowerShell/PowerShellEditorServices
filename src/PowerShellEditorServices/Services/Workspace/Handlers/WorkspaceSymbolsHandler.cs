@@ -23,7 +23,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
 
-        public PsesWorkspaceSymbolsHandler(ILoggerFactory loggerFactory, SymbolsService symbols, WorkspaceService workspace) {
+        public PsesWorkspaceSymbolsHandler(ILoggerFactory loggerFactory, SymbolsService symbols, WorkspaceService workspace)
+        {
             _logger = loggerFactory.CreateLogger<PsesWorkspaceSymbolsHandler>();
             _symbolsService = symbols;
             _workspaceService = workspace;
@@ -35,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             var symbols = new List<SymbolInformation>();
 
-            foreach (ScriptFile scriptFile in _workspaceService.GetOpenedFiles())
+            foreach(ScriptFile scriptFile in _workspaceService.GetOpenedFiles())
             {
                 List<SymbolReference> foundSymbols =
                     _symbolsService.FindSymbolsInFile(
@@ -44,9 +45,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 // TODO: Need to compute a relative path that is based on common path for all workspace files
                 string containerName = Path.GetFileNameWithoutExtension(scriptFile.FilePath);
 
-                foreach (SymbolReference foundOccurrence in foundSymbols)
+                foreach(SymbolReference foundOccurrence in foundSymbols)
                 {
-                    if (!IsQueryMatch(request.Query, foundOccurrence.SymbolName))
+                    if(!IsQueryMatch(request.Query, foundOccurrence.SymbolName))
                     {
                         continue;
                     }
@@ -99,7 +100,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             string name = symbolReference.SymbolName;
 
-            if (symbolReference.SymbolType == SymbolType.Configuration ||
+            if(symbolReference.SymbolType == SymbolType.Configuration ||
                 symbolReference.SymbolType == SymbolType.Function ||
                 symbolReference.SymbolType == SymbolType.Workflow)
             {

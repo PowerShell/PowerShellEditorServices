@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 
             private object _settingsParameter;
 
-            private string[] _rules;
+            private string [] _rules;
 
             /// <summary>
             /// Create a builder for PssaCmdletAnalysisEngine construction.
@@ -70,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             /// </summary>
             /// <param name="rules">The rules for PSSA to run.</param>
             /// <returns>The builder for chaining.</returns>
-            public Builder WithIncludedRules(string[] rules)
+            public Builder WithIncludedRules(string [] rules)
             {
                 _rules = rules;
                 return this;
@@ -97,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                     cmdletAnalysisEngine.LogAvailablePssaFeatures();
                     return cmdletAnalysisEngine;
                 }
-                catch (FileNotFoundException e)
+                catch(FileNotFoundException e)
                 {
                     logger.LogError(e, $"Unable to find PSScriptAnalyzer. Disabling script analysis. PSModulePath: '{Environment.GetEnvironmentVariable("PSModulePath")}'");
                     return null;
@@ -114,7 +114,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 
         private static readonly IReadOnlyCollection<PSObject> s_emptyDiagnosticResult = new Collection<PSObject>();
 
-        private static readonly ScriptFileMarkerLevel[] s_scriptMarkerLevels = new[]
+        private static readonly ScriptFileMarkerLevel [] s_scriptMarkerLevels = new []
         {
             ScriptFileMarkerLevel.Error,
             ScriptFileMarkerLevel.Warning,
@@ -129,13 +129,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 
         private readonly object _settingsParameter;
 
-        private readonly string[] _rulesToInclude;
+        private readonly string [] _rulesToInclude;
 
         private PssaCmdletAnalysisEngine(
             ILogger logger,
             RunspacePool analysisRunspacePool,
             PSModuleInfo pssaModuleInfo,
-            string[] rulesToInclude)
+            string [] rulesToInclude)
             : this(logger, analysisRunspacePool, pssaModuleInfo)
         {
             _rulesToInclude = rulesToInclude;
@@ -168,11 +168,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         /// <param name="formatSettings">The formatter settings to use.</param>
         /// <param name="rangeList">A possible range over which to run the formatter.</param>
         /// <returns></returns>
-        public async Task<string> FormatAsync(string scriptDefinition, Hashtable formatSettings, int[] rangeList)
+        public async Task<string> FormatAsync(string scriptDefinition, Hashtable formatSettings, int [] rangeList)
         {
             // We cannot use Range type therefore this workaround of using -1 default value.
             // Invoke-Formatter throws a ParameterBinderValidationException if the ScriptDefinition is an empty string.
-            if (string.IsNullOrEmpty(scriptDefinition))
+            if(string.IsNullOrEmpty(scriptDefinition))
             {
                 _logger.LogDebug("Script Definition was: " + scriptDefinition == null ? "null" : "empty string");
                 return scriptDefinition;
@@ -183,23 +183,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                 .AddParameter("ScriptDefinition", scriptDefinition)
                 .AddParameter("Settings", formatSettings);
 
-            if (rangeList != null)
+            if(rangeList != null)
             {
                 psCommand.AddParameter("Range", rangeList);
             }
 
             PowerShellResult result = await InvokePowerShellAsync(psCommand).ConfigureAwait(false);
 
-            if (result == null)
+            if(result == null)
             {
                 _logger.LogError("Formatter returned null result");
                 return scriptDefinition;
             }
 
-            if (result.HasErrors)
+            if(result.HasErrors)
             {
                 var errorBuilder = new StringBuilder().Append(s_indentJoin);
-                foreach (ErrorRecord err in result.Errors)
+                foreach(ErrorRecord err in result.Errors)
                 {
                     errorBuilder.Append(err).Append(s_indentJoin);
                 }
@@ -207,9 +207,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                 return scriptDefinition;
             }
 
-            foreach (PSObject resultObj in result.Output)
+            foreach(PSObject resultObj in result.Output)
             {
-                if (resultObj?.BaseObject is string formatResult)
+                if(resultObj?.BaseObject is string formatResult)
                 {
                     return formatResult;
                 }
@@ -224,7 +224,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         /// </summary>
         /// <param name="scriptContent">The contents of the script to analyze.</param>
         /// <returns>An array of markers indicating script analysis diagnostics.</returns>
-        public Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptContent) => AnalyzeScriptAsync(scriptContent, settings: null);
+        public Task<ScriptFileMarker []> AnalyzeScriptAsync(string scriptContent) => AnalyzeScriptAsync(scriptContent, settings: null);
 
 
         /// <summary>
@@ -233,12 +233,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         /// <param name="scriptContent">The contents of the script to analyze.</param>
         /// <param name="settings">The settings file to use in this instance of analysis.</param>
         /// <returns>An array of markers indicating script analysis diagnostics.</returns>
-        public Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptContent, Hashtable settings)
+        public Task<ScriptFileMarker []> AnalyzeScriptAsync(string scriptContent, Hashtable settings)
         {
             // When a new, empty file is created there are by definition no issues.
             // Furthermore, if you call Invoke-ScriptAnalyzer with an empty ScriptDefinition
             // it will generate a ParameterBindingValidationException.
-            if (string.IsNullOrEmpty(scriptContent))
+            if(string.IsNullOrEmpty(scriptContent))
             {
                 return Task.FromResult(Array.Empty<ScriptFileMarker>());
             }
@@ -249,7 +249,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                 .AddParameter("Severity", s_scriptMarkerLevels);
 
             object settingsValue = settings ?? _settingsParameter;
-            if (settingsValue != null)
+            if(settingsValue != null)
             {
                 command.AddParameter("Settings", settingsValue);
             }
@@ -271,7 +271,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             return new PssaCmdletAnalysisEngine(_logger, _analysisRunspacePool, _pssaModuleInfo, settingsHashtable);
         }
 
-        public PssaCmdletAnalysisEngine RecreateWithRules(string[] rules)
+        public PssaCmdletAnalysisEngine RecreateWithRules(string [] rules)
         {
             return new PssaCmdletAnalysisEngine(_logger, _analysisRunspacePool, _pssaModuleInfo, rules);
         }
@@ -281,9 +281,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            if(!disposedValue)
             {
-                if (disposing)
+                if(disposing)
                 {
                     _analysisRunspacePool.Dispose();
                 }
@@ -301,18 +301,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 
         #endregion
 
-        private async Task<ScriptFileMarker[]> GetSemanticMarkersFromCommandAsync(PSCommand command)
+        private async Task<ScriptFileMarker []> GetSemanticMarkersFromCommandAsync(PSCommand command)
         {
             PowerShellResult result = await InvokePowerShellAsync(command).ConfigureAwait(false);
 
             IReadOnlyCollection<PSObject> diagnosticResults = result?.Output ?? s_emptyDiagnosticResult;
             _logger.LogDebug(String.Format("Found {0} violations", diagnosticResults.Count));
 
-            var scriptMarkers = new ScriptFileMarker[diagnosticResults.Count];
+            var scriptMarkers = new ScriptFileMarker [diagnosticResults.Count];
             int i = 0;
-            foreach (PSObject diagnostic in diagnosticResults)
+            foreach(PSObject diagnostic in diagnosticResults)
             {
-                scriptMarkers[i] = ScriptFileMarker.FromDiagnosticRecord(diagnostic);
+                scriptMarkers [i] = ScriptFileMarker.FromDiagnosticRecord(diagnostic);
                 i++;
             }
 
@@ -326,7 +326,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 
         private PowerShellResult InvokePowerShell(PSCommand command)
         {
-            using (var powerShell = System.Management.Automation.PowerShell.Create(RunspaceMode.NewRunspace))
+            using(var powerShell = System.Management.Automation.PowerShell.Create(RunspaceMode.NewRunspace))
             {
                 powerShell.RunspacePool = _analysisRunspacePool;
                 powerShell.Commands = command;
@@ -337,13 +337,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                     PSDataCollection<ErrorRecord> errors = powerShell.Streams.Error;
                     result = new PowerShellResult(output, errors, powerShell.HadErrors);
                 }
-                catch (CommandNotFoundException ex)
+                catch(CommandNotFoundException ex)
                 {
                     // This exception is possible if the module path loaded
                     // is wrong even though PSScriptAnalyzer is available as a module
                     _logger.LogError(ex.Message);
                 }
-                catch (CmdletInvocationException ex)
+                catch(CmdletInvocationException ex)
                 {
                     // We do not want to crash EditorServices for exceptions caused by cmdlet invocation.
                     // Two main reasons that cause the exception are:
@@ -364,7 +364,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         /// <returns>The output of PowerShell execution.</returns>
         private Collection<PSObject> InvokePowerShellWithModulePathPreservation(System.Management.Automation.PowerShell powershell)
         {
-            using (PSModulePathPreserver.Take())
+            using(PSModulePathPreserver.Take())
             {
                 return powershell.Invoke();
             }
@@ -377,12 +377,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         private void LogAvailablePssaFeatures()
         {
             // Save ourselves some work here
-            if (!_logger.IsEnabled(LogLevel.Debug))
+            if(!_logger.IsEnabled(LogLevel.Debug))
             {
                 return;
             }
 
-            if (_pssaModuleInfo == null)
+            if(_pssaModuleInfo == null)
             {
                 throw new FileNotFoundException("Unable to find loaded PSScriptAnalyzer module for logging");
             }
@@ -396,7 +396,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 
             // Log exported cmdlets
             sb.AppendLine("    Exported Cmdlets:");
-            foreach (string cmdletName in _pssaModuleInfo.ExportedCmdlets.Keys.OrderBy(name => name))
+            foreach(string cmdletName in _pssaModuleInfo.ExportedCmdlets.Keys.OrderBy(name => name))
             {
                 sb.Append("    ");
                 sb.AppendLine(cmdletName);
@@ -404,7 +404,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 
             // Log available rules
             sb.AppendLine("    Available Rules:");
-            foreach (string ruleName in GetPSScriptAnalyzerRules())
+            foreach(string ruleName in GetPSScriptAnalyzerRules())
             {
                 sb.Append("        ");
                 sb.AppendLine(ruleName);
@@ -419,16 +419,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         private IEnumerable<string> GetPSScriptAnalyzerRules()
         {
             PowerShellResult getRuleResult = InvokePowerShell(new PSCommand().AddCommand("Get-ScriptAnalyzerRule"));
-            if (getRuleResult == null)
+            if(getRuleResult == null)
             {
                 _logger.LogWarning("Get-ScriptAnalyzerRule returned null result");
                 return Enumerable.Empty<string>();
             }
 
             var ruleNames = new List<string>(getRuleResult.Output.Count);
-            foreach (var rule in getRuleResult.Output)
+            foreach(var rule in getRuleResult.Output)
             {
-                ruleNames.Add((string)rule.Members["RuleName"].Value);
+                ruleNames.Add((string)rule.Members ["RuleName"].Value);
             }
 
             return ruleNames;
@@ -441,7 +441,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         /// <returns>A runspace pool with PSScriptAnalyzer loaded for running script analysis tasks.</returns>
         private static RunspacePool CreatePssaRunspacePool(out PSModuleInfo pssaModuleInfo)
         {
-            using (var ps = System.Management.Automation.PowerShell.Create(RunspaceMode.NewRunspace))
+            using(var ps = System.Management.Automation.PowerShell.Create(RunspaceMode.NewRunspace))
             {
                 // Run `Get-Module -ListAvailable -Name "PSScriptAnalyzer"`
                 ps.AddCommand("Get-Module")
@@ -450,7 +450,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 
                 try
                 {
-                    using (PSModulePathPreserver.Take())
+                    using(PSModulePathPreserver.Take())
                     {
                         // Get the latest version of PSScriptAnalyzer we can find
                         pssaModuleInfo = ps.Invoke<PSModuleInfo>()?
@@ -458,12 +458,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                             .FirstOrDefault();
                     }
                 }
-                catch (Exception e)
+                catch(Exception e)
                 {
                     throw new FileNotFoundException("Unable to find PSScriptAnalyzer module on the module path", e);
                 }
 
-                if (pssaModuleInfo == null)
+                if(pssaModuleInfo == null)
                 {
                     throw new FileNotFoundException("Unable to find PSScriptAnalyzer module on the module path");
                 }
@@ -486,7 +486,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                 runspacePool.ThreadOptions = PSThreadOptions.ReuseThread;
 
                 // Open the runspace pool here so we can deterministically handle the PSModulePath change issue
-                using (PSModulePathPreserver.Take())
+                using(PSModulePathPreserver.Take())
                 {
                     runspacePool.Open();
                 }

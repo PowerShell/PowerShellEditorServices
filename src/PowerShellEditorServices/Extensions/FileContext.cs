@@ -85,7 +85,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             IEditorOperations editorOperations,
             string language = "Unknown")
         {
-            if (string.IsNullOrWhiteSpace(language))
+            if(string.IsNullOrWhiteSpace(language))
             {
                 language = "Unknown";
             }
@@ -127,7 +127,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// Gets the complete file content as an array of strings.
         /// </summary>
         /// <returns>An array of strings, each representing a line in the file.</returns>
-        public string[] GetTextLines()
+        public string [] GetTextLines()
         {
             return this.scriptFile.FileLines.ToArray();
         }
@@ -137,7 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         /// <param name="bufferRange">The buffer range for which content will be extracted.</param>
         /// <returns>An array of strings, each representing a line in the file within the specified range.</returns>
-        public string[] GetTextLines(FileRange fileRange)
+        public string [] GetTextLines(FileRange fileRange)
         {
             return this.scriptFile.GetLinesInRange(fileRange.ToBufferRange());
         }
@@ -154,7 +154,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public void InsertText(string textToInsert)
         {
             // Is there a selection?
-            if (this.editorContext.SelectedRange.HasRange())
+            if(this.editorContext.SelectedRange.HasRange())
             {
                 this.InsertText(
                     textToInsert,
@@ -258,7 +258,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
                 newFilePath :
                 System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(this.scriptFile.FilePath), newFilePath));
 
-            if (File.Exists(absolutePath))
+            if(File.Exists(absolutePath))
             {
                 throw new IOException(String.Format("The file '{0}' already exists", absolutePath));
             }

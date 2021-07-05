@@ -69,10 +69,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // We don't support exception breakpoints and for "pause", we can't distinguish
             // between stepping and the user pressing the pause/break button in the debug toolbar.
             string debuggerStoppedReason = "step";
-            if (e.OriginalEvent.Breakpoints.Count > 0)
+            if(e.OriginalEvent.Breakpoints.Count > 0)
             {
                 debuggerStoppedReason =
-                    e.OriginalEvent.Breakpoints[0] is CommandBreakpoint
+                    e.OriginalEvent.Breakpoints [0] is CommandBreakpoint
                         ? "function breakpoint"
                         : "breakpoint";
             }
@@ -87,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void PowerShellContext_RunspaceChanged(object sender, RunspaceChangedEventArgs e)
         {
-            if (_debugStateService.WaitingForAttach &&
+            if(_debugStateService.WaitingForAttach &&
                 e.ChangeAction == RunspaceChangeAction.Enter &&
                 e.NewRunspace.Context == RunspaceContext.DebuggedRunspace)
             {
@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 _debugStateService.WaitingForAttach = false;
                 _debugStateService.ServerStarted.SetResult(true);
             }
-            else if (
+            else if(
                 e.ChangeAction == RunspaceChangeAction.Exit &&
                 _powerShellContextService.IsDebuggerStopped)
             {
@@ -126,14 +126,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             string reason = "changed";
 
-            if (_debugStateService.IsSetBreakpointInProgress)
+            if(_debugStateService.IsSetBreakpointInProgress)
             {
                 // Don't send breakpoint update notifications when setting
                 // breakpoints on behalf of the client.
                 return;
             }
 
-            switch (e.UpdateType)
+            switch(e.UpdateType)
             {
                 case BreakpointUpdateType.Set:
                     reason = "new";
@@ -149,11 +149,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 Verified = e.UpdateType != BreakpointUpdateType.Disabled
             };
 
-            if (e.Breakpoint is LineBreakpoint)
+            if(e.Breakpoint is LineBreakpoint)
             {
                 breakpoint = LspDebugUtils.CreateBreakpoint(BreakpointDetails.Create(e.Breakpoint));
             }
-            else if (e.Breakpoint is CommandBreakpoint)
+            else if(e.Breakpoint is CommandBreakpoint)
             {
                 _logger.LogTrace("Function breakpoint updated event is not supported yet");
                 return;

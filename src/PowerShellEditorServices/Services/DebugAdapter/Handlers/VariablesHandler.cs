@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public Task<VariablesResponse> Handle(VariablesArguments request, CancellationToken cancellationToken)
         {
-            VariableDetailsBase[] variables =
+            VariableDetailsBase [] variables =
                 _debugService.GetVariables(
                     (int)request.VariablesReference);
 
@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                             .ToArray()
                 };
             }
-            catch (Exception)
+            catch(Exception)
             {
                 // TODO: This shouldn't be so broad
             }

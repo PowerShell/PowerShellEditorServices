@@ -34,9 +34,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitCommand(CommandAst commandAst)
         {
-            Ast commandNameAst = commandAst.CommandElements[0];
+            Ast commandNameAst = commandAst.CommandElements [0];
 
-            if (this.IsPositionInExtent(commandNameAst.Extent))
+            if(this.IsPositionInExtent(commandNameAst.Extent))
             {
                 this.FoundSymbolReference =
                     new SymbolReference(
@@ -59,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         {
             int startColumnNumber = 1;
 
-            if (!this.includeFunctionDefinitions)
+            if(!this.includeFunctionDefinitions)
             {
                 startColumnNumber =
                     functionDefinitionAst.Extent.Text.IndexOf(
@@ -76,7 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 File = functionDefinitionAst.Extent.File
             };
 
-            if (this.IsPositionInExtent(nameExtent))
+            if(this.IsPositionInExtent(nameExtent))
             {
                 this.FoundSymbolReference =
                     new SymbolReference(
@@ -97,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitCommandParameter(CommandParameterAst commandParameterAst)
         {
-            if (this.IsPositionInExtent(commandParameterAst.Extent))
+            if(this.IsPositionInExtent(commandParameterAst.Extent))
             {
                 this.FoundSymbolReference =
                     new SymbolReference(
@@ -116,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
         {
-            if (this.IsPositionInExtent(variableExpressionAst.Extent))
+            if(this.IsPositionInExtent(variableExpressionAst.Extent))
             {
                 this.FoundSymbolReference =
                     new SymbolReference(

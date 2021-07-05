@@ -69,16 +69,16 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// </returns>
         public async Task EnqueueAsync(T item)
         {
-            using (await queueLock.LockAsync().ConfigureAwait(false))
+            using(await queueLock.LockAsync().ConfigureAwait(false))
             {
                 TaskCompletionSource<T> requestTaskSource = null;
 
                 // Are any requests waiting?
-                while (this.requestQueue.Count > 0)
+                while(this.requestQueue.Count > 0)
                 {
                     // Is the next request cancelled already?
                     requestTaskSource = this.requestQueue.Dequeue();
-                    if (!requestTaskSource.Task.IsCanceled)
+                    if(!requestTaskSource.Task.IsCanceled)
                     {
                         // Dispatch the item
                         requestTaskSource.SetResult(item);
@@ -98,12 +98,12 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <param name="item">The item to be added to the queue.</param>
         public void Enqueue(T item)
         {
-            using (queueLock.Lock())
+            using(queueLock.Lock())
             {
-                while (this.requestQueue.Count > 0)
+                while(this.requestQueue.Count > 0)
                 {
                     var requestTaskSource = this.requestQueue.Dequeue();
-                    if (requestTaskSource.Task.IsCanceled)
+                    if(requestTaskSource.Task.IsCanceled)
                     {
                         continue;
                     }
@@ -144,9 +144,9 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         {
             Task<T> requestTask;
 
-            using (await queueLock.LockAsync(cancellationToken).ConfigureAwait(false))
+            using(await queueLock.LockAsync(cancellationToken).ConfigureAwait(false))
             {
-                if (this.itemQueue.Count > 0)
+                if(this.itemQueue.Count > 0)
                 {
                     // Items are waiting to be taken so take one immediately
                     T item = this.itemQueue.Dequeue();
@@ -194,9 +194,9 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         public T Dequeue(CancellationToken cancellationToken)
         {
             TaskCompletionSource<T> requestTask;
-            using (queueLock.Lock(cancellationToken))
+            using(queueLock.Lock(cancellationToken))
             {
-                if (this.itemQueue.Count > 0)
+                if(this.itemQueue.Count > 0)
                 {
                     T item = this.itemQueue.Dequeue();
                     this.IsEmpty = this.itemQueue.Count == 0;
@@ -207,7 +207,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 requestTask = new TaskCompletionSource<T>();
                 this.requestQueue.Enqueue(requestTask);
 
-                if (cancellationToken.CanBeCanceled)
+                if(cancellationToken.CanBeCanceled)
                 {
                     cancellationToken.Register(() => requestTask.TrySetCanceled());
                 }

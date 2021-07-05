@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     /// <summary>
     /// A class that holds the information for a foldable region of text in a document
     /// </summary>
-    internal class FoldingReference: IComparable<FoldingReference>, IEquatable<FoldingReference>
+    internal class FoldingReference : IComparable<FoldingReference>, IEquatable<FoldingReference>
     {
         /// <summary>
         /// The zero-based line number from where the folded range starts.
@@ -40,26 +40,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// A custom comparable method which can properly sort FoldingReference objects
         /// </summary>
-        public int CompareTo(FoldingReference that) {
+        public int CompareTo(FoldingReference that)
+        {
             // Initially look at the start line
-            if (this.StartLine < that.StartLine) { return -1; }
-            if (this.StartLine > that.StartLine) { return 1; }
+            if(this.StartLine < that.StartLine) { return -1; }
+            if(this.StartLine > that.StartLine) { return 1; }
 
             // They have the same start line so now consider the end line.
             // The biggest line range is sorted first
-            if (this.EndLine > that.EndLine) { return -1; }
-            if (this.EndLine < that.EndLine) { return 1; }
+            if(this.EndLine > that.EndLine) { return -1; }
+            if(this.EndLine < that.EndLine) { return 1; }
 
             // They have the same lines, but what about character offsets
-            if (this.StartCharacter < that.StartCharacter) { return -1; }
-            if (this.StartCharacter > that.StartCharacter) { return 1; }
-            if (this.EndCharacter < that.EndCharacter) { return -1; }
-            if (this.EndCharacter > that.EndCharacter) { return 1; }
+            if(this.StartCharacter < that.StartCharacter) { return -1; }
+            if(this.StartCharacter > that.StartCharacter) { return 1; }
+            if(this.EndCharacter < that.EndCharacter) { return -1; }
+            if(this.EndCharacter > that.EndCharacter) { return 1; }
 
             // They're the same range, but what about kind
-            if (this.Kind == null)
+            if(this.Kind == null)
             {
-                if (that.Kind == null)
+                if(that.Kind == null)
                 {
                     return 0;
                 }
@@ -67,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                 return 1;
             }
 
-            if (that.Kind != null)
+            if(that.Kind != null)
             {
                 return that.Kind.Value - this.Kind.Value;
             }
@@ -103,25 +104,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// </summary>
         public void SafeAdd(FoldingReference item)
         {
-            if (item == null) { return; }
+            if(item == null) { return; }
 
             // Only add the item if it hasn't been seen before or it's the largest range
-            if (references.TryGetValue(item.StartLine, out FoldingReference currentItem))
+            if(references.TryGetValue(item.StartLine, out FoldingReference currentItem))
             {
-                if (currentItem.CompareTo(item) == 1) { references[item.StartLine] = item; }
+                if(currentItem.CompareTo(item) == 1) { references [item.StartLine] = item; }
             }
             else
             {
-                references[item.StartLine] = item;
+                references [item.StartLine] = item;
             }
         }
 
         /// <summary>
         /// Helper method to easily convert the Dictionary Values into an array
         /// </summary>
-        public FoldingReference[] ToArray()
+        public FoldingReference [] ToArray()
         {
-            var result = new FoldingReference[references.Count];
+            var result = new FoldingReference [references.Count];
             references.Values.CopyTo(result, 0);
             return result;
         }

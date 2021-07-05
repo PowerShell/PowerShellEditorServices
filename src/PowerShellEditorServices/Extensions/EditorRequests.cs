@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
 
     internal class GetEditorContextRequest
-    {}
+    { }
 
     internal enum EditorCommandResponse
     {

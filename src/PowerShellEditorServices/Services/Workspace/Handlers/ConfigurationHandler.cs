@@ -51,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             LanguageServerSettingsWrapper incomingSettings = request.Settings.ToObject<LanguageServerSettingsWrapper>();
             this._logger.LogTrace("Handling DidChangeConfiguration");
-            if (incomingSettings is null || incomingSettings.Powershell is null)
+            if(incomingSettings is null || incomingSettings.Powershell is null)
             {
                 this._logger.LogTrace("Incoming settings were null");
                 return await Unit.Task.ConfigureAwait(false);
@@ -70,9 +70,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 _workspaceService.WorkspacePath,
                 _logger);
 
-            if (!this._cwdSet)
+            if(!this._cwdSet)
             {
-                if (!string.IsNullOrEmpty(_configurationService.CurrentSettings.Cwd)
+                if(!string.IsNullOrEmpty(_configurationService.CurrentSettings.Cwd)
                     && Directory.Exists(_configurationService.CurrentSettings.Cwd))
                 {
                     this._logger.LogTrace($"Setting CWD (from config) to {_configurationService.CurrentSettings.Cwd}");
@@ -80,14 +80,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         _configurationService.CurrentSettings.Cwd,
                         isPathAlreadyEscaped: false).ConfigureAwait(false);
 
-                } else if (_workspaceService.WorkspacePath != null
-                    && Directory.Exists(_workspaceService.WorkspacePath))
+                }
+                else if(_workspaceService.WorkspacePath != null
+                  && Directory.Exists(_workspaceService.WorkspacePath))
                 {
                     this._logger.LogTrace($"Setting CWD (from workspace) to {_workspaceService.WorkspacePath}");
                     await _powerShellContextService.SetWorkingDirectoryAsync(
                         _workspaceService.WorkspacePath,
                         isPathAlreadyEscaped: false).ConfigureAwait(false);
-                } else {
+                }
+                else
+                {
                     this._logger.LogTrace("Tried to set CWD but in bad state");
                 }
 
@@ -98,7 +101,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // - Profile loading is configured, AND
             //   - Profiles haven't been loaded before, OR
             //   - The profile loading configuration just changed
-            if (_configurationService.CurrentSettings.EnableProfileLoading
+            if(_configurationService.CurrentSettings.EnableProfileLoading
                 && (!this._profilesLoaded || !profileLoadingPreviouslyEnabled))
             {
                 this._logger.LogTrace("Loading profiles...");
@@ -109,7 +112,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             // Wait until after profiles are loaded (or not, if that's the
             // case) before starting the interactive console.
-            if (!this._consoleReplStarted)
+            if(!this._consoleReplStarted)
             {
                 // Start the interactive terminal
                 this._logger.LogTrace("Starting command loop");
@@ -129,24 +132,24 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             //     "build/*": true
             // }
             var excludeFilePatterns = new List<string>();
-            if (incomingSettings.Files?.Exclude != null)
+            if(incomingSettings.Files?.Exclude != null)
             {
                 foreach(KeyValuePair<string, bool> patternEntry in incomingSettings.Files.Exclude)
                 {
-                    if (patternEntry.Value) { excludeFilePatterns.Add(patternEntry.Key); }
+                    if(patternEntry.Value) { excludeFilePatterns.Add(patternEntry.Key); }
                 }
             }
-            if (incomingSettings.Search?.Exclude != null)
+            if(incomingSettings.Search?.Exclude != null)
             {
                 foreach(KeyValuePair<string, bool> patternEntry in incomingSettings.Search.Exclude)
                 {
-                    if (patternEntry.Value && !excludeFilePatterns.Contains(patternEntry.Key)) { excludeFilePatterns.Add(patternEntry.Key); }
+                    if(patternEntry.Value && !excludeFilePatterns.Contains(patternEntry.Key)) { excludeFilePatterns.Add(patternEntry.Key); }
                 }
             }
             _workspaceService.ExcludeFilesGlob = excludeFilePatterns;
 
             // Convert the editor file search options to Workspace properties
-            if (incomingSettings.Search?.FollowSymlinks != null)
+            if(incomingSettings.Search?.FollowSymlinks != null)
             {
                 _workspaceService.FollowSymlinks = incomingSettings.Search.FollowSymlinks;
             }
@@ -156,7 +159,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private void SendFeatureChangesTelemetry(LanguageServerSettingsWrapper incomingSettings)
         {
-            if (incomingSettings is null)
+            if(incomingSettings is null)
             {
                 this._logger.LogTrace("Incoming settings were null");
                 return;
@@ -164,43 +167,43 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             var configChanges = new Dictionary<string, bool>();
             // Send telemetry if the user opted-out of ScriptAnalysis
-            if (incomingSettings.Powershell.ScriptAnalysis.Enable == false &&
+            if(incomingSettings.Powershell.ScriptAnalysis.Enable == false &&
                 _configurationService.CurrentSettings.ScriptAnalysis.Enable != incomingSettings.Powershell.ScriptAnalysis.Enable)
             {
-                configChanges["ScriptAnalysis"] = incomingSettings.Powershell.ScriptAnalysis.Enable ?? false;
+                configChanges ["ScriptAnalysis"] = incomingSettings.Powershell.ScriptAnalysis.Enable ?? false;
             }
 
             // Send telemetry if the user opted-out of CodeFolding
-            if (!incomingSettings.Powershell.CodeFolding.Enable &&
+            if(!incomingSettings.Powershell.CodeFolding.Enable &&
                 _configurationService.CurrentSettings.CodeFolding.Enable != incomingSettings.Powershell.CodeFolding.Enable)
             {
-                configChanges["CodeFolding"] = incomingSettings.Powershell.CodeFolding.Enable;
+                configChanges ["CodeFolding"] = incomingSettings.Powershell.CodeFolding.Enable;
             }
 
             // Send telemetry if the user opted-out of the prompt to update PackageManagement
-            if (!incomingSettings.Powershell.PromptToUpdatePackageManagement &&
+            if(!incomingSettings.Powershell.PromptToUpdatePackageManagement &&
                 _configurationService.CurrentSettings.PromptToUpdatePackageManagement != incomingSettings.Powershell.PromptToUpdatePackageManagement)
             {
-                configChanges["PromptToUpdatePackageManagement"] = incomingSettings.Powershell.PromptToUpdatePackageManagement;
+                configChanges ["PromptToUpdatePackageManagement"] = incomingSettings.Powershell.PromptToUpdatePackageManagement;
             }
 
             // Send telemetry if the user opted-out of Profile loading
-            if (!incomingSettings.Powershell.EnableProfileLoading &&
+            if(!incomingSettings.Powershell.EnableProfileLoading &&
                 _configurationService.CurrentSettings.EnableProfileLoading != incomingSettings.Powershell.EnableProfileLoading)
             {
-                configChanges["ProfileLoading"] = incomingSettings.Powershell.EnableProfileLoading;
+                configChanges ["ProfileLoading"] = incomingSettings.Powershell.EnableProfileLoading;
             }
 
             // Send telemetry if the user opted-in to Pester 5+ CodeLens
-            if (!incomingSettings.Powershell.Pester.UseLegacyCodeLens &&
+            if(!incomingSettings.Powershell.Pester.UseLegacyCodeLens &&
                 _configurationService.CurrentSettings.Pester.UseLegacyCodeLens != incomingSettings.Powershell.Pester.UseLegacyCodeLens)
             {
                 // From our perspective we want to see how many people are opting in to this so we flip the value
-                configChanges["Pester5CodeLens"] = !incomingSettings.Powershell.Pester.UseLegacyCodeLens;
+                configChanges ["Pester5CodeLens"] = !incomingSettings.Powershell.Pester.UseLegacyCodeLens;
             }
 
             // No need to send any telemetry since nothing changed
-            if (configChanges.Count == 0)
+            if(configChanges.Count == 0)
             {
                 return;
             }

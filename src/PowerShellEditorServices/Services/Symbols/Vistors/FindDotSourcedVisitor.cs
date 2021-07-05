@@ -39,11 +39,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitCommand(CommandAst commandAst)
         {
-            CommandElementAst commandElementAst = commandAst.CommandElements[0];
-            if (commandAst.InvocationOperator.Equals(TokenKind.Dot))
+            CommandElementAst commandElementAst = commandAst.CommandElements [0];
+            if(commandAst.InvocationOperator.Equals(TokenKind.Dot))
             {
                 string path;
-                switch (commandElementAst)
+                switch(commandElementAst)
                 {
                     case StringConstantExpressionAst stringConstantExpressionAst:
                         path = stringConstantExpressionAst.Value;
@@ -58,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                         break;
                 }
 
-                if (!string.IsNullOrWhiteSpace(path))
+                if(!string.IsNullOrWhiteSpace(path))
                 {
                     DotSourcedFiles.Add(PathUtils.NormalizePathSeparators(path));
                 }
@@ -70,10 +70,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         private string GetPathFromExpandableStringExpression(ExpandableStringExpressionAst expandableStringExpressionAst)
         {
             var path = expandableStringExpressionAst.Value;
-            foreach (var nestedExpression in expandableStringExpressionAst.NestedExpressions)
+            foreach(var nestedExpression in expandableStringExpressionAst.NestedExpressions)
             {
                 // If the string contains the variable $PSScriptRoot, we replace it with the corresponding value.
-                if (!(nestedExpression is VariableExpressionAst variableAst
+                if(!(nestedExpression is VariableExpressionAst variableAst
                     && variableAst.VariablePath.UserPath.Equals("PSScriptRoot", StringComparison.OrdinalIgnoreCase)))
                 {
                     return null; // We return null instead of a partially evaluated ExpandableStringExpression.

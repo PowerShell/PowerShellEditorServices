@@ -38,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             PowerShellContextService powerShellContext,
             PSHost internalHost,
             ILogger logger)
-            : base (
+            : base(
                 powerShellContext,
                 new TerminalPSHostRawUserInterface(logger, internalHost),
                 logger)
@@ -54,7 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             System.Console.CancelKeyPress +=
                 (obj, args) =>
                 {
-                    if (!IsNativeApplicationRunning)
+                    if(!IsNativeApplicationRunning)
                     {
                         // We'll handle Ctrl+C
                         args.Cancel = true;
@@ -80,8 +80,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </summary>
         internal override ConsoleColor ProgressForegroundColor
         {
-            get => (ConsoleColor)_internalHostPrivateData.Properties["ProgressForegroundColor"].Value;
-            set => _internalHostPrivateData.Properties["ProgressForegroundColor"].Value = value;
+            get => (ConsoleColor)_internalHostPrivateData.Properties ["ProgressForegroundColor"].Value;
+            set => _internalHostPrivateData.Properties ["ProgressForegroundColor"].Value = value;
         }
 
         /// <summary>
@@ -89,8 +89,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </summary>
         internal override ConsoleColor ProgressBackgroundColor
         {
-            get => (ConsoleColor)_internalHostPrivateData.Properties["ProgressBackgroundColor"].Value;
-            set => _internalHostPrivateData.Properties["ProgressBackgroundColor"].Value = value;
+            get => (ConsoleColor)_internalHostPrivateData.Properties ["ProgressBackgroundColor"].Value;
+            set => _internalHostPrivateData.Properties ["ProgressBackgroundColor"].Value = value;
         }
 
         /// <summary>

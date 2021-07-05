@@ -14,9 +14,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared
     /// </summary>
     public static class TestUtilities
     {
-        private static readonly char[] s_unixPathSeparators = new [] { '/' };
+        private static readonly char [] s_unixPathSeparators = new [] { '/' };
 
-        private static readonly char[] s_unixNewlines = new [] { '\n' };
+        private static readonly char [] s_unixNewlines = new [] { '\n' };
 
         /// <summary>
         /// Takes a UNIX-style path and converts it to the path appropriate to the platform.
@@ -25,12 +25,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared
         /// <returns>A path with directories separated by the appropriate separator.</returns>
         public static string NormalizePath(string unixPath)
         {
-            if (unixPath == null)
+            if(unixPath == null)
             {
                 return unixPath;
             }
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 return unixPath.Replace('/', Path.DirectorySeparatorChar);
             }
@@ -45,12 +45,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared
         /// <returns>The platform-newline-normalized string.</returns>
         public static string NormalizeNewlines(string unixString)
         {
-            if (unixString == null)
+            if(unixString == null)
             {
                 return unixString;
             }
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 return String.Join(Environment.NewLine, unixString.Split(s_unixNewlines));
             }
@@ -76,7 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared
             [CallerFilePath] string callerPath = null,
             [CallerLineNumber] int callerLine = -1)
         {
-            if (Debugger.IsAttached)
+            if(Debugger.IsAttached)
             {
                 return;
             }

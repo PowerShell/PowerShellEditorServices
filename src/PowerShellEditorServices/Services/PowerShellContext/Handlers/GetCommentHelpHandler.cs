@@ -35,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             var result = new CommentHelpRequestResult();
 
-            if (!_workspaceService.TryGetFile(request.DocumentUri, out ScriptFile scriptFile))
+            if(!_workspaceService.TryGetFile(request.DocumentUri, out ScriptFile scriptFile))
             {
                 return result;
             }
@@ -47,22 +47,22 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 triggerLine,
                 out string helpLocation);
 
-            if (functionDefinitionAst == null)
+            if(functionDefinitionAst == null)
             {
                 return result;
             }
 
             IScriptExtent funcExtent = functionDefinitionAst.Extent;
             string funcText = funcExtent.Text;
-            if (helpLocation.Equals("begin"))
+            if(helpLocation.Equals("begin"))
             {
                 // check if the previous character is `<` because it invalidates
                 // the param block the follows it.
                 IList<string> lines = ScriptFile.GetLinesInternal(funcText);
                 int relativeTriggerLine0b = triggerLine - funcExtent.StartLineNumber;
-                if (relativeTriggerLine0b > 0 && lines[relativeTriggerLine0b].IndexOf("<", StringComparison.OrdinalIgnoreCase) > -1)
+                if(relativeTriggerLine0b > 0 && lines [relativeTriggerLine0b].IndexOf("<", StringComparison.OrdinalIgnoreCase) > -1)
                 {
-                    lines[relativeTriggerLine0b] = string.Empty;
+                    lines [relativeTriggerLine0b] = string.Empty;
                 }
 
                 funcText = string.Join("\n", lines);
@@ -70,14 +70,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             string helpText = await _analysisService.GetCommentHelpText(funcText, helpLocation, forBlockComment: request.BlockComment).ConfigureAwait(false);
 
-            if (helpText == null)
+            if(helpText == null)
             {
                 return result;
             }
 
             List<string> helpLines = ScriptFile.GetLinesInternal(helpText);
 
-            if (helpLocation != null &&
+            if(helpLocation != null &&
                 !helpLocation.Equals("before", StringComparison.OrdinalIgnoreCase))
             {
                 // we need to trim the leading `{` and newline when helpLocation=="begin"
@@ -88,7 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             // Trim trailing newline from help text.
-            if (string.IsNullOrEmpty(helpLines[helpLines.Count - 1]))
+            if(string.IsNullOrEmpty(helpLines [helpLines.Count - 1]))
             {
                 helpLines.RemoveAt(helpLines.Count - 1);
             }

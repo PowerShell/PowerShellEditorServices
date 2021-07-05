@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             TokenModifiers = tokenModifiers;
         }
 
-        public string Text { get; set ;}
+        public string Text { get; set; }
 
         public int Line { get; set; }
 

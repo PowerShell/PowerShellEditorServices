@@ -67,7 +67,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 
             // If we have a CommandInfo cached, return that.
-            if (s_commandInfoCache.TryGetValue(commandName, out CommandInfo cmdInfo))
+            if(s_commandInfoCache.TryGetValue(commandName, out CommandInfo cmdInfo))
             {
                 return cmdInfo;
             }
@@ -77,7 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             // load PackageManagement or PowerShellGet v2 because they cause
             // a major slowdown in IntelliSense.
             var commandParts = commandName.Split('-');
-            if ((commandParts.Length == 2 && s_nounExclusionList.Contains(commandParts[1]))
+            if((commandParts.Length == 2 && s_nounExclusionList.Contains(commandParts [1]))
                     || s_cmdletExclusionList.Contains(commandName))
             {
                 return null;
@@ -94,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 .FirstOrDefault();
 
             // Only cache CmdletInfos since they're exposed in binaries they are likely to not change throughout the session.
-            if (commandInfo?.CommandType == CommandTypes.Cmdlet)
+            if(commandInfo?.CommandType == CommandTypes.Cmdlet)
             {
                 s_commandInfoCache.TryAdd(commandName, commandInfo);
             }
@@ -116,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             Validate.IsNotNull(nameof(powerShellContext), powerShellContext);
 
             // A small optimization to not run Get-Help on things like DSC resources.
-            if (commandInfo.CommandType != CommandTypes.Cmdlet &&
+            if(commandInfo.CommandType != CommandTypes.Cmdlet &&
                 commandInfo.CommandType != CommandTypes.Function &&
                 commandInfo.CommandType != CommandTypes.Filter)
             {
@@ -127,7 +127,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             // NOTE: If the user runs Update-Help, it's possible that this synopsis will be out of date.
             // Given the perf increase of doing this, and the simple workaround of restarting the extension,
             // this seems worth it.
-            if (s_synopsisCache.TryGetValue(commandInfo.Name, out string synopsis))
+            if(s_synopsisCache.TryGetValue(commandInfo.Name, out string synopsis))
             {
                 return synopsis;
             }
@@ -145,17 +145,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             // Extract the synopsis string from the object
             string synopsisString =
-                (string)helpObject?.Properties["synopsis"].Value ??
+                (string)helpObject?.Properties ["synopsis"].Value ??
                 string.Empty;
 
             // Only cache cmdlet infos because since they're exposed in binaries, the can never change throughout the session.
-            if (commandInfo.CommandType == CommandTypes.Cmdlet)
+            if(commandInfo.CommandType == CommandTypes.Cmdlet)
             {
                 s_synopsisCache.TryAdd(commandInfo.Name, synopsisString);
             }
 
             // Ignore the placeholder value for this field
-            if (string.Equals(synopsisString, "SHORT DESCRIPTION", System.StringComparison.CurrentCultureIgnoreCase))
+            if(string.Equals(synopsisString, "SHORT DESCRIPTION", System.StringComparison.CurrentCultureIgnoreCase))
             {
                 return string.Empty;
             }
