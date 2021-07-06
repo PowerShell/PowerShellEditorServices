@@ -204,7 +204,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
         public static PowerShellContextService Create(
             ILoggerFactory factory,
-            OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade languageServer = null,
+            OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade languageServer,
             HostStartupInfo hostStartupInfo
             )
         {
