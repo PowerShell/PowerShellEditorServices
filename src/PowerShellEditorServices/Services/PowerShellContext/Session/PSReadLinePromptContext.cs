@@ -82,42 +82,51 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             out PSReadLineProxy readLineProxy)
         {
             readLineProxy = null;
-            logger.LogTrace("Attempting to load PSReadLine");
-            using (var pwsh = PowerShell.Create())
+            var psReadLineAssembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName.Contains("Microsoft.PowerShell.PSReadLine2"));
+            Type psReadLineType = null;
+            if(psReadLineAssembly is null)
             {
-                try
+                logger.LogWarning("Microsoft.PowerShell.PSReadLine2 not found in loaded assemblies");                
+            }
+            psReadLineType = psReadLineAssembly?.ExportedTypes?.FirstOrDefault(a => a.Name == "PSConsoleReadLine");
+            if(psReadLineType is null)
+            {
+                logger.LogWarning("PSConsoleReadline type not found, attempting to load PSReadLine");
+                using(var pwsh = PowerShell.Create())
                 {
-                    pwsh.Runspace = runspace;
-                    pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
-                        .AddParameter("Name", _psReadLineModulePath)
-                        .Invoke();
-
-                    var psReadLineType = Type.GetType("Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2");
-
-                    if (psReadLineType == null)
+                    try
                     {
-                        logger.LogWarning("PSConsoleReadline type not found: {Reason}", pwsh.HadErrors ? pwsh.Streams.Error[0].ToString() : "<Unknown reason>");
+                        pwsh.Runspace = runspace;
+                        pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                            .AddParameter("Name", _psReadLineModulePath)
+                            .Invoke();
+
+
+                        if(psReadLineType == null)
+                        {
+                            logger.LogWarning(_psReadLineModulePath + " could not be Imported: {Reason}", pwsh.HadErrors ? pwsh.Streams.Error [0].ToString() : "<Unknown reason>");
+                            return false;
+                        }
+
+                        readLineProxy = new PSReadLineProxy(psReadLineType, logger);
+                    }
+                    catch(InvalidOperationException e)
+                    {
+                        // The Type we got back from PowerShell doesn't have the members we expected.
+                        // Could be an older version, a custom build, or something a newer version with
+                        // breaking changes.
+                        logger.LogWarning("PSReadLineProxy unable to be initialized: {Reason}", e);
                         return false;
                     }
-
-                    readLineProxy = new PSReadLineProxy(psReadLineType, logger);
-                }
-                catch (InvalidOperationException e)
-                {
-                    // The Type we got back from PowerShell doesn't have the members we expected.
-                    // Could be an older version, a custom build, or something a newer version with
-                    // breaking changes.
-                    logger.LogWarning("PSReadLineProxy unable to be initialized: {Reason}", e);
-                    return false;
-                }
-                catch(CommandNotFoundException e)
-                {
-                    logger.LogWarning("PSReadLineProxy unable to be initialized: {Reason}", e);
-                    return false;
+                    catch(CommandNotFoundException e)
+                    {
+                        logger.LogWarning("PSReadLineProxy unable to be initialized: {Reason}", e);
+                        return false;
+                    }
                 }
             }
 
-            return true;
+            return (psReadLineType is not null);
         }
 
         public async Task<string> InvokeReadLineAsync(bool isCommandLine, CancellationToken cancellationToken)
