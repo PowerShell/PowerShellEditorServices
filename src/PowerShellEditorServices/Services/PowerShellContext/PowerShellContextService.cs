@@ -32,17 +32,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// </summary>
     internal class PowerShellContextService : IHostSupportsInteractiveSession
     {
-        private static string s_bundledModulesPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), 
-            //"..", 
-            //".."
-//#if TEST
-            // When using xUnit (dotnet test) the assemblies are deployed to the
-            // test project folder, invalidating our relative path assumption.
-            //,
-            //"..",
-            //"..",
+        private static string s_bundledModulesPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+            "..",
+            ".."
+#if TEST
+             When using xUnit (dotnet test) the assemblies are deployed to the
+             test project folder, invalidating our relative path assumption.
+            ,
+            "..",
+            "..",
             "module"
-//#endif
+#endif
             );
 
         private static string s_commandsModulePath => Path.GetFullPath(
