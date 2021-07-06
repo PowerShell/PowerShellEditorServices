@@ -152,15 +152,16 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [SkippableFact]
         public async Task CanGetPSReadLineProxy()
         {
-            Skip.If(IsWindows, "This test doesn't work on Windows for some reason.");
-            string s_bundledModulesPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+            //Skip.If(IsWindows, "This test doesn't work on Windows for some reason.");
+            string s_bundledModulesPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+            "..",
             "..",
             "..",
             "..",
             "..",
             "module"
-            );
-            System.Console.WriteLine($"Attempting to import {s_bundledModulesPath}");
+            ));
+            System.Console.WriteLine($"Attempting to import {s_bundledModulesPath}\\PSReadLine");
             Assert.True(PSReadLinePromptContext.TryGetPSReadLineProxy(
                     NullLogger.Instance,
                     PowerShellContextFactory.initialRunspace,
