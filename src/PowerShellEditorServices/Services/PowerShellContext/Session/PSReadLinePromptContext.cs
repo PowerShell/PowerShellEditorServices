@@ -83,8 +83,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 if (psReadLineType == null)
                 {
                     logger.LogWarning("PSConsoleReadline type not found: {Reason}", pwsh.HadErrors ? pwsh.Streams.Error[0].ToString() : "<Unknown reason>");
-                    return false;
+                    System.Console.WriteLine("psReadLineType is null, searching loaded assemblies...");                    
+
+                    var allAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+                    var assemblies = allAssemblies.FirstOrDefault(a => a.FullName.Contains("Microsoft.PowerShell.PSReadLine2"));
+                    var type = assemblies?.ExportedTypes?.FirstOrDefault(a => a.FullName == "Microsoft.PowerShell.PSConsoleReadLine");
+                    if(type is not null)
+                    {
+                        System.Console.WriteLine("Found PSConsoleReadLine in loaded assemblies.");                    
+                        psReadLineType = type;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Unable to find PSConsoleReadLine in loaded assembles.");
+                        return false;
+                    }
                 }
+
 
                 try
                 {
@@ -96,6 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     // Could be an older version, a custom build, or something a newer version with
                     // breaking changes.
                     logger.LogWarning("PSReadLineProxy unable to be initialized: {Reason}", e);
+                    System.Console.WriteLine("PSReadLineProxy unable to be initialized");
                     return false;
                 }
             }
