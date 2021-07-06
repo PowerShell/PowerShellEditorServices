@@ -63,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
                     logger);
 
             powerShellContext.Initialize(
-                TestProfilePaths,
+                testHostDetails,
                 initialRunspace,
                 ownsInitialRunspace: true,
                 consoleHost: null);
