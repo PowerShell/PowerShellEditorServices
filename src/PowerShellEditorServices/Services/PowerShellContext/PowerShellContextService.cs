@@ -36,8 +36,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             "..",
             ".."
 #if TEST
-             When using xUnit (dotnet test) the assemblies are deployed to the
-             test project folder, invalidating our relative path assumption.
+             //When using xUnit (dotnet test) the assemblies are deployed to the
+             //test project folder, invalidating our relative path assumption.
             ,
             "..",
             "..",
@@ -204,7 +204,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
         public static PowerShellContextService Create(
             ILoggerFactory factory,
-            OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade languageServer = null,
+            OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade languageServer,
             HostStartupInfo hostStartupInfo
             )
         {
