@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -152,10 +153,18 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         public async Task CanGetPSReadLineProxy()
         {
             Skip.If(IsWindows, "This test doesn't work on Windows for some reason.");
+            string s_bundledModulesPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+            "..",
+            "..",
+            "..",
+            "..",
+            "module"
+            );
             Assert.True(PSReadLinePromptContext.TryGetPSReadLineProxy(
-                NullLogger.Instance,
-                PowerShellContextFactory.initialRunspace,
-                out PSReadLineProxy proxy));
+                    NullLogger.Instance,
+                    PowerShellContextFactory.initialRunspace,
+                    s_bundledModulesPath,
+                    out PSReadLineProxy proxy));
         }
 
         #region Helper Methods

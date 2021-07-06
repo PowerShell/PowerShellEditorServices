@@ -17,20 +17,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
     internal class PSReadLinePromptContext : IPromptContext
     {
-        private static readonly string _psReadLineModulePath = Path.Combine(
-            Path.GetDirectoryName(typeof(PSReadLinePromptContext).Assembly.Location),
-            "..",
-            "..",
-            "..",
-#if TEST
-            // When using xUnit (dotnet test) the assemblies are deployed to the
-            // test project folder, invalidating our relative path assumption.
-            "..",
-            "..",
-            "module",
-#endif
-            "PSReadLine");
-
         private static readonly Lazy<CmdletInfo> s_lazyInvokeReadLineForEditorServicesCmdletInfo = new Lazy<CmdletInfo>(() =>
         {
             var type = Type.GetType("Microsoft.PowerShell.EditorServices.Commands.InvokeReadLineForEditorServicesCommand, Microsoft.PowerShell.EditorServices.Hosting");
@@ -79,6 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         internal static bool TryGetPSReadLineProxy(
             ILogger logger,
             Runspace runspace,
+            string bundledModulePath,
             out PSReadLineProxy readLineProxy)
         {
             readLineProxy = null;
@@ -92,6 +79,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             if(psReadLineType is null)
             {
                 logger.LogWarning("PSConsoleReadline type not found, attempting to load PSReadLine");
+                string _psReadLineModulePath = Path.Combine(bundledModulePath, "PSReadLine");
                 using(var pwsh = PowerShell.Create())
                 {
                     try

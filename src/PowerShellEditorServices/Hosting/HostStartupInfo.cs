@@ -140,7 +140,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <param name="logLevel">The minimum log event level.</param>
         /// <param name="consoleReplEnabled">Enable console if true.</param>
         /// <param name="usesLegacyReadLine">Use PSReadLine if false, otherwise use the legacy readline implementation.</param>
-        /// /// <param name="bundledModulePath">The path to the Modules folder, helps with loading the bundled PSReadLine and other included modules</param>
+        /// <param name="bundledModulePath">The path to the Modules folder, helps with loading the bundled PSReadLine and other included modules</param>
         public HostStartupInfo(
             string name,
             string profileId,

@@ -34,18 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// </summary>
     internal class PowerShellContextService: IHostSupportsInteractiveSession
     {
-        private static string s_bundledModulesPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-            "..",
-            ".."
-#if TEST
-             //When using xUnit (dotnet test) the assemblies are deployed to the
-             //test project folder, invalidating our relative path assumption.
-            ,
-            "..",
-            "..",
-            "module"
-#endif
-            );
+        private static string s_bundledModulesPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "..", "..");
 
         private static string s_commandsModulePath => Path.GetFullPath(
             Path.Combine(
@@ -211,6 +200,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             HostStartupInfo hostStartupInfo)
         {
             Validate.IsNotNull(nameof(hostStartupInfo), hostStartupInfo);
+            s_bundledModulesPath = !string.IsNullOrEmpty(hostStartupInfo.BundledModulePath) && Directory.Exists(hostStartupInfo.BundledModulePath) 
+                ? hostStartupInfo.BundledModulePath
+                : s_bundledModulesPath;
             
             var logger = factory.CreateLogger<PowerShellContextService>();
             bool shouldUsePSReadLine = hostStartupInfo.ConsoleReplEnabled
@@ -464,7 +456,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             this.ConfigureRunspaceCapabilities(this.CurrentRunspace);
 
             // Set the $profile variable in the runspace
-            this.profilePaths = profilePaths;
+            this.profilePaths = hostStartupInfo.ProfilePaths;
             if (profilePaths != null)
             {
                 this.SetProfileVariableInCurrentRunspace(profilePaths);
@@ -501,7 +493,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (powerShellVersion.Major >= 5 &&
                 this.isPSReadLineEnabled &&
-                PSReadLinePromptContext.TryGetPSReadLineProxy(logger, initialRunspace, out PSReadLineProxy proxy))
+                PSReadLinePromptContext.TryGetPSReadLineProxy(logger, initialRunspace, hostStartupInfo.BundledModulePath, out PSReadLineProxy proxy))
             {
                 this.PromptContext = new PSReadLinePromptContext(
                     this,
