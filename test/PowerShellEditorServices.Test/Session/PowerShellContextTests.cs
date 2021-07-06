@@ -153,9 +153,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         public async Task CanGetPSReadLineProxy()
         {
             var directory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppDomain.CurrentDomain.RelativeSearchPath ?? "");
-            System.Console.WriteLine($"directory: {directory}");
-            System.Console.WriteLine($"{Directory.GetDirectories(directory)}");
-            System.Console.WriteLine($"{Directory.GetFiles(directory)}");
             string s_bundledModulesPath = Path.GetFullPath(Path.Combine(directory,
             "..",
             "..",
@@ -164,10 +161,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             "..",
             "module"
             ));
-            System.Console.WriteLine($"s_bundledModulesPath: {s_bundledModulesPath}");
-            System.Console.WriteLine($"{Directory.GetDirectories(s_bundledModulesPath)}");
-            System.Console.WriteLine($"{Directory.GetFiles(s_bundledModulesPath)}");
-            System.Console.WriteLine($"Attempting to import {s_bundledModulesPath}\\PSReadLine");
             Assert.True(PSReadLinePromptContext.TryGetPSReadLineProxy(
                     NullLogger.Instance,
                     PowerShellContextFactory.initialRunspace,

@@ -82,20 +82,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
                 if (psReadLineType == null)
                 {
-                    logger.LogWarning("PSConsoleReadline type not found: {Reason}", pwsh.HadErrors ? pwsh.Streams.Error[0].ToString() : "<Unknown reason>");
-                    System.Console.WriteLine("psReadLineType is null, searching loaded assemblies...");                    
-
+                    logger.LogWarning("PSConsoleReadline type not found using Type.GetType(): {Reason}", pwsh.HadErrors ? pwsh.Streams.Error[0].ToString() : "<Unknown reason>");
+                    logger.LogWarning("Searching loaded assemblies...");
                     var allAssemblies = AppDomain.CurrentDomain.GetAssemblies();
                     var assemblies = allAssemblies.FirstOrDefault(a => a.FullName.Contains("Microsoft.PowerShell.PSReadLine2"));
                     var type = assemblies?.ExportedTypes?.FirstOrDefault(a => a.FullName == "Microsoft.PowerShell.PSConsoleReadLine");
                     if(type is not null)
                     {
-                        System.Console.WriteLine("Found PSConsoleReadLine in loaded assemblies.");                    
+                        logger.LogInformation("Found PSConsoleReadLine in loaded assemblies.");                    
                         psReadLineType = type;
                     }
                     else
                     {
-                        Console.WriteLine("Unable to find PSConsoleReadLine in loaded assembles.");
+                        logger.LogError("Unable to find PSConsoleReadLine in loaded assembles.");
                         return false;
                     }
                 }
