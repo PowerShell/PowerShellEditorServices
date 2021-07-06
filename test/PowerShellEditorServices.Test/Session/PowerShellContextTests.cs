@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Runtime.InteropServices;
@@ -149,7 +148,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
         [Trait("Category", "PSReadLine")]
         [SkippableFact]
-        public async Task CanGetPSReadLineProxy()
+        public void CanGetPSReadLineProxy()
         {
             Skip.If(IsWindows, "This test doesn't work on Windows for some reason.");
             Assert.True(PSReadLinePromptContext.TryGetPSReadLineProxy(
