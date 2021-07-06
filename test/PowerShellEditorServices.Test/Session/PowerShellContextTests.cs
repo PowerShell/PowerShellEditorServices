@@ -160,6 +160,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             "..",
             "module"
             );
+            System.Console.WriteLine($"Attempting to import {s_bundledModulesPath}");
             Assert.True(PSReadLinePromptContext.TryGetPSReadLineProxy(
                     NullLogger.Instance,
                     PowerShellContextFactory.initialRunspace,
