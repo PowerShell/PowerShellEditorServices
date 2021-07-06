@@ -226,7 +226,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             logger.LogTrace("Creating initial PowerShell runspace");
             Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.LanguageMode);
-            powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
+            powerShellContext.Initialize(hostStartupInfo, initialRunspace, true, hostUserInterface);
             powerShellContext.ImportCommandsModuleAsync();
 
             // TODO: This can be moved to the point after the $psEditor object
@@ -322,7 +322,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="ownsInitialRunspace">If true, the PowerShellContext owns this runspace.</param>
         /// <param name="consoleHost">An IHostOutput implementation.  Optional.</param>
         public void Initialize(
-            ProfilePathInfo profilePaths,
+            HostStartupInfo hostStartupInfo,
             Runspace initialRunspace,
             bool ownsInitialRunspace,
             IHostOutput consoleHost)
@@ -376,7 +376,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             this.ConfigureRunspaceCapabilities(this.CurrentRunspace);
 
             // Set the $profile variable in the runspace
-            this.profilePaths = profilePaths;
+            this.profilePaths = hostStartupInfo.ProfilePaths;
             if (profilePaths != null)
             {
                 this.SetProfileVariableInCurrentRunspace(profilePaths);
@@ -413,7 +413,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (powerShellVersion.Major >= 5 &&
                 this.isPSReadLineEnabled &&
-                PSReadLinePromptContext.TryGetPSReadLineProxy(logger, initialRunspace, out PSReadLineProxy proxy))
+                PSReadLinePromptContext.TryGetPSReadLineProxy(logger, initialRunspace, hostStartupInfo.BundledModulePath, out PSReadLineProxy proxy))
             {
                 this.PromptContext = new PSReadLinePromptContext(
                     this,
