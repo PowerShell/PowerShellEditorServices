@@ -153,7 +153,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         public async Task CanGetPSReadLineProxy()
         {
             //Skip.If(IsWindows, "This test doesn't work on Windows for some reason.");
-            var executingAssembly = Assembly.GetExecutingAssembly().Location;
+            var executingAssembly = Assembly.GetExecutingAssembly().GetName().CodeBase;
             System.Console.WriteLine($"executingAssembly {executingAssembly}");
             var directory = Path.GetDirectoryName(executingAssembly);
             System.Console.WriteLine($"directory: {directory}");
