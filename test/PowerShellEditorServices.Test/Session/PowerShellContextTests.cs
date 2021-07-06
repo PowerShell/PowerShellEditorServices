@@ -147,10 +147,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         }
 
         [Trait("Category", "PSReadLine")]
-        [SkippableFact]
+        [Fact]
         public void CanGetPSReadLineProxy()
         {
-            Skip.If(IsWindows, "This test doesn't work on Windows for some reason.");
             Assert.True(PSReadLinePromptContext.TryGetPSReadLineProxy(
                 NullLogger.Instance,
                 PowerShellContextFactory.initialRunspace,

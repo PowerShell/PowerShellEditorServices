@@ -11,6 +11,7 @@ using System.Management.Automation.Host;
 using System.Management.Automation.Remoting;
 using System.Management.Automation.Runspaces;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -280,6 +281,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // that started PowerShell Editor Services. This is because the PowerShell Integrated Console
             // should have the same LanguageMode of whatever is set by the system.
             initialSessionState.LanguageMode = languageMode;
+
+            // We set the process scope's execution policy (which is really the runspace's scope) to
+            // Bypass so we can import our bundled modules. This is equivalent in scope to the CLI
+            // argument `-Bypass`, which (for instance) the extension passes. Thus we emulate this
+            // behavior for consistency such that unit tests can pass in a similar environment.
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                initialSessionState.ExecutionPolicy = ExecutionPolicy.Bypass;
+            }
 
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
 
