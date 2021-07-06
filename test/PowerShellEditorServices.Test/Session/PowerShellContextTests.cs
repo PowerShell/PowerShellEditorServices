@@ -154,7 +154,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             Assert.True(PSReadLinePromptContext.TryGetPSReadLineProxy(
                 NullLogger.Instance,
                 PowerShellContextFactory.initialRunspace,
-                out PSReadLineProxy proxy));
+                out PSReadLineProxy proxy,
+                true));
         }
 
         #region Helper Methods
