@@ -96,7 +96,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                             return false;
                         }
 
-                        readLineProxy = new PSReadLineProxy(psReadLineType, logger);
                     }
                     catch(InvalidOperationException e)
                     {
@@ -113,7 +112,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     }
                 }
             }
-
+            readLineProxy = new PSReadLineProxy(psReadLineType, logger);
             return (psReadLineType is not null);
         }
 
