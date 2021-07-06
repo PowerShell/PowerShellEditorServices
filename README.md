@@ -29,7 +29,7 @@ The functionality in PowerShell Editor Services is already available in the foll
 
 ## Usage
 
-Are you looking to integrate PowerShell Editor Services into your [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) compliant editor or client? We support two ways of connecting.
+If you're looking to integrate PowerShell Editor Services into your [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) compliant editor or client, we support two ways of connecting.
 
 ### Named Pipes/Unix Domain Sockets (recommended)
 
