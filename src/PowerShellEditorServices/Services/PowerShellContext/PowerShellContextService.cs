@@ -320,21 +320,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="profilePaths">An object containing the profile paths for the session.</param>
         /// <param name="initialRunspace">The initial runspace to use for this instance.</param>
         /// <param name="ownsInitialRunspace">If true, the PowerShellContext owns this runspace.</param>
-        public void Initialize(
-            ProfilePathInfo profilePaths,
-            Runspace initialRunspace,
-            bool ownsInitialRunspace)
-        {
-            this.Initialize(profilePaths, initialRunspace, ownsInitialRunspace, consoleHost: null);
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the PowerShellContext class using
-        /// an existing runspace for the session.
-        /// </summary>
-        /// <param name="profilePaths">An object containing the profile paths for the session.</param>
-        /// <param name="initialRunspace">The initial runspace to use for this instance.</param>
-        /// <param name="ownsInitialRunspace">If true, the PowerShellContext owns this runspace.</param>
         /// <param name="consoleHost">An IHostOutput implementation.  Optional.</param>
         public void Initialize(
             ProfilePathInfo profilePaths,

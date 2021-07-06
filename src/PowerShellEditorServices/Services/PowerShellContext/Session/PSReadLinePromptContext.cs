@@ -22,25 +22,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             "..",
             "..",
             "..",
+#if TEST
+            // When using xUnit (dotnet test) the assemblies are deployed to the
+            // test project folder, invalidating our relative path assumption.
+            "..",
+            "..",
+            "module",
+#endif
             "PSReadLine");
-
-        private static readonly string ReadLineInitScript = $@"
-            [System.Diagnostics.DebuggerHidden()]
-            [System.Diagnostics.DebuggerStepThrough()]
-            param()
-            end {{
-                $module = Get-Module -ListAvailable PSReadLine |
-                    Where-Object {{ $_.Version -ge '2.0.2' }} |
-                    Sort-Object -Descending Version |
-                    Select-Object -First 1
-                if (-not $module) {{
-                    Import-Module '{_psReadLineModulePath.Replace("'", "''")}'
-                    return [Microsoft.PowerShell.PSConsoleReadLine]
-                }}
-
-                Import-Module -ModuleInfo $module
-                return [Microsoft.PowerShell.PSConsoleReadLine]
-            }}";
 
         private static readonly Lazy<CmdletInfo> s_lazyInvokeReadLineForEditorServicesCmdletInfo = new Lazy<CmdletInfo>(() =>
         {
@@ -97,14 +86,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             using (var pwsh = PowerShell.Create())
             {
                 pwsh.Runspace = runspace;
-                var psReadLineType = pwsh
-                    .AddScript(ReadLineInitScript, useLocalScope: true)
-                    .Invoke<Type>()
-                    .FirstOrDefault();
+                pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                    .AddParameter("Name", _psReadLineModulePath)
+                    .Invoke();
+
+                var psReadLineType = Type.GetType("Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2");
 
                 if (psReadLineType == null)
                 {
-                    logger.LogWarning("PSReadLine unable to be loaded: {Reason}", pwsh.HadErrors ? pwsh.Streams.Error[0].ToString() : "<Unknown reason>");
+                    logger.LogWarning("PSConsoleReadline type not found: {Reason}", pwsh.HadErrors ? pwsh.Streams.Error[0].ToString() : "<Unknown reason>");
                     return false;
                 }
 
@@ -117,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     // The Type we got back from PowerShell doesn't have the members we expected.
                     // Could be an older version, a custom build, or something a newer version with
                     // breaking changes.
-                    logger.LogWarning("PSReadLine unable to be loaded: {Reason}", e);
+                    logger.LogWarning("PSReadLineProxy unable to be initialized: {Reason}", e);
                     return false;
                 }
             }
