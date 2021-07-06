@@ -22,22 +22,20 @@ namespace Microsoft.PowerShell.EditorServices.Test
         //       can be set to whatever they need to be for the given host.
 
         public static readonly ProfilePathInfo TestProfilePaths =
-            new ProfilePathInfo(
-                    Path.GetFullPath(
-                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Profile/Test.PowerShellEditorServices_profile.ps1")),
-                    Path.GetFullPath(
-                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Profile/ProfileTest.ps1")),
-                    Path.GetFullPath(
-                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Test.PowerShellEditorServices_profile.ps1")),
-                    Path.GetFullPath(
-                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/ProfileTest.ps1")));
+           new ProfilePathInfo(
+                   Path.GetFullPath(
+                       TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Profile/Test.PowerShellEditorServices_profile.ps1")),
+                   Path.GetFullPath(
+                       TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Profile/ProfileTest.ps1")),
+                   Path.GetFullPath(
+                       TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Test.PowerShellEditorServices_profile.ps1")),
+                   Path.GetFullPath(
+                       TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/ProfileTest.ps1")));
 
         public static System.Management.Automation.Runspaces.Runspace initialRunspace;
 
-        public static PowerShellContextService Create(ILogger logger)
+        public static PowerShellContextService Create(ILogger logger, bool isPSReadLineEnabled = false)
         {
-            PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, isPSReadLineEnabled: false);
-
             HostStartupInfo testHostDetails = new HostStartupInfo(
                 "PowerShell Editor Services Test Host",
                 "Test.PowerShellEditorServices",
@@ -49,8 +47,10 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 PSLanguageMode.FullLanguage,
                 null,
                 0,
-                consoleReplEnabled: false,
+                consoleReplEnabled: isPSReadLineEnabled,
                 usesLegacyReadLine: false);
+
+            PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, testHostDetails);
 
             initialRunspace = PowerShellContextService.CreateRunspace(
                     testHostDetails,

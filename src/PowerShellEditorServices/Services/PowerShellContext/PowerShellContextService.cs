@@ -32,7 +32,18 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// </summary>
     internal class PowerShellContextService : IHostSupportsInteractiveSession
     {
-        private static string s_bundledModulesPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "..", "..");
+        private static string s_bundledModulesPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), 
+            //"..", 
+            //".."
+//#if TEST
+            // When using xUnit (dotnet test) the assemblies are deployed to the
+            // test project folder, invalidating our relative path assumption.
+            //,
+            //"..",
+            //"..",
+            "module"
+//#endif
+            );
 
         private static string s_commandsModulePath => Path.GetFullPath(
             Path.Combine(
@@ -40,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 "PowerShellEditorServices",
                 "Commands",
                 "PowerShellEditorServices.Commands.psd1"));
-        private static string _psReadLineModulePath => Path.GetFullPath(
+        private static string s_psReadLineModulePath => Path.GetFullPath(
             Path.Combine(
                 s_bundledModulesPath,
                 "PSReadLine"));
@@ -180,40 +191,46 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public PowerShellContextService(
             ILogger logger,
             OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade languageServer,
-            bool isPSReadLineEnabled)
+            HostStartupInfo hostStartupInfo)
         {
             logger.LogTrace("Instantiating PowerShellContextService and adding event handlers");
             _languageServer = languageServer;
             this.logger = logger;
-            this.isPSReadLineEnabled = isPSReadLineEnabled;
+            this.isPSReadLineEnabled = hostStartupInfo.ConsoleReplEnabled
+                && !hostStartupInfo.UsesLegacyReadLine;
 
             RunspaceChanged += PowerShellContext_RunspaceChangedAsync;
             ExecutionStatusChanged += PowerShellContext_ExecutionStatusChangedAsync;
         }
-
-        [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Checked by Validate call")]
         public static PowerShellContextService Create(
             ILoggerFactory factory,
-            OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade languageServer,
-            HostStartupInfo hostStartupInfo)
+            OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade languageServer = null,
+            HostStartupInfo hostStartupInfo
+            )
         {
             Validate.IsNotNull(nameof(hostStartupInfo), hostStartupInfo);
 
             var logger = factory.CreateLogger<PowerShellContextService>();
+            return Create(logger, hostStartupInfo, languageServer);
+            
+        }
 
-            bool shouldUsePSReadLine = hostStartupInfo.ConsoleReplEnabled
-                && !hostStartupInfo.UsesLegacyReadLine;
-
+        public static PowerShellContextService Create(
+            ILogger logger,
+            HostStartupInfo hostStartupInfo,
+            OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade languageServer = null
+            )
+        {
             var powerShellContext = new PowerShellContextService(
                 logger,
                 languageServer,
-                shouldUsePSReadLine);
+                hostStartupInfo);
 
             EditorServicesPSHostUserInterface hostUserInterface =
                 hostStartupInfo.ConsoleReplEnabled
-                    ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, hostStartupInfo.PSHost, logger)
+                    ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, hostStartupInfo.PSHost, logger)
                     : new ProtocolPSHostUserInterface(languageServer, powerShellContext, logger);
-
+            
             EditorServicesPSHost psHost =
                 new EditorServicesPSHost(
                     powerShellContext,
@@ -222,13 +239,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     logger);
 
             logger.LogTrace("Creating initial PowerShell runspace");
-            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.LanguageMode);
+            Runspace initialRunspace = PowerShellContextService.CreateRunspace(hostStartupInfo, powerShellContext, hostUserInterface, logger);
             powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
-            powerShellContext.ImportCommandsModuleAsync();
+
 
             // TODO: This can be moved to the point after the $psEditor object
             // gets initialized when that is done earlier than LanguageServer.Initialize
-            foreach (string module in hostStartupInfo.AdditionalModules)
+            foreach(string module in hostStartupInfo.AdditionalModules)
             {
                 var command =
                     new PSCommand()
@@ -246,7 +263,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             return powerShellContext;
         }
-
+        [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Checked by Validate call")]
+        
         /// <summary>
         ///
         /// </summary>
@@ -325,7 +343,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             this.SessionState = PowerShellContextState.NotStarted;
             this.ConsoleWriter = consoleHost;
             this.ConsoleReader = consoleHost as IHostInput;
-
+            
             // Get the PowerShell runtime version
             this.LocalPowerShellVersion =
                 PowerShellVersionDetails.GetVersionDetails(
@@ -421,6 +439,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 this.SetExecutionPolicy();
             }
+            _ = this.ImportCommandsModuleAsync();
+            if(isPSReadLineEnabled)
+            {
+                this.ImportPSReadLine2ModuleAsync().GetAwaiter().GetResult();
+            }
         }
 
         /// <summary>
@@ -428,9 +451,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// the runspace.  This method will be moved somewhere else soon.
         /// </summary>
         /// <returns></returns>
-        public Task ImportCommandsModuleAsync() => ImportCommandsModuleAsync(s_commandsModulePath);
+        public Task ImportCommandsModuleAsync() => ImportsModuleAsync(s_commandsModulePath);
 
-        public Task ImportCommandsModuleAsync(string path)
+        /// <summary>
+        /// Imports the PSReadLine2 module into
+        /// the runspace.  This method will be moved somewhere else soon.
+        /// </summary>
+        /// <returns></returns>
+        public Task ImportPSReadLine2ModuleAsync() => ImportsModuleAsync(s_psReadLineModulePath);
+        public Task ImportsModuleAsync(string path)
         {
             this.logger.LogTrace($"Importing PowershellEditorServices commands from {path}");
 

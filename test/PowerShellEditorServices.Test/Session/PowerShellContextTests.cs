@@ -9,6 +9,7 @@ using System.Management.Automation;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
@@ -27,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
         private static readonly string s_debugTestFilePath =
             TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/DebugTest.ps1");
-
+       
         public PowerShellContextTests()
         {
             this.powerShellContext = PowerShellContextFactory.Create(NullLogger.Instance);
@@ -111,8 +112,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public async Task CanResolveAndLoadProfilesForHostId()
         {
-            string[] expectedProfilePaths =
-                new string[]
+            string [] expectedProfilePaths =
+                new string []
                 {
                     PowerShellContextFactory.TestProfilePaths.AllUsersAllHosts,
                     PowerShellContextFactory.TestProfilePaths.AllUsersCurrentHost,
@@ -151,7 +152,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [SkippableFact]
         public async Task CanGetPSReadLineProxy()
         {
-            Skip.If(IsWindows, "This test doesn't work on Windows for some reason.");
+            // This will force the loading of the PSReadLine assembly
+            var psContext = PowerShellContextFactory.Create(NullLogger.Instance, isPSReadLineEnabled: true);
+            //PowerShellContextService powerShellContext = new PowerShellContextService(NullLogger.Instance, null, isPSReadLineEnabled: true);
+            //var psContext = PowerShellContextService.Create(NullLogger.Instance, null, new Hosting.HostStartupInfo("testhost","testprofileid",new Version("1.0.0"), null, null);
+            //Skip.If(IsWindows, "This test doesn't work on Windows for some reason.");
             Assert.True(PSReadLinePromptContext.TryGetPSReadLineProxy(
                 NullLogger.Instance,
                 out PSReadLineProxy proxy));
