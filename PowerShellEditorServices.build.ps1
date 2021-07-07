@@ -23,9 +23,9 @@ $script:PsesCommonProps = [xml](Get-Content -Raw "$PSScriptRoot/PowerShellEditor
 $script:IsPreview = [bool]($script:PsesCommonProps.Project.PropertyGroup.VersionSuffix)
 
 $script:NetRuntime = @{
-    PS7 = 'netcoreapp3.1'
-    PS72 = 'net6.0'
-    Desktop = 'net461'
+    PS7      = 'netcoreapp3.1'
+    PS72     = 'net6.0'
+    Desktop  = 'net461'
     Standard = 'netstandard2.0'
 }
 
@@ -42,11 +42,11 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
 function Invoke-WithCreateDefaultHook {
     param([scriptblock]$ScriptBlock)
 
-    try
-    {
+    try {
         $env:PSES_TEST_USE_CREATE_DEFAULT = 1
         & $ScriptBlock
-    } finally {
+    }
+    finally {
         Remove-Item env:PSES_TEST_USE_CREATE_DEFAULT
     }
 }
@@ -69,25 +69,22 @@ function Install-Dotnet {
     Invoke-WebRequest "https://dot.net/v1/$installScript" -OutFile $installScriptPath
 
     # Download and install the different .NET channels
-    foreach ($dotnetChannel in $Channel)
-    {
+    foreach ($dotnetChannel in $Channel) {
         Write-Host "`n### Installing .NET CLI $Version...`n"
 
         if ($script:IsNix) {
             chmod +x $installScriptPath
         }
 
-        $params = if ($script:IsNix)
-        {
+        $params = if ($script:IsNix) {
             @('-Channel', $dotnetChannel, '-InstallDir', $env:DOTNET_INSTALL_DIR, '-NoPath', '-Verbose')
         }
-        else
-        {
+        else {
             @{
-                Channel = $dotnetChannel
+                Channel    = $dotnetChannel
                 InstallDir = $env:DOTNET_INSTALL_DIR
-                NoPath = $true
-                Verbose = $true
+                NoPath     = $true
+                Verbose    = $true
             }
         }
 
@@ -108,13 +105,12 @@ task SetupDotNet -Before Clean, Build, TestServerWinPS, TestServerPS7, TestServe
 
     if (!(Test-Path $dotnetExePath)) {
         # TODO: Test .NET 5 with PowerShell 7.1
-        Install-Dotnet -Channel '3.1','5.0','6.0'
+        Install-Dotnet -Channel '3.1', '5.0', '6.0'
     }
 
     # This variable is used internally by 'dotnet' to know where it's installed
     $script:dotnetExe = Resolve-Path $dotnetExePath
-    if (!$env:DOTNET_INSTALL_DIR)
-    {
+    if (!$env:DOTNET_INSTALL_DIR) {
         $dotnetExeDir = [System.IO.Path]::GetDirectoryName($script:dotnetExe)
         $env:PATH = $dotnetExeDir + [System.IO.Path]::PathSeparator + $env:PATH
         $env:DOTNET_INSTALL_DIR = $dotnetExeDir
@@ -129,7 +125,7 @@ task BinClean {
     Remove-Item $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin -Recurse -Force -ErrorAction Ignore
 }
 
-task Clean BinClean,{
+task Clean BinClean, {
     exec { & $script:dotnetExe restore }
     exec { & $script:dotnetExe clean }
     Get-ChildItem -Recurse $PSScriptRoot\src\*.nupkg | Remove-Item -Force -ErrorAction Ignore
@@ -140,9 +136,9 @@ task Clean BinClean,{
     $moduleJsonPath = "$PSScriptRoot\modules.json"
     if (Test-Path $moduleJsonPath) {
         Get-Content -Raw $moduleJsonPath |
-            ConvertFrom-Json |
-            ForEach-Object { $_.PSObject.Properties.Name } |
-            ForEach-Object { Remove-Item -Path "$PSScriptRoot/module/$_" -Recurse -Force -ErrorAction Ignore }
+        ConvertFrom-Json |
+        ForEach-Object { $_.PSObject.Properties.Name } |
+        ForEach-Object { Remove-Item -Path "$PSScriptRoot/module/$_" -Recurse -Force -ErrorAction Ignore }
     }
 }
 
@@ -180,9 +176,11 @@ task CreateBuildInfo -Before Build {
     if ($env:TF_BUILD) {
         if ($env:BUILD_BUILDNUMBER -like "PR-*") {
             $buildOrigin = "PR"
-        } elseif ($env:BUILD_DEFINITIONNAME -like "*-CI") {
+        }
+        elseif ($env:BUILD_DEFINITIONNAME -like "*-CI") {
             $buildOrigin = "CI"
-        } else {
+        }
+        else {
             $buildOrigin = "Release"
         }
 
@@ -190,8 +188,7 @@ task CreateBuildInfo -Before Build {
         $propsBody = $propsXml.Project.PropertyGroup
         $buildVersion = $propsBody.VersionPrefix
 
-        if ($propsBody.VersionSuffix)
-        {
+        if ($propsBody.VersionSuffix) {
             $buildVersion += '-' + $propsBody.VersionSuffix
         }
     }
@@ -230,17 +227,15 @@ task SetupHelpForTests {
         Write-Host "Updating help for tests"
         Update-Help -Module Microsoft.PowerShell.Utility -Force -Scope CurrentUser
     }
-    else
-    {
+    else {
         Write-Host "Write-Host help found -- Update-Help skipped"
     }
 }
 
-task Build BinClean,{
+task Build BinClean, {
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetRuntime.Standard }
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.PS7 }
-    if (-not $script:IsNix)
-    {
+    if (-not $script:IsNix) {
         exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Desktop }
     }
 
@@ -250,29 +245,29 @@ task Build BinClean,{
 
 function DotNetTestFilter {
     # Reference https://docs.microsoft.com/en-us/dotnet/core/testing/selective-unit-tests
-    if ($TestFilter) { @("--filter",$TestFilter) } else { "" }
+    if ($TestFilter) { @("--filter", $TestFilter) } else { "" }
 }
 
-task Test SetupHelpForTests,TestServer,TestE2E
+task Test SetupHelpForTests, TestServer, TestE2E
 
-task TestServer TestServerWinPS,TestServerPS7,TestServerPS72
+task TestServer TestServerWinPS, TestServerPS7, TestServerPS72
 
 task TestServerWinPS -If (-not $script:IsNix) {
     Set-Location .\test\PowerShellEditorServices.Test\
-    exec { & $script:dotnetExe test -p:ExtraDefineConstants=TEST --logger trx -f $script:NetRuntime.Desktop (DotNetTestFilter) }
+    exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Desktop (DotNetTestFilter) }
 }
 
 task TestServerPS7 -If (-not $script:IsRosetta) {
     Set-Location .\test\PowerShellEditorServices.Test\
     Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
-        exec { & $script:dotnetExe test -p:ExtraDefineConstants=TEST --logger trx -f $script:NetRuntime.PS7 (DotNetTestFilter) }
+        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS7 (DotNetTestFilter) }
     }
 }
 
 task TestServerPS72 {
     Set-Location .\test\PowerShellEditorServices.Test\
     Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
-        exec { & $script:dotnetExe test -p:ExtraDefineConstants=TEST --logger trx -f $script:NetRuntime.PS72 (DotNetTestFilter) }
+        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS72 (DotNetTestFilter) }
     }
 }
 
@@ -281,14 +276,15 @@ task TestE2E {
 
     $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
     $NetRuntime = if ($IsRosetta) { $script:NetRuntime.PS72 } else { $script:NetRuntime.PS7 }
-    exec { & $script:dotnetExe test -p:ExtraDefineConstants=TEST --logger trx -f $NetRuntime (DotNetTestFilter) }
+    exec { & $script:dotnetExe test --logger trx -f $NetRuntime (DotNetTestFilter) }
 
     # Run E2E tests in ConstrainedLanguage mode.
     if (!$script:IsNix) {
         try {
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", "0x80000007", [System.EnvironmentVariableTarget]::Machine);
-            exec { & $script:dotnetExe test -p:ExtraDefineConstants=TEST --logger trx -f $script:NetRuntime.PS7 (DotNetTestFilter) }
-        } finally {
+            exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS7 (DotNetTestFilter) }
+        }
+        finally {
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", $null, [System.EnvironmentVariableTarget]::Machine);
         }
     }
@@ -303,8 +299,7 @@ task LayoutModule -After Build {
     $psesCoreHostPath = "$psesBinOutputPath/Core"
     $psesDeskHostPath = "$psesBinOutputPath/Desktop"
 
-    foreach ($dir in $psesDepsPath,$psesCoreHostPath,$psesDeskHostPath,$psesVSCodeBinOutputPath)
-    {
+    foreach ($dir in $psesDepsPath, $psesCoreHostPath, $psesDeskHostPath, $psesVSCodeBinOutputPath) {
         New-Item -Force -Path $dir -ItemType Directory
     }
 
@@ -317,37 +312,29 @@ task LayoutModule -After Build {
     [void]$includedDlls.Add('System.Management.Automation.dll')
 
     # PSES/bin/Common
-    foreach ($psesComponent in Get-ChildItem $script:PsesOutput)
-    {
+    foreach ($psesComponent in Get-ChildItem $script:PsesOutput) {
         if ($psesComponent.Name -eq 'System.Management.Automation.dll' -or
-            $psesComponent.Name -eq 'System.Runtime.InteropServices.RuntimeInformation.dll')
-        {
+            $psesComponent.Name -eq 'System.Runtime.InteropServices.RuntimeInformation.dll') {
             continue
         }
 
-        if ($psesComponent.Extension)
-        {
+        if ($psesComponent.Extension) {
             [void]$includedDlls.Add($psesComponent.Name)
             Copy-Item -Path $psesComponent.FullName -Destination $psesDepsPath -Force
         }
     }
 
     # PSES/bin/Core
-    foreach ($hostComponent in Get-ChildItem $script:HostCoreOutput)
-    {
-        if (-not $includedDlls.Contains($hostComponent.Name))
-        {
+    foreach ($hostComponent in Get-ChildItem $script:HostCoreOutput) {
+        if (-not $includedDlls.Contains($hostComponent.Name)) {
             Copy-Item -Path $hostComponent.FullName -Destination $psesCoreHostPath -Force
         }
     }
 
     # PSES/bin/Desktop
-    if (-not $script:IsNix)
-    {
-        foreach ($hostComponent in Get-ChildItem $script:HostDeskOutput)
-        {
-            if (-not $includedDlls.Contains($hostComponent.Name))
-            {
+    if (-not $script:IsNix) {
+        foreach ($hostComponent in Get-ChildItem $script:HostDeskOutput) {
+            if (-not $includedDlls.Contains($hostComponent.Name)) {
                 Copy-Item -Path $hostComponent.FullName -Destination $psesDeskHostPath -Force
             }
         }
@@ -355,10 +342,8 @@ task LayoutModule -After Build {
 
     # Assemble the PowerShellEditorServices.VSCode module
 
-    foreach ($vscodeComponent in Get-ChildItem $script:VSCodeOutput)
-    {
-        if (-not $includedDlls.Contains($vscodeComponent.Name))
-        {
+    foreach ($vscodeComponent in Get-ChildItem $script:VSCodeOutput) {
+        if (-not $includedDlls.Contains($vscodeComponent.Name)) {
             Copy-Item -Path $vscodeComponent.FullName -Destination $psesVSCodeBinOutputPath -Force
         }
     }
@@ -374,16 +359,15 @@ task RestorePsesModules -After Build {
     (Get-Content -Raw $ModulesJsonPath | ConvertFrom-Json).PSObject.Properties | ForEach-Object {
         $name = $_.Name
         $body = @{
-            Name = $name
-            MinimumVersion = $_.Value.MinimumVersion
-            MaximumVersion = $_.Value.MaximumVersion
+            Name            = $name
+            MinimumVersion  = $_.Value.MinimumVersion
+            MaximumVersion  = $_.Value.MaximumVersion
             AllowPrerelease = $script:IsPreview
-            Repository = if ($_.Value.Repository) { $_.Value.Repository } else { $DefaultModuleRepository }
-            Path = $submodulePath
+            Repository      = if ($_.Value.Repository) { $_.Value.Repository } else { $DefaultModuleRepository }
+            Path            = $submodulePath
         }
 
-        if (-not $name)
-        {
+        if (-not $name) {
             throw "EditorServices module listed without name in '$ModulesJsonPath'"
         }
 
@@ -398,10 +382,8 @@ task RestorePsesModules -After Build {
     }
 
     # Save each module in the modules.json file
-    foreach ($moduleName in $moduleInfos.Keys)
-    {
-        if (Test-Path -Path (Join-Path -Path $submodulePath -ChildPath $moduleName))
-        {
+    foreach ($moduleName in $moduleInfos.Keys) {
+        if (Test-Path -Path (Join-Path -Path $submodulePath -ChildPath $moduleName)) {
             Write-Host "`tModule '${moduleName}' already detected. Skipping"
             continue
         }
@@ -409,10 +391,10 @@ task RestorePsesModules -After Build {
         $moduleInstallDetails = $moduleInfos[$moduleName]
 
         $splatParameters = @{
-           Name = $moduleName
-           AllowPrerelease = $moduleInstallDetails.AllowPrerelease
-           Repository = if ($moduleInstallDetails.Repository) { $moduleInstallDetails.Repository } else { $DefaultModuleRepository }
-           Path = $submodulePath
+            Name            = $moduleName
+            AllowPrerelease = $moduleInstallDetails.AllowPrerelease
+            Repository      = if ($moduleInstallDetails.Repository) { $moduleInstallDetails.Repository } else { $DefaultModuleRepository }
+            Path            = $submodulePath
         }
 
         # Only add Min and Max version if we're doing a stable release.

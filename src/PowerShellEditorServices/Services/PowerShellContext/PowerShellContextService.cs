@@ -411,6 +411,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.versionSpecificOperations);
             this.InvocationEventQueue = InvocationEventQueue.Create(this, this.PromptNest);
 
+            if (VersionUtils.IsWindows)
+            {
+                this.SetExecutionPolicy();
+            }
+
             if (powerShellVersion.Major >= 5 &&
                 this.isPSReadLineEnabled &&
                 PSReadLinePromptContext.TryGetPSReadLineProxy(logger, initialRunspace, hostStartupInfo.BundledModulePath, out PSReadLineProxy proxy))
@@ -426,10 +431,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.PromptContext = new LegacyReadLineContext(this);
             }
 
-            if (VersionUtils.IsWindows)
-            {
-                this.SetExecutionPolicy();
-            }
         }
 
         /// <summary>
