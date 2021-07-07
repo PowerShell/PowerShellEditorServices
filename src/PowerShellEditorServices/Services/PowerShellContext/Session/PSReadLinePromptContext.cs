@@ -89,7 +89,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             readLineProxy = null;
             logger.LogTrace("Attempting to load PSReadLine");
-            Console.WriteLine($"Module path is {_psReadLineTestModulePath}");
             using (var pwsh = PowerShell.Create())
             {
                 pwsh.Runspace = runspace;
@@ -97,13 +96,30 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     .AddParameter("Name", testing ? _psReadLineTestModulePath : _psReadLineModulePath)
                     .Invoke();
 
+                if (pwsh.HadErrors)
+                {
+                    logger.LogWarning("PSConsoleReadline type not found: {Reason}", pwsh.Streams.Error[0].ToString());
+                    return false;
+                }
+
                 var psReadLineType = Type.GetType("Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2");
 
                 if (psReadLineType == null)
                 {
-                    logger.LogWarning("PSConsoleReadline type not found: {Reason}", pwsh.HadErrors ? pwsh.Streams.Error[0].ToString() : "<Unknown reason>");
-                    Console.WriteLine("Failed to GetType but no PowerShell error");
-                    return false;
+                    // NOTE: For some reason `Type.GetType(...)` can fail to find the type,
+                    // and in that case, this search through the `AppDomain` for some reason will succeed.
+                    // It's slower, but only happens when needed.
+                    logger.LogTrace("PSConsoleReadline type not found using Type.GetType(), searching all loaded assemblies...");
+                    psReadLineType = AppDomain.CurrentDomain
+                        .GetAssemblies()
+                        .FirstOrDefault(asm => asm.GetName().Name.Equals("Microsoft.PowerShell.PSReadLine2"))
+                        ?.ExportedTypes
+                        ?.FirstOrDefault(type => type.FullName.Equals("Microsoft.PowerShell.PSConsoleReadLine"));
+                    if (psReadLineType == null)
+                    {
+                        logger.LogWarning("PSConsoleReadLine type not found anywhere!");
+                        return false;
+                    }
                 }
 
                 try
