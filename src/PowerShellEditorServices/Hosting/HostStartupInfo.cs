@@ -167,6 +167,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             LogLevel = logLevel;
             ConsoleReplEnabled = consoleReplEnabled;
             UsesLegacyReadLine = usesLegacyReadLine;
+            BundledModulePath = bundledModulePath;
         }
 
         #endregion
