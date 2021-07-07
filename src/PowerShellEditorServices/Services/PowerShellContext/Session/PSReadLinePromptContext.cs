@@ -89,6 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             readLineProxy = null;
             logger.LogTrace("Attempting to load PSReadLine");
+            Console.WriteLine($"Module path is {_psReadLineTestModulePath}");
             using (var pwsh = PowerShell.Create())
             {
                 pwsh.Runspace = runspace;
@@ -101,6 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 if (psReadLineType == null)
                 {
                     logger.LogWarning("PSConsoleReadline type not found: {Reason}", pwsh.HadErrors ? pwsh.Streams.Error[0].ToString() : "<Unknown reason>");
+                    Console.WriteLine("Failed to GetType but no PowerShell error");
                     return false;
                 }
 
