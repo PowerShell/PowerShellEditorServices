@@ -26,7 +26,22 @@ namespace Microsoft.PowerShell.EditorServices.Services
 {
     using System.Management.Automation;
 
+    public static class InitialSessionStateExtensions
+    {
+        public static void AddCommandAndAliasToInitialSessionState<T>(this InitialSessionState iss, string alias)
+        {
+            var shortName = alias.Split('\\').LastOrDefault();
 
+            if(!iss.Commands.Any(a => string.Compare(a.Name, shortName, true) == 0))
+            {
+                iss.Commands.Add(new SessionStateCmdletEntry(shortName, typeof(T), null));
+            }
+            if(!iss.Commands.Any(a => string.Compare(a.Name, alias) == 0))
+            {
+                iss.Commands.Add(new SessionStateAliasEntry(alias, shortName, null));
+            }
+        }
+    }
     /// <summary>
     /// Manages the lifetime and usage of a PowerShell session.
     /// Handles nested PowerShell prompts and also manages execution of
@@ -213,24 +228,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 languageServer,
                 shouldUsePSReadLine);
 
-            EditorServicesPSHostUserInterface hostUserInterface =
-                hostStartupInfo.ConsoleReplEnabled
-                    ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, hostStartupInfo.PSHost, logger)
-                    : new ProtocolPSHostUserInterface(languageServer, powerShellContext, logger);
-
-            EditorServicesPSHost psHost =
-                new EditorServicesPSHost(
-                    powerShellContext,
-                    hostStartupInfo,
-                    hostUserInterface,
-                    logger);
-
-            logger.LogTrace("Creating initial PowerShell runspace");
-            Runspace initialRunspace;
-            
-            initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
-            powerShellContext.Initialize(hostStartupInfo, initialRunspace, true, hostUserInterface);
-            
+            powerShellContext.Initialize(hostStartupInfo, languageServer, true);            
 
             return powerShellContext;
         }
@@ -278,22 +276,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             return runspace;
         }
-
-        /// <summary>
-        /// Initializes a new instance of the PowerShellContext class using
-        /// an existing runspace for the session.
-        /// </summary>
-        /// <param name="hostStartupInfo">An object containing the profile paths for the session.</param>
-        /// <param name="initialRunspace">The initial runspace to use for this instance.</param>
-        /// <param name="ownsInitialRunspace">If true, the PowerShellContext owns this runspace.</param>
-        public void Initialize(
-            HostStartupInfo hostStartupInfo,
-            Runspace initialRunspace,
-            bool ownsInitialRunspace)
-        {
-            this.Initialize(hostStartupInfo, initialRunspace, ownsInitialRunspace, consoleHost: null);
-        }
-
+        
         /// <summary>
         /// Initializes a new instance of the PowerShellContext class using
         /// an existing runspace for the session.
@@ -304,9 +287,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="consoleHost">An IHostOutput implementation.  Optional.</param>
         public void Initialize(
             HostStartupInfo hostStartupInfo,
-            Runspace initialRunspace,
-            bool ownsInitialRunspace,
-            IHostOutput consoleHost)
+            OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade languageServer,
+            bool ownsInitialRunspace
+            )
         {
             var modulesToImport = new List<string>();
             s_bundledModulesPath = !string.IsNullOrEmpty(hostStartupInfo.BundledModulePath) && Directory.Exists(hostStartupInfo.BundledModulePath) ? hostStartupInfo.BundledModulePath
@@ -321,6 +304,18 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 modulesToImport.AddRange(hostStartupInfo.AdditionalModules);
             }
             bool preloadModules = !hostStartupInfo.InitialSessionState.Providers.Any(a => a.Name == "FileSystem" && a.Visibility == SessionStateEntryVisibility.Public);
+            EditorServicesPSHostUserInterface hostUserInterface =
+                hostStartupInfo.ConsoleReplEnabled
+                    ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(this, hostStartupInfo.PSHost, logger)
+                    : new ProtocolPSHostUserInterface(languageServer, this, logger);
+
+            EditorServicesPSHost psHost =
+                new EditorServicesPSHost(
+                    this,
+                    hostStartupInfo,
+                    hostUserInterface,
+                    logger);
+            Runspace initialRunspace;
             if(preloadModules)
             {
                 // Loading modules with ImportPSModulesFromPath into the InitialSessionState because in a Constrained Runspace there may not be a FileSystem provider.
@@ -376,45 +371,34 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     var defaultTabExpansionFunctionEntry = defaultSessionState.Commands.FirstOrDefault(a => a.Name.ToLower() == "prompt");
                     hostStartupInfo.InitialSessionState.Commands.Add(defaultTabExpansionFunctionEntry);
                 }
-                if(!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == "Get-Command"))
-                {
-                    // Adding Get-Command to the Runspace in case the calling runspace didn't add it.
-                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Command", typeof(GetCommandCommand), null));
-                    // PSES calls Get-Command by its Module Qualified Syntax "Microsoft.PowerShell.Core\Get-Command"
-                    // This fails in a Constrained Runspace.
-                    // To work around it without modifying PSES code, we add Microsoft.PowerShell.Core\Get-Command as an alias to Get-Command.
-                }
-                if(!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == @"Microsoft.PowerShell.Core\Get-Command"))
-                {
-                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Command", "Get-Command", null));
-                }
-                if(!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == "Get-Help"))
-                {
-                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Help", typeof(GetHelpCommand), null));
-                }
-                if(!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == @"Microsoft.PowerShell.Core\Get-Help"))
-                {
-                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Help", "Get-Help", null));
-                }
-                if(!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == "Get-Module"))
-                {
-                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateCmdletEntry("Get-Module", typeof(GetModuleCommand), null));
-                }
-                if(!hostStartupInfo.InitialSessionState.Commands.Any(a => a.Name == @"Microsoft.PowerShell.Core\Get-Module"))
-                {
-                    hostStartupInfo.InitialSessionState.Commands.Add(new SessionStateAliasEntry(@"Microsoft.PowerShell.Core\Get-Module", "Get-Module", null));
-                }
+                // Adding Get-Command to the Runspace in case the calling runspace didn't add it.
+                // PSES calls Get-Command by its Module Qualified Syntax "Microsoft.PowerShell.Core\Get-Command"
+                // This fails in a Constrained Runspace.
+                // To work around it without modifying PSES code, we add Microsoft.PowerShell.Core\Get-Command as an alias to Get-Command.
+                hostStartupInfo.InitialSessionState.AddCommandAndAliasToInitialSessionState<GetCommandCommand>(@"Microsoft.PowerShell.Core\Get-Command");
+                hostStartupInfo.InitialSessionState.AddCommandAndAliasToInitialSessionState<GetHelpCommand>(@"Microsoft.PowerShell.Core\Get-Help");
+                hostStartupInfo.InitialSessionState.AddCommandAndAliasToInitialSessionState<GetModuleCommand>(@"Microsoft.PowerShell.Core\Get-Module");
+                hostStartupInfo.InitialSessionState.AddCommandAndAliasToInitialSessionState<OutDefaultCommand>(@"Microsoft.PowerShell.Core\Out-Default");
+                //hostStartupInfo.InitialSessionState.AddCommandAndAliasToInitialSessionState<Microsoft.PowerShell.Commands.WriteHostCommand>(@"Microsoft.PowerShell.Core\Write-Host");
+
 
                 initialRunspace = PowerShellContextService.CreateRunspace(hostStartupInfo.PSHost, hostStartupInfo.InitialSessionState);
             }
+            else
+            {
+                logger.LogTrace("Creating initial PowerShell runspace");
+
+                initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
+            }
+            logger.LogInformation("Opening Runspace");
             initialRunspace.Open();
             Validate.IsNotNull("initialRunspace", initialRunspace);
-            this.logger.LogTrace($"Initializing PowerShell context with runspace {initialRunspace.Name}");
+            this.logger.LogInformation($"Initializing PowerShell context with runspace {initialRunspace.Name}");
 
             this.ownsInitialRunspace = ownsInitialRunspace;
             this.SessionState = PowerShellContextState.NotStarted;
-            this.ConsoleWriter = consoleHost;
-            this.ConsoleReader = consoleHost as IHostInput;
+            this.ConsoleWriter = hostUserInterface;
+            this.ConsoleReader = hostUserInterface as IHostInput;
 
             // Get the PowerShell runtime version
             this.LocalPowerShellVersion =
@@ -895,7 +879,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         var errorMessage = strBld.ToString();
 
                         errorMessages?.Append(errorMessage);
-                        this.logger.LogError(errorMessage);
+                        if(executionOptions.WriteErrorsToHost)
+                        {
+                            this.logger.LogError(errorMessage);
+                        }
 
                         hadErrors = true;
                     }
