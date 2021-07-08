@@ -17,25 +17,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
     internal class PSReadLinePromptContext : IPromptContext
     {
-        private static readonly string _psReadLineModulePath = Path.Combine(
-            Path.GetDirectoryName(typeof(PSReadLinePromptContext).Assembly.Location),
-            "..",
-            "..",
-            "..",
-            "PSReadLine");
-
-        // When using xUnit (dotnet test) the assemblies are deployed to the
-        // test project folder, invalidating our relative path assumption.
-        private static readonly string _psReadLineTestModulePath = Path.Combine(
-            Path.GetDirectoryName(typeof(PSReadLinePromptContext).Assembly.Location),
-            "..",
-            "..",
-            "..",
-            "..",
-            "..",
-            "module",
-            "PSReadLine");
-
         private static readonly Lazy<CmdletInfo> s_lazyInvokeReadLineForEditorServicesCmdletInfo = new Lazy<CmdletInfo>(() =>
         {
             var type = Type.GetType("Microsoft.PowerShell.EditorServices.Commands.InvokeReadLineForEditorServicesCommand, Microsoft.PowerShell.EditorServices.Hosting");
@@ -84,8 +65,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         internal static bool TryGetPSReadLineProxy(
             ILogger logger,
             Runspace runspace,
-            out PSReadLineProxy readLineProxy,
-            bool testing = false)
+            string bundledModulePath,
+            out PSReadLineProxy readLineProxy)
         {
             readLineProxy = null;
             logger.LogTrace("Attempting to load PSReadLine");
@@ -93,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             {
                 pwsh.Runspace = runspace;
                 pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
-                    .AddParameter("Name", testing ? _psReadLineTestModulePath : _psReadLineModulePath)
+                    .AddParameter("Name", Path.Combine(bundledModulePath, "PSReadLine"))
                     .Invoke();
 
                 if (pwsh.HadErrors)

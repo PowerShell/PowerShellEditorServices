@@ -152,9 +152,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         {
             Assert.True(PSReadLinePromptContext.TryGetPSReadLineProxy(
                 NullLogger.Instance,
-                PowerShellContextFactory.initialRunspace,
-                out PSReadLineProxy proxy,
-                true));
+                PowerShellContextFactory.InitialRunspace,
+                PowerShellContextFactory.BundledModulePath,
+                out PSReadLineProxy proxy));
         }
 
         #region Helper Methods

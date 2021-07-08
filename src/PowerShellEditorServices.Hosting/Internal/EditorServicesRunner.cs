@@ -292,7 +292,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 _config.LogPath,
                 (int)_config.LogLevel,
                 consoleReplEnabled: _config.ConsoleRepl != ConsoleReplKind.None,
-                usesLegacyReadLine: _config.ConsoleRepl == ConsoleReplKind.LegacyReadLine);
+                usesLegacyReadLine: _config.ConsoleRepl == ConsoleReplKind.LegacyReadLine,
+                bundledModulePath: _config.BundledModulePath);
         }
 
         private void WriteStartupBanner()

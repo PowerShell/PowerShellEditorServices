@@ -33,10 +33,18 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// </summary>
     internal class PowerShellContextService : IHostSupportsInteractiveSession
     {
-        private static readonly string s_commandsModulePath = Path.GetFullPath(
-            Path.Combine(
-                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                "../../Commands/PowerShellEditorServices.Commands.psd1"));
+        // This is a default that can be overriden at runtime by the user or tests.
+        private static string s_bundledModulePath = Path.GetFullPath(Path.Combine(
+                Path.GetDirectoryName(typeof(PowerShellContextService).Assembly.Location),
+                "..",
+                "..",
+                ".."));
+
+        private static string s_commandsModulePath => Path.GetFullPath(Path.Combine(
+            s_bundledModulePath,
+            "PowerShellEditorServices",
+            "Commands",
+            "PowerShellEditorServices.Commands.psd1"));
 
         private static readonly Action<Runspace, ApartmentState> s_runspaceApartmentStateSetter;
         private static readonly PropertyInfo s_writeStreamProperty;
@@ -190,9 +198,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
             OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade languageServer,
             HostStartupInfo hostStartupInfo)
         {
+            var logger = factory.CreateLogger<PowerShellContextService>();
+
             Validate.IsNotNull(nameof(hostStartupInfo), hostStartupInfo);
 
-            var logger = factory.CreateLogger<PowerShellContextService>();
+            // Respect a user provided bundled module path.
+            if (Directory.Exists(hostStartupInfo.BundledModulePath))
+            {
+                logger.LogTrace($"Using new bundled module path: {hostStartupInfo.BundledModulePath}");
+                s_bundledModulePath = hostStartupInfo.BundledModulePath;
+            }
 
             bool shouldUsePSReadLine = hostStartupInfo.ConsoleReplEnabled
                 && !hostStartupInfo.UsesLegacyReadLine;
@@ -406,7 +421,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (powerShellVersion.Major >= 5 &&
                 this.isPSReadLineEnabled &&
-                PSReadLinePromptContext.TryGetPSReadLineProxy(logger, initialRunspace, out PSReadLineProxy proxy))
+                PSReadLinePromptContext.TryGetPSReadLineProxy(logger, initialRunspace, s_bundledModulePath, out PSReadLineProxy proxy))
             {
                 this.PromptContext = new PSReadLinePromptContext(
                     this,
@@ -430,15 +445,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// the runspace.  This method will be moved somewhere else soon.
         /// </summary>
         /// <returns></returns>
-        public Task ImportCommandsModuleAsync() => ImportCommandsModuleAsync(s_commandsModulePath);
-
-        public Task ImportCommandsModuleAsync(string path)
+        public Task ImportCommandsModuleAsync()
         {
-            this.logger.LogTrace($"Importing PowershellEditorServices commands from {path}");
+            this.logger.LogTrace($"Importing PowershellEditorServices commands from {s_commandsModulePath}");
 
             PSCommand importCommand = new PSCommand()
                 .AddCommand("Import-Module")
-                .AddArgument(path);
+                .AddArgument(s_commandsModulePath);
 
             return this.ExecuteCommandAsync<PSObject>(importCommand, sendOutputToHost: false, sendErrorToHost: false);
         }
