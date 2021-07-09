@@ -32,7 +32,10 @@ namespace Microsoft.PowerShell.EditorServices.Test
                     Path.GetFullPath(
                         TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/ProfileTest.ps1")));
 
-        public static System.Management.Automation.Runspaces.Runspace initialRunspace;
+        public static readonly string BundledModulePath = Path.GetFullPath(
+            TestUtilities.NormalizePath("../../../../../module"));
+
+        public static System.Management.Automation.Runspaces.Runspace InitialRunspace;
 
         public static PowerShellContextService Create(ILogger logger)
         {
@@ -46,13 +49,16 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 TestProfilePaths,
                 new List<string>(),
                 new List<string>(),
+                // TODO: We want to replace this property with an entire initial session state,
+                // which would then also control the process-scoped execution policy.
                 PSLanguageMode.FullLanguage,
                 null,
                 0,
                 consoleReplEnabled: false,
-                usesLegacyReadLine: false);
+                usesLegacyReadLine: false,
+                bundledModulePath: BundledModulePath);
 
-            initialRunspace = PowerShellContextService.CreateRunspace(
+            InitialRunspace = PowerShellContextService.CreateRunspace(
                     testHostDetails,
                     powerShellContext,
                     new TestPSHostUserInterface(powerShellContext, logger),
@@ -60,7 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
 
             powerShellContext.Initialize(
                 TestProfilePaths,
-                initialRunspace,
+                InitialRunspace,
                 ownsInitialRunspace: true,
                 consoleHost: null);
 

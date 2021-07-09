@@ -17,20 +17,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
     internal class PSReadLinePromptContext : IPromptContext
     {
-        private static readonly string _psReadLineModulePath = Path.Combine(
-            Path.GetDirectoryName(typeof(PSReadLinePromptContext).Assembly.Location),
-            "..",
-            "..",
-            "..",
-#if TEST
-            // When using xUnit (dotnet test) the assemblies are deployed to the
-            // test project folder, invalidating our relative path assumption.
-            "..",
-            "..",
-            "module",
-#endif
-            "PSReadLine");
-
         private static readonly Lazy<CmdletInfo> s_lazyInvokeReadLineForEditorServicesCmdletInfo = new Lazy<CmdletInfo>(() =>
         {
             var type = Type.GetType("Microsoft.PowerShell.EditorServices.Commands.InvokeReadLineForEditorServicesCommand, Microsoft.PowerShell.EditorServices.Hosting");
@@ -79,6 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         internal static bool TryGetPSReadLineProxy(
             ILogger logger,
             Runspace runspace,
+            string bundledModulePath,
             out PSReadLineProxy readLineProxy)
         {
             readLineProxy = null;
@@ -87,15 +74,33 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             {
                 pwsh.Runspace = runspace;
                 pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
-                    .AddParameter("Name", _psReadLineModulePath)
+                    .AddParameter("Name", Path.Combine(bundledModulePath, "PSReadLine"))
                     .Invoke();
+
+                if (pwsh.HadErrors)
+                {
+                    logger.LogWarning("PSConsoleReadline type not found: {Reason}", pwsh.Streams.Error[0].ToString());
+                    return false;
+                }
 
                 var psReadLineType = Type.GetType("Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2");
 
                 if (psReadLineType == null)
                 {
-                    logger.LogWarning("PSConsoleReadline type not found: {Reason}", pwsh.HadErrors ? pwsh.Streams.Error[0].ToString() : "<Unknown reason>");
-                    return false;
+                    // NOTE: For some reason `Type.GetType(...)` can fail to find the type,
+                    // and in that case, this search through the `AppDomain` for some reason will succeed.
+                    // It's slower, but only happens when needed.
+                    logger.LogTrace("PSConsoleReadline type not found using Type.GetType(), searching all loaded assemblies...");
+                    psReadLineType = AppDomain.CurrentDomain
+                        .GetAssemblies()
+                        .FirstOrDefault(asm => asm.GetName().Name.Equals("Microsoft.PowerShell.PSReadLine2"))
+                        ?.ExportedTypes
+                        ?.FirstOrDefault(type => type.FullName.Equals("Microsoft.PowerShell.PSConsoleReadLine"));
+                    if (psReadLineType == null)
+                    {
+                        logger.LogWarning("PSConsoleReadLine type not found anywhere!");
+                        return false;
+                    }
                 }
 
                 try
