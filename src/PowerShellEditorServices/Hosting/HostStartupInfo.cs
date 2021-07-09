@@ -109,9 +109,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public int LogLevel { get; }
 
         /// <summary>
-        /// The path to find the Bundled Modules        /// 
+        /// The path to find the bundled modules. User configurable for advanced usage.
         /// </summary>
         public string BundledModulePath { get; }
+
         #endregion
 
         #region Constructors
@@ -140,7 +141,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <param name="logLevel">The minimum log event level.</param>
         /// <param name="consoleReplEnabled">Enable console if true.</param>
         /// <param name="usesLegacyReadLine">Use PSReadLine if false, otherwise use the legacy readline implementation.</param>
-        /// <param name="bundledModulePath">The path to the Modules folder, helps with loading the bundled PSReadLine and other included modules</param>
+        /// <param name="bundledModulePath">A custom path to the expected bundled modules.</param>
         public HostStartupInfo(
             string name,
             string profileId,
@@ -154,8 +155,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             int logLevel,
             bool consoleReplEnabled,
             bool usesLegacyReadLine,
-            string bundledModulePath
-            )
+            string bundledModulePath)
         {
             Name = name ?? DefaultHostName;
             ProfileId = profileId ?? DefaultHostProfileId;

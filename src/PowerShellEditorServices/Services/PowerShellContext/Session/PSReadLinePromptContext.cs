@@ -69,32 +69,39 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             out PSReadLineProxy readLineProxy)
         {
             readLineProxy = null;
-            var psReadLineAssembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName.Contains("Microsoft.PowerShell.PSReadLine2"));
-            Type psReadLineType = null;
-            if(psReadLineAssembly is null)
+            logger.LogTrace("Attempting to load PSReadLine");
+            using (var pwsh = PowerShell.Create())
             {
-                logger.LogWarning("Microsoft.PowerShell.PSReadLine2 not found in loaded assemblies");                
-            }
-            psReadLineType = psReadLineAssembly?.ExportedTypes?.FirstOrDefault(a => a.Name == "PSConsoleReadLine");
-            if(psReadLineType is null)
-            {
-                logger.LogWarning("PSConsoleReadline type not found, attempting to load PSReadLine");
-                string _psReadLineModulePath = Path.Combine(bundledModulePath, "PSReadLine");
-                using(var pwsh = PowerShell.Create())
+                pwsh.Runspace = runspace;
+                pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                    .AddParameter("Name", Path.Combine(bundledModulePath, "PSReadLine"))
+                    .Invoke();
+
+                if (pwsh.HadErrors)
                 {
-                    try
+                    logger.LogWarning("PSConsoleReadline type not found: {Reason}", pwsh.Streams.Error[0].ToString());
+                    return false;
+                }
+
+                var psReadLineType = Type.GetType("Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2");
+
+                if (psReadLineType == null)
+                {
+                    // NOTE: For some reason `Type.GetType(...)` can fail to find the type,
+                    // and in that case, this search through the `AppDomain` for some reason will succeed.
+                    // It's slower, but only happens when needed.
+                    logger.LogTrace("PSConsoleReadline type not found using Type.GetType(), searching all loaded assemblies...");
+                    psReadLineType = AppDomain.CurrentDomain
+                        .GetAssemblies()
+                        .FirstOrDefault(asm => asm.GetName().Name.Equals("Microsoft.PowerShell.PSReadLine2"))
+                        ?.ExportedTypes
+                        ?.FirstOrDefault(type => type.FullName.Equals("Microsoft.PowerShell.PSConsoleReadLine"));
+                    if (psReadLineType == null)
                     {
-                        pwsh.Runspace = runspace;
-                        pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
-                            .AddParameter("Name", _psReadLineModulePath)
-                            .Invoke();
-
-
-                        if(psReadLineType == null)
-                        {
-                            logger.LogWarning(_psReadLineModulePath + " could not be Imported: {Reason}", pwsh.HadErrors ? pwsh.Streams.Error [0].ToString() : "<Unknown reason>");
-                            return false;
-                        }
+                        logger.LogWarning("PSConsoleReadLine type not found anywhere!");
+                        return false;
+                    }
+                }
 
                     }
                     catch(InvalidOperationException e)

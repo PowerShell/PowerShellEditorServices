@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
     public class SemanticTokenTest
     {
         [Fact]
-        public async Task TokenizesFunctionElements()
+        public void TokenizesFunctionElements()
         {
             string text = @"
 function Get-Sum {
@@ -59,7 +59,7 @@ function Get-Sum {
         }
 
         [Fact]
-        public async Task TokenizesStringExpansion()
+        public void TokenizesStringExpansion()
         {
             string text = "Write-Host \"$(Test-Property Get-Whatever) $(Get-Whatever)\"";
             ScriptFile scriptFile = new ScriptFile(
@@ -82,7 +82,7 @@ function Get-Sum {
         }
 
         [Fact]
-        public async Task RecognizesTokensWithAsterisk()
+        public void RecognizesTokensWithAsterisk()
         {
             string text = @"
 function Get-A*A {
@@ -111,7 +111,7 @@ Get-A*A
         }
 
         [Fact]
-        public async Task RecognizesArrayPropertyInExpandableString()
+        public void RecognizesArrayPropertyInExpandableString()
         {
             string text = "\"$(@($Array).Count) OtherText\"";
             ScriptFile scriptFile = new ScriptFile(
@@ -136,7 +136,7 @@ Get-A*A
         }
 
         [Fact]
-        public async Task RecognizesCurlyQuotedString()
+        public void RecognizesCurlyQuotedString()
         {
             string text = "“^[-'a-z]*”";
             ScriptFile scriptFile = new ScriptFile(
@@ -150,7 +150,7 @@ Get-A*A
         }
 
         [Fact]
-        public async Task RecognizeEnum()
+        public void RecognizeEnum()
         {
             string text =  @"
 enum MyEnum{

@@ -11,6 +11,7 @@ using System.Management.Automation.Host;
 using System.Management.Automation.Remoting;
 using System.Management.Automation.Runspaces;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -49,18 +50,18 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// </summary>
     internal class PowerShellContextService: IHostSupportsInteractiveSession
     {
-        private static string s_bundledModulesPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "..", "..");
+        // This is a default that can be overriden at runtime by the user or tests.
+        private static string s_bundledModulePath = Path.GetFullPath(Path.Combine(
+                Path.GetDirectoryName(typeof(PowerShellContextService).Assembly.Location),
+                "..",
+                "..",
+                ".."));
 
-        private static string s_commandsModulePath => Path.GetFullPath(
-            Path.Combine(
-                s_bundledModulesPath,
-                "PowerShellEditorServices",
-                "Commands",
-                "PowerShellEditorServices.Commands.psd1"));
-        private static string s_psReadLineModulePath => Path.GetFullPath(
-            Path.Combine(
-                s_bundledModulesPath,
-                "PSReadLine"));
+        private static string s_commandsModulePath => Path.GetFullPath(Path.Combine(
+            s_bundledModulePath,
+            "PowerShellEditorServices",
+            "Commands",
+            "PowerShellEditorServices.Commands.psd1"));
 
         private static readonly Action<Runspace, ApartmentState> s_runspaceApartmentStateSetter;
         private static readonly PropertyInfo s_writeStreamProperty;
@@ -214,12 +215,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
             OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade languageServer,
             HostStartupInfo hostStartupInfo)
         {
-            Validate.IsNotNull(nameof(hostStartupInfo), hostStartupInfo);
-            s_bundledModulesPath = !string.IsNullOrEmpty(hostStartupInfo.BundledModulePath) && Directory.Exists(hostStartupInfo.BundledModulePath) 
-                ? hostStartupInfo.BundledModulePath
-                : s_bundledModulesPath;
-            
             var logger = factory.CreateLogger<PowerShellContextService>();
+
+            Validate.IsNotNull(nameof(hostStartupInfo), hostStartupInfo);
+
+            // Respect a user provided bundled module path.
+            if (Directory.Exists(hostStartupInfo.BundledModulePath))
+            {
+                logger.LogTrace($"Using new bundled module path: {hostStartupInfo.BundledModulePath}");
+                s_bundledModulePath = hostStartupInfo.BundledModulePath;
+            }
+
             bool shouldUsePSReadLine = hostStartupInfo.ConsoleReplEnabled
                 && !hostStartupInfo.UsesLegacyReadLine;
 
@@ -263,6 +269,19 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns></returns>
         public static Runspace CreateRunspace(PSHost psHost, InitialSessionState initialSessionState, List<string> additionalModules = null)
         {
+            if (Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1") {
+                initialSessionState = InitialSessionState.CreateDefault();
+            } 
+            
+            // We set the process scope's execution policy (which is really the runspace's scope) to
+            // Bypass so we can import our bundled modules. This is equivalent in scope to the CLI
+            // argument `-Bypass`, which (for instance) the extension passes. Thus we emulate this
+            // behavior for consistency such that unit tests can pass in a similar environment.
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                initialSessionState.ExecutionPolicy = ExecutionPolicy.Bypass;
+            }
+
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
 
             // Windows PowerShell must be hosted in STA mode
@@ -477,7 +496,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (powerShellVersion.Major >= 5 &&
                 this.isPSReadLineEnabled &&
-                PSReadLinePromptContext.TryGetPSReadLineProxy(logger, initialRunspace, hostStartupInfo.BundledModulePath, out PSReadLineProxy proxy))
+                PSReadLinePromptContext.TryGetPSReadLineProxy(logger, initialRunspace, s_bundledModulePath, out PSReadLineProxy proxy))
             {
                 this.PromptContext = new PSReadLinePromptContext(
                     this,
