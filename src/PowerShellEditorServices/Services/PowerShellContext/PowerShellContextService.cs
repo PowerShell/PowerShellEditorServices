@@ -51,13 +51,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
     internal class PowerShellContextService: IHostSupportsInteractiveSession
     {
         // This is a default that can be overriden at runtime by the user or tests.
-        private static string s_bundledModulePath = Path.GetFullPath(Path.Combine(
+        private string s_bundledModulePath = Path.GetFullPath(Path.Combine(
                 Path.GetDirectoryName(typeof(PowerShellContextService).Assembly.Location),
                 "..",
                 "..",
                 ".."));
 
-        private static string s_commandsModulePath => Path.GetFullPath(Path.Combine(
+        private string s_commandsModulePath => Path.GetFullPath(Path.Combine(
             s_bundledModulePath,
             "PowerShellEditorServices",
             "Commands",
@@ -219,13 +219,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             Validate.IsNotNull(nameof(hostStartupInfo), hostStartupInfo);
 
-            // Respect a user provided bundled module path.
-            if (Directory.Exists(hostStartupInfo.BundledModulePath))
-            {
-                logger.LogTrace($"Using new bundled module path: {hostStartupInfo.BundledModulePath}");
-                s_bundledModulePath = hostStartupInfo.BundledModulePath;
-            }
-
             bool shouldUsePSReadLine = hostStartupInfo.ConsoleReplEnabled
                 && !hostStartupInfo.UsesLegacyReadLine;
 
@@ -311,12 +304,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
             )
         {
             var modulesToImport = new List<string>();
-            s_bundledModulesPath = !string.IsNullOrEmpty(hostStartupInfo.BundledModulePath) && Directory.Exists(hostStartupInfo.BundledModulePath) ? hostStartupInfo.BundledModulePath
-                : s_bundledModulesPath;
+            // Respect a user provided bundled module path.
+            if(Directory.Exists(hostStartupInfo.BundledModulePath))
+            {
+                logger.LogTrace($"Using new bundled module path: {hostStartupInfo.BundledModulePath}");
+                s_bundledModulePath = hostStartupInfo.BundledModulePath;
+            }
+            
             modulesToImport.Add(s_commandsModulePath);
             if(this.isPSReadLineEnabled)
             {
-                modulesToImport.Add(s_psReadLineModulePath);
+                modulesToImport.Add(Path.Combine(s_bundledModulePath, "PSReadLine"));
             }
             if(hostStartupInfo.AdditionalModules is not null)
             {

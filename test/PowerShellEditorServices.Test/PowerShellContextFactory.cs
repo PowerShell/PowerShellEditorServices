@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 new List<string>(),
                 // TODO: We want to replace this property with an entire initial session state,
                 // which would then also control the process-scoped execution policy.
-                PSLanguageMode.FullLanguage,
+                InitialSessionState.CreateDefault(),
                 null,
                 0,
                 consoleReplEnabled: false,
@@ -66,10 +66,9 @@ namespace Microsoft.PowerShell.EditorServices.Test
                     logger);
 
             powerShellContext.Initialize(
-                TestProfilePaths,
-                InitialRunspace,
-                ownsInitialRunspace: true,
-                consoleHost: null);
+                testHostDetails,
+                null,
+                ownsInitialRunspace: true);
 
             return powerShellContext;
         }

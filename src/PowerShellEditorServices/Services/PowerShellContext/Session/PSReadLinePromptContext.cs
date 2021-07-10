@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
     using System.IO;
     using System.Management.Automation;
 
-    internal class PSReadLinePromptContext : IPromptContext
+    internal class PSReadLinePromptContext: IPromptContext
     {
         private static readonly Lazy<CmdletInfo> s_lazyInvokeReadLineForEditorServicesCmdletInfo = new Lazy<CmdletInfo>(() =>
         {
@@ -70,22 +70,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             readLineProxy = null;
             logger.LogTrace("Attempting to load PSReadLine");
-            using (var pwsh = PowerShell.Create())
+            using(var pwsh = PowerShell.Create())
             {
                 pwsh.Runspace = runspace;
                 pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
                     .AddParameter("Name", Path.Combine(bundledModulePath, "PSReadLine"))
                     .Invoke();
 
-                if (pwsh.HadErrors)
+                if(pwsh.HadErrors)
                 {
-                    logger.LogWarning("PSConsoleReadline type not found: {Reason}", pwsh.Streams.Error[0].ToString());
+                    logger.LogWarning("PSConsoleReadline type not found: {Reason}", pwsh.Streams.Error [0].ToString());
                     return false;
                 }
 
                 var psReadLineType = Type.GetType("Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2");
 
-                if (psReadLineType == null)
+                if(psReadLineType == null)
                 {
                     // NOTE: For some reason `Type.GetType(...)` can fail to find the type,
                     // and in that case, this search through the `AppDomain` for some reason will succeed.
@@ -96,31 +96,31 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         .FirstOrDefault(asm => asm.GetName().Name.Equals("Microsoft.PowerShell.PSReadLine2"))
                         ?.ExportedTypes
                         ?.FirstOrDefault(type => type.FullName.Equals("Microsoft.PowerShell.PSConsoleReadLine"));
-                    if (psReadLineType == null)
+                    if(psReadLineType == null)
                     {
                         logger.LogWarning("PSConsoleReadLine type not found anywhere!");
                         return false;
                     }
                 }
-
-                    }
-                    catch(InvalidOperationException e)
-                    {
-                        // The Type we got back from PowerShell doesn't have the members we expected.
-                        // Could be an older version, a custom build, or something a newer version with
-                        // breaking changes.
-                        logger.LogWarning("PSReadLineProxy unable to be initialized: {Reason}", e);
-                        return false;
-                    }
-                    catch(CommandNotFoundException e)
-                    {
-                        logger.LogWarning("PSReadLineProxy unable to be initialized: {Reason}", e);
-                        return false;
-                    }
+                try
+                {
+                    readLineProxy = new PSReadLineProxy(psReadLineType, logger);
+                }
+                catch(InvalidOperationException e)
+                {
+                    // The Type we got back from PowerShell doesn't have the members we expected.
+                    // Could be an older version, a custom build, or something a newer version with
+                    // breaking changes.
+                    logger.LogWarning("PSReadLineProxy unable to be initialized: {Reason}", e);
+                    return false;
+                }
+                catch(CommandNotFoundException e)
+                {
+                    logger.LogWarning("PSReadLineProxy unable to be initialized: {Reason}", e);
+                    return false;
                 }
             }
-            readLineProxy = new PSReadLineProxy(psReadLineType, logger);
-            return (psReadLineType is not null);
+            return true;
         }
 
         public async Task<string> InvokeReadLineAsync(bool isCommandLine, CancellationToken cancellationToken)
