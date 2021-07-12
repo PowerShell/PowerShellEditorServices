@@ -23,19 +23,19 @@ The functionality in PowerShell Editor Services is already available in the foll
   - Code navigation actions (find references, go to definition)
   - Statement completions (IntelliSense)
   - Real-time semantic analysis of scripts using PowerShell Script Analyzer
-- The Debugging Service simplifies interaction with the PowerShell debugger (breakpoints, variables, call stack, etc)
+- The Debugging Service simplifies interaction with the PowerShell debugger (breakpoints, variables, call stack, etc.)
 - The [$psEditor API](http://powershell.github.io/PowerShellEditorServices/guide/extensions.html) enables scripting of the host editor
 - A full, terminal-based Integrated Console experience for interactive development and debugging
 
 ## Usage
 
-Looking to integrate PowerShell Editor Services into your [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) compliant editor or client? We support two ways of connecting.
+If you're looking to integrate PowerShell Editor Services into your [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) compliant editor or client, we support two ways of connecting.
 
 ### Named Pipes/Unix Domain Sockets (recommended)
 
-If you're looking for the more feature-rich experience,
+If you're looking for a more feature-rich experience,
 Named Pipes are the way to go.
-They give you all the benefit of the Language Server Protocol with extra capabilities that you can take advantage of:
+They give you all the benefits of the Language Server Protocol with extra capabilities that you can take advantage of:
 
 - The PowerShell Integrated Console
 - Debugging using the [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/)
@@ -55,7 +55,7 @@ Once the command is run,
 PowerShell Editor Services will wait until the client connects to the Named Pipe.
 The `session.json` will contain the paths of the Named Pipes that you will connect to.
 There will be one you immediately connect to for Language Server Protocol messages,
-and one you connect to when you launch the debugger for Debug Adapter Protocol messages.
+and once you connect to when you launch the debugger for Debug Adapter Protocol messages.
 
 The Visual Studio Code, Vim, and IntelliJ extensions currently use Named Pipes.
 
@@ -68,7 +68,7 @@ The PowerShell Integrated Console uses the host process' Stdio streams for conso
 If you want to take advantage of the PowerShell Integrated Console which automatically shares state with the editor-side,
 you must include the `-EnableConsoleRepl` switch when called `Start-EditorServices.ps1`.
 
-This is typically used if your client has the ability to create arbitrary terminals in the editor like below:
+This is typically used if your client can create arbitrary terminals in the editor like below:
 
 ![integrated console in vscode](https://user-images.githubusercontent.com/2644648/66245018-04ca8000-e6c0-11e9-808c-b86144149444.png)
 
@@ -83,13 +83,13 @@ If you want to take advantage of debugging,
 your client must support the [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/).
 Your client should use the path to the debug named pipe found in the `session.json` file talked about above.
 
-Currently only the Visual Studio Code extension supports debugging.
+Currently, only the Visual Studio Code extension supports debugging.
 
 ### Stdio
 
-Stdio is a simpler and more universal mechanism when it comes to the Language Server Protocol and is what we recommend if your editor/client doesn't need to support the PowerShell Integrated Console or debugging.
+Stdio is a simpler and more universal mechanism for the Language Server Protocol. We recommend using it if your editor/client doesn't need to support the PowerShell Integrated Console or debugging.
 
-> NOTE: Debugging and the Integrated Console are not features of the Stdio channel because each feature requires their own IO streams and since the Stdio model only provides a single set of streams (Stdio),
+> NOTE: Debugging and the Integrated Console are not features of the Stdio channel because each feature requires its own IO streams and since the Stdio model only provides a single set of streams (Stdio),
 > these features cannot be leveraged.
 
 The typical command to start PowerShell Editor Services using stdio is as follows:
@@ -115,7 +115,7 @@ Please note that we only consider the following as stable APIs that can be relie
 - Debug adapter protocol connection
 - Start up mechanism
 
-The types of PowerShell Editor Services can change at any moment and should not be linked against in production environment.
+The types of PowerShell Editor Services can change at any moment and should not be linked against in a production environment.
 
 ## Development
 
@@ -168,7 +168,7 @@ This project is [licensed under the MIT License](LICENSE).
 ## [Code of Conduct][conduct-md]
 
 This project has adopted the [Microsoft Open Source Code of Conduct][conduct-code].
-For more information see the [Code of Conduct FAQ][conduct-FAQ] or contact [opencode@microsoft.com][conduct-email] with any additional questions or comments.
+For more information, see the [Code of Conduct FAQ][conduct-FAQ] or contact [opencode@microsoft.com][conduct-email] with any additional questions or comments.
 
 [conduct-code]: http://opensource.microsoft.com/codeofconduct/
 [conduct-FAQ]: http://opensource.microsoft.com/codeofconduct/faq/
