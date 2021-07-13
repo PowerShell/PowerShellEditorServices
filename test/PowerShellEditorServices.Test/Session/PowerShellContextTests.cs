@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
@@ -27,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
         private static readonly string s_debugTestFilePath =
             TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Debugging/DebugTest.ps1");
-
+       
         public PowerShellContextTests()
         {
             this.powerShellContext = PowerShellContextFactory.Create(NullLogger.Instance);
@@ -111,8 +112,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public async Task CanResolveAndLoadProfilesForHostId()
         {
-            string[] expectedProfilePaths =
-                new string[]
+            string [] expectedProfilePaths =
+                new string []
                 {
                     PowerShellContextFactory.TestProfilePaths.AllUsersAllHosts,
                     PowerShellContextFactory.TestProfilePaths.AllUsersCurrentHost,
@@ -132,7 +133,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 "$($profile.CurrentUserAllHosts) " +
                 "$($profile.CurrentUserCurrentHost) " +
                 "$(Assert-ProfileLoaded)\"");
-
+            
             var result =
                 await this.powerShellContext.ExecuteCommandAsync<string>(
                     psCommand);
@@ -151,10 +152,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public void CanGetPSReadLineProxy()
         {
+            // This will force the loading of the PSReadLine assembly
+            var psContext = PowerShellContextFactory.Create(NullLogger.Instance, isPSReadLineEnabled: true);
             Assert.True(PSReadLinePromptContext.TryGetPSReadLineProxy(
                 NullLogger.Instance,
-                PowerShellContextFactory.InitialRunspace,
-                PowerShellContextFactory.BundledModulePath,
                 out PSReadLineProxy proxy));
         }
 

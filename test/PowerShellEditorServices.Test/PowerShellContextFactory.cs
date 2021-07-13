@@ -37,11 +37,8 @@ namespace Microsoft.PowerShell.EditorServices.Test
             TestUtilities.NormalizePath("../../../../../module"));
 
         public static System.Management.Automation.Runspaces.Runspace InitialRunspace;
-
-        public static PowerShellContextService Create(ILogger logger)
+        public static PowerShellContextService Create(ILogger logger, bool isPSReadLineEnabled = false)
         {
-            PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, isPSReadLineEnabled: false);
-
             HostStartupInfo testHostDetails = new HostStartupInfo(
                 "PowerShell Editor Services Test Host",
                 "Test.PowerShellEditorServices",
@@ -55,9 +52,11 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 InitialSessionState.CreateDefault(),
                 null,
                 0,
-                consoleReplEnabled: false,
+                consoleReplEnabled: isPSReadLineEnabled,
                 usesLegacyReadLine: false,
                 bundledModulePath: BundledModulePath);
+
+            PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, testHostDetails);
 
             InitialRunspace = PowerShellContextService.CreateRunspace(
                     testHostDetails,
