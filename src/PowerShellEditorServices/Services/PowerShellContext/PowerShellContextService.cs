@@ -428,7 +428,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             else
             {
                 logger.LogTrace("Creating initial PowerShell runspace");
-
                 initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
             }
             logger.LogInformation("Opening Runspace");
@@ -512,10 +511,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     .PSVariable
                     .GetValue("Host")
                     as PSHost;
-            if(VersionUtils.IsWindows)
-            {
-                this.SetExecutionPolicy();
-            }
             // Now that the runspace is ready, enqueue it for first use
             this.PromptNest = new PromptNest(
                 this,
@@ -523,30 +518,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.ConsoleReader,
                 this.versionSpecificOperations);
             this.InvocationEventQueue = InvocationEventQueue.Create(this, this.PromptNest);
-            this.ImportCommandsModuleAsync().GetAwaiter().GetResult();
-            if(isPSReadLineEnabled)
-            {
-                this.ImportPSReadLine2ModuleAsync().GetAwaiter().GetResult();
-            }
-            // TODO: This can be moved to the point after the $psEditor object
-            // gets initialized when that is done earlier than LanguageServer.Initialize
-            foreach(string module in hostStartupInfo.AdditionalModules)
-            {
-                var command =
-                    new PSCommand()
-                        .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
-                        .AddParameter("Name", module);
-
-#pragma warning disable CS4014
-                // This call queues the loading on the pipeline thread, so no need to await
-                this.ExecuteCommandAsync<PSObject>(
-                    command,
-                    sendOutputToHost: false,
-                    sendErrorToHost: true);
-#pragma warning restore CS4014
-            }
             
-
+            
             if (powerShellVersion.Major >= 5 &&
                 this.isPSReadLineEnabled &&
                 PSReadLinePromptContext.TryGetPSReadLineProxy(logger, out PSReadLineProxy proxy))
@@ -582,7 +555,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     this.ExecuteCommandAsync<PSObject>(
                         command,
                         sendOutputToHost: false,
-                        sendErrorToHost: true);
+                        sendErrorToHost: true).GetAwaiter().GetResult();
 #pragma warning restore CS4014
                 }
             }
