@@ -219,7 +219,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             EditorServicesPSHostUserInterface hostUserInterface =
                 hostStartupInfo.ConsoleReplEnabled
-                    ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, hostStartupInfo.PSHost, logger)
+                    ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, hostStartupInfo.PSHost, logger)
                     : new ProtocolPSHostUserInterface(languageServer, powerShellContext, logger);
 
             EditorServicesPSHost psHost =
@@ -230,7 +230,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     logger);
 
             logger.LogTrace("Creating initial PowerShell runspace");
-            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.LanguageMode);
+            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
             powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
             powerShellContext.ImportCommandsModuleAsync();
 
@@ -274,7 +274,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var psHost = new EditorServicesPSHost(powerShellContext, hostDetails, hostUserInterface, logger);
             powerShellContext.ConsoleWriter = hostUserInterface;
             powerShellContext.ConsoleReader = hostUserInterface;
-            return CreateRunspace(psHost, hostDetails.LanguageMode);
+            return CreateRunspace(psHost, hostDetails.InitialSessionState);
         }
 
         /// <summary>
@@ -283,20 +283,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="psHost">The PSHost that will be used for this Runspace.</param>
         /// <param name="languageMode">The language mode inherited from the orginal PowerShell process. This will be used when creating runspaces so that we honor the same language mode.</param>
         /// <returns></returns>
-        public static Runspace CreateRunspace(PSHost psHost, PSLanguageMode languageMode)
+        public static Runspace CreateRunspace(PSHost psHost, InitialSessionState initialSessionState)
         {
-            InitialSessionState initialSessionState;
-            if (Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1") {
-                initialSessionState = InitialSessionState.CreateDefault();
-            } else {
-                initialSessionState = InitialSessionState.CreateDefault2();
-            }
-
-            // Create and initialize a new Runspace while honoring the LanguageMode of the original runspace
-            // that started PowerShell Editor Services. This is because the PowerShell Integrated Console
-            // should have the same LanguageMode of whatever is set by the system.
-            initialSessionState.LanguageMode = languageMode;
-
             // We set the process scope's execution policy (which is really the runspace's scope) to
             // Bypass so we can import our bundled modules. This is equivalent in scope to the CLI
             // argument `-Bypass`, which (for instance) the extension passes. Thus we emulate this
@@ -612,7 +600,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // cancelled prompt when it's called again.
             if (executionOptions.AddToHistory)
             {
-                this.PromptContext.AddToHistory(executionOptions.InputString ?? psCommand.Commands[0].CommandText);
+                this.PromptContext.AddToHistory(executionOptions.InputString ?? psCommand.Commands [0].CommandText);
             }
 
             bool hadErrors = false;
@@ -666,7 +654,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // Instruct PowerShell to send output and errors to the host
                 if (executionOptions.WriteOutputToHost)
                 {
-                    psCommand.Commands[0].MergeMyResults(
+                    psCommand.Commands [0].MergeMyResults(
                         PipelineResultTypes.Error,
                         PipelineResultTypes.Output);
 
@@ -701,7 +689,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 if (executionOptions.WriteInputToHost)
                 {
                     this.WriteOutput(
-                        executionOptions.InputString ?? psCommand.Commands[0].CommandText,
+                        executionOptions.InputString ?? psCommand.Commands [0].CommandText,
                         includeNewLine: true);
                 }
 
@@ -1014,7 +1002,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             Validate.IsNotNull(nameof(scriptString), scriptString);
 
             PSCommand command = null;
-            if(CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
+            if (CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
             {
                 try
                 {
@@ -1029,7 +1017,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             // fall back to old behavior
-            if(command == null)
+            if (command == null)
             {
                 command = new PSCommand().AddScript(scriptString.Trim());
             }
@@ -1729,7 +1717,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var sb = new StringBuilder();
             for (int i = 0; i < path.Length; i++)
             {
-                char curr = path[i];
+                char curr = path [i];
                 switch (curr)
                 {
                     // Escape '[', ']', '?' and '*' with '`'
@@ -1783,11 +1771,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             for (int i = 0; i < wildcardEscapedPath.Length; i++)
             {
                 // If we see a backtick perform a lookahead
-                char curr = wildcardEscapedPath[i];
+                char curr = wildcardEscapedPath [i];
                 if (curr == '`' && i + 1 < wildcardEscapedPath.Length)
                 {
                     // If the next char is an escapable one, don't add this backtick to the new string
-                    char next = wildcardEscapedPath[i + 1];
+                    char next = wildcardEscapedPath [i + 1];
                     switch (next)
                     {
                         case '[':
@@ -2178,14 +2166,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // set to expected values, so we must sift through those.
 
             ExecutionPolicy policyToSet = ExecutionPolicy.Bypass;
-            var currentUserPolicy = (ExecutionPolicy)policies[policies.Count - 2].Members["ExecutionPolicy"].Value;
+            var currentUserPolicy = (ExecutionPolicy)policies [policies.Count - 2].Members ["ExecutionPolicy"].Value;
             if (currentUserPolicy != ExecutionPolicy.Undefined)
             {
                 policyToSet = currentUserPolicy;
             }
             else
             {
-                var localMachinePolicy = (ExecutionPolicy)policies[policies.Count - 1].Members["ExecutionPolicy"].Value;
+                var localMachinePolicy = (ExecutionPolicy)policies [policies.Count - 1].Members ["ExecutionPolicy"].Value;
                 if (localMachinePolicy != ExecutionPolicy.Undefined)
                 {
                     policyToSet = localMachinePolicy;

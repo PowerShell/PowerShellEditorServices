@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Management.Automation;
+using System.Management.Automation.Runspaces;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -49,9 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 TestProfilePaths,
                 new List<string>(),
                 new List<string>(),
-                // TODO: We want to replace this property with an entire initial session state,
-                // which would then also control the process-scoped execution policy.
-                PSLanguageMode.FullLanguage,
+                InitialSessionState.CreateDefault(),
                 null,
                 0,
                 consoleReplEnabled: false,
