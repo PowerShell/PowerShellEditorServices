@@ -35,6 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
         public static readonly string BundledModulePath = Path.GetFullPath(
             TestUtilities.NormalizePath("../../../../../module"));
 
+        public static System.Management.Automation.Runspaces.Runspace InitialRunspace;
         public static PowerShellContextService Create(ILogger logger, bool isPSReadLineEnabled = false)
         {
             HostStartupInfo testHostDetails = new HostStartupInfo(
@@ -50,20 +51,20 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 PSLanguageMode.FullLanguage,
                 null,
                 0,
-                consoleReplEnabled: false,
+                consoleReplEnabled: isPSReadLineEnabled,
                 usesLegacyReadLine: false,
                 bundledModulePath: BundledModulePath);
 
             PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, testHostDetails);
 
-            initialRunspace = PowerShellContextService.CreateRunspace(
+            InitialRunspace = PowerShellContextService.CreateRunspace(
                     testHostDetails,
                     powerShellContext,
                     new TestPSHostUserInterface(powerShellContext, logger),
                     logger);
 
             powerShellContext.Initialize(
-                TestProfilePaths,
+                testHostDetails,
                 InitialRunspace,
                 ownsInitialRunspace: true,
                 consoleHost: null);

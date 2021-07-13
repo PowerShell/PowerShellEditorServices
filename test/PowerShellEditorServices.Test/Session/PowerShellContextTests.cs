@@ -132,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 "$($profile.CurrentUserAllHosts) " +
                 "$($profile.CurrentUserCurrentHost) " +
                 "$(Assert-ProfileLoaded)\"");
-
+            
             var result =
                 await this.powerShellContext.ExecuteCommandAsync<string>(
                     psCommand);
@@ -153,9 +153,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         {
             // This will force the loading of the PSReadLine assembly
             var psContext = PowerShellContextFactory.Create(NullLogger.Instance, isPSReadLineEnabled: true);
-            //PowerShellContextService powerShellContext = new PowerShellContextService(NullLogger.Instance, null, isPSReadLineEnabled: true);
-            //var psContext = PowerShellContextService.Create(NullLogger.Instance, null, new Hosting.HostStartupInfo("testhost","testprofileid",new Version("1.0.0"), null, null);
-            //Skip.If(IsWindows, "This test doesn't work on Windows for some reason.");
             Assert.True(PSReadLinePromptContext.TryGetPSReadLineProxy(
                 NullLogger.Instance,
                 out PSReadLineProxy proxy));
