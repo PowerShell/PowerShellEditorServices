@@ -58,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 MethodInfo setterInfo = typeof(Runspace).GetProperty("ApartmentState").GetSetMethod();
                 Delegate setter = Delegate.CreateDelegate(typeof(Action<Runspace, ApartmentState>), firstArgument: null, method: setterInfo);
-                s_runspaceApartmentStateSetter = (Action<Runspace, ApartmentState>)setter;
+                s_runspaceApartmentStateSetter = (Action<Runspace, ApartmentState>) setter;
             }
 
             if (VersionUtils.IsPS7OrGreater)
@@ -219,7 +219,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             EditorServicesPSHostUserInterface hostUserInterface =
                 hostStartupInfo.ConsoleReplEnabled
-                    ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, hostStartupInfo.PSHost, logger)
+                    ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, hostStartupInfo.PSHost, logger)
                     : new ProtocolPSHostUserInterface(languageServer, powerShellContext, logger);
 
             EditorServicesPSHost psHost =
@@ -600,7 +600,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // cancelled prompt when it's called again.
             if (executionOptions.AddToHistory)
             {
-                this.PromptContext.AddToHistory(executionOptions.InputString ?? psCommand.Commands [0].CommandText);
+                this.PromptContext.AddToHistory(executionOptions.InputString ?? psCommand.Commands[0].CommandText);
             }
 
             bool hadErrors = false;
@@ -654,7 +654,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // Instruct PowerShell to send output and errors to the host
                 if (executionOptions.WriteOutputToHost)
                 {
-                    psCommand.Commands [0].MergeMyResults(
+                    psCommand.Commands[0].MergeMyResults(
                         PipelineResultTypes.Error,
                         PipelineResultTypes.Output);
 
@@ -689,7 +689,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 if (executionOptions.WriteInputToHost)
                 {
                     this.WriteOutput(
-                        executionOptions.InputString ?? psCommand.Commands [0].CommandText,
+                        executionOptions.InputString ?? psCommand.Commands[0].CommandText,
                         includeNewLine: true);
                 }
 
@@ -1717,7 +1717,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var sb = new StringBuilder();
             for (int i = 0; i < path.Length; i++)
             {
-                char curr = path [i];
+                char curr = path[i];
                 switch (curr)
                 {
                     // Escape '[', ']', '?' and '*' with '`'
@@ -1771,11 +1771,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             for (int i = 0; i < wildcardEscapedPath.Length; i++)
             {
                 // If we see a backtick perform a lookahead
-                char curr = wildcardEscapedPath [i];
+                char curr = wildcardEscapedPath[i];
                 if (curr == '`' && i + 1 < wildcardEscapedPath.Length)
                 {
                     // If the next char is an escapable one, don't add this backtick to the new string
-                    char next = wildcardEscapedPath [i + 1];
+                    char next = wildcardEscapedPath[i + 1];
                     switch (next)
                     {
                         case '[':
@@ -2166,14 +2166,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // set to expected values, so we must sift through those.
 
             ExecutionPolicy policyToSet = ExecutionPolicy.Bypass;
-            var currentUserPolicy = (ExecutionPolicy)policies [policies.Count - 2].Members ["ExecutionPolicy"].Value;
+            var currentUserPolicy = (ExecutionPolicy) policies[policies.Count - 2].Members["ExecutionPolicy"].Value;
             if (currentUserPolicy != ExecutionPolicy.Undefined)
             {
                 policyToSet = currentUserPolicy;
             }
             else
             {
-                var localMachinePolicy = (ExecutionPolicy)policies [policies.Count - 1].Members ["ExecutionPolicy"].Value;
+                var localMachinePolicy = (ExecutionPolicy) policies[policies.Count - 1].Members["ExecutionPolicy"].Value;
                 if (localMachinePolicy != ExecutionPolicy.Undefined)
                 {
                     policyToSet = localMachinePolicy;
@@ -2345,7 +2345,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 case RunspaceState.Closed:
                 case RunspaceState.Broken:
                     // If the runspace closes or fails, pop the runspace
-                    ((IHostSupportsInteractiveSession)this).PopRunspace();
+                    ((IHostSupportsInteractiveSession) this).PopRunspace();
                     break;
             }
         }
@@ -2357,7 +2357,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 yield break;
             }
 
-            foreach (string path in new [] { profilePaths.AllUsersAllHosts, profilePaths.AllUsersCurrentHost, profilePaths.CurrentUserAllHosts, profilePaths.CurrentUserCurrentHost })
+            foreach (string path in new[] { profilePaths.AllUsersAllHosts, profilePaths.AllUsersCurrentHost, profilePaths.CurrentUserAllHosts, profilePaths.CurrentUserCurrentHost })
             {
                 if (path != null && File.Exists(path))
                 {
@@ -2389,12 +2389,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
             void availabilityChangedHandler(object runspace, RunspaceAvailabilityEventArgs eventArgs)
             {
                 if (eventArgs.RunspaceAvailability != RunspaceAvailability.Available ||
-                    this.versionSpecificOperations.IsDebuggerStopped(this.PromptNest, (Runspace)runspace))
+                    this.versionSpecificOperations.IsDebuggerStopped(this.PromptNest, (Runspace) runspace))
                 {
                     return;
                 }
 
-                ((Runspace)runspace).AvailabilityChanged -= availabilityChangedHandler;
+                ((Runspace) runspace).AvailabilityChanged -= availabilityChangedHandler;
                 Interlocked.Exchange(ref this.isCommandLoopRestarterSet, 0);
                 this.ConsoleReader?.StartCommandLoop();
             }
