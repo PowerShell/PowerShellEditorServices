@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Runtime.InteropServices;
@@ -149,8 +148,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         }
 
         [Trait("Category", "PSReadLine")]
-        [SkippableFact]
-        public async Task CanGetPSReadLineProxy()
+        [Fact]
+        public void CanGetPSReadLineProxy()
         {
             // This will force the loading of the PSReadLine assembly
             var psContext = PowerShellContextFactory.Create(NullLogger.Instance, isPSReadLineEnabled: true);

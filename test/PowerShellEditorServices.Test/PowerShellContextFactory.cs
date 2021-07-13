@@ -22,17 +22,18 @@ namespace Microsoft.PowerShell.EditorServices.Test
         //       can be set to whatever they need to be for the given host.
 
         public static readonly ProfilePathInfo TestProfilePaths =
-           new ProfilePathInfo(
-                   Path.GetFullPath(
-                       TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Profile/Test.PowerShellEditorServices_profile.ps1")),
-                   Path.GetFullPath(
-                       TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Profile/ProfileTest.ps1")),
-                   Path.GetFullPath(
-                       TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Test.PowerShellEditorServices_profile.ps1")),
-                   Path.GetFullPath(
-                       TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/ProfileTest.ps1")));
+            new ProfilePathInfo(
+                    Path.GetFullPath(
+                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Profile/Test.PowerShellEditorServices_profile.ps1")),
+                    Path.GetFullPath(
+                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Profile/ProfileTest.ps1")),
+                    Path.GetFullPath(
+                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Test.PowerShellEditorServices_profile.ps1")),
+                    Path.GetFullPath(
+                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/ProfileTest.ps1")));
 
-        public static System.Management.Automation.Runspaces.Runspace initialRunspace;
+        public static readonly string BundledModulePath = Path.GetFullPath(
+            TestUtilities.NormalizePath("../../../../../module"));
 
         public static PowerShellContextService Create(ILogger logger, bool isPSReadLineEnabled = false)
         {
@@ -44,11 +45,14 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 TestProfilePaths,
                 new List<string>(),
                 new List<string>(),
+                // TODO: We want to replace this property with an entire initial session state,
+                // which would then also control the process-scoped execution policy.
                 PSLanguageMode.FullLanguage,
                 null,
                 0,
-                consoleReplEnabled: isPSReadLineEnabled,
-                usesLegacyReadLine: false);
+                consoleReplEnabled: false,
+                usesLegacyReadLine: false,
+                bundledModulePath: BundledModulePath);
 
             PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, testHostDetails);
 
@@ -60,7 +64,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
 
             powerShellContext.Initialize(
                 TestProfilePaths,
-                initialRunspace,
+                InitialRunspace,
                 ownsInitialRunspace: true,
                 consoleHost: null);
 
