@@ -11,7 +11,7 @@ insert_final_newline = true
 indent_size = 4
 trim_trailing_whitespace = true
 csharp_space_before_open_square_brackets = true
-csharp_space_after_keywords_in_control_flow_statements = false
+csharp_space_after_keywords_in_control_flow_statements = true
 
 [*.{json}]
 indent_size = 2

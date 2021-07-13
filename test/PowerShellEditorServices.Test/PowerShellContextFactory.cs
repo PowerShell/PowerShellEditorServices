@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Management.Automation;
+using System.Management.Automation.Runspaces;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -13,6 +13,7 @@ using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Test
 {
@@ -40,6 +41,16 @@ namespace Microsoft.PowerShell.EditorServices.Test
         public static PowerShellContextService Create(ILogger logger)
         {
             PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, isPSReadLineEnabled: false);
+            var initialSessionState = InitialSessionState.CreateDefault();
+            // We set the process scope's execution policy (which is really the runspace's scope) to
+            // `Bypass` so we can import our bundled modules. This is equivalent in scope to the CLI
+            // argument `-ExecutionPolicy Bypass`, which (for instance) the extension passes. Thus
+            // we emulate this behavior for consistency such that unit tests can pass in a similar
+            // environment.
+            if (VersionUtils.IsWindows)
+            {
+                initialSessionState.ExecutionPolicy = ExecutionPolicy.Bypass;
+            }
 
             HostStartupInfo testHostDetails = new HostStartupInfo(
                 "PowerShell Editor Services Test Host",
@@ -49,16 +60,14 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 TestProfilePaths,
                 new List<string>(),
                 new List<string>(),
-                // TODO: We want to replace this property with an entire initial session state,
-                // which would then also control the process-scoped execution policy.
-                PSLanguageMode.FullLanguage,
+                initialSessionState,
                 null,
                 0,
                 consoleReplEnabled: false,
                 usesLegacyReadLine: false,
                 bundledModulePath: BundledModulePath);
 
-            InitialRunspace = PowerShellContextService.CreateRunspace(
+            InitialRunspace = PowerShellContextService.CreateTestRunspace(
                     testHostDetails,
                     powerShellContext,
                     new TestPSHostUserInterface(powerShellContext, logger),
