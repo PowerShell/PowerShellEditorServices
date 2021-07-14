@@ -321,7 +321,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 logger.LogTrace($"Using new bundled module path: {hostStartupInfo.BundledModulePath}");
                 s_bundledModulePath = hostStartupInfo.BundledModulePath;
             }
-            
+
             modulesToImport.Add(s_commandsModulePath);
             if(this.isPSReadLineEnabled)
             {
@@ -333,7 +333,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
             bool preloadModules = !hostStartupInfo.InitialSessionState.Providers.Any(a => a.Name == "FileSystem" && a.Visibility == SessionStateEntryVisibility.Public);
             EditorServicesPSHostUserInterface hostUserInterface =
-                hostStartupInfo.ConsoleReplEnabled
+                hostStartupInfo.ConsoleReplEnabled && hostStartupInfo.PSHost is not null
                     ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(this, hostStartupInfo.PSHost, logger)
                     : new ProtocolPSHostUserInterface(languageServer, this, logger);
 
@@ -453,7 +453,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             this.logger.LogInformation($"PowerShell Version: {this.LocalPowerShellVersion.Version}, Edition: {this.LocalPowerShellVersion.Edition}");
 
             Version powerShellVersion = this.LocalPowerShellVersion.Version;
-            if (powerShellVersion >= new Version(5, 0))
+            if(powerShellVersion >= new Version(5, 0))
             {
                 this.versionSpecificOperations = new PowerShell5Operations();
             }
@@ -472,7 +472,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // Set the $profile variable in the runspace
             this.profilePaths = hostStartupInfo.ProfilePaths;
-            if (profilePaths != null)
+            if(profilePaths != null)
             {
                 this.SetProfileVariableInCurrentRunspace(profilePaths);
             }
@@ -504,9 +504,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.ConsoleReader,
                 this.versionSpecificOperations);
             this.InvocationEventQueue = InvocationEventQueue.Create(this, this.PromptNest);
-            
-            
-            if (powerShellVersion.Major >= 5 &&
+
+
+            if(powerShellVersion.Major >= 5 &&
                 this.isPSReadLineEnabled &&
                 PSReadLinePromptContext.TryGetPSReadLineProxy(logger, out PSReadLineProxy proxy))
             {
@@ -520,7 +520,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 this.PromptContext = new LegacyReadLineContext(this);
             }
-        
+
             if(!preloadModules)
             {
                 // TODO: This can be moved to the point after the $psEditor object
