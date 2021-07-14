@@ -251,10 +251,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     sendErrorToHost: true);
 #pragma warning restore CS4014
             }
-            if(VersionUtils.IsWindows)
-            {
-                powerShellContext.RestoreExecutionPolicy();
-            }
+            
             return powerShellContext;
         }
 
@@ -288,15 +285,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns></returns>
         public static Runspace CreateRunspace(PSHost psHost, InitialSessionState initialSessionState)
         {
-            // We set the process scope's execution policy (which is really the runspace's scope) to
-            // Bypass so we can import our bundled modules. This is equivalent in scope to the CLI
-            // argument `-Bypass`, which (for instance) the extension passes. Thus we emulate this
-            // behavior for consistency such that unit tests can pass in a similar environment.
-            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                initialSessionState.ExecutionPolicy = ExecutionPolicy.Bypass;
-            }
-            
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
 
             // Windows PowerShell must be hosted in STA mode
@@ -2138,7 +2126,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return stringBuilder.ToString();
         }
 
-        private void RestoreExecutionPolicy()
+        internal void RestoreExecutionPolicy()
         {
             this.logger.LogTrace("Setting execution policy...");
 
