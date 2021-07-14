@@ -43,14 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
         {
             PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, isPSReadLineEnabled: false);
             var initialSessionState = InitialSessionState.CreateDefault();
-            // We set the process scope's execution policy (which is really the runspace's scope) to
-            // Bypass so we can import our bundled modules. This is equivalent in scope to the CLI
-            // argument `-Bypass`, which (for instance) the extension passes. Thus we emulate this
-            // behavior for consistency such that unit tests can pass in a similar environment.
-            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                initialSessionState.ExecutionPolicy = ExecutionPolicy.Bypass;
-            }
+            
             HostStartupInfo testHostDetails = new HostStartupInfo(
                 "PowerShell Editor Services Test Host",
                 "Test.PowerShellEditorServices",
