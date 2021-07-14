@@ -79,7 +79,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 MethodInfo setterInfo = typeof(Runspace).GetProperty("ApartmentState").GetSetMethod();
                 Delegate setter = Delegate.CreateDelegate(typeof(Action<Runspace, ApartmentState>), firstArgument: null, method: setterInfo);
-                s_runspaceApartmentStateSetter = (Action<Runspace, ApartmentState>)setter;
+                s_runspaceApartmentStateSetter = (Action<Runspace, ApartmentState>) setter;
             }
 
             if (VersionUtils.IsPS7OrGreater)
@@ -242,7 +242,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="hostUserInterface">The EditorServicesPSHostUserInterface to use for this instance.</param>
         /// <param name="logger">An ILogger implementation to use for this instance.</param>
         /// <returns></returns>
-        public static Runspace CreateRunspace(
+        public static Runspace CreateTestRunspace(
             HostStartupInfo hostDetails,
             PowerShellContextService powerShellContext,
             EditorServicesPSHostUserInterface hostUserInterface,
@@ -262,21 +262,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="psHost">The PSHost that will be used for this Runspace.</param>
         /// <param name="languageMode">The language mode inherited from the orginal PowerShell process. This will be used when creating runspaces so that we honor the same language mode.</param>
         /// <returns></returns>
-        public static Runspace CreateRunspace(PSHost psHost, InitialSessionState initialSessionState, List<string> additionalModules = null)
+        public static Runspace CreateTestRunspace(PSHost psHost, InitialSessionState initialSessionState, List<string> additionalModules = null)
         {
-            if (Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1") {
-                initialSessionState = InitialSessionState.CreateDefault();
-            } 
-            
-            // We set the process scope's execution policy (which is really the runspace's scope) to
-            // Bypass so we can import our bundled modules. This is equivalent in scope to the CLI
-            // argument `-Bypass`, which (for instance) the extension passes. Thus we emulate this
-            // behavior for consistency such that unit tests can pass in a similar environment.
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                initialSessionState.ExecutionPolicy = ExecutionPolicy.Bypass;
-            }
-
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
 
             // Windows PowerShell must be hosted in STA mode
@@ -534,6 +521,20 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 this.PromptContext = new LegacyReadLineContext(this);
             }
+        }
+
+        /// <summary>
+        /// Imports the PowerShellEditorServices.Commands module into
+        /// the runspace.  This method will be moved somewhere else soon.
+        /// </summary>
+        /// <returns></returns>
+        public Task ImportCommandsModuleAsync()
+        {
+            this.logger.LogTrace($"Importing PowershellEditorServices commands from {s_commandsModulePath}");
+
+            PSCommand importCommand = new PSCommand()
+                .AddCommand("Import-Module")
+                .AddArgument(s_commandsModulePath);
 
             if (VersionUtils.IsWindows && initialRunspace.InitialSessionState.LanguageMode == PSLanguageMode.FullLanguage)
             {
@@ -2262,7 +2263,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return stringBuilder.ToString();
         }
 
-        private void SetExecutionPolicy()
+        internal void RestoreExecutionPolicy()
         {
             this.logger.LogTrace("Setting execution policy...");
 
@@ -2288,14 +2289,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // set to expected values, so we must sift through those.
 
             ExecutionPolicy policyToSet = ExecutionPolicy.Bypass;
-            var currentUserPolicy = (ExecutionPolicy)policies [policies.Count - 2].Members ["ExecutionPolicy"].Value;
+            var currentUserPolicy = (ExecutionPolicy) policies[policies.Count - 2].Members["ExecutionPolicy"].Value;
             if (currentUserPolicy != ExecutionPolicy.Undefined)
             {
                 policyToSet = currentUserPolicy;
             }
             else
             {
-                var localMachinePolicy = (ExecutionPolicy)policies [policies.Count - 1].Members ["ExecutionPolicy"].Value;
+                var localMachinePolicy = (ExecutionPolicy) policies[policies.Count - 1].Members["ExecutionPolicy"].Value;
                 if (localMachinePolicy != ExecutionPolicy.Undefined)
                 {
                     policyToSet = localMachinePolicy;
@@ -2467,7 +2468,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 case RunspaceState.Closed:
                 case RunspaceState.Broken:
                     // If the runspace closes or fails, pop the runspace
-                    ((IHostSupportsInteractiveSession)this).PopRunspace();
+                    ((IHostSupportsInteractiveSession) this).PopRunspace();
                     break;
             }
         }
@@ -2479,7 +2480,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 yield break;
             }
 
-            foreach (string path in new [] { profilePaths.AllUsersAllHosts, profilePaths.AllUsersCurrentHost, profilePaths.CurrentUserAllHosts, profilePaths.CurrentUserCurrentHost })
+            foreach (string path in new[] { profilePaths.AllUsersAllHosts, profilePaths.AllUsersCurrentHost, profilePaths.CurrentUserAllHosts, profilePaths.CurrentUserCurrentHost })
             {
                 if (path != null && File.Exists(path))
                 {
@@ -2511,12 +2512,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
             void availabilityChangedHandler(object runspace, RunspaceAvailabilityEventArgs eventArgs)
             {
                 if (eventArgs.RunspaceAvailability != RunspaceAvailability.Available ||
-                    this.versionSpecificOperations.IsDebuggerStopped(this.PromptNest, (Runspace)runspace))
+                    this.versionSpecificOperations.IsDebuggerStopped(this.PromptNest, (Runspace) runspace))
                 {
                     return;
                 }
 
-                ((Runspace)runspace).AvailabilityChanged -= availabilityChangedHandler;
+                ((Runspace) runspace).AvailabilityChanged -= availabilityChangedHandler;
                 Interlocked.Exchange(ref this.isCommandLoopRestarterSet, 0);
                 this.ConsoleReader?.StartCommandLoop();
             }
