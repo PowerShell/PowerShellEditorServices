@@ -262,7 +262,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="psHost">The PSHost that will be used for this Runspace.</param>
         /// <param name="languageMode">The language mode inherited from the orginal PowerShell process. This will be used when creating runspaces so that we honor the same language mode.</param>
         /// <returns></returns>
-        public static Runspace CreateTestRunspace(PSHost psHost, InitialSessionState initialSessionState, List<string> additionalModules = null)
+        public static Runspace CreateRunspace(PSHost psHost, InitialSessionState initialSessionState, List<string> additionalModules = null)
         {
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
 
@@ -409,13 +409,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 hostStartupInfo.InitialSessionState.AddCommandAndAliasToInitialSessionState<OutDefaultCommand>(@"Microsoft.PowerShell.Core\Out-Default");
                 //hostStartupInfo.InitialSessionState.AddCommandAndAliasToInitialSessionState<Microsoft.PowerShell.Commands.WriteHostCommand>(@"Microsoft.PowerShell.Core\Write-Host");
 
-
-                initialRunspace = PowerShellContextService.CreateRunspace(hostStartupInfo.PSHost, hostStartupInfo.InitialSessionState);
+                initialRunspace = CreateRunspace(hostStartupInfo.PSHost, hostStartupInfo.InitialSessionState);
             }
             else
             {
                 logger.LogTrace("Creating initial PowerShell runspace");
-                initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
+                initialRunspace = CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
             }
             logger.LogInformation("Opening Runspace");
             initialRunspace.Open();
@@ -521,25 +520,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 this.PromptContext = new LegacyReadLineContext(this);
             }
-        }
-
-        /// <summary>
-        /// Imports the PowerShellEditorServices.Commands module into
-        /// the runspace.  This method will be moved somewhere else soon.
-        /// </summary>
-        /// <returns></returns>
-        public Task ImportCommandsModuleAsync()
-        {
-            this.logger.LogTrace($"Importing PowershellEditorServices commands from {s_commandsModulePath}");
-
-            PSCommand importCommand = new PSCommand()
-                .AddCommand("Import-Module")
-                .AddArgument(s_commandsModulePath);
-
-            if (VersionUtils.IsWindows && initialRunspace.InitialSessionState.LanguageMode == PSLanguageMode.FullLanguage)
-            {
-                this.SetExecutionPolicy();
-            }
+        
             if(!preloadModules)
             {
                 // TODO: This can be moved to the point after the $psEditor object
