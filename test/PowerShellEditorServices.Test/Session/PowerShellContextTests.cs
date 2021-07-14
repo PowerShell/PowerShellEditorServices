@@ -130,7 +130,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 "$($profile.AllUsersCurrentHost) " +
                 "$($profile.CurrentUserAllHosts) " +
                 "$($profile.CurrentUserCurrentHost) " +
-                "$(Assert-ProfileLoaded)\"");
+                "$(Assert-ProfileLoaded)\"");//.Commands[0].MergeMyResults(System.Management.Automation.Runspaces.PipelineResultTypes.All, System.Management.Automation.Runspaces.PipelineResultTypes.Output);
 
             var result =
                 await this.powerShellContext.ExecuteCommandAsync<string>(

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -37,11 +38,19 @@ namespace Microsoft.PowerShell.EditorServices.Test
             TestUtilities.NormalizePath("../../../../../module"));
 
         public static System.Management.Automation.Runspaces.Runspace InitialRunspace;
-
+        
         public static PowerShellContextService Create(ILogger logger)
         {
             PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, isPSReadLineEnabled: false);
-
+            var initialSessionState = InitialSessionState.CreateDefault();
+            // We set the process scope's execution policy (which is really the runspace's scope) to
+            // Bypass so we can import our bundled modules. This is equivalent in scope to the CLI
+            // argument `-Bypass`, which (for instance) the extension passes. Thus we emulate this
+            // behavior for consistency such that unit tests can pass in a similar environment.
+            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                initialSessionState.ExecutionPolicy = ExecutionPolicy.Bypass;
+            }
             HostStartupInfo testHostDetails = new HostStartupInfo(
                 "PowerShell Editor Services Test Host",
                 "Test.PowerShellEditorServices",
@@ -50,19 +59,19 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 TestProfilePaths,
                 new List<string>(),
                 new List<string>(),
-                InitialSessionState.CreateDefault(),
+                initialSessionState,
                 null,
                 0,
                 consoleReplEnabled: false,
                 usesLegacyReadLine: false,
                 bundledModulePath: BundledModulePath);
 
-            InitialRunspace = PowerShellContextService.CreateRunspace(
+            InitialRunspace = PowerShellContextService.CreateTestRunspace(
                     testHostDetails,
                     powerShellContext,
                     new TestPSHostUserInterface(powerShellContext, logger),
                     logger);
-
+            
             powerShellContext.Initialize(
                 TestProfilePaths,
                 InitialRunspace,
