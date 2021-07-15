@@ -50,81 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     iss.Commands.Remove(moduleQualifiedCmdletName, existingLongCmdlet.GetType());
                 }
                 iss.Commands.Add(new SessionStateAliasEntry(moduleQualifiedCmdletName, shortName, null));
-                //throw new Exception($"Unsupported state, {moduleQualifiedCmdletName} and {shortName} defined as Cmdlet types. One needs to be an alias of the other");
-            }
-        //    if(existingShortCmdlet is SessionStateCmdletEntry)
-        //        {
-        //            if(existingLongCmdlet is null)
-        //            {
-        //                iss.Commands.Add(new SessionStateAliasEntry(shortName, moduleQualifiedCmdletName, null));
-        //            }
-        //            else
-        //            {
-                        
-        //            }
-        //        }
-        //    }
-
-        //    if(existingLongCmdlet is not null)
-        //    else if(existingShortCmdlet is SessionStateAliasEntry)
-        //    {
-        //        if(existingLongCmdlet is null)
-        //        {
-        //            iss.Commands.Add(new SessionStateCmdletEntry(moduleQualifiedCmdletName, typeof(T), null));
-        //        }
-        //        else
-        //        {
-        //            if(existingLongCmdlet is not null && existingLongCmdlet is SessionStateAliasEntry)
-        //            {
-        //                throw new Exception($"Unsupported state, {moduleQualifiedCmdletName} and {shortName} defined as alias types. One needs to be an alias of the other");
-        //            }
-        //        }
-        //    }
-        //    else
-        //    {
-        //        throw new Exception($"Unsupported state, {shortName} exists as an unsupported type. {existingShortCmdlet.GetType().Name}. Needs to be SessionStateCmdletEntry or SessionStateAliasEntry.");
-        //    }
-        //    }
-        //    else 
-        //    {
-        //        if(existingLongCmdlet is null)
-        //        {
-        //            if(existingShortCmdlet is null)
-        //            {
-        //                //iss.Commands.Add(new SessionStateCmdletEntry(moduleQualifiedCmdletName, typeof(T), null));
-        //                //iss.Commands.Add(new SessionStateAliasEntry(shortName, moduleQualifiedCmdletName, null));
-        //                iss.Commands.Add(new SessionStateCmdletEntry(shortName, typeof(T), null));
-        //                iss.Commands.Add(new SessionStateAliasEntry(moduleQualifiedCmdletName, shortName, null));
-        //            }
-        //            else
-        //            {
-        //                if(existingShortCmdlet is SessionStateAliasEntry)
-        //                {
-        //                    iss.Commands.Add(new SessionStateCmdletEntry(moduleQualifiedCmdletName, typeof(T), null));
-        //                }
-        //                else if(existingShortCmdlet is SessionStateCmdletEntry)
-        //                {
-        //                    iss.Commands.Add(new SessionStateAliasEntry(moduleQualifiedCmdletName, shortName, null));
-        //                }
-        //                else
-        //                {
-        //                    throw new Exception($"Unsupported state, {shortName} exists as an unsupported type. {existingShortCmdlet.GetType().Name}. Needs to be SessionStateCmdletEntry or SessionStateAliasEntry.");
-        //                }
-        //            }
-
-        //        }
-        //        else
-        //        {
-        //            if((existingLongCmdlet is SessionStateAliasEntry && existingShortCmdlet is SessionStateCmdletEntry) || (existingLongCmdlet is SessionStateCmdletEntry && existingShortCmdlet is SessionStateAliasEntry))
-        //            {
-        //                // All good
-        //            }
-        //            else
-        //            {
-        //                throw new Exception($"Unsupported state, {shortName} defined as type {existingShortCmdlet.GetType().Name} type and {moduleQualifiedCmdletName} defined as {existingLongCmdlet.GetType().Name}. One needs to be an alias of the other.");
-        //            }
-        //        }
-        //    }            
+            }        
         }
     }
     /// <summary>
@@ -490,8 +416,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 hostStartupInfo.InitialSessionState.AddCommandAndAliasToInitialSessionState<GetCommandCommand>(@"Microsoft.PowerShell.Core\Get-Command");
                 hostStartupInfo.InitialSessionState.AddCommandAndAliasToInitialSessionState<GetHelpCommand>(@"Microsoft.PowerShell.Core\Get-Help");
                 hostStartupInfo.InitialSessionState.AddCommandAndAliasToInitialSessionState<GetModuleCommand>(@"Microsoft.PowerShell.Core\Get-Module");
-                hostStartupInfo.InitialSessionState.AddCommandAndAliasToInitialSessionState<OutDefaultCommand>(@"Microsoft.PowerShell.Core\Out-Default");
-                //hostStartupInfo.InitialSessionState.AddCommandAndAliasToInitialSessionState<Microsoft.PowerShell.Commands.WriteHostCommand>(@"Microsoft.PowerShell.Core\Write-Host");
+                hostStartupInfo.InitialSessionState.AddCommandAndAliasToInitialSessionState<OutDefaultCommand>(@"Microsoft.PowerShell.Core\Out-Default");                
 
                 initialRunspace = CreateRunspace(hostStartupInfo.PSHost, hostStartupInfo.InitialSessionState);
             }
