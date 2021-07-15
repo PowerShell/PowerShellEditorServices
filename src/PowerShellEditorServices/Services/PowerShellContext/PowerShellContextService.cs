@@ -29,18 +29,102 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
     public static class InitialSessionStateExtensions
     {
-        public static void AddCommandAndAliasToInitialSessionState<T>(this InitialSessionState iss, string alias)
+        public static void AddCommandAndAliasToInitialSessionState<T>(this InitialSessionState iss, string moduleQualifiedCmdletName)
         {
-            var shortName = alias.Split('\\').LastOrDefault();
-
-            if(!iss.Commands.Any(a => string.Compare(a.Name, shortName, true) == 0))
+            var shortName = moduleQualifiedCmdletName.Split('\\').LastOrDefault();
+            var existingShortCmdlet = iss.Commands.FirstOrDefault(a => string.Compare(a.Name, shortName, true) == 0);
+            var existingLongCmdlet = iss.Commands.FirstOrDefault(a => string.Compare(a.Name, moduleQualifiedCmdletName, true) == 0);
+            // Can't have both short and long defined as CmdletEntries. One has to be an alias.
+            if(existingShortCmdlet is not SessionStateCmdletEntry)
             {
+                if(existingShortCmdlet is not null)
+                {
+                    iss.Commands.Remove(shortName, existingShortCmdlet.GetType());
+                }
                 iss.Commands.Add(new SessionStateCmdletEntry(shortName, typeof(T), null));
             }
-            if(!iss.Commands.Any(a => string.Compare(a.Name, alias) == 0))
+            if(existingLongCmdlet is not SessionStateAliasEntry)
             {
-                iss.Commands.Add(new SessionStateAliasEntry(alias, shortName, null));
+                if(existingLongCmdlet is not null)
+                {
+                    iss.Commands.Remove(moduleQualifiedCmdletName, existingLongCmdlet.GetType());
+                }
+                iss.Commands.Add(new SessionStateAliasEntry(moduleQualifiedCmdletName, shortName, null));
+                //throw new Exception($"Unsupported state, {moduleQualifiedCmdletName} and {shortName} defined as Cmdlet types. One needs to be an alias of the other");
             }
+        //    if(existingShortCmdlet is SessionStateCmdletEntry)
+        //        {
+        //            if(existingLongCmdlet is null)
+        //            {
+        //                iss.Commands.Add(new SessionStateAliasEntry(shortName, moduleQualifiedCmdletName, null));
+        //            }
+        //            else
+        //            {
+                        
+        //            }
+        //        }
+        //    }
+
+        //    if(existingLongCmdlet is not null)
+        //    else if(existingShortCmdlet is SessionStateAliasEntry)
+        //    {
+        //        if(existingLongCmdlet is null)
+        //        {
+        //            iss.Commands.Add(new SessionStateCmdletEntry(moduleQualifiedCmdletName, typeof(T), null));
+        //        }
+        //        else
+        //        {
+        //            if(existingLongCmdlet is not null && existingLongCmdlet is SessionStateAliasEntry)
+        //            {
+        //                throw new Exception($"Unsupported state, {moduleQualifiedCmdletName} and {shortName} defined as alias types. One needs to be an alias of the other");
+        //            }
+        //        }
+        //    }
+        //    else
+        //    {
+        //        throw new Exception($"Unsupported state, {shortName} exists as an unsupported type. {existingShortCmdlet.GetType().Name}. Needs to be SessionStateCmdletEntry or SessionStateAliasEntry.");
+        //    }
+        //    }
+        //    else 
+        //    {
+        //        if(existingLongCmdlet is null)
+        //        {
+        //            if(existingShortCmdlet is null)
+        //            {
+        //                //iss.Commands.Add(new SessionStateCmdletEntry(moduleQualifiedCmdletName, typeof(T), null));
+        //                //iss.Commands.Add(new SessionStateAliasEntry(shortName, moduleQualifiedCmdletName, null));
+        //                iss.Commands.Add(new SessionStateCmdletEntry(shortName, typeof(T), null));
+        //                iss.Commands.Add(new SessionStateAliasEntry(moduleQualifiedCmdletName, shortName, null));
+        //            }
+        //            else
+        //            {
+        //                if(existingShortCmdlet is SessionStateAliasEntry)
+        //                {
+        //                    iss.Commands.Add(new SessionStateCmdletEntry(moduleQualifiedCmdletName, typeof(T), null));
+        //                }
+        //                else if(existingShortCmdlet is SessionStateCmdletEntry)
+        //                {
+        //                    iss.Commands.Add(new SessionStateAliasEntry(moduleQualifiedCmdletName, shortName, null));
+        //                }
+        //                else
+        //                {
+        //                    throw new Exception($"Unsupported state, {shortName} exists as an unsupported type. {existingShortCmdlet.GetType().Name}. Needs to be SessionStateCmdletEntry or SessionStateAliasEntry.");
+        //                }
+        //            }
+
+        //        }
+        //        else
+        //        {
+        //            if((existingLongCmdlet is SessionStateAliasEntry && existingShortCmdlet is SessionStateCmdletEntry) || (existingLongCmdlet is SessionStateCmdletEntry && existingShortCmdlet is SessionStateAliasEntry))
+        //            {
+        //                // All good
+        //            }
+        //            else
+        //            {
+        //                throw new Exception($"Unsupported state, {shortName} defined as type {existingShortCmdlet.GetType().Name} type and {moduleQualifiedCmdletName} defined as {existingLongCmdlet.GetType().Name}. One needs to be an alias of the other.");
+        //            }
+        //        }
+        //    }            
         }
     }
     /// <summary>
