@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Management.Automation;
 using System.Management.Automation.Host;
+using System.Management.Automation.Runspaces;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
@@ -92,10 +93,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public string LogPath { get; }
 
         /// <summary>
-        /// The language mode inherited from the orginal PowerShell process.
-        /// This will be used when creating runspaces so that we honor the same language mode.
+        /// The initialSessionState will be inherited from the orginal PowerShell process.
+        /// This will be used when creating runspaces so that we honor the same initialSessionState including allowed modules, cmdlets and language mode.
         /// </summary>
-        public PSLanguageMode LanguageMode { get; }
+        public InitialSessionState InitialSessionState { get; }
 
         /// <summary>
         /// The minimum log level of log events to be logged.
@@ -135,7 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <param name="currentUsersProfilePath">The path to the user specific profile.</param>
         /// <param name="featureFlags">Flags of features to enable.</param>
         /// <param name="additionalModules">Names or paths of additional modules to import.</param>
-        /// <param name="languageMode">The language mode inherited from the orginal PowerShell process. This will be used when creating runspaces so that we honor the same language mode.</param>
+        /// <param name="initialSessionState">The language mode inherited from the orginal PowerShell process. This will be used when creating runspaces so that we honor the same initialSessionState including allowed modules, cmdlets and language mode.</param>
         /// <param name="logPath">The path to log to.</param>
         /// <param name="logLevel">The minimum log event level.</param>
         /// <param name="consoleReplEnabled">Enable console if true.</param>
@@ -149,7 +150,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             ProfilePathInfo profilePaths,
             IReadOnlyList<string> featureFlags,
             IReadOnlyList<string> additionalModules,
-            PSLanguageMode languageMode,
+            InitialSessionState initialSessionState,
             string logPath,
             int logLevel,
             bool consoleReplEnabled,
@@ -163,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             ProfilePaths = profilePaths;
             FeatureFlags = featureFlags ?? Array.Empty<string>();
             AdditionalModules = additionalModules ?? Array.Empty<string>();
-            LanguageMode = languageMode;
+            InitialSessionState = initialSessionState;
             LogPath = logPath;
             LogLevel = logLevel;
             ConsoleReplEnabled = consoleReplEnabled;

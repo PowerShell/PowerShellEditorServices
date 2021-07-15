@@ -349,6 +349,8 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             var profile = (PSObject)GetVariableValue("profile");
 
             var hostInfo = new HostInfo(HostName, HostProfileId, HostVersion);
+            var iss = Runspace.DefaultRunspace.InitialSessionState;
+            iss.LanguageMode = Runspace.DefaultRunspace.SessionStateProxy.LanguageMode;
             var editorServicesConfig = new EditorServicesConfig(hostInfo, Host, SessionDetailsPath, bundledModulesPath, LogPath)
             {
                 FeatureFlags = FeatureFlags,
@@ -357,7 +359,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 AdditionalModules = AdditionalModules,
                 LanguageServiceTransport = GetLanguageServiceTransport(),
                 DebugServiceTransport = GetDebugServiceTransport(),
-                LanguageMode = Runspace.DefaultRunspace.SessionStateProxy.LanguageMode,
+                InitialSessionState = iss,
                 ProfilePaths = new ProfilePathConfig
                 {
                     AllUsersAllHosts = GetProfilePathFromProfileObject(profile, ProfileUserKind.AllUsers, ProfileHostKind.AllHosts),
