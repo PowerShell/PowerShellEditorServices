@@ -18,24 +18,40 @@ resources:
   repositories:
   - repository: ComplianceRepo
     type: github
-    endpoint: ComplianceGHRepo
+    endpoint: GitHub
     name: PowerShell/compliance
+  - repository: vscode-powershell
+    type: github
+    endpoint: GitHub
+    name: PowerShell/vscode-powershell
+
 
 jobs:
-- job: 'ReleaseBuild'
-  displayName: 'Build release'
+- job: Build
+  displayName: Build the release
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: vs2017-win2016
   steps:
   - template: templates/ci-general.yml
 
-- job: 'SignBuild'
-  displayName: Signing Build
-  dependsOn: 'ReleaseBuild'
+- job: Sign
+  displayName: Sign the release
+  dependsOn: Build
   pool:
-    name: '1ES'
+    name: 1ES
     demands: ImageOverride -equals MMS2019
   variables:
   - group: ESRP
   steps:
   - template: templates/release-general.yml
+
+- deployment: Publish
+  displayName: Publish the release
+  dependsOn: Sign
+  environment: PowerShellEditorServices
+  pool:
+    name: 1ES
+  variables:
+  - group: Publish
+  steps:
+  - template: templates/publish-general.yml
