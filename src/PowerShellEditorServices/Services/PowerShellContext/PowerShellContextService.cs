@@ -224,7 +224,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     logger);
 
             logger.LogTrace("Creating initial PowerShell runspace");
-            Runspace initialRunspace = PowerShellContextService.CreateRunspace(hostStartupInfo, powerShellContext, hostUserInterface, logger);
+            Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost,hostStartupInfo.InitialSessionState);
             powerShellContext.Initialize(hostStartupInfo, initialRunspace, true, hostUserInterface);
 
             return powerShellContext;
@@ -232,14 +232,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
         [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Checked by Validate call")]
         
         /// <summary>
-        ///
+        /// Only used in testing. Creates a Runspace given HostStartupInfo instead of a PSHost.
         /// </summary>
+        /// <remarks>
+        /// TODO: We should use `CreateRunspace` in testing instead of this, if possible.
+        /// </remarks>
         /// <param name="hostDetails"></param>
         /// <param name="powerShellContext"></param>
         /// <param name="hostUserInterface">The EditorServicesPSHostUserInterface to use for this instance.</param>
         /// <param name="logger">An ILogger implementation to use for this instance.</param>
         /// <returns></returns>
-        public static Runspace CreateRunspace(
+        public static Runspace CreateTestRunspace(
             HostStartupInfo hostDetails,
             PowerShellContextService powerShellContext,
             EditorServicesPSHostUserInterface hostUserInterface,
@@ -250,38 +253,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var psHost = new EditorServicesPSHost(powerShellContext, hostDetails, hostUserInterface, logger);
             powerShellContext.ConsoleWriter = hostUserInterface;
             powerShellContext.ConsoleReader = hostUserInterface;
-            return CreateRunspace(psHost, hostDetails.LanguageMode);
+            return CreateRunspace(psHost, hostDetails.InitialSessionState);
         }
 
         /// <summary>
         ///
         /// </summary>
         /// <param name="psHost">The PSHost that will be used for this Runspace.</param>
-        /// <param name="languageMode">The language mode inherited from the orginal PowerShell process. This will be used when creating runspaces so that we honor the same language mode.</param>
+        /// <param name="initialSessionState">This will be used when creating runspaces so that we honor the same InitialSessionState.</param>
         /// <returns></returns>
-        public static Runspace CreateRunspace(PSHost psHost, PSLanguageMode languageMode)
+        public static Runspace CreateRunspace(PSHost psHost, InitialSessionState initialSessionState)
         {
-            InitialSessionState initialSessionState;
-            if (Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1") {
-                initialSessionState = InitialSessionState.CreateDefault();
-            } else {
-                initialSessionState = InitialSessionState.CreateDefault2();
-            }
-
-            // Create and initialize a new Runspace while honoring the LanguageMode of the original runspace
-            // that started PowerShell Editor Services. This is because the PowerShell Integrated Console
-            // should have the same LanguageMode of whatever is set by the system.
-            initialSessionState.LanguageMode = languageMode;
-
-            // We set the process scope's execution policy (which is really the runspace's scope) to
-            // Bypass so we can import our bundled modules. This is equivalent in scope to the CLI
-            // argument `-Bypass`, which (for instance) the extension passes. Thus we emulate this
-            // behavior for consistency such that unit tests can pass in a similar environment.
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                initialSessionState.ExecutionPolicy = ExecutionPolicy.Bypass;
-            }
-
             Runspace runspace = RunspaceFactory.CreateRunspace(psHost, initialSessionState);
 
             // Windows PowerShell must be hosted in STA mode
@@ -391,10 +373,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     .PSVariable
                     .GetValue("Host")
                     as PSHost;
-            if(VersionUtils.IsWindows)
-            {
-                this.SetExecutionPolicy();
-            }
+            
             // Now that the runspace is ready, enqueue it for first use
             this.PromptNest = new PromptNest(
                 this,
@@ -421,7 +400,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.ExecuteCommandAsync<PSObject>(
                     command,
                     sendOutputToHost: false,
-                    sendErrorToHost: true);
+                    sendErrorToHost: true).GetAwaiter().GetResult();
 #pragma warning restore CS4014
             }
             
@@ -440,9 +419,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 this.PromptContext = new LegacyReadLineContext(this);
             }
-
-            
-            
+            // Finally, restore the runspace's execution policy to the user's policy instead of
+            // Bypass.
+            this.RestoreExecutionPolicy();
         }
 
         /// <summary>
@@ -460,11 +439,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public Task ImportPSReadLine2ModuleAsync() => ImportsModuleAsync(s_psReadLineModulePath);
         public Task ImportsModuleAsync(string path)
         {
-            this.logger.LogTrace($"Importing PowershellEditorServices commands from {path}");
+            this.logger.LogTrace($"Importing PowershellEditorServices commands from {s_commandsModulePath}");
 
             PSCommand importCommand = new PSCommand()
                 .AddCommand("Import-Module")
-                .AddArgument(path);
+                .AddArgument(s_commandsModulePath);
 
             return this.ExecuteCommandAsync<PSObject>(importCommand, sendOutputToHost: false, sendErrorToHost: false);
         }
@@ -2165,9 +2144,20 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return stringBuilder.ToString();
         }
 
-        private void SetExecutionPolicy()
+        /// <summary>
+        /// This function restores the execution policy for the process by examining the user's
+        /// execution policy hierarchy. We do this because the process policy will always be set to
+        /// Bypass when initializing our runspaces.
+        /// </summary>
+        internal void RestoreExecutionPolicy()
         {
-            this.logger.LogTrace("Setting execution policy...");
+            // Execution policy is a Windows-only feature.
+            if (!VersionUtils.IsWindows)
+            {
+                return;
+            }
+
+            this.logger.LogTrace("Restoring execution policy...");
 
             // We want to get the list hierarchy of execution policies
             // Calling the cmdlet is the simplest way to do that
