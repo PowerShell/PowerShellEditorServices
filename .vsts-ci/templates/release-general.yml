@@ -1,27 +1,29 @@
 steps:
 
+# TODO: Replace build artifacts with pipeline artifacts
 - task: DownloadBuildArtifacts@0
-  displayName: 'Download Build Artifacts'
+  displayName: Download build artifacts
   inputs:
     downloadType: specific
 
 - task: ExtractFiles@1
-  displayName: 'Extract Build Zip'
+  displayName: Unzip build artifacts
   inputs:
-    archiveFilePatterns: '$(Build.ArtifactStagingDirectory)/PowerShellEditorServices-CI/PowerShellEditorServices*.zip'
-    destinationFolder: '$(Build.ArtifactStagingDirectory)/PowerShellEditorServices'
+    archiveFilePatterns: $(Build.ArtifactStagingDirectory)/PowerShellEditorServices-CI/PowerShellEditorServices*.zip
+    destinationFolder: $(Build.ArtifactStagingDirectory)/Unsigned
 
 - checkout: ComplianceRepo
-  displayName: 'Checkout the ComplianceRepo'
 
+# NOTE: The signing templates explicitly copy everything along as they run, so
+# the last output path has every signed (and intentionally unsigned) file.
 - template: EsrpSign.yml@ComplianceRepo
   parameters:
-    buildOutputPath: '$(Build.ArtifactStagingDirectory)/PowerShellEditorServices'
-    signOutputPath: '$(Build.ArtifactStagingDirectory)/FirstPartySigned'
-    alwaysCopy: true # So publishing works
-    certificateId: 'CP-230012' # Authenticode certificate
-    useMinimatch: true # This enables the use of globbing
+    buildOutputPath: $(Build.ArtifactStagingDirectory)/Unsigned
+    signOutputPath: $(Build.ArtifactStagingDirectory)/FirstPartySigned
+    alwaysCopy: true
+    certificateId: CP-230012 # Authenticode certificate
     shouldSign: true # We always want to sign
+    useMinimatch: true # This enables the use of globbing
     pattern: |
       # PowerShellEditorServices Script
       PowerShellEditorServices/*.{ps1,psd1,psm1,ps1xml}
@@ -35,12 +37,12 @@ steps:
 
 - template: EsrpSign.yml@ComplianceRepo
   parameters:
-    buildOutputPath: '$(Build.ArtifactStagingDirectory)/FirstPartySigned'
-    signOutputPath: '$(Build.ArtifactStagingDirectory)/ThirdPartySigned'
-    alwaysCopy: true # So publishing works
-    certificateId: 'CP-231522' # Third-party certificate
-    useMinimatch: true # This enables the use of globbing
+    buildOutputPath: $(Build.ArtifactStagingDirectory)/FirstPartySigned
+    signOutputPath: $(Build.ArtifactStagingDirectory)/ThirdPartySigned
+    alwaysCopy: true
+    certificateId: CP-231522 # Third-party certificate
     shouldSign: true # We always want to sign
+    useMinimatch: true # This enables the use of globbing
     pattern: |
       **/MediatR.dll
       **/Nerdbank.Streams.dll
@@ -49,9 +51,19 @@ steps:
       **/Serilog*.dll
       **/UnixConsoleEcho.dll
 
-- publish: $(Build.ArtifactStagingDirectory)/ThirdPartySigned
+- task: ArchiveFiles@2
+  displayName: Zip finished assets
+  inputs:
+    rootFolderOrFile: $(Build.ArtifactStagingDirectory)/ThirdPartySigned
+    includeRootFolder: false
+    archiveType: zip
+    archiveFile: $(Build.ArtifactStagingDirectory)/PowerShellEditorServices.zip
+    replaceExistingArchive: true
+    verbose: true
+
+- publish: $(Build.ArtifactStagingDirectory)/PowerShellEditorServices.zip
   artifact: PowerShellEditorServices
-  displayName: 'Publish signed (and unsigned) artifacts'
+  displayName: Publish signed pipeline artifacts
 
 - checkout: self
 
