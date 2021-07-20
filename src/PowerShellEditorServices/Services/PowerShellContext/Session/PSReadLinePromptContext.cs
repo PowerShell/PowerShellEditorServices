@@ -17,35 +17,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
     internal class PSReadLinePromptContext : IPromptContext
     {
-        private static readonly string _psReadLineModulePath = Path.Combine(
-            Path.GetDirectoryName(typeof(PSReadLinePromptContext).Assembly.Location),
-            "..",
-            "..",
-            "..",
-            "PSReadLine");
-
-        private static readonly string ReadLineInitScript = $@"
-            [System.Diagnostics.DebuggerHidden()]
-            [System.Diagnostics.DebuggerStepThrough()]
-            param()
-            end {{
-                $module = Get-Module -ListAvailable PSReadLine |
-                    Where-Object {{ $_.Version -ge '2.0.2' }} |
-                    Sort-Object -Descending Version |
-                    Select-Object -First 1
-                if (-not $module) {{
-                    Import-Module '{_psReadLineModulePath.Replace("'", "''")}'
-                    return [Microsoft.PowerShell.PSConsoleReadLine]
-                }}
-
-                Import-Module -ModuleInfo $module
-                return [Microsoft.PowerShell.PSConsoleReadLine]
-            }}";
-
         private static readonly Lazy<CmdletInfo> s_lazyInvokeReadLineForEditorServicesCmdletInfo = new Lazy<CmdletInfo>(() =>
         {
-            var type = Type.GetType("Microsoft.PowerShell.EditorServices.Commands.InvokeReadLineForEditorServicesCommand, Microsoft.PowerShell.EditorServices.Hosting");
-            return new CmdletInfo("__Invoke-ReadLineForEditorServices", type);
+            var allAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+            var assemblies = allAssemblies.FirstOrDefault(a => a.FullName.Contains("Microsoft.PowerShell.EditorServices"));
+            var type = assemblies?.ExportedTypes?.FirstOrDefault(a => a.Name == "InvokeReadLineForEditorServicesCommand");
+            return new CmdletInfo("__Invoke-ReadLineForEditorServices", type ?? typeof(PSCmdlet));
         });
 
         private static ExecutionOptions s_psrlExecutionOptions = new ExecutionOptions
@@ -89,39 +66,46 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         internal static bool TryGetPSReadLineProxy(
             ILogger logger,
-            Runspace runspace,
             out PSReadLineProxy readLineProxy)
         {
             readLineProxy = null;
             logger.LogTrace("Attempting to load PSReadLine");
-            using (var pwsh = PowerShell.Create())
-            {
-                pwsh.Runspace = runspace;
-                var psReadLineType = pwsh
-                    .AddScript(ReadLineInitScript, useLocalScope: true)
-                    .Invoke<Type>()
-                    .FirstOrDefault();
+            var psReadLineType = Type.GetType("Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2");
 
+            if (psReadLineType == null)
+            {
+                // NOTE: For some reason `Type.GetType(...)` can fail to find the type,
+                // and in that case, this search through the `AppDomain` for some reason will succeed.
+                // It's slower, but only happens when needed.
+                logger.LogTrace("PSConsoleReadline type not found using Type.GetType(), searching all loaded assemblies...");
+                psReadLineType = AppDomain.CurrentDomain
+                    .GetAssemblies()
+                    .FirstOrDefault(asm => asm.GetName().Name.Equals("Microsoft.PowerShell.PSReadLine2"))
+                    ?.ExportedTypes
+                    ?.FirstOrDefault(type => type.FullName.Equals("Microsoft.PowerShell.PSConsoleReadLine"));
                 if (psReadLineType == null)
                 {
-                    logger.LogWarning("PSReadLine unable to be loaded: {Reason}", pwsh.HadErrors ? pwsh.Streams.Error[0].ToString() : "<Unknown reason>");
-                    return false;
-                }
-
-                try
-                {
-                    readLineProxy = new PSReadLineProxy(psReadLineType, logger);
-                }
-                catch (InvalidOperationException e)
-                {
-                    // The Type we got back from PowerShell doesn't have the members we expected.
-                    // Could be an older version, a custom build, or something a newer version with
-                    // breaking changes.
-                    logger.LogWarning("PSReadLine unable to be loaded: {Reason}", e);
+                    logger.LogWarning("PSConsoleReadLine type not found anywhere!");
                     return false;
                 }
             }
-
+            try
+            {
+                readLineProxy = new PSReadLineProxy(psReadLineType, logger);
+            }
+            catch (InvalidOperationException e)
+            {
+                // The Type we got back from PowerShell doesn't have the members we expected.
+                // Could be an older version, a custom build, or something a newer version with
+                // breaking changes.
+                logger.LogWarning("PSReadLineProxy unable to be initialized: {Reason}", e);
+                return false;
+            }
+            catch (CommandNotFoundException e)
+            {
+                logger.LogWarning("PSReadLineProxy unable to be initialized: {Reason}", e);
+                return false;
+            }
             return true;
         }
 
@@ -169,7 +153,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             WaitForReadLineExit();
         }
 
-        public async Task AbortReadLineAsync() {
+        public async Task AbortReadLineAsync()
+        {
             if (_readLineCancellationSource == null)
             {
                 return;
@@ -186,7 +171,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             { }
         }
 
-        public async Task WaitForReadLineExitAsync() {
+        public async Task WaitForReadLineExitAsync()
+        {
             using (await _promptNest.GetRunspaceHandleAsync(CancellationToken.None, isReadLine: true).ConfigureAwait(false))
             { }
         }

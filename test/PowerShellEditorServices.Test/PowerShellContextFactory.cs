@@ -1,18 +1,18 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.PowerShell.EditorServices.Hosting;
-using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
-using Microsoft.PowerShell.EditorServices.Test.Shared;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.PowerShell.EditorServices.Hosting;
+using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 
 namespace Microsoft.PowerShell.EditorServices.Test
 {
@@ -32,10 +32,12 @@ namespace Microsoft.PowerShell.EditorServices.Test
                     Path.GetFullPath(
                         TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/ProfileTest.ps1")));
 
-        public static PowerShellContextService Create(ILogger logger)
-        {
-            PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, isPSReadLineEnabled: false);
+        public static readonly string BundledModulePath = Path.GetFullPath(
+            TestUtilities.NormalizePath("../../../../../module"));
 
+        public static System.Management.Automation.Runspaces.Runspace InitialRunspace;
+        public static PowerShellContextService Create(ILogger logger, bool isPSReadLineEnabled = false)
+        {
             HostStartupInfo testHostDetails = new HostStartupInfo(
                 "PowerShell Editor Services Test Host",
                 "Test.PowerShellEditorServices",
@@ -44,21 +46,28 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 TestProfilePaths,
                 new List<string>(),
                 new List<string>(),
+                // TODO: We want to replace this property with an entire initial session state,
+                // which would then also control the process-scoped execution policy.
                 PSLanguageMode.FullLanguage,
                 null,
                 0,
-                consoleReplEnabled: false,
-                usesLegacyReadLine: false);
+                consoleReplEnabled: isPSReadLineEnabled,
+                usesLegacyReadLine: false,
+                bundledModulePath: BundledModulePath);
 
+            PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, testHostDetails);
 
-            powerShellContext.Initialize(
-                TestProfilePaths,
-                PowerShellContextService.CreateRunspace(
+            InitialRunspace = PowerShellContextService.CreateRunspace(
                     testHostDetails,
                     powerShellContext,
                     new TestPSHostUserInterface(powerShellContext, logger),
-                    logger),
-                true);
+                    logger);
+
+            powerShellContext.Initialize(
+                testHostDetails,
+                InitialRunspace,
+                ownsInitialRunspace: true,
+                consoleHost: null);
 
             return powerShellContext;
         }
