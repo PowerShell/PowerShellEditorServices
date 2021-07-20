@@ -1,5 +1,14 @@
 # PowerShell Editor Services Release History
 
+## v2.4.6
+### Tuesday, July 13, 2021
+
+- ✨ 🚨 [PowerShellEditorServices #1522](https://github.com/PowerShell/PowerShellEditorServices/pull/1522) - Run new PSReadLine test on Windows.
+- ✨ 📖 [PowerShellEditorServices #1519](https://github.com/PowerShell/PowerShellEditorServices/pull/1519) - Update README.md. (Thanks @vladdoster!)
+- ✨ 🙏 [PowerShellEditorServices #1493](https://github.com/PowerShell/PowerShellEditorServices/pull/1514) - Load only bundled `PSReadLine`.
+- 🐛 👷 [PowerShellEditorServices #1513](https://github.com/PowerShell/PowerShellEditorServices/pull/1513) - Import `InvokePesterStub.ps1` from `vscode-powershell` (with history).
+- 🐛 🛫 [PowerShellEditorServices #1503](https://github.com/PowerShell/PowerShellEditorServices/pull/1504) - Handle `incomingSettings` and `profileObject` being null. (Thanks @dkattan!)
+
 ## v2.4.5
 ### Wednesday, June 23, 2021
 
