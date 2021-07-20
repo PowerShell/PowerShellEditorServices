@@ -25,11 +25,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private readonly ILogger _logger;
 
-        private readonly EditorServicesConsolePSHost _psesHost;
+        private readonly InternalHost _psesHost;
 
         public PowerShellFactory(
             ILoggerFactory loggerFactory,
-            EditorServicesConsolePSHost psHost)
+            InternalHost psHost)
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<PowerShellFactory>();

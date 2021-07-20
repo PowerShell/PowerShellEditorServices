@@ -23,26 +23,26 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
     /// </example>
     internal class CancellationContext
     {
-        private readonly ConcurrentStack<CancellationTokenSource> _cancellationSourceStack;
+        private readonly ConcurrentStack<CancellationScope> _cancellationSourceStack;
 
         public CancellationContext()
         {
-            _cancellationSourceStack = new ConcurrentStack<CancellationTokenSource>();
+            _cancellationSourceStack = new ConcurrentStack<CancellationScope>();
         }
 
-        public CancellationScope EnterScope(params CancellationToken[] linkedTokens)
+        public CancellationScope EnterScope(bool isIdleScope, params CancellationToken[] linkedTokens)
         {
-            return EnterScope(CancellationTokenSource.CreateLinkedTokenSource(linkedTokens));
+            return EnterScope(isIdleScope, CancellationTokenSource.CreateLinkedTokenSource(linkedTokens));
         }
 
-        public CancellationScope EnterScope(CancellationToken linkedToken1, CancellationToken linkedToken2)
+        public CancellationScope EnterScope(bool isIdleScope, CancellationToken linkedToken1, CancellationToken linkedToken2)
         {
-            return EnterScope(CancellationTokenSource.CreateLinkedTokenSource(linkedToken1, linkedToken2));
+            return EnterScope(isIdleScope, CancellationTokenSource.CreateLinkedTokenSource(linkedToken1, linkedToken2));
         }
 
         public void CancelCurrentTask()
         {
-            if (_cancellationSourceStack.TryPeek(out CancellationTokenSource currentCancellationSource))
+            if (_cancellationSourceStack.TryPeek(out CancellationScope currentCancellationSource))
             {
                 currentCancellationSource.Cancel();
             }
@@ -50,37 +50,59 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
         public void CancelCurrentTaskStack()
         {
-            foreach (CancellationTokenSource cancellationSource in _cancellationSourceStack)
+            foreach (CancellationScope scope in _cancellationSourceStack)
             {
-                cancellationSource.Cancel();
+                scope.Cancel();
             }
         }
 
-        private CancellationScope EnterScope(CancellationTokenSource cancellationFrameSource)
+        public void CancelIdleParentTask()
         {
-            _cancellationSourceStack.Push(cancellationFrameSource);
-            return new CancellationScope(_cancellationSourceStack, cancellationFrameSource.Token);
+            foreach (CancellationScope scope in _cancellationSourceStack)
+            {
+                scope.Cancel();
+
+                if (!scope.IsIdleScope)
+                {
+                    break;
+                }
+            }
+        }
+
+        private CancellationScope EnterScope(bool isIdleScope, CancellationTokenSource cancellationFrameSource)
+        {
+            var scope = new CancellationScope(_cancellationSourceStack, cancellationFrameSource, isIdleScope);
+            _cancellationSourceStack.Push(scope);
+            return scope;
         }
     }
 
     internal class CancellationScope : IDisposable
     {
-        private readonly ConcurrentStack<CancellationTokenSource> _cancellationStack;
+        private readonly ConcurrentStack<CancellationScope> _cancellationStack;
 
-        internal CancellationScope(ConcurrentStack<CancellationTokenSource> cancellationStack, CancellationToken currentCancellationToken)
+        private readonly CancellationTokenSource _cancellationSource;
+
+        internal CancellationScope(
+            ConcurrentStack<CancellationScope> cancellationStack,
+            CancellationTokenSource frameCancellationSource,
+            bool isIdleScope)
         {
             _cancellationStack = cancellationStack;
-            CancellationToken = currentCancellationToken;
+            _cancellationSource = frameCancellationSource;
+            IsIdleScope = isIdleScope;
         }
 
-        public readonly CancellationToken CancellationToken;
+        public CancellationToken CancellationToken => _cancellationSource.Token;
+
+        public void Cancel() => _cancellationSource.Cancel();
+
+        public bool IsIdleScope { get; }
 
         public void Dispose()
         {
-            if (_cancellationStack.TryPop(out CancellationTokenSource contextCancellationTokenSource))
-            {
-                contextCancellationTokenSource.Dispose();
-            }
+            _cancellationStack.TryPop(out CancellationScope _);
+            _cancellationSource.Cancel();
         }
     }
 }
