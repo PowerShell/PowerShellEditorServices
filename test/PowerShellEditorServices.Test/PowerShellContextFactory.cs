@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,12 +36,10 @@ namespace Microsoft.PowerShell.EditorServices.Test
 
         public static readonly string BundledModulePath = Path.GetFullPath(
             TestUtilities.NormalizePath("../../../../../module"));
-
         public static System.Management.Automation.Runspaces.Runspace InitialRunspace;
 
-        public static PowerShellContextService Create(ILogger logger)
+        public static PowerShellContextService Create(ILogger logger, bool isPSReadLineEnabled = false)
         {
-            PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, isPSReadLineEnabled: false);
             var initialSessionState = InitialSessionState.CreateDefault();
             // We set the process scope's execution policy (which is really the runspace's scope) to
             // `Bypass` so we can import our bundled modules. This is equivalent in scope to the CLI
@@ -51,7 +50,6 @@ namespace Microsoft.PowerShell.EditorServices.Test
             {
                 initialSessionState.ExecutionPolicy = ExecutionPolicy.Bypass;
             }
-
             HostStartupInfo testHostDetails = new HostStartupInfo(
                 "PowerShell Editor Services Test Host",
                 "Test.PowerShellEditorServices",
@@ -63,9 +61,11 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 initialSessionState,
                 null,
                 0,
-                consoleReplEnabled: false,
+                consoleReplEnabled: isPSReadLineEnabled,
                 usesLegacyReadLine: false,
                 bundledModulePath: BundledModulePath);
+
+            PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, testHostDetails);
 
             InitialRunspace = PowerShellContextService.CreateTestRunspace(
                     testHostDetails,
@@ -74,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
                     logger);
 
             powerShellContext.Initialize(
-                TestProfilePaths,
+                testHostDetails,
                 InitialRunspace,
                 ownsInitialRunspace: true,
                 consoleHost: null);
