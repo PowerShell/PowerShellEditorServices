@@ -439,11 +439,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public Task ImportPSReadLine2ModuleAsync() => ImportsModuleAsync(s_psReadLineModulePath);
         public Task ImportsModuleAsync(string path)
         {
-            this.logger.LogTrace($"Importing PowershellEditorServices commands from {s_commandsModulePath}");
+            this.logger.LogTrace($"Importing PowershellEditorServices commands from {path}");
 
             PSCommand importCommand = new PSCommand()
                 .AddCommand("Import-Module")
-                .AddArgument(s_commandsModulePath);
+                .AddArgument(path);
 
             return this.ExecuteCommandAsync<PSObject>(importCommand, sendOutputToHost: false, sendErrorToHost: false);
         }
