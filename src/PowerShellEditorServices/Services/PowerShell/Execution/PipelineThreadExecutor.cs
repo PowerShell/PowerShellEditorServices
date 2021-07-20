@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
+using System.Collections.Concurrent;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 {
@@ -41,8 +42,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private readonly CancellationContext _commandCancellationContext;
 
-        private readonly ManualResetEventSlim _taskProcessingAllowed;
-
         private bool _runIdleLoop;
 
         public PipelineThreadExecutor(
@@ -59,7 +58,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             _taskQueue = new BlockingConcurrentDeque<ISynchronousTask>();
             _loopCancellationContext = new CancellationContext();
             _commandCancellationContext = new CancellationContext();
-            _taskProcessingAllowed = new ManualResetEventSlim(initialState: true);
 
             _pipelineThread = new Thread(Run)
             {
@@ -144,7 +142,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public void RunPowerShellLoop(PowerShellFrameType powerShellFrameType)
         {
-            using (CancellationScope cancellationScope = _loopCancellationContext.EnterScope(_psesHost.CurrentCancellationSource.Token, _consumerThreadCancellationSource.Token))
+            using (CancellationScope cancellationScope = _loopCancellationContext.EnterScope(_runIdleLoop, _psesHost.CurrentCancellationSource.Token, _consumerThreadCancellationSource.Token))
             {
                 try
                 {
@@ -174,7 +172,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private void RunTopLevelConsumerLoop()
         {
-            using (CancellationScope cancellationScope = _loopCancellationContext.EnterScope(_psesHost.CurrentCancellationSource.Token, _consumerThreadCancellationSource.Token))
+            using (CancellationScope cancellationScope = _loopCancellationContext.EnterScope(isIdleScope: false, _psesHost.CurrentCancellationSource.Token, _consumerThreadCancellationSource.Token))
             {
                 try
                 {
@@ -251,6 +249,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                     if (task.ExecutionOptions.MustRunInForeground)
                     {
                         _taskQueue.Prepend(task);
+                        _loopCancellationContext.CancelIdleParentTask();
+                        _commandCancellationContext.CancelIdleParentTask();
                         break;
                     }
 
@@ -277,7 +277,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 return;
             }
 
-            using (CancellationScope commandCancellationScope = _commandCancellationContext.EnterScope(loopCancellationToken))
+            using (CancellationScope commandCancellationScope = _commandCancellationContext.EnterScope(_runIdleLoop, loopCancellationToken))
             {
                 task.ExecuteSynchronously(commandCancellationScope.CancellationToken);
             }
