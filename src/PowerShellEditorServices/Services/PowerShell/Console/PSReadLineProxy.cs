@@ -80,7 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
         {
             Type psConsoleReadLineType = pwsh.AddScript(ReadLineInitScript).InvokeAndClear<Type>().FirstOrDefault();
 
-            Type type = Type.GetType("Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2");
+            Type type = Type.GetType("Microsoft.PowerShell.PSConsoleReadLine");
 
             RuntimeHelpers.RunClassConstructor(type.TypeHandle);
 

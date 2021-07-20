@@ -38,6 +38,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private readonly Stack<KeyValuePair<Runspace, RunspaceInfo>> _runspacesInUse;
 
+        private readonly Thread _topRunspaceThread;
+
         private string _localComputerName;
 
         private int _hostStarted = 0;
@@ -54,6 +56,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _hostInfo = hostInfo;
             Name = hostInfo.Name;
             Version = hostInfo.Version;
+
+            _topRunspaceThread = new Thread(Run);
 
             _readLineProvider = new ReadLineProvider(loggerFactory);
             _pipelineExecutor = new PipelineThreadExecutor(loggerFactory, hostInfo, this, _readLineProvider);
@@ -137,6 +141,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public override void SetShouldExit(int exitCode)
         {
             SetExit();
+        }
+
+        internal void Start()
+        {
+            _topRunspaceThread.Start();
+        }
+
+        private void Run()
+        {
+            PushInitialPowerShell();
         }
 
         public void PushInitialPowerShell()
