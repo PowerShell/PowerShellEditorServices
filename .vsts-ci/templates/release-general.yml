@@ -1,16 +1,7 @@
 steps:
 
-# TODO: Replace build artifacts with pipeline artifacts
-- task: DownloadBuildArtifacts@0
-  displayName: Download build artifacts
-  inputs:
-    downloadType: specific
-
-- task: ExtractFiles@1
-  displayName: Unzip build artifacts
-  inputs:
-    archiveFilePatterns: $(Build.ArtifactStagingDirectory)/PowerShellEditorServices-CI/PowerShellEditorServices*.zip
-    destinationFolder: $(Build.ArtifactStagingDirectory)/Unsigned
+- download: current
+  displayName: Download unsigned pipeline artifacts
 
 - checkout: ComplianceRepo
 
@@ -18,8 +9,8 @@ steps:
 # the last output path has every signed (and intentionally unsigned) file.
 - template: EsrpSign.yml@ComplianceRepo
   parameters:
-    buildOutputPath: $(Build.ArtifactStagingDirectory)/Unsigned
-    signOutputPath: $(Build.ArtifactStagingDirectory)/FirstPartySigned
+    buildOutputPath: $(Pipeline.Workspace)/PowerShellEditorServices-Build-*
+    signOutputPath: $(Pipeline.Workspace)/FirstPartySigned
     alwaysCopy: true
     certificateId: CP-230012 # Authenticode certificate
     shouldSign: true # We always want to sign
@@ -37,8 +28,8 @@ steps:
 
 - template: EsrpSign.yml@ComplianceRepo
   parameters:
-    buildOutputPath: $(Build.ArtifactStagingDirectory)/FirstPartySigned
-    signOutputPath: $(Build.ArtifactStagingDirectory)/ThirdPartySigned
+    buildOutputPath: $(Pipeline.Workspace)/FirstPartySigned
+    signOutputPath: $(Pipeline.Workspace)/ThirdPartySigned
     alwaysCopy: true
     certificateId: CP-231522 # Third-party certificate
     shouldSign: true # We always want to sign
@@ -54,14 +45,14 @@ steps:
 - task: ArchiveFiles@2
   displayName: Zip finished assets
   inputs:
-    rootFolderOrFile: $(Build.ArtifactStagingDirectory)/ThirdPartySigned
+    rootFolderOrFile: $(Pipeline.Workspace)/ThirdPartySigned
     includeRootFolder: false
     archiveType: zip
-    archiveFile: $(Build.ArtifactStagingDirectory)/PowerShellEditorServices.zip
+    archiveFile: PowerShellEditorServices.zip
     replaceExistingArchive: true
     verbose: true
 
-- publish: $(Build.ArtifactStagingDirectory)/PowerShellEditorServices.zip
+- publish: PowerShellEditorServices.zip
   artifact: PowerShellEditorServices
   displayName: Publish signed pipeline artifacts
 
@@ -70,18 +61,18 @@ steps:
 - template: assembly-module-compliance.yml@ComplianceRepo
   parameters:
     # binskim
-    AnalyzeTarget: '$(Build.ArtifactStagingDirectory)/*.dll'
+    AnalyzeTarget: $(Pipeline.Workspace)/*.dll
     AnalyzeSymPath: 'SRV*'
     # component-governance
-    sourceScanPath: '$(Build.SourcesDirectory)/PowerShellEditorServices'
+    sourceScanPath: $(Build.SourcesDirectory)/PowerShellEditorServices
     # credscan
     suppressionsFile: ''
     # TermCheck AKA PoliCheck
-    targetArgument: '$(Build.SourcesDirectory)/PowerShellEditorServices'
-    optionsUEPATH: '$(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/UserExclusions.xml'
+    targetArgument: $(Build.SourcesDirectory)/PowerShellEditorServices
+    optionsUEPATH: $(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/UserExclusions.xml
     optionsRulesDBPath: ''
-    optionsFTPath: '$(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/FileTypeSet.xml'
+    optionsFTPath: $(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/FileTypeSet.xml
     # tsa-upload
-    codeBaseName: 'PowerShell_PowerShellEditorServices_20210201'
+    codeBaseName: PowerShell_PowerShellEditorServices_20210201
     # selections
     APIScan: false
