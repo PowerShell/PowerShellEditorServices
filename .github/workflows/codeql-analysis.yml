@@ -37,7 +37,7 @@ jobs:
 
     - name: Build
       shell: pwsh
-      run: scripts/azurePipelinesBuild.ps1
+      run: tools/azurePipelinesBuild.ps1
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1

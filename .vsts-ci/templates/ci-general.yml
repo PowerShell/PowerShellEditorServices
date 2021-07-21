@@ -24,7 +24,7 @@ steps:
     condition: ne(variables['Build.Reason'], 'PullRequest')
   - task: PowerShell@2
     inputs:
-      filePath: scripts/azurePipelinesBuild.ps1
+      filePath: tools/azurePipelinesBuild.ps1
       pwsh: ${{ parameters.pwsh }}
   - task: PublishTestResults@2
     inputs:
