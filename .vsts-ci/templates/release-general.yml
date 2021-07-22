@@ -1,27 +1,20 @@
 steps:
 
-- task: DownloadBuildArtifacts@0
-  displayName: 'Download Build Artifacts'
-  inputs:
-    downloadType: specific
-
-- task: ExtractFiles@1
-  displayName: 'Extract Build Zip'
-  inputs:
-    archiveFilePatterns: '$(Build.ArtifactStagingDirectory)/PowerShellEditorServices-CI/PowerShellEditorServices*.zip'
-    destinationFolder: '$(Build.ArtifactStagingDirectory)/PowerShellEditorServices'
+- download: current
+  displayName: Download unsigned pipeline artifacts
 
 - checkout: ComplianceRepo
-  displayName: 'Checkout the ComplianceRepo'
 
+# NOTE: The signing templates explicitly copy everything along as they run, so
+# the last output path has every signed (and intentionally unsigned) file.
 - template: EsrpSign.yml@ComplianceRepo
   parameters:
-    buildOutputPath: '$(Build.ArtifactStagingDirectory)/PowerShellEditorServices'
-    signOutputPath: '$(Build.ArtifactStagingDirectory)/FirstPartySigned'
-    alwaysCopy: true # So publishing works
-    certificateId: 'CP-230012' # Authenticode certificate
-    useMinimatch: true # This enables the use of globbing
+    buildOutputPath: $(Pipeline.Workspace)/PowerShellEditorServices-Build-*
+    signOutputPath: $(Pipeline.Workspace)/FirstPartySigned
+    alwaysCopy: true
+    certificateId: CP-230012 # Authenticode certificate
     shouldSign: true # We always want to sign
+    useMinimatch: true # This enables the use of globbing
     pattern: |
       # PowerShellEditorServices Script
       PowerShellEditorServices/*.{ps1,psd1,psm1,ps1xml}
@@ -35,12 +28,12 @@ steps:
 
 - template: EsrpSign.yml@ComplianceRepo
   parameters:
-    buildOutputPath: '$(Build.ArtifactStagingDirectory)/FirstPartySigned'
-    signOutputPath: '$(Build.ArtifactStagingDirectory)/ThirdPartySigned'
-    alwaysCopy: true # So publishing works
-    certificateId: 'CP-231522' # Third-party certificate
-    useMinimatch: true # This enables the use of globbing
+    buildOutputPath: $(Pipeline.Workspace)/FirstPartySigned
+    signOutputPath: $(Pipeline.Workspace)/ThirdPartySigned
+    alwaysCopy: true
+    certificateId: CP-231522 # Third-party certificate
     shouldSign: true # We always want to sign
+    useMinimatch: true # This enables the use of globbing
     pattern: |
       **/MediatR.dll
       **/Nerdbank.Streams.dll
@@ -49,27 +42,37 @@ steps:
       **/Serilog*.dll
       **/UnixConsoleEcho.dll
 
-- publish: $(Build.ArtifactStagingDirectory)/ThirdPartySigned
+- task: ArchiveFiles@2
+  displayName: Zip finished assets
+  inputs:
+    rootFolderOrFile: $(Pipeline.Workspace)/ThirdPartySigned
+    includeRootFolder: false
+    archiveType: zip
+    archiveFile: PowerShellEditorServices.zip
+    replaceExistingArchive: true
+    verbose: true
+
+- publish: PowerShellEditorServices.zip
   artifact: PowerShellEditorServices
-  displayName: 'Publish signed (and unsigned) artifacts'
+  displayName: Publish signed pipeline artifacts
 
 - checkout: self
 
 - template: assembly-module-compliance.yml@ComplianceRepo
   parameters:
     # binskim
-    AnalyzeTarget: '$(Build.ArtifactStagingDirectory)/*.dll'
+    AnalyzeTarget: $(Pipeline.Workspace)/*.dll
     AnalyzeSymPath: 'SRV*'
     # component-governance
-    sourceScanPath: '$(Build.SourcesDirectory)/PowerShellEditorServices'
+    sourceScanPath: $(Build.SourcesDirectory)/PowerShellEditorServices
     # credscan
     suppressionsFile: ''
     # TermCheck AKA PoliCheck
-    targetArgument: '$(Build.SourcesDirectory)/PowerShellEditorServices'
-    optionsUEPATH: '$(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/UserExclusions.xml'
+    targetArgument: $(Build.SourcesDirectory)/PowerShellEditorServices
+    optionsUEPATH: $(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/UserExclusions.xml
     optionsRulesDBPath: ''
-    optionsFTPath: '$(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/FileTypeSet.xml'
+    optionsFTPath: $(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/FileTypeSet.xml
     # tsa-upload
-    codeBaseName: 'PowerShell_PowerShellEditorServices_20210201'
+    codeBaseName: PowerShell_PowerShellEditorServices_20210201
     # selections
     APIScan: false
