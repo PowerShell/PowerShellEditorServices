@@ -29,7 +29,7 @@ stages:
   jobs:
   - job: Build
     pool:
-      vmImage: vs2017-win2016
+      vmImage: windows-2019
     steps:
     - template: templates/ci-general.yml
 
@@ -51,7 +51,7 @@ stages:
   - deployment: Publish
     environment: PowerShellEditorServices
     pool:
-      name: 1ES
+      vmImage: ubuntu-latest
     variables:
     - group: Publish
     strategy:
