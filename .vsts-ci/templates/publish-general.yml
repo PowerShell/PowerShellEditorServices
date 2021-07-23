@@ -1,15 +1,23 @@
 steps:
 - checkout: self
+
 - checkout: vscode-powershell
+
 - download: current
   artifact: PowerShellEditorServices
   displayName: Download signed pipeline artifacts
+
 - pwsh: |
+    Write-Host "Install and import PowerShell modules"
     Set-PSRepository -Name PSGallery -InstallationPolicy Trusted | Out-Null
-    Install-Module -Name PowerShellForGitHub -Scope CurrentUser -Force -Confirm:$false
+    Install-Module -Name PowerShellForGitHub -Scope CurrentUser -Force
     Import-Module '$(Build.SourcesDirectory)/vscode-powershell/tools/ReleaseTools.psm1'
+
+    Write-Host "Setup authentication"
     Set-GitHubConfiguration -SuppressTelemetryReminder
     $password = ConvertTo-SecureString -String '$(GitHubToken)' -AsPlainText -Force
     Set-GitHubAuthentication -Credential (New-Object System.Management.Automation.PSCredential ("token", $password))
+
+    Write-Host "Publish draft release"
     New-DraftRelease -RepositoryName PowerShellEditorServices -Assets '$(Pipeline.Workspace)/PowerShellEditorServices/PowerShellEditorServices.zip'
   displayName: Drafting a GitHub Release

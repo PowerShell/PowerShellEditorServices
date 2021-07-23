@@ -1,5 +1,4 @@
 steps:
-
 - download: current
   displayName: Download unsigned pipeline artifacts
 
@@ -52,10 +51,6 @@ steps:
     replaceExistingArchive: true
     verbose: true
 
-- publish: PowerShellEditorServices.zip
-  artifact: PowerShellEditorServices
-  displayName: Publish signed pipeline artifacts
-
 - checkout: self
 
 - template: assembly-module-compliance.yml@ComplianceRepo
@@ -74,5 +69,9 @@ steps:
     optionsFTPath: $(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/FileTypeSet.xml
     # tsa-upload
     codeBaseName: PowerShell_PowerShellEditorServices_20210201
-    # selections
+    # We don't use any Windows APIs directly, so we don't need API scan
     APIScan: false
+
+- publish: PowerShellEditorServices.zip
+  artifact: PowerShellEditorServices
+  displayName: Publish signed pipeline artifacts

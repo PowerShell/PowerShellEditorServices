@@ -4,7 +4,7 @@ parameters:
   default: true
 
 steps:
-- pwsh: '$PSVersionTable'
+- pwsh: $PSVersionTable
   displayName: PowerShell version
 
 - task: PowerShell@2
