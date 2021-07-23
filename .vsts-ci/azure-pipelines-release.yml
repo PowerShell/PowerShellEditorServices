@@ -11,10 +11,7 @@ variables:
 trigger:
   branches:
     include:
-      - release/*
-  tags:
-    include:
-    - v*
+      - release
 
 resources:
   repositories:
