@@ -2,13 +2,20 @@ steps:
 - download: current
   displayName: Download unsigned pipeline artifacts
 
+- task: ExtractFiles@1
+  displayName: Extract unsigned artifacts
+  inputs:
+    archiveFilePatterns: $(Pipeline.Workspace)/PowerShellEditorServices-Build-*/PowerShellEditorServices-Build.zip
+    destinationFolder: $(Pipeline.Workspace)/Unsigned
+    cleanDestinationFolder: true
+
 - checkout: ComplianceRepo
 
 # NOTE: The signing templates explicitly copy everything along as they run, so
 # the last output path has every signed (and intentionally unsigned) file.
 - template: EsrpSign.yml@ComplianceRepo
   parameters:
-    buildOutputPath: $(Pipeline.Workspace)/PowerShellEditorServices-Build-*
+    buildOutputPath: $(Pipeline.Workspace)/Unsigned
     signOutputPath: $(Pipeline.Workspace)/FirstPartySigned
     alwaysCopy: true
     certificateId: CP-230012 # Authenticode certificate
@@ -42,7 +49,7 @@ steps:
       **/UnixConsoleEcho.dll
 
 - task: ArchiveFiles@2
-  displayName: Zip finished assets
+  displayName: Zip signed artifacts
   inputs:
     rootFolderOrFile: $(Pipeline.Workspace)/ThirdPartySigned
     includeRootFolder: false
