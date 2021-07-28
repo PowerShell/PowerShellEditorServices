@@ -4,7 +4,7 @@ parameters:
   default: true
 
 steps:
-- pwsh: '$PSVersionTable'
+- pwsh: $PSVersionTable
   displayName: PowerShell version
 
 - task: PowerShell@2
@@ -13,10 +13,20 @@ steps:
     filePath: tools/azurePipelinesBuild.ps1
     pwsh: ${{ parameters.pwsh }}
 
-- publish: module
+# NOTE: We zip the artifacts because they're ~20 MB compressed, but ~300 MB raw,
+# and we have limited pipeline artifact storage space.
+- task: ArchiveFiles@2
+  displayName: Zip pipeline artifacts
+  inputs:
+    rootFolderOrFile: module
+    includeRootFolder: false
+    archiveType: zip
+    archiveFile: PowerShellEditorServices-Build.zip
+    verbose: true
+
+- publish: PowerShellEditorServices-Build.zip
   artifact: PowerShellEditorServices-Build-$(System.JobId)
   displayName: Publish unsigned pipeline artifacts
-  condition: succeededOrFailed()
 
 - task: PublishTestResults@2
   displayName: Publish test results

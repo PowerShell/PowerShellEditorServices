@@ -1,7 +1,13 @@
 steps:
-
 - download: current
   displayName: Download unsigned pipeline artifacts
+
+- task: ExtractFiles@1
+  displayName: Extract unsigned artifacts
+  inputs:
+    archiveFilePatterns: $(Pipeline.Workspace)/PowerShellEditorServices-Build-*/PowerShellEditorServices-Build.zip
+    destinationFolder: $(Pipeline.Workspace)/Unsigned
+    cleanDestinationFolder: true
 
 - checkout: ComplianceRepo
 
@@ -9,7 +15,7 @@ steps:
 # the last output path has every signed (and intentionally unsigned) file.
 - template: EsrpSign.yml@ComplianceRepo
   parameters:
-    buildOutputPath: $(Pipeline.Workspace)/PowerShellEditorServices-Build-*
+    buildOutputPath: $(Pipeline.Workspace)/Unsigned
     signOutputPath: $(Pipeline.Workspace)/FirstPartySigned
     alwaysCopy: true
     certificateId: CP-230012 # Authenticode certificate
@@ -43,7 +49,7 @@ steps:
       **/UnixConsoleEcho.dll
 
 - task: ArchiveFiles@2
-  displayName: Zip finished assets
+  displayName: Zip signed artifacts
   inputs:
     rootFolderOrFile: $(Pipeline.Workspace)/ThirdPartySigned
     includeRootFolder: false
@@ -51,10 +57,6 @@ steps:
     archiveFile: PowerShellEditorServices.zip
     replaceExistingArchive: true
     verbose: true
-
-- publish: PowerShellEditorServices.zip
-  artifact: PowerShellEditorServices
-  displayName: Publish signed pipeline artifacts
 
 - checkout: self
 
@@ -74,5 +76,9 @@ steps:
     optionsFTPath: $(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/FileTypeSet.xml
     # tsa-upload
     codeBaseName: PowerShell_PowerShellEditorServices_20210201
-    # selections
+    # We don't use any Windows APIs directly, so we don't need API scan
     APIScan: false
+
+- publish: PowerShellEditorServices.zip
+  artifact: PowerShellEditorServices
+  displayName: Publish signed pipeline artifacts
