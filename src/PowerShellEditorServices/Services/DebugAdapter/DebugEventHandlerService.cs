@@ -139,16 +139,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 );
 
                 string reason = (e.UpdateType) switch {
-                    BreakpointUpdateType.Set => "new",
-                    BreakpointUpdateType.Removed => "removed",
-                    BreakpointUpdateType.Enabled => "changed",
-                    BreakpointUpdateType.Disabled => "changed",
-                    _ => "unknown"
+                    BreakpointUpdateType.Set => BreakpointEventReason.New,
+                    BreakpointUpdateType.Removed => BreakpointEventReason.Removed,
+                    BreakpointUpdateType.Enabled => BreakpointEventReason.Changed,
+                    BreakpointUpdateType.Disabled => BreakpointEventReason.Changed,
+                    _ => "InvalidBreakpointUpdateTypeEnum"
                 };
 
                 _debugAdapterServer.SendNotification(
                     EventNames.Breakpoint,
-                    new BreakpointEvent { Reason = reason, Breakpoint = breakpoint }
+                    new BreakpointEvent { Breakpoint = breakpoint, Reason = reason }
                 );
             }
             else if (e.Breakpoint is CommandBreakpoint)

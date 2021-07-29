@@ -519,9 +519,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public Task<IEnumerable<TResult>> ExecuteCommandAsync<TResult>(
             PSCommand psCommand,
             bool sendOutputToHost = false,
-            bool sendErrorToHost = true)
+            bool sendErrorToHost = true,
+            CancellationToken cancellationToken = default)
         {
-            return ExecuteCommandAsync<TResult>(psCommand, errorMessages: null, sendOutputToHost, sendErrorToHost);
+            return this.ExecuteCommandAsync<TResult>(
+                psCommand, errorMessages: null, sendOutputToHost, sendErrorToHost, cancellationToken: cancellationToken);
         }
 
         /// <summary>
@@ -549,7 +551,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             StringBuilder errorMessages,
             bool sendOutputToHost = false,
             bool sendErrorToHost = true,
-            bool addToHistory = false)
+            bool addToHistory = false,
+            CancellationToken cancellationToken = default)
         {
             return
                 this.ExecuteCommandAsync<TResult>(
@@ -560,7 +563,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         WriteOutputToHost = sendOutputToHost,
                         WriteErrorsToHost = sendErrorToHost,
                         AddToHistory = addToHistory
-                    });
+                    },
+                    cancellationToken);
         }
 
 
@@ -581,7 +585,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public async Task<IEnumerable<TResult>> ExecuteCommandAsync<TResult>(
             PSCommand psCommand,
             StringBuilder errorMessages,
-            ExecutionOptions executionOptions)
+            ExecutionOptions executionOptions,
+            CancellationToken cancellationToken = default)
         {
             Validate.IsNotNull(nameof(psCommand), psCommand);
             Validate.IsNotNull(nameof(executionOptions), executionOptions);
@@ -759,8 +764,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         return shell.Invoke<TResult>(null, invocationSettings);
                     }
 
-                    // May need a cancellation token here
-                    return await Task.Run<IEnumerable<TResult>>(() => shell.Invoke<TResult>(input: null, invocationSettings), CancellationToken.None).ConfigureAwait(false);
+                    // This is the primary reason that ExecuteCommandAsync takes a CancellationToken
+                    cancellationToken.Register(() => shell.Stop());
+                    return await Task.Run<IEnumerable<TResult>>(
+                        () => shell.Invoke<TResult>(input: null, invocationSettings), cancellationToken)
+                        .ConfigureAwait(false);
                 }
                 finally
                 {
@@ -872,7 +880,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         // will exist already so we need to create one and then use it
                         if (runspaceHandle == null)
                         {
-                            runspaceHandle = await this.GetRunspaceHandleAsync().ConfigureAwait(false);
+                            runspaceHandle = await this.GetRunspaceHandleAsync(cancellationToken).ConfigureAwait(false);
                         }
 
                         sessionDetails = this.GetSessionDetailsInRunspace(runspaceHandle.Runspace);

@@ -53,7 +53,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 .AddCommand("Microsoft.PowerShell.Utility\\Sort-Object")
                     .AddParameter("Property", "Name");
 
-            IEnumerable<CommandInfo> result = await _powerShellContextService.ExecuteCommandAsync<CommandInfo>(psCommand).ConfigureAwait(false);
+            IEnumerable<CommandInfo> result = await _powerShellContextService.ExecuteCommandAsync<CommandInfo>(
+                psCommand, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             var commandList = new List<PSCommandMessage>();
             if (result != null)
