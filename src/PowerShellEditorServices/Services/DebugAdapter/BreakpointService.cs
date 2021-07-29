@@ -135,7 +135,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 IEnumerable<Breakpoint> setBreakpoints =
                     await _powerShellContextService.ExecuteCommandAsync<Breakpoint>(psCommand).ConfigureAwait(false);
                 configuredBreakpoints.AddRange(
-                    setBreakpoints.Select(BreakpointDetails.Create));
+                    setBreakpoints.Select((breakpoint) => BreakpointDetails.Create(breakpoint))
+                );
             }
 
             return configuredBreakpoints;

@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 // TODO: OmniSharp supports multithreaded debugging (where
                 // multiple threads can be debugged at once), but we don't. This
-                // means we always need to set AllThreadsStoppped and
+                // means we always need to set AllThreadsStopped and
                 // AllThreadsContinued in our events. But if we one day support
                 // multithreaded debugging, we'd need a way to associate
                 // debugged runspaces with .NET threads in a consistent way.

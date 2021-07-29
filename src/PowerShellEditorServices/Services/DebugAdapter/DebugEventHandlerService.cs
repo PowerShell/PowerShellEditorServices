@@ -81,6 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 new StoppedEvent
                 {
                     ThreadId = 1,
+                    AllThreadsStopped = true,
                     Reason = debuggerStoppedReason
                 });
         }
@@ -117,59 +118,47 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _debugAdapterServer.SendNotification(EventNames.Continued,
                 new ContinuedEvent
                 {
-                    AllThreadsContinued = true,
-                    ThreadId = 1
+                    ThreadId = 1,
+                    AllThreadsContinued = true
                 });
         }
 
         private void DebugService_BreakpointUpdated(object sender, BreakpointUpdatedEventArgs e)
         {
-            string reason = "changed";
-
+            // Don't send breakpoint update notifications when setting
+            // breakpoints on behalf of the client.
             if (_debugStateService.IsSetBreakpointInProgress)
             {
-                // Don't send breakpoint update notifications when setting
-                // breakpoints on behalf of the client.
                 return;
             }
 
-            switch (e.UpdateType)
-            {
-                case BreakpointUpdateType.Set:
-                    reason = "new";
-                    break;
-
-                case BreakpointUpdateType.Removed:
-                    reason = "removed";
-                    break;
-            }
-
-            var breakpoint = new OmniSharp.Extensions.DebugAdapter.Protocol.Models.Breakpoint
-            {
-                Verified = e.UpdateType != BreakpointUpdateType.Disabled
-            };
-
             if (e.Breakpoint is LineBreakpoint)
             {
-                breakpoint = LspDebugUtils.CreateBreakpoint(BreakpointDetails.Create(e.Breakpoint));
+                var breakpoint = LspDebugUtils.CreateBreakpoint(
+                    BreakpointDetails.Create(e.Breakpoint, e.UpdateType)
+                );
+
+                string reason = (e.UpdateType) switch {
+                    BreakpointUpdateType.Set => "new",
+                    BreakpointUpdateType.Removed => "removed",
+                    BreakpointUpdateType.Enabled => "changed",
+                    BreakpointUpdateType.Disabled => "changed",
+                    _ => "unknown"
+                };
+
+                _debugAdapterServer.SendNotification(
+                    EventNames.Breakpoint,
+                    new BreakpointEvent { Reason = reason, Breakpoint = breakpoint }
+                );
             }
             else if (e.Breakpoint is CommandBreakpoint)
             {
                 _logger.LogTrace("Function breakpoint updated event is not supported yet");
-                return;
             }
             else
             {
                 _logger.LogError($"Unrecognized breakpoint type {e.Breakpoint.GetType().FullName}");
-                return;
             }
-
-            _debugAdapterServer.SendNotification(EventNames.Breakpoint,
-                new BreakpointEvent
-                {
-                    Reason = reason,
-                    Breakpoint = breakpoint
-                });
         }
 
         #endregion

@@ -77,8 +77,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// PowerShell Breakpoint object.
         /// </summary>
         /// <param name="breakpoint">The Breakpoint instance from which details will be taken.</param>
+        /// <param name="updateType">The BreakpointUpdateType to determine if the breakpoint is verified.</param>
         /// <returns>A new instance of the BreakpointDetails class.</returns>
-        internal static BreakpointDetails Create(Breakpoint breakpoint)
+        internal static BreakpointDetails Create(
+            Breakpoint breakpoint,
+            BreakpointUpdateType updateType = BreakpointUpdateType.Set)
         {
             Validate.IsNotNull("breakpoint", breakpoint);
 
@@ -91,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             var breakpointDetails = new BreakpointDetails
             {
                 Id = breakpoint.Id,
-                Verified = true,
+                Verified = updateType != BreakpointUpdateType.Disabled,
                 Source = lineBreakpoint.Script,
                 LineNumber = lineBreakpoint.Line,
                 ColumnNumber = lineBreakpoint.Column,
