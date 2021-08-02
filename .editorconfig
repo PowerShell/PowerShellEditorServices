@@ -15,6 +15,8 @@ csharp_space_after_keywords_in_control_flow_statements = true
 
 # CA2007: Do not directly await a Task
 dotnet_diagnostic.CA2007.severity = error
+# CA1822: Mark members as static
+dotnet_diagnostic.CA1822.severity = error
 
 [*.{json}]
 indent_size = 2

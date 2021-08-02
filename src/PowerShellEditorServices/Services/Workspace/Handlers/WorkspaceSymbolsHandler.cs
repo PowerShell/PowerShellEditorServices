@@ -73,7 +73,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         #region private Methods
 
-        private bool IsQueryMatch(string query, string symbolName)
+        private static bool IsQueryMatch(string query, string symbolName)
         {
             return symbolName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
         }

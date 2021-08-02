@@ -40,8 +40,8 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
                     HtmlContent = new HtmlContent()
                     {
                         BodyContent = htmlContent.BodyContent,
-                        JavaScriptPaths = this.GetUriPaths(htmlContent.JavaScriptPaths),
-                        StyleSheetPaths = this.GetUriPaths(htmlContent.StyleSheetPaths)
+                        JavaScriptPaths = HtmlContentView.GetUriPaths(htmlContent.JavaScriptPaths),
+                        StyleSheetPaths = HtmlContentView.GetUriPaths(htmlContent.StyleSheetPaths)
                     }
                 }
             );
@@ -56,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
                 }
             );
 
-        private string[] GetUriPaths(string[] filePaths)
+        private static string[] GetUriPaths(string[] filePaths)
         {
             return
                 filePaths?

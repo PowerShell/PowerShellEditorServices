@@ -147,7 +147,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             return files.AsReadOnly();
         }
 
-        private IEditorScriptFile GetEditorFileFromScriptFile(ScriptFile file)
+        private static IEditorScriptFile GetEditorFileFromScriptFile(ScriptFile file)
         {
             return new EditorScriptFile(file);
         }

@@ -856,7 +856,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        private string TrimScriptListingLine(PSObject scriptLineObj, ref int prefixLength)
+        private static string TrimScriptListingLine(PSObject scriptLineObj, ref int prefixLength)
         {
             string scriptLine = scriptLineObj.ToString();
 
@@ -908,7 +908,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         string.Join(
                             Environment.NewLine,
                             scriptListingLines
-                                .Select(o => this.TrimScriptListingLine(o, ref linePrefixLength))
+                                .Select(o => DebugService.TrimScriptListingLine(o, ref linePrefixLength))
                                 .Where(s => s != null));
 
                     this.temporaryScriptListingPath =

@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         /// <summary>
         /// Helper method to create a stub script file and then call FoldableRegions
         /// </summary>
-        private FoldingReference[] GetRegions(string text) {
+        private static FoldingReference[] GetRegions(string text) {
             ScriptFile scriptFile = new ScriptFile(
                 // Use any absolute path. Even if it doesn't exist.
                 DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
@@ -153,7 +153,7 @@ $foo = 'bar'
         /// <summary>
         /// Assertion helper to compare two FoldingReference arrays.
         /// </summary>
-        private void AssertFoldingReferenceArrays(
+        private static void AssertFoldingReferenceArrays(
             FoldingReference[] expected,
             FoldingReference[] actual)
         {

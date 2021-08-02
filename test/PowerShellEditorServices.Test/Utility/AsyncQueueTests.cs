@@ -77,7 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
             Assert.Equal(1, taskTwo.Result);
         }
 
-        private async Task ConsumeItemsAsync(
+        private static async Task ConsumeItemsAsync(
             AsyncQueue<int> inputQueue,
             ConcurrentBag<int> outputItems,
             CancellationToken cancellationToken)

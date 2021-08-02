@@ -26,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly WorkspaceService _workspaceService;
         private readonly RemoteFileManagerService _remoteFileManagerService;
 
-        public TextDocumentSyncKind Change => TextDocumentSyncKind.Incremental;
+        public static TextDocumentSyncKind Change => TextDocumentSyncKind.Incremental;
 
         public PsesTextDocumentHandler(
             ILoggerFactory factory,

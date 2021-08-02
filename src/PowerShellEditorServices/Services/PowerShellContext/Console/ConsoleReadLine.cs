@@ -42,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             return this.ReadLineAsync(false, cancellationToken);
         }
 
-        public async Task<SecureString> ReadSecureLineAsync(CancellationToken cancellationToken)
+        public async static Task<SecureString> ReadSecureLineAsync(CancellationToken cancellationToken)
         {
             SecureString secureString = new SecureString();
 
@@ -253,7 +253,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         if (completion != null)
                         {
                             currentCursorIndex =
-                                this.InsertInput(
+                                ConsoleReadLine.InsertInput(
                                     inputLine,
                                     promptStartCol,
                                     promptStartRow,
@@ -271,7 +271,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         if (currentCursorIndex > 0)
                         {
                             currentCursorIndex =
-                                this.MoveCursorToIndex(
+                                ConsoleReadLine.MoveCursorToIndex(
                                     promptStartCol,
                                     promptStartRow,
                                     consoleWidth,
@@ -283,7 +283,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         currentCompletion = null;
 
                         currentCursorIndex =
-                            this.MoveCursorToIndex(
+                            ConsoleReadLine.MoveCursorToIndex(
                                 promptStartCol,
                                 promptStartRow,
                                 consoleWidth,
@@ -296,7 +296,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         if (currentCursorIndex < inputLine.Length)
                         {
                             currentCursorIndex =
-                                this.MoveCursorToIndex(
+                                ConsoleReadLine.MoveCursorToIndex(
                                     promptStartCol,
                                     promptStartRow,
                                     consoleWidth,
@@ -308,7 +308,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         currentCompletion = null;
 
                         currentCursorIndex =
-                            this.MoveCursorToIndex(
+                            ConsoleReadLine.MoveCursorToIndex(
                                 promptStartCol,
                                 promptStartRow,
                                 consoleWidth,
@@ -342,7 +342,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                             historyIndex--;
 
                             currentCursorIndex =
-                                this.InsertInput(
+                                ConsoleReadLine.InsertInput(
                                     inputLine,
                                     promptStartCol,
                                     promptStartRow,
@@ -367,7 +367,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                             if (historyIndex < currentHistory.Count)
                             {
                                 currentCursorIndex =
-                                    this.InsertInput(
+                                    ConsoleReadLine.InsertInput(
                                         inputLine,
                                         promptStartCol,
                                         promptStartRow,
@@ -379,7 +379,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                             else if (historyIndex == currentHistory.Count)
                             {
                                 currentCursorIndex =
-                                    this.InsertInput(
+                                    ConsoleReadLine.InsertInput(
                                         inputLine,
                                         promptStartCol,
                                         promptStartRow,
@@ -396,7 +396,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         historyIndex = currentHistory != null ? currentHistory.Count : -1;
 
                         currentCursorIndex =
-                            this.InsertInput(
+                            ConsoleReadLine.InsertInput(
                                 inputLine,
                                 promptStartCol,
                                 promptStartRow,
@@ -412,7 +412,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         if (currentCursorIndex > 0)
                         {
                             currentCursorIndex =
-                                this.InsertInput(
+                                ConsoleReadLine.InsertInput(
                                     inputLine,
                                     promptStartCol,
                                     promptStartRow,
@@ -430,7 +430,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         if (currentCursorIndex < inputLine.Length)
                         {
                             currentCursorIndex =
-                                this.InsertInput(
+                                ConsoleReadLine.InsertInput(
                                     inputLine,
                                     promptStartCol,
                                     promptStartRow,
@@ -471,7 +471,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         currentCompletion = null;
 
                         currentCursorIndex =
-                            this.InsertInput(
+                            ConsoleReadLine.InsertInput(
                                 inputLine,
                                 promptStartCol,
                                 promptStartRow,
@@ -490,7 +490,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         }
 
         // TODO: Is this used?
-        private int CalculateIndexFromCursor(
+        private static int CalculateIndexFromCursor(
             int promptStartCol,
             int promptStartRow,
             int consoleWidth)
@@ -500,7 +500,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 ConsoleProxy.GetCursorLeft() - promptStartCol;
         }
 
-        private void CalculateCursorFromIndex(
+        private static void CalculateCursorFromIndex(
             int promptStartCol,
             int promptStartRow,
             int consoleWidth,
@@ -513,7 +513,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             cursorCol = cursorCol % consoleWidth;
         }
 
-        private int InsertInput(
+        private static int InsertInput(
             StringBuilder inputLine,
             int promptStartCol,
             int promptStartRow,
@@ -532,7 +532,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             }
 
             // Move the cursor to the new insertion point
-            this.MoveCursorToIndex(
+            ConsoleReadLine.MoveCursorToIndex(
                 promptStartCol,
                 promptStartRow,
                 consoleWidth,
@@ -581,7 +581,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             {
                 // Move the cursor to the final position
                 return
-                    this.MoveCursorToIndex(
+                    ConsoleReadLine.MoveCursorToIndex(
                         promptStartCol,
                         promptStartRow,
                         consoleWidth,
@@ -593,13 +593,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             }
         }
 
-        private int MoveCursorToIndex(
+        private static int MoveCursorToIndex(
             int promptStartCol,
             int promptStartRow,
             int consoleWidth,
             int newCursorIndex)
         {
-            this.CalculateCursorFromIndex(
+            ConsoleReadLine.CalculateCursorFromIndex(
                 promptStartCol,
                 promptStartRow,
                 consoleWidth,

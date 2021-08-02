@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
             SymbolReference foundSymbol =
-                _symbolsService.FindSymbolAtLocation(
+                SymbolsService.FindSymbolAtLocation(
                     scriptFile,
                     request.Position.Line + 1,
                     request.Position.Character + 1);

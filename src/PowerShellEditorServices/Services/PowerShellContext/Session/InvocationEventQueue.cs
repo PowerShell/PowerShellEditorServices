@@ -223,7 +223,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             CreateInvocationSubscriber();
         }
 
-        private void SetSubscriberExecutionThreadWithReflection(PSEventSubscriber subscriber)
+        private static void SetSubscriberExecutionThreadWithReflection(PSEventSubscriber subscriber)
         {
             // We need to create the PowerShell object in the same thread so we can get a nested
             // PowerShell.  This is the only way to consistently take control of the pipeline.  The

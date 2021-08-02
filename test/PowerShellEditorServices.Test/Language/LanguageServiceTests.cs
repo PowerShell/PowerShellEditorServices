@@ -478,7 +478,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             ScriptFile scriptFile = GetScriptFile(scriptRegion);
 
             SymbolReference symbolReference =
-                this.symbolsService.FindSymbolAtLocation(
+                SymbolsService.FindSymbolAtLocation(
                     scriptFile,
                     scriptRegion.StartLineNumber,
                     scriptRegion.StartColumnNumber);
@@ -496,7 +496,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             ScriptFile scriptFile = GetScriptFile(scriptRegion);
 
             SymbolReference symbolReference =
-                this.symbolsService.FindSymbolAtLocation(
+                SymbolsService.FindSymbolAtLocation(
                     scriptFile,
                     scriptRegion.StartLineNumber,
                     scriptRegion.StartColumnNumber);
@@ -513,7 +513,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         private IReadOnlyList<SymbolReference> GetOccurrences(ScriptRegion scriptRegion)
         {
             return
-                this.symbolsService.FindOccurrencesInFile(
+                SymbolsService.FindOccurrencesInFile(
                     GetScriptFile(scriptRegion),
                     scriptRegion.StartLineNumber,
                     scriptRegion.StartColumnNumber);

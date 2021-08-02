@@ -319,7 +319,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                             if (fileContent != null)
                             {
-                                this.StoreRemoteFile(localFilePath, fileContent, pathMappings);
+                                RemoteFileManagerService.StoreRemoteFile(localFilePath, fileContent, pathMappings);
                             }
                             else
                             {
@@ -475,7 +475,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             RemotePathMappings pathMappings = this.GetPathMappings(runspaceDetails);
             string localFilePath = pathMappings.GetMappedPath(remoteFilePath);
 
-            this.StoreRemoteFile(
+            RemoteFileManagerService.StoreRemoteFile(
                 localFilePath,
                 fileContent,
                 pathMappings);
@@ -483,7 +483,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return localFilePath;
         }
 
-        private void StoreRemoteFile(
+        private static void StoreRemoteFile(
             string localFilePath,
             byte[] fileContent,
             RemotePathMappings pathMappings)
