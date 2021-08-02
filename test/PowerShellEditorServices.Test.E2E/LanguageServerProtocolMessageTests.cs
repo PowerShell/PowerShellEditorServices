@@ -35,8 +35,6 @@ namespace PowerShellEditorServices.Test.E2E
         private readonly static string s_binDir =
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
-        private static bool s_registeredOnLogMessage;
-
         private readonly ILanguageClient PsesLanguageClient;
         private readonly List<Diagnostic> Diagnostics;
         private readonly List<PsesTelemetryEvent> TelemetryEvents;

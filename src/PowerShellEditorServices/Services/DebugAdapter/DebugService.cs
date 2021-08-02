@@ -43,8 +43,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private StackFrameDetails[] stackFrameDetails;
         private readonly PropertyInfo invocationTypeScriptPositionProperty;
 
-        private static int breakpointHitCounter;
-
         private readonly SemaphoreSlim debugInfoHandle = AsyncUtils.CreateSimpleLockingSemaphore();
         #endregion
 

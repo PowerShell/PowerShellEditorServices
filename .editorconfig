@@ -13,6 +13,14 @@ trim_trailing_whitespace = true
 csharp_space_before_open_square_brackets = true
 csharp_space_after_keywords_in_control_flow_statements = true
 
+# CS0168: The variable 'var' is declared but never used
+dotnet_diagnostic.CS0168.severity = error
+# CS0169: The private field 'class member' is never used
+dotnet_diagnostic.CS0169.severity = error
+# CS0219: The variable 'variable' is assigned but its value is never used
+dotnet_diagnostic.CS0219.severity = error
+# CS0414: The private field 'field' is assigned but its value is never used
+dotnet_diagnostic.CS0414.severity = error
 # CA2007: Do not directly await a Task
 dotnet_diagnostic.CA2007.severity = error
 # CA1822: Mark members as static
