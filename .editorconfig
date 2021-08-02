@@ -17,6 +17,8 @@ csharp_space_after_keywords_in_control_flow_statements = true
 dotnet_diagnostic.CA2007.severity = error
 # CA1822: Mark members as static
 dotnet_diagnostic.CA1822.severity = error
+# VSTHRD200: Use "Async" suffix for awaitable methods
+dotnet_diagnostic.VSTHRD200.severity = silent
 
 [*.{json}]
 indent_size = 2
