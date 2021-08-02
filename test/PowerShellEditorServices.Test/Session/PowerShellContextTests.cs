@@ -50,10 +50,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             var executeTask =
                 this.powerShellContext.ExecuteCommandAsync<string>(psCommand);
 
-            await this.AssertStateChange(PowerShellContextState.Running);
-            await this.AssertStateChange(PowerShellContextState.Ready);
+            await this.AssertStateChange(PowerShellContextState.Running).ConfigureAwait(false);
+            await this.AssertStateChange(PowerShellContextState.Ready).ConfigureAwait(false);
 
-            var result = await executeTask;
+            var result = await executeTask.ConfigureAwait(false);
             Assert.Equal("foo", result.First());
         }
 
@@ -72,11 +72,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             Task<IEnumerable<int>> resultTask = this.powerShellContext.ExecuteCommandAsync<int>(psCommand);
 
             // Wait for the requested runspace handle and then dispose it
-            RunspaceHandle handle = await handleTask;
+            RunspaceHandle handle = await handleTask.ConfigureAwait(false);
             handle.Dispose();
 
             // Wait for all of the executes to complete
-            await Task.WhenAll(taskOne, taskTwo, taskThree, resultTask);
+            await Task.WhenAll(taskOne, taskTwo, taskThree, resultTask).ConfigureAwait(false);
 
             // At this point, the remaining command executions should execute and complete
             int result = resultTask.Result.FirstOrDefault();
@@ -95,15 +95,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     async () =>
                     {
                         var unusedTask = this.powerShellContext.ExecuteScriptWithArgsAsync(s_debugTestFilePath);
-                        await Task.Delay(50);
+                        await Task.Delay(50).ConfigureAwait(false);
                         this.powerShellContext.AbortExecution();
                     });
 
-            await this.AssertStateChange(PowerShellContextState.Running);
-            await this.AssertStateChange(PowerShellContextState.Aborting);
-            await this.AssertStateChange(PowerShellContextState.Ready);
+            await this.AssertStateChange(PowerShellContextState.Running).ConfigureAwait(false);
+            await this.AssertStateChange(PowerShellContextState.Aborting).ConfigureAwait(false);
+            await this.AssertStateChange(PowerShellContextState.Ready).ConfigureAwait(false);
 
-            await executeTask;
+            await executeTask.ConfigureAwait(false);
         }
 
         [Trait("Category", "PowerShellContext")]
@@ -120,7 +120,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 };
 
             // Load the profiles for the test host name
-            await this.powerShellContext.LoadHostProfilesAsync();
+            await this.powerShellContext.LoadHostProfilesAsync().ConfigureAwait(false);
 
             // Ensure that all the paths are set in the correct variables
             // and that the current user's host profile got loaded
@@ -134,7 +134,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
             var result =
                 await this.powerShellContext.ExecuteCommandAsync<string>(
-                    psCommand);
+                    psCommand).ConfigureAwait(false);
 
             string expectedString =
                 string.Format(
@@ -162,7 +162,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         private async Task AssertStateChange(PowerShellContextState expectedState)
         {
             SessionStateChangedEventArgs newState =
-                await this.stateChangeQueue.DequeueAsync();
+                await this.stateChangeQueue.DequeueAsync().ConfigureAwait(false);
 
             Assert.Equal(expectedState, newState.NewSessionState);
         }
@@ -175,4 +175,3 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         #endregion
     }
 }
-

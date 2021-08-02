@@ -21,9 +21,8 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         {
         }
 
-        public async Task SetContentAsync(string htmlBodyContent)
-        {
-            await languageServer.SendRequestAsync(
+        public Task SetContentAsync(string htmlBodyContent) =>
+            languageServer.SendRequestAsync(
                 SetHtmlContentViewRequest.Method,
                 new SetHtmlContentViewRequest
                 {
@@ -31,31 +30,24 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
                     HtmlContent = new HtmlContent { BodyContent = htmlBodyContent }
                 }
             );
-        }
 
-        public async Task SetContentAsync(HtmlContent htmlContent)
-        {
-            HtmlContent validatedContent =
-                new HtmlContent()
-                {
-                    BodyContent = htmlContent.BodyContent,
-                    JavaScriptPaths = this.GetUriPaths(htmlContent.JavaScriptPaths),
-                    StyleSheetPaths = this.GetUriPaths(htmlContent.StyleSheetPaths)
-                };
-
-            await languageServer.SendRequestAsync(
+        public Task SetContentAsync(HtmlContent htmlContent) =>
+            languageServer.SendRequestAsync(
                 SetHtmlContentViewRequest.Method,
                 new SetHtmlContentViewRequest
                 {
                     Id = this.Id,
-                    HtmlContent = validatedContent
+                    HtmlContent = new HtmlContent()
+                    {
+                        BodyContent = htmlContent.BodyContent,
+                        JavaScriptPaths = this.GetUriPaths(htmlContent.JavaScriptPaths),
+                        StyleSheetPaths = this.GetUriPaths(htmlContent.StyleSheetPaths)
+                    }
                 }
             );
-        }
 
-        public async Task AppendContentAsync(string appendedHtmlBodyContent)
-        {
-            await languageServer.SendRequestAsync(
+        public Task AppendContentAsync(string appendedHtmlBodyContent) =>
+            languageServer.SendRequestAsync(
                 AppendHtmlContentViewRequest.Method,
                 new AppendHtmlContentViewRequest
                 {
@@ -63,7 +55,6 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
                     AppendedHtmlBodyContent = appendedHtmlBodyContent
                 }
             );
-        }
 
         private string[] GetUriPaths(string[] filePaths)
         {

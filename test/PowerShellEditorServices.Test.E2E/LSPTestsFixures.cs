@@ -43,7 +43,7 @@ namespace PowerShellEditorServices.Test.E2E
         {
             var factory = new LoggerFactory();
             _psesProcess = new PsesStdioProcess(factory, IsDebugAdapterTests);
-            await _psesProcess.Start();
+            await _psesProcess.Start().ConfigureAwait(false);
 
             Diagnostics = new List<Diagnostic>();
             TelemetryEvents = new List<PsesTelemetryEvent>();

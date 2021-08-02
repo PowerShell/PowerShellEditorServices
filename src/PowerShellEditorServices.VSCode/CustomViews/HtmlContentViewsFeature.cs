@@ -21,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
                     viewTitle,
                     languageServer);
 
-            await htmlView.CreateAsync();
+            await htmlView.CreateAsync().ConfigureAwait(false);
             this.AddView(htmlView);
 
             return htmlView;

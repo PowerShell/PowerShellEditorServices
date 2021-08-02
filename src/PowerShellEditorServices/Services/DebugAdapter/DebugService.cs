@@ -190,7 +190,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return await dscBreakpoints.SetLineBreakpointsAsync(
                 this.powerShellContext,
                 escapedScriptPath,
-                breakpoints);
+                breakpoints).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -208,7 +208,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (clearExisting)
             {
                 // Flatten dictionary values into one list and remove them all.
-                await _breakpointService.RemoveBreakpointsAsync((await _breakpointService.GetBreakpointsAsync()).Where( i => i is CommandBreakpoint)).ConfigureAwait(false);
+                await _breakpointService.RemoveBreakpointsAsync(
+                    (await _breakpointService.GetBreakpointsAsync().ConfigureAwait(false))
+                    .Where( i => i is CommandBreakpoint)).ConfigureAwait(false);
             }
 
             if (breakpoints.Length > 0)

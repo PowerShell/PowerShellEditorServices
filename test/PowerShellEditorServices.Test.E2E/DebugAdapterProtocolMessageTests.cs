@@ -41,7 +41,7 @@ namespace PowerShellEditorServices.Test.E2E
         {
             var factory = new LoggerFactory();
             _psesProcess = new PsesStdioProcess(factory, true);
-            await _psesProcess.Start();
+            await _psesProcess.Start().ConfigureAwait(false);
 
             var initialized = new TaskCompletionSource<bool>();
             PsesDebugAdapterClient = DebugAdapterClient.Create(options =>
