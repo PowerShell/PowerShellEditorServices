@@ -216,7 +216,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                             }
                             else
                             {
-                                using (RunspaceHandle runspaceHandle = await this.powerShellContext.GetRunspaceHandleAsync().ConfigureAwait(false))
+                                using (RunspaceHandle runspaceHandle = await this.powerShellContext.GetRunspaceHandleAsync(cancellationToken) .ConfigureAwait(false))
                                 using (PowerShell powerShell = PowerShell.Create())
                                 {
                                     powerShell.Runspace = runspaceHandle.Runspace;

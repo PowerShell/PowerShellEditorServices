@@ -264,7 +264,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                         s_waitHandle.Wait(ShortWaitForKeySpinUntilSleepTime, cancellationToken);
                         return IsKeyAvailable(cancellationToken);
                     },
-                    millisecondsTimeout));
+                    millisecondsTimeout), cancellationToken);
         }
 
         private static bool IsKeyAvailable(CancellationToken cancellationToken)
