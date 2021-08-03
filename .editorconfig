@@ -25,6 +25,9 @@ dotnet_diagnostic.CS0414.severity = error
 dotnet_diagnostic.CA2007.severity = error
 # CA1822: Mark members as static
 dotnet_diagnostic.CA1822.severity = error
+# All maintainability issues (dead code etc.)
+# See: https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/maintainability-warnings
+dotnet_analyzer_diagnostic.category-Maintainability.severity = error
 # VSTHRD002: Synchronously waiting on tasks or awaiters may cause deadlocks
 # TODO: Fix all of these issues and explicitly ignore the intentional ones.
 dotnet_diagnostic.VSTHRD002.severity = silent

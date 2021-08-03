@@ -83,7 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             internal ConsoleColorProxy(EditorServicesPSHostUserInterface hostUserInterface)
             {
-                if (hostUserInterface == null) throw new ArgumentNullException("hostUserInterface");
+                if (hostUserInterface == null) throw new ArgumentNullException(nameof(hostUserInterface));
                 _hostUserInterface = hostUserInterface;
             }
 
