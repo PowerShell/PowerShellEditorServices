@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
             Assert.Equal(TaskStatus.WaitingForActivation, lockTwo.Status);
             lockOne.Result.Dispose();
 
-            await lockTwo;
+            await lockTwo.ConfigureAwait(false);
             Assert.Equal(TaskStatus.RanToCompletion, lockTwo.Status);
         }
 
@@ -45,4 +45,3 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
         }
     }
 }
-

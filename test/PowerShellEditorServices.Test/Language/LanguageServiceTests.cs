@@ -62,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             CompletionResults completionResults =
                 await this.GetCompletionResults(
-                    CompleteCommandInFile.SourceDetails);
+                    CompleteCommandInFile.SourceDetails).ConfigureAwait(false);
 
             Assert.NotEmpty(completionResults.Completions);
             Assert.Equal(
@@ -76,7 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             CompletionResults completionResults =
                 await this.GetCompletionResults(
-                    CompleteCommandFromModule.SourceDetails);
+                    CompleteCommandFromModule.SourceDetails).ConfigureAwait(false);
 
             Assert.NotEmpty(completionResults.Completions);
 
@@ -103,7 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
             CompletionResults completionResults =
                 await this.GetCompletionResults(
-                    CompleteTypeName.SourceDetails);
+                    CompleteTypeName.SourceDetails).ConfigureAwait(false);
 
             Assert.NotEmpty(completionResults.Completions);
 
@@ -130,7 +130,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
             CompletionResults completionResults =
                 await this.GetCompletionResults(
-                    CompleteNamespace.SourceDetails);
+                    CompleteNamespace.SourceDetails).ConfigureAwait(false);
 
             Assert.NotEmpty(completionResults.Completions);
 
@@ -153,7 +153,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             CompletionResults completionResults =
                 await this.GetCompletionResults(
-                    CompleteVariableInFile.SourceDetails);
+                    CompleteVariableInFile.SourceDetails).ConfigureAwait(false);
 
             Assert.Single(completionResults.Completions);
             Assert.Equal(
@@ -167,7 +167,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             CompletionResults completionResults =
                 await this.GetCompletionResults(
-                    CompleteAttributeValue.SourceDetails);
+                    CompleteAttributeValue.SourceDetails).ConfigureAwait(false);
 
             Assert.NotEmpty(completionResults.Completions);
             Assert.Equal(
@@ -181,7 +181,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             CompletionResults completionResults =
                 await this.GetCompletionResults(
-                    CompleteFilePath.SourceDetails);
+                    CompleteFilePath.SourceDetails).ConfigureAwait(false);
 
             Assert.NotEmpty(completionResults.Completions);
             // TODO: Since this is a path completion, this test will need to be
@@ -200,7 +200,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             ParameterSetSignatures paramSignatures =
                 await this.GetParamSetSignatures(
-                    FindsParameterSetsOnCommand.SourceDetails);
+                    FindsParameterSetsOnCommand.SourceDetails).ConfigureAwait(false);
 
             Assert.NotNull(paramSignatures);
             Assert.Equal("Get-Process", paramSignatures.CommandName);
@@ -213,7 +213,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             ParameterSetSignatures paramSignatures =
                 await this.GetParamSetSignatures(
-                    FindsParameterSetsOnCommandWithSpaces.SourceDetails);
+                    FindsParameterSetsOnCommandWithSpaces.SourceDetails).ConfigureAwait(false);
 
             Assert.NotNull(paramSignatures);
             Assert.Equal("Write-Host", paramSignatures.CommandName);
@@ -226,7 +226,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             SymbolReference definitionResult =
                 await this.GetDefinition(
-                    FindsFunctionDefinition.SourceDetails);
+                    FindsFunctionDefinition.SourceDetails).ConfigureAwait(false);
 
             Assert.Equal(1, definitionResult.ScriptRegion.StartLineNumber);
             Assert.Equal(10, definitionResult.ScriptRegion.StartColumnNumber);
@@ -239,7 +239,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             SymbolReference definitionResult =
                 await this.GetDefinition(
-                    FindsFunctionDefinitionInDotSourceReference.SourceDetails);
+                    FindsFunctionDefinitionInDotSourceReference.SourceDetails).ConfigureAwait(false);
 
             Assert.True(
                 definitionResult.FilePath.EndsWith(
@@ -256,7 +256,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             SymbolReference definitionResult =
                 await this.GetDefinition(
-                    FindsDotSourcedFile.SourceDetails);
+                    FindsDotSourcedFile.SourceDetails).ConfigureAwait(false);
 
             Assert.True(
                 definitionResult.FilePath.EndsWith(
@@ -273,7 +273,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             SymbolReference definitionResult =
                 await this.GetDefinition(
-                    FindsFunctionDefinitionInWorkspace.SourceDetails);
+                    FindsFunctionDefinitionInWorkspace.SourceDetails).ConfigureAwait(false);
             Assert.EndsWith("ReferenceFileE.ps1", definitionResult.FilePath);
             Assert.Equal("My-FunctionInFileE", definitionResult.SymbolName);
         }
@@ -284,7 +284,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         {
             SymbolReference definitionResult =
                 await this.GetDefinition(
-                    FindsVariableDefinition.SourceDetails);
+                    FindsVariableDefinition.SourceDetails).ConfigureAwait(false);
 
             Assert.Equal(6, definitionResult.ScriptRegion.StartLineNumber);
             Assert.Equal(1, definitionResult.ScriptRegion.StartColumnNumber);
@@ -373,7 +373,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.symbolsService.FindSymbolDetailsAtLocationAsync(
                     this.GetScriptFile(FindsDetailsForBuiltInCommand.SourceDetails),
                     FindsDetailsForBuiltInCommand.SourceDetails.StartLineNumber,
-                    FindsDetailsForBuiltInCommand.SourceDetails.StartColumnNumber);
+                    FindsDetailsForBuiltInCommand.SourceDetails.StartColumnNumber).ConfigureAwait(false);
 
             Assert.NotNull(symbolDetails.Documentation);
             Assert.NotEqual("", symbolDetails.Documentation);
@@ -460,7 +460,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 await this.completionHandler.GetCompletionsInFileAsync(
                     GetScriptFile(scriptRegion),
                     scriptRegion.StartLineNumber,
-                    scriptRegion.StartColumnNumber);
+                    scriptRegion.StartColumnNumber).ConfigureAwait(false);
         }
 
         private async Task<ParameterSetSignatures> GetParamSetSignatures(ScriptRegion scriptRegion)
@@ -470,7 +470,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                     GetScriptFile(scriptRegion),
                     scriptRegion.StartLineNumber,
                     scriptRegion.StartColumnNumber,
-                    powerShellContext);
+                    powerShellContext).ConfigureAwait(false);
         }
 
         private async Task<SymbolReference> GetDefinition(ScriptRegion scriptRegion)
@@ -478,7 +478,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             ScriptFile scriptFile = GetScriptFile(scriptRegion);
 
             SymbolReference symbolReference =
-                this.symbolsService.FindSymbolAtLocation(
+                SymbolsService.FindSymbolAtLocation(
                     scriptFile,
                     scriptRegion.StartLineNumber,
                     scriptRegion.StartColumnNumber);
@@ -488,7 +488,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             return
                 await this.symbolsService.GetDefinitionOfSymbolAsync(
                     scriptFile,
-                    symbolReference);
+                    symbolReference).ConfigureAwait(false);
         }
 
         private List<SymbolReference> GetReferences(ScriptRegion scriptRegion)
@@ -496,7 +496,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             ScriptFile scriptFile = GetScriptFile(scriptRegion);
 
             SymbolReference symbolReference =
-                this.symbolsService.FindSymbolAtLocation(
+                SymbolsService.FindSymbolAtLocation(
                     scriptFile,
                     scriptRegion.StartLineNumber,
                     scriptRegion.StartColumnNumber);
@@ -513,7 +513,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         private IReadOnlyList<SymbolReference> GetOccurrences(ScriptRegion scriptRegion)
         {
             return
-                this.symbolsService.FindOccurrencesInFile(
+                SymbolsService.FindOccurrencesInFile(
                     GetScriptFile(scriptRegion),
                     scriptRegion.StartLineNumber,
                     scriptRegion.StartColumnNumber);

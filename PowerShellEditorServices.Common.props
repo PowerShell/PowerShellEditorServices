@@ -11,5 +11,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/PowerShell/PowerShellEditorServices</RepositoryUrl>
     <DebugType>portable</DebugType>
+    <!-- See: https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/overview -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <!-- TODO: Enable `EnforceCodeStyleInBuild` -->
   </PropertyGroup>
 </Project>

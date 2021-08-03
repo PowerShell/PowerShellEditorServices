@@ -485,7 +485,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>A RunspaceHandle instance that gives access to the session's runspace.</returns>
         public Task<RunspaceHandle> GetRunspaceHandleAsync()
         {
-            return this.GetRunspaceHandleImplAsync(CancellationToken.None, isReadLine: false);
+            return this.GetRunspaceHandleImplAsync(isReadLine: false, CancellationToken.None);
         }
 
         /// <summary>
@@ -497,7 +497,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>A RunspaceHandle instance that gives access to the session's runspace.</returns>
         public Task<RunspaceHandle> GetRunspaceHandleAsync(CancellationToken cancellationToken)
         {
-            return this.GetRunspaceHandleImplAsync(cancellationToken, isReadLine: false);
+            return this.GetRunspaceHandleImplAsync(isReadLine: false, cancellationToken);
         }
 
         /// <summary>
@@ -1415,12 +1415,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private Task<RunspaceHandle> GetRunspaceHandleAsync(bool isReadLine)
         {
-            return this.GetRunspaceHandleImplAsync(CancellationToken.None, isReadLine);
+            return this.GetRunspaceHandleImplAsync(isReadLine, CancellationToken.None);
         }
 
-        private Task<RunspaceHandle> GetRunspaceHandleImplAsync(CancellationToken cancellationToken, bool isReadLine)
+        private Task<RunspaceHandle> GetRunspaceHandleImplAsync(bool isReadLine, CancellationToken cancellationToken)
         {
-            return this.PromptNest.GetRunspaceHandleAsync(cancellationToken, isReadLine);
+            return this.PromptNest.GetRunspaceHandleAsync(isReadLine, cancellationToken);
         }
 
         private ExecutionTarget GetExecutionTarget(ExecutionOptions options = null)

@@ -144,7 +144,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                                 throw new TaskCanceledException(task);
                             }
 
-                            return this.GetSingleResult(task.GetAwaiter().GetResult());
+                            return ChoicePromptHandler.GetSingleResult(task.GetAwaiter().GetResult());
                         }));
         }
 
@@ -335,7 +335,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         #region Private Methods
 
-        private int GetSingleResult(int[] choiceArray)
+        private static int GetSingleResult(int[] choiceArray)
         {
             return
                 choiceArray != null

@@ -42,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// <param name="pesterSymbol">The Pester symbol to get CodeLenses for.</param>
         /// <param name="scriptFile">The script file the Pester symbol comes from.</param>
         /// <returns>All CodeLenses for the given Pester symbol.</returns>
-        private CodeLens[] GetPesterLens(PesterSymbolReference pesterSymbol, ScriptFile scriptFile)
+        private static CodeLens[] GetPesterLens(PesterSymbolReference pesterSymbol, ScriptFile scriptFile)
         {
             string word = pesterSymbol.Command == PesterCommandType.It ? "test" : "tests";
             var codeLensResults = new CodeLens[]

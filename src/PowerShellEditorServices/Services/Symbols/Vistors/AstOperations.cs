@@ -62,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             ILogger logger,
             CancellationToken cancellationToken)
         {
-            if (!s_completionHandle.Wait(0))
+            if (!s_completionHandle.Wait(0, cancellationToken))
             {
                 return null;
             }

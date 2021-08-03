@@ -226,7 +226,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             // This is not high priority, since the PSES process shouldn't be reused
         }
 
-        private void LoadEditorServices()
+        private static void LoadEditorServices()
         {
             // This must be in its own method, since the actual load happens when the calling method is called
             // The call within this method is therefore a total no-op
@@ -317,7 +317,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             LogOperatingSystemDetails();
         }
 
-        private string GetPSOutputEncoding()
+        private static string GetPSOutputEncoding()
         {
             using (var pwsh = SMA.PowerShell.Create())
             {
@@ -346,7 +346,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 ");
         }
 
-        private string GetOSArchitecture()
+        private static string GetOSArchitecture()
         {
 #if CoreCLR
             if (Environment.OSVersion.Platform != PlatformID.Win32NT)

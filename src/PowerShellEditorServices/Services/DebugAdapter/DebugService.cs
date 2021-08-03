@@ -43,8 +43,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private StackFrameDetails[] stackFrameDetails;
         private readonly PropertyInfo invocationTypeScriptPositionProperty;
 
-        private static int breakpointHitCounter;
-
         private readonly SemaphoreSlim debugInfoHandle = AsyncUtils.CreateSimpleLockingSemaphore();
         #endregion
 
@@ -190,7 +188,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return await dscBreakpoints.SetLineBreakpointsAsync(
                 this.powerShellContext,
                 escapedScriptPath,
-                breakpoints);
+                breakpoints).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -208,7 +206,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (clearExisting)
             {
                 // Flatten dictionary values into one list and remove them all.
-                await _breakpointService.RemoveBreakpointsAsync((await _breakpointService.GetBreakpointsAsync()).Where( i => i is CommandBreakpoint)).ConfigureAwait(false);
+                await _breakpointService.RemoveBreakpointsAsync(
+                    (await _breakpointService.GetBreakpointsAsync().ConfigureAwait(false))
+                    .Where( i => i is CommandBreakpoint)).ConfigureAwait(false);
             }
 
             if (breakpoints.Length > 0)
@@ -854,7 +854,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        private string TrimScriptListingLine(PSObject scriptLineObj, ref int prefixLength)
+        private static string TrimScriptListingLine(PSObject scriptLineObj, ref int prefixLength)
         {
             string scriptLine = scriptLineObj.ToString();
 
@@ -906,7 +906,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         string.Join(
                             Environment.NewLine,
                             scriptListingLines
-                                .Select(o => this.TrimScriptListingLine(o, ref linePrefixLength))
+                                .Select(o => DebugService.TrimScriptListingLine(o, ref linePrefixLength))
                                 .Where(s => s != null));
 
                     this.temporaryScriptListingPath =

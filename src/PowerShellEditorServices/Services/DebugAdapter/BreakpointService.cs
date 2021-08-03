@@ -47,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // Legacy behavior
             PSCommand psCommand = new PSCommand();
             psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
-            IEnumerable<Breakpoint> breakpoints = await _powerShellContextService.ExecuteCommandAsync<Breakpoint>(psCommand);
+            IEnumerable<Breakpoint> breakpoints = await _powerShellContextService.ExecuteCommandAsync<Breakpoint>(psCommand).ConfigureAwait(false);
             return breakpoints.ToList();
         }
 
@@ -133,7 +133,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (psCommand != null)
             {
                 IEnumerable<Breakpoint> setBreakpoints =
-                    await _powerShellContextService.ExecuteCommandAsync<Breakpoint>(psCommand);
+                    await _powerShellContextService.ExecuteCommandAsync<Breakpoint>(psCommand).ConfigureAwait(false);
                 configuredBreakpoints.AddRange(
                     setBreakpoints.Select(BreakpointDetails.Create));
             }
@@ -210,7 +210,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (psCommand != null)
             {
                 IEnumerable<Breakpoint> setBreakpoints =
-                    await _powerShellContextService.ExecuteCommandAsync<Breakpoint>(psCommand);
+                    await _powerShellContextService.ExecuteCommandAsync<Breakpoint>(psCommand).ConfigureAwait(false);
                 configuredBreakpoints.AddRange(
                     setBreakpoints.Select(CommandBreakpointDetails.Create));
             }
@@ -301,7 +301,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint");
                 psCommand.AddParameter("Id", breakpoints.Select(b => b.Id).ToArray());
 
-                await _powerShellContextService.ExecuteCommandAsync<object>(psCommand);
+                await _powerShellContextService.ExecuteCommandAsync<object>(psCommand).ConfigureAwait(false);
             }
         }
 

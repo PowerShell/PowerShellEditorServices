@@ -156,7 +156,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// In .NET Framework, this returns null.
         /// </summary>
         /// <returns>The assembly load context used for loading PSES, or null in .NET Framework.</returns>
-        public object GetPsesAssemblyLoadContext()
+        public static object GetPsesAssemblyLoadContext()
         {
             if (!VersionUtils.IsNetCore)
             {
@@ -172,7 +172,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// </summary>
         /// <param name="assemblyPath">The absolute path of the assembly to load.</param>
         /// <returns>The loaded assembly object.</returns>
-        public Assembly LoadAssemblyInPsesLoadContext(string assemblyPath)
+        public static Assembly LoadAssemblyInPsesLoadContext(string assemblyPath)
         {
             if (!VersionUtils.IsNetCore)
             {

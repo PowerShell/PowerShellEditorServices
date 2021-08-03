@@ -33,16 +33,16 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
                         async () =>
                         {
                             // Wait for a bit and then add more items to the queue
-                            await Task.Delay(250);
+                            await Task.Delay(250).ConfigureAwait(false);
 
                             foreach (var i in Enumerable.Range(100, 200))
                             {
-                                await inputQueue.EnqueueAsync(i);
+                                await inputQueue.EnqueueAsync(i).ConfigureAwait(false);
                             }
 
                             // Cancel the waiters
                             cancellationTokenSource.Cancel();
-                        }));
+                        })).ConfigureAwait(false);
             }
             catch (TaskCanceledException)
             {
@@ -66,7 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
 
             // Cancel the first task and then enqueue a number
             cancellationSource.Cancel();
-            await inputQueue.EnqueueAsync(1);
+            await inputQueue.EnqueueAsync(1).ConfigureAwait(false);
 
             // Wait for things to propegate.
             await Task.Delay(1000).ConfigureAwait(false);
@@ -77,17 +77,16 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
             Assert.Equal(1, taskTwo.Result);
         }
 
-        private async Task ConsumeItemsAsync(
+        private static async Task ConsumeItemsAsync(
             AsyncQueue<int> inputQueue,
             ConcurrentBag<int> outputItems,
             CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                int consumedItem = await inputQueue.DequeueAsync(cancellationToken);
+                int consumedItem = await inputQueue.DequeueAsync(cancellationToken).ConfigureAwait(false);
                 outputItems.Add(consumedItem);
             }
         }
     }
 }
-

@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             return AstVisitAction.Continue;
         }
 
-        private bool IsAssignedAtScriptScope(VariableExpressionAst variableExpressionAst)
+        private static bool IsAssignedAtScriptScope(VariableExpressionAst variableExpressionAst)
         {
             Ast parent = variableExpressionAst.Parent;
             if (!(parent is AssignmentStatementAst))

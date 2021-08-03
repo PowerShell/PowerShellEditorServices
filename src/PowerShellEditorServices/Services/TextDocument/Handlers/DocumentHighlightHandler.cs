@@ -44,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
-            IReadOnlyList<SymbolReference> symbolOccurrences = _symbolsService.FindOccurrencesInFile(
+            IReadOnlyList<SymbolReference> symbolOccurrences = SymbolsService.FindOccurrencesInFile(
                 scriptFile,
                 request.Position.Line + 1,
                 request.Position.Character + 1);

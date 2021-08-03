@@ -41,7 +41,7 @@ namespace PowerShellEditorServices.Test.E2E
         {
             var factory = new LoggerFactory();
             _psesProcess = new PsesStdioProcess(factory, true);
-            await _psesProcess.Start();
+            await _psesProcess.Start().ConfigureAwait(false);
 
             var initialized = new TaskCompletionSource<bool>();
             PsesDebugAdapterClient = DebugAdapterClient.Create(options =>
@@ -99,7 +99,7 @@ namespace PowerShellEditorServices.Test.E2E
             }
         }
 
-        private string NewTestFile(string script, bool isPester = false)
+        private static string NewTestFile(string script, bool isPester = false)
         {
             string fileExt = isPester ? ".Tests.ps1" : ".ps1";
             string filePath = Path.Combine(s_binDir, Path.GetRandomFileName() + fileExt);
@@ -128,7 +128,7 @@ namespace PowerShellEditorServices.Test.E2E
             return builder.ToString();
         }
 
-        private string[] GetLog()
+        private static string[] GetLog()
         {
             return File.ReadLines(s_testOutputPath).ToArray();
         }

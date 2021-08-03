@@ -42,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             int triggerLine = request.TriggerPosition.Line + 1;
 
-            FunctionDefinitionAst functionDefinitionAst = _symbolsService.GetFunctionDefinitionForHelpComment(
+            FunctionDefinitionAst functionDefinitionAst = SymbolsService.GetFunctionDefinitionForHelpComment(
                 scriptFile,
                 triggerLine,
                 out string helpLocation);

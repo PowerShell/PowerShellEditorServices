@@ -123,7 +123,7 @@ namespace PowerShellEditorServices.Test.E2E
                 serverProcess.Kill();
             }
 
-            await ServerExitCompletion.Task;
+            await ServerExitCompletion.Task.ConfigureAwait(false);
         }
 
         /// <summary>

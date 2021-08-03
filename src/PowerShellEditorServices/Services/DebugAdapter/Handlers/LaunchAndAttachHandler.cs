@@ -264,7 +264,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 await _powerShellContextService.ExecuteScriptStringAsync(
                     $"Enter-PSHostProcess -Id {processId}",
-                    errorMessages);
+                    errorMessages).ConfigureAwait(false);
 
                 if (errorMessages.Length > 0)
                 {
@@ -280,7 +280,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 await _powerShellContextService.ExecuteScriptStringAsync(
                     $"Enter-PSHostProcess -CustomPipeName {request.CustomPipeName}",
-                    errorMessages);
+                    errorMessages).ConfigureAwait(false);
 
                 if (errorMessages.Length > 0)
                 {
@@ -307,7 +307,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     .AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace")
                     .AddParameter("Name", request.RunspaceName)
                     .AddCommand("Microsoft.PowerShell.Utility\\Select-Object")
-                    .AddParameter("ExpandProperty", "Id"));
+                    .AddParameter("ExpandProperty", "Id")).ConfigureAwait(false);
                 foreach (var id in ids)
                 {
                     _debugStateService.RunspaceId = id;
@@ -396,12 +396,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                {
                    try
                    {
-                       await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSHostProcess");
+                       await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSHostProcess").ConfigureAwait(false);
 
                        if (_debugStateService.IsRemoteAttach &&
                            _powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Remote)
                        {
-                           await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSSession");
+                           await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSSession").ConfigureAwait(false);
                        }
                    }
                    catch (Exception e)
