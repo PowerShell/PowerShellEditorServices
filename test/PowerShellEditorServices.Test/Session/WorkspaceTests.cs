@@ -14,8 +14,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
 {
     public class WorkspaceTests
     {
-        private static readonly Version PowerShellVersion = new Version("5.0");
-
         private static readonly Lazy<string> s_lazyDriveLetter = new Lazy<string>(() => Path.GetFullPath("\\").Substring(0, 1));
 
         public static string CurrentDriveLetter => RuntimeInformation.IsOSPlatform(OSPlatform.Windows)

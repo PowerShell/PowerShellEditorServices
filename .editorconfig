@@ -25,6 +25,8 @@ dotnet_diagnostic.CS0414.severity = error
 dotnet_diagnostic.CA2007.severity = error
 # CA1822: Mark members as static
 dotnet_diagnostic.CA1822.severity = error
+# CA1823: Avoid unused private fields
+dotnet_diagnostic.CA1823.severity = error
 # All maintainability issues (dead code etc.)
 # See: https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/maintainability-warnings
 dotnet_analyzer_diagnostic.category-Maintainability.severity = error
