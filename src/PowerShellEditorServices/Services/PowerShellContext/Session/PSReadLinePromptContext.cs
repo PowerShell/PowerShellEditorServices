@@ -177,12 +177,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
         public void WaitForReadLineExit()
         {
-            using (_promptNest.GetRunspaceHandle(CancellationToken.None, isReadLine: true))
+            using (_promptNest.GetRunspaceHandle(isReadLine: true, CancellationToken.None))
             { }
         }
 
         public async Task WaitForReadLineExitAsync() {
-            using (await _promptNest.GetRunspaceHandleAsync(CancellationToken.None, isReadLine: true).ConfigureAwait(false))
+            using (await _promptNest.GetRunspaceHandleAsync(isReadLine: true, CancellationToken.None).ConfigureAwait(false))
             { }
         }
 

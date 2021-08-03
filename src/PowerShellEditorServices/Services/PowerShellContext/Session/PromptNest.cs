@@ -253,7 +253,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// </param>
         /// <param name="isReadLine">Indicates whether this is for a PSReadLine command.</param>
         /// <returns>The <see cref="RunspaceHandle" /> for the current frame.</returns>
-        internal RunspaceHandle GetRunspaceHandle(CancellationToken cancellationToken, bool isReadLine)
+        internal RunspaceHandle GetRunspaceHandle(bool isReadLine, CancellationToken cancellationToken)
         {
             if (_isDisposed)
             {
@@ -264,10 +264,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             // is in process.
             if (isReadLine && !_powerShellContext.IsCurrentRunspaceOutOfProcess())
             {
-                GetRunspaceHandleImpl(cancellationToken, isReadLine: false);
+                GetRunspaceHandleImpl(isReadLine: false, cancellationToken);
             }
 
-            return GetRunspaceHandleImpl(cancellationToken, isReadLine);
+            return GetRunspaceHandleImpl(isReadLine, cancellationToken);
         }
 
 
@@ -284,7 +284,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         /// The <see cref="Task{RunspaceHandle}.Result" /> property will return the
         /// <see cref="RunspaceHandle" /> for the current frame.
         /// </returns>
-        internal async Task<RunspaceHandle> GetRunspaceHandleAsync(CancellationToken cancellationToken, bool isReadLine)
+        internal async Task<RunspaceHandle> GetRunspaceHandleAsync(bool isReadLine, CancellationToken cancellationToken)
         {
             if (_isDisposed)
             {
@@ -295,10 +295,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             // is in process.
             if (isReadLine && !_powerShellContext.IsCurrentRunspaceOutOfProcess())
             {
-                await GetRunspaceHandleImplAsync(cancellationToken, isReadLine: false).ConfigureAwait(false);
+                await GetRunspaceHandleImplAsync(isReadLine: false, cancellationToken).ConfigureAwait(false);
             }
 
-            return await GetRunspaceHandleImplAsync(cancellationToken, isReadLine).ConfigureAwait(false);
+            return await GetRunspaceHandleImplAsync(isReadLine, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -517,7 +517,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             return queue;
         }
 
-        private RunspaceHandle GetRunspaceHandleImpl(CancellationToken cancellationToken, bool isReadLine)
+        private RunspaceHandle GetRunspaceHandleImpl(bool isReadLine, CancellationToken cancellationToken)
         {
             if (isReadLine)
             {
@@ -527,7 +527,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             return CurrentFrame.Queue.Dequeue(cancellationToken);
         }
 
-        private async Task<RunspaceHandle> GetRunspaceHandleImplAsync(CancellationToken cancellationToken, bool isReadLine)
+        private async Task<RunspaceHandle> GetRunspaceHandleImplAsync(bool isReadLine, CancellationToken cancellationToken)
         {
             if (isReadLine)
             {

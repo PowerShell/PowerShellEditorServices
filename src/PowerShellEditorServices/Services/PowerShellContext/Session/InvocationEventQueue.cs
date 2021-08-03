@@ -113,7 +113,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             var request = new InvocationRequest(pwsh =>
             {
-                using (_promptNest.GetRunspaceHandle(CancellationToken.None, isReadLine: false))
+                using (_promptNest.GetRunspaceHandle(isReadLine: false, CancellationToken.None))
                 {
                     pwsh.Runspace = _runspace;
                     invocationAction(pwsh);
