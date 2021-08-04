@@ -5,7 +5,6 @@
 
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
@@ -16,30 +15,29 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
     using System.Diagnostics;
     using System.Management.Automation;
     using System.Management.Automation.Language;
-    using System.Runtime.CompilerServices;
     using System.Security;
 
     internal class ConsoleReadLine : IReadLine
     {
         private readonly PSReadLineProxy _psrlProxy;
 
-        private readonly EditorServicesConsolePSHost _psesHost;
-
-        private readonly PowerShellExecutionService _executionService;
+        private readonly InternalHost _psesHost;
 
         private readonly EngineIntrinsics _engineIntrinsics;
+
+        private ISynchronousExecutor _executor;
 
         #region Constructors
 
         public ConsoleReadLine(
             PSReadLineProxy psrlProxy,
-            EditorServicesConsolePSHost psesHost,
-            PowerShellExecutionService executionService,
+            InternalHost psesHost,
+            ISynchronousExecutor executor,
             EngineIntrinsics engineIntrinsics)
         {
             _psrlProxy = psrlProxy;
             _psesHost = psesHost;
-            _executionService = executionService;
+            _executor = executor;
             _engineIntrinsics = engineIntrinsics;
         }
 
@@ -47,11 +45,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         #region Public Methods
 
-        public Task<string> ReadLineAsync(CancellationToken cancellationToken) => ReadLineAsync(isCommandLine: true, cancellationToken);
-
-        public string ReadLine() => ReadLineAsync(CancellationToken.None).GetAwaiter().GetResult();
-
-        public SecureString ReadSecureLine() => ReadSecureLineAsync(CancellationToken.None).GetAwaiter().GetResult();
+        public string ReadLine(CancellationToken cancellationToken)
+        {
+            return _executor.InvokeDelegate<string>(representation: "ReadLine", new ExecutionOptions { MustRunInForeground = true }, InvokePSReadLine, cancellationToken);
+        }
 
         public bool TryOverrideReadKey(Func<bool, ConsoleKeyInfo> readKeyFunc)
         {
@@ -65,23 +62,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             return true;
         }
 
-        public Task<string> ReadCommandLineAsync(CancellationToken cancellationToken)
-        {
-            return ReadLineAsync(true, cancellationToken);
-        }
-
-        public Task<string> ReadSimpleLineAsync(CancellationToken cancellationToken)
-        {
-            return ReadLineAsync(false, cancellationToken);
-        }
-
-        public async Task<SecureString> ReadSecureLineAsync(CancellationToken cancellationToken)
+        public SecureString ReadSecureLine(CancellationToken cancellationToken)
         {
             SecureString secureString = new SecureString();
 
             // TODO: Are these values used?
-            int initialPromptRow = await ConsoleProxy.GetCursorTopAsync(cancellationToken).ConfigureAwait(false);
-            int initialPromptCol = await ConsoleProxy.GetCursorLeftAsync(cancellationToken).ConfigureAwait(false);
+            int initialPromptRow = ConsoleProxy.GetCursorTop(cancellationToken);
+            int initialPromptCol = ConsoleProxy.GetCursorLeft(cancellationToken);
             int previousInputLength = 0;
 
             Console.TreatControlCAsInput = true;
@@ -90,7 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    ConsoleKeyInfo keyInfo = await ReadKeyAsync(cancellationToken).ConfigureAwait(false);
+                    ConsoleKeyInfo keyInfo = ReadKey(cancellationToken);
 
                     if ((int)keyInfo.Key == 3 ||
                         keyInfo.Key == ConsoleKey.C && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control))
@@ -128,8 +115,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                     }
                     else if (previousInputLength > 0 && currentInputLength < previousInputLength)
                     {
-                        int row = await ConsoleProxy.GetCursorTopAsync(cancellationToken).ConfigureAwait(false);
-                        int col = await ConsoleProxy.GetCursorLeftAsync(cancellationToken).ConfigureAwait(false);
+                        int row = ConsoleProxy.GetCursorTop(cancellationToken);
+                        int col = ConsoleProxy.GetCursorLeft(cancellationToken);
 
                         // Back up the cursor before clearing the character
                         col--;
@@ -159,14 +146,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         #region Private Methods
 
-        private static Task<ConsoleKeyInfo> ReadKeyAsync(CancellationToken cancellationToken)
+        private static ConsoleKeyInfo ReadKey(CancellationToken cancellationToken)
         {
-            return ConsoleProxy.ReadKeyAsync(intercept: true, cancellationToken);
-        }
-
-        private Task<string> ReadLineAsync(bool isCommandLine, CancellationToken cancellationToken)
-        {
-            return _executionService.ExecuteDelegateAsync(representation: "ReadLine", new ExecutionOptions { MustRunInForeground = true }, cancellationToken, InvokePSReadLine);
+            return ConsoleProxy.ReadKey(intercept: true, cancellationToken);
         }
 
         private string InvokePSReadLine(CancellationToken cancellationToken)
@@ -194,7 +176,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
         /// A task object representing the asynchronus operation. The Result property on
         /// the task object returns the user input string.
         /// </returns>
-        internal async Task<string> InvokeLegacyReadLineAsync(bool isCommandLine, CancellationToken cancellationToken)
+        internal string InvokeLegacyReadLine(bool isCommandLine, CancellationToken cancellationToken)
         {
             string inputAfterCompletion = null;
             CommandCompletion currentCompletion = null;
@@ -204,8 +186,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
             StringBuilder inputLine = new StringBuilder();
 
-            int initialCursorCol = await ConsoleProxy.GetCursorLeftAsync(cancellationToken).ConfigureAwait(false);
-            int initialCursorRow = await ConsoleProxy.GetCursorTopAsync(cancellationToken).ConfigureAwait(false);
+            int initialCursorCol = ConsoleProxy.GetCursorLeft(cancellationToken);
+            int initialCursorRow = ConsoleProxy.GetCursorTop(cancellationToken);
 
             // TODO: Are these used?
             int initialWindowLeft = Console.WindowLeft;
@@ -219,7 +201,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    ConsoleKeyInfo keyInfo = await ReadKeyAsync(cancellationToken).ConfigureAwait(false);
+                    ConsoleKeyInfo keyInfo = ReadKey(cancellationToken);
 
                     // Do final position calculation after the key has been pressed
                     // because the window could have been resized before then
@@ -369,9 +351,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
                             PSCommand command = new PSCommand().AddCommand("Get-History");
 
-                            currentHistory = await _executionService.ExecutePSCommandAsync<PSObject>(
+                            currentHistory = _executor.InvokePSCommand<PSObject>(
                                 command,
-                                cancellationToken).ConfigureAwait(false);
+                                PowerShellExecutionOptions.Default,
+                                cancellationToken);
 
                             if (currentHistory != null)
                             {

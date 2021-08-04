@@ -20,9 +20,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;
     using System.Reflection;
+    using System.Text;
+    using System.Threading;
 
     internal class InternalHost : PSHost, IHostSupportsInteractiveSession, IRunspaceContext
     {
+        private const string DefaultPrompt = "PSIC> ";
+
         private static readonly string s_commandsModulePath = Path.GetFullPath(
             Path.Combine(
                 Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
@@ -36,8 +40,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private readonly HostStartupInfo _hostInfo;
 
-        private readonly ReadLineProvider _readLineProvider;
-
         private readonly BlockingConcurrentDeque<ISynchronousTask> _taskQueue;
 
         private readonly Stack<PowerShellContextFrame> _psFrameStack;
@@ -48,9 +50,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private readonly EditorServicesConsolePSHost _publicHost;
 
+        private readonly ReadLineProvider _readLineProvider;
+
+        private readonly PowerShellExecutor _executor;
+
         private bool _shouldExit = false;
 
         private string _localComputerName;
+
+        private ConsoleKeyInfo? _lastKey;
 
         public InternalHost(
             ILoggerFactory loggerFactory,
@@ -62,14 +70,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _logger = loggerFactory.CreateLogger<InternalHost>();
             _languageServer = languageServer;
             _hostInfo = hostInfo;
-            _publicHost = publicHost;
 
-            _readLineProvider = new ReadLineProvider(loggerFactory);
             _taskQueue = new BlockingConcurrentDeque<ISynchronousTask>();
             _psFrameStack = new Stack<PowerShellContextFrame>();
             _runspaceStack = new Stack<(Runspace, RunspaceInfo)>();
             _psFactory = new PowerShellFactory(loggerFactory, this);
+            _executor = new PowerShellExecutor(loggerFactory, publicHost);
 
+            PublicHost = publicHost;
             Name = hostInfo.Name;
             Version = hostInfo.Version;
 
@@ -94,9 +102,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public RunspaceInfo CurrentRunspace => CurrentFrame.RunspaceInfo;
 
-        IRunspaceInfo IRunspaceContext.CurrentRunspace => CurrentRunspace;
+        public SMA.PowerShell CurrentPowerShell => CurrentFrame.PowerShell;
 
-        private SMA.PowerShell CurrentPowerShell => CurrentFrame.PowerShell;
+        public EditorServicesConsolePSHost PublicHost { get; }
+
+        IRunspaceInfo IRunspaceContext.CurrentRunspace => CurrentRunspace;
 
         private PowerShellContextFrame CurrentFrame => _psFrameStack.Peek();
 
@@ -136,6 +146,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         {
             // TODO: Handle exit code if needed
             SetExit();
+        }
+
+        public void Start()
+        {
+            SMA.PowerShell pwsh = CreateInitialPowerShell(_hostInfo, _readLineProvider);
+            PushPowerShellAndRunLoop(pwsh, PowerShellFrameType.Normal);
         }
 
         private void SetExit()
@@ -186,15 +202,124 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             _psFrameStack.Push(frame);
 
-            RunExecutionLoop();
+            try
+            {
+                RunExecutionLoop();
+            }
+            finally
+            {
+                PopPowerShell();
+            }
+        }
+
+        private void PopPowerShell()
+        {
+            _shouldExit = false;
+            PowerShellContextFrame frame = _psFrameStack.Pop();
+            try
+            {
+                RemoveRunspaceEventHandlers(frame.PowerShell.Runspace);
+
+                if (_runspaceStack.Peek().Item1 != CurrentPowerShell.Runspace)
+                {
+                    _runspaceStack.Pop();
+                }
+            }
+            finally
+            {
+                frame.Dispose();
+            }
         }
 
         private void RunExecutionLoop()
         {
             while (true)
             {
+                DoOneRepl(CancellationToken.None);
 
+                if (_shouldExit)
+                {
+                    break;
+                }
+
+                while (_taskQueue.TryTake(out ISynchronousTask task))
+                {
+                    RunTaskSynchronously(task, CancellationToken.None);
+                }
             }
+        }
+
+        private void DoOneRepl(CancellationToken cancellationToken)
+        {
+            try
+            {
+                string prompt = GetPrompt(cancellationToken) ?? DefaultPrompt;
+                UI.Write(prompt);
+                string userInput = InvokeReadLine(cancellationToken);
+
+                // If the user input was empty it's because:
+                //  - the user provided no input
+                //  - the readline task was canceled
+                //  - CtrlC was sent to readline (which does not propagate a cancellation)
+                //
+                // In any event there's nothing to run in PowerShell, so we just loop back to the prompt again.
+                // However, we must distinguish the last two scenarios, since PSRL will not print a new line in those cases.
+                if (string.IsNullOrEmpty(userInput))
+                {
+                    if (cancellationToken.IsCancellationRequested
+                        || LastKeyWasCtrlC())
+                    {
+                        UI.WriteLine();
+                    }
+                    return;
+                }
+
+                InvokeInput(userInput, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // Do nothing, since we were just cancelled
+            }
+            catch (Exception e)
+            {
+                UI.WriteErrorLine($"An error occurred while running the REPL loop:{Environment.NewLine}{e}");
+                _logger.LogError(e, "An error occurred while running the REPL loop");
+            }
+        }
+
+        private string GetPrompt(CancellationToken cancellationToken)
+        {
+            var command = new PSCommand().AddCommand("prompt");
+            IReadOnlyList<string> results = _executor.InvokePSCommand<string>(command, PowerShellExecutionOptions.Default, cancellationToken);
+            return results.Count > 0 ? results[0] : null;
+        }
+
+        private string InvokeReadLine(CancellationToken cancellationToken)
+        {
+            return _readLineProvider.ReadLine.ReadLine(cancellationToken);
+        }
+
+        private void InvokeInput(string input, CancellationToken cancellationToken)
+        {
+            var command = new PSCommand().AddScript(input, useLocalScope: false);
+            _executor.InvokePSCommand(command, new PowerShellExecutionOptions { AddToHistory = true, WriteErrorsToHost = true, WriteOutputToHost = true }, cancellationToken);
+        }
+
+        private void RunTaskSynchronously(ISynchronousTask task, CancellationToken cancellationToken)
+        {
+            if (task.IsCanceled)
+            {
+                return;
+            }
+
+            task.ExecuteSynchronously(cancellationToken);
+        }
+
+        private IReadOnlyList<TResult> RunPSCommandSynchronously<TResult>(PSCommand psCommand, PowerShellExecutionOptions executionOptions, CancellationToken cancellationToken)
+        {
+            var task = new SynchronousPowerShellTask<TResult>(_logger, _publicHost, psCommand, executionOptions, cancellationToken);
+            task.ExecuteSynchronously(cancellationToken);
+            return task.Result;
         }
 
         private void AddRunspaceEventHandlers(Runspace runspace)
@@ -249,8 +374,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             if (hostStartupInfo.ConsoleReplEnabled && !hostStartupInfo.UsesLegacyReadLine)
             {
                 var psrlProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, pwsh);
-                var readLine = new ConsoleReadLine(psrlProxy, this, engineIntrinsics);
+                var readLine = new ConsoleReadLine(psrlProxy, this, _executor, engineIntrinsics);
+                _readLineProvider.ReadLine.TryOverrideReadKey(ReadKey);
+                readLine.TryOverrideReadKey(ReadKey);
+                readLine.TryOverrideIdleHandler(OnPowerShellIdle);
                 readLineProvider.OverrideReadLine(readLine);
+                System.Console.CancelKeyPress += OnCancelKeyPress;
+                System.Console.InputEncoding = Encoding.UTF8;
+                System.Console.OutputEncoding = Encoding.UTF8;
             }
 
             if (VersionUtils.IsWindows)
@@ -291,6 +422,34 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return runspace;
         }
 
+        private void OnPowerShellIdle()
+        {
+
+        }
+
+        private void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
+        {
+
+        }
+
+        private ConsoleKeyInfo ReadKey(bool intercept)
+        {
+            // PSRL doesn't tell us when CtrlC was sent.
+            // So instead we keep track of the last key here.
+            // This isn't functionally required,
+            // but helps us determine when the prompt needs a newline added
+
+            _lastKey = ConsoleProxy.SafeReadKey(intercept, CancellationToken.None);
+            return _lastKey.Value;
+        }
+
+        private bool LastKeyWasCtrlC()
+        {
+            return _lastKey.HasValue
+                && _lastKey.Value.Key == ConsoleKey.C
+                && (_lastKey.Value.Modifiers & ConsoleModifiers.Control) != 0
+                && (_lastKey.Value.Modifiers & ConsoleModifiers.Alt) != 0;
+        }
 
         private void OnDebuggerStopped(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
         {
