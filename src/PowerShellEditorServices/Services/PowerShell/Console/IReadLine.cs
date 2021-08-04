@@ -9,13 +9,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
     internal interface IReadLine
     {
-        Task<string> ReadLineAsync(CancellationToken cancellationToken);
+        string ReadLine(CancellationToken cancellationToken);
 
-        Task<SecureString> ReadSecureLineAsync(CancellationToken cancellationToken);
-
-        string ReadLine();
-
-        SecureString ReadSecureLine();
+        SecureString ReadSecureLine(CancellationToken cancellationToken);
 
         bool TryOverrideReadKey(Func<bool, ConsoleKeyInfo> readKeyOverride);
 
