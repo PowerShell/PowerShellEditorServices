@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,6 +23,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private bool _executionCanceled;
 
+        private TResult _result;
+
+        private ExceptionDispatchInfo _exceptionInfo;
+
         protected SynchronousTask(
             ILogger logger,
             CancellationToken cancellationToken)
@@ -35,6 +40,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         protected ILogger Logger { get; }
 
         public Task<TResult> Task => _taskCompletionSource.Task;
+
+        public TResult Result
+        {
+            get
+            {
+                if (_executionCanceled)
+                {
+                    throw new OperationCanceledException();
+                }
+
+                if (_exceptionInfo is not null)
+                {
+                    _exceptionInfo.Throw();
+                }
+
+                return _result;
+            }
+        }
 
         public bool IsCanceled => _executionCanceled || _taskRequesterCancellationToken.IsCancellationRequested;
 
@@ -57,8 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 try
                 {
                     TResult result = Run(cancellationSource.Token);
-
-                    _taskCompletionSource.SetResult(result);
+                    SetResult(result);
                 }
                 catch (OperationCanceledException)
                 {
@@ -66,15 +88,34 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 }
                 catch (Exception e)
                 {
-                    _taskCompletionSource.SetException(e);
+                    SetException(e);
                 }
             }
+        }
+
+        public TResult ExecuteAndGetResult(CancellationToken cancellationToken)
+        {
+            ExecuteSynchronously(cancellationToken);
+            return Result;
         }
 
         private void SetCanceled()
         {
             _executionCanceled = true;
             _taskCompletionSource.SetCanceled();
+        }
+
+        private void SetException(Exception e)
+        {
+            // We use this to capture the original stack trace so that exceptions will be useful later
+            _exceptionInfo = ExceptionDispatchInfo.Capture(e);
+            _taskCompletionSource.SetException(e);
+        }
+
+        private void SetResult(TResult result)
+        {
+            _result = result;
+            _taskCompletionSource.SetResult(result);
         }
     }
 }
