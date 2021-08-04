@@ -1,27 +1,26 @@
 steps:
-
-- task: DownloadBuildArtifacts@0
-  displayName: 'Download Build Artifacts'
-  inputs:
-    downloadType: specific
+- download: current
+  displayName: Download unsigned pipeline artifacts
 
 - task: ExtractFiles@1
-  displayName: 'Extract Build Zip'
+  displayName: Extract unsigned artifacts
   inputs:
-    archiveFilePatterns: '$(Build.ArtifactStagingDirectory)/PowerShellEditorServices-CI/PowerShellEditorServices*.zip'
-    destinationFolder: '$(Build.ArtifactStagingDirectory)/PowerShellEditorServices'
+    archiveFilePatterns: $(Pipeline.Workspace)/PowerShellEditorServices-Build-*/PowerShellEditorServices-Build.zip
+    destinationFolder: $(Pipeline.Workspace)/Unsigned
+    cleanDestinationFolder: true
 
 - checkout: ComplianceRepo
-  displayName: 'Checkout the ComplianceRepo'
 
+# NOTE: The signing templates explicitly copy everything along as they run, so
+# the last output path has every signed (and intentionally unsigned) file.
 - template: EsrpSign.yml@ComplianceRepo
   parameters:
-    buildOutputPath: '$(Build.ArtifactStagingDirectory)/PowerShellEditorServices'
-    signOutputPath: '$(Build.ArtifactStagingDirectory)/FirstPartySigned'
-    alwaysCopy: true # So publishing works
-    certificateId: 'CP-230012' # Authenticode certificate
-    useMinimatch: true # This enables the use of globbing
+    buildOutputPath: $(Pipeline.Workspace)/Unsigned
+    signOutputPath: $(Pipeline.Workspace)/FirstPartySigned
+    alwaysCopy: true
+    certificateId: CP-230012 # Authenticode certificate
     shouldSign: true # We always want to sign
+    useMinimatch: true # This enables the use of globbing
     pattern: |
       # PowerShellEditorServices Script
       PowerShellEditorServices/*.{ps1,psd1,psm1,ps1xml}
@@ -35,12 +34,12 @@ steps:
 
 - template: EsrpSign.yml@ComplianceRepo
   parameters:
-    buildOutputPath: '$(Build.ArtifactStagingDirectory)/FirstPartySigned'
-    signOutputPath: '$(Build.ArtifactStagingDirectory)/ThirdPartySigned'
-    alwaysCopy: true # So publishing works
-    certificateId: 'CP-231522' # Third-party certificate
-    useMinimatch: true # This enables the use of globbing
+    buildOutputPath: $(Pipeline.Workspace)/FirstPartySigned
+    signOutputPath: $(Pipeline.Workspace)/ThirdPartySigned
+    alwaysCopy: true
+    certificateId: CP-231522 # Third-party certificate
     shouldSign: true # We always want to sign
+    useMinimatch: true # This enables the use of globbing
     pattern: |
       **/MediatR.dll
       **/Nerdbank.Streams.dll
@@ -49,27 +48,37 @@ steps:
       **/Serilog*.dll
       **/UnixConsoleEcho.dll
 
-- publish: $(Build.ArtifactStagingDirectory)/ThirdPartySigned
-  artifact: PowerShellEditorServices
-  displayName: 'Publish signed (and unsigned) artifacts'
+- task: ArchiveFiles@2
+  displayName: Zip signed artifacts
+  inputs:
+    rootFolderOrFile: $(Pipeline.Workspace)/ThirdPartySigned
+    includeRootFolder: false
+    archiveType: zip
+    archiveFile: PowerShellEditorServices.zip
+    replaceExistingArchive: true
+    verbose: true
 
 - checkout: self
 
 - template: assembly-module-compliance.yml@ComplianceRepo
   parameters:
     # binskim
-    AnalyzeTarget: '$(Build.ArtifactStagingDirectory)/*.dll'
+    AnalyzeTarget: $(Pipeline.Workspace)/*.dll
     AnalyzeSymPath: 'SRV*'
     # component-governance
-    sourceScanPath: '$(Build.SourcesDirectory)/PowerShellEditorServices'
+    sourceScanPath: $(Build.SourcesDirectory)/PowerShellEditorServices
     # credscan
     suppressionsFile: ''
     # TermCheck AKA PoliCheck
-    targetArgument: '$(Build.SourcesDirectory)/PowerShellEditorServices'
-    optionsUEPATH: '$(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/UserExclusions.xml'
+    targetArgument: $(Build.SourcesDirectory)/PowerShellEditorServices
+    optionsUEPATH: $(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/UserExclusions.xml
     optionsRulesDBPath: ''
-    optionsFTPath: '$(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/FileTypeSet.xml'
+    optionsFTPath: $(Build.SourcesDirectory)/PowerShellEditorServices/tools/terms/FileTypeSet.xml
     # tsa-upload
-    codeBaseName: 'PowerShell_PowerShellEditorServices_20210201'
-    # selections
+    codeBaseName: PowerShell_PowerShellEditorServices_20210201
+    # We don't use any Windows APIs directly, so we don't need API scan
     APIScan: false
+
+- publish: PowerShellEditorServices.zip
+  artifact: PowerShellEditorServices
+  displayName: Publish signed pipeline artifacts

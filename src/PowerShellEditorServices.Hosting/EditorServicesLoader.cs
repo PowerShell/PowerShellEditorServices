@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -93,7 +94,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             AssemblyLoadContext.Default.Resolving += (AssemblyLoadContext defaultLoadContext, AssemblyName asmName) =>
             {
+#if DEBUG
+                logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {asmName}. Stacktrace:\n{new StackTrace()}");
+#else
                 logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {asmName}");
+#endif
 
                 // We only want the Editor Services DLL; the new ALC will lazily load its dependencies automatically
                 if (!string.Equals(asmName.Name, "Microsoft.PowerShell.EditorServices", StringComparison.Ordinal))
@@ -124,7 +129,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             // Unlike in .NET Core, we need to be look for all dependencies in .NET Framework, not just PSES.dll
             AppDomain.CurrentDomain.AssemblyResolve += (object sender, ResolveEventArgs args) =>
             {
+#if DEBUG
+                logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {args.Name}. Stacktrace:\n{new StackTrace()}");
+#else
                 logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {args.Name}");
+#endif
 
                 var asmName = new AssemblyName(args.Name);
                 var dllName = $"{asmName.Name}.dll";
@@ -217,7 +226,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             // This is not high priority, since the PSES process shouldn't be reused
         }
 
-        private void LoadEditorServices()
+        private static void LoadEditorServices()
         {
             // This must be in its own method, since the actual load happens when the calling method is called
             // The call within this method is therefore a total no-op
@@ -308,7 +317,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             LogOperatingSystemDetails();
         }
 
-        private string GetPSOutputEncoding()
+        private static string GetPSOutputEncoding()
         {
             using (var pwsh = SMA.PowerShell.Create())
             {
@@ -337,7 +346,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 ");
         }
 
-        private string GetOSArchitecture()
+        private static string GetOSArchitecture()
         {
 #if CoreCLR
             if (Environment.OSVersion.Platform != PlatformID.Win32NT)

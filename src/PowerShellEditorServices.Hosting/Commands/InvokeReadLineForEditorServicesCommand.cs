@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Reflection;
@@ -24,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             Type type = Type.GetType("Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2");
             MethodInfo method = type?.GetMethod(
                 "ReadLine",
-                new[] { typeof(Runspace), typeof(EngineIntrinsics), typeof(CancellationToken) });
+                new [] { typeof(Runspace), typeof(EngineIntrinsics), typeof(CancellationToken) });
 
             // TODO: Handle method being null here. This shouldn't ever happen.
 

@@ -146,31 +146,6 @@ task Clean BinClean,{
     }
 }
 
-task GetProductVersion -Before PackageModule, UploadArtifacts {
-    [xml]$props = Get-Content .\PowerShellEditorServices.Common.props
-
-    $script:BuildNumber = 9999
-    $script:VersionSuffix = $props.Project.PropertyGroup.VersionSuffix
-
-    if ($env:TF_BUILD) {
-        # SYSTEM_PHASENAME is the Job name.
-        # Job names can only include `_` but that's not a valid character for versions.
-        $jobname = $env:SYSTEM_PHASENAME -replace '_', ''
-        $script:BuildNumber = "$jobname-$env:BUILD_BUILDID"
-    }
-
-    if ($script:VersionSuffix -ne $null) {
-        $script:VersionSuffix = "$script:VersionSuffix-$script:BuildNumber"
-    }
-    else {
-        $script:VersionSuffix = "$script:BuildNumber"
-    }
-
-    $script:FullVersion = "$($props.Project.PropertyGroup.VersionPrefix)-$script:VersionSuffix"
-
-    Write-Host "`n### Product Version: $script:FullVersion`n" -ForegroundColor Green
-}
-
 task CreateBuildInfo -Before Build {
     $buildVersion = "<development-build>"
     $buildOrigin = "Development"
@@ -435,17 +410,5 @@ task BuildCmdletHelp {
     New-ExternalHelp -Path $PSScriptRoot\module\PowerShellEditorServices.VSCode\docs -OutputPath $PSScriptRoot\module\PowerShellEditorServices.VSCode\en-US -Force
 }
 
-task PackageModule {
-    [System.IO.Compression.ZipFile]::CreateFromDirectory(
-        "$PSScriptRoot/module/",
-        "$PSScriptRoot/PowerShellEditorServices-$($script:FullVersion).zip",
-        [System.IO.Compression.CompressionLevel]::Optimal,
-        $false)
-}
-
-task UploadArtifacts -If ($null -ne $env:TF_BUILD) {
-    Copy-Item -Path .\PowerShellEditorServices-$($script:FullVersion).zip -Destination $env:BUILD_ARTIFACTSTAGINGDIRECTORY -Force
-}
-
 # The default task is to run the entire CI build
-task . GetProductVersion, Clean, Build, Test, BuildCmdletHelp, PackageModule, UploadArtifacts
+task . Clean, Build, Test, BuildCmdletHelp

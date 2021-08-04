@@ -31,10 +31,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PowerShellEditorServices\PowerShellEditorServices.csproj" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.3.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)'=='net461'">

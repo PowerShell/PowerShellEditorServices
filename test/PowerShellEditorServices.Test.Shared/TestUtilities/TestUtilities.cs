@@ -14,8 +14,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared
     /// </summary>
     public static class TestUtilities
     {
-        private static readonly char[] s_unixPathSeparators = new [] { '/' };
-
         private static readonly char[] s_unixNewlines = new [] { '\n' };
 
         /// <summary>

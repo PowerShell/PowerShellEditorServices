@@ -75,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
 #pragma warning disable CS4014
             // Trigger the clean up of the debugger. No need to wait for it.
-            Task.Run(_psesDebugServer.OnSessionEnded);
+            Task.Run(_psesDebugServer.OnSessionEnded, cancellationToken);
 #pragma warning restore CS4014
 
             return new DisconnectResponse();

@@ -77,7 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private async Task CheckPackageManagement()
         {
             PSCommand getModule = new PSCommand().AddCommand("Get-Module").AddParameter("ListAvailable").AddParameter("Name", "PackageManagement");
-            foreach (PSModuleInfo module in await _powerShellContextService.ExecuteCommandAsync<PSModuleInfo>(getModule))
+            foreach (PSModuleInfo module in await _powerShellContextService.ExecuteCommandAsync<PSModuleInfo>(getModule).ConfigureAwait(false))
             {
                 // The user has a good enough version of PackageManagement
                 if (module.Version >= s_desiredPackageManagementVersion)
@@ -109,7 +109,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                             Title = "Not now"
                         }
                     }
-                });
+                }).ConfigureAwait(false);
 
                 // If the user chose "Not now" ignore it for the rest of the session.
                 if (messageAction?.Title == takeActionText)

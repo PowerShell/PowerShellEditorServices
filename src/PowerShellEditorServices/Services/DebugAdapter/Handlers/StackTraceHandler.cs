@@ -30,7 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public Task<StackTraceResponse> Handle(StackTraceArguments request, CancellationToken cancellationToken)
         {
             StackFrameDetails[] stackFrameDetails =
-                _debugService.GetStackFrames();
+                _debugService.GetStackFrames(cancellationToken);
 
             // Handle a rare race condition where the adapter requests stack frames before they've
             // begun building.

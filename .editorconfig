@@ -13,6 +13,33 @@ trim_trailing_whitespace = true
 csharp_space_before_open_square_brackets = true
 csharp_space_after_keywords_in_control_flow_statements = true
 
+# CS0168: The variable 'var' is declared but never used
+dotnet_diagnostic.CS0168.severity = error
+# CS0169: The private field 'class member' is never used
+dotnet_diagnostic.CS0169.severity = error
+# CS0219: The variable 'variable' is assigned but its value is never used
+dotnet_diagnostic.CS0219.severity = error
+# CS0414: The private field 'field' is assigned but its value is never used
+dotnet_diagnostic.CS0414.severity = error
+# CA1068: CancellationToken parameters must come last
+dotnet_diagnostic.CA1068.severity = error
+# CA1822: Mark members as static
+dotnet_diagnostic.CA1822.severity = error
+# CA1823: Avoid unused private fields
+dotnet_diagnostic.CA1823.severity = error
+# CA2007: Do not directly await a Task
+dotnet_diagnostic.CA2007.severity = error
+# CA2016: Forward the CancellationToken parameter to methods that take one
+dotnet_diagnostic.CA2016.severity = error
+# All maintainability issues (dead code etc.)
+# See: https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/maintainability-warnings
+dotnet_analyzer_diagnostic.category-Maintainability.severity = error
+# VSTHRD002: Synchronously waiting on tasks or awaiters may cause deadlocks
+# TODO: Fix all of these issues and explicitly ignore the intentional ones.
+dotnet_diagnostic.VSTHRD002.severity = silent
+# VSTHRD200: Use "Async" suffix for awaitable methods
+dotnet_diagnostic.VSTHRD200.severity = silent
+
 [*.{json}]
 indent_size = 2
 trim_trailing_whitespace = true

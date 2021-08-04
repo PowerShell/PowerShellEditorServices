@@ -25,7 +25,7 @@ namespace PSLanguageService.Test
         [Fact]
         public void CanApplySingleLineInsert()
         {
-            this.AssertFileChange(
+            AssertFileChange(
                 "This is a test.",
                 "This is a working test.",
                 new FileChange
@@ -42,7 +42,7 @@ namespace PSLanguageService.Test
         [Fact]
         public void CanApplySingleLineReplace()
         {
-            this.AssertFileChange(
+            AssertFileChange(
                 "This is a potentially broken test.",
                 "This is a working test.",
                 new FileChange
@@ -59,7 +59,7 @@ namespace PSLanguageService.Test
         [Fact]
         public void CanApplySingleLineDelete()
         {
-            this.AssertFileChange(
+            AssertFileChange(
                 "This is a test of the emergency broadcasting system.",
                 "This is a test.",
                 new FileChange
@@ -76,7 +76,7 @@ namespace PSLanguageService.Test
         [Fact]
         public void CanApplyMultiLineInsert()
         {
-            this.AssertFileChange(
+            AssertFileChange(
                 TestUtilities.NormalizeNewlines("first\nsecond\nfifth"),
                 TestUtilities.NormalizeNewlines("first\nsecond\nthird\nfourth\nfifth"),
                 new FileChange
@@ -93,7 +93,7 @@ namespace PSLanguageService.Test
         [Fact]
         public void CanApplyMultiLineReplace()
         {
-            this.AssertFileChange(
+            AssertFileChange(
                 TestUtilities.NormalizeNewlines("first\nsecoXX\nXXfth"),
                 TestUtilities.NormalizeNewlines("first\nsecond\nthird\nfourth\nfifth"),
                 new FileChange
@@ -110,7 +110,7 @@ namespace PSLanguageService.Test
         [Fact]
         public void CanApplyMultiLineReplaceWithRemovedLines()
         {
-            this.AssertFileChange(
+            AssertFileChange(
                 TestUtilities.NormalizeNewlines("first\nsecoXX\nREMOVE\nTHESE\nLINES\nXXfth"),
                 TestUtilities.NormalizeNewlines("first\nsecond\nthird\nfourth\nfifth"),
                 new FileChange
@@ -127,7 +127,7 @@ namespace PSLanguageService.Test
         [Fact]
         public void CanApplyMultiLineDelete()
         {
-            this.AssertFileChange(
+            AssertFileChange(
                 TestUtilities.NormalizeNewlines("first\nsecond\nREMOVE\nTHESE\nLINES\nthird"),
                 TestUtilities.NormalizeNewlines("first\nsecond\nthird"),
                 new FileChange
@@ -144,7 +144,7 @@ namespace PSLanguageService.Test
         [Fact]
         public void CanApplyEditsToEndOfFile()
         {
-            this.AssertFileChange(
+            AssertFileChange(
                 TestUtilities.NormalizeNewlines("line1\nline2\nline3\n\n"),
                 TestUtilities.NormalizeNewlines("line1\nline2\nline3\n\n\n\n"),
                 new FileChange
@@ -161,7 +161,7 @@ namespace PSLanguageService.Test
         [Fact]
         public void CanAppendToEndOfFile()
         {
-            this.AssertFileChange(
+            AssertFileChange(
                 TestUtilities.NormalizeNewlines("line1\nline2\nline3"),
                 TestUtilities.NormalizeNewlines("line1\nline2\nline3\nline4\nline5"),
                 new FileChange
@@ -208,7 +208,7 @@ namespace PSLanguageService.Test
             Assert.Throws<ArgumentOutOfRangeException>(
                 () =>
                 {
-                    this.AssertFileChange(
+                    AssertFileChange(
                         TestUtilities.NormalizeNewlines("first\nsecond\nREMOVE\nTHESE\nLINES\nthird"),
                         TestUtilities.NormalizeNewlines("first\nsecond\nthird"),
                         new FileChange
@@ -226,7 +226,7 @@ namespace PSLanguageService.Test
         [Fact]
         public void CanDeleteFromEndOfFile()
         {
-            this.AssertFileChange(
+            AssertFileChange(
                 TestUtilities.NormalizeNewlines("line1\nline2\nline3\nline4"),
                 TestUtilities.NormalizeNewlines("line1\nline2"),
                 new FileChange
@@ -256,7 +256,7 @@ namespace PSLanguageService.Test
             }
         }
 
-        private void AssertFileChange(
+        private static void AssertFileChange(
             string initialString,
             string expectedString,
             FileChange fileChange)

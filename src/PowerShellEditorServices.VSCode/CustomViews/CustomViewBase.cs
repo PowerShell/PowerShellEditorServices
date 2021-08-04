@@ -28,40 +28,31 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
             this.languageServer = languageServer;
         }
 
-        internal async Task CreateAsync()
-        {
-            await languageServer.SendRequestAsync(
+        internal Task CreateAsync() =>
+            languageServer.SendRequestAsync(
                 NewCustomViewRequest.Method,
                 new NewCustomViewRequest
                 {
                     Id = this.Id,
                     Title = this.Title,
                     ViewType = this.ViewType,
-                }
-            );
-        }
+                });
 
-        public async Task Show(ViewColumn viewColumn)
-        {
-            await languageServer.SendRequestAsync(
+        public Task Show(ViewColumn viewColumn) =>
+            languageServer.SendRequestAsync(
                 ShowCustomViewRequest.Method,
                 new ShowCustomViewRequest
                 {
                     Id = this.Id,
                     ViewColumn = viewColumn
-                }
-            );
-        }
+                });
 
-        public async Task Close()
-        {
-            await languageServer.SendRequestAsync(
+        public Task Close() =>
+            languageServer.SendRequestAsync(
                 CloseCustomViewRequest.Method,
                 new CloseCustomViewRequest
                 {
                     Id = this.Id,
-                }
-            );
-        }
+                });
     }
 }

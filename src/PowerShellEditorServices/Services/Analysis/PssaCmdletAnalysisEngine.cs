@@ -362,7 +362,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         /// </summary>
         /// <param name="powershell">The PowerShell instance to execute.</param>
         /// <returns>The output of PowerShell execution.</returns>
-        private Collection<PSObject> InvokePowerShellWithModulePathPreservation(System.Management.Automation.PowerShell powershell)
+        private static Collection<PSObject> InvokePowerShellWithModulePathPreservation(System.Management.Automation.PowerShell powershell)
         {
             using (PSModulePathPreserver.Take())
             {

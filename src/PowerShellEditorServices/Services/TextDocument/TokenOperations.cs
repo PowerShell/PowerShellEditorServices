@@ -14,9 +14,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     /// </summary>
     internal static class TokenOperations
     {
-        // Region kinds to align with VSCode's region kinds
-        private const string RegionKindComment = "comment";
-        private const string RegionKindRegion = "region";
         private static readonly FoldingRangeKind? RegionKindNone = null;
 
         // These regular expressions are used to match lines which mark the start and end of region comment in a PowerShell

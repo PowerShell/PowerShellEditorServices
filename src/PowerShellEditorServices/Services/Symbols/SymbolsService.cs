@@ -144,7 +144,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>A SymbolReference of the symbol found at the given location
         /// or null if there is no symbol at that location
         /// </returns>
-        public SymbolReference FindSymbolAtLocation(
+        public static SymbolReference FindSymbolAtLocation(
             ScriptFile scriptFile,
             int lineNumber,
             int columnNumber)
@@ -243,7 +243,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="symbolLineNumber">The line number of the cursor for the given script</param>
         /// <param name="symbolColumnNumber">The coulumn number of the cursor for the given script</param>
         /// <returns>FindOccurrencesResult</returns>
-        public IReadOnlyList<SymbolReference> FindOccurrencesInFile(
+        public static IReadOnlyList<SymbolReference> FindOccurrencesInFile(
             ScriptFile file,
             int symbolLineNumber,
             int symbolColumnNumber)
@@ -273,7 +273,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>A SymbolReference of the symbol found at the given location
         /// or null if there is no symbol at that location
         /// </returns>
-        public SymbolReference FindFunctionDefinitionAtLocation(
+        public static SymbolReference FindFunctionDefinitionAtLocation(
             ScriptFile scriptFile,
             int lineNumber,
             int columnNumber)
@@ -573,7 +573,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="lineNumber">The 1 based line on which to look for function definition.</param>
         /// <param name="helpLocation"></param>
         /// <returns>If found, returns the function definition, otherwise, returns null.</returns>
-        public FunctionDefinitionAst GetFunctionDefinitionForHelpComment(
+        public static FunctionDefinitionAst GetFunctionDefinitionForHelpComment(
             ScriptFile scriptFile,
             int lineNumber,
             out string helpLocation)
@@ -647,7 +647,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="scriptFile">Open script file.</param>
         /// <param name="lineNumber">The 1 based line on which to look for function definition.</param>
         /// <returns>If found, returns the function definition on the given line. Otherwise, returns null.</returns>
-        public FunctionDefinitionAst GetFunctionDefinitionAtLine(
+        public static FunctionDefinitionAst GetFunctionDefinitionAtLine(
             ScriptFile scriptFile,
             int lineNumber)
         {

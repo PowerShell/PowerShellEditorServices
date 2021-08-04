@@ -1,3 +1,5 @@
+name: Release-$(Build.SourceBranchName)-$(Date:yyyyMMdd)$(Rev:.rr)
+
 variables:
   # Don't download unneeded packages
   - name: DOTNET_SKIP_FIRST_TIME_EXPERIENCE
@@ -9,33 +11,51 @@ variables:
 trigger:
   branches:
     include:
-      - release/*
-  tags:
-    include:
-    - v*
+      - release
 
 resources:
   repositories:
   - repository: ComplianceRepo
     type: github
-    endpoint: ComplianceGHRepo
+    endpoint: GitHub
     name: PowerShell/compliance
+  - repository: vscode-powershell
+    type: git
+    name: vscode-powershell
 
-jobs:
-- job: 'ReleaseBuild'
-  displayName: 'Build release'
-  pool:
-    vmImage: 'vs2017-win2016'
-  steps:
-  - template: templates/ci-general.yml
+stages:
+- stage: Build
+  displayName: Build the release
+  jobs:
+  - job: Build
+    pool:
+      vmImage: windows-2019
+    steps:
+    - template: templates/ci-general.yml
 
-- job: 'SignBuild'
-  displayName: Signing Build
-  dependsOn: 'ReleaseBuild'
-  pool:
-    name: '1ES'
-    demands: ImageOverride -equals MMS2019
-  variables:
-  - group: ESRP
-  steps:
-  - template: templates/release-general.yml
+- stage: Sign
+  displayName: Sign the release
+  jobs:
+  - job: Sign
+    pool:
+      name: 1ES
+      demands: ImageOverride -equals MMS2019
+    variables:
+    - group: ESRP
+    steps:
+    - template: templates/release-general.yml
+
+- stage: Publish
+  displayName: Publish the draft release
+  jobs:
+  - deployment: Publish
+    environment: PowerShellEditorServices
+    pool:
+      vmImage: ubuntu-latest
+    variables:
+    - group: Publish
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - template: templates/publish-general.yml

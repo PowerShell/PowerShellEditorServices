@@ -11,6 +11,7 @@ using System.Management.Automation.Host;
 using System.Management.Automation.Remoting;
 using System.Management.Automation.Runspaces;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     /// Handles nested PowerShell prompts and also manages execution of
     /// commands whether inside or outside of the debugger.
     /// </summary>
-    internal class PowerShellContextService : IHostSupportsInteractiveSession
+    internal class PowerShellContextService: IHostSupportsInteractiveSession
     {
         // This is a default that can be overriden at runtime by the user or tests.
         private static string s_bundledModulePath = Path.GetFullPath(Path.Combine(
@@ -44,6 +45,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             "PowerShellEditorServices",
             "Commands",
             "PowerShellEditorServices.Commands.psd1"));
+
+        private static string s_psReadLineModulePath => Path.GetFullPath(Path.Combine(
+            s_bundledModulePath,
+            "PSReadLine"));
 
         private static readonly Action<Runspace, ApartmentState> s_runspaceApartmentStateSetter;
         private static readonly PropertyInfo s_writeStreamProperty;
@@ -180,17 +185,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public PowerShellContextService(
             ILogger logger,
             OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade languageServer,
-            bool isPSReadLineEnabled)
+            HostStartupInfo hostStartupInfo)
         {
             logger.LogTrace("Instantiating PowerShellContextService and adding event handlers");
             _languageServer = languageServer;
             this.logger = logger;
-            this.isPSReadLineEnabled = isPSReadLineEnabled;
+            this.isPSReadLineEnabled = hostStartupInfo.ConsoleReplEnabled
+                && !hostStartupInfo.UsesLegacyReadLine;
 
             RunspaceChanged += PowerShellContext_RunspaceChangedAsync;
             ExecutionStatusChanged += PowerShellContext_ExecutionStatusChangedAsync;
         }
-
         [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Checked by Validate call")]
         public static PowerShellContextService Create(
             ILoggerFactory factory,
@@ -201,24 +206,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             Validate.IsNotNull(nameof(hostStartupInfo), hostStartupInfo);
 
-            // Respect a user provided bundled module path.
-            if (Directory.Exists(hostStartupInfo.BundledModulePath))
-            {
-                logger.LogTrace($"Using new bundled module path: {hostStartupInfo.BundledModulePath}");
-                s_bundledModulePath = hostStartupInfo.BundledModulePath;
-            }
-
-            bool shouldUsePSReadLine = hostStartupInfo.ConsoleReplEnabled
-                && !hostStartupInfo.UsesLegacyReadLine;
-
             var powerShellContext = new PowerShellContextService(
                 logger,
                 languageServer,
-                shouldUsePSReadLine);
+                hostStartupInfo);
 
             EditorServicesPSHostUserInterface hostUserInterface =
                 hostStartupInfo.ConsoleReplEnabled
-                    ? (EditorServicesPSHostUserInterface) new TerminalPSHostUserInterface(powerShellContext, hostStartupInfo.PSHost, logger)
+                    ? (EditorServicesPSHostUserInterface)new TerminalPSHostUserInterface(powerShellContext, hostStartupInfo.PSHost, logger)
                     : new ProtocolPSHostUserInterface(languageServer, powerShellContext, logger);
 
             EditorServicesPSHost psHost =
@@ -230,26 +225,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             logger.LogTrace("Creating initial PowerShell runspace");
             Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
-            powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
-            powerShellContext.ImportCommandsModuleAsync();
-
-            // TODO: This can be moved to the point after the $psEditor object
-            // gets initialized when that is done earlier than LanguageServer.Initialize
-            foreach (string module in hostStartupInfo.AdditionalModules)
-            {
-                var command =
-                    new PSCommand()
-                        .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
-                        .AddParameter("Name", module);
-
-#pragma warning disable CS4014
-                // This call queues the loading on the pipeline thread, so no need to await
-                powerShellContext.ExecuteCommandAsync<PSObject>(
-                    command,
-                    sendOutputToHost: false,
-                    sendErrorToHost: true);
-#pragma warning restore CS4014
-            }
+            powerShellContext.Initialize(hostStartupInfo, initialRunspace, true, hostUserInterface);
 
             return powerShellContext;
         }
@@ -311,7 +287,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="ownsInitialRunspace">If true, the PowerShellContext owns this runspace.</param>
         /// <param name="consoleHost">An IHostOutput implementation.  Optional.</param>
         public void Initialize(
-            ProfilePathInfo profilePaths,
+            HostStartupInfo hostStartupInfo,
             Runspace initialRunspace,
             bool ownsInitialRunspace,
             IHostOutput consoleHost)
@@ -342,7 +318,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     RunspaceContext.Original,
                     connectionString: null);
             this.CurrentRunspace = this.initialRunspace;
-
+            // Respect a user provided bundled module path.
+            if (Directory.Exists(hostStartupInfo.BundledModulePath))
+            {
+                logger.LogTrace($"Using new bundled module path: {hostStartupInfo.BundledModulePath}");
+                s_bundledModulePath = hostStartupInfo.BundledModulePath;
+            }
             // Write out the PowerShell version for tracking purposes
             this.logger.LogInformation($"PowerShell Version: {this.LocalPowerShellVersion.Version}, Edition: {this.LocalPowerShellVersion.Edition}");
 
@@ -365,7 +346,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             this.ConfigureRunspaceCapabilities(this.CurrentRunspace);
 
             // Set the $profile variable in the runspace
-            this.profilePaths = profilePaths;
+            this.profilePaths = hostStartupInfo.ProfilePaths;
             if (profilePaths != null)
             {
                 this.SetProfileVariableInCurrentRunspace(profilePaths);
@@ -399,10 +380,47 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.ConsoleReader,
                 this.versionSpecificOperations);
             this.InvocationEventQueue = InvocationEventQueue.Create(this, this.PromptNest);
+            this.ImportCommandsModuleAsync().GetAwaiter().GetResult();
+            if (isPSReadLineEnabled)
+            {
+                this.ImportPSReadLine2ModuleAsync().GetAwaiter().GetResult();
+            }
+            // TODO: This can be moved to the point after the $psEditor object
+            // gets initialized when that is done earlier than LanguageServer.Initialize
+            foreach (string module in hostStartupInfo.AdditionalModules)
+            {
+                var command =
+                    new PSCommand()
+                        .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                        .AddParameter("Name", module);
+
+#pragma warning disable CS4014
+                // This call queues the loading on the pipeline thread, so no need to await
+                this.ExecuteCommandAsync<PSObject>(
+                    command,
+                    sendOutputToHost: false,
+                    sendErrorToHost: true).GetAwaiter().GetResult();
+#pragma warning restore CS4014
+            }
+
+
+            // Import the PowerShellEditorServices.Commands module into the runspace.
+            this.ImportModuleAsync(s_commandsModulePath).GetAwaiter().GetResult();
+            if (isPSReadLineEnabled)
+            {
+                // Imports the PSReadLine2 module into the runspace.
+                ImportModuleAsync(s_psReadLineModulePath).GetAwaiter().GetResult();
+            }
+            // TODO: This can be moved to the point after the $psEditor object
+            // gets initialized when that is done earlier than LanguageServer.Initialize
+            foreach (string module in hostStartupInfo.AdditionalModules)
+            {
+                this.ImportModuleAsync(module).GetAwaiter().GetResult();
+            }
 
             if (powerShellVersion.Major >= 5 &&
                 this.isPSReadLineEnabled &&
-                PSReadLinePromptContext.TryGetPSReadLineProxy(logger, initialRunspace, s_bundledModulePath, out PSReadLineProxy proxy))
+                PSReadLinePromptContext.TryGetPSReadLineProxy(logger, out PSReadLineProxy proxy))
             {
                 this.PromptContext = new PSReadLinePromptContext(
                     this,
@@ -414,24 +432,18 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 this.PromptContext = new LegacyReadLineContext(this);
             }
-
             // Finally, restore the runspace's execution policy to the user's policy instead of
             // Bypass.
             this.RestoreExecutionPolicy();
         }
 
-        /// <summary>
-        /// Imports the PowerShellEditorServices.Commands module into
-        /// the runspace.  This method will be moved somewhere else soon.
-        /// </summary>
-        /// <returns></returns>
-        public Task ImportCommandsModuleAsync()
+        public Task ImportModuleAsync(string path)
         {
-            this.logger.LogTrace($"Importing PowershellEditorServices commands from {s_commandsModulePath}");
+            this.logger.LogTrace($"Importing PowershellEditorServices commands from {path}");
 
             PSCommand importCommand = new PSCommand()
                 .AddCommand("Import-Module")
-                .AddArgument(s_commandsModulePath);
+                .AddArgument(path);
 
             return this.ExecuteCommandAsync<PSObject>(importCommand, sendOutputToHost: false, sendErrorToHost: false);
         }
@@ -485,7 +497,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>A RunspaceHandle instance that gives access to the session's runspace.</returns>
         public Task<RunspaceHandle> GetRunspaceHandleAsync()
         {
-            return this.GetRunspaceHandleImplAsync(CancellationToken.None, isReadLine: false);
+            return this.GetRunspaceHandleImplAsync(isReadLine: false, CancellationToken.None);
         }
 
         /// <summary>
@@ -497,7 +509,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>A RunspaceHandle instance that gives access to the session's runspace.</returns>
         public Task<RunspaceHandle> GetRunspaceHandleAsync(CancellationToken cancellationToken)
         {
-            return this.GetRunspaceHandleImplAsync(cancellationToken, isReadLine: false);
+            return this.GetRunspaceHandleImplAsync(isReadLine: false, cancellationToken);
         }
 
         /// <summary>
@@ -994,7 +1006,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             Validate.IsNotNull(nameof(scriptString), scriptString);
 
             PSCommand command = null;
-            if(CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
+            if (CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
             {
                 try
                 {
@@ -1009,7 +1021,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             // fall back to old behavior
-            if(command == null)
+            if (command == null)
             {
                 command = new PSCommand().AddScript(scriptString.Trim());
             }
@@ -1415,12 +1427,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private Task<RunspaceHandle> GetRunspaceHandleAsync(bool isReadLine)
         {
-            return this.GetRunspaceHandleImplAsync(CancellationToken.None, isReadLine);
+            return this.GetRunspaceHandleImplAsync(isReadLine, CancellationToken.None);
         }
 
-        private Task<RunspaceHandle> GetRunspaceHandleImplAsync(CancellationToken cancellationToken, bool isReadLine)
+        private Task<RunspaceHandle> GetRunspaceHandleImplAsync(bool isReadLine, CancellationToken cancellationToken)
         {
-            return this.PromptNest.GetRunspaceHandleAsync(cancellationToken, isReadLine);
+            return this.PromptNest.GetRunspaceHandleAsync(isReadLine, cancellationToken);
         }
 
         private ExecutionTarget GetExecutionTarget(ExecutionOptions options = null)
@@ -1707,7 +1719,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         internal static string WildcardEscapePath(string path, bool escapeSpaces = false)
         {
             var sb = new StringBuilder();
-            for (int i = 0; i < path.Length; i++)
+            for (int i = 0;i < path.Length;i++)
             {
                 char curr = path[i];
                 switch (curr)
@@ -1760,7 +1772,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             var sb = new StringBuilder(wildcardEscapedPath.Length);
-            for (int i = 0; i < wildcardEscapedPath.Length; i++)
+            for (int i = 0;i < wildcardEscapedPath.Length;i++)
             {
                 // If we see a backtick perform a lookahead
                 char curr = wildcardEscapedPath[i];
@@ -2360,7 +2372,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 yield break;
             }
 
-            foreach (string path in new [] { profilePaths.AllUsersAllHosts, profilePaths.AllUsersCurrentHost, profilePaths.CurrentUserAllHosts, profilePaths.CurrentUserCurrentHost })
+            foreach (string path in new[] { profilePaths.AllUsersAllHosts, profilePaths.AllUsersCurrentHost, profilePaths.CurrentUserAllHosts, profilePaths.CurrentUserCurrentHost })
             {
                 if (path != null && File.Exists(path))
                 {

@@ -103,7 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
         }
 
-        public bool CanResolve(CompletionItem value)
+        public static bool CanResolve(CompletionItem value)
         {
             return value.Kind == CompletionItemKind.Function;
         }

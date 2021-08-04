@@ -113,7 +113,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         {
             var request = new InvocationRequest(pwsh =>
             {
-                using (_promptNest.GetRunspaceHandle(CancellationToken.None, isReadLine: false))
+                using (_promptNest.GetRunspaceHandle(isReadLine: false, CancellationToken.None))
                 {
                     pwsh.Runspace = _runspace;
                     invocationAction(pwsh);
@@ -223,7 +223,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             CreateInvocationSubscriber();
         }
 
-        private void SetSubscriberExecutionThreadWithReflection(PSEventSubscriber subscriber)
+        private static void SetSubscriberExecutionThreadWithReflection(PSEventSubscriber subscriber)
         {
             // We need to create the PowerShell object in the same thread so we can get a nested
             // PowerShell.  This is the only way to consistently take control of the pipeline.  The

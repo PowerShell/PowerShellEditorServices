@@ -4,6 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Management.Automation;
+using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +15,6 @@ using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
-using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Test
 {
@@ -35,12 +36,11 @@ namespace Microsoft.PowerShell.EditorServices.Test
 
         public static readonly string BundledModulePath = Path.GetFullPath(
             TestUtilities.NormalizePath("../../../../../module"));
-
         public static System.Management.Automation.Runspaces.Runspace InitialRunspace;
+        public static PowerShellContextService Create(ILogger logger, bool isPSReadLineEnabled = false)
 
-        public static PowerShellContextService Create(ILogger logger)
+        public static PowerShellContextService Create(ILogger logger, bool isPSReadLineEnabled = false)
         {
-            PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, isPSReadLineEnabled: false);
             var initialSessionState = InitialSessionState.CreateDefault();
             // We set the process scope's execution policy (which is really the runspace's scope) to
             // `Bypass` so we can import our bundled modules. This is equivalent in scope to the CLI
@@ -51,7 +51,6 @@ namespace Microsoft.PowerShell.EditorServices.Test
             {
                 initialSessionState.ExecutionPolicy = ExecutionPolicy.Bypass;
             }
-
             HostStartupInfo testHostDetails = new HostStartupInfo(
                 "PowerShell Editor Services Test Host",
                 "Test.PowerShellEditorServices",
@@ -60,12 +59,16 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 TestProfilePaths,
                 new List<string>(),
                 new List<string>(),
-                initialSessionState,
+                // TODO: We want to replace this property with an entire initial session state,
+                // which would then also control the process-scoped execution policy.
+                PSLanguageMode.FullLanguage,
                 null,
                 0,
-                consoleReplEnabled: false,
+                consoleReplEnabled: isPSReadLineEnabled,
                 usesLegacyReadLine: false,
                 bundledModulePath: BundledModulePath);
+
+            PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, testHostDetails);
 
             InitialRunspace = PowerShellContextService.CreateTestRunspace(
                     testHostDetails,
@@ -74,7 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
                     logger);
 
             powerShellContext.Initialize(
-                TestProfilePaths,
+                testHostDetails,
                 InitialRunspace,
                 ownsInitialRunspace: true,
                 consoleHost: null);
