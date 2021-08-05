@@ -1,5 +1,14 @@
 # PowerShell Editor Services Release History
 
+## v2.4.7
+### Tuesday, August 03, 2021
+
+- ✨ 🔍 [PowerShellEditorServices #1533](https://github.com/PowerShell/PowerShellEditorServices/pull/1533) - Enable and fix many .NET Code Analysis warnings.
+- ✨ 👷 [PowerShellEditorServices #1530](https://github.com/PowerShell/PowerShellEditorServices/pull/1530) - Update release and CI pipelines.
+- ✨ 👷 [PowerShellEditorServices #1528](https://github.com/PowerShell/PowerShellEditorServices/pull/1528) - Automate entire release process.
+- ✨ 🛫 [PowerShellEditorServices #1527](https://github.com/PowerShell/PowerShellEditorServices/pull/1527) - Add stack trace to resolve event handler on debug.
+- ✨ 🛫 [PowerShellEditorServices #1523](https://github.com/PowerShell/PowerShellEditorServices/pull/1526) - Initialize runspaces with `InitialSessionState` object.
+
 ## v2.4.6
 ### Tuesday, July 13, 2021
 
