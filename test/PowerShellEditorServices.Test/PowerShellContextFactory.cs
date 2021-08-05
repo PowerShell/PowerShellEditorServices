@@ -38,9 +38,8 @@ namespace Microsoft.PowerShell.EditorServices.Test
 
         public static System.Management.Automation.Runspaces.Runspace InitialRunspace;
 
-        public static PowerShellContextService Create(ILogger logger)
+        public static PowerShellContextService Create(ILogger logger, bool isPSReadLineEnabled = false)
         {
-            PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, isPSReadLineEnabled: false);
             var initialSessionState = InitialSessionState.CreateDefault();
             // We set the process scope's execution policy (which is really the runspace's scope) to
             // `Bypass` so we can import our bundled modules. This is equivalent in scope to the CLI
@@ -67,6 +66,8 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 usesLegacyReadLine: false,
                 bundledModulePath: BundledModulePath);
 
+            PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, isPSReadLineEnabled);
+
             InitialRunspace = PowerShellContextService.CreateTestRunspace(
                     testHostDetails,
                     powerShellContext,
@@ -74,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
                     logger);
 
             powerShellContext.Initialize(
-                TestProfilePaths,
+                testHostDetails,
                 InitialRunspace,
                 ownsInitialRunspace: true,
                 consoleHost: null);

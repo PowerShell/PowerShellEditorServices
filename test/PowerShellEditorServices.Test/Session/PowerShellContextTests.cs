@@ -16,7 +16,7 @@ using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Console
 {
-    public class PowerShellContextTests : IDisposable
+    public class PowerShellContextTests: IDisposable
     {
         // Borrowed from `VersionUtils` which can't be used here due to an initialization problem.
         private static bool IsWindows { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
@@ -110,8 +110,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public async Task CanResolveAndLoadProfilesForHostId()
         {
-            string[] expectedProfilePaths =
-                new string[]
+            string [] expectedProfilePaths =
+                new string []
                 {
                     PowerShellContextFactory.TestProfilePaths.AllUsersAllHosts,
                     PowerShellContextFactory.TestProfilePaths.AllUsersCurrentHost,
@@ -150,10 +150,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public void CanGetPSReadLineProxy()
         {
+            // This will force the loading of the PSReadLine assembly
+            var psContext = PowerShellContextFactory.Create(NullLogger.Instance, isPSReadLineEnabled: true);
             Assert.True(PSReadLinePromptContext.TryGetPSReadLineProxy(
                 NullLogger.Instance,
-                PowerShellContextFactory.InitialRunspace,
-                PowerShellContextFactory.BundledModulePath,
                 out PSReadLineProxy proxy));
         }
 
