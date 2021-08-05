@@ -137,7 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 HostStartupInfo hostStartupInfo = CreateHostStartupInfo();
 
                 // If we just want a temp debug session, run that and do nothing else
-                if (isTempDebugSession)
+                if(isTempDebugSession)
                 {
                     await RunTempDebugSessionAsync(hostStartupInfo).ConfigureAwait(false);
                     return;
@@ -153,9 +153,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
                 // Unsubscribe the host logger here so that the integrated console is not polluted with input after the first prompt
                 _logger.Log(PsesLogLevel.Verbose, "Starting server, deregistering host logger and registering shutdown listener");
-                if (_loggersToUnsubscribe != null)
+                if(_loggersToUnsubscribe != null)
                 {
-                    foreach (IDisposable loggerToUnsubscribe in _loggersToUnsubscribe)
+                    foreach(IDisposable loggerToUnsubscribe in _loggersToUnsubscribe)
                     {
                         loggerToUnsubscribe.Dispose();
                     }
@@ -166,7 +166,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 PsesLanguageServer languageServer = await CreateLanguageServerAsync(hostStartupInfo).ConfigureAwait(false);
 
                 Task<PsesDebugServer> debugServerCreation = null;
-                if (creatingDebugServer)
+                if(creatingDebugServer)
                 {
                     debugServerCreation = CreateDebugServerWithLanguageServerAsync(languageServer, usePSReadLine: _config.ConsoleRepl == ConsoleReplKind.PSReadLine);
                 }
@@ -174,14 +174,14 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 Task languageServerStart = languageServer.StartAsync();
 
                 Task debugServerStart = null;
-                if (creatingDebugServer)
+                if(creatingDebugServer)
                 {
                     // We don't need to wait for this to start, since we instead wait for it to complete later
                     debugServerStart = StartDebugServer(debugServerCreation);
                 }
 
                 await languageServerStart.ConfigureAwait(false);
-                if (debugServerStart != null)
+                if(debugServerStart != null)
                 {
                     await debugServerStart.ConfigureAwait(false);
                 }
@@ -210,7 +210,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             // When the debug server shuts down, we want it to automatically restart
             // To do this, we set an event to allow it to create a new debug server as its session ends
-            if (!_alreadySubscribedDebug)
+            if(!_alreadySubscribedDebug)
             {
                 _logger.Log(PsesLogLevel.Diagnostic, "Subscribing debug server for session ended event");
                 _alreadySubscribedDebug = true;
@@ -268,7 +268,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _logger.Log(PsesLogLevel.Diagnostic, "Creating startup info object");
 
             ProfilePathInfo profilePaths = null;
-            if (_config.ProfilePaths.AllUsersAllHosts != null
+            if(_config.ProfilePaths.AllUsersAllHosts != null
                 || _config.ProfilePaths.AllUsersCurrentHost != null
                 || _config.ProfilePaths.CurrentUserAllHosts != null
                 || _config.ProfilePaths.CurrentUserCurrentHost != null)
@@ -298,7 +298,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private void WriteStartupBanner()
         {
-            if (_config.ConsoleRepl == ConsoleReplKind.None)
+            if(_config.ConsoleRepl == ConsoleReplKind.None)
             {
                 return;
             }

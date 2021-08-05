@@ -134,7 +134,7 @@ task Clean BinClean,{
     exec { & $script:dotnetExe clean }
     Get-ChildItem -Recurse $PSScriptRoot\src\*.nupkg | Remove-Item -Force -ErrorAction Ignore
     Get-ChildItem $PSScriptRoot\PowerShellEditorServices*.zip | Remove-Item -Force -ErrorAction Ignore
-    Get-ChildItem $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US\*-help.xml | Remove-Item -Force -ErrorAction Ignore
+    Get-ChildItem $PSScriptRoot\module\PowerShellEditorServices.Commands\en-US\*-help.xml | Remove-Item -Force -ErrorAction Ignore
 
     # Remove bundled component modules
     $moduleJsonPath = "$PSScriptRoot\modules.json"
@@ -406,7 +406,7 @@ task RestorePsesModules -After Build {
 }
 
 task BuildCmdletHelp {
-    New-ExternalHelp -Path $PSScriptRoot\module\docs -OutputPath $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US -Force
+    New-ExternalHelp -Path $PSScriptRoot\module\docs -OutputPath $PSScriptRoot\module\PowerShellEditorServices.Commands\en-US -Force
     New-ExternalHelp -Path $PSScriptRoot\module\PowerShellEditorServices.VSCode\docs -OutputPath $PSScriptRoot\module\PowerShellEditorServices.VSCode\en-US -Force
 }
 

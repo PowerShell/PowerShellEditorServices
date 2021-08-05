@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Reflection;
@@ -21,12 +22,12 @@ namespace Microsoft.PowerShell.EditorServices.Commands
 
         private static Lazy<ReadLineInvoker> s_readLine = new Lazy<ReadLineInvoker>(() =>
         {
-            Type type = Type.GetType("Microsoft.PowerShell.PSConsoleReadLine, Microsoft.PowerShell.PSReadLine2");
+            var allAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+            var assemblies = allAssemblies.FirstOrDefault(a => a.FullName.Contains("Microsoft.PowerShell.PSReadLine2"));
+            var type = assemblies?.ExportedTypes?.FirstOrDefault(a => a.FullName == "Microsoft.PowerShell.PSConsoleReadLine");
             MethodInfo method = type?.GetMethod(
                 "ReadLine",
-                new[] { typeof(Runspace), typeof(EngineIntrinsics), typeof(CancellationToken) });
-
-            // TODO: Handle method being null here. This shouldn't ever happen.
+                new [] { typeof(Runspace), typeof(EngineIntrinsics), typeof(CancellationToken) });
 
             return (ReadLineInvoker)method.CreateDelegate(typeof(ReadLineInvoker));
         });

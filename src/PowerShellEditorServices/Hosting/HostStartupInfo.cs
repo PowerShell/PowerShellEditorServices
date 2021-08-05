@@ -92,8 +92,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public string LogPath { get; }
 
         /// <summary>
-        /// The InitialSessionState will be inherited from the orginal PowerShell process. This will
-        /// be used when creating runspaces so that we honor the same InitialSessionState.
+        /// The initialSessionState will be inherited from the orginal PowerShell process.
+        /// This will be used when creating runspaces so that we honor the same initialSessionState including allowed modules, cmdlets and language mode.
         /// </summary>
         public InitialSessionState InitialSessionState { get; }
 

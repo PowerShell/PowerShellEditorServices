@@ -14,6 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
         #region Private Fields
 
         private readonly ILanguageServerFacade _languageServer;
+        private readonly ILogger _logger;
 
         #endregion
 
@@ -34,6 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 logger)
         {
             _languageServer = languageServer;
+            _logger = logger;
         }
 
         #endregion
@@ -65,7 +67,28 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             ConsoleColor foregroundColor,
             ConsoleColor backgroundColor)
         {
-            // TODO: Invoke the "output" notification!
+            if(includeNewLine)
+            {
+                outputString = "\r\n" + outputString;
+            }
+            switch(outputType)
+            {
+                case OutputType.Normal:
+                    _logger.LogInformation(outputString);
+                    break;
+                case OutputType.Error:
+                    _logger.LogError(outputString);
+                    break;
+                case OutputType.Warning:
+                    _logger.LogWarning(outputString);
+                    break;
+                case OutputType.Verbose:
+                    _logger.LogTrace(outputString);
+                    break;
+                case OutputType.Debug:
+                    _logger.LogDebug(outputString);
+                    break;
+            }
         }
 
         /// <summary>
