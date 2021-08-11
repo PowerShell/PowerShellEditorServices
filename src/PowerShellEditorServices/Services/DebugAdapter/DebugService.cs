@@ -8,13 +8,13 @@ using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
-using Microsoft.PowerShell.EditorServices.Utility;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
+using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -988,6 +988,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // this for CommandBreakpoint, as those span all script files.
             if (e.Breakpoint is LineBreakpoint lineBreakpoint)
             {
+                // TODO: This could be either a path or a script block!
                 string scriptPath = lineBreakpoint.Script;
                 if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
                     this.remoteFileManager != null)
@@ -1007,6 +1008,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                     scriptPath = mappedPath;
                 }
+
+                // TODO: It is very strange that we use the path as the key, which it could also be
+                // a script block.
+                Validate.IsNotNullOrEmptyString(nameof(scriptPath), scriptPath);
 
                 // Normalize the script filename for proper indexing
                 string normalizedScriptName = scriptPath.ToLower();

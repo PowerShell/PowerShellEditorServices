@@ -58,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             string hitCondition = null,
             string logMessage = null)
         {
-            Validate.IsNotNull("source", source);
+            Validate.IsNotNullOrEmptyString(nameof(source), source);
 
             return new BreakpointDetails
             {
