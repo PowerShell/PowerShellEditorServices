@@ -2416,7 +2416,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (!IsDebugServerActive)
             {
-                _languageServer.SendNotification("powerShell/startDebugger");
+                _languageServer?.SendNotification("powerShell/startDebugger");
             }
 
             // We've hit a breakpoint so go to a new line so that the prompt can be rendered.
