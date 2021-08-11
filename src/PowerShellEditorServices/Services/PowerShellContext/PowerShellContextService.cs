@@ -1040,26 +1040,28 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (arguments != null)
             {
-                // Need to determine If the script string is a path to a script file.
-                string scriptAbsPath = string.Empty;
-                try
+                // Add CWD from PowerShell if not an absolute path
+                if (!Path.IsPathRooted(script))
                 {
-                    // Assume we can only debug scripts from the FileSystem provider
-                    string workingDir = (await ExecuteCommandAsync<PathInfo>(
-                        new PSCommand()
-                            .AddCommand("Microsoft.PowerShell.Management\\Get-Location")
-                            .AddParameter("PSProvider", "FileSystem"),
-                            sendOutputToHost: false,
-                            sendErrorToHost: false).ConfigureAwait(false))
-                        .FirstOrDefault()
-                        .ProviderPath;
+                    try
+                    {
+                        // Assume we can only debug scripts from the FileSystem provider
+                        string workingDir = (await ExecuteCommandAsync<PathInfo>(
+                            new PSCommand()
+                                .AddCommand("Microsoft.PowerShell.Management\\Get-Location")
+                                .AddParameter("PSProvider", "FileSystem"),
+                                sendOutputToHost: false,
+                                sendErrorToHost: false).ConfigureAwait(false))
+                            .FirstOrDefault()
+                            .ProviderPath;
 
-                    workingDir = workingDir.TrimEnd(Path.DirectorySeparatorChar);
-                    scriptAbsPath = workingDir + Path.DirectorySeparatorChar + script;
-                }
-                catch (System.Management.Automation.DriveNotFoundException e)
-                {
-                    this.logger.LogHandledException("Could not determine current filesystem location", e);
+                        this.logger.LogTrace($"Prepending working directory {workingDir} to script path {script}");
+                        script = Path.Combine(workingDir, script);
+                    }
+                    catch (System.Management.Automation.DriveNotFoundException e)
+                    {
+                        this.logger.LogHandledException("Could not determine current filesystem location", e);
+                    }
                 }
 
                 var strBld = new StringBuilder();
@@ -1071,7 +1073,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // If the provided path is already quoted, then File.Exists will not find it.
                 // This keeps us from quoting an already quoted path.
                 // Related to issue #123.
-                if (File.Exists(script) || File.Exists(scriptAbsPath))
+                if (File.Exists(script))
                 {
                     // Dot-source the launched script path and single quote the path in case it includes
                     strBld.Append(". ").Append(QuoteEscapeString(script));
