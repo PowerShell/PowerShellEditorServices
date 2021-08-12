@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
 
         // These are the default values for the EnumeratePSFiles() method
         // in Microsoft.PowerShell.EditorServices.Workspace class
-        private static string[] s_defaultExcludeGlobs        = new string[0];
+        private static string[] s_defaultExcludeGlobs        = Array.Empty<string>();
         private static string[] s_defaultIncludeGlobs        = new [] { "**/*" };
         private static int      s_defaultMaxDepth            = 64;
         private static bool     s_defaultIgnoreReparsePoints = false;

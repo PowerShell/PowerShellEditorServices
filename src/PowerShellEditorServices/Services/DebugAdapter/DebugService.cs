@@ -8,13 +8,13 @@ using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
-using Microsoft.PowerShell.EditorServices.Utility;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
+using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -28,7 +28,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private const string PsesGlobalVariableNamePrefix = "__psEditorServices_";
         private const string TemporaryScriptFileName = "Script Listing.ps1";
-        private readonly BreakpointDetails[] s_emptyBreakpointDetailsArray = new BreakpointDetails[0];
 
         private readonly ILogger logger;
         private readonly PowerShellContextService powerShellContext;
@@ -150,7 +149,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     this.logger.LogTrace(
                         $"Could not set breakpoints for local path '{scriptPath}' in a remote session.");
 
-                    return s_emptyBreakpointDetailsArray;
+                    return Array.Empty<BreakpointDetails>();
                 }
 
                 string mappedPath =
@@ -167,7 +166,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.logger.LogTrace(
                     $"Could not set breakpoint on temporary script listing path '{scriptPath}'.");
 
-                return s_emptyBreakpointDetailsArray;
+                return Array.Empty<BreakpointDetails>();
             }
 
             // Fix for issue #123 - file paths that contain wildcard chars [ and ] need to
@@ -216,7 +215,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 resultBreakpointDetails = (await _breakpointService.SetCommandBreakpoints(breakpoints).ConfigureAwait(false)).ToArray();
             }
 
-            return resultBreakpointDetails ?? new CommandBreakpointDetails[0];
+            return resultBreakpointDetails ?? Array.Empty<CommandBreakpointDetails>();
         }
 
         /// <summary>
@@ -988,6 +987,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // this for CommandBreakpoint, as those span all script files.
             if (e.Breakpoint is LineBreakpoint lineBreakpoint)
             {
+                // TODO: This could be either a path or a script block!
                 string scriptPath = lineBreakpoint.Script;
                 if (this.powerShellContext.CurrentRunspace.Location == RunspaceLocation.Remote &&
                     this.remoteFileManager != null)
@@ -1007,6 +1007,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                     scriptPath = mappedPath;
                 }
+
+                // TODO: It is very strange that we use the path as the key, which it could also be
+                // a script block.
+                Validate.IsNotNullOrEmptyString(nameof(scriptPath), scriptPath);
 
                 // Normalize the script filename for proper indexing
                 string normalizedScriptName = scriptPath.ToLower();

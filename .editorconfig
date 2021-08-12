@@ -39,6 +39,8 @@ dotnet_analyzer_diagnostic.category-Maintainability.severity = error
 dotnet_diagnostic.VSTHRD002.severity = silent
 # VSTHRD200: Use "Async" suffix for awaitable methods
 dotnet_diagnostic.VSTHRD200.severity = silent
+# IDE0003: this and Me preferences
+dotnet_diagnostic.IDE0003.severity = silent
 
 [*.{json}]
 indent_size = 2

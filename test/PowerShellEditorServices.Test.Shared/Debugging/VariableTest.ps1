@@ -15,8 +15,10 @@ function Test-Variables {
     $nullString = [NullString]::Value
     $psObjVar = New-Object -TypeName PSObject -Property @{Name = 'John';  Age = 75}
     $psCustomObjVar = [PSCustomObject] @{Name = 'Paul'; Age = 73}
-    $procVar = Get-Process system
+    $procVar = Get-Process -PID $PID
 	Write-Output "Done"
 }
 
 Test-Variables
+# NOTE: If a line is added to the function above, the line numbers in the
+# associated unit tests MUST be adjusted accordingly.
