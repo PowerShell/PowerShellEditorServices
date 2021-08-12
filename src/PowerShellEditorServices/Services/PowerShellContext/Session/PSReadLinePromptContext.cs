@@ -143,7 +143,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             IEnumerable<string> readLineResults = await _powerShellContext.ExecuteCommandAsync<string>(
                 readLineCommand,
                 errorMessages: null,
-                s_psrlExecutionOptions).ConfigureAwait(false);
+                s_psrlExecutionOptions,
+                cancellationToken).ConfigureAwait(false);
 
             string line = readLineResults.FirstOrDefault();
 

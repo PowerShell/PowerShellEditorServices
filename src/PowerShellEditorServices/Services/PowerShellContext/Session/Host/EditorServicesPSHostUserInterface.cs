@@ -731,7 +731,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
 
             cancellationToken.ThrowIfCancellationRequested();
             string promptString =
-                (await this.powerShellContext.ExecuteCommandAsync<PSObject>(promptCommand, false, false).ConfigureAwait(false))
+                (await this.powerShellContext.ExecuteCommandAsync<PSObject>(
+                    promptCommand, false, false, cancellationToken).ConfigureAwait(false))
                     .Select(pso => pso.BaseObject)
                     .OfType<string>()
                     .FirstOrDefault() ?? "PS> ";

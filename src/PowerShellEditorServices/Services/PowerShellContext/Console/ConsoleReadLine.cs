@@ -208,9 +208,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                                 command.AddParameter("CursorColumn", currentCursorIndex);
                                 command.AddParameter("Options", null);
 
-                                var results = await this.powerShellContext
-                                    .ExecuteCommandAsync<CommandCompletion>(command, sendOutputToHost: false, sendErrorToHost: false)
-                                    .ConfigureAwait(false);
+                                var results = await this.powerShellContext.ExecuteCommandAsync<CommandCompletion>(
+                                    command, sendOutputToHost: false, sendErrorToHost: false, cancellationToken).ConfigureAwait(false);
 
                                 currentCompletion = results.FirstOrDefault();
                             }
@@ -327,8 +326,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                             PSCommand command = new PSCommand();
                             command.AddCommand("Get-History");
 
-                            currentHistory = await this.powerShellContext.ExecuteCommandAsync<PSObject>(command, sendOutputToHost: false, sendErrorToHost: false)
-                                .ConfigureAwait(false)
+                            currentHistory = await this.powerShellContext.ExecuteCommandAsync<PSObject>(
+                                command, sendOutputToHost: false, sendErrorToHost: false, cancellationToken).ConfigureAwait(false)
                                 as Collection<PSObject>;
 
                             if (currentHistory != null)

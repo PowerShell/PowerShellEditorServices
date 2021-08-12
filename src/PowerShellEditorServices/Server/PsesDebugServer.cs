@@ -137,6 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
         public void Dispose()
         {
             _powerShellContextService.IsDebugServerActive = false;
+            // TODO: If the debugger has stopped, should we clear the breakpoints?
             _debugAdapterServer.Dispose();
             _inputStream.Dispose();
             _outputStream.Dispose();
