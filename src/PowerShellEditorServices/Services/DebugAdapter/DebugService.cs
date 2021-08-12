@@ -28,7 +28,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private const string PsesGlobalVariableNamePrefix = "__psEditorServices_";
         private const string TemporaryScriptFileName = "Script Listing.ps1";
-        private readonly BreakpointDetails[] s_emptyBreakpointDetailsArray = new BreakpointDetails[0];
 
         private readonly ILogger logger;
         private readonly PowerShellContextService powerShellContext;
@@ -150,7 +149,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     this.logger.LogTrace(
                         $"Could not set breakpoints for local path '{scriptPath}' in a remote session.");
 
-                    return s_emptyBreakpointDetailsArray;
+                    return Array.Empty<BreakpointDetails>();
                 }
 
                 string mappedPath =
@@ -167,7 +166,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.logger.LogTrace(
                     $"Could not set breakpoint on temporary script listing path '{scriptPath}'.");
 
-                return s_emptyBreakpointDetailsArray;
+                return Array.Empty<BreakpointDetails>();
             }
 
             // Fix for issue #123 - file paths that contain wildcard chars [ and ] need to
@@ -216,7 +215,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 resultBreakpointDetails = (await _breakpointService.SetCommandBreakpoints(breakpoints).ConfigureAwait(false)).ToArray();
             }
 
-            return resultBreakpointDetails ?? new CommandBreakpointDetails[0];
+            return resultBreakpointDetails ?? Array.Empty<CommandBreakpointDetails>();
         }
 
         /// <summary>
