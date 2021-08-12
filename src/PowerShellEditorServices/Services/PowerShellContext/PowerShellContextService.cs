@@ -1248,7 +1248,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.versionSpecificOperations.StopCommandInDebugger(this);
                 if (shouldAbortDebugSession)
                 {
-                    this.ResumeDebugger(DebuggerResumeAction.Stop);
+                    this.ResumeDebugger(DebuggerResumeAction.Stop, shouldWaitForExit: false);
                 }
             }
             else
@@ -1940,7 +1940,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private IEnumerable<TResult> ExecuteCommandInDebugger<TResult>(PSCommand psCommand, bool sendOutputToHost)
         {
-            this.logger.LogTrace($"Attempting to execute command(s)a in the debugger: {GetStringForPSCommand(psCommand)}");
+            this.logger.LogTrace($"Attempting to execute command(s) in the debugger: {GetStringForPSCommand(psCommand)}");
 
             IEnumerable<TResult> output =
                 this.versionSpecificOperations.ExecuteCommandInDebugger<TResult>(
