@@ -4,7 +4,7 @@
     <VersionSuffix></VersionSuffix>
     <Company>Microsoft</Company>
     <Copyright>© Microsoft Corporation.</Copyright>
-    <LangVersion>9.0</LangVersion>
+    <LangVersion>10.0</LangVersion>
     <PackageTags>PowerShell;editor;development;language;debugging</PackageTags>
     <PackageLicenseUrl>https://raw.githubusercontent.com/PowerShell/PowerShellEditorServices/master/LICENSE</PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
