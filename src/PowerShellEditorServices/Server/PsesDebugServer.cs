@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using OmniSharp.Extensions.DebugAdapter.Server;
@@ -42,9 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
         private DebugAdapterServer _debugAdapterServer;
 
-        private PowerShellExecutionService _executionService;
-
-        private EditorServicesConsolePSHost _psesHost;
+        private PowerShellDebugContext _debugContext;
 
         protected readonly ILoggerFactory _loggerFactory;
 
@@ -77,10 +76,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
             {
                 // We need to let the PowerShell Context Service know that we are in a debug session
                 // so that it doesn't send the powerShell/startDebugger message.
-                _psesHost = ServiceProvider.GetService<EditorServicesConsolePSHost>();
-                _psesHost.DebugContext.IsDebugServerActive = true;
-
-                _executionService = ServiceProvider.GetService<PowerShellExecutionService>();
+                _debugContext = ServiceProvider.GetService<InternalHost>().DebugContext;
+                _debugContext.IsDebugServerActive = true;
 
                 /*
                 // Needed to make sure PSReadLine's static properties are initialized in the pipeline thread.
@@ -144,7 +141,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
         public void Dispose()
         {
             // TODO: If the debugger has stopped, should we clear the breakpoints?
-            _psesHost.DebugContext.IsDebugServerActive = false;
+            _debugContext.IsDebugServerActive = false;
             _debugAdapterServer.Dispose();
             _inputStream.Dispose();
             _outputStream.Dispose();

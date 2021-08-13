@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿/*
+using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
@@ -26,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private readonly ILogger _logger;
 
-        private readonly EditorServicesConsolePSHost _psesHost;
+        private readonly InternalHost _psesHost;
 
         private readonly IReadLineProvider _readLineProvider;
 
@@ -36,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private readonly CancellationTokenSource _consumerThreadCancellationSource;
 
-        private readonly Thread _pipelineThread; 
+        private readonly Thread _pipelineThread;
 
         private readonly CancellationContext _loopCancellationContext;
 
@@ -47,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         public PipelineThreadExecutor(
             ILoggerFactory loggerFactory,
             HostStartupInfo hostInfo,
-            EditorServicesConsolePSHost psesHost,
+            InternalHost psesHost,
             IReadLineProvider readLineProvider)
         {
             _logger = loggerFactory.CreateLogger<PipelineThreadExecutor>();
@@ -295,3 +296,4 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         }
     }
 }
+*/

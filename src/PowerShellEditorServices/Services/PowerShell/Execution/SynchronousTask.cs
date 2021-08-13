@@ -69,6 +69,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public void ExecuteSynchronously(CancellationToken executorCancellationToken)
         {
+            if (IsCanceled)
+            {
+                return;
+            }
+
             using (var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(_taskRequesterCancellationToken, executorCancellationToken))
             {
                 if (cancellationSource.IsCancellationRequested)

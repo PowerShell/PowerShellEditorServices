@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly WorkspaceService _workspaceService;
         private readonly ConfigurationService _configurationService;
         private readonly ExtensionService _extensionService;
-        private readonly EditorServicesConsolePSHost _psesHost;
+        private readonly InternalHost _psesHost;
         private readonly ILanguageServerFacade _languageServer;
         private DidChangeConfigurationCapability _capability;
         private bool _profilesLoaded;
@@ -44,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             ConfigurationService configurationService,
             ILanguageServerFacade languageServer,
             ExtensionService extensionService,
-            EditorServicesConsolePSHost psesHost)
+            InternalHost psesHost)
         {
             _logger = factory.CreateLogger<PsesConfigurationHandler>();
             _workspaceService = workspaceService;

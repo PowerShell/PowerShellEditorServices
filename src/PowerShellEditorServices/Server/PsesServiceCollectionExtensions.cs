@@ -28,14 +28,13 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 .AddSingleton<HostStartupInfo>(hostStartupInfo)
                 .AddSingleton<WorkspaceService>()
                 .AddSingleton<SymbolsService>()
-                .AddSingleton<EditorServicesConsolePSHost>()
+                .AddSingleton<InternalHost>()
                 .AddSingleton<IRunspaceContext>(
-                    (provider) => provider.GetService<EditorServicesConsolePSHost>())
-                .AddSingleton<PowerShellExecutionService>(
-                    (provider) => provider.GetService<EditorServicesConsolePSHost>().ExecutionService)
+                    (provider) => provider.GetService<InternalHost>())
+                .AddSingleton<PowerShellExecutionService>()
                 .AddSingleton<ConfigurationService>()
                 .AddSingleton<IPowerShellDebugContext>(
-                    (provider) => provider.GetService<EditorServicesConsolePSHost>().DebugContext)
+                    (provider) => provider.GetService<InternalHost>().DebugContext)
                 .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<RemoteFileManagerService>()
@@ -67,8 +66,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
         {
             return collection
                 .AddSingleton(languageServiceProvider.GetService<EditorServicesConsolePSHost>())
-                .AddSingleton<IRunspaceContext>(languageServiceProvider.GetService<EditorServicesConsolePSHost>())
-                .AddSingleton<IPowerShellDebugContext>(languageServiceProvider.GetService<EditorServicesConsolePSHost>().DebugContext)
+                .AddSingleton<IRunspaceContext>(languageServiceProvider.GetService<InternalHost>())
+                .AddSingleton<IPowerShellDebugContext>(languageServiceProvider.GetService<InternalHost>().DebugContext)
                 .AddSingleton(languageServiceProvider.GetService<PowerShellExecutionService>())
                 .AddSingleton(languageServiceProvider.GetService<WorkspaceService>())
                 .AddSingleton(languageServiceProvider.GetService<RemoteFileManagerService>())
