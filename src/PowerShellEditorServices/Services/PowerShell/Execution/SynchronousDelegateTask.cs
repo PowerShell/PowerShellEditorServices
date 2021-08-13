@@ -78,11 +78,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private readonly string _representation;
 
-        private readonly EditorServicesConsolePSHost _psesHost;
+        private readonly InternalHost _psesHost;
 
         public SynchronousPSDelegateTask(
             ILogger logger,
-            EditorServicesConsolePSHost psesHost,
+            InternalHost psesHost,
             string representation,
             ExecutionOptions executionOptions,
             CancellationToken cancellationToken,
@@ -115,11 +115,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private readonly string _representation;
 
-        private readonly EditorServicesConsolePSHost _psesHost;
+        private readonly InternalHost _psesHost;
 
         public SynchronousPSDelegateTask(
             ILogger logger,
-            EditorServicesConsolePSHost psesHost,
+            InternalHost psesHost,
             string representation,
             ExecutionOptions executionOptions,
             CancellationToken cancellationToken,

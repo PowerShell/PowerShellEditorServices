@@ -39,22 +39,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         private readonly ILanguageServerFacade _languageServer;
 
-        private readonly EditorServicesConsolePSHost _psesHost;
-
-        private readonly ConsoleReplRunner _consoleRepl;
+        private readonly InternalHost _psesHost;
 
         private CancellationTokenSource _debugLoopCancellationSource;
 
         public PowerShellDebugContext(
             ILoggerFactory loggerFactory,
             ILanguageServerFacade languageServer,
-            EditorServicesConsolePSHost psesHost,
-            ConsoleReplRunner consoleReplRunner)
+            InternalHost psesHost)
         {
             _logger = loggerFactory.CreateLogger<PowerShellDebugContext>();
             _languageServer = languageServer;
             _psesHost = psesHost;
-            _consoleRepl = consoleReplRunner;
         }
 
         public bool IsStopped { get; private set; }
@@ -71,7 +67,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         public Task<DscBreakpointCapability> GetDscBreakpointCapabilityAsync(CancellationToken cancellationToken)
         {
-            return _psesHost.CurrentRunspace.GetDscBreakpointCapabilityAsync(_logger, _psesHost.ExecutionService, cancellationToken);
+            return _psesHost.CurrentRunspace.GetDscBreakpointCapabilityAsync(_logger, _psesHost, cancellationToken);
         }
 
         public void Abort()
@@ -106,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         public void SetDebugResuming(DebuggerResumeAction debuggerResumeAction)
         {
-            _consoleRepl?.SetReplPop();
+            _psesHost.SetExit();
             LastStopEventArgs.ResumeAction = debuggerResumeAction;
             _debugLoopCancellationSource.Cancel();
         }
@@ -115,7 +111,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         {
             _debugLoopCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(loopCancellationToken);
             RaiseDebuggerStoppedEvent();
-
         }
 
         public void ExitDebugLoop()

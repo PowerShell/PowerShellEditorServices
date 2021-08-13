@@ -25,19 +25,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private readonly EngineIntrinsics _engineIntrinsics;
 
-        private ISynchronousExecutor _executor;
-
         #region Constructors
 
         public ConsoleReadLine(
             PSReadLineProxy psrlProxy,
             InternalHost psesHost,
-            ISynchronousExecutor executor,
             EngineIntrinsics engineIntrinsics)
         {
             _psrlProxy = psrlProxy;
             _psesHost = psesHost;
-            _executor = executor;
             _engineIntrinsics = engineIntrinsics;
         }
 
@@ -47,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         public string ReadLine(CancellationToken cancellationToken)
         {
-            return _executor.InvokeDelegate<string>(representation: "ReadLine", new ExecutionOptions { MustRunInForeground = true }, InvokePSReadLine, cancellationToken);
+            return _psesHost.InvokeDelegate<string>(representation: "ReadLine", new ExecutionOptions { MustRunInForeground = true }, InvokePSReadLine, cancellationToken);
         }
 
         public bool TryOverrideReadKey(Func<bool, ConsoleKeyInfo> readKeyFunc)
@@ -351,7 +347,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
                             PSCommand command = new PSCommand().AddCommand("Get-History");
 
-                            currentHistory = _executor.InvokePSCommand<PSObject>(
+                            currentHistory = _psesHost.InvokePSCommand<PSObject>(
                                 command,
                                 PowerShellExecutionOptions.Default,
                                 cancellationToken);

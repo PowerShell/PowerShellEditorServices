@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
     {
         private readonly ILogger _logger;
 
-        private readonly EditorServicesConsolePSHost _psesHost;
+        private readonly InternalHost _psesHost;
 
         private readonly PSCommand _psCommand;
 
@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public SynchronousPowerShellTask(
             ILogger logger,
-            EditorServicesConsolePSHost psesHost,
+            InternalHost psesHost,
             PSCommand command,
             PowerShellExecutionOptions executionOptions,
             CancellationToken cancellationToken)
