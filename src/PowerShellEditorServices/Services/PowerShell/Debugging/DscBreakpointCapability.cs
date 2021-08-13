@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
-using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -90,7 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         public static async Task<DscBreakpointCapability> GetDscCapabilityAsync(
             ILogger logger,
             IRunspaceInfo currentRunspace,
-            PowerShellExecutionService executionService,
+            InternalHost psesHost,
             CancellationToken cancellationToken)
         {
             // DSC support is enabled only for Windows PowerShell.
@@ -165,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                 return capability;
             };
 
-            return await executionService.ExecuteDelegateAsync<DscBreakpointCapability>(
+            return await psesHost.ExecuteDelegateAsync<DscBreakpointCapability>(
                 nameof(getDscBreakpointCapabilityFunc),
                 ExecutionOptions.Default,
                 cancellationToken,

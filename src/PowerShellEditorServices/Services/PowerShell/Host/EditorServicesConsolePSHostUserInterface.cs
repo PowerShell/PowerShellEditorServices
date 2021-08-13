@@ -84,12 +84,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public override string ReadLine()
         {
-            return _readLineProvider.ReadLine.ReadLineAsync(CancellationToken.None).GetAwaiter().GetResult();
+            return _readLineProvider.ReadLine.ReadLine(CancellationToken.None);
         }
 
         public override SecureString ReadLineAsSecureString()
         {
-            return _readLineProvider.ReadLine.ReadSecureLineAsync(CancellationToken.None).GetAwaiter().GetResult();
+            return _readLineProvider.ReadLine.ReadSecureLine(CancellationToken.None);
         }
 
         public override void Write(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value)

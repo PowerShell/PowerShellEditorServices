@@ -9,6 +9,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
     using System.Threading.Tasks;
     using System.Threading;
     using System;
+    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 
     internal class RunspaceInfo : IRunspaceInfo
     {
@@ -75,7 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
 
         public async Task<DscBreakpointCapability> GetDscBreakpointCapabilityAsync(
             ILogger logger,
-            PowerShellExecutionService executionService,
+            InternalHost psesHost,
             CancellationToken cancellationToken)
         {
             if (_dscBreakpointCapability == null)
@@ -83,7 +84,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
                 _dscBreakpointCapability = await DscBreakpointCapability.GetDscCapabilityAsync(
                     logger,
                     this,
-                    executionService,
+                    psesHost,
                     cancellationToken);
             }
 

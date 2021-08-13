@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿/*
+using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using System;
@@ -300,3 +301,4 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
         }
     }
 }
+*/
