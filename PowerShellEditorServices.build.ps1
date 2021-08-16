@@ -11,10 +11,22 @@ param(
 
     [string]$DefaultModuleRepository = "PSGallery",
 
-    [string]$TestFilter = ''
+    # See: https://docs.microsoft.com/en-us/dotnet/core/testing/selective-unit-tests
+    [string]$TestFilter = '',
+
+    # See: https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-test
+    # E.g. use @("--logger", "console;verbosity=detailed") for detailed console output instead
+    [string[]]$TestArgs = @("--logger", "trx")
 )
 
 #Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
+
+$script:dotnetTestArgs = @(
+    "test"
+    $TestArgs
+    if ($TestFilter) { "--filter", $TestFilter }
+    "--framework"
+)
 
 $script:IsNix = $IsLinux -or $IsMacOS
 $script:IsRosetta = $IsMacOS -and (sysctl -n sysctl.proc_translated) -eq 1 # Mac M1
@@ -223,31 +235,26 @@ task Build BinClean,{
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj -f $script:NetRuntime.Standard }
 }
 
-function DotNetTestFilter {
-    # Reference https://docs.microsoft.com/en-us/dotnet/core/testing/selective-unit-tests
-    if ($TestFilter) { @("--filter",$TestFilter) } else { "" }
-}
-
 task Test SetupHelpForTests,TestServer,TestE2E
 
 task TestServer TestServerWinPS,TestServerPS7,TestServerPS72
 
 task TestServerWinPS -If (-not $script:IsNix) {
     Set-Location .\test\PowerShellEditorServices.Test\
-    exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.Desktop (DotNetTestFilter) }
+    exec { & $script:dotnetExe $script:dotnetTestArgs $script:NetRuntime.Desktop }
 }
 
 task TestServerPS7 -If (-not $script:IsRosetta) {
     Set-Location .\test\PowerShellEditorServices.Test\
     Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
-        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS7 (DotNetTestFilter) }
+        exec { & $script:dotnetExe $script:dotnetTestArgs $script:NetRuntime.PS7 }
     }
 }
 
 task TestServerPS72 {
     Set-Location .\test\PowerShellEditorServices.Test\
     Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
-        exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS72 (DotNetTestFilter) }
+        exec { & $script:dotnetExe $script:dotnetTestArgs $script:NetRuntime.PS72 }
     }
 }
 
@@ -256,13 +263,13 @@ task TestE2E {
 
     $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
     $NetRuntime = if ($IsRosetta) { $script:NetRuntime.PS72 } else { $script:NetRuntime.PS7 }
-    exec { & $script:dotnetExe test --logger trx -f $NetRuntime (DotNetTestFilter) }
+    exec { & $script:dotnetExe $script:dotnetTestArgs $NetRuntime }
 
     # Run E2E tests in ConstrainedLanguage mode.
     if (!$script:IsNix) {
         try {
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", "0x80000007", [System.EnvironmentVariableTarget]::Machine);
-            exec { & $script:dotnetExe test --logger trx -f $script:NetRuntime.PS7 (DotNetTestFilter) }
+            exec { & $script:dotnetExe $script:dotnetTestArgs $script:NetRuntime.PS7 }
         } finally {
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", $null, [System.EnvironmentVariableTarget]::Machine);
         }
