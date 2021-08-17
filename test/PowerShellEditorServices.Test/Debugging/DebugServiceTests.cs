@@ -32,6 +32,16 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         private AsyncQueue<SessionStateChangedEventArgs> sessionStateQueue =
             new AsyncQueue<SessionStateChangedEventArgs>();
 
+        private ScriptFile GetDebugScript(string fileName)
+        {
+            return this.workspace.GetFile(
+                TestUtilities.NormalizePath(Path.Combine(
+                    Path.GetDirectoryName(typeof(DebugServiceTests).Assembly.Location),
+                    "../../../../PowerShellEditorServices.Test.Shared/Debugging",
+                    fileName
+                )));
+        }
+
         public DebugServiceTests()
         {
             var logger = NullLogger.Instance;
@@ -41,18 +51,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             this.workspace = new WorkspaceService(NullLoggerFactory.Instance);
 
-            // Load the test debug file
-            this.debugScriptFile =
-                this.workspace.GetFile(
-                    TestUtilities.NormalizePath(Path.Combine(
-                        Path.GetDirectoryName(typeof(DebugServiceTests).Assembly.Location),
-                        "../../../../PowerShellEditorServices.Test.Shared/Debugging/VariableTest.ps1")));
-
-            this.variableScriptFile =
-                this.workspace.GetFile(
-                    TestUtilities.NormalizePath(Path.Combine(
-                        Path.GetDirectoryName(typeof(DebugServiceTests).Assembly.Location),
-                        "../../../../PowerShellEditorServices.Test.Shared/Debugging/VariableTest.ps1")));
+            // Load the test debug files
+            this.debugScriptFile = GetDebugScript("DebugTest.ps1");
+            this.variableScriptFile = GetDebugScript("VariableTest.ps1");
 
             this.debugService = new DebugService(
                 this.powerShellContext,
@@ -65,13 +66,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             this.debugService.DebuggerStopped += debugService_DebuggerStopped;
             this.debugService.BreakpointUpdated += debugService_BreakpointUpdated;
-
-            // Load the test debug file
-            this.debugScriptFile =
-                this.workspace.GetFile(
-                    TestUtilities.NormalizePath(Path.Combine(
-                        Path.GetDirectoryName(typeof(DebugServiceTests).Assembly.Location),
-                        "../../../../PowerShellEditorServices.Test.Shared/Debugging/DebugTest.ps1")));
         }
 
         async void powerShellContext_SessionStateChanged(object sender, SessionStateChangedEventArgs e)
@@ -123,11 +117,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             // The path is intentionally odd (some escaped chars but not all) because we are testing
             // the internal path escaping mechanism - it should escape certains chars ([, ] and space) but
             // it should not escape already escaped chars.
-            ScriptFile debugWithParamsFile =
-                this.workspace.GetFile(
-                    TestUtilities.NormalizePath(Path.Combine(
-                        Path.GetDirectoryName(typeof(DebugServiceTests).Assembly.Location),
-                        "../../../../PowerShellEditorServices.Test.Shared/Debugging/Debug W&ith Params [Test].ps1")));
+            ScriptFile debugWithParamsFile = GetDebugScript("Debug W&ith Params [Test].ps1");
 
             await this.debugService.SetLineBreakpointsAsync(
                 debugWithParamsFile,
@@ -889,7 +879,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             var nullStringVar = variables.FirstOrDefault(v => v.Name == "$nullString");
             Assert.NotNull(nullStringVar);
-            Assert.True("[NullString]".Equals(nullStringVar.ValueString));
+            Assert.Equal("[NullString]", nullStringVar.ValueString);
             Assert.True(nullStringVar.IsExpandable);
 
             // Abort script execution early and wait for completion
@@ -973,6 +963,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
         // Verifies fix for issue #86, $proc = Get-Process foo displays just the ETS property set
         // and not all process properties.
+        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerVariableProcessObjDisplaysCorrectly()
         {
