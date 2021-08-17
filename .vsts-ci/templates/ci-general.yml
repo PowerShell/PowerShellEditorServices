@@ -7,10 +7,15 @@ steps:
 - pwsh: $PSVersionTable
   displayName: PowerShell version
 
+# TODO: Remove this when OmniSharp updates
+- checkout: self
+- checkout: OmniSharp
+
 - task: PowerShell@2
   displayName: Build and test
   inputs:
-    filePath: tools/azurePipelinesBuild.ps1
+    filePath: $(Build.SourcesDirectory)/PowerShellEditorServices/tools/azurePipelinesBuild.ps1
+    workingDirectory: $(Build.SourcesDirectory)/PowerShellEditorServices
     pwsh: ${{ parameters.pwsh }}
 
 # NOTE: We zip the artifacts because they're ~20 MB compressed, but ~300 MB raw,
@@ -18,7 +23,7 @@ steps:
 - task: ArchiveFiles@2
   displayName: Zip pipeline artifacts
   inputs:
-    rootFolderOrFile: module
+    rootFolderOrFile: $(Build.SourcesDirectory)/PowerShellEditorServices/module
     includeRootFolder: false
     archiveType: zip
     archiveFile: PowerShellEditorServices-Build.zip

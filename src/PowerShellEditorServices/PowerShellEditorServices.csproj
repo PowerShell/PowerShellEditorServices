@@ -28,8 +28,11 @@
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
-    <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.19.2" />
-    <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Server" Version="0.19.2" />
+    <!-- TODO: Update to 0.19.3 when available -->
+    <!-- <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.19.2" /> -->
+    <!-- <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Server" Version="0.19.2" /> -->
+    <ProjectReference Include="..\..\..\csharp-language-server-protocol\src\Server\Server.csproj" />
+    <ProjectReference Include="..\..\..\csharp-language-server-protocol\src\Dap.Server\Dap.Server.csproj" />
     <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" />
     <PackageReference Include="Serilog" Version="2.10.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
@@ -42,6 +45,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Extensions\Api\DocumentSymbolService.cs"/>
+    <Compile Remove="Extensions\Api\DocumentSymbolService.cs" />
   </ItemGroup>
 </Project>

@@ -16,6 +16,15 @@ trigger:
 pr:
 - master
 
+# TODO: Remove this when OmniSharp updates
+resources:
+  repositories:
+  - repository: OmniSharp
+    type: github
+    endpoint: GitHub
+    name: andschwa/csharp-language-server-protocol
+    ref: preview
+
 jobs:
 - job: PS51_Win2016
   displayName: PowerShell 5.1 - Windows Server 2016
