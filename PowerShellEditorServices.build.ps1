@@ -51,18 +51,6 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
     git update-index --assume-unchanged "$PSScriptRoot/src/PowerShellEditorServices.Hosting/BuildInfo.cs"
 }
 
-function Invoke-WithCreateDefaultHook {
-    param([scriptblock]$ScriptBlock)
-
-    try
-    {
-        $env:PSES_TEST_USE_CREATE_DEFAULT = 1
-        & $ScriptBlock
-    } finally {
-        Remove-Item env:PSES_TEST_USE_CREATE_DEFAULT
-    }
-}
-
 function Install-Dotnet {
     param (
         [string[]]$Channel
@@ -246,16 +234,12 @@ task TestServerWinPS -If (-not $script:IsNix) {
 
 task TestServerPS7 -If (-not $script:IsRosetta) {
     Set-Location .\test\PowerShellEditorServices.Test\
-    Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
-        exec { & $script:dotnetExe $script:dotnetTestArgs $script:NetRuntime.PS7 }
-    }
+    exec { & $script:dotnetExe $script:dotnetTestArgs $script:NetRuntime.PS7 }
 }
 
 task TestServerPS72 {
     Set-Location .\test\PowerShellEditorServices.Test\
-    Invoke-WithCreateDefaultHook -NewModulePath $script:PSCoreModulePath {
-        exec { & $script:dotnetExe $script:dotnetTestArgs $script:NetRuntime.PS72 }
-    }
+    exec { & $script:dotnetExe $script:dotnetTestArgs $script:NetRuntime.PS72 }
 }
 
 task TestE2E {
