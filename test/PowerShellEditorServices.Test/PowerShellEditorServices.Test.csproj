@@ -34,9 +34,7 @@
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
     <PackageReference Include="Xunit.SkippableFact" Version="1.4.13" />
-    <!-- TODO: Update to 0.19.3 when available -->
-    <!-- <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.19.2" /> -->
-    <ProjectReference Include="..\..\..\csharp-language-server-protocol\src\Server\Server.csproj" />
+    <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.19.3" />
   </ItemGroup>
 
   <ItemGroup>
