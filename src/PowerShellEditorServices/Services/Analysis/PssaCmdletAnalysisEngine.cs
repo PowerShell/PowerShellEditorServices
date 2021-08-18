@@ -468,15 +468,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                     throw new FileNotFoundException("Unable to find PSScriptAnalyzer module on the module path");
                 }
 
-                // Now that we know where the PSScriptAnalyzer we want to use is,
-                // create a base session state with PSScriptAnalyzer loaded
-#if DEBUG
-                InitialSessionState sessionState = Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1"
-                    ? InitialSessionState.CreateDefault()
-                    : InitialSessionState.CreateDefault2();
-#else
+                // Now that we know where the PSScriptAnalyzer we want to use is, create a base
+                // session state with PSScriptAnalyzer loaded
+                //
+                // We intentionally use `CreateDefault2()` as it loads `Microsoft.PowerShell.Core`
+                // only, which is a more minimal and therefore safer state.
                 InitialSessionState sessionState = InitialSessionState.CreateDefault2();
-#endif
 
                 sessionState.ImportPSModule(new [] { pssaModuleInfo.ModuleBase });
 

@@ -41,7 +41,11 @@ namespace Microsoft.PowerShell.EditorServices.Test
         public static PowerShellContextService Create(ILogger logger)
         {
             PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, isPSReadLineEnabled: false);
-            var initialSessionState = InitialSessionState.CreateDefault();
+
+            // We intentionally use `CreateDefault2()` as it loads `Microsoft.PowerShell.Core` only,
+            // which is a more minimal and therefore safer state.
+            var initialSessionState = InitialSessionState.CreateDefault2();
+
             // We set the process scope's execution policy (which is really the runspace's scope) to
             // `Bypass` so we can import our bundled modules. This is equivalent in scope to the CLI
             // argument `-ExecutionPolicy Bypass`, which (for instance) the extension passes. Thus
