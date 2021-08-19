@@ -228,5 +228,64 @@ namespace PowerShellEditorServices.Test.E2E
                 (i) => Assert.Equal("at breakpoint", i),
                 (i) => Assert.Equal("after breakpoint", i));
         }
+
+        // This is a regression test for a bug where user code causes a new synchronization context
+        // to be created, breaking the extension. It's most evident when debugging PowerShell
+        // scripts that use System.Windows.Forms. It required fixing both Editor Services and
+        // OmniSharp.
+        //
+        // This test depends on PowerShell being able to load System.Windows.Forms, which only works
+        // reliably with Windows PowerShell. It works with PowerShell Core in the real-world;
+        // however, our host executable is xUnit, not PowerShell. So by restricting to Windows
+        // PowerShell, we avoid all issues with our test project (and the xUnit executable) not
+        // having System.Windows.Forms deployed, and can instead rely on the Windows Global Assembly
+        // Cache (GAC) to find it.
+        [Trait("Category", "DAP")]
+        [SkippableFact]
+        public async Task CanStepPastSystemWindowsForms()
+        {
+            Skip.IfNot(PsesStdioProcess.IsWindowsPowerShell);
+            Skip.If(PsesStdioProcess.RunningInConstainedLanguageMode);
+
+            string filePath = NewTestFile(string.Join(Environment.NewLine, new []
+                {
+                    "Add-Type -AssemblyName System.Windows.Forms",
+                    "$form = New-Object System.Windows.Forms.Form",
+                    "Write-Host $form"
+                }));
+
+            await PsesDebugAdapterClient.LaunchScript(filePath, Started).ConfigureAwait(false);
+
+            var setBreakpointsResponse = await PsesDebugAdapterClient.SetFunctionBreakpoints(
+                new SetFunctionBreakpointsArguments
+                {
+                    Breakpoints = new FunctionBreakpoint[]
+                    {
+                        new FunctionBreakpoint
+                        {
+                            Name = "Write-Host",
+                        }
+                    }
+                }).ConfigureAwait(false);
+
+            var breakpoint = setBreakpointsResponse.Breakpoints.First();
+            Assert.True(breakpoint.Verified);
+
+            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(false);
+            Assert.NotNull(configDoneResponse);
+
+            // At this point the script should be running so lets give it time
+            await Task.Delay(2000).ConfigureAwait(false);
+
+            var variablesResponse = await PsesDebugAdapterClient.RequestVariables(
+                new VariablesArguments
+                {
+                    VariablesReference = 1
+                }).ConfigureAwait(false);
+
+            var form = variablesResponse.Variables.FirstOrDefault(v => v.Name == "$form");
+            Assert.NotNull(form);
+            Assert.Equal("System.Windows.Forms.Form, Text: ", form.Value);
+        }
     }
 }
