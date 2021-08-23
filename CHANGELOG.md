@@ -1,5 +1,10 @@
 # PowerShell Editor Services Release History
 
+## v2.4.9
+### Monday, August 23, 2021
+
+- 🐛 🔍 [vscode-powershell #3513](https://github.com/PowerShell/PowerShellEditorServices/pull/1555) - Fix debugger regression where console needed input to start/continue.
+
 ## v2.4.8
 ### Thursday, August 19, 2021
 
