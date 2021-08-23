@@ -144,7 +144,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 readLineCommand,
                 errorMessages: null,
                 s_psrlExecutionOptions,
-                cancellationToken).ConfigureAwait(false);
+                // NOTE: This command should always be allowed to complete, as the command itself
+                // has a linked cancellation token such that PSReadLine will be correctly cancelled.
+                CancellationToken.None).ConfigureAwait(false);
 
             string line = readLineResults.FirstOrDefault();
 
