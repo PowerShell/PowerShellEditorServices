@@ -765,7 +765,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     }
 
                     // This is the primary reason that ExecuteCommandAsync takes a CancellationToken
-                    cancellationToken.Register(() => shell.Stop());
                     return await Task.Run<IEnumerable<TResult>>(
                         () => shell.Invoke<TResult>(input: null, invocationSettings), cancellationToken)
                         .ConfigureAwait(false);
