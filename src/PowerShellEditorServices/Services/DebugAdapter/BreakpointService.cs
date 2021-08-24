@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     {
         private readonly ILogger<BreakpointService> _logger;
         private readonly PowerShellExecutionService _executionService;
-        private readonly EditorServicesConsolePSHost _editorServicesHost;
+        private readonly InternalHost _editorServicesHost;
         private readonly DebugStateService _debugStateService;
 
         // TODO: This needs to be managed per nested session
@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public BreakpointService(
             ILoggerFactory factory,
             PowerShellExecutionService executionService,
-            EditorServicesConsolePSHost editorServicesHost,
+            InternalHost editorServicesHost,
             DebugStateService debugStateService)
         {
             _logger = factory.CreateLogger<BreakpointService>();

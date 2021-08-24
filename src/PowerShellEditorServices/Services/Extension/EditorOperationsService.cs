@@ -16,7 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
     {
         private const bool DefaultPreviewSetting = true;
 
-        private readonly EditorServicesConsolePSHost _psesHost;
+        private readonly InternalHost _psesHost;
         private readonly WorkspaceService _workspaceService;
 
         private readonly ILanguageServerFacade _languageServer;
@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         private readonly PowerShellExecutionService _executionService;
 
         public EditorOperationsService(
-            EditorServicesConsolePSHost psesHost,
+            InternalHost psesHost,
             WorkspaceService workspaceService,
             PowerShellExecutionService executionService,
             ILanguageServerFacade languageServer)

@@ -11,12 +11,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
     {
         private readonly InternalHost _internalHost;
 
-        public EditorServicesConsolePSHost(
-            ILoggerFactory loggerFactory,
-            ILanguageServerFacade languageServer,
-            HostStartupInfo hostInfo)
+        internal EditorServicesConsolePSHost(
+            InternalHost internalHost)
         {
-            _internalHost = new InternalHost(loggerFactory, languageServer, hostInfo, this);
+            _internalHost = internalHost;
         }
 
         public override CultureInfo CurrentCulture => _internalHost.CurrentCulture;
