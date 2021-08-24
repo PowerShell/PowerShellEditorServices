@@ -80,9 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
         {
             Type psConsoleReadLineType = pwsh.AddScript(ReadLineInitScript).InvokeAndClear<Type>().FirstOrDefault();
 
-            Type type = Type.GetType("Microsoft.PowerShell.PSConsoleReadLine");
-
-            RuntimeHelpers.RunClassConstructor(type.TypeHandle);
+            RuntimeHelpers.RunClassConstructor(psConsoleReadLineType.TypeHandle);
 
             return new PSReadLineProxy(loggerFactory, psConsoleReadLineType);
         }
@@ -125,6 +123,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                 throw NewInvalidPSReadLineVersionException(
                     FieldMemberType,
                     ReadKeyOverrideFieldName,
+                    _logger);
+            }
+
+            if (_handleIdleOverrideField is null)
+            {
+                throw NewInvalidPSReadLineVersionException(
+                    FieldMemberType,
+                    HandleIdleOverrideName,
                     _logger);
             }
 
