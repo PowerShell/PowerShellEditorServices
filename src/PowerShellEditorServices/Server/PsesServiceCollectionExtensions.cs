@@ -65,7 +65,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
             bool useTempSession)
         {
             return collection
-                .AddSingleton(languageServiceProvider.GetService<EditorServicesConsolePSHost>())
                 .AddSingleton<IRunspaceContext>(languageServiceProvider.GetService<InternalHost>())
                 .AddSingleton<IPowerShellDebugContext>(languageServiceProvider.GetService<InternalHost>().DebugContext)
                 .AddSingleton(languageServiceProvider.GetService<PowerShellExecutionService>())

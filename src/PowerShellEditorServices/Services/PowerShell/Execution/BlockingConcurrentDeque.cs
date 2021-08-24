@@ -63,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 return false;
             }
 
-            return BlockingCollection<T>.TakeFromAny(_queues, out item) != -1;
+            return BlockingCollection<T>.TryTakeFromAny(_queues, out item) >= 0;
         }
 
         public IDisposable BlockConsumers() => PriorityQueueBlockLifetime.StartBlocking(_blockConsumersEvent);

@@ -47,8 +47,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private readonly Stack<(Runspace, RunspaceInfo)> _runspaceStack;
 
-        private readonly EditorServicesConsolePSHost _publicHost;
-
         private readonly ReadLineProvider _readLineProvider;
 
         private readonly Thread _pipelineThread;
@@ -64,14 +62,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public InternalHost(
             ILoggerFactory loggerFactory,
             ILanguageServerFacade languageServer,
-            HostStartupInfo hostInfo,
-            EditorServicesConsolePSHost publicHost)
+            HostStartupInfo hostInfo)
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<InternalHost>();
             _languageServer = languageServer;
             _hostInfo = hostInfo;
 
+            _readLineProvider = new ReadLineProvider(loggerFactory);
             _taskQueue = new BlockingConcurrentDeque<ISynchronousTask>();
             _psFrameStack = new Stack<PowerShellContextFrame>();
             _runspaceStack = new Stack<(Runspace, RunspaceInfo)>();
@@ -81,7 +79,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 Name = "PSES Pipeline Execution Thread",
             };
 
-            PublicHost = publicHost;
+            _pipelineThread.SetApartmentState(ApartmentState.STA);
+
+            PublicHost = new EditorServicesConsolePSHost(this);
             Name = hostInfo.Name;
             Version = hostInfo.Version;
 
@@ -518,7 +518,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             {
                 var psrlProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, pwsh);
                 var readLine = new ConsoleReadLine(psrlProxy, this, engineIntrinsics);
-                _readLineProvider.ReadLine.TryOverrideReadKey(ReadKey);
                 readLine.TryOverrideReadKey(ReadKey);
                 readLine.TryOverrideIdleHandler(OnPowerShellIdle);
                 readLineProvider.OverrideReadLine(readLine);
@@ -554,7 +553,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             iss.LanguageMode = languageMode;
 
-            Runspace runspace = RunspaceFactory.CreateRunspace(_publicHost, iss);
+            Runspace runspace = RunspaceFactory.CreateRunspace(PublicHost, iss);
 
             runspace.SetApartmentStateToSta();
             runspace.ThreadOptions = PSThreadOptions.UseCurrentThread;
