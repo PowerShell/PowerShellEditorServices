@@ -131,7 +131,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
                 // First look for the required assembly in the .NET Framework DLL dir
                 string baseDirAsmPath = Path.Combine(s_psesBaseDirPath, dllName);
-                if (File.Exists(baseDirAsmPath))
+                if (RequiredAssemblyExists(baseDirAsmPath, asmName))
                 {
                     logger.Log(PsesLogLevel.Diagnostic, $"Loading {args.Name} from PSES base dir into LoadFile context");
                     return Assembly.LoadFile(baseDirAsmPath);
@@ -139,7 +139,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
                 // Then look in the shared .NET Standard directory
                 string asmPath = Path.Combine(s_psesDependencyDirPath, dllName);
-                if (File.Exists(asmPath))
+                if (RequiredAssemblyExists(asmPath, asmName))
                 {
                     logger.Log(PsesLogLevel.Diagnostic, $"Loading {args.Name} from PSES dependency dir into LoadFile context");
                     return Assembly.LoadFile(asmPath);
@@ -393,6 +393,21 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 .GetType("System.Management.Automation.PSVersionInfo")
                 .GetMethod("get_PSVersion", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
                 .Invoke(null, new object[0] /* Cannot use Array.Empty, since it must work in net452 */);
+        }
+
+        private static bool RequiredAssemblyExists(string assemblyPath, AssemblyName requiredAssembly)
+        {
+            try
+            {
+                AssemblyName foundAsm = AssemblyName.GetAssemblyName(assemblyPath);
+                return foundAsm.Equals(requiredAssembly);
+            }
+            catch
+            {
+                // Do nothing
+            }
+
+            return false;
         }
     }
 }
