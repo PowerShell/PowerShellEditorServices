@@ -32,7 +32,6 @@ $script:IsNix = $IsLinux -or $IsMacOS
 $script:IsRosetta = $IsMacOS -and (sysctl -n sysctl.proc_translated) -eq 1 # Mac M1
 $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Hosting", "BuildInfo.cs")
 $script:PsesCommonProps = [xml](Get-Content -Raw "$PSScriptRoot/PowerShellEditorServices.Common.props")
-$script:IsPreview = [bool]($script:PsesCommonProps.Project.PropertyGroup.VersionSuffix)
 
 $script:NetRuntime = @{
     PS7 = 'netcoreapp3.1'
@@ -341,15 +340,13 @@ task RestorePsesModules -After Build {
         $name = $_.Name
         $body = @{
             Name = $name
-            MinimumVersion = $_.Value.MinimumVersion
-            MaximumVersion = $_.Value.MaximumVersion
-            AllowPrerelease = $script:IsPreview
+            Version = $_.Value.Version
+            AllowPrerelease = $_.Value.AllowPrerelease
             Repository = if ($_.Value.Repository) { $_.Value.Repository } else { $DefaultModuleRepository }
             Path = $submodulePath
         }
 
-        if (-not $name)
-        {
+        if (-not $name) {
             throw "EditorServices module listed without name in '$ModulesJsonPath'"
         }
 
@@ -364,10 +361,8 @@ task RestorePsesModules -After Build {
     }
 
     # Save each module in the modules.json file
-    foreach ($moduleName in $moduleInfos.Keys)
-    {
-        if (Test-Path -Path (Join-Path -Path $submodulePath -ChildPath $moduleName))
-        {
+    foreach ($moduleName in $moduleInfos.Keys) {
+        if (Test-Path -Path (Join-Path -Path $submodulePath -ChildPath $moduleName)) {
             Write-Host "`tModule '${moduleName}' already detected. Skipping"
             continue
         }
@@ -376,16 +371,10 @@ task RestorePsesModules -After Build {
 
         $splatParameters = @{
            Name = $moduleName
+           RequiredVersion = $moduleInstallDetails.Version
            AllowPrerelease = $moduleInstallDetails.AllowPrerelease
            Repository = if ($moduleInstallDetails.Repository) { $moduleInstallDetails.Repository } else { $DefaultModuleRepository }
            Path = $submodulePath
-        }
-
-        # Only add Min and Max version if we're doing a stable release.
-        # This is due to a PSGet issue with AllowPrerelease not installing the latest preview.
-        if (!$moduleInstallDetails.AllowPrerelease) {
-            $splatParameters.MinimumVersion = $moduleInstallDetails.MinimumVersion
-            $splatParameters.MaximumVersion = $moduleInstallDetails.MaximumVersion
         }
 
         Write-Host "`tInstalling module: ${moduleName} with arguments $(ConvertTo-Json $splatParameters)"
