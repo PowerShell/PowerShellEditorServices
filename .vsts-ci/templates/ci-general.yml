@@ -4,8 +4,12 @@ parameters:
   default: true
 
 steps:
-- pwsh: $PSVersionTable
+- task: PowerShell@2
   displayName: PowerShell version
+  inputs:
+    targetType: inline
+    script: $PSVersionTable
+    pwsh: ${{ parameters.pwsh }}
 
 - task: PowerShell@2
   displayName: Build and test
