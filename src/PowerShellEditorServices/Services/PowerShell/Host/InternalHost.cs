@@ -379,7 +379,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             try
             {
-                RunExecutionLoop();
+                if (_psFrameStack.Count == 1)
+                {
+                    RunTopLevelExecutionLoop();
+                }
+                else if ((frame.FrameType & PowerShellFrameType.Debug) != 0)
+                {
+                    RunDebugExecutionLoop();
+                }
+                else
+                {
+                    RunExecutionLoop();
+                }
             }
             finally
             {
@@ -393,11 +404,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             PowerShellContextFrame frame = _psFrameStack.Pop();
             try
             {
-                RemoveRunspaceEventHandlers(frame.PowerShell.Runspace);
-
+                // If we're changing runspace, make sure we move the handlers over
                 if (_runspaceStack.Peek().Item1 != CurrentPowerShell.Runspace)
                 {
-                    _runspaceStack.Pop();
+                    (Runspace parentRunspace, _) = _runspaceStack.Pop();
+                    RemoveRunspaceEventHandlers(frame.PowerShell.Runspace);
+                    AddRunspaceEventHandlers(parentRunspace);
                 }
             }
             finally
@@ -406,10 +418,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             }
         }
 
-        private void RunExecutionLoop()
+        private void RunTopLevelExecutionLoop()
         {
-            // If we're in the top level of the stack,
-            // make sure we execute any startup tasks first
+            // Make sure we execute any startup tasks first
             if (_psFrameStack.Count == 1)
             {
                 while (_taskQueue.TryTake(out ISynchronousTask task))
@@ -418,6 +429,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 }
             }
 
+            RunExecutionLoop();
+        }
+
+        private void RunDebugExecutionLoop()
+        {
+            try
+            {
+                DebugContext.EnterDebugLoop(CancellationToken.None);
+                RunExecutionLoop();
+            }
+            finally
+            {
+                DebugContext.ExitDebugLoop();
+            }
+        }
+
+        private void RunExecutionLoop()
+        {
             while (!_shouldExit)
             {
                 using (CancellationScope cancellationScope = _cancellationContext.EnterScope(isIdleScope: false))
