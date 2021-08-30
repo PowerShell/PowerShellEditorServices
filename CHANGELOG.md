@@ -1,5 +1,10 @@
 # PowerShell Editor Services Release History
 
+## v2.5.0
+### Monday, August 30, 2021
+
+- ✨ ‍🕵️ [PowerShellEditorServices #1562](https://github.com/PowerShell/PowerShellEditorServices/pull/1562) - Pin PSScriptAnalyzer to `1.20.0`, Plaster to `1.1.3` and PSReadLine to `2.1.0`.
+
 ## v2.4.9
 ### Monday, August 23, 2021
 
