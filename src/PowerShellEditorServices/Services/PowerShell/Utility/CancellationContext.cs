@@ -30,14 +30,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             _cancellationSourceStack = new ConcurrentStack<CancellationScope>();
         }
 
-        public CancellationScope EnterScope(bool isIdleScope, params CancellationToken[] linkedTokens)
+        public CancellationScope EnterScope(bool isIdleScope)
         {
-            return EnterScope(isIdleScope, CancellationTokenSource.CreateLinkedTokenSource(linkedTokens));
-        }
+            CancellationTokenSource newScopeCancellationSource = _cancellationSourceStack.TryPeek(out CancellationScope parentScope)
+                ? CancellationTokenSource.CreateLinkedTokenSource(parentScope.CancellationToken)
+                : new CancellationTokenSource();
 
-        public CancellationScope EnterScope(bool isIdleScope, CancellationToken linkedToken1, CancellationToken linkedToken2)
-        {
-            return EnterScope(isIdleScope, CancellationTokenSource.CreateLinkedTokenSource(linkedToken1, linkedToken2));
+            return EnterScope(isIdleScope, newScopeCancellationSource);
         }
 
         public void CancelCurrentTask()
@@ -60,12 +59,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         {
             foreach (CancellationScope scope in _cancellationSourceStack)
             {
-                scope.Cancel();
-
                 if (!scope.IsIdleScope)
                 {
                     break;
                 }
+
+                scope.Cancel();
             }
         }
 
