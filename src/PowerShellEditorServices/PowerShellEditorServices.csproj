@@ -29,7 +29,7 @@
     <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
     <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.19.4" />
-    <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Server" Version="0.19.4" />
+    <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Server" Version="0.19.5" />
     <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" />
     <PackageReference Include="Serilog" Version="2.10.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
