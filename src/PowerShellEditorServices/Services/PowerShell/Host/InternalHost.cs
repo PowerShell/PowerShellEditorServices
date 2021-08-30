@@ -396,6 +396,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void RunExecutionLoop()
         {
+            // If we're in the top level of the stack,
+            // make sure we execute any startup tasks first
+            if (_psFrameStack.Count == 1)
+            {
+                while (_taskQueue.TryTake(out ISynchronousTask task))
+                {
+                    task.ExecuteSynchronously(CancellationToken.None);
+                }
+            }
+
             while (!_shouldExit)
             {
                 using (CancellationScope cancellationScope = _cancellationContext.EnterScope(isIdleScope: false))
@@ -573,6 +583,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void OnPowerShellIdle()
         {
+            if (_taskQueue.Count == 0)
+            {
+                return;
+            }
+
             using (CancellationScope cancellationScope = _cancellationContext.EnterScope(isIdleScope: true))
             {
                 while (!cancellationScope.CancellationToken.IsCancellationRequested
