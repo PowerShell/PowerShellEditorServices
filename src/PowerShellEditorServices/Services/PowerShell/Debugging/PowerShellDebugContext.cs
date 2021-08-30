@@ -41,8 +41,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         private readonly InternalHost _psesHost;
 
-        private CancellationTokenSource _debugLoopCancellationSource;
-
         public PowerShellDebugContext(
             ILoggerFactory loggerFactory,
             ILanguageServerFacade languageServer,
@@ -58,8 +56,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         public bool IsDebugServerActive { get; set; }
 
         public DebuggerStopEventArgs LastStopEventArgs { get; private set; }
-
-        public CancellationToken OnResumeCancellationToken => _debugLoopCancellationSource.Token;
 
         public event Action<object, DebuggerStopEventArgs> DebuggerStopped;
         public event Action<object, DebuggerResumingEventArgs> DebuggerResuming;
@@ -104,19 +100,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         {
             _psesHost.SetExit();
             LastStopEventArgs.ResumeAction = debuggerResumeAction;
-            _debugLoopCancellationSource.Cancel();
         }
 
+        // This must be called AFTER the new PowerShell has been pushed
         public void EnterDebugLoop(CancellationToken loopCancellationToken)
         {
-            _debugLoopCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(loopCancellationToken);
             RaiseDebuggerStoppedEvent();
         }
 
+        // This must be called BEFORE the debug PowerShell has been popped
         public void ExitDebugLoop()
         {
-            _debugLoopCancellationSource.Dispose();
-            _debugLoopCancellationSource = null;
         }
 
         public void SetDebuggerStopped(DebuggerStopEventArgs debuggerStopEventArgs)
