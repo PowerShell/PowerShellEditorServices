@@ -324,12 +324,29 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private void Run()
         {
             SMA.PowerShell pwsh = CreateInitialPowerShell(_hostInfo, _readLineProvider);
-            PushPowerShellAndRunLoop(pwsh, PowerShellFrameType.Normal);
+            RunspaceInfo localRunspaceInfo = RunspaceInfo.CreateFromLocalPowerShell(_logger, pwsh);
+            _runspaceStack.Push((pwsh.Runspace, localRunspaceInfo));
+            PushPowerShellAndRunLoop(pwsh, PowerShellFrameType.Normal, localRunspaceInfo);
         }
 
-        private void PushPowerShellAndRunLoop(SMA.PowerShell pwsh, PowerShellFrameType frameType)
+        private void PushPowerShellAndRunLoop(SMA.PowerShell pwsh, PowerShellFrameType frameType, RunspaceInfo runspaceInfo = null)
         {
-            RunspaceInfo runspaceInfo = null;
+            // TODO: Improve runspace origin detection here
+            if (runspaceInfo is null)
+            {
+                runspaceInfo = GetRunspaceInfoForPowerShell(pwsh, out bool isNewRunspace);
+
+                if (isNewRunspace)
+                {
+                    _runspaceStack.Push((pwsh.Runspace, runspaceInfo));
+                }
+            }
+
+            PushPowerShellAndRunLoop(new PowerShellContextFrame(pwsh, runspaceInfo, frameType));
+        }
+
+        private RunspaceInfo GetRunspaceInfoForPowerShell(SMA.PowerShell pwsh, out bool isNewRunspace)
+        {
             if (_runspaceStack.Count > 0)
             {
                 // This is more than just an optimization.
@@ -339,19 +356,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 (Runspace currentRunspace, RunspaceInfo currentRunspaceInfo) = _runspaceStack.Peek();
                 if (currentRunspace == pwsh.Runspace)
                 {
-                    runspaceInfo = currentRunspaceInfo;
+                    isNewRunspace = false;
+                    return currentRunspaceInfo;
                 }
             }
 
-            if (runspaceInfo is null)
-            {
-                RunspaceOrigin runspaceOrigin = pwsh.Runspace.RunspaceIsRemote ? RunspaceOrigin.EnteredProcess : RunspaceOrigin.Local;
-                runspaceInfo = RunspaceInfo.CreateFromPowerShell(_logger, pwsh, runspaceOrigin, _localComputerName);
-                _runspaceStack.Push((pwsh.Runspace, runspaceInfo));
-            }
-
-            // TODO: Improve runspace origin detection here
-            PushPowerShellAndRunLoop(new PowerShellContextFrame(pwsh, runspaceInfo, frameType));
+            RunspaceOrigin runspaceOrigin = pwsh.Runspace.RunspaceIsRemote ? RunspaceOrigin.EnteredProcess : RunspaceOrigin.Local;
+            isNewRunspace = true;
+            return RunspaceInfo.CreateFromPowerShell(_logger, pwsh, runspaceOrigin, _localComputerName);
         }
 
         private void PushPowerShellAndRunLoop(PowerShellContextFrame frame)
