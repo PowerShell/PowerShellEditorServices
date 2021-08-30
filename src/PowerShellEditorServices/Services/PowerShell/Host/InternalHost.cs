@@ -47,6 +47,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private readonly Stack<(Runspace, RunspaceInfo)> _runspaceStack;
 
+        private readonly CancellationContext _cancellationContext;
+
         private readonly ReadLineProvider _readLineProvider;
 
         private readonly Thread _pipelineThread;
@@ -73,6 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _taskQueue = new BlockingConcurrentDeque<ISynchronousTask>();
             _psFrameStack = new Stack<PowerShellContextFrame>();
             _runspaceStack = new Stack<(Runspace, RunspaceInfo)>();
+            _cancellationContext = new CancellationContext();
 
             _pipelineThread = new Thread(Run)
             {
@@ -219,7 +222,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public void CancelCurrentTask()
         {
-
+            _cancellationContext.CancelCurrentTask();
         }
 
         public Task<TResult> ExecuteDelegateAsync<TResult>(
@@ -395,16 +398,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         {
             while (!_shouldExit)
             {
-                DoOneRepl(CancellationToken.None);
-
-                if (_shouldExit)
+                using (CancellationScope cancellationScope = _cancellationContext.EnterScope(isIdleScope: false))
                 {
-                    break;
-                }
+                    DoOneRepl(cancellationScope.CancellationToken);
 
-                while (_taskQueue.TryTake(out ISynchronousTask task))
-                {
-                    task.ExecuteSynchronously(CancellationToken.None);
+                    if (_shouldExit)
+                    {
+                        break;
+                    }
+
+                    while (!cancellationScope.CancellationToken.IsCancellationRequested
+                        && _taskQueue.TryTake(out ISynchronousTask task))
+                    {
+                        task.ExecuteSynchronously(cancellationScope.CancellationToken);
+                    }
                 }
             }
         }
@@ -544,7 +551,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return pwsh;
         }
 
-
         private Runspace CreateInitialRunspace(PSLanguageMode languageMode)
         {
             InitialSessionState iss = Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1"
@@ -567,15 +573,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void OnPowerShellIdle()
         {
-            while (_taskQueue.TryTake(out ISynchronousTask task))
+            using (CancellationScope cancellationScope = _cancellationContext.EnterScope(isIdleScope: true))
             {
-                task.ExecuteSynchronously(CancellationToken.None);
+                while (!cancellationScope.CancellationToken.IsCancellationRequested
+                    && _taskQueue.TryTake(out ISynchronousTask task))
+                {
+                    task.ExecuteSynchronously(cancellationScope.CancellationToken);
+                }
             }
         }
 
         private void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
         {
-
+            _cancellationContext.CancelCurrentTask();
         }
 
         private ConsoleKeyInfo ReadKey(bool intercept)
