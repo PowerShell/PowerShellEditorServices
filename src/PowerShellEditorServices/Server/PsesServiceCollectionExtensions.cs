@@ -64,9 +64,12 @@ namespace Microsoft.PowerShell.EditorServices.Server
             PsesDebugServer psesDebugServer,
             bool useTempSession)
         {
+            InternalHost internalHost = languageServiceProvider.GetService<InternalHost>();
+
             return collection
-                .AddSingleton<IRunspaceContext>(languageServiceProvider.GetService<InternalHost>())
-                .AddSingleton<IPowerShellDebugContext>(languageServiceProvider.GetService<InternalHost>().DebugContext)
+                .AddSingleton<InternalHost>(internalHost)
+                .AddSingleton<IRunspaceContext>(internalHost)
+                .AddSingleton<IPowerShellDebugContext>(internalHost.DebugContext)
                 .AddSingleton(languageServiceProvider.GetService<PowerShellExecutionService>())
                 .AddSingleton(languageServiceProvider.GetService<WorkspaceService>())
                 .AddSingleton(languageServiceProvider.GetService<RemoteFileManagerService>())
