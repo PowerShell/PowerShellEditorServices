@@ -11,8 +11,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         DebuggerStopEventArgs LastStopEventArgs { get; }
 
-        CancellationToken OnResumeCancellationToken { get; }
-
         public event Action<object, DebuggerStopEventArgs> DebuggerStopped;
 
         public event Action<object, DebuggerResumingEventArgs> DebuggerResuming;
