@@ -16,6 +16,7 @@ using SMA = System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
+    using OmniSharp.Extensions.DebugAdapter.Protocol.Models;
     using System.Management.Automation.Runspaces;
 
     internal class PSReadLineProxy
@@ -97,10 +98,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
         {
             _logger = loggerFactory.CreateLogger<PSReadLineProxy>();
 
-            ReadLine = (Func<Runspace, EngineIntrinsics, CancellationToken, string>)psConsoleReadLine.GetMethod(
+            ReadLine = (Func<Runspace, EngineIntrinsics, CancellationToken, bool?, string>)psConsoleReadLine.GetMethod(
                 ReadLineMethodName,
-                new[] { typeof(Runspace), typeof(EngineIntrinsics), typeof(CancellationToken) })
-                ?.CreateDelegate(typeof(Func<Runspace, EngineIntrinsics, CancellationToken, string>));
+                new[] { typeof(Runspace), typeof(EngineIntrinsics), typeof(CancellationToken), typeof(bool?) })
+                ?.CreateDelegate(typeof(Func<Runspace, EngineIntrinsics, CancellationToken, bool?, string>));
 
             AddToHistory = (Action<string>)psConsoleReadLine.GetMethod(
                 AddToHistoryMethodName,
@@ -165,7 +166,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         internal Action ForcePSEventHandling { get; }
 
-        internal Func<Runspace, EngineIntrinsics, CancellationToken, string> ReadLine { get; }
+        internal Func<Runspace, EngineIntrinsics, CancellationToken, bool?, string> ReadLine { get; }
 
         internal void OverrideReadKey(Func<bool, ConsoleKeyInfo> readKeyFunc)
         {

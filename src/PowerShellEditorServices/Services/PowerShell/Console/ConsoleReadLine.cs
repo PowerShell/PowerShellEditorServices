@@ -154,7 +154,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                 Debug.WriteLine("PSRL CANCELLED");
             });
             EngineIntrinsics engineIntrinsics = _psesHost.IsRunspacePushed ? null : _engineIntrinsics;
-            return _psrlProxy.ReadLine(_psesHost.Runspace, engineIntrinsics, cancellationToken);
+            return _psrlProxy.ReadLine(_psesHost.Runspace, engineIntrinsics, cancellationToken, /* lastExecutionStatus */ null);
         }
 
         /// <summary>
