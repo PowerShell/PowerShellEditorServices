@@ -1047,8 +1047,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (arguments != null)
             {
-                // Add CWD from PowerShell if not an absolute path
-                if (!Path.IsPathRooted(script))
+                // Add CWD from PowerShell if the script is a file (not a command/inline script) and
+                // it's not an absolute path.
+                if (File.Exists(script) && !Path.IsPathRooted(script))
                 {
                     try
                     {
