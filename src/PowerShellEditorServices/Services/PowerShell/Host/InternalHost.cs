@@ -61,6 +61,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private ConsoleKeyInfo? _lastKey;
 
+        private bool _skipNextPrompt = false;
+
         public InternalHost(
             ILoggerFactory loggerFactory,
             ILanguageServerFacade languageServer,
@@ -206,6 +208,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public Task<T> InvokeTaskOnPipelineThreadAsync<T>(
             SynchronousTask<T> task)
         {
+            if (task.ExecutionOptions.InterruptCurrentForeground)
+            {
+                // When a task must displace the current foreground command,
+                // we must:
+                //  - block the consumer thread from mutating the queue
+                //  - cancel any running task on the consumer thread
+                //  - place our task on the front of the queue
+                //  - unblock the consumer thread
+                using (_taskQueue.BlockConsumers())
+                {
+                    CancelCurrentTask();
+                    _taskQueue.Prepend(task);
+                }
+
+                return task.Task;
+            }
+
             switch (task.ExecutionOptions.Priority)
             {
                 case ExecutionPriority.Next:
@@ -469,6 +488,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void DoOneRepl(CancellationToken cancellationToken)
         {
+            if (_skipNextPrompt)
+            {
+                _skipNextPrompt = false;
+                return;
+            }
+
             try
             {
                 string prompt = GetPrompt(cancellationToken) ?? DefaultPrompt;
@@ -634,6 +659,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 while (!cancellationScope.CancellationToken.IsCancellationRequested
                     && _taskQueue.TryTake(out ISynchronousTask task))
                 {
+                    if (task.ExecutionOptions.MustRunInForeground)
+                    {
+                        // If we have a task that is queued, but cannot be run under readline
+                        // we place it back at the front of the queue, and cancel the readline task
+                        _taskQueue.Prepend(task);
+                        _skipNextPrompt = true;
+                        _cancellationContext.CancelIdleParentTask();
+                        break;
+                    }
+
                     task.ExecuteSynchronously(cancellationScope.CancellationToken);
                 }
             }

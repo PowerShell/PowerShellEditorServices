@@ -55,16 +55,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             }
         }
 
+        /// <summary>
+        /// Cancels the parent task of the idle task.
+        /// </summary>
         public void CancelIdleParentTask()
         {
             foreach (CancellationScope scope in _cancellationSourceStack)
             {
+                scope.Cancel();
+
+                // Note that this check is done *after* the cancellation because we want to cancel
+                // not just the idle task, but its parent as well
                 if (!scope.IsIdleScope)
                 {
                     break;
                 }
-
-                scope.Cancel();
             }
         }
 
