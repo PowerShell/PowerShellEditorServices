@@ -95,6 +95,36 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             this.powerShellContext.Close();
         }
 
+        [Trait("Category", "DebugService")]
+        [Fact]
+        // This regression test asserts that `ExecuteScriptWithArgsAsync` works for both script
+        // files and, in this case, in-line scripts (commands). The bug was that the cwd was
+        // erroneously prepended when the script argument was a command.
+        public async Task DebuggerAcceptsInlineScript()
+        {
+            await this.debugService.SetCommandBreakpointsAsync(
+                new[] { CommandBreakpointDetails.Create("Get-Random") }).ConfigureAwait(false);
+
+            Task executeTask =
+                this.powerShellContext.ExecuteScriptWithArgsAsync(
+                    "Get-Random", string.Join(" ", "-Maximum", "100"));
+
+            await this.AssertDebuggerStopped("", 1).ConfigureAwait(false);
+            this.debugService.Continue();
+            await executeTask.ConfigureAwait(false);
+
+            StackFrameDetails[] stackFrames = debugService.GetStackFrames();
+            Assert.Equal(StackFrameDetails.NoFileScriptPath, stackFrames [0].ScriptPath);
+
+            VariableDetailsBase[] variables =
+                debugService.GetVariables(stackFrames[0].LocalVariables.Id);
+
+            var var = variables.FirstOrDefault(v => v.Name == "$Error");
+            Assert.NotNull(var);
+            Assert.True(var.IsExpandable);
+            Assert.Equal("[ArrayList: 0]", var.ValueString);
+        }
+
         public static IEnumerable<object[]> DebuggerAcceptsScriptArgsTestData
         {
             get
