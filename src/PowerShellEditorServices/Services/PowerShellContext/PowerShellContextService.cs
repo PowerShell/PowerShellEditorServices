@@ -162,7 +162,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public string InitialWorkingDirectory { get; private set; }
 
+        /// <summary>
+        /// Tracks the state of the LSP debug server (not the PowerShell debugger).
+        /// </summary>
         internal bool IsDebugServerActive { get; set; }
+
+        /// <summary>
+        /// Tracks if the PowerShell session started the debug server itself (true), or if it was
+        /// started by an LSP notification (false). Essentially, this marks if we're responsible for
+        /// stopping the debug server (and thus need to send a notification to do so).
+        /// </summary>
+        internal bool OwnsDebugServerState { get; set; }
 
         internal DebuggerStopEventArgs CurrentDebuggerStopEventArgs { get; private set; }
 
@@ -775,6 +785,21 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     {
                         shell.InvocationStateChanged -= PowerShell_InvocationStateChanged;
                         await this.sessionStateLock.ReleaseForExecuteCommand().ConfigureAwait(false);
+                    }
+
+                    // This is the edge case where the debug server is running because it was
+                    // started by PowerShell (and not by an LSP event), and we're no longer in the
+                    // debugger within PowerShell, so since we own the state we need to stop the
+                    // debug server too.
+                    //
+                    // Strangely one would think we could check `!PromptNest.IsInDebugger` but that
+                    // doesn't work, we have to check if the shell is nested instead. Therefore this
+                    // is a bit fragile, and I don't know how it'll work in a remoting scenario.
+                    if (IsDebugServerActive && OwnsDebugServerState && !shell.IsNested)
+                    {
+                        logger.LogDebug("Stopping LSP debugger because PowerShell debugger stopped running!");
+                        OwnsDebugServerState = false;
+                        _languageServer?.SendNotification("powerShell/stopDebugger");
                     }
 
                     if (shell.HadErrors)
@@ -2422,8 +2447,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // when the DebugServer is fully started.
             CurrentDebuggerStopEventArgs = e;
 
+            // If this event has fired but the LSP debug server is not active, it means that the
+            // PowerShell debugger has started some other way (most likely an existing PSBreakPoint
+            // was executed). So not only do we have to start the server, but later we will be
+            // responsible for stopping it too.
             if (!IsDebugServerActive)
             {
+                logger.LogDebug("Starting LSP debugger because PowerShell debugger is running!");
+                OwnsDebugServerState = true;
                 _languageServer?.SendNotification("powerShell/startDebugger");
             }
 
