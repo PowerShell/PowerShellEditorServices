@@ -1,5 +1,4 @@
-﻿using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
-using System;
+﻿using System;
 using System.Management.Automation;
 using System.Threading;
 
@@ -100,6 +99,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         {
             _psesHost.SetExit();
             LastStopEventArgs.ResumeAction = debuggerResumeAction;
+            // We need to tell whatever is happening right now in the debug prompt to wrap up so we can continue
+            _psesHost.CancelCurrentTask();
         }
 
         // This must be called AFTER the new PowerShell has been pushed
@@ -140,7 +141,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         private void RaiseDebuggerStoppedEvent()
         {
-            // TODO: Send language server message to start debugger
             if (!IsDebugServerActive)
             {
                 _languageServer.SendNotification("powerShell/startDebugger");

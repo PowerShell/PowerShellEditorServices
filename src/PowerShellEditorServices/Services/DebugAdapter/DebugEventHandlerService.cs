@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _executionService.RunspaceChanged += ExecutionService_RunspaceChanged;
             _debugService.BreakpointUpdated += DebugService_BreakpointUpdated;
             _debugService.DebuggerStopped += DebugService_DebuggerStopped;
-            //_powerShellContextService.DebuggerResumed += PowerShellContext_DebuggerResumed;
+            _debugContext.DebuggerResuming += PowerShellContext_DebuggerResuming;
         }
 
         internal void UnregisterEventHandlers()
@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _executionService.RunspaceChanged -= ExecutionService_RunspaceChanged;
             _debugService.BreakpointUpdated -= DebugService_BreakpointUpdated;
             _debugService.DebuggerStopped -= DebugService_DebuggerStopped;
-            //_powerShellContextService.DebuggerResumed -= PowerShellContext_DebuggerResumed;
+            _debugContext.DebuggerResuming -= PowerShellContext_DebuggerResuming;
         }
 
         #region Public methods
@@ -125,13 +125,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        private void PowerShellContext_DebuggerResumed(object sender, DebuggerResumeAction e)
+        private void PowerShellContext_DebuggerResuming(object sender, DebuggerResumingEventArgs e)
         {
             _debugAdapterServer.SendNotification(EventNames.Continued,
                 new ContinuedEvent
                 {
-                    ThreadId = 1,
-                    AllThreadsContinued = true
+                    AllThreadsContinued = true,
+                    ThreadId = ThreadsHandler.PipelineThread.Id,
                 });
         }
 
