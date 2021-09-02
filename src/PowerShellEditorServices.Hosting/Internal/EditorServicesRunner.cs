@@ -308,7 +308,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private void DebugServer_OnSessionEnded(object sender, EventArgs args)
         {
-            _logger.Log(PsesLogLevel.Verbose, "Debug session ended. Restarting debug service");
+            _logger.Log(PsesLogLevel.Verbose, "Debug session ended, restarting debug service...");
             var oldServer = (PsesDebugServer)sender;
             oldServer.Dispose();
             _alreadySubscribedDebug = false;
