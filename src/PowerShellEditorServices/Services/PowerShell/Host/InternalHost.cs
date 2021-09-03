@@ -344,6 +344,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         {
             SMA.PowerShell pwsh = CreateInitialPowerShell(_hostInfo, _readLineProvider);
             RunspaceInfo localRunspaceInfo = RunspaceInfo.CreateFromLocalPowerShell(_logger, pwsh);
+            _localComputerName = localRunspaceInfo.SessionDetails.ComputerName;
             _runspaceStack.Push((pwsh.Runspace, localRunspaceInfo));
             PushPowerShellAndRunLoop(pwsh, PowerShellFrameType.Normal, localRunspaceInfo);
         }
@@ -380,9 +381,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 }
             }
 
-            RunspaceOrigin runspaceOrigin = pwsh.Runspace.RunspaceIsRemote ? RunspaceOrigin.EnteredProcess : RunspaceOrigin.Local;
             isNewRunspace = true;
-            return RunspaceInfo.CreateFromPowerShell(_logger, pwsh, runspaceOrigin, _localComputerName);
+            return RunspaceInfo.CreateFromPowerShell(_logger, pwsh, _localComputerName);
         }
 
         private void PushPowerShellAndRunLoop(PowerShellContextFrame frame)
@@ -496,7 +496,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             try
             {
-                string prompt = GetPrompt(cancellationToken) ?? DefaultPrompt;
+                string prompt = GetPrompt(cancellationToken);
                 UI.Write(prompt);
                 string userInput = InvokeReadLine(cancellationToken);
 
@@ -534,7 +534,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         {
             var command = new PSCommand().AddCommand("prompt");
             IReadOnlyList<string> results = InvokePSCommand<string>(command, PowerShellExecutionOptions.Default, cancellationToken);
-            return results.Count > 0 ? results[0] : null;
+            string prompt = results.Count > 0 ? results[0] : DefaultPrompt;
+
+            if (CurrentRunspace.RunspaceOrigin != RunspaceOrigin.Local)
+            {
+                prompt = Runspace.GetRemotePrompt(prompt);
+            }
+
+            return prompt;
         }
 
         private string InvokeReadLine(CancellationToken cancellationToken)
@@ -720,7 +727,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void OnRunspaceStateChanged(object sender, RunspaceStateEventArgs runspaceStateEventArgs)
         {
-            if (!runspaceStateEventArgs.RunspaceStateInfo.IsUsable())
+            if (!_shouldExit && !runspaceStateEventArgs.RunspaceStateInfo.IsUsable())
             {
                 //PopOrReinitializeRunspaceAsync();
             }

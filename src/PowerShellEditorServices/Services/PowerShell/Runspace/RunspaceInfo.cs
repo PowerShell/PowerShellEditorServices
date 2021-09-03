@@ -31,7 +31,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
         public static RunspaceInfo CreateFromPowerShell(
             ILogger logger,
             PowerShell pwsh,
-            RunspaceOrigin runspaceOrigin,
             string localComputerName)
         {
             var psVersionDetails = PowerShellVersionDetails.GetVersionDetails(logger, pwsh);
@@ -39,6 +38,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
 
             bool isOnLocalMachine = string.Equals(sessionDetails.ComputerName, localComputerName, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(sessionDetails.ComputerName, "localhost", StringComparison.OrdinalIgnoreCase);
+
+            RunspaceOrigin runspaceOrigin = RunspaceOrigin.Local;
+            if (pwsh.Runspace.RunspaceIsRemote)
+            {
+                runspaceOrigin = pwsh.Runspace.ConnectionInfo is NamedPipeConnectionInfo
+                    ? RunspaceOrigin.EnteredProcess
+                    : RunspaceOrigin.PSSession;
+            }
 
             return new RunspaceInfo(
                 pwsh.Runspace,
