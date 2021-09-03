@@ -11,11 +11,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
         public static PowerShellContextFrame CreateForPowerShellInstance(
             ILogger logger,
             SMA.PowerShell pwsh,
-            RunspaceOrigin runspaceOrigin,
             PowerShellFrameType frameType,
             string localComputerName)
         {
-            var runspaceInfo = RunspaceInfo.CreateFromPowerShell(logger, pwsh, runspaceOrigin, localComputerName);
+            var runspaceInfo = RunspaceInfo.CreateFromPowerShell(logger, pwsh, localComputerName);
             return new PowerShellContextFrame(pwsh, runspaceInfo, frameType);
         }
 
@@ -26,7 +25,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
             PowerShell = powerShell;
             RunspaceInfo = runspaceInfo;
             FrameType = frameType;
-            CancellationTokenSource = new CancellationTokenSource();
         }
 
         public SMA.PowerShell PowerShell { get; }
@@ -35,8 +33,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
 
         public PowerShellFrameType FrameType { get; }
 
-        public CancellationTokenSource CancellationTokenSource { get; }
-
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
@@ -44,7 +40,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
                 if (disposing)
                 {
                     PowerShell.Dispose();
-                    CancellationTokenSource.Dispose();
                 }
 
                 disposedValue = true;
