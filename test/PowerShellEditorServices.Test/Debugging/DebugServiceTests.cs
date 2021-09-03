@@ -114,7 +114,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             await executeTask.ConfigureAwait(false);
 
             StackFrameDetails[] stackFrames = debugService.GetStackFrames();
-            Assert.Equal(StackFrameDetails.NoFileScriptPath, stackFrames [0].ScriptPath);
+            Assert.Equal(StackFrameDetails.NoFileScriptPath, stackFrames[0].ScriptPath);
 
             VariableDetailsBase[] variables =
                 debugService.GetVariables(stackFrames[0].LocalVariables.Id);
@@ -151,7 +151,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             await this.debugService.SetLineBreakpointsAsync(
                 debugWithParamsFile,
-                new [] { BreakpointDetails.Create(debugWithParamsFile.FilePath, 3) }).ConfigureAwait(false);
+                new[] { BreakpointDetails.Create(debugWithParamsFile.FilePath, 3) }).ConfigureAwait(false);
 
             string arguments = string.Join(" ", args);
 
@@ -580,8 +580,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
                 PowerShellContextState.Ready,
                 PowerShellExecutionResult.Stopped).ConfigureAwait(false);
 
-            // Abort script execution early and wait for completion
-            this.debugService.Abort();
             await executeTask.ConfigureAwait(false);
         }
 
@@ -872,7 +870,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal("[1]", childVars[1].Name);
 
             var childVarStrs = new HashSet<string>(childVars.Select(v => v.ValueString));
-            var expectedVars = new [] {
+            var expectedVars = new[] {
                 "[firstChild, \"Child\"]",
                 "[secondChild, 42]"
             };
@@ -1026,7 +1024,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             await executeTask.ConfigureAwait(false);
         }
 
-        public async Task AssertDebuggerPaused()
+        private async Task AssertDebuggerPaused()
         {
             DebuggerStoppedEventArgs eventArgs =
                 await this.debuggerStoppedQueue.DequeueAsync(new CancellationTokenSource(10000).Token).ConfigureAwait(false);
@@ -1034,7 +1032,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Empty(eventArgs.OriginalEvent.Breakpoints);
         }
 
-        public async Task AssertDebuggerStopped(
+        private async Task AssertDebuggerStopped(
             string scriptPath,
             int lineNumber = -1)
         {
