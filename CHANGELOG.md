@@ -1,5 +1,12 @@
 # PowerShell Editor Services Release History
 
+## v2.5.1
+### Tuesday, September 07, 2021
+
+- 🐛 📟 [PowerShellEditorServices #24977523](https://github.com/PowerShell/PowerShellEditorServices/pull/1571) - Implement `LengthInBufferCells` to fix ANSI formatting. (Thanks @SeeminglyScience!)
+- ✨ 🔍 [vscode-powershell #3522](https://github.com/PowerShell/PowerShellEditorServices/pull/1570) -  Send `stopDebugger` notification when appropriate.
+- 🐛 🔍 [vscode-powershell #3537](https://github.com/PowerShell/PowerShellEditorServices/pull/1569) - Fix bug with `ExecuteScriptWithArgsAsync` when `script` is a command.
+
 ## v2.5.0
 ### Monday, August 30, 2021
 
