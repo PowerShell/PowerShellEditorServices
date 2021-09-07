@@ -260,12 +260,7 @@ namespace PowerShellEditorServices.Test.E2E
                 new SetFunctionBreakpointsArguments
                 {
                     Breakpoints = new FunctionBreakpoint[]
-                    {
-                        new FunctionBreakpoint
-                        {
-                            Name = "Write-Host",
-                        }
-                    }
+                        { new FunctionBreakpoint { Name = "Write-Host", } }
                 }).ConfigureAwait(false);
 
             var breakpoint = setBreakpointsResponse.Breakpoints.First();

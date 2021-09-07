@@ -162,7 +162,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public string InitialWorkingDirectory { get; private set; }
 
+        /// <summary>
+        /// Tracks the state of the LSP debug server (not the PowerShell debugger).
+        /// </summary>
         internal bool IsDebugServerActive { get; set; }
+
+        /// <summary>
+        /// Tracks if the PowerShell session started the debug server itself (true), or if it was
+        /// started by an LSP notification (false). Essentially, this marks if we're responsible for
+        /// stopping the debug server (and thus need to send a notification to do so).
+        /// </summary>
+        internal bool OwnsDebugServerState { get; set; }
 
         internal DebuggerStopEventArgs CurrentDebuggerStopEventArgs { get; private set; }
 
@@ -182,7 +192,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade languageServer,
             bool isPSReadLineEnabled)
         {
-            logger.LogTrace("Instantiating PowerShellContextService and adding event handlers");
             _languageServer = languageServer;
             this.logger = logger;
             this.isPSReadLineEnabled = isPSReadLineEnabled;
@@ -204,7 +213,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // Respect a user provided bundled module path.
             if (Directory.Exists(hostStartupInfo.BundledModulePath))
             {
-                logger.LogTrace($"Using new bundled module path: {hostStartupInfo.BundledModulePath}");
+                logger.LogDebug($"Using new bundled module path: {hostStartupInfo.BundledModulePath}");
                 s_bundledModulePath = hostStartupInfo.BundledModulePath;
             }
 
@@ -228,7 +237,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     hostUserInterface,
                     logger);
 
-            logger.LogTrace("Creating initial PowerShell runspace");
             Runspace initialRunspace = PowerShellContextService.CreateRunspace(psHost, hostStartupInfo.InitialSessionState);
             powerShellContext.Initialize(hostStartupInfo.ProfilePaths, initialRunspace, true, hostUserInterface);
             powerShellContext.ImportCommandsModuleAsync();
@@ -317,7 +325,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             IHostOutput consoleHost)
         {
             Validate.IsNotNull("initialRunspace", initialRunspace);
-            this.logger.LogTrace($"Initializing PowerShell context with runspace {initialRunspace.Name}");
 
             this.ownsInitialRunspace = ownsInitialRunspace;
             this.SessionState = PowerShellContextState.NotStarted;
@@ -353,6 +360,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
             else
             {
+                // TODO: Also throw for PowerShell 6
                 throw new NotSupportedException(
                     "This computer has an unsupported version of PowerShell installed: " +
                     powerShellVersion.ToString());
@@ -567,10 +575,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     cancellationToken);
         }
 
-
         /// <summary>
         /// Executes a PSCommand against the session's runspace and returns
-        /// a collection of results of the expected type.
+        /// a collection of results of the expected type. This function needs help.
         /// </summary>
         /// <typeparam name="TResult">The expected result type.</typeparam>
         /// <param name="psCommand">The PSCommand to be executed.</param>
@@ -590,8 +597,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             Validate.IsNotNull(nameof(psCommand), psCommand);
             Validate.IsNotNull(nameof(executionOptions), executionOptions);
-
-            this.logger.LogTrace($"Attempting to execute command(s): {GetStringForPSCommand(psCommand)}");
 
             // Add history to PSReadLine before cancelling, otherwise it will be restored as the
             // cancelled prompt when it's called again.
@@ -626,8 +631,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 this.ShouldExecuteWithEventing(executionOptions) ||
                 (PromptNest.IsRemote && executionOptions.IsReadLine)))
             {
-                this.logger.LogTrace("Passing command execution to pipeline thread");
-
                 if (shouldCancelReadLine && PromptNest.IsReadLineBusy())
                 {
                     // If a ReadLine pipeline is running in the debugger then we'll stop responding here
@@ -705,6 +708,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     }
                     try
                     {
+                        this.logger.LogTrace($"Executing in debugger: {GetStringForPSCommand(psCommand)}");
                         return this.ExecuteCommandInDebugger<TResult>(
                             psCommand,
                             executionOptions.WriteOutputToHost);
@@ -732,8 +736,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     AddToHistory = executionOptions.AddToHistory
                 };
 
-                this.logger.LogTrace("Passing to PowerShell");
-
                 PowerShell shell = this.PromptNest.GetPowerShell(executionOptions.IsReadLine);
 
                 // Due to the following PowerShell bug, we can't just assign shell.Commands to psCommand
@@ -757,6 +759,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     : this.CurrentRunspace.Runspace;
                 try
                 {
+                    this.logger.LogDebug($"Invoking: {GetStringForPSCommand(psCommand)}");
+
                     // Nested PowerShell instances can't be invoked asynchronously. This occurs
                     // in nested prompts and pipeline requests from eventing.
                     if (shell.IsNested)
@@ -775,6 +779,21 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     {
                         shell.InvocationStateChanged -= PowerShell_InvocationStateChanged;
                         await this.sessionStateLock.ReleaseForExecuteCommand().ConfigureAwait(false);
+                    }
+
+                    // This is the edge case where the debug server is running because it was
+                    // started by PowerShell (and not by an LSP event), and we're no longer in the
+                    // debugger within PowerShell, so since we own the state we need to stop the
+                    // debug server too.
+                    //
+                    // Strangely one would think we could check `!PromptNest.IsInDebugger` but that
+                    // doesn't work, we have to check if the shell is nested instead. Therefore this
+                    // is a bit fragile, and I don't know how it'll work in a remoting scenario.
+                    if (IsDebugServerActive && OwnsDebugServerState && !shell.IsNested)
+                    {
+                        logger.LogDebug("Stopping LSP debugger because PowerShell debugger stopped running!");
+                        OwnsDebugServerState = false;
+                        _languageServer?.SendNotification("powerShell/stopDebugger");
                     }
 
                     if (shell.HadErrors)
@@ -810,15 +829,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                         hadErrors = true;
                     }
-                    else
-                    {
-                        this.logger.LogTrace("Execution completed successfully");
-                    }
                 }
             }
             catch (PSRemotingDataStructureException e)
             {
-                this.logger.LogHandledException("Pipeline stopped while executing command", e);
+                this.logger.LogHandledException("PSRemotingDataStructure exception while executing command", e);
                 errorMessages?.Append(e.Message);
             }
             catch (PipelineStoppedException e)
@@ -1063,7 +1078,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             .FirstOrDefault()
                             .ProviderPath;
 
-                        this.logger.LogTrace($"Prepending working directory {workingDir} to script path {script}");
+                        this.logger.LogDebug($"Prepending working directory {workingDir} to script path {script}");
                         script = Path.Combine(workingDir, script);
                     }
                     catch (System.Management.Automation.DriveNotFoundException e)
@@ -1095,7 +1110,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 strBld.Append(' ').Append(arguments);
 
                 var launchedScript = strBld.ToString();
-                this.logger.LogTrace($"Launch script is: {launchedScript}");
 
                 command.AddScript(launchedScript, false);
             }
@@ -1237,14 +1251,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </param>
         public void AbortExecution(bool shouldAbortDebugSession)
         {
+            this.logger.LogTrace("Execution abort requested...");
+
             if (this.SessionState == PowerShellContextState.Aborting
                 || this.SessionState == PowerShellContextState.Disposed)
             {
                 this.logger.LogTrace($"Execution abort requested when already aborted (SessionState = {this.SessionState})");
                 return;
             }
-
-            this.logger.LogTrace("Execution abort requested...");
 
             if (shouldAbortDebugSession)
             {
@@ -1391,7 +1405,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public void Close()
         {
-            logger.LogDebug("Closing PowerShellContextService...");
+            logger.LogTrace("Closing PowerShellContextService...");
             this.PromptNest.Dispose();
             this.SessionState = PowerShellContextState.Disposed;
 
@@ -1829,13 +1843,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             if (this.SessionState != PowerShellContextState.Disposed)
             {
-                this.logger.LogTrace(
-                    string.Format(
-                        "Session state changed --\r\n\r\n    Old state: {0}\r\n    New state: {1}\r\n    Result: {2}",
-                        this.SessionState.ToString(),
-                        e.NewSessionState.ToString(),
-                        e.ExecutionResult));
-
+                this.logger.LogTrace($"Session state was: {SessionState}, is now: {e.NewSessionState}, result: {e.ExecutionResult}");
                 this.SessionState = e.NewSessionState;
                 this.SessionStateChanged?.Invoke(sender, e);
             }
@@ -1881,8 +1889,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </remarks>
         private void PowerShellContext_RunspaceChangedAsync(object sender, RunspaceChangedEventArgs e)
         {
-            this.logger.LogTrace("Sending runspaceChanged notification");
-
             _languageServer?.SendNotification(
                 "powerShell/runspaceChanged",
                 new MinifiedRunspaceDetails(e.NewRunspace));
@@ -1927,8 +1933,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="e">details of the execution status change</param>
         private void PowerShellContext_ExecutionStatusChangedAsync(object sender, ExecutionStatusChangedEventArgs e)
         {
-            this.logger.LogTrace("Sending executionStatusChanged notification");
-
             // The cancelling of the prompt (PSReadLine) causes an ExecutionStatus.Aborted to be sent after every
             // actual execution (ExecutionStatus.Running) on the pipeline. We ignore that event since it's counterintuitive to
             // the goal of this method which is to send updates when the pipeline is actually running something.
@@ -1948,8 +1952,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private IEnumerable<TResult> ExecuteCommandInDebugger<TResult>(PSCommand psCommand, bool sendOutputToHost)
         {
-            this.logger.LogTrace($"Attempting to execute command(s) in the debugger: {GetStringForPSCommand(psCommand)}");
-
             IEnumerable<TResult> output =
                 this.versionSpecificOperations.ExecuteCommandInDebugger<TResult>(
                     this,
@@ -2422,8 +2424,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // when the DebugServer is fully started.
             CurrentDebuggerStopEventArgs = e;
 
+            // If this event has fired but the LSP debug server is not active, it means that the
+            // PowerShell debugger has started some other way (most likely an existing PSBreakPoint
+            // was executed). So not only do we have to start the server, but later we will be
+            // responsible for stopping it too.
             if (!IsDebugServerActive)
             {
+                logger.LogDebug("Starting LSP debugger because PowerShell debugger is running!");
+                OwnsDebugServerState = true;
                 _languageServer?.SendNotification("powerShell/startDebugger");
             }
 

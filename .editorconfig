@@ -12,6 +12,7 @@ indent_size = 4
 trim_trailing_whitespace = true
 csharp_space_before_open_square_brackets = true
 csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_before_open_square_brackets = false
 
 # CS0168: The variable 'var' is declared but never used
 dotnet_diagnostic.CS0168.severity = error
