@@ -18,6 +18,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 {
     internal class BreakpointService
     {
+        private static readonly Version s_minimumBreakpointApiVersion = new Version(7, 0, 0, 0);
+
         private readonly ILogger<BreakpointService> _logger;
         private readonly PowerShellExecutionService _executionService;
         private readonly InternalHost _editorServicesHost;
@@ -44,7 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task<List<Breakpoint>> GetBreakpointsAsync()
         {
-            if (BreakpointApiUtils.SupportsBreakpointApis)
+            if (_editorServicesHost.CurrentRunspace.PowerShellVersionDetails.Version >= s_minimumBreakpointApiVersion)
             {
                 return BreakpointApiUtils.GetBreakpoints(
                     _editorServicesHost.Runspace.Debugger,
@@ -60,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task<IEnumerable<BreakpointDetails>> SetBreakpointsAsync(string escapedScriptPath, IEnumerable<BreakpointDetails> breakpoints)
         {
-            if (BreakpointApiUtils.SupportsBreakpointApis)
+            if (_editorServicesHost.CurrentRunspace.PowerShellVersionDetails.Version >= s_minimumBreakpointApiVersion)
             {
                 foreach (BreakpointDetails breakpointDetails in breakpoints)
                 {
@@ -151,7 +153,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task<IEnumerable<CommandBreakpointDetails>> SetCommandBreakpoints(IEnumerable<CommandBreakpointDetails> breakpoints)
         {
-            if (BreakpointApiUtils.SupportsBreakpointApis)
+            if (_editorServicesHost.CurrentRunspace.PowerShellVersionDetails.Version >= s_minimumBreakpointApiVersion)
             {
                 foreach (CommandBreakpointDetails commandBreakpointDetails in breakpoints)
                 {
@@ -233,7 +235,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             try
             {
-                if (BreakpointApiUtils.SupportsBreakpointApis)
+                if (_editorServicesHost.CurrentRunspace.PowerShellVersionDetails.Version >= s_minimumBreakpointApiVersion)
                 {
                     foreach (Breakpoint breakpoint in BreakpointApiUtils.GetBreakpoints(
                             _editorServicesHost.Runspace.Debugger,
@@ -273,7 +275,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task RemoveBreakpointsAsync(IEnumerable<Breakpoint> breakpoints)
         {
-            if (BreakpointApiUtils.SupportsBreakpointApis)
+            if (_editorServicesHost.CurrentRunspace.PowerShellVersionDetails.Version >= s_minimumBreakpointApiVersion)
             {
                 foreach (Breakpoint breakpoint in breakpoints)
                 {
