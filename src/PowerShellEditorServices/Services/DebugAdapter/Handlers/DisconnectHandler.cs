@@ -48,10 +48,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public async Task<DisconnectResponse> Handle(DisconnectArguments request, CancellationToken cancellationToken)
         {
             _debugEventHandlerService.UnregisterEventHandlers();
-            if (_debugStateService.ExecutionCompleted == false)
+
+            if (!_debugStateService.ExecutionCompleted)
             {
                 _debugStateService.ExecutionCompleted = true;
-                _executionService.CancelCurrentTask();
+                _debugService.Abort();
 
                 if (_debugStateService.IsInteractiveDebugSession && _debugStateService.IsAttachSession)
                 {
@@ -78,7 +79,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         }
                     }
                 }
-
                 _debugService.IsClientAttached = false;
             }
 
