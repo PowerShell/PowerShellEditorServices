@@ -65,6 +65,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
             return _psesHost.CurrentRunspace.GetDscBreakpointCapabilityAsync(_logger, _psesHost, cancellationToken);
         }
 
+        public void EnableDebugMode()
+        {
+            _psesHost.Runspace.Debugger.SetDebugMode(DebugModes.LocalScript | DebugModes.RemoteScript);
+        }
+
         public void Abort()
         {
             SetDebugResuming(DebuggerResumeAction.Stop);
