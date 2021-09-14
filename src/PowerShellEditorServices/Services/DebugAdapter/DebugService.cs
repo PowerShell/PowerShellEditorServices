@@ -696,6 +696,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 foreach (PSObject psVariableObject in results)
                 {
+                    if (psVariableObject.Properties["Name"] is null)
+                    {
+                        continue;
+                    }
+
                     var variableDetails = new VariableDetails(psVariableObject) { Id = this.nextVariableId++ };
                     this.variables.Add(variableDetails);
                     scopeVariableContainer.Children.Add(variableDetails.Name, variableDetails);
