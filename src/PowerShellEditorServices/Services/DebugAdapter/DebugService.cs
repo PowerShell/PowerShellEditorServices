@@ -408,7 +408,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // Evaluate the expression to get back a PowerShell object from the expression string.
             // This may throw, in which case the exception is propagated to the caller
             PSCommand evaluateExpressionCommand = new PSCommand().AddScript(value);
-            object expressionResult = (await _executionService.ExecutePSCommandAsync<object>(evaluateExpressionCommand, CancellationToken.None)).FirstOrDefault();
+            object expressionResult = (await _executionService.ExecutePSCommandAsync<object>(evaluateExpressionCommand, CancellationToken.None).ConfigureAwait(false)).FirstOrDefault();
 
             // If PowerShellContext.ExecuteCommand returns an ErrorRecord as output, the expression failed evaluation.
             // Ideally we would have a separate means from communicating error records apart from normal output.
