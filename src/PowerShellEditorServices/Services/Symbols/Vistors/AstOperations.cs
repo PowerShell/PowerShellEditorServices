@@ -91,7 +91,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             await executionService.ExecuteDelegateAsync(
                 representation: "CompleteInput",
                 new ExecutionOptions { Priority = ExecutionPriority.Next },
-                cancellationToken,
                 (pwsh, cancellationToken) =>
                 {
                     stopwatch.Start();
@@ -101,7 +100,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                         cursorPosition,
                         options: null,
                         powershell: pwsh);
-                });
+                },
+                cancellationToken);
 
             stopwatch.Stop();
             logger.LogTrace($"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");

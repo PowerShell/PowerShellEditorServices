@@ -178,13 +178,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             if (startOptions.LoadProfiles)
             {
                 await ExecuteDelegateAsync(
-                   "LoadProfiles",
-                   new PowerShellExecutionOptions { MustRunInForeground = true },
-                   cancellationToken,
-                    (pwsh, delegateCancellation) =>
-                    {
-                        pwsh.LoadProfiles(_hostInfo.ProfilePaths);
-                    }).ConfigureAwait(false);
+                    "LoadProfiles",
+                    new PowerShellExecutionOptions { MustRunInForeground = true },
+                    (pwsh, delegateCancellation) => pwsh.LoadProfiles(_hostInfo.ProfilePaths),
+                    cancellationToken).ConfigureAwait(false);
 
                 _logger.LogInformation("Profiles loaded");
             }
@@ -247,37 +244,37 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public Task<TResult> ExecuteDelegateAsync<TResult>(
             string representation,
             ExecutionOptions executionOptions,
-            CancellationToken cancellationToken,
-            Func<SMA.PowerShell, CancellationToken, TResult> func)
+            Func<SMA.PowerShell, CancellationToken, TResult> func,
+            CancellationToken cancellationToken)
         {
-            return InvokeTaskOnPipelineThreadAsync(new SynchronousPSDelegateTask<TResult>(_logger, this, representation, executionOptions ?? ExecutionOptions.Default, cancellationToken, func));
+            return InvokeTaskOnPipelineThreadAsync(new SynchronousPSDelegateTask<TResult>(_logger, this, representation, executionOptions ?? ExecutionOptions.Default, func, cancellationToken));
         }
 
         public Task ExecuteDelegateAsync(
             string representation,
             ExecutionOptions executionOptions,
-            CancellationToken cancellationToken,
-            Action<SMA.PowerShell, CancellationToken> action)
+            Action<SMA.PowerShell, CancellationToken> action,
+            CancellationToken cancellationToken)
         {
-            return InvokeTaskOnPipelineThreadAsync(new SynchronousPSDelegateTask(_logger, this, representation, executionOptions ?? ExecutionOptions.Default, cancellationToken, action));
+            return InvokeTaskOnPipelineThreadAsync(new SynchronousPSDelegateTask(_logger, this, representation, executionOptions ?? ExecutionOptions.Default, action, cancellationToken));
         }
 
         public Task<TResult> ExecuteDelegateAsync<TResult>(
             string representation,
             ExecutionOptions executionOptions,
-            CancellationToken cancellationToken,
-            Func<CancellationToken, TResult> func)
+            Func<CancellationToken, TResult> func,
+            CancellationToken cancellationToken)
         {
-            return InvokeTaskOnPipelineThreadAsync(new SynchronousDelegateTask<TResult>(_logger, representation, executionOptions ?? ExecutionOptions.Default, cancellationToken, func));
+            return InvokeTaskOnPipelineThreadAsync(new SynchronousDelegateTask<TResult>(_logger, representation, executionOptions ?? ExecutionOptions.Default, func, cancellationToken));
         }
 
         public Task ExecuteDelegateAsync(
             string representation,
             ExecutionOptions executionOptions,
-            CancellationToken cancellationToken,
-            Action<CancellationToken> action)
+            Action<CancellationToken> action,
+            CancellationToken cancellationToken)
         {
-            return InvokeTaskOnPipelineThreadAsync(new SynchronousDelegateTask(_logger, representation, executionOptions ?? ExecutionOptions.Default, cancellationToken, action));
+            return InvokeTaskOnPipelineThreadAsync(new SynchronousDelegateTask(_logger, representation, executionOptions ?? ExecutionOptions.Default, action, cancellationToken));
         }
 
         public Task<IReadOnlyList<TResult>> ExecutePSCommandAsync<TResult>(
@@ -300,13 +297,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public TResult InvokeDelegate<TResult>(string representation, ExecutionOptions executionOptions, Func<CancellationToken, TResult> func, CancellationToken cancellationToken)
         {
-            var task = new SynchronousDelegateTask<TResult>(_logger, representation, executionOptions, cancellationToken, func);
+            var task = new SynchronousDelegateTask<TResult>(_logger, representation, executionOptions, func, cancellationToken);
             return task.ExecuteAndGetResult(cancellationToken);
         }
 
         public void InvokeDelegate(string representation, ExecutionOptions executionOptions, Action<CancellationToken> action, CancellationToken cancellationToken)
         {
-            var task = new SynchronousDelegateTask(_logger, representation, executionOptions, cancellationToken, action);
+            var task = new SynchronousDelegateTask(_logger, representation, executionOptions, action, cancellationToken);
             task.ExecuteAndGetResult(cancellationToken);
         }
 
@@ -321,13 +318,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public TResult InvokePSDelegate<TResult>(string representation, ExecutionOptions executionOptions, Func<SMA.PowerShell, CancellationToken, TResult> func, CancellationToken cancellationToken)
         {
-            var task = new SynchronousPSDelegateTask<TResult>(_logger, this, representation, executionOptions, cancellationToken, func);
+            var task = new SynchronousPSDelegateTask<TResult>(_logger, this, representation, executionOptions, func, cancellationToken);
             return task.ExecuteAndGetResult(cancellationToken);
         }
 
         public void InvokePSDelegate(string representation, ExecutionOptions executionOptions, Action<SMA.PowerShell, CancellationToken> action, CancellationToken cancellationToken)
         {
-            var task = new SynchronousPSDelegateTask(_logger, this, representation, executionOptions, cancellationToken, action);
+            var task = new SynchronousPSDelegateTask(_logger, this, representation, executionOptions, action, cancellationToken);
             task.ExecuteAndGetResult(cancellationToken);
         }
 
