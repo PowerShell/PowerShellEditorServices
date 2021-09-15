@@ -149,10 +149,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private string InvokePSReadLine(CancellationToken cancellationToken)
         {
-            cancellationToken.Register(() =>
-            {
-                Debug.WriteLine("PSRL CANCELLED");
-            });
             EngineIntrinsics engineIntrinsics = _psesHost.IsRunspacePushed ? null : _engineIntrinsics;
             return _psrlProxy.ReadLine(_psesHost.Runspace, engineIntrinsics, cancellationToken, /* lastExecutionStatus */ null);
         }
