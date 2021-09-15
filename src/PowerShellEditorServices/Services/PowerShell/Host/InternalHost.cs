@@ -485,6 +485,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void DoOneRepl(CancellationToken cancellationToken)
         {
+            // When a task must run in the foreground, we cancel out of the idle loop and return to the top level.
+            // At that point, we would normally run a REPL, but we need to immediately execute the task.
+            // So we set _skipNextPrompt to do that.
             if (_skipNextPrompt)
             {
                 _skipNextPrompt = false;
