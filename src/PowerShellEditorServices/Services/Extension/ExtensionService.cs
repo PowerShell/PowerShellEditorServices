@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 
         private readonly ILanguageServerFacade _languageServer;
 
-        private int _initialized = 0;
+        private IdempotentLatch _initializedLatch = new();
 
         #endregion
 
@@ -97,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         /// <returns>A Task that can be awaited for completion.</returns>
         internal Task InitializeAsync()
         {
-            if (Interlocked.Exchange(ref _initialized, 1) != 0)
+            if (!_initializedLatch.TryEnter())
             {
                 return Task.CompletedTask;
             }

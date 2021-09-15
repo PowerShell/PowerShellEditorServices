@@ -53,9 +53,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private readonly Thread _pipelineThread;
 
-        private bool _shouldExit = false;
+        private readonly IdempotentLatch _isRunningLatch = new();
 
-        private int _isRunning = 0;
+        private bool _shouldExit = false;
 
         private string _localComputerName;
 
@@ -118,7 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public PowerShellDebugContext DebugContext { get; }
 
-        public bool IsRunning => _isRunning != 0;
+        public bool IsRunning => _isRunningLatch.IsSignaled;
 
         public string InitialWorkingDirectory { get; private set; }
 
@@ -167,7 +167,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public async Task StartAsync(HostStartOptions startOptions, CancellationToken cancellationToken)
         {
             _logger.LogInformation("Host starting");
-            if (Interlocked.Exchange(ref _isRunning, 1) != 0)
+            if (!_isRunningLatch.TryEnter())
             {
                 _logger.LogDebug("Host start requested after already started");
                 return;
