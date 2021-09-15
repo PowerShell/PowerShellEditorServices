@@ -20,6 +20,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
     /// </summary>
     internal sealed class ExtensionService
     {
+        public const string PSEditorVariableName = "psEditor";
+
         #region Fields
 
         private readonly Dictionary<string, EditorCommand> editorCommands =
@@ -105,12 +107,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 
             // Register the editor object in the runspace
             return ExecutionService.ExecuteDelegateAsync(
-                "Create $psEditorObject",
+                $"Create ${PSEditorVariableName} object",
                 ExecutionOptions.Default,
                 CancellationToken.None,
                 (pwsh, cancellationToken) =>
                 {
-                    pwsh.Runspace.SessionStateProxy.PSVariable.Set("psEditor", EditorObject);
+                    pwsh.Runspace.SessionStateProxy.PSVariable.Set(PSEditorVariableName, EditorObject);
                 });
         }
 
