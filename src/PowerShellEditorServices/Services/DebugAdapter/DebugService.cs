@@ -496,7 +496,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 psVariable.Value = await _executionService.ExecuteDelegateAsync<object>(
                     "PS debugger argument converter",
                     ExecutionOptions.Default,
-                    CancellationToken.None,
                     (pwsh, cancellationToken) =>
                     {
                         var engineIntrinsics = (EngineIntrinsics)pwsh.Runspace.SessionStateProxy.GetVariable("ExecutionContext");
@@ -505,7 +504,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         //       We should investigate changing it.
                         return argTypeConverterAttr.Transform(engineIntrinsics, expressionResult);
 
-                    }).ConfigureAwait(false);
+                    },
+                    CancellationToken.None).ConfigureAwait(false);
 
             }
             else

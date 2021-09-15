@@ -35,30 +35,30 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         public Task<TResult> ExecuteDelegateAsync<TResult>(
             string representation,
             ExecutionOptions executionOptions,
-            CancellationToken cancellationToken,
-            Func<SMA.PowerShell, CancellationToken, TResult> func)
-            => _psesHost.ExecuteDelegateAsync(representation, executionOptions, cancellationToken, func);
+            Func<SMA.PowerShell, CancellationToken, TResult> func,
+            CancellationToken cancellationToken)
+            => _psesHost.ExecuteDelegateAsync(representation, executionOptions, func, cancellationToken);
 
         public Task ExecuteDelegateAsync(
             string representation,
             ExecutionOptions executionOptions,
-            CancellationToken cancellationToken,
-            Action<SMA.PowerShell, CancellationToken> action)
-            => _psesHost.ExecuteDelegateAsync(representation, executionOptions, cancellationToken, action);
+            Action<SMA.PowerShell, CancellationToken> action,
+            CancellationToken cancellationToken)
+            => _psesHost.ExecuteDelegateAsync(representation, executionOptions, action, cancellationToken);
 
         public Task<TResult> ExecuteDelegateAsync<TResult>(
             string representation,
             ExecutionOptions executionOptions,
-            CancellationToken cancellationToken,
-            Func<CancellationToken, TResult> func)
-            => _psesHost.ExecuteDelegateAsync(representation, executionOptions, cancellationToken, func);
+            Func<CancellationToken, TResult> func,
+            CancellationToken cancellationToken)
+            => _psesHost.ExecuteDelegateAsync(representation, executionOptions, func, cancellationToken);
 
         public Task ExecuteDelegateAsync(
             string representation,
             ExecutionOptions executionOptions,
-            CancellationToken cancellationToken,
-            Action<CancellationToken> action)
-            => _psesHost.ExecuteDelegateAsync(representation, executionOptions, cancellationToken, action);
+            Action<CancellationToken> action,
+            CancellationToken cancellationToken)
+            => _psesHost.ExecuteDelegateAsync(representation, executionOptions, action, cancellationToken);
 
         public Task<IReadOnlyList<TResult>> ExecutePSCommandAsync<TResult>(
             PSCommand psCommand,

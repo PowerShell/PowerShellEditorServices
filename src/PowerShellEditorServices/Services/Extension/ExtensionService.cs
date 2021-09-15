@@ -109,11 +109,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             return ExecutionService.ExecuteDelegateAsync(
                 $"Create ${PSEditorVariableName} object",
                 ExecutionOptions.Default,
-                CancellationToken.None,
                 (pwsh, cancellationToken) =>
                 {
                     pwsh.Runspace.SessionStateProxy.PSVariable.Set(PSEditorVariableName, EditorObject);
-                });
+                },
+                CancellationToken.None);
         }
 
         /// <summary>
