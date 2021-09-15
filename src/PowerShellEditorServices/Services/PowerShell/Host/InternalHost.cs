@@ -440,12 +440,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private void RunTopLevelExecutionLoop()
         {
             // Make sure we execute any startup tasks first
-            if (_psFrameStack.Count == 1)
+            while (_taskQueue.TryTake(out ISynchronousTask task))
             {
-                while (_taskQueue.TryTake(out ISynchronousTask task))
-                {
-                    task.ExecuteSynchronously(CancellationToken.None);
-                }
+                task.ExecuteSynchronously(CancellationToken.None);
             }
 
             RunExecutionLoop();
