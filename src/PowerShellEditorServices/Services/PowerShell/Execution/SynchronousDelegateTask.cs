@@ -17,8 +17,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             ILogger logger,
             string representation,
             ExecutionOptions executionOptions,
-            CancellationToken cancellationToken,
-            Action<CancellationToken> action)
+            Action<CancellationToken> action,
+            CancellationToken cancellationToken)
             : base(logger, cancellationToken)
         {
             ExecutionOptions = executionOptions;
@@ -50,8 +50,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             ILogger logger,
             string representation,
             ExecutionOptions executionOptions,
-            CancellationToken cancellationToken,
-            Func<CancellationToken, TResult> func)
+            Func<CancellationToken, TResult> func,
+            CancellationToken cancellationToken)
             : base(logger, cancellationToken)
         {
             _func = func;
@@ -85,8 +85,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             InternalHost psesHost,
             string representation,
             ExecutionOptions executionOptions,
-            CancellationToken cancellationToken,
-            Action<SMA.PowerShell, CancellationToken> action)
+            Action<SMA.PowerShell, CancellationToken> action,
+            CancellationToken cancellationToken)
             : base(logger, cancellationToken)
         {
             _psesHost = psesHost;
@@ -122,8 +122,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             InternalHost psesHost,
             string representation,
             ExecutionOptions executionOptions,
-            CancellationToken cancellationToken,
-            Func<SMA.PowerShell, CancellationToken, TResult> func)
+            Func<SMA.PowerShell, CancellationToken, TResult> func,
+            CancellationToken cancellationToken)
             : base(logger, cancellationToken)
         {
             _psesHost = psesHost;
