@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
     /// This behavior is unlikely to change and ensuring its correctness at our layer is likely to be costly.
     /// See https://stackoverflow.com/q/26472251.
     /// </remarks>
-    internal class BlockingConcurrentDeque<T>
+    internal class BlockingConcurrentDeque<T> : IDisposable
     {
         private readonly ManualResetEventSlim _blockConsumersEvent;
 
@@ -67,6 +67,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         }
 
         public IDisposable BlockConsumers() => PriorityQueueBlockLifetime.StartBlocking(_blockConsumersEvent);
+
+        public void Dispose()
+        {
+            ((IDisposable)_blockConsumersEvent).Dispose();
+        }
 
         private class PriorityQueueBlockLifetime : IDisposable
         {
