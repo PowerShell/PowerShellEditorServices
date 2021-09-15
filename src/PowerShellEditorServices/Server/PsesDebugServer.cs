@@ -119,7 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     // The OnInitialize delegate gets run when we first receive the _Initialize_ request:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
                     .OnInitialize(async (server, request, cancellationToken) => {
-                        // Ensure the debugger mode is set correctly
+                        // Ensure the debugger mode is set correctly - this is required for remote debugging to work
                         _debugContext.EnableDebugMode();
 
                         var breakpointService = server.GetService<BreakpointService>();
