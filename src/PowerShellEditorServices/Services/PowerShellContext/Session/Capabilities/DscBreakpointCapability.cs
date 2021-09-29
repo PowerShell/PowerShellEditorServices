@@ -97,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                     powerShell.AddCommand("Import-Module");
                     powerShell.AddArgument(@"C:\Program Files\DesiredStateConfiguration\1.0.0.0\Modules\PSDesiredStateConfiguration\PSDesiredStateConfiguration.psd1");
                     powerShell.AddParameter("PassThru");
-                    powerShell.AddParameter("ErrorAction", "Ignore");
+                    powerShell.AddParameter("ErrorAction", "SilentlyContinue");
 
                     PSObject moduleInfo = null;
 
