@@ -86,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
             PSCommand command = new PSCommand();
             command.AddCommand(@"Microsoft.PowerShell.Core\Get-Command");
             command.AddArgument(commandName);
-            command.AddParameter("ErrorAction", "Ignore");
+            command.AddParameter("ErrorAction", "SilentlyContinue");
 
             CommandInfo commandInfo = (await powerShellContext.ExecuteCommandAsync<PSObject>(command, sendOutputToHost: false, sendErrorToHost: false).ConfigureAwait(false))
                 .Select(o => o.BaseObject)
@@ -138,7 +138,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShellContext
                 // CommandInfo.ToString() duplicates the Prefix if one exists.
                 .AddParameter("Name", commandInfo.Name)
                 .AddParameter("Online", false)
-                .AddParameter("ErrorAction", "Ignore");
+                .AddParameter("ErrorAction", "SilentlyContinue");
 
             var results = await powerShellContext.ExecuteCommandAsync<PSObject>(command, sendOutputToHost: false, sendErrorToHost: false).ConfigureAwait(false);
             PSObject helpObject = results.FirstOrDefault();
