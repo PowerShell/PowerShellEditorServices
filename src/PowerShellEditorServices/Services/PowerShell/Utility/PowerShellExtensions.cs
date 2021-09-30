@@ -163,10 +163,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         {
             var profileVariable = new PSObject();
 
-            pwsh.AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.AllUsersAllHosts), profilePaths.AllUsersAllHosts);
-            pwsh.AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.AllUsersCurrentHost), profilePaths.AllUsersCurrentHost);
-            pwsh.AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.CurrentUserAllHosts), profilePaths.CurrentUserAllHosts);
-            pwsh.AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.CurrentUserCurrentHost), profilePaths.CurrentUserCurrentHost);
+            pwsh.AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.AllUsersAllHosts), profilePaths.AllUsersAllHosts)
+                .AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.AllUsersCurrentHost), profilePaths.AllUsersCurrentHost)
+                .AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.CurrentUserAllHosts), profilePaths.CurrentUserAllHosts)
+                .AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.CurrentUserCurrentHost), profilePaths.CurrentUserCurrentHost);
 
             pwsh.Runspace.SessionStateProxy.SetVariable("PROFILE", profileVariable);
         }
@@ -197,7 +197,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             return sb.ToString();
         }
 
-        private static void AddProfileMemberAndLoadIfExists(this PowerShell pwsh, PSObject profileVariable, string profileName, string profilePath)
+        private static PowerShell AddProfileMemberAndLoadIfExists(this PowerShell pwsh, PSObject profileVariable, string profileName, string profilePath)
         {
             profileVariable.Members.Add(new PSNoteProperty(profileName, profilePath));
 
@@ -209,6 +209,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
                 pwsh.InvokeCommand(psCommand);
             }
+
+            return pwsh;
         }
 
         private static StringBuilder AddErrorString(this StringBuilder sb, ErrorRecord error, int errorIndex)
