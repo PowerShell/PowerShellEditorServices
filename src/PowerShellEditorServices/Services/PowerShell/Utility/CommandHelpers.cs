@@ -98,12 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 .AddArgument(commandName)
                 .AddParameter("ErrorAction", "Ignore");
 
-            CommandInfo commandInfo = null;
-            foreach (CommandInfo result in await executionService.ExecutePSCommandAsync<CommandInfo>(command, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false))
-            {
-                commandInfo = result;
-                break;
-            }
+            CommandInfo commandInfo = (await executionService.ExecutePSCommandAsync<CommandInfo>(command, new PowerShellExecutionOptions(), CancellationToken.None).ConfigureAwait(false)).FirstOrDefault();
 
             // Only cache CmdletInfos since they're exposed in binaries they are likely to not change throughout the session.
             if (commandInfo?.CommandType == CommandTypes.Cmdlet)
