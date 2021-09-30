@@ -4,6 +4,7 @@
 using System.IO;
 using System.Management.Automation;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Microsoft.PowerShell.EditorServices.Utility
 {
@@ -40,6 +41,45 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         public static string WildcardEscape(string path)
         {
             return WildcardPattern.Escape(path);
+        }
+
+        /// <summary>
+        /// Return the given path with all PowerShell globbing characters escaped,
+        /// plus optionally the whitespace.
+        /// </summary>
+        /// <param name="path">The path to process.</param>
+        /// <param name="escapeSpaces">Specify True to escape spaces in the path, otherwise False.</param>
+        /// <returns>The path with [ and ] escaped.</returns>
+        internal static string WildcardEscapePath(string path, bool escapeSpaces = false)
+        {
+            var sb = new StringBuilder();
+            for (int i = 0; i < path.Length; i++)
+            {
+                char curr = path[i];
+                switch (curr)
+                {
+                    // Escape '[', ']', '?' and '*' with '`'
+                    case '[':
+                    case ']':
+                    case '*':
+                    case '?':
+                    case '`':
+                        sb.Append('`').Append(curr);
+                        break;
+
+                    default:
+                        // Escape whitespace if required
+                        if (escapeSpaces && char.IsWhiteSpace(curr))
+                        {
+                            sb.Append('`').Append(curr);
+                            break;
+                        }
+                        sb.Append(curr);
+                        break;
+                }
+            }
+
+            return sb.ToString();
         }
     }
 }
