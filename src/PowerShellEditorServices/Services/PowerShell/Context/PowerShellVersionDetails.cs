@@ -103,8 +103,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
 
             try
             {
-                var psVersionTableCommand = new PSCommand().AddScript("$PSVersionTable", useLocalScope: true);
-
                 Hashtable psVersionTable = pwsh
                     .AddScript("$PSVersionTable", useLocalScope: true)
                     .InvokeAndClear<Hashtable>()
