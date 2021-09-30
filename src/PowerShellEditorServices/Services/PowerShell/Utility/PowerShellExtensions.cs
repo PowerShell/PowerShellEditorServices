@@ -71,6 +71,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             pwsh.InvokeAndClear();
         }
 
+        /// <summary>
+        /// When running a remote session, waits for remote processing and output to complete.
+        /// </summary>
         public static void WaitForRemoteOutputIfNeeded(this PowerShell pwsh)
         {
             if (!pwsh.Runspace.RunspaceIsRemote)
@@ -78,6 +81,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 return;
             }
 
+            // These methods are required when running commands remotely.
+            // Remote rendering from command output is done asynchronously.
+            // So to ensure we wait for output to be rendered,
+            // we need these methods to wait for rendering.
+            // PowerShell does this in its own implementation: https://github.com/PowerShell/PowerShell/blob/883ca98dd74ea13b3d8c0dd62d301963a40483d6/src/System.Management.Automation/engine/debugger/debugger.cs#L4628-L4652
             s_waitForServicingComplete(pwsh);
             s_suspendIncomingData(pwsh);
         }
