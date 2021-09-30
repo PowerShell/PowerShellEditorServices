@@ -21,22 +21,26 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
         public static PSCommand MergePipelineResults(this PSCommand psCommand)
         {
+            // We need to do merge errors and output before rendering with an Out- cmdlet
             Command lastCommand = psCommand.Commands[psCommand.Commands.Count - 1];
             lastCommand.MergeMyResults(PipelineResultTypes.Error, PipelineResultTypes.Output);
             lastCommand.MergeMyResults(PipelineResultTypes.Information, PipelineResultTypes.Output);
             return psCommand;
         }
 
+        /// <summary>
+        /// Get a representation of the PSCommand, for logging purposes.
+        /// </summary>
         public static string GetInvocationText(this PSCommand command)
         {
-            Command lastCommand = command.Commands[0];
+            Command currentCommand = command.Commands[0];
             var sb = new StringBuilder().AddCommandText(command.Commands[0]);
 
             for (int i = 1; i < command.Commands.Count; i++)
             {
-                sb.Append(lastCommand.IsEndOfStatement ? "; " : " | ");
-                lastCommand = command.Commands[i];
-                sb.AddCommandText(lastCommand);
+                sb.Append(currentCommand.IsEndOfStatement ? "; " : " | ");
+                currentCommand = command.Commands[i];
+                sb.AddCommandText(currentCommand);
             }
 
             return sb.ToString();
