@@ -22,10 +22,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
         private const string Property_InstanceId = "instanceId";
 
         /// <summary>
-        /// Gets the PSCommand that gathers details from the
-        /// current session.
+        /// Runs a PowerShell command to gather details about the current session.
         /// </summary>
-        /// <returns>A PSCommand used to gather session details.</returns>
+        /// <returns>A data object containing details about the PowerShell session.</returns>
         public static SessionDetails GetFromPowerShell(PowerShell pwsh)
         {
             Hashtable detailsObject = pwsh
