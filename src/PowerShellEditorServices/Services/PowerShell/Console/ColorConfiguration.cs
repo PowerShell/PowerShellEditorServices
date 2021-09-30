@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace PowerShellEditorServices.Services.PowerShell.Console
+namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
     internal class ColorConfiguration
     {
