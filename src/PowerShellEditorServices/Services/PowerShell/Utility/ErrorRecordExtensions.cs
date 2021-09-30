@@ -27,6 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 // Generates a call like:
                 //  $errorPSObject.WriteStream = [System.Management.Automation.WriteStreamType]::Error
                 // So that error record PSObjects will be rendered in the console properly
+                // See https://github.com/PowerShell/PowerShell/blob/946341b2ebe6a61f081f4c9143668dc7be1f9119/src/Microsoft.PowerShell.ConsoleHost/host/msh/ConsoleHost.cs#L2088-L2091
                 s_setWriteStreamProperty = Expression.Lambda<Action<PSObject>>(
                     Expression.Call(
                         errorObjectParameter,
