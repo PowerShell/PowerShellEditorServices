@@ -4,6 +4,23 @@ using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 {
+    /// <summary>
+    /// Encapsulates the scoping logic for cancellation tokens.
+    /// As PowerShell commands nest, this class maintains a stack of cancellation scopes
+    /// that allow each scope of logic to be cancelled at its own level.
+    /// Implicitly handles the merging and cleanup of cancellation token sources.
+    /// </summary>
+    /// <example>
+    /// The <see cref="Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility.CancellationContext"/> class
+    /// and the <see cref="Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility.CancellationScope"/> struct
+    /// are intended to be used with a <c>using</c> block so you can do this:
+    /// <code>
+    ///     using (CancellationScope cancellationScope = _cancellationContext.EnterScope(_globalCancellationSource.CancellationToken, localCancellationToken))
+    ///     {
+    ///         ExecuteCommandAsync(command, cancellationScope.CancellationToken);
+    ///     }
+    /// </code>
+    /// </example>
     internal class CancellationContext
     {
         private readonly ConcurrentStack<CancellationTokenSource> _cancellationSourceStack;
