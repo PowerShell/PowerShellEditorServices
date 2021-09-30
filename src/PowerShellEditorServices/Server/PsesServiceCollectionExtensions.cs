@@ -47,6 +47,11 @@ namespace Microsoft.PowerShell.EditorServices.Server
                             provider.GetService<EditorOperationsService>(),
                             provider.GetService<PowerShellExecutionService>());
 
+                        // This is where we create the $psEditor variable
+                        // so that when the console is ready, it will be available
+                        // TODO: Improve the sequencing here so that:
+                        //  - The variable is guaranteed to be initialized when the console first appears
+                        //  - Any errors that occur are handled rather than lost by the unawaited task
                         extensionService.InitializeAsync();
 
                         return extensionService;
