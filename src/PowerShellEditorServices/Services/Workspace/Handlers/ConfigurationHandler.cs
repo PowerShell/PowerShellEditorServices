@@ -17,8 +17,6 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Window;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
-using System.IO;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.Extension;
 
@@ -81,13 +79,34 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 _workspaceService.WorkspacePath,
                 _logger);
 
+            // We need to load the profiles if:
+            // - Profile loading is configured, AND
+            //   - Profiles haven't been loaded before, OR
+            //   - The profile loading configuration just changed
+            bool loadProfiles = _configurationService.CurrentSettings.EnableProfileLoading
+                && (!_profilesLoaded || !profileLoadingPreviouslyEnabled);
+
             if (!_psesHost.IsRunning)
             {
-                await _psesHost.StartAsync(new HostStartOptions
+                _logger.LogTrace("Starting command loop");
+
+                if (loadProfiles)
                 {
-                    LoadProfiles = _configurationService.CurrentSettings.EnableProfileLoading,
-                }, CancellationToken.None).ConfigureAwait(false);
+                    _logger.LogTrace("Loading profiles...");
+                }
+
+                await _psesHost.StartAsync(new HostStartOptions(), CancellationToken.None).ConfigureAwait(false);
+
+                _consoleReplStarted = true;
+
+                if (loadProfiles)
+                {
+                    _profilesLoaded = true;
+                    _logger.LogTrace("Loaded!");
+                }
             }
+
+            // TODO: Load profiles when the host is already running
 
             if (!this._cwdSet)
             {
@@ -114,33 +133,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
 
                 this._cwdSet = true;
-            }
-
-            // We need to load the profiles if:
-            // - Profile loading is configured, AND
-            //   - Profiles haven't been loaded before, OR
-            //   - The profile loading configuration just changed
-            bool loadProfiles = _configurationService.CurrentSettings.EnableProfileLoading
-                && (!_profilesLoaded || !profileLoadingPreviouslyEnabled);
-
-            if (!_psesHost.IsRunning)
-            {
-                _logger.LogTrace("Starting command loop");
-
-                if (loadProfiles)
-                {
-                    _logger.LogTrace("Loading profiles...");
-                }
-
-                await _psesHost.StartAsync(new HostStartOptions
-                {
-                    LoadProfiles = loadProfiles,
-                }, CancellationToken.None).ConfigureAwait(false);
-
-                _consoleReplStarted = true;
-                _profilesLoaded = loadProfiles;
-
-                _logger.LogTrace("Loaded!");
             }
 
             if (!_extensionServiceInitialized)
