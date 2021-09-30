@@ -24,11 +24,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
                 var errorObjectParameter = Expression.Parameter(typeof(PSObject));
 
+                // Generates a call like:
+                //  $errorPSObject.WriteStream = [System.Management.Automation.WriteStreamType]::Error
+                // So that error record PSObjects will be rendered in the console properly
                 s_setWriteStreamProperty = Expression.Lambda<Action<PSObject>>(
                     Expression.Call(
                         errorObjectParameter,
                         writeStreamProperty.GetSetMethod(),
-                        Expression.Constant(errorStreamType)), 
+                        Expression.Constant(errorStreamType)),
                     errorObjectParameter)
                     .Compile();
             }
