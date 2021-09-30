@@ -18,7 +18,6 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -181,7 +180,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // Fix for issue #123 - file paths that contain wildcard chars [ and ] need to
             // quoted and have those wildcard chars escaped.
-            string escapedScriptPath = PathUtils.WildcardEscape(scriptPath);
+            string escapedScriptPath = PathUtils.WildcardEscapePath(scriptPath);
 
             if (dscBreakpoints == null || !dscBreakpoints.IsDscResourcePath(escapedScriptPath))
             {
