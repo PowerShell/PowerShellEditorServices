@@ -84,43 +84,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                     cursorPosition.LineNumber,
                     cursorPosition.ColumnNumber));
 
-            /*
-            if (!powerShellContext.IsAvailable)
-            {
-                return null;
-            }
-            */
-
             var stopwatch = new Stopwatch();
-
-            // If the current runspace is out of process we can use
-            // CommandCompletion.CompleteInput because PSReadLine won't be taking up the
-            // main runspace.
-            /*
-            if (powerShellContext.IsCurrentRunspaceOutOfProcess())
-            {
-                using (RunspaceHandle runspaceHandle = await powerShellContext.GetRunspaceHandleAsync(cancellationToken).ConfigureAwait(false))
-                using (System.Management.Automation.PowerShell powerShell = System.Management.Automation.PowerShell.Create())
-                {
-                    powerShell.Runspace = runspaceHandle.Runspace;
-                    stopwatch.Start();
-                    try
-                    {
-                        return CommandCompletion.CompleteInput(
-                            scriptAst,
-                            currentTokens,
-                            cursorPosition,
-                            options: null,
-                            powershell: powerShell);
-                    }
-                    finally
-                    {
-                        stopwatch.Stop();
-                        logger.LogTrace($"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
-                    }
-                }
-            }
-            */
 
             CommandCompletion commandCompletion = null;
             await executionService.ExecuteDelegateAsync((pwsh, cancellationToken) =>
