@@ -18,12 +18,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         static RunspaceExtensions()
         {
             // PowerShell ApartmentState APIs aren't available in PSStandard, so we need to use reflection.
-            if (!VersionUtils.IsNetCore || VersionUtils.IsPS7OrGreater)
-            {
-                MethodInfo setterInfo = typeof(Runspace).GetProperty("ApartmentState").GetSetMethod();
-                Delegate setter = Delegate.CreateDelegate(typeof(Action<Runspace, ApartmentState>), firstArgument: null, method: setterInfo);
-                s_runspaceApartmentStateSetter = (Action<Runspace, ApartmentState>)setter;
-            }
+            MethodInfo setterInfo = typeof(Runspace).GetProperty("ApartmentState").GetSetMethod();
+            Delegate setter = Delegate.CreateDelegate(typeof(Action<Runspace, ApartmentState>), firstArgument: null, method: setterInfo);
+            s_runspaceApartmentStateSetter = (Action<Runspace, ApartmentState>)setter;
 
             MethodInfo getRemotePromptMethod = typeof(HostUtilities).GetMethod("GetRemotePrompt", BindingFlags.NonPublic | BindingFlags.Static);
             ParameterExpression runspaceParam = Expression.Parameter(typeof(Runspace));
@@ -45,6 +42,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             s_runspaceApartmentStateSetter?.Invoke(runspace, ApartmentState.STA);
         }
 
+        /// <summary>
+        /// Augment a given prompt string with a remote decoration.
+        /// This is an internal method on <c>Runspace</c> in PowerShell that we reuse via reflection.
+        /// </summary>
+        /// <param name="runspace">The runspace the prompt is for.</param>
+        /// <param name="basePrompt">The base prompt to decorate.</param>
+        /// <returns>A prompt string decorated with remote connection details.</returns>
         public static string GetRemotePrompt(this Runspace runspace, string basePrompt)
         {
             return s_getRemotePromptFunc(runspace, basePrompt);
