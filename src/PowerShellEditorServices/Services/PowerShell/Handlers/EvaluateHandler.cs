@@ -10,6 +10,10 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
+    /// <summary>
+    /// Handler for a custom request type for evaluating PowerShell.
+    /// This is generally for F8 support, to allow execution of a highlighted code snippet in the console as if it were copy-pasted.
+    /// </summary>
     internal class EvaluateHandler : IEvaluateHandler
     {
         private readonly ILogger _logger;
@@ -25,6 +29,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public Task<EvaluateResponseBody> Handle(EvaluateRequestArguments request, CancellationToken cancellationToken)
         {
+            // TODO: Understand why we currently handle this asynchronously and why we return a dummy result value
+            //       instead of awaiting the execution and returing a real result of some kind
+
             _executionService.ExecutePSCommandAsync(
                 new PSCommand().AddScript(request.Expression),
                 new PowerShellExecutionOptions { WriteInputToHost = true, WriteOutputToHost = true, AddToHistory = true, InterruptCommandPrompt = true },
