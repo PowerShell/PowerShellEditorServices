@@ -71,10 +71,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 result = _pwsh.InvokeCommand<TResult>(_psCommand);
                 cancellationToken.ThrowIfCancellationRequested();
             }
+            // Test if we've been cancelled. If we're remoting, PSRemotingDataStructureException effectively means the pipeline was stopped.
             catch (Exception e) when (cancellationToken.IsCancellationRequested || e is PipelineStoppedException || e is PSRemotingDataStructureException)
             {
                 throw new OperationCanceledException();
             }
+            // We only catch RuntimeExceptions here in case writing errors to output was requested
+            // Other errors are bubbled up to the caller
             catch (RuntimeException e)
             {
                 Logger.LogWarning($"Runtime exception occurred while executing command:{Environment.NewLine}{Environment.NewLine}{e}");
@@ -134,11 +137,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 debuggerResult = _pwsh.Runspace.Debugger.ProcessCommand(_psCommand, outputCollection);
                 cancellationToken.ThrowIfCancellationRequested();
             }
+            // Test if we've been cancelled. If we're remoting, PSRemotingDataStructureException effectively means the pipeline was stopped.
             catch (Exception e) when (cancellationToken.IsCancellationRequested || e is PipelineStoppedException || e is PSRemotingDataStructureException)
             {
                 StopDebuggerIfRemoteDebugSessionFailed();
                 throw new OperationCanceledException();
             }
+            // We only catch RuntimeExceptions here in case writing errors to output was requested
+            // Other errors are bubbled up to the caller
             catch (RuntimeException e)
             {
                 Logger.LogWarning($"Runtime exception occurred while executing command:{Environment.NewLine}{Environment.NewLine}{e}");
