@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             InterruptCurrentForeground = false,
             WriteOutputToHost = false,
             WriteInputToHost = false,
-            WriteErrorsToHost = false,
+            ThrowOnError = true,
             AddToHistory = false,
         };
 
@@ -47,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public bool WriteInputToHost { get; init; }
 
-        public bool WriteErrorsToHost { get; init; }
+        public bool ThrowOnError { get; init; }
 
         public bool AddToHistory { get; init; }
     }

@@ -179,7 +179,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             {
                 await ExecuteDelegateAsync(
                     "LoadProfiles",
-                    new PowerShellExecutionOptions { MustRunInForeground = true },
+                    new PowerShellExecutionOptions { MustRunInForeground = true, ThrowOnError = false },
                     (pwsh, delegateCancellation) => pwsh.LoadProfiles(_hostInfo.ProfilePaths),
                     cancellationToken).ConfigureAwait(false);
 
@@ -549,7 +549,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private void InvokeInput(string input, CancellationToken cancellationToken)
         {
             var command = new PSCommand().AddScript(input, useLocalScope: false);
-            InvokePSCommand(command, new PowerShellExecutionOptions { AddToHistory = true, WriteErrorsToHost = true, WriteOutputToHost = true }, cancellationToken);
+            InvokePSCommand(command, new PowerShellExecutionOptions { AddToHistory = true, ThrowOnError = false, WriteOutputToHost = true }, cancellationToken);
         }
 
         private void AddRunspaceEventHandlers(Runspace runspace)
