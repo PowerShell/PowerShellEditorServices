@@ -135,7 +135,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
                 await ExecutionService.ExecutePSCommandAsync(
                     executeCommand,
                     CancellationToken.None,
-                    new PowerShellExecutionOptions { WriteOutputToHost = !editorCommand.SuppressOutput })
+                    new PowerShellExecutionOptions { WriteOutputToHost = !editorCommand.SuppressOutput, ThrowOnError = false, AddToHistory = !editorCommand.SuppressOutput })
                     .ConfigureAwait(false);
             }
             else
