@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly BreakpointService _breakpointService;
         private readonly RemoteFileManagerService remoteFileManager;
 
-        private readonly InternalHost _psesHost;
+        private readonly PsesInternalHost _psesHost;
 
         private readonly IPowerShellDebugContext _debugContext;
 
@@ -107,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             IPowerShellDebugContext debugContext,
             RemoteFileManagerService remoteFileManager,
             BreakpointService breakpointService,
-            InternalHost psesHost,
+            PsesInternalHost psesHost,
             ILoggerFactory factory)
         {
             Validate.IsNotNull(nameof(executionService), executionService);

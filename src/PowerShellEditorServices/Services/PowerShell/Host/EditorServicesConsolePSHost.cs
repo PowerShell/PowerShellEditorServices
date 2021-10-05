@@ -9,10 +9,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 {
     public class EditorServicesConsolePSHost : PSHost, IHostSupportsInteractiveSession
     {
-        private readonly InternalHost _internalHost;
+        private readonly PsesInternalHost _internalHost;
 
         internal EditorServicesConsolePSHost(
-            InternalHost internalHost)
+            PsesInternalHost internalHost)
         {
             _internalHost = internalHost;
         }
