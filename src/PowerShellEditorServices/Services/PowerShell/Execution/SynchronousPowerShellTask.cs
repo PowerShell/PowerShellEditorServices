@@ -75,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                     AddToHistory = PowerShellExecutionOptions.AddToHistory,
                 };
 
-                if (!PowerShellExecutionOptions.WriteErrorsToHost)
+                if (PowerShellExecutionOptions.ThrowOnError)
                 {
                     invocationSettings.ErrorActionPreference = ActionPreference.Stop;
                 }
@@ -94,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             {
                 Logger.LogWarning($"Runtime exception occurred while executing command:{Environment.NewLine}{Environment.NewLine}{e}");
 
-                if (!PowerShellExecutionOptions.WriteErrorsToHost)
+                if (PowerShellExecutionOptions.ThrowOnError)
                 {
                     throw;
                 }
@@ -161,7 +161,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             {
                 Logger.LogWarning($"Runtime exception occurred while executing command:{Environment.NewLine}{Environment.NewLine}{e}");
 
-                if (!PowerShellExecutionOptions.WriteErrorsToHost)
+                if (!PowerShellExecutionOptions.ThrowOnError)
                 {
                     throw;
                 }

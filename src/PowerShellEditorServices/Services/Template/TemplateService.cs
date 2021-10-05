@@ -166,7 +166,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
             await _executionService.ExecutePSCommandAsync(
                 command,
                 CancellationToken.None,
-                new PowerShellExecutionOptions { WriteOutputToHost = true, InterruptCurrentForeground = true }).ConfigureAwait(false);
+                new PowerShellExecutionOptions { WriteOutputToHost = true, InterruptCurrentForeground = true, ThrowOnError = false }).ConfigureAwait(false);
 
             // If any errors were written out, creation was not successful
             return true;

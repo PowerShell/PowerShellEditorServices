@@ -28,6 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             MustRunInForeground = true,
             WriteInputToHost = true,
             WriteOutputToHost = true,
+            ThrowOnError = false,
             AddToHistory = true,
         };
 

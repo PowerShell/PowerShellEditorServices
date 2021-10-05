@@ -35,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _executionService.ExecutePSCommandAsync(
                 new PSCommand().AddScript(request.Expression),
                 CancellationToken.None,
-                new PowerShellExecutionOptions { WriteInputToHost = true, WriteOutputToHost = true, AddToHistory = true });
+                new PowerShellExecutionOptions { WriteInputToHost = true, WriteOutputToHost = true, AddToHistory = true, ThrowOnError = false });
 
             return Task.FromResult(new EvaluateResponseBody
             {

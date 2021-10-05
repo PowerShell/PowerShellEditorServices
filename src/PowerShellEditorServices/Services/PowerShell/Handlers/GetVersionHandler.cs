@@ -127,7 +127,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     await _executionService.ExecutePSCommandAsync(
                         command,
                         CancellationToken.None,
-                        new PowerShellExecutionOptions { WriteInputToHost = true, WriteOutputToHost = true, AddToHistory = true }).ConfigureAwait(false);
+                        new PowerShellExecutionOptions { WriteInputToHost = true, WriteOutputToHost = true, AddToHistory = true, ThrowOnError = false }).ConfigureAwait(false);
 
                     // TODO: Error handling here
 
