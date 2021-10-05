@@ -83,7 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
 
         public async Task<DscBreakpointCapability> GetDscBreakpointCapabilityAsync(
             ILogger logger,
-            InternalHost psesHost,
+            PsesInternalHost psesHost,
             CancellationToken cancellationToken)
         {
             if (_dscBreakpointCapability == null)

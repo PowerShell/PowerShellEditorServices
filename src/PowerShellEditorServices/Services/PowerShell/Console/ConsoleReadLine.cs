@@ -21,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
     {
         private readonly PSReadLineProxy _psrlProxy;
 
-        private readonly InternalHost _psesHost;
+        private readonly PsesInternalHost _psesHost;
 
         private readonly EngineIntrinsics _engineIntrinsics;
 
@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         public ConsoleReadLine(
             PSReadLineProxy psrlProxy,
-            InternalHost psesHost,
+            PsesInternalHost psesHost,
             EngineIntrinsics engineIntrinsics)
         {
             _psrlProxy = psrlProxy;

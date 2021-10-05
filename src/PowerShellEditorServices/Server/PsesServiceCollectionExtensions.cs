@@ -28,13 +28,13 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 .AddSingleton<HostStartupInfo>(hostStartupInfo)
                 .AddSingleton<WorkspaceService>()
                 .AddSingleton<SymbolsService>()
-                .AddSingleton<InternalHost>()
+                .AddSingleton<PsesInternalHost>()
                 .AddSingleton<IRunspaceContext>(
-                    (provider) => provider.GetService<InternalHost>())
+                    (provider) => provider.GetService<PsesInternalHost>())
                 .AddSingleton<PowerShellExecutionService>()
                 .AddSingleton<ConfigurationService>()
                 .AddSingleton<IPowerShellDebugContext>(
-                    (provider) => provider.GetService<InternalHost>().DebugContext)
+                    (provider) => provider.GetService<PsesInternalHost>().DebugContext)
                 .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<RemoteFileManagerService>()
@@ -64,10 +64,10 @@ namespace Microsoft.PowerShell.EditorServices.Server
             PsesDebugServer psesDebugServer,
             bool useTempSession)
         {
-            InternalHost internalHost = languageServiceProvider.GetService<InternalHost>();
+            PsesInternalHost internalHost = languageServiceProvider.GetService<PsesInternalHost>();
 
             return collection
-                .AddSingleton<InternalHost>(internalHost)
+                .AddSingleton<PsesInternalHost>(internalHost)
                 .AddSingleton<IRunspaceContext>(internalHost)
                 .AddSingleton<IPowerShellDebugContext>(internalHost.DebugContext)
                 .AddSingleton(languageServiceProvider.GetService<PowerShellExecutionService>())

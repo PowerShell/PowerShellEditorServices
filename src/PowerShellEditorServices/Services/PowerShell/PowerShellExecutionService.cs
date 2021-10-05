@@ -20,11 +20,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
     {
         private readonly ILogger _logger;
 
-        private readonly InternalHost _psesHost;
+        private readonly PsesInternalHost _psesHost;
 
         public PowerShellExecutionService(
             ILoggerFactory loggerFactory,
-            InternalHost psesHost)
+            PsesInternalHost psesHost)
         {
             _logger = loggerFactory.CreateLogger<PowerShellExecutionService>();
             _psesHost = psesHost;

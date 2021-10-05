@@ -76,7 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
             {
                 // We need to let the PowerShell Context Service know that we are in a debug session
                 // so that it doesn't send the powerShell/startDebugger message.
-                _debugContext = ServiceProvider.GetService<InternalHost>().DebugContext;
+                _debugContext = ServiceProvider.GetService<PsesInternalHost>().DebugContext;
                 _debugContext.IsDebugServerActive = true;
 
                 /*
