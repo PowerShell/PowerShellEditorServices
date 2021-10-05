@@ -113,7 +113,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     // _Initialize_ request:
                     // https://microsoft.github.io/language-server-protocol/specifications/specification-current/#initialize
                     .OnInitialize(
-                        // TODO: Either fix or ignore "method lacks 'await'" warning.
                         (languageServer, request, cancellationToken) =>
                         {
                             Log.Logger.Debug("Initializing OmniSharp Language Server");

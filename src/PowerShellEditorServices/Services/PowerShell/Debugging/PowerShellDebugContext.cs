@@ -10,6 +10,29 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
     using OmniSharp.Extensions.LanguageServer.Protocol.Server;
     using System.Threading.Tasks;
 
+    /// <summary>
+    /// Handles the state of the PowerShell debugger.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Debugging through a PowerShell Host is implemented by registering a handler
+    /// for the <see cref="System.Management.Automation.Debugger.DebuggerStop"/> event.
+    /// Registering that handler causes debug actions in PowerShell like Set-PSBreakpoint
+    /// and Wait-Debugger to drop into the debugger and trigger the handler.
+    /// The handler is passed a mutable <see cref="System.Management.Automation.DebuggerStopEventArgs"/> object
+    /// and the debugger stop lasts for the duration of the handler call.
+    /// The handler sets the <see cref="System.Management.Automation.DebuggerStopEventArgs.ResumeAction"/> property
+    /// when after it returns, the PowerShell debugger uses that as the direction on how to proceed.
+    /// </para>
+    /// <para>
+    /// When we handle the <see cref="System.Management.Automation.Debugger.DebuggerStop"/> event,
+    /// we drop into a nested debug prompt and execute things in the debugger with <see cref="System.Management.Automation.Debugger.ProcessCommand(PSCommand, PSDataCollection{PSObject})"/>,
+    /// which enables debugger commands like <c>l</c>, <c>c</c>, <c>s</c>, etc.
+    /// <see cref="Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging.PowerShellDebugContext"/> saves the event args object in its state,
+    /// and when one of the debugger commands is used, the result returned is used to set <see cref="System.Management.Automation.DebuggerStopEventArgs.ResumeAction"/>
+    /// on the saved event args object so that when the event handler returns, the PowerShell debugger takes the correct action.
+    /// </para>
+    /// </remarks>
     internal class PowerShellDebugContext : IPowerShellDebugContext
     {
         private readonly ILogger _logger;

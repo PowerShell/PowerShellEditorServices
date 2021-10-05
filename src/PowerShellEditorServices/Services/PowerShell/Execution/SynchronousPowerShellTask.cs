@@ -71,10 +71,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 result = _pwsh.InvokeCommand<TResult>(_psCommand);
                 cancellationToken.ThrowIfCancellationRequested();
             }
+            // Test if we've been cancelled. If we're remoting, PSRemotingDataStructureException effectively means the pipeline was stopped.
             catch (Exception e) when (cancellationToken.IsCancellationRequested || e is PipelineStoppedException || e is PSRemotingDataStructureException)
             {
                 throw new OperationCanceledException();
             }
+            // We only catch RuntimeExceptions here in case writing errors to output was requested
+            // Other errors are bubbled up to the caller
             catch (RuntimeException e)
             {
                 Logger.LogWarning($"Runtime exception occurred while executing command:{Environment.NewLine}{Environment.NewLine}{e}");
@@ -107,6 +110,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
             var outputCollection = new PSDataCollection<PSObject>();
 
+            // Out-Default doesn't work as needed in the debugger
+            // Instead we add Out-String to the command and collect results in a PSDataCollection
+            // and use the event handler to print output to the UI as its added to that collection
             if (_executionOptions.WriteOutputToHost)
             {
                 _psCommand.AddDebugOutputCommand();
@@ -124,14 +130,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             DebuggerCommandResults debuggerResult = null;
             try
             {
+                // In the PowerShell debugger, extra debugger commands are made available, like "l", "s", "c", etc.
+                // Executing those commands produces a result that needs to be set on the debugger stop event args.
+                // So we use the Debugger.ProcessCommand() API to properly execute commands in the debugger
+                // and then call DebugContext.ProcessDebuggerResult() later to handle the command appropriately
                 debuggerResult = _pwsh.Runspace.Debugger.ProcessCommand(_psCommand, outputCollection);
                 cancellationToken.ThrowIfCancellationRequested();
             }
+            // Test if we've been cancelled. If we're remoting, PSRemotingDataStructureException effectively means the pipeline was stopped.
             catch (Exception e) when (cancellationToken.IsCancellationRequested || e is PipelineStoppedException || e is PSRemotingDataStructureException)
             {
                 StopDebuggerIfRemoteDebugSessionFailed();
                 throw new OperationCanceledException();
             }
+            // We only catch RuntimeExceptions here in case writing errors to output was requested
+            // Other errors are bubbled up to the caller
             catch (RuntimeException e)
             {
                 Logger.LogWarning($"Runtime exception occurred while executing command:{Environment.NewLine}{Environment.NewLine}{e}");

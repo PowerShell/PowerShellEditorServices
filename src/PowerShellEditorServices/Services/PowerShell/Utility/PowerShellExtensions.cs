@@ -71,6 +71,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             pwsh.InvokeAndClear();
         }
 
+        /// <summary>
+        /// When running a remote session, waits for remote processing and output to complete.
+        /// </summary>
         public static void WaitForRemoteOutputIfNeeded(this PowerShell pwsh)
         {
             if (!pwsh.Runspace.RunspaceIsRemote)
@@ -78,6 +81,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 return;
             }
 
+            // These methods are required when running commands remotely.
+            // Remote rendering from command output is done asynchronously.
+            // So to ensure we wait for output to be rendered,
+            // we need these methods to wait for rendering.
+            // PowerShell does this in its own implementation: https://github.com/PowerShell/PowerShell/blob/883ca98dd74ea13b3d8c0dd62d301963a40483d6/src/System.Management.Automation/engine/debugger/debugger.cs#L4628-L4652
             s_waitForServicingComplete(pwsh);
             s_suspendIncomingData(pwsh);
         }
@@ -155,10 +163,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         {
             var profileVariable = new PSObject();
 
-            pwsh.AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.AllUsersAllHosts), profilePaths.AllUsersAllHosts);
-            pwsh.AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.AllUsersCurrentHost), profilePaths.AllUsersCurrentHost);
-            pwsh.AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.CurrentUserAllHosts), profilePaths.CurrentUserAllHosts);
-            pwsh.AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.CurrentUserCurrentHost), profilePaths.CurrentUserCurrentHost);
+            pwsh.AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.AllUsersAllHosts), profilePaths.AllUsersAllHosts)
+                .AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.AllUsersCurrentHost), profilePaths.AllUsersCurrentHost)
+                .AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.CurrentUserAllHosts), profilePaths.CurrentUserAllHosts)
+                .AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.CurrentUserCurrentHost), profilePaths.CurrentUserCurrentHost);
 
             pwsh.Runspace.SessionStateProxy.SetVariable("PROFILE", profileVariable);
         }
@@ -189,7 +197,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             return sb.ToString();
         }
 
-        private static void AddProfileMemberAndLoadIfExists(this PowerShell pwsh, PSObject profileVariable, string profileName, string profilePath)
+        private static PowerShell AddProfileMemberAndLoadIfExists(this PowerShell pwsh, PSObject profileVariable, string profileName, string profilePath)
         {
             profileVariable.Members.Add(new PSNoteProperty(profileName, profilePath));
 
@@ -201,6 +209,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
                 pwsh.InvokeCommand(psCommand);
             }
+
+            return pwsh;
         }
 
         private static StringBuilder AddErrorString(this StringBuilder sb, ErrorRecord error, int errorIndex)
