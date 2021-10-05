@@ -89,7 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         public static async Task<DscBreakpointCapability> GetDscCapabilityAsync(
             ILogger logger,
             IRunspaceInfo currentRunspace,
-            InternalHost psesHost,
+            PsesInternalHost psesHost,
             CancellationToken cancellationToken)
         {
             // DSC support is enabled only for Windows PowerShell.

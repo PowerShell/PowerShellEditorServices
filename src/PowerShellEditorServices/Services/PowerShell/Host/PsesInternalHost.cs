@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
     using System.Threading;
     using System.Threading.Tasks;
 
-    internal class InternalHost : PSHost, IHostSupportsInteractiveSession, IRunspaceContext
+    internal class PsesInternalHost : PSHost, IHostSupportsInteractiveSession, IRunspaceContext
     {
         private const string DefaultPrompt = "PSIC> ";
 
@@ -63,13 +63,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private bool _skipNextPrompt = false;
 
-        public InternalHost(
+        public PsesInternalHost(
             ILoggerFactory loggerFactory,
             ILanguageServerFacade languageServer,
             HostStartupInfo hostInfo)
         {
             _loggerFactory = loggerFactory;
-            _logger = loggerFactory.CreateLogger<InternalHost>();
+            _logger = loggerFactory.CreateLogger<PsesInternalHost>();
             _languageServer = languageServer;
             _hostInfo = hostInfo;
 

@@ -38,12 +38,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         private readonly ILanguageServerFacade _languageServer;
 
-        private readonly InternalHost _psesHost;
+        private readonly PsesInternalHost _psesHost;
 
         public PowerShellDebugContext(
             ILoggerFactory loggerFactory,
             ILanguageServerFacade languageServer,
-            InternalHost psesHost)
+            PsesInternalHost psesHost)
         {
             _logger = loggerFactory.CreateLogger<PowerShellDebugContext>();
             _languageServer = languageServer;
