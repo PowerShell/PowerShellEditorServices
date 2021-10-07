@@ -118,6 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             new ContinuedEvent
                             {
                                 ThreadId = ThreadsHandler.PipelineThread.Id,
+                                AllThreadsContinued = true,
                             });
                     }
                     return;
