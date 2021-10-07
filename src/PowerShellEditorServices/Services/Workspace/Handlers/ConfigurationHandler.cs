@@ -137,7 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (!_extensionServiceInitialized)
             {
-                await _extensionService.InitializeAsync();
+                await _extensionService.InitializeAsync().ConfigureAwait(false);
             }
 
             // Run any events subscribed to configuration updates

@@ -147,7 +147,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             BreakpointDetails[] breakpoints,
             bool clearExisting = true)
         {
-            DscBreakpointCapability dscBreakpoints = await _debugContext.GetDscBreakpointCapabilityAsync(CancellationToken.None);
+            DscBreakpointCapability dscBreakpoints = await _debugContext.GetDscBreakpointCapabilityAsync(CancellationToken.None).ConfigureAwait(false);
 
             string scriptPath = scriptFile.FilePath;
             // Make sure we're using the remote script path
@@ -196,7 +196,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return await dscBreakpoints.SetLineBreakpointsAsync(
                 _executionService,
                 escapedScriptPath,
-                breakpoints);
+                breakpoints)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -214,7 +215,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (clearExisting)
             {
                 // Flatten dictionary values into one list and remove them all.
-                await _breakpointService.RemoveBreakpointsAsync((await _breakpointService.GetBreakpointsAsync()).Where( i => i is CommandBreakpoint)).ConfigureAwait(false);
+                IEnumerable<Breakpoint> existingBreakpoints = await _breakpointService.GetBreakpointsAsync().ConfigureAwait(false);
+                await _breakpointService.RemoveBreakpointsAsync(existingBreakpoints.OfType<CommandBreakpoint>()).ConfigureAwait(false);
             }
 
             if (breakpoints.Length > 0)
