@@ -117,7 +117,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                             Title = "Not now"
                         }
                     }
-                }).ConfigureAwait(false);
+                })
+                .ConfigureAwait(false);
 
                 // If the user chose "Not now" ignore it for the rest of the session.
                 if (messageAction?.Title == takeActionText)

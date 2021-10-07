@@ -165,7 +165,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 if (!string.IsNullOrEmpty(workingDir))
                 {
                     var setDirCommand = new PSCommand().AddCommand("Set-Location").AddParameter("LiteralPath", workingDir);
-                    await _executionService.ExecutePSCommandAsync(setDirCommand, cancellationToken);
+                    await _executionService.ExecutePSCommandAsync(setDirCommand, cancellationToken).ConfigureAwait(false);
                 }
 
                 _logger.LogTrace("Working dir " + (string.IsNullOrEmpty(workingDir) ? "not set." : $"set to '{workingDir}'"));
@@ -299,7 +299,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 try
                 {
-                    await _executionService.ExecutePSCommandAsync(enterPSHostProcessCommand, cancellationToken);
+                    await _executionService.ExecutePSCommandAsync(enterPSHostProcessCommand, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -423,12 +423,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 {
                     try
                     {
-                        await _executionService.ExecutePSCommandAsync(new PSCommand().AddCommand("Exit-PSHostProcess"), CancellationToken.None);
+                        await _executionService.ExecutePSCommandAsync(new PSCommand().AddCommand("Exit-PSHostProcess"), CancellationToken.None).ConfigureAwait(false);
 
                         if (_debugStateService.IsRemoteAttach &&
                             _runspaceContext.CurrentRunspace.RunspaceOrigin != RunspaceOrigin.Local)
                         {
-                            await _executionService.ExecutePSCommandAsync(new PSCommand().AddCommand("Exit-PSSession"), CancellationToken.None);
+                            await _executionService.ExecutePSCommandAsync(new PSCommand().AddCommand("Exit-PSSession"), CancellationToken.None).ConfigureAwait(false);
                         }
                     }
                     catch (Exception e)
