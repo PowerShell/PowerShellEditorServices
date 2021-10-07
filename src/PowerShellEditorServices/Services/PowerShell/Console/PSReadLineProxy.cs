@@ -119,7 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                 .GetType(VirtualTerminalTypeName)
                 ?.GetField(ReadKeyOverrideFieldName, BindingFlags.Static | BindingFlags.NonPublic);
 
-            if (_readKeyOverrideField == null)
+            if (_readKeyOverrideField is null)
             {
                 throw NewInvalidPSReadLineVersionException(
                     FieldMemberType,
@@ -135,7 +135,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                     _logger);
             }
 
-            if (ReadLine == null)
+            if (ReadLine is null)
             {
                 throw NewInvalidPSReadLineVersionException(
                     MethodMemberType,
@@ -143,7 +143,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                     _logger);
             }
 
-            if (SetKeyHandler == null)
+            if (SetKeyHandler is null)
             {
                 throw NewInvalidPSReadLineVersionException(
                     MethodMemberType,
@@ -151,7 +151,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                     _logger);
             }
 
-            if (AddToHistory == null)
+            if (AddToHistory is null)
             {
                 throw NewInvalidPSReadLineVersionException(
                     MethodMemberType,
