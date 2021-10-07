@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class ConfigurationDoneHandler : IConfigurationDoneHandler
     {
-        private readonly PowerShellExecutionOptions s_debuggerExecutionOptions = new()
+        private static readonly PowerShellExecutionOptions s_debuggerExecutionOptions = new()
         {
             MustRunInForeground = true,
             WriteInputToHost = true,
