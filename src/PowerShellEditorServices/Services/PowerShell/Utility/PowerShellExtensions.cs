@@ -10,8 +10,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
     using System.Collections.Generic;
     using System.IO;
     using System.Management.Automation;
-    using System.Runtime.CompilerServices;
-    using UnixConsoleEcho;
 
     internal static class PowerShellExtensions
     {
