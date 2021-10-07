@@ -116,7 +116,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
                 new ShowInputPromptRequest
                 {
                     Name = message,
-                }).Returning<ShowInputPromptResponse>(CancellationToken.None).ConfigureAwait(false);
+                })
+                .Returning<ShowInputPromptResponse>(CancellationToken.None)
+                .ConfigureAwait(false);
 
             if (response.PromptCancelled)
             {
@@ -142,7 +144,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
                     Message = message,
                     Choices = choiceDetails,
                     DefaultChoices = defaultChoiceIndexes?.ToArray(),
-                }).Returning<ShowChoicePromptResponse>(CancellationToken.None).ConfigureAwait(false);
+                })
+                .Returning<ShowChoicePromptResponse>(CancellationToken.None)
+                .ConfigureAwait(false);
 
             if (response.PromptCancelled)
             {
@@ -168,7 +172,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
                     Message = message,
                     Choices = choiceDetails,
                     DefaultChoices = defaultChoiceIndex > -1 ? new[] { defaultChoiceIndex } : null,
-                }).Returning<ShowChoicePromptResponse>(CancellationToken.None).ConfigureAwait(false);
+                })
+                .Returning<ShowChoicePromptResponse>(CancellationToken.None)
+                .ConfigureAwait(false);
 
             if (response.PromptCancelled)
             {

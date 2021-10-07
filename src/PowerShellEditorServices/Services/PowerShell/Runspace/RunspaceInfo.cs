@@ -92,7 +92,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
                     logger,
                     this,
                     psesHost,
-                    cancellationToken);
+                    cancellationToken)
+                    .ConfigureAwait(false);
             }
 
             return _dscBreakpointCapability;
