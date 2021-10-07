@@ -143,6 +143,9 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
         public void Dispose()
         {
+            // Note that the lifetime of the DebugContext is longer than the debug server;
+            // It represents the debugger on the PowerShell process we're in,
+            // while a new debug server is spun up for every debugging session
             _debugContext.IsDebugServerActive = false;
             _debugAdapterServer.Dispose();
             _inputStream.Dispose();
