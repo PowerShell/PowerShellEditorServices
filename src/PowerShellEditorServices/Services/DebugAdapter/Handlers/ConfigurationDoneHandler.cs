@@ -147,8 +147,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private PSCommand BuildPSCommandFromArguments(string command, IReadOnlyList<string> arguments)
         {
-            if (arguments is null
-                || arguments.Count == 0)
+            if (arguments is null or { Count: 0 })
             {
                 return new PSCommand().AddCommand(command);
             }
