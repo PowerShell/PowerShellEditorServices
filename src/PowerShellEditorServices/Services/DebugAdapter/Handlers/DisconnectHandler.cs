@@ -47,6 +47,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<DisconnectResponse> Handle(DisconnectArguments request, CancellationToken cancellationToken)
         {
+            // TODO: We need to sort out the proper order of operations here.
+            //       Currently we just tear things down in some order without really checking what the debugger is doing.
+            //       We should instead ensure that the debugger is in some valid state, lock it and then tear things down
+
             _debugEventHandlerService.UnregisterEventHandlers();
 
             if (!_debugStateService.ExecutionCompleted)
