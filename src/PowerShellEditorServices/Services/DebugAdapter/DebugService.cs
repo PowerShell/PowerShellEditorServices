@@ -696,6 +696,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 foreach (PSObject psVariableObject in results)
                 {
+                    // Under some circumstances, we seem to get variables back with no "Name" field
+                    // We skip over those here
                     if (psVariableObject.Properties["Name"] is null)
                     {
                         continue;
