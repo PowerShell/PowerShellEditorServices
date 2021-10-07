@@ -66,6 +66,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
                 // Note that this check is done *after* the cancellation because we want to cancel
                 // not just the idle task, but its parent as well
+                // because we want to cancel the ReadLine call that the idle handler is running in
+                // so we can run something else in the foreground
                 if (!scope.IsIdleScope)
                 {
                     break;
