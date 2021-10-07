@@ -542,7 +542,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(
                 command,
                 CancellationToken.None,
-                new PowerShellExecutionOptions { WriteOutputToHost = true }).ConfigureAwait(false);
+                new PowerShellExecutionOptions { WriteOutputToHost = writeResultAsOutput, ThrowOnError = !writeResultAsOutput }).ConfigureAwait(false);
 
             // Since this method should only be getting invoked in the debugger,
             // we can assume that Out-String will be getting used to format results
