@@ -9,7 +9,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {
     /// <summary>
-    /// The vistor used to find the dont sourced files in an AST
+    /// The vistor used to find the dot-sourced files in an AST
     /// </summary>
     internal class FindDotSourcedVisitor : AstVisitor
     {
