@@ -143,12 +143,15 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
         public void Dispose()
         {
-            // TODO: If the debugger has stopped, should we clear the breakpoints?
+            // Note that the lifetime of the DebugContext is longer than the debug server;
+            // It represents the debugger on the PowerShell process we're in,
+            // while a new debug server is spun up for every debugging session
             _debugContext.IsDebugServerActive = false;
             _debugAdapterServer.Dispose();
             _inputStream.Dispose();
             _outputStream.Dispose();
             _serverStopped.SetResult(true);
+            // TODO: If the debugger has stopped, should we clear the breakpoints?
         }
 
         public async Task WaitForShutdown()
