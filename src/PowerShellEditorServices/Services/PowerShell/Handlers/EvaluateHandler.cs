@@ -32,10 +32,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // TODO: Understand why we currently handle this asynchronously and why we return a dummy result value
             //       instead of awaiting the execution and returing a real result of some kind
 
+            // This API is mostly used for F8 execution, so needs to interrupt the command prompt
             _executionService.ExecutePSCommandAsync(
                 new PSCommand().AddScript(request.Expression),
                 CancellationToken.None,
-                new PowerShellExecutionOptions { WriteInputToHost = true, WriteOutputToHost = true, AddToHistory = true, ThrowOnError = false });
+                new PowerShellExecutionOptions { WriteInputToHost = true, WriteOutputToHost = true, AddToHistory = true, ThrowOnError = false, InterruptCurrentForeground = true });
 
             return Task.FromResult(new EvaluateResponseBody
             {
