@@ -113,7 +113,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                     dscModule = pwsh.AddCommand("Import-Module")
                         .AddArgument(@"C:\Program Files\DesiredStateConfiguration\1.0.0.0\Modules\PSDesiredStateConfiguration\PSDesiredStateConfiguration.psd1")
                         .AddParameter("PassThru")
-                        .AddParameter("ErrorAction", "Ignore")
                         .InvokeAndClear<PSModuleInfo>(invocationSettings)
                         .FirstOrDefault();
                 }
