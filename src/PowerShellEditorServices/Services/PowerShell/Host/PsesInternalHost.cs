@@ -468,12 +468,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 {
                     DoOneRepl(cancellationScope.CancellationToken);
 
-                    if (_shouldExit)
-                    {
-                        break;
-                    }
-
-                    while (!cancellationScope.CancellationToken.IsCancellationRequested
+                    while (!_shouldExit
+                        && !cancellationScope.CancellationToken.IsCancellationRequested
                         && _taskQueue.TryTake(out ISynchronousTask task))
                     {
                         task.ExecuteSynchronously(cancellationScope.CancellationToken);
