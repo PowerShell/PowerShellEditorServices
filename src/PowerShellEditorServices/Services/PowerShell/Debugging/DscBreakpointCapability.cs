@@ -86,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                         StringComparison.CurrentCultureIgnoreCase));
         }
 
-        public static async Task<DscBreakpointCapability> GetDscCapabilityAsync(
+        public static Task<DscBreakpointCapability> GetDscCapabilityAsync(
             ILogger logger,
             IRunspaceInfo currentRunspace,
             PsesInternalHost psesHost,
@@ -163,12 +163,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                 return capability;
             };
 
-            return await psesHost.ExecuteDelegateAsync<DscBreakpointCapability>(
+            return psesHost.ExecuteDelegateAsync<DscBreakpointCapability>(
                 nameof(getDscBreakpointCapabilityFunc),
                 ExecutionOptions.Default,
                 getDscBreakpointCapabilityFunc,
                 cancellationToken);
-
         }
     }
 }
