@@ -8,6 +8,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         Next,
     }
 
+    // Some of the fields of this class are not orthogonal,
+    // so it's possible to construct self-contradictory execution options.
+    // We should see if it's possible to rework this class to make the options less misconfigurable.
+    // Generally the executor will do the right thing though; some options just priority over others.
     public record ExecutionOptions
     {
         public static ExecutionOptions Default = new()
