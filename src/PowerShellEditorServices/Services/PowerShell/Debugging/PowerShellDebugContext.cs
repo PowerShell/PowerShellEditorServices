@@ -67,6 +67,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         public void EnableDebugMode()
         {
+            // This is required by the PowerShell API so that remote debugging works.
+            // Without it, a runspace may not have these options set and attempting to set breakpoints remotely can fail.
             _psesHost.Runspace.Debugger.SetDebugMode(DebugModes.LocalScript | DebugModes.RemoteScript);
         }
 
