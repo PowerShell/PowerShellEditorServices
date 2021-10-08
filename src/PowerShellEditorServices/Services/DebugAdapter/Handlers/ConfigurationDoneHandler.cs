@@ -13,6 +13,7 @@ using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
@@ -41,6 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly WorkspaceService _workspaceService;
 
         private readonly IPowerShellDebugContext _debugContext;
+        private readonly IRunspaceContext _runspaceContext;
 
         public ConfigurationDoneHandler(
             ILoggerFactory loggerFactory,
@@ -50,7 +52,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             DebugEventHandlerService debugEventHandlerService,
             PowerShellExecutionService executionService,
             WorkspaceService workspaceService,
-            IPowerShellDebugContext debugContext)
+            IPowerShellDebugContext debugContext,
+            IRunspaceContext runspaceContext)
         {
             _logger = loggerFactory.CreateLogger<ConfigurationDoneHandler>();
             _debugAdapterServer = debugAdapterServer;
@@ -60,6 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _executionService = executionService;
             _workspaceService = workspaceService;
             _debugContext = debugContext;
+            _runspaceContext = runspaceContext;
         }
 
         public Task<ConfigurationDoneResponse> Handle(ConfigurationDoneArguments request, CancellationToken cancellationToken)
@@ -108,7 +112,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 ScriptFile untitledScript = _workspaceService.GetFile(scriptToLaunch);
 
-                if (BreakpointApiUtils.SupportsBreakpointApis)
+                if (BreakpointApiUtils.SupportsBreakpointApis(_runspaceContext.CurrentRunspace))
                 {
                     // Parse untitled files with their `Untitled:` URI as the file name which will cache the URI & contents within the PowerShell parser.
                     // By doing this, we light up the ability to debug Untitled files with breakpoints.

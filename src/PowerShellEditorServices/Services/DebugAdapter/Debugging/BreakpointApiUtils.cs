@@ -8,6 +8,7 @@ using System.Management.Automation.Language;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
@@ -27,6 +28,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
         private static readonly Lazy<Func<Debugger, Breakpoint, int?, bool>> s_removeBreakpointLazy;
 
+        private static readonly Version s_minimumBreakpointApiPowerShellVersion = new(7, 0, 0, 0);
+
         private static int breakpointHitCounter;
 
         #endregion
@@ -37,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         {
             // If this version of PowerShell does not support the new Breakpoint APIs introduced in PowerShell 7.0.0,
             // do nothing as this class will not get used.
-            if (!SupportsBreakpointApis)
+            if (!VersionUtils.IsPS7OrGreater)
             {
                 return;
             }
@@ -89,7 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
         #endregion
 
-        #region Public Static Properties
+        #region Private Static Properties
 
         private static Func<Debugger, string, int, int, ScriptBlock, int?, LineBreakpoint> SetLineBreakpointDelegate => s_setLineBreakpointLazy.Value;
 
@@ -103,9 +106,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
         #region Public Static Properties
 
-        // TODO: Try to compute this more dynamically. If we're launching a script in the PSIC, there are APIs are available in PS 5.1 and up.
-        // For now, only PS7 or greater gets this feature.
-        public static bool SupportsBreakpointApis => VersionUtils.IsPS7OrGreater;
+        public static bool SupportsBreakpointApis(IRunspaceInfo targetRunspace) => targetRunspace.PowerShellVersionDetails.Version >= s_minimumBreakpointApiPowerShellVersion;
 
         #endregion
 
