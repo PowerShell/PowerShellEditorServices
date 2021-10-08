@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Models;
@@ -19,21 +20,30 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class BreakpointHandlers : ISetFunctionBreakpointsHandler, ISetBreakpointsHandler, ISetExceptionBreakpointsHandler
     {
+        private static readonly string[] s_supportedDebugFileExtensions = new[]
+        {
+            ".ps1",
+            ".psm1"
+        };
+
         private readonly ILogger _logger;
         private readonly DebugService _debugService;
         private readonly DebugStateService _debugStateService;
         private readonly WorkspaceService _workspaceService;
+        private readonly IRunspaceContext _runspaceContext;
 
         public BreakpointHandlers(
             ILoggerFactory loggerFactory,
             DebugService debugService,
             DebugStateService debugStateService,
-            WorkspaceService workspaceService)
+            WorkspaceService workspaceService,
+            IRunspaceContext runspaceContext)
         {
             _logger = loggerFactory.CreateLogger<BreakpointHandlers>();
             _debugService = debugService;
             _debugStateService = debugStateService;
             _workspaceService = workspaceService;
+            _runspaceContext = runspaceContext;
         }
 
         public async Task<SetBreakpointsResponse> Handle(SetBreakpointsArguments request, CancellationToken cancellationToken)
@@ -53,10 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             // Verify source file is a PowerShell script file.
-            string fileExtension = Path.GetExtension(scriptFile?.FilePath ?? "")?.ToLower();
-            bool isUntitledPath = ScriptFile.IsUntitledPath(request.Source.Path);
-            if ((!isUntitledPath && fileExtension != ".ps1" && fileExtension != ".psm1") ||
-                (!BreakpointApiUtils.SupportsBreakpointApis && isUntitledPath))
+            if (!IsFileSupportedForBreakpoints(request.Source.Path, scriptFile))
             {
                 _logger.LogWarning(
                     $"Attempted to set breakpoints on a non-PowerShell file: {request.Source.Path}");
@@ -181,6 +188,23 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             //}
 
             return Task.FromResult(new SetExceptionBreakpointsResponse());
+        }
+
+        private bool IsFileSupportedForBreakpoints(string requestedPath, ScriptFile resolvedScriptFile)
+        {
+            // PowerShell 7 and above support breakpoints in untitled files
+            if (ScriptFile.IsUntitledPath(requestedPath))
+            {
+                return BreakpointApiUtils.SupportsBreakpointApis(_runspaceContext.CurrentRunspace);
+            }
+
+            if (string.IsNullOrEmpty(resolvedScriptFile?.FilePath))
+            {
+                return false;
+            }
+
+            string fileExtension = Path.GetExtension(resolvedScriptFile.FilePath);
+            return s_supportedDebugFileExtensions.Contains(fileExtension, StringComparer.OrdinalIgnoreCase);
         }
     }
 }
