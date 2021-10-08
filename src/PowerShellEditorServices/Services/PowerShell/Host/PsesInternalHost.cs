@@ -194,6 +194,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public void SetExit()
         {
+            // Can't exit from the top level of PSES
+            // since if you do, you lose all LSP services
             if (_psFrameStack.Count <= 1)
             {
                 return;
