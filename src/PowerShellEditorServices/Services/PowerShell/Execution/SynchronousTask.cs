@@ -41,6 +41,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public Task<TResult> Task => _taskCompletionSource.Task;
 
+        // Sometimes we need the result of task run on the same thread,
+        // which this property allows us to do.
         public TResult Result
         {
             get
