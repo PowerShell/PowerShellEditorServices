@@ -570,9 +570,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         {
             if (currentRunspace.RunspaceOrigin != RunspaceOrigin.Local)
             {
-                var remotePwsh = PowerShell.Create();
-                remotePwsh.Runspace = currentRunspace.Runspace;
-                return remotePwsh;
+                return CreatePowerShellForRunspace(currentRunspace.Runspace);
             }
 
             // PowerShell.CreateNestedPowerShell() sets IsNested but not IsChild
@@ -595,9 +593,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             ReadLineProvider readLineProvider)
         {
             Runspace runspace = CreateInitialRunspace(hostStartupInfo.LanguageMode);
-
-            var pwsh = PowerShell.Create();
-            pwsh.Runspace = runspace;
+            PowerShell pwsh = CreatePowerShellForRunspace(runspace);
 
             var engineIntrinsics = (EngineIntrinsics)runspace.SessionStateProxy.GetVariable("ExecutionContext");
 
