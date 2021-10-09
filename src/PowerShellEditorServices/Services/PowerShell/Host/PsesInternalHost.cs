@@ -666,7 +666,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                         _taskQueue.Prepend(task);
                         _skipNextPrompt = true;
                         _cancellationContext.CancelIdleParentTask();
-                        break;
+                        return;
                     }
 
                     task.ExecuteSynchronously(cancellationScope.CancellationToken);
