@@ -101,7 +101,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                         options: null,
                         powershell: pwsh);
                 },
-                cancellationToken);
+                cancellationToken)
+                .ConfigureAwait(false);
 
             stopwatch.Stop();
             logger.LogTrace($"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");

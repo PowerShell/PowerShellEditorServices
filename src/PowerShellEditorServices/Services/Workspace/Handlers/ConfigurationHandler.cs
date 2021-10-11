@@ -31,9 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly ExtensionService _extensionService;
         private readonly PsesInternalHost _psesHost;
         private readonly ILanguageServerFacade _languageServer;
-        private DidChangeConfigurationCapability _capability;
         private bool _profilesLoaded;
-        private bool _consoleReplStarted;
         private bool _extensionServiceInitialized;
         private bool _cwdSet;
 
@@ -96,8 +94,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
 
                 await _psesHost.StartAsync(new HostStartOptions(), CancellationToken.None).ConfigureAwait(false);
-
-                _consoleReplStarted = true;
 
                 if (loadProfiles)
                 {

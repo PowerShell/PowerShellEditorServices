@@ -245,7 +245,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             return false;
         }
 
-        private bool SpinUntilKeyAvailable(int millisecondsTimeout, CancellationToken cancellationToken)
+        private static bool SpinUntilKeyAvailable(int millisecondsTimeout, CancellationToken cancellationToken)
         {
             return SpinWait.SpinUntil(
                 () =>
@@ -256,7 +256,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                 millisecondsTimeout);
         }
 
-        private Task<bool> SpinUntilKeyAvailableAsync(int millisecondsTimeout, CancellationToken cancellationToken)
+        private static Task<bool> SpinUntilKeyAvailableAsync(int millisecondsTimeout, CancellationToken cancellationToken)
         {
             return Task<bool>.Factory.StartNew(
                 () => SpinWait.SpinUntil(
@@ -266,10 +266,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                         s_waitHandle.Wait(ShortWaitForKeySpinUntilSleepTime, cancellationToken);
                         return IsKeyAvailable(cancellationToken);
                     },
-                    millisecondsTimeout));
+                    millisecondsTimeout),
+                cancellationToken);
         }
 
-        private bool IsKeyAvailable(CancellationToken cancellationToken)
+        private static bool IsKeyAvailable(CancellationToken cancellationToken)
         {
             s_stdInHandle.Wait(cancellationToken);
             try
@@ -282,7 +283,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             }
         }
 
-        private async Task<bool> IsKeyAvailableAsync(CancellationToken cancellationToken)
+        private static async Task<bool> IsKeyAvailableAsync(CancellationToken cancellationToken)
         {
             await s_stdInHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
             try

@@ -31,8 +31,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private const string PsesGlobalVariableNamePrefix = "__psEditorServices_";
         private const string TemporaryScriptFileName = "Script Listing.ps1";
 
-        private readonly BreakpointDetails[] s_emptyBreakpointDetailsArray = Array.Empty<BreakpointDetails>();
-
         private readonly ILogger _logger;
         private readonly IInternalPowerShellExecutionService _executionService;
         private readonly BreakpointService _breakpointService;

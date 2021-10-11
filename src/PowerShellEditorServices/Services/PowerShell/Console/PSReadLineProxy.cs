@@ -37,8 +37,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private const string VirtualTerminalTypeName = "Microsoft.PowerShell.Internal.VirtualTerminal";
 
-        private const string ForcePSEventHandlingMethodName = "ForcePSEventHandling";
-
         private static readonly Type[] s_setKeyHandlerTypes =
         {
             typeof(string[]),
