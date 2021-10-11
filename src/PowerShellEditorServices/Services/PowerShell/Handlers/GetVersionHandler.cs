@@ -26,14 +26,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private readonly ILogger<GetVersionHandler> _logger;
         private IRunspaceContext _runspaceContext;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly IInternalPowerShellExecutionService _executionService;
         private readonly ILanguageServerFacade _languageServer;
         private readonly ConfigurationService _configurationService;
 
         public GetVersionHandler(
             ILoggerFactory factory,
             IRunspaceContext runspaceContext,
-            PowerShellExecutionService executionService,
+            IInternalPowerShellExecutionService executionService,
             ILanguageServerFacade languageServer,
             ConfigurationService configurationService)
         {

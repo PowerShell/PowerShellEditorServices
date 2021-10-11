@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         const int DefaultWaitTimeoutMilliseconds = 5000;
         private readonly ILogger _logger;
         private readonly IRunspaceContext _runspaceContext;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly IInternalPowerShellExecutionService _executionService;
         private readonly WorkspaceService _workspaceService;
         private CompletionResults _mostRecentCompletions;
         private int _mostRecentRequestLine;
@@ -40,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public PsesCompletionHandler(
             ILoggerFactory factory,
             IRunspaceContext runspaceContext,
-            PowerShellExecutionService executionService,
+            IInternalPowerShellExecutionService executionService,
             WorkspaceService workspaceService)
         {
             _logger = factory.CreateLogger<PsesCompletionHandler>();

@@ -38,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly DebugService _debugService;
         private readonly DebugStateService _debugStateService;
         private readonly DebugEventHandlerService _debugEventHandlerService;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly IInternalPowerShellExecutionService _executionService;
         private readonly WorkspaceService _workspaceService;
 
         private readonly IPowerShellDebugContext _debugContext;
@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             DebugService debugService,
             DebugStateService debugStateService,
             DebugEventHandlerService debugEventHandlerService,
-            PowerShellExecutionService executionService,
+            IInternalPowerShellExecutionService executionService,
             WorkspaceService workspaceService,
             IPowerShellDebugContext debugContext,
             IRunspaceContext runspaceContext)

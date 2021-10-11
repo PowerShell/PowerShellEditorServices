@@ -72,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             Ast scriptAst,
             Token[] currentTokens,
             int fileOffset,
-            PowerShellExecutionService executionService,
+            IInternalPowerShellExecutionService executionService,
             ILogger logger,
             CancellationToken cancellationToken)
         {

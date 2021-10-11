@@ -21,12 +21,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 
         private readonly ILanguageServerFacade _languageServer;
 
-        private readonly PowerShellExecutionService _executionService;
+        private readonly IInternalPowerShellExecutionService _executionService;
 
         public EditorOperationsService(
             PsesInternalHost psesHost,
             WorkspaceService workspaceService,
-            PowerShellExecutionService executionService,
+            IInternalPowerShellExecutionService executionService,
             ILanguageServerFacade languageServer)
         {
             _psesHost = psesHost;

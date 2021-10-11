@@ -35,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly ILogger _logger;
         private readonly IRunspaceContext _runspaceContext;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly IInternalPowerShellExecutionService _executionService;
         private readonly WorkspaceService _workspaceService;
 
         private readonly ConcurrentDictionary<string, ICodeLensProvider> _codeLensProviders;
@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public SymbolsService(
             ILoggerFactory factory,
             IRunspaceContext runspaceContext,
-            PowerShellExecutionService executionService,
+            IInternalPowerShellExecutionService executionService,
             WorkspaceService workspaceService,
             ConfigurationService configurationService)
         {

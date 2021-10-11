@@ -35,9 +35,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class GetCommandHandler : IGetCommandHandler
     {
         private readonly ILogger<GetCommandHandler> _logger;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly IInternalPowerShellExecutionService _executionService;
 
-        public GetCommandHandler(ILoggerFactory factory, PowerShellExecutionService executionService)
+        public GetCommandHandler(ILoggerFactory factory, IInternalPowerShellExecutionService executionService)
         {
             _logger = factory.CreateLogger<GetCommandHandler>();
             _executionService = executionService;
