@@ -116,7 +116,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
             RaiseDebuggerStoppedEvent();
         }
 
+
         // This must be called BEFORE the debug PowerShell has been popped
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "This method may acquire an implementation later, at which point it will need instance data")]
         public void ExitDebugLoop()
         {
         }
