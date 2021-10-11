@@ -615,7 +615,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             HostStartupInfo hostStartupInfo,
             ReadLineProvider readLineProvider)
         {
-            Runspace runspace = CreateInitialRunspace(hostStartupInfo.LanguageMode);
+            Runspace runspace = CreateInitialRunspace(hostStartupInfo.InitialSessionState);
             PowerShell pwsh = CreatePowerShellForRunspace(runspace);
 
             var engineIntrinsics = (EngineIntrinsics)runspace.SessionStateProxy.GetVariable("ExecutionContext");
@@ -650,15 +650,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return pwsh;
         }
 
-        private Runspace CreateInitialRunspace(PSLanguageMode languageMode)
+        private Runspace CreateInitialRunspace(InitialSessionState initialSessionState)
         {
-            InitialSessionState iss = Environment.GetEnvironmentVariable("PSES_TEST_USE_CREATE_DEFAULT") == "1"
-                ? InitialSessionState.CreateDefault()
-                : InitialSessionState.CreateDefault2();
-
-            iss.LanguageMode = languageMode;
-
-            Runspace runspace = RunspaceFactory.CreateRunspace(PublicHost, iss);
+            Runspace runspace = RunspaceFactory.CreateRunspace(PublicHost, initialSessionState);
 
             runspace.SetApartmentStateToSta();
             runspace.ThreadOptions = PSThreadOptions.UseCurrentThread;
