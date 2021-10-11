@@ -129,7 +129,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _underlyingHostUI.WriteWarningLine(message);
         }
 
-        private PSHostUserInterface GetConsoleHostUI(PSHostUserInterface ui)
+        private static PSHostUserInterface GetConsoleHostUI(PSHostUserInterface ui)
         {
             FieldInfo externalUIField = ui.GetType().GetField("_externalUI", BindingFlags.NonPublic | BindingFlags.Instance);
 
@@ -141,7 +141,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return (PSHostUserInterface)externalUIField.GetValue(ui);
         }
 
-        private void SetConsoleHostUIToInteractive(PSHostUserInterface ui)
+        private static void SetConsoleHostUIToInteractive(PSHostUserInterface ui)
         {
             ui.GetType().GetProperty("ThrowOnReadAndPrompt", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(ui, false);
         }

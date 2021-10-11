@@ -25,17 +25,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
     /// </summary>
     internal class PsesDebugServer : IDisposable
     {
-        /// <summary>
-        /// This is a bool but must be an int, since Interlocked.Exchange can't handle a bool
-        /// </summary>
-        private static readonly IdempotentLatch s_psrlCtorLatch = new();
-
-        private static readonly Lazy<CmdletInfo> s_lazyInvokeReadLineConstructorCmdletInfo = new Lazy<CmdletInfo>(() =>
-        {
-            var type = Type.GetType("Microsoft.PowerShell.EditorServices.Commands.InvokeReadLineConstructorCommand, Microsoft.PowerShell.EditorServices.Hosting");
-            return new CmdletInfo("__Invoke-ReadLineConstructor", type);
-        });
-
         private readonly Stream _inputStream;
         private readonly Stream _outputStream;
         private readonly bool _useTempSession;

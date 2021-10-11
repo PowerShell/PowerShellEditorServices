@@ -149,7 +149,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _debugAdapterServer.SendNotification(EventNames.Terminated);
         }
 
-        private PSCommand BuildPSCommandFromArguments(string command, IReadOnlyList<string> arguments)
+        private static PSCommand BuildPSCommandFromArguments(string command, IReadOnlyList<string> arguments)
         {
             if (arguments is null or { Count: 0 })
             {
@@ -179,7 +179,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return new PSCommand().AddScript(sb.ToString());
         }
 
-        private bool ArgumentNeedsEscaping(string argument)
+        private static bool ArgumentNeedsEscaping(string argument)
         {
             foreach (char c in argument)
             {

@@ -66,7 +66,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
             await executionService.ExecutePSCommandAsync(
                 dscCommand,
-                CancellationToken.None);
+                CancellationToken.None)
+                .ConfigureAwait(false);
 
             // Verify all the breakpoints and return them
             foreach (var breakpoint in breakpoints)

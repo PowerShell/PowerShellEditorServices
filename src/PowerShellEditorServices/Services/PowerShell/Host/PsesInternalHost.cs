@@ -589,7 +589,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             runspace.StateChanged -= OnRunspaceStateChanged;
         }
 
-        private PowerShell CreateNestedPowerShell(RunspaceInfo currentRunspace)
+        private static PowerShell CreateNestedPowerShell(RunspaceInfo currentRunspace)
         {
             if (currentRunspace.RunspaceOrigin != RunspaceOrigin.Local)
             {
@@ -604,7 +604,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return pwsh;
         }
 
-        private PowerShell CreatePowerShellForRunspace(Runspace runspace)
+        private static PowerShell CreatePowerShellForRunspace(Runspace runspace)
         {
             var pwsh = PowerShell.Create();
             pwsh.Runspace = runspace;
