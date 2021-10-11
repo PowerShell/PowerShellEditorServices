@@ -543,7 +543,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             if (CurrentRunspace.RunspaceOrigin != RunspaceOrigin.Local)
             {
                 // This is a PowerShell-internal method that we reuse to decorate the prompt string
-                // with the remote details when execution is occurring over a remoting session
+                // with the remote details when remoting,
+                // so the prompt changes to indicate when you're in a remote session
                 prompt = Runspace.GetRemotePrompt(prompt);
             }
 
