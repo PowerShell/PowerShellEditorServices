@@ -14,6 +14,7 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
+using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Server;
 using OmniSharp.Extensions.LanguageServer.Server;
 
@@ -27,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
         /// <summary>
         /// This is a bool but must be an int, since Interlocked.Exchange can't handle a bool
         /// </summary>
-        private static int s_hasRunPsrlStaticCtor = 0;
+        private static readonly IdempotentLatch s_psrlCtorLatch = new();
 
         private static readonly Lazy<CmdletInfo> s_lazyInvokeReadLineConstructorCmdletInfo = new Lazy<CmdletInfo>(() =>
         {
@@ -78,22 +79,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 // so that it doesn't send the powerShell/startDebugger message.
                 _debugContext = ServiceProvider.GetService<PsesInternalHost>().DebugContext;
                 _debugContext.IsDebugServerActive = true;
-
-                /*
-                // Needed to make sure PSReadLine's static properties are initialized in the pipeline thread.
-                // This is only needed for Temp sessions who only have a debug server.
-                if (_usePSReadLine && _useTempSession && Interlocked.Exchange(ref s_hasRunPsrlStaticCtor, 1) == 0)
-                {
-                    // This must be run synchronously to ensure debugging works
-                    _executionService
-                        .ExecuteDelegateAsync((cancellationToken) =>
-                        {
-                            // Is this needed now that we do things the cool way??
-                        }, "PSRL static constructor execution", CancellationToken.None)
-                        .GetAwaiter()
-                        .GetResult();
-                }
-                */
 
                 options
                     .WithInput(_inputStream)
