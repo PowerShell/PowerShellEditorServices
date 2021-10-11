@@ -63,6 +63,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private bool _skipNextPrompt = false;
 
+        private bool _resettingRunspace = false;
+
         public PsesInternalHost(
             ILoggerFactory loggerFactory,
             ILanguageServerFacade languageServer,
@@ -343,11 +345,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void Run()
         {
-            SMA.PowerShell pwsh = CreateInitialPowerShell(_hostInfo, _readLineProvider);
-            RunspaceInfo localRunspaceInfo = RunspaceInfo.CreateFromLocalPowerShell(_logger, pwsh);
+            (PowerShell pwsh, RunspaceInfo localRunspaceInfo) = CreateInitialPowerShellSession();
             _localComputerName = localRunspaceInfo.SessionDetails.ComputerName;
             _runspaceStack.Push(new RunspaceFrame(pwsh.Runspace, localRunspaceInfo));
             PushPowerShellAndRunLoop(pwsh, PowerShellFrameType.Normal, localRunspaceInfo);
+        }
+
+        private (PowerShell, RunspaceInfo) CreateInitialPowerShellSession()
+        {
+            PowerShell pwsh = CreateInitialPowerShell(_hostInfo, _readLineProvider);
+            RunspaceInfo localRunspaceInfo = RunspaceInfo.CreateFromLocalPowerShell(_logger, pwsh);
+            return (pwsh, localRunspaceInfo);
         }
 
         private void PushPowerShellAndRunLoop(SMA.PowerShell pwsh, PowerShellFrameType frameType, RunspaceInfo newRunspaceInfo = null)
@@ -392,14 +400,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void PushPowerShellAndRunLoop(PowerShellContextFrame frame)
         {
-            if (_psFrameStack.Count > 0)
-            {
-                RemoveRunspaceEventHandlers(CurrentFrame.PowerShell.Runspace);
-            }
-
-            AddRunspaceEventHandlers(frame.PowerShell.Runspace);
-
-            _psFrameStack.Push(frame);
+            PushPowerShell(frame);
 
             try
             {
@@ -422,7 +423,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             }
         }
 
-        private void PopPowerShell()
+        private void PushPowerShell(PowerShellContextFrame frame)
+        {
+            if (_psFrameStack.Count > 0)
+            {
+                RemoveRunspaceEventHandlers(CurrentFrame.PowerShell.Runspace);
+            }
+
+            AddRunspaceEventHandlers(frame.PowerShell.Runspace);
+
+            _psFrameStack.Push(frame);
+        }
+
+        private void PopPowerShell(RunspaceChangeAction runspaceChangeAction = RunspaceChangeAction.Exit)
         {
             _shouldExit = false;
             PowerShellContextFrame frame = _psFrameStack.Pop();
@@ -436,7 +449,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                     RunspaceFrame currentRunspaceFrame = _runspaceStack.Peek();
                     RemoveRunspaceEventHandlers(previousRunspaceFrame.Runspace);
                     AddRunspaceEventHandlers(currentRunspaceFrame.Runspace);
-                    RunspaceChanged?.Invoke(this, new RunspaceChangedEventArgs(RunspaceChangeAction.Exit, previousRunspaceFrame.RunspaceInfo, currentRunspaceFrame.RunspaceInfo));
+                    RunspaceChanged?.Invoke(this, new RunspaceChangedEventArgs(runspaceChangeAction, previousRunspaceFrame.RunspaceInfo, currentRunspaceFrame.RunspaceInfo));
                 }
             }
             finally
@@ -730,37 +743,40 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void OnRunspaceStateChanged(object sender, RunspaceStateEventArgs runspaceStateEventArgs)
         {
-            if (!_shouldExit && !runspaceStateEventArgs.RunspaceStateInfo.IsUsable())
+            if (!_shouldExit && !_resettingRunspace && !runspaceStateEventArgs.RunspaceStateInfo.IsUsable())
             {
-                //PopOrReinitializeRunspaceAsync();
+                _resettingRunspace = true;
+                PopOrReinitializeRunspaceAsync().HandleErrorsAsync(_logger);
             }
         }
 
-        /*
-        private void PopOrReinitializeRunspace()
+        private Task PopOrReinitializeRunspaceAsync()
         {
-            SetExit();
+            _cancellationContext.CancelCurrentTaskStack();
             RunspaceStateInfo oldRunspaceState = CurrentPowerShell.Runspace.RunspaceStateInfo;
 
             // Rather than try to lock the PowerShell executor while we alter its state,
             // we simply run this on its thread, guaranteeing that no other action can occur
-            _executor.InvokeDelegate(
-                nameof(PopOrReinitializeRunspace),
+            return ExecuteDelegateAsync(
+                nameof(PopOrReinitializeRunspaceAsync),
                 new ExecutionOptions { InterruptCurrentForeground = true },
                 (cancellationToken) =>
                 {
                     while (_psFrameStack.Count > 0
                         && !_psFrameStack.Peek().PowerShell.Runspace.RunspaceStateInfo.IsUsable())
                     {
-                        PopPowerShell();
+                        PopPowerShell(RunspaceChangeAction.Shutdown);
                     }
+
+                    _resettingRunspace = false;
 
                     if (_psFrameStack.Count == 0)
                     {
                         // If our main runspace was corrupted,
                         // we must re-initialize our state.
                         // TODO: Use runspace.ResetRunspaceState() here instead
-                        PushInitialPowerShell();
+                        (PowerShell pwsh, RunspaceInfo runspaceInfo) = CreateInitialPowerShellSession();
+                        PushPowerShell(new PowerShellContextFrame(pwsh, runspaceInfo, PowerShellFrameType.Normal));
 
                         _logger.LogError($"Top level runspace entered state '{oldRunspaceState.State}' for reason '{oldRunspaceState.Reason}' and was reinitialized."
                             + " Please report this issue in the PowerShell/vscode-PowerShell GitHub repository with these logs.");
@@ -776,7 +792,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 },
                 CancellationToken.None);
         }
-        */
 
         private record RunspaceFrame(
             Runspace Runspace,
