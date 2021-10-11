@@ -42,17 +42,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal void RegisterEventHandlers()
         {
-            _executionService.RunspaceChanged += ExecutionService_RunspaceChanged;
-            _debugService.BreakpointUpdated += DebugService_BreakpointUpdated;
-            _debugService.DebuggerStopped += DebugService_DebuggerStopped;
+            _executionService.RunspaceChanged += OnRunspaceChanged;
+            _debugService.BreakpointUpdated += OnBreakpointUpdated;
+            _debugService.DebuggerStopped += OnDebuggerStopped;
             _debugContext.DebuggerResuming += OnDebuggerResuming;
         }
 
         internal void UnregisterEventHandlers()
         {
-            _executionService.RunspaceChanged -= ExecutionService_RunspaceChanged;
-            _debugService.BreakpointUpdated -= DebugService_BreakpointUpdated;
-            _debugService.DebuggerStopped -= DebugService_DebuggerStopped;
+            _executionService.RunspaceChanged -= OnRunspaceChanged;
+            _debugService.BreakpointUpdated -= OnBreakpointUpdated;
+            _debugService.DebuggerStopped -= OnDebuggerStopped;
             _debugContext.DebuggerResuming -= OnDebuggerResuming;
         }
 
@@ -60,14 +60,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal void TriggerDebuggerStopped(DebuggerStoppedEventArgs e)
         {
-            DebugService_DebuggerStopped(null, e);
+            OnDebuggerStopped(null, e);
         }
 
         #endregion
 
         #region Event Handlers
 
-        private void DebugService_DebuggerStopped(object sender, DebuggerStoppedEventArgs e)
+        private void OnDebuggerStopped(object sender, DebuggerStoppedEventArgs e)
         {
             // Provide the reason for why the debugger has stopped script execution.
             // See https://github.com/Microsoft/vscode/issues/3648
@@ -93,7 +93,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 });
         }
 
-        private void ExecutionService_RunspaceChanged(object sender, RunspaceChangedEventArgs e)
+        private void OnRunspaceChanged(object sender, RunspaceChangedEventArgs e)
         {
             switch (e.ChangeAction)
             {
@@ -136,7 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 });
         }
 
-        private void DebugService_BreakpointUpdated(object sender, BreakpointUpdatedEventArgs e)
+        private void OnBreakpointUpdated(object sender, BreakpointUpdatedEventArgs e)
         {
             // Don't send breakpoint update notifications when setting
             // breakpoints on behalf of the client.
