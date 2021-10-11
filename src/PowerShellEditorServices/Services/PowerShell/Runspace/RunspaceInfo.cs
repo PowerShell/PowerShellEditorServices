@@ -86,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
             PsesInternalHost psesHost,
             CancellationToken cancellationToken)
         {
-            if (_dscBreakpointCapability == null)
+            if (_dscBreakpointCapability is not null)
             {
                 _dscBreakpointCapability = await DscBreakpointCapability.GetDscCapabilityAsync(
                     logger,
