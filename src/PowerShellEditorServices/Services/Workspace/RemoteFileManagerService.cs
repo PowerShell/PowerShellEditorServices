@@ -274,7 +274,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // TODO: Do this somewhere other than the constructor and make it async
             // Register the psedit function in the current runspace
-            //this.RegisterPSEditFunction(this.powerShellContext.CurrentRunspace);
+            this.RegisterPSEditFunction(_runspaceContext.CurrentRunspace);
         }
 
         #endregion
