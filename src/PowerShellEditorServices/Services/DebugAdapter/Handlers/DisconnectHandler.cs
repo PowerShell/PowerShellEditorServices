@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class DisconnectHandler : IDisconnectHandler
     {
         private readonly ILogger<DisconnectHandler> _logger;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly IInternalPowerShellExecutionService _executionService;
         private readonly DebugService _debugService;
         private readonly DebugStateService _debugStateService;
         private readonly DebugEventHandlerService _debugEventHandlerService;
@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             ILoggerFactory factory,
             PsesDebugServer psesDebugServer,
             IRunspaceContext runspaceContext,
-            PowerShellExecutionService executionService,
+            IInternalPowerShellExecutionService executionService,
             DebugService debugService,
             DebugStateService debugStateService,
             DebugEventHandlerService debugEventHandlerService)

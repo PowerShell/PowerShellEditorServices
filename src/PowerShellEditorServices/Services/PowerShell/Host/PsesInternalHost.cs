@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
     using System.Threading;
     using System.Threading.Tasks;
 
-    internal class PsesInternalHost : PSHost, IHostSupportsInteractiveSession, IRunspaceContext
+    internal class PsesInternalHost : PSHost, IHostSupportsInteractiveSession, IRunspaceContext, IInternalPowerShellExecutionService
     {
         private const string DefaultPrompt = "PSIC> ";
 
@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private readonly Stack<PowerShellContextFrame> _psFrameStack;
 
-        private readonly Stack<(Runspace, RunspaceInfo)> _runspaceStack;
+        private readonly Stack<RunspaceFrame> _runspaceStack;
 
         private readonly CancellationContext _cancellationContext;
 
@@ -76,7 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _readLineProvider = new ReadLineProvider(loggerFactory);
             _taskQueue = new BlockingConcurrentDeque<ISynchronousTask>();
             _psFrameStack = new Stack<PowerShellContextFrame>();
-            _runspaceStack = new Stack<(Runspace, RunspaceInfo)>();
+            _runspaceStack = new Stack<RunspaceFrame>();
             _cancellationContext = new CancellationContext();
 
             _pipelineThread = new Thread(Run)
@@ -108,7 +108,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public bool IsRunspacePushed { get; private set; }
 
-        public Runspace Runspace => _runspaceStack.Peek().Item1;
+        public Runspace Runspace => _runspaceStack.Peek().Runspace;
 
         public RunspaceInfo CurrentRunspace => CurrentFrame.RunspaceInfo;
 
@@ -125,6 +125,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         IRunspaceInfo IRunspaceContext.CurrentRunspace => CurrentRunspace;
 
         private PowerShellContextFrame CurrentFrame => _psFrameStack.Peek();
+
+        public event Action<object, RunspaceChangedEventArgs> RunspaceChanged;
 
         public override void EnterNestedPrompt()
         {
@@ -344,39 +346,43 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             SMA.PowerShell pwsh = CreateInitialPowerShell(_hostInfo, _readLineProvider);
             RunspaceInfo localRunspaceInfo = RunspaceInfo.CreateFromLocalPowerShell(_logger, pwsh);
             _localComputerName = localRunspaceInfo.SessionDetails.ComputerName;
-            _runspaceStack.Push((pwsh.Runspace, localRunspaceInfo));
+            _runspaceStack.Push(new RunspaceFrame(pwsh.Runspace, localRunspaceInfo));
             PushPowerShellAndRunLoop(pwsh, PowerShellFrameType.Normal, localRunspaceInfo);
         }
 
-        private void PushPowerShellAndRunLoop(SMA.PowerShell pwsh, PowerShellFrameType frameType, RunspaceInfo runspaceInfo = null)
+        private void PushPowerShellAndRunLoop(SMA.PowerShell pwsh, PowerShellFrameType frameType, RunspaceInfo newRunspaceInfo = null)
         {
             // TODO: Improve runspace origin detection here
-            if (runspaceInfo is null)
+            if (newRunspaceInfo is null)
             {
-                runspaceInfo = GetRunspaceInfoForPowerShell(pwsh, out bool isNewRunspace);
+                newRunspaceInfo = GetRunspaceInfoForPowerShell(pwsh, out bool isNewRunspace, out RunspaceFrame oldRunspaceFrame);
 
                 if (isNewRunspace)
                 {
-                    _runspaceStack.Push((pwsh.Runspace, runspaceInfo));
+                    Runspace newRunspace = pwsh.Runspace;
+                    _runspaceStack.Push(new RunspaceFrame(newRunspace, newRunspaceInfo));
+                    RunspaceChanged.Invoke(this, new RunspaceChangedEventArgs(RunspaceChangeAction.Enter, oldRunspaceFrame.RunspaceInfo, newRunspaceInfo));
                 }
             }
 
-            PushPowerShellAndRunLoop(new PowerShellContextFrame(pwsh, runspaceInfo, frameType));
+            PushPowerShellAndRunLoop(new PowerShellContextFrame(pwsh, newRunspaceInfo, frameType));
         }
 
-        private RunspaceInfo GetRunspaceInfoForPowerShell(SMA.PowerShell pwsh, out bool isNewRunspace)
+        private RunspaceInfo GetRunspaceInfoForPowerShell(SMA.PowerShell pwsh, out bool isNewRunspace, out RunspaceFrame oldRunspaceFrame)
         {
+            oldRunspaceFrame = null;
+
             if (_runspaceStack.Count > 0)
             {
                 // This is more than just an optimization.
                 // When debugging, we cannot execute PowerShell directly to get this information;
                 // trying to do so will block on the command that called us, deadlocking execution.
                 // Instead, since we are reusing the runspace, we reuse that runspace's info as well.
-                (Runspace currentRunspace, RunspaceInfo currentRunspaceInfo) = _runspaceStack.Peek();
-                if (currentRunspace == pwsh.Runspace)
+                oldRunspaceFrame = _runspaceStack.Peek();
+                if (oldRunspaceFrame.Runspace == pwsh.Runspace)
                 {
                     isNewRunspace = false;
-                    return currentRunspaceInfo;
+                    return oldRunspaceFrame.RunspaceInfo;
                 }
             }
 
@@ -423,11 +429,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             try
             {
                 // If we're changing runspace, make sure we move the handlers over
-                if (_runspaceStack.Peek().Item1 != CurrentPowerShell.Runspace)
+                RunspaceFrame previousRunspaceFrame = _runspaceStack.Peek();
+                if (previousRunspaceFrame.Runspace != CurrentPowerShell.Runspace)
                 {
-                    (Runspace parentRunspace, _) = _runspaceStack.Pop();
-                    RemoveRunspaceEventHandlers(frame.PowerShell.Runspace);
-                    AddRunspaceEventHandlers(parentRunspace);
+                    _runspaceStack.Pop();
+                    RunspaceFrame currentRunspaceFrame = _runspaceStack.Peek();
+                    RemoveRunspaceEventHandlers(previousRunspaceFrame.Runspace);
+                    AddRunspaceEventHandlers(currentRunspaceFrame.Runspace);
+                    RunspaceChanged?.Invoke(this, new RunspaceChangedEventArgs(RunspaceChangeAction.Exit, previousRunspaceFrame.RunspaceInfo, currentRunspaceFrame.RunspaceInfo));
                 }
             }
             finally
@@ -767,5 +776,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 CancellationToken.None);
         }
         */
+
+        private record RunspaceFrame(
+            Runspace Runspace,
+            RunspaceInfo RunspaceInfo);
     }
 }

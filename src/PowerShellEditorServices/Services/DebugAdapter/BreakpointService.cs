@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     internal class BreakpointService
     {
         private readonly ILogger<BreakpointService> _logger;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly IInternalPowerShellExecutionService _executionService;
         private readonly PsesInternalHost _editorServicesHost;
         private readonly DebugStateService _debugStateService;
 
@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public BreakpointService(
             ILoggerFactory factory,
-            PowerShellExecutionService executionService,
+            IInternalPowerShellExecutionService executionService,
             PsesInternalHost editorServicesHost,
             DebugStateService debugStateService)
         {

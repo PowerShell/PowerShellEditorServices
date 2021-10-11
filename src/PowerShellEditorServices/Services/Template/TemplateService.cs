@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
         private readonly ILogger _logger;
         private bool isPlasterLoaded;
         private bool? isPlasterInstalled;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly IInternalPowerShellExecutionService _executionService;
 
         #endregion
 
@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
         /// </summary>
         /// <param name="powerShellContext">The PowerShellContext to use for this service.</param>
         /// <param name="factory">An ILoggerFactory implementation used for writing log messages.</param>
-        public TemplateService(PowerShellExecutionService executionService, ILoggerFactory factory)
+        public TemplateService(IInternalPowerShellExecutionService executionService, ILoggerFactory factory)
         {
             _logger = factory.CreateLogger<TemplateService>();
             _executionService = executionService;

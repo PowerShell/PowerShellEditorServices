@@ -41,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         internal static async Task<SymbolDetails> CreateAsync(
             SymbolReference symbolReference,
             IRunspaceInfo currentRunspace,
-            PowerShellExecutionService executionService)
+            IInternalPowerShellExecutionService executionService)
         {
             SymbolDetails symbolDetails = new SymbolDetails
             {

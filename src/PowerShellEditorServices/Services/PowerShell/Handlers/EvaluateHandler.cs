@@ -17,11 +17,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class EvaluateHandler : IEvaluateHandler
     {
         private readonly ILogger _logger;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly IInternalPowerShellExecutionService _executionService;
 
         public EvaluateHandler(
             ILoggerFactory factory,
-            PowerShellExecutionService executionService)
+            IInternalPowerShellExecutionService executionService)
         {
             _logger = factory.CreateLogger<EvaluateHandler>();
             _executionService = executionService;

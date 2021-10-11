@@ -21,13 +21,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly IInternalPowerShellExecutionService _executionService;
 
         public PsesSignatureHelpHandler(
             ILoggerFactory factory,
             SymbolsService symbolsService,
             WorkspaceService workspaceService,
-            PowerShellExecutionService executionService)
+            IInternalPowerShellExecutionService executionService)
         {
             _logger = factory.CreateLogger<PsesHoverHandler>();
             _symbolsService = symbolsService;

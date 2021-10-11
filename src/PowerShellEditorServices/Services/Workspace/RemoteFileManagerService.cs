@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private string remoteFilesPath;
         private string processTempPath;
         private readonly IRunspaceContext _runspaceContext;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly IInternalPowerShellExecutionService _executionService;
         private IEditorOperations editorOperations;
 
         private Dictionary<string, RemotePathMappings> filesPerComputer =
@@ -252,7 +252,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public RemoteFileManagerService(
             ILoggerFactory factory,
             IRunspaceContext runspaceContext,
-            PowerShellExecutionService executionService,
+            IInternalPowerShellExecutionService executionService,
             EditorOperationsService editorOperations)
         {
             this.logger = factory.CreateLogger<RemoteFileManagerService>();

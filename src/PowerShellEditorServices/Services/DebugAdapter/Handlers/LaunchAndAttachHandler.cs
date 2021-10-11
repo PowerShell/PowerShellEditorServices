@@ -92,7 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly BreakpointService _breakpointService;
         private readonly DebugService _debugService;
         private readonly IRunspaceContext _runspaceContext;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly IInternalPowerShellExecutionService _executionService;
         private readonly DebugStateService _debugStateService;
         private readonly DebugEventHandlerService _debugEventHandlerService;
         private readonly IDebugAdapterServerFacade _debugAdapterServer;
@@ -105,7 +105,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             DebugEventHandlerService debugEventHandlerService,
             DebugService debugService,
             IRunspaceContext runspaceContext,
-            PowerShellExecutionService executionService,
+            IInternalPowerShellExecutionService executionService,
             DebugStateService debugStateService,
             RemoteFileManagerService remoteFileManagerService)
         {

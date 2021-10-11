@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly BreakpointDetails[] s_emptyBreakpointDetailsArray = Array.Empty<BreakpointDetails>();
 
         private readonly ILogger _logger;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly IInternalPowerShellExecutionService _executionService;
         private readonly BreakpointService _breakpointService;
         private readonly RemoteFileManagerService remoteFileManager;
 
@@ -104,7 +104,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         //// </param>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public DebugService(
-            PowerShellExecutionService executionService,
+            IInternalPowerShellExecutionService executionService,
             IPowerShellDebugContext debugContext,
             RemoteFileManagerService remoteFileManager,
             BreakpointService breakpointService,

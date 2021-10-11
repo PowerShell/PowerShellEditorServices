@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         /// <summary>
         /// Gets the PowerShellContext in which extension code will be executed.
         /// </summary>
-        internal PowerShellExecutionService ExecutionService { get; private set; }
+        internal IInternalPowerShellExecutionService ExecutionService { get; private set; }
 
         #endregion
 
@@ -68,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             ILanguageServerFacade languageServer,
             IServiceProvider serviceProvider,
             IEditorOperations editorOperations,
-            PowerShellExecutionService executionService)
+            IInternalPowerShellExecutionService executionService)
         {
             ExecutionService = executionService;
             _languageServer = languageServer;
