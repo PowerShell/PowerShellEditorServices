@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
             new Dictionary<string, int[]>();
 
         public async Task<BreakpointDetails[]> SetLineBreakpointsAsync(
-            PowerShellExecutionService executionService,
+            IInternalPowerShellExecutionService executionService,
             string scriptPath,
             BreakpointDetails[] breakpoints)
         {

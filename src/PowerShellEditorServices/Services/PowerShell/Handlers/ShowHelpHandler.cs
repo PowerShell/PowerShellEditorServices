@@ -24,9 +24,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class ShowHelpHandler : IShowHelpHandler
     {
         private readonly ILogger _logger;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly IInternalPowerShellExecutionService _executionService;
 
-        public ShowHelpHandler(ILoggerFactory factory, PowerShellExecutionService executionService)
+        public ShowHelpHandler(ILoggerFactory factory, IInternalPowerShellExecutionService executionService)
         {
             _logger = factory.CreateLogger<ShowHelpHandler>();
             _executionService = executionService;

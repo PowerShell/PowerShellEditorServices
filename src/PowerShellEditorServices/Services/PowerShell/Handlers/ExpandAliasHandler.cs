@@ -30,9 +30,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class ExpandAliasHandler : IExpandAliasHandler
     {
         private readonly ILogger _logger;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly IInternalPowerShellExecutionService _executionService;
 
-        public ExpandAliasHandler(ILoggerFactory factory, PowerShellExecutionService executionService)
+        public ExpandAliasHandler(ILoggerFactory factory, IInternalPowerShellExecutionService executionService)
         {
             _logger = factory.CreateLogger<ExpandAliasHandler>();
             _executionService = executionService;

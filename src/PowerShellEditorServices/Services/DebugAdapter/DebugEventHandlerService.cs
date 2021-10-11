@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     internal class DebugEventHandlerService
     {
         private readonly ILogger<DebugEventHandlerService> _logger;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly IInternalPowerShellExecutionService _executionService;
         private readonly DebugService _debugService;
         private readonly DebugStateService _debugStateService;
         private readonly IDebugAdapterServerFacade _debugAdapterServer;
@@ -26,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public DebugEventHandlerService(
             ILoggerFactory factory,
-            PowerShellExecutionService executionService,
+            IInternalPowerShellExecutionService executionService,
             DebugService debugService,
             DebugStateService debugStateService,
             IDebugAdapterServerFacade debugAdapterServer,

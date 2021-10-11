@@ -31,7 +31,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 .AddSingleton<PsesInternalHost>()
                 .AddSingleton<IRunspaceContext>(
                     (provider) => provider.GetService<PsesInternalHost>())
-                .AddSingleton<PowerShellExecutionService>()
+                .AddSingleton<IInternalPowerShellExecutionService>(
+                    (provider) => provider.GetService<PsesInternalHost>())
                 .AddSingleton<ConfigurationService>()
                 .AddSingleton<IPowerShellDebugContext>(
                     (provider) => provider.GetService<PsesInternalHost>().DebugContext)
@@ -44,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                             provider.GetService<ILanguageServerFacade>(),
                             provider,
                             provider.GetService<EditorOperationsService>(),
-                            provider.GetService<PowerShellExecutionService>());
+                            provider.GetService<IInternalPowerShellExecutionService>());
 
                         // This is where we create the $psEditor variable
                         // so that when the console is ready, it will be available
@@ -70,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 .AddSingleton<PsesInternalHost>(internalHost)
                 .AddSingleton<IRunspaceContext>(internalHost)
                 .AddSingleton<IPowerShellDebugContext>(internalHost.DebugContext)
-                .AddSingleton(languageServiceProvider.GetService<PowerShellExecutionService>())
+                .AddSingleton(languageServiceProvider.GetService<IInternalPowerShellExecutionService>())
                 .AddSingleton(languageServiceProvider.GetService<WorkspaceService>())
                 .AddSingleton(languageServiceProvider.GetService<RemoteFileManagerService>())
                 .AddSingleton<PsesDebugServer>(psesDebugServer)

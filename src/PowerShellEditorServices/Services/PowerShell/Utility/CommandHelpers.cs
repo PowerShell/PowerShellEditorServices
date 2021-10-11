@@ -65,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         public static async Task<CommandInfo> GetCommandInfoAsync(
             string commandName,
             IRunspaceInfo currentRunspace,
-            PowerShellExecutionService executionService)
+            IInternalPowerShellExecutionService executionService)
         {
             // This mechanism only works in-process
             if (currentRunspace.RunspaceOrigin != RunspaceOrigin.Local)
@@ -117,7 +117,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         /// <returns></returns>
         public static async Task<string> GetCommandSynopsisAsync(
             CommandInfo commandInfo,
-            PowerShellExecutionService executionService)
+            IInternalPowerShellExecutionService executionService)
         {
             Validate.IsNotNull(nameof(commandInfo), commandInfo);
             Validate.IsNotNull(nameof(executionService), executionService);

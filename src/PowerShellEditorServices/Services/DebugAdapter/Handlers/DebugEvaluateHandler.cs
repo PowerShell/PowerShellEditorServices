@@ -19,13 +19,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     {
         private readonly ILogger _logger;
         private readonly IPowerShellDebugContext _debugContext;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly IInternalPowerShellExecutionService _executionService;
         private readonly DebugService _debugService;
 
         public DebugEvaluateHandler(
             ILoggerFactory factory,
             IPowerShellDebugContext debugContext,
-            PowerShellExecutionService executionService,
+            IInternalPowerShellExecutionService executionService,
             DebugService debugService)
         {
             _logger = factory.CreateLogger<DebugEvaluateHandler>();

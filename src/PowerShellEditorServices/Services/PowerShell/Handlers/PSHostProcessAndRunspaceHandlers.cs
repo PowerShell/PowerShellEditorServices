@@ -18,9 +18,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class PSHostProcessAndRunspaceHandlers : IGetPSHostProcessesHandler, IGetRunspaceHandler
     {
         private readonly ILogger<PSHostProcessAndRunspaceHandlers> _logger;
-        private readonly PowerShellExecutionService _executionService;
+        private readonly IInternalPowerShellExecutionService _executionService;
 
-        public PSHostProcessAndRunspaceHandlers(ILoggerFactory factory, PowerShellExecutionService executionService)
+        public PSHostProcessAndRunspaceHandlers(ILoggerFactory factory, IInternalPowerShellExecutionService executionService)
         {
             _logger = factory.CreateLogger<PSHostProcessAndRunspaceHandlers>();
             _executionService = executionService;
