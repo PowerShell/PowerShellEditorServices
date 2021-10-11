@@ -392,16 +392,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 .AddParameter("RemoteFilePath", remoteFilePath)
                 .AddParameter("Content", localFileContents);
 
-            await _executionService.ExecutePSCommandAsync<object>(
-                saveCommand,
-                CancellationToken.None).ConfigureAwait(false);
-
-            /*
-            if (errorMessages.Length > 0)
+            try
             {
-                this.logger.LogError($"Remote file save failed due to an error:\r\n\r\n{errorMessages}");
+                await _executionService.ExecutePSCommandAsync<object>(
+                    saveCommand,
+                    CancellationToken.None).ConfigureAwait(false);
             }
-            */
+            catch (Exception e)
+            {
+                this.logger.LogError(e, "Remote file save failed");
+            }
         }
 
         /// <summary>
