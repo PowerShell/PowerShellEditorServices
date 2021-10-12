@@ -8,14 +8,13 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
-using System.Management.Automation.Language;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
     using System;
-    using System.Threading.Tasks;
 
     internal class LegacyReadLine : TerminalReadLine
     {
@@ -330,6 +329,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                             string completedInput = inputLine.ToString();
                             currentCompletion = null;
                             currentHistory = null;
+
+                            // TODO: Add line continuation support:
+                            // - When shift+enter is pressed, or
+                            // - When the parse indicates incomplete input
 
                             //if ((keyInfo.Modifiers & ConsoleModifiers.Shift) == ConsoleModifiers.Shift)
                             //{
