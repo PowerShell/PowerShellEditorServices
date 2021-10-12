@@ -1,13 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
+using System.Management.Automation;
 using System.Security;
 using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
     using System;
-    using System.Management.Automation;
 
     internal abstract class TerminalReadLine : IReadLine
     {
@@ -31,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                 {
                     ConsoleKeyInfo keyInfo = ReadKey(cancellationToken);
 
-                    if (IsCtrlC(keyInfo))
+                    if (keyInfo.IsCtrlC())
                     {
                         throw new PipelineStoppedException();
                     }
@@ -97,18 +98,5 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
             return secureString;
         }
-
-        protected static bool IsCtrlC(ConsoleKeyInfo keyInfo)
-        {
-            if ((int)keyInfo.Key == 3)
-            {
-                return true;
-            }
-
-            return keyInfo.Key == ConsoleKey.C
-                && (keyInfo.Modifiers & ConsoleModifiers.Control) != 0
-                && (keyInfo.Modifiers & ConsoleModifiers.Alt) == 0;
-        }
-
     }
 }

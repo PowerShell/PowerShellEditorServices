@@ -1,16 +1,16 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Collections.Generic;
-using System.Management.Automation;
-using System.Security;
-using System.Text;
-using System.Threading;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
+using System.Collections.Generic;
 using System.Linq;
+using System.Management.Automation;
 using System.Management.Automation.Language;
+using System.Text;
+using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
@@ -345,7 +345,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                             return completedInput;
 
                         default:
-                            if (IsCtrlC(keyInfo))
+                            if (keyInfo.IsCtrlC())
                             {
                                 throw new PipelineStoppedException();
                             }
