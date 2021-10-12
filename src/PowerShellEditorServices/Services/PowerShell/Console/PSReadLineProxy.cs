@@ -16,7 +16,6 @@ using SMA = System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
-    using OmniSharp.Extensions.DebugAdapter.Protocol.Models;
     using System.Management.Automation.Runspaces;
 
     internal class PSReadLineProxy

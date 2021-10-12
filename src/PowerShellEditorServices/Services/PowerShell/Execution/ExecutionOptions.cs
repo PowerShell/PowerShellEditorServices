@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
+﻿namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 {
     public enum ExecutionPriority
     {

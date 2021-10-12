@@ -3,16 +3,13 @@
 
 using System.Collections.Generic;
 using System.Management.Automation.Runspaces;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Services;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     using Microsoft.PowerShell.EditorServices.Services.PowerShell;
-    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
     using System.Management.Automation;
 
     internal class PSHostProcessAndRunspaceHandlers : IGetPSHostProcessesHandler, IGetRunspaceHandler

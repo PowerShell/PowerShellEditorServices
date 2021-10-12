@@ -1,5 +1,4 @@
-﻿using Microsoft.PowerShell.EditorServices.Utility;
-using System;
+﻿using System;
 using System.Linq.Expressions;
 using System.Management.Automation;
 using System.Reflection;

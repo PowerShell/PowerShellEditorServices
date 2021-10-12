@@ -5,7 +5,6 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using System;
 using System.Collections.Generic;
 using System.Management.Automation.Language;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 {

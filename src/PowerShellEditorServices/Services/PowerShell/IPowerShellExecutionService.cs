@@ -1,12 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Hosting;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+﻿using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System;
 using System.Collections.Generic;
 using System.Management.Automation;
