@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         {
             if (hostUserInterface is null)
             {
-                throw new ArgumentNullException();
+                throw new ArgumentNullException(nameof(hostUserInterface));
             }
 
             _hostUserInterface = hostUserInterface;
