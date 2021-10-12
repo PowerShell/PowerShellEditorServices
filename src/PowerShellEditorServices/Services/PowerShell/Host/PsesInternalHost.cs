@@ -747,9 +747,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private bool LastKeyWasCtrlC()
         {
             return _lastKey.HasValue
-                && _lastKey.Value.Key == ConsoleKey.C
-                && (_lastKey.Value.Modifiers & ConsoleModifiers.Control) != 0
-                && (_lastKey.Value.Modifiers & ConsoleModifiers.Alt) == 0;
+                && _lastKey.Value.IsCtrlC();
         }
 
         private void OnDebuggerStopped(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
