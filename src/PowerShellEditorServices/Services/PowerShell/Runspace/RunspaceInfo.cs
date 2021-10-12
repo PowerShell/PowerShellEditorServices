@@ -3,16 +3,16 @@
 
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
+using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
 {
-    using System.Management.Automation.Runspaces;
     using System.Management.Automation;
-    using Microsoft.Extensions.Logging;
-    using System.Threading.Tasks;
-    using System.Threading;
-    using System;
-    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+    using System.Management.Automation.Runspaces;
 
     internal class RunspaceInfo : IRunspaceInfo
     {

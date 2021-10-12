@@ -3,17 +3,16 @@
 
 using System.Text;
 using System.Threading;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using System;
+using System.Collections.Generic;
+using System.Management.Automation;
+using System.Management.Automation.Language;
+using System.Security;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
-    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
-    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
-    using System;
-    using System.Collections.Generic;
-    using System.Management.Automation;
-    using System.Management.Automation.Language;
-    using System.Security;
-
     internal class ConsoleReadLine : IReadLine
     {
         private readonly PSReadLineProxy _psrlProxy;

@@ -3,11 +3,11 @@
 
 using System;
 using System.Collections;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
+using System.Linq;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
 {
-    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
-    using System.Linq;
     using System.Management.Automation;
 
     /// <summary>
