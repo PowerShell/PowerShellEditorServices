@@ -15,6 +15,7 @@ using System.Threading;
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
     using System;
+    using System.Threading.Tasks;
 
     internal class LegacyReadLine : TerminalReadLine
     {
@@ -22,7 +23,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private readonly IPowerShellDebugContext _debugContext;
 
+        private readonly Task[] _readKeyTasks;
+
         private Func<bool, ConsoleKeyInfo> _readKeyFunc;
+
+        private Action _onIdleAction;
 
         public LegacyReadLine(
             PsesInternalHost psesHost,
@@ -30,6 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
         {
             _psesHost = psesHost;
             _debugContext = debugContext;
+            _readKeyTasks = new Task[2];
         }
 
         public override string ReadLine(CancellationToken cancellationToken)
@@ -383,6 +389,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         public override bool TryOverrideIdleHandler(Action<CancellationToken> idleHandler)
         {
+            _onIdleAction = idleHandler;
             return true;
         }
 
@@ -397,13 +404,45 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
-                // intercept = false means we display the key in the console
-                return _readKeyFunc(/* intercept */ false);
+                return _onIdleAction is null
+                    ? InvokeReadKeyFunc()
+                    : ReadKeyWithIdleSupport(cancellationToken);
             }
             finally
             {
                 cancellationToken.ThrowIfCancellationRequested();
             }
+        }
+
+        private ConsoleKeyInfo ReadKeyWithIdleSupport(CancellationToken cancellationToken)
+        {
+            // We run the readkey function on another thread so we can run an idle handler
+            Task<ConsoleKeyInfo> readKeyTask = Task.Run(InvokeReadKeyFunc);
+
+            _readKeyTasks[0] = readKeyTask;
+            _readKeyTasks[1] = Task.Delay(millisecondsDelay: 300, cancellationToken);
+
+            while (true)
+            {
+                switch (Task.WaitAny(_readKeyTasks, cancellationToken))
+                {
+                    // ReadKey returned
+                    case 0:
+                        return readKeyTask.Result;
+
+                    // The idle timed out
+                    case 1:
+                        _onIdleAction();
+                        _readKeyTasks[1] = Task.Delay(millisecondsDelay: 300, cancellationToken);
+                        continue;
+                }
+            }
+        }
+
+        private ConsoleKeyInfo InvokeReadKeyFunc()
+        {
+            // intercept = false means we display the key in the console
+            return _readKeyFunc(/* intercept */ false);
         }
 
         private static int InsertInput(
