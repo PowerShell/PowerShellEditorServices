@@ -42,6 +42,29 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public override bool SupportsVirtualTerminal => _underlyingHostUI.SupportsVirtualTerminal;
 
+        #region Console color support
+
+        internal static ConsoleColor BackgroundColor { get; set; }
+
+        internal ConsoleColor FormatAccentColor { get; set; } = ConsoleColor.Green;
+        internal ConsoleColor ErrorAccentColor { get; set; } = ConsoleColor.Cyan;
+
+        internal ConsoleColor ErrorForegroundColor { get; set; } = ConsoleColor.Red;
+        internal ConsoleColor ErrorBackgroundColor { get; set; } = BackgroundColor;
+
+        internal ConsoleColor WarningForegroundColor { get; set; } = ConsoleColor.Yellow;
+        internal ConsoleColor WarningBackgroundColor { get; set; } = BackgroundColor;
+
+        internal ConsoleColor DebugForegroundColor { get; set; } = ConsoleColor.Yellow;
+        internal ConsoleColor DebugBackgroundColor { get; set; } = BackgroundColor;
+
+        internal ConsoleColor VerboseForegroundColor { get; set; } = ConsoleColor.Yellow;
+        internal ConsoleColor VerboseBackgroundColor { get; set; } = BackgroundColor;
+        internal virtual ConsoleColor ProgressForegroundColor { get; set; } = ConsoleColor.Yellow;
+        internal virtual ConsoleColor ProgressBackgroundColor { get; set; } = ConsoleColor.DarkCyan;
+
+        #endregion
+
         public override Dictionary<string, PSObject> Prompt(string caption, string message, Collection<FieldDescription> descriptions)
         {
             if (_consoleHostUI != null)

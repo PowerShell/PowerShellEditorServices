@@ -1,9 +1,6 @@
-﻿//
-// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
 
-/*
 using System;
 using System.Management.Automation.Host;
 
@@ -11,9 +8,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 {
     internal class ConsoleColorProxy
     {
+        private readonly EditorServicesConsolePSHostUserInterface _hostUserInterface;
+
         internal ConsoleColorProxy(EditorServicesConsolePSHostUserInterface hostUserInterface)
         {
-            if (hostUserInterface == null) throw new ArgumentNullException();
+            if (hostUserInterface is null)
+            {
+                throw new ArgumentNullException();
+            }
+
             _hostUserInterface = hostUserInterface;
         }
 
@@ -150,4 +153,3 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         }
     }
 }
-*/
