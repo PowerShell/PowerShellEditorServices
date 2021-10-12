@@ -628,7 +628,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             if (hostStartupInfo.ConsoleReplEnabled && !hostStartupInfo.UsesLegacyReadLine)
             {
                 var psrlProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, pwsh);
-                var readLine = new ConsoleReadLine(psrlProxy, this, engineIntrinsics);
+                var readLine = new PsrlReadLine(psrlProxy, this, engineIntrinsics);
                 readLine.TryOverrideReadKey(ReadKey);
                 readLine.TryOverrideIdleHandler(OnPowerShellIdle);
                 readLineProvider.OverrideReadLine(readLine);
