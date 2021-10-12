@@ -1,4 +1,7 @@
-﻿namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 {
     public enum ExecutionPriority
     {

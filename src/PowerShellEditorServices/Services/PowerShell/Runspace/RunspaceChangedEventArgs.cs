@@ -1,4 +1,7 @@
-﻿using Microsoft.PowerShell.EditorServices.Utility;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
 {

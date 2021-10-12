@@ -1,4 +1,6 @@
-﻿
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
 using SMA = System.Management.Automation.Runspaces;
 
