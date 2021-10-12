@@ -1,12 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Collections.Generic;
-using System.Management.Automation;
-using System.Management.Automation.Language;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
@@ -19,6 +13,12 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
+using System.Collections.Generic;
+using System.Management.Automation;
+using System.Management.Automation.Language;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {

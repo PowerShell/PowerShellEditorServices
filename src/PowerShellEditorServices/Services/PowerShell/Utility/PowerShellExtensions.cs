@@ -5,13 +5,14 @@ using System;
 using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Text;
+using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Hosting;
+using Microsoft.PowerShell.EditorServices.Utility;
+using System.Collections.Generic;
+using System.IO;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 {
-    using Microsoft.Extensions.Logging;
-    using Microsoft.PowerShell.EditorServices.Hosting;
-    using System.Collections.Generic;
-    using System.IO;
     using System.Management.Automation;
 
     internal static class PowerShellExtensions
