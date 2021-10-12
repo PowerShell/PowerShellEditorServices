@@ -330,12 +330,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                             //    // TODO: Start a new line!
                             //    continue;
                             //}
-
-                            Parser.ParseInput(
-                                completedInput,
-                                out Token[] tokens,
-                                out ParseError[] parseErrors);
-
+                            //Parser.ParseInput(
+                            //    completedInput,
+                            //    out Token[] tokens,
+                            //    out ParseError[] parseErrors);
                             //if (parseErrors.Any(e => e.IncompleteInput))
                             //{
                             //    // TODO: Start a new line!
