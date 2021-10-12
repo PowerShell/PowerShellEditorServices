@@ -1,20 +1,20 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System.Text;
-using System.Threading;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using System.Collections.Generic;
 using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Security;
+using System.Text;
+using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
     using System;
 
-    internal class ConsoleReadLine : IReadLine
+    internal class PsrlReadLine : IReadLine
     {
         private readonly PSReadLineProxy _psrlProxy;
 
@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         #region Constructors
 
-        public ConsoleReadLine(
+        public PsrlReadLine(
             PSReadLineProxy psrlProxy,
             PsesInternalHost psesHost,
             EngineIntrinsics engineIntrinsics)
