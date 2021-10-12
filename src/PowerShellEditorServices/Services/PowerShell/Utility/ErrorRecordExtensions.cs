@@ -1,4 +1,7 @@
-﻿using Microsoft.PowerShell.EditorServices.Utility;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;

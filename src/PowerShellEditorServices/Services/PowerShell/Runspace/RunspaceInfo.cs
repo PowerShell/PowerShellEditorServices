@@ -1,4 +1,7 @@
-﻿using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace

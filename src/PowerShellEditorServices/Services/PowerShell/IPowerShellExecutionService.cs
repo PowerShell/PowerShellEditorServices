@@ -1,4 +1,7 @@
-﻿using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using System;
 using System.Collections.Generic;
