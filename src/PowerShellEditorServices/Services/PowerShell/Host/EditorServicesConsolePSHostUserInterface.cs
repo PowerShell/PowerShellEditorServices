@@ -60,6 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         internal ConsoleColor VerboseForegroundColor { get; set; } = ConsoleColor.Yellow;
         internal ConsoleColor VerboseBackgroundColor { get; set; } = BackgroundColor;
+
         internal virtual ConsoleColor ProgressForegroundColor { get; set; } = ConsoleColor.Yellow;
         internal virtual ConsoleColor ProgressBackgroundColor { get; set; } = ConsoleColor.DarkCyan;
 
