@@ -1,9 +1,6 @@
 using System;
 using System.Globalization;
 using System.Management.Automation.Host;
-using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Hosting;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 {

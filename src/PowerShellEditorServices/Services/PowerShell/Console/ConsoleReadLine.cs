@@ -12,7 +12,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
     using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Management.Automation;
     using System.Management.Automation.Language;
     using System.Security;
