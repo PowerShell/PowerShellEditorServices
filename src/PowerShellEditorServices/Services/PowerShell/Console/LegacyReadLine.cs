@@ -16,7 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
     using System;
 
-    internal class LegacyReadLine : IReadLine
+    internal class LegacyReadLine : TerminalReadLine
     {
         private readonly PsesInternalHost _psesHost;
 
@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             _debugContext = debugContext;
         }
 
-        public string ReadLine(CancellationToken cancellationToken)
+        public override string ReadLine(CancellationToken cancellationToken)
         {
             // TODO: Is inputBeforeCompletion used?
             string inputBeforeCompletion = null;
@@ -59,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    ConsoleKeyInfo keyInfo = ReadKey(displayKeyInConsole: false, cancellationToken);
+                    ConsoleKeyInfo keyInfo = ReadKey(cancellationToken);
 
                     // Do final position calculation after the key has been pressed
                     // because the window could have been resized before then
@@ -383,46 +383,31 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             return null;
         }
 
-        private static bool IsCtrlC(ConsoleKeyInfo keyInfo)
-        {
-            if ((int)keyInfo.Key == 3)
-            {
-                return true;
-            }
-
-            return keyInfo.Key == ConsoleKey.C
-                && (keyInfo.Modifiers & ConsoleModifiers.Control) != 0
-                && (keyInfo.Modifiers & ConsoleModifiers.Alt) == 0;
-        }
-
-        public SecureString ReadSecureLine(CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool TryOverrideIdleHandler(Action idleHandler)
+        public override bool TryOverrideIdleHandler(Action<CancellationToken> idleHandler)
         {
             return true;
         }
 
-        public bool TryOverrideReadKey(Func<bool, ConsoleKeyInfo> readKeyOverride)
+        public override bool TryOverrideReadKey(Func<bool, ConsoleKeyInfo> readKeyOverride)
         {
             _readKeyFunc = readKeyOverride;
             return true;
         }
 
-        private ConsoleKeyInfo ReadKey(bool displayKeyInConsole, CancellationToken cancellationToken)
+        protected override ConsoleKeyInfo ReadKey(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
-                return _readKeyFunc(!displayKeyInConsole);
+                // intercept = false means we display the key in the console
+                return _readKeyFunc(/* intercept */ false);
             }
             finally
             {
                 cancellationToken.ThrowIfCancellationRequested();
             }
         }
+
         private static int InsertInput(
             StringBuilder inputLine,
             int promptStartCol,
