@@ -35,7 +35,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         public override string ReadLine(CancellationToken cancellationToken)
         {
-            // TODO: Is inputBeforeCompletion used?
             string inputBeforeCompletion = null;
             string inputAfterCompletion = null;
             CommandCompletion currentCompletion = null;
@@ -47,10 +46,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
             int initialCursorCol = ConsoleProxy.GetCursorLeft(cancellationToken);
             int initialCursorRow = ConsoleProxy.GetCursorTop(cancellationToken);
-
-            // TODO: Are these used?
-            int initialWindowLeft = Console.WindowLeft;
-            int initialWindowTop = Console.WindowTop;
 
             int currentCursorIndex = 0;
 
