@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             };
         }
 
-        public int Count => _queues[0].Count + _queues[1].Count;
+        public bool IsEmpty => _queues[0].Count == 0 && _queues[1].Count == 0;
 
         public void Prepend(T item)
         {

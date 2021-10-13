@@ -57,6 +57,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private readonly IdempotentLatch _isRunningLatch = new();
 
+        private EngineIntrinsics _mainRunspaceEngineIntrinsics;
+
         private bool _shouldExit = false;
 
         private string _localComputerName;
@@ -347,17 +349,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void Run()
         {
-            (PowerShell pwsh, RunspaceInfo localRunspaceInfo) = CreateInitialPowerShellSession();
+            (PowerShell pwsh, RunspaceInfo localRunspaceInfo, EngineIntrinsics engineIntrinsics) = CreateInitialPowerShellSession();
+            _mainRunspaceEngineIntrinsics = engineIntrinsics;
             _localComputerName = localRunspaceInfo.SessionDetails.ComputerName;
             _runspaceStack.Push(new RunspaceFrame(pwsh.Runspace, localRunspaceInfo));
             PushPowerShellAndRunLoop(pwsh, PowerShellFrameType.Normal, localRunspaceInfo);
         }
 
-        private (PowerShell, RunspaceInfo) CreateInitialPowerShellSession()
+        private (PowerShell, RunspaceInfo, EngineIntrinsics) CreateInitialPowerShellSession()
         {
-            PowerShell pwsh = CreateInitialPowerShell(_hostInfo, _readLineProvider);
+            (PowerShell pwsh, EngineIntrinsics engineIntrinsics) = CreateInitialPowerShell(_hostInfo, _readLineProvider);
             RunspaceInfo localRunspaceInfo = RunspaceInfo.CreateFromLocalPowerShell(_logger, pwsh);
-            return (pwsh, localRunspaceInfo);
+            return (pwsh, localRunspaceInfo, engineIntrinsics);
         }
 
         private void PushPowerShellAndRunLoop(PowerShell pwsh, PowerShellFrameType frameType, RunspaceInfo newRunspaceInfo = null)
@@ -613,7 +616,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return pwsh;
         }
 
-        public PowerShell CreateInitialPowerShell(
+        public (PowerShell, EngineIntrinsics) CreateInitialPowerShell(
             HostStartupInfo hostStartupInfo,
             ReadLineProvider readLineProvider)
         {
@@ -649,7 +652,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 }
             }
 
-            return pwsh;
+            return (pwsh, engineIntrinsics);
         }
 
         private Runspace CreateInitialRunspace(InitialSessionState initialSessionState)
@@ -668,7 +671,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void OnPowerShellIdle()
         {
-            if (_taskQueue.Count == 0)
+            IReadOnlyList<PSEventSubscriber> eventSubscribers = _mainRunspaceEngineIntrinsics.Events.Subscribers;
+
+            // Go through pending event subscribers and:
+            // - if we have any subscribers, ensure we process any events
+            // - if we have any idle events, generate an idle event and process that
+            bool runPipelineForEventProcessing = false;
+            foreach (PSEventSubscriber subscriber in eventSubscribers)
+            {
+                runPipelineForEventProcessing = true;
+
+                if (string.Equals(subscriber.SourceIdentifier, PSEngineEvent.OnIdle, StringComparison.OrdinalIgnoreCase))
+                {
+                    // We control the pipeline thread, so it's not possible for PowerShell to generate events while we're here.
+                    // But we know we're sitting waiting for the prompt, so we generate the idle event ourselves
+                    // and that will flush idle event subscribers in PowerShell so we can service them
+                    _mainRunspaceEngineIntrinsics.Events.GenerateEvent(PSEngineEvent.OnIdle, sender: null, args: null, extraData: null);
+                    break;
+                }
+            }
+
+            if (!runPipelineForEventProcessing && _taskQueue.IsEmpty)
             {
                 return;
             }
@@ -688,8 +711,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                         return;
                     }
 
+                    // If we're executing a task, we don't need to run an extra pipeline later for events
+                    // TODO: This may not be a PowerShell task, so ideally we can differentiate that here.
+                    //       For now it's mostly true and an easy assumption to make.
+                    runPipelineForEventProcessing = false;
                     task.ExecuteSynchronously(cancellationScope.CancellationToken);
                 }
+            }
+
+            // We didn't end up executing anything in the background,
+            // so we need to run a small artificial pipeline instead
+            // to force event processing
+            if (runPipelineForEventProcessing)
+            {
+                InvokePSCommand(new PSCommand().AddScript("0", useLocalScope: true), PowerShellExecutionOptions.Default, CancellationToken.None);
             }
         }
 
@@ -771,7 +806,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                         // If our main runspace was corrupted,
                         // we must re-initialize our state.
                         // TODO: Use runspace.ResetRunspaceState() here instead
-                        (PowerShell pwsh, RunspaceInfo runspaceInfo) = CreateInitialPowerShellSession();
+                        (PowerShell pwsh, RunspaceInfo runspaceInfo, EngineIntrinsics engineIntrinsics) = CreateInitialPowerShellSession();
+                        _mainRunspaceEngineIntrinsics = engineIntrinsics;
                         PushPowerShell(new PowerShellContextFrame(pwsh, runspaceInfo, PowerShellFrameType.Normal));
 
                         _logger.LogError($"Top level runspace entered state '{oldRunspaceState.State}' for reason '{oldRunspaceState.Reason}' and was reinitialized."
