@@ -20,8 +20,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
     {
         private readonly PsesInternalHost _psesHost;
 
-        private readonly IPowerShellDebugContext _debugContext;
-
         private readonly Task[] _readKeyTasks;
 
         private Func<bool, ConsoleKeyInfo> _readKeyFunc;
@@ -29,11 +27,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
         private Action _onIdleAction;
 
         public LegacyReadLine(
-            PsesInternalHost psesHost,
-            IPowerShellDebugContext debugContext)
+            PsesInternalHost psesHost)
         {
             _psesHost = psesHost;
-            _debugContext = debugContext;
             _readKeyTasks = new Task[2];
         }
 
@@ -86,7 +82,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
                                 // TODO: This logic should be moved to AstOperations or similar!
 
-                                if (_debugContext.IsStopped)
+                                if (_psesHost.DebugContext.IsStopped)
                                 {
                                     PSCommand command = new PSCommand()
                                         .AddCommand("TabExpansion2")

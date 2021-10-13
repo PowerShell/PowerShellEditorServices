@@ -625,10 +625,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             var engineIntrinsics = (EngineIntrinsics)runspace.SessionStateProxy.GetVariable("ExecutionContext");
 
-            if (hostStartupInfo.ConsoleReplEnabled && !hostStartupInfo.UsesLegacyReadLine)
+            if (hostStartupInfo.ConsoleReplEnabled)
             {
-                var psrlProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, pwsh);
-                var readLine = new PsrlReadLine(psrlProxy, this, engineIntrinsics);
+                // If we've been configured to use it, or if we can't load PSReadLine, use the legacy readline
+                if (hostStartupInfo.UsesLegacyReadLine || !TryLoadPSReadLine(pwsh, engineIntrinsics, out IReadLine readLine))
+                {
+                    readLine = new LegacyReadLine(this);
+                }
+
                 readLine.TryOverrideReadKey(ReadKey);
                 readLine.TryOverrideIdleHandler(OnPowerShellIdle);
                 readLineProvider.OverrideReadLine(readLine);
@@ -821,6 +825,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                     }
                 },
                 CancellationToken.None);
+        }
+
+        private bool TryLoadPSReadLine(PowerShell pwsh, EngineIntrinsics engineIntrinsics, out IReadLine psrlReadLine)
+        {
+            psrlReadLine = null;
+            try
+            {
+                var psrlProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, pwsh);
+                psrlReadLine = new PsrlReadLine(psrlProxy, this, engineIntrinsics);
+                return true;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Unable to load PSReadLine. Will fall back to legacy readline implementation.");
+                return false;
+            }
         }
 
         private record RunspaceFrame(
