@@ -49,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             return true;
         }
 
-        public bool TryOverrideIdleHandler(Action idleHandler)
+        public bool TryOverrideIdleHandler(Action<CancellationToken> idleHandler)
         {
             _psrlProxy.OverrideIdleHandler(idleHandler);
             return true;
