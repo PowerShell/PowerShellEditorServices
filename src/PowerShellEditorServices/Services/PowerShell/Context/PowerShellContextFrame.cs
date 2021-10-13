@@ -1,7 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using System;
-using System.Threading;
 using SMA = System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context

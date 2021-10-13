@@ -1,14 +1,16 @@
-﻿using System;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+using System;
 using System.Management.Automation;
 using System.Threading;
+using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 {
-    using Microsoft.Extensions.Logging;
-    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
-    using OmniSharp.Extensions.LanguageServer.Protocol.Server;
-    using System.Threading.Tasks;
-
     /// <summary>
     /// Handles the state of the PowerShell debugger.
     /// </summary>

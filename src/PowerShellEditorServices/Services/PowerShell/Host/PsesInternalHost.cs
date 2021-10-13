@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
@@ -8,21 +11,20 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Management.Automation.Host;
-using SMA = System.Management.Automation;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
+using Microsoft.PowerShell.EditorServices.Utility;
+using System.IO;
+using System.Reflection;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 {
-    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
-    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
-    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
-    using Microsoft.PowerShell.EditorServices.Utility;
-    using System.IO;
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading;
-    using System.Threading.Tasks;
 
     internal class PsesInternalHost : PSHost, IHostSupportsInteractiveSession, IRunspaceContext, IInternalPowerShellExecutionService
     {
@@ -114,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public RunspaceInfo CurrentRunspace => CurrentFrame.RunspaceInfo;
 
-        public SMA.PowerShell CurrentPowerShell => CurrentFrame.PowerShell;
+        public PowerShell CurrentPowerShell => CurrentFrame.PowerShell;
 
         public EditorServicesConsolePSHost PublicHost { get; }
 
@@ -250,7 +252,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public Task<TResult> ExecuteDelegateAsync<TResult>(
             string representation,
             ExecutionOptions executionOptions,
-            Func<SMA.PowerShell, CancellationToken, TResult> func,
+            Func<PowerShell, CancellationToken, TResult> func,
             CancellationToken cancellationToken)
         {
             return InvokeTaskOnPipelineThreadAsync(new SynchronousPSDelegateTask<TResult>(_logger, this, representation, executionOptions ?? ExecutionOptions.Default, func, cancellationToken));
@@ -259,7 +261,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public Task ExecuteDelegateAsync(
             string representation,
             ExecutionOptions executionOptions,
-            Action<SMA.PowerShell, CancellationToken> action,
+            Action<PowerShell, CancellationToken> action,
             CancellationToken cancellationToken)
         {
             return InvokeTaskOnPipelineThreadAsync(new SynchronousPSDelegateTask(_logger, this, representation, executionOptions ?? ExecutionOptions.Default, action, cancellationToken));
@@ -322,13 +324,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public void InvokePSCommand(PSCommand psCommand, PowerShellExecutionOptions executionOptions, CancellationToken cancellationToken)
             => InvokePSCommand<PSObject>(psCommand, executionOptions, cancellationToken);
 
-        public TResult InvokePSDelegate<TResult>(string representation, ExecutionOptions executionOptions, Func<SMA.PowerShell, CancellationToken, TResult> func, CancellationToken cancellationToken)
+        public TResult InvokePSDelegate<TResult>(string representation, ExecutionOptions executionOptions, Func<PowerShell, CancellationToken, TResult> func, CancellationToken cancellationToken)
         {
             var task = new SynchronousPSDelegateTask<TResult>(_logger, this, representation, executionOptions, func, cancellationToken);
             return task.ExecuteAndGetResult(cancellationToken);
         }
 
-        public void InvokePSDelegate(string representation, ExecutionOptions executionOptions, Action<SMA.PowerShell, CancellationToken> action, CancellationToken cancellationToken)
+        public void InvokePSDelegate(string representation, ExecutionOptions executionOptions, Action<PowerShell, CancellationToken> action, CancellationToken cancellationToken)
         {
             var task = new SynchronousPSDelegateTask(_logger, this, representation, executionOptions, action, cancellationToken);
             task.ExecuteAndGetResult(cancellationToken);
@@ -358,7 +360,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return (pwsh, localRunspaceInfo);
         }
 
-        private void PushPowerShellAndRunLoop(SMA.PowerShell pwsh, PowerShellFrameType frameType, RunspaceInfo newRunspaceInfo = null)
+        private void PushPowerShellAndRunLoop(PowerShell pwsh, PowerShellFrameType frameType, RunspaceInfo newRunspaceInfo = null)
         {
             // TODO: Improve runspace origin detection here
             if (newRunspaceInfo is null)
@@ -376,7 +378,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             PushPowerShellAndRunLoop(new PowerShellContextFrame(pwsh, newRunspaceInfo, frameType));
         }
 
-        private RunspaceInfo GetRunspaceInfoForPowerShell(SMA.PowerShell pwsh, out bool isNewRunspace, out RunspaceFrame oldRunspaceFrame)
+        private RunspaceInfo GetRunspaceInfoForPowerShell(PowerShell pwsh, out bool isNewRunspace, out RunspaceFrame oldRunspaceFrame)
         {
             oldRunspaceFrame = null;
 

@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+using System;
 using System.Security;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {

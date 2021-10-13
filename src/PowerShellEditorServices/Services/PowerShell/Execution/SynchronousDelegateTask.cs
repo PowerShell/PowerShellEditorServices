@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using System;
 using System.Threading;

@@ -1,7 +1,5 @@
-//
 // Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
-//
+// Licensed under the MIT license.
 
 using System;
 using System.IO;
@@ -16,7 +14,6 @@ using SMA = System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
-    using OmniSharp.Extensions.DebugAdapter.Protocol.Models;
     using System.Management.Automation.Runspaces;
 
     internal class PSReadLineProxy

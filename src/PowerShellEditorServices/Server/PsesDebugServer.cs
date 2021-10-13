@@ -3,18 +3,13 @@
 
 using System;
 using System.IO;
-using System.Management.Automation;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
-using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Server;
 using OmniSharp.Extensions.LanguageServer.Server;
 

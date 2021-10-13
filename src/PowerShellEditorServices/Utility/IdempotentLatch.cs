@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices.Utility

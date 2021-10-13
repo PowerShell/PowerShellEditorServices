@@ -1,9 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Collections.Generic;
-using System.Management.Automation.Language;
-
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {
     // TODO: Restore this when we figure out how to support multiple
