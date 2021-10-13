@@ -46,6 +46,16 @@ namespace PowerShellEditorServices.Test.E2E
         }
 
         /// <summary>
+        ///     The process ID of the server process, useful for attaching a debugger.
+        /// </summary>
+        public int Id
+        {
+            get {
+                return _serverProcess.Id;
+            }
+        }
+
+        /// <summary>
         ///     Dispose of resources being used by the launcher.
         /// </summary>
         /// <param name="disposing">

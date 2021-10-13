@@ -661,7 +661,8 @@ Write-Host 'Goodbye'
 {
     ""powershell"": {
         ""pester"": {
-            ""useLegacyCodeLens"": true
+            ""useLegacyCodeLens"": true,
+            ""codeLens"": true
         }
     }
 }
@@ -727,7 +728,8 @@ Describe 'DescribeName' {
 {
     ""powershell"": {
         ""pester"": {
-            ""useLegacyCodeLens"": false
+            ""useLegacyCodeLens"": false,
+            ""codeLens"": true
         }
     }
 }
