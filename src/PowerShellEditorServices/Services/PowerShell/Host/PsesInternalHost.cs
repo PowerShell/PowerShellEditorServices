@@ -689,7 +689,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 }
             }
 
-            if (!runPipelineForEventProcessing && _taskQueue.Count == 0)
+            if (!runPipelineForEventProcessing && _taskQueue.IsEmpty)
             {
                 return;
             }
