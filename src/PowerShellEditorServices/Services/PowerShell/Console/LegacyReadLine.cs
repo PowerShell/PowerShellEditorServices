@@ -63,10 +63,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                     int promptStartRow = initialCursorRow;
                     int consoleWidth = Console.WindowWidth;
 
-                    //case ConsoleKey.C when ((keyInfo.Modifiers & ConsoleModifiers.Control) != 0):
-                    //  throw new PipelineStoppedException();
-
-
                     switch (keyInfo.Key)
                     {
                         case ConsoleKey.Tab:
