@@ -15,6 +15,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         bool TryOverrideReadKey(Func<bool, ConsoleKeyInfo> readKeyOverride);
 
-        bool TryOverrideIdleHandler(Action idleHandler);
+        bool TryOverrideIdleHandler(Action<CancellationToken> idleHandler);
     }
 }

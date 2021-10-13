@@ -616,7 +616,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return pwsh;
         }
 
-        public (PowerShell, EngineIntrinsics) CreateInitialPowerShell(
+        private (PowerShell, EngineIntrinsics) CreateInitialPowerShell(
             HostStartupInfo hostStartupInfo,
             ReadLineProvider readLineProvider)
         {
@@ -669,7 +669,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return runspace;
         }
 
-        private void OnPowerShellIdle()
+        private void OnPowerShellIdle(CancellationToken idleCancellationToken)
         {
             IReadOnlyList<PSEventSubscriber> eventSubscribers = _mainRunspaceEngineIntrinsics.Events.Subscribers;
 
@@ -696,7 +696,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 return;
             }
 
-            using (CancellationScope cancellationScope = _cancellationContext.EnterScope(isIdleScope: true))
+            using (CancellationScope cancellationScope = _cancellationContext.EnterScope(isIdleScope: true, idleCancellationToken))
             {
                 while (!cancellationScope.CancellationToken.IsCancellationRequested
                     && _taskQueue.TryTake(out ISynchronousTask task))
