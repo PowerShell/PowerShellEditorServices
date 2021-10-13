@@ -681,9 +681,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
                 if (string.Equals(subscriber.SourceIdentifier, PSEngineEvent.OnIdle, StringComparison.OrdinalIgnoreCase))
                 {
-                    // PowerShell thinks we're in a call (the ReadLine call) rather than idle,
-                    // but we know we're sitting in the prompt.
-                    // So we need to generate the idle event ourselves
+                    // We control the pipeline thread, so it's not possible for PowerShell to generate events while we're here.
+                    // But we know we're sitting waiting for the prompt, so we generate the idle event ourselves
+                    // and that will flush idle event subscribers in PowerShell so we can service them
                     _mainRunspaceEngineIntrinsics.Events.GenerateEvent(PSEngineEvent.OnIdle, sender: null, args: null, extraData: null);
                     break;
                 }
