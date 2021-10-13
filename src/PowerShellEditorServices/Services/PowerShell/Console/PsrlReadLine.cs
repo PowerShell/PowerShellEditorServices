@@ -3,11 +3,7 @@
 
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
-using System.Collections.Generic;
 using System.Management.Automation;
-using System.Management.Automation.Language;
-using System.Security;
-using System.Text;
 using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
