@@ -719,7 +719,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 }
             }
 
-            // We didn't end up executinng anything in the background,
+            // We didn't end up executing anything in the background,
             // so we need to run a small artificial pipeline instead
             // to force event processing
             if (runPipelineForEventProcessing)
