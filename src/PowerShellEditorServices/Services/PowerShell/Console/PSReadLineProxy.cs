@@ -168,7 +168,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             _readKeyOverrideField.SetValue(null, readKeyFunc);
         }
 
-        internal void OverrideIdleHandler(Action idleAction)
+        internal void OverrideIdleHandler(Action<CancellationToken> idleAction)
         {
             _handleIdleOverrideField.SetValue(null, idleAction);
         }

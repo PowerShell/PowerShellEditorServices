@@ -33,14 +33,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             _cancellationSourceStack = new ConcurrentStack<CancellationScope>();
         }
 
-        public CancellationScope EnterScope(bool isIdleScope)
+        public CancellationScope EnterScope(bool isIdleScope, CancellationToken cancellationToken)
         {
             CancellationTokenSource newScopeCancellationSource = _cancellationSourceStack.TryPeek(out CancellationScope parentScope)
-                ? CancellationTokenSource.CreateLinkedTokenSource(parentScope.CancellationToken)
-                : new CancellationTokenSource();
+                ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, parentScope.CancellationToken)
+                : CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
             return EnterScope(isIdleScope, newScopeCancellationSource);
         }
+
+        public CancellationScope EnterScope(bool isIdleScope) => EnterScope(isIdleScope, CancellationToken.None);
 
         public void CancelCurrentTask()
         {
