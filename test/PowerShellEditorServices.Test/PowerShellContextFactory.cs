@@ -11,12 +11,12 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Test
 {
+    /*
     internal static class PowerShellContextFactory
     {
         // NOTE: These paths are arbitrarily chosen just to verify that the profile paths
@@ -122,4 +122,5 @@ namespace Microsoft.PowerShell.EditorServices.Test
         {
         }
     }
+    */
 }
