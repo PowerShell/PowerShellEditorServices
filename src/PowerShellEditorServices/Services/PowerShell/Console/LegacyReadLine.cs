@@ -21,15 +21,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private readonly Task[] _readKeyTasks;
 
-        private Func<bool, ConsoleKeyInfo> _readKeyFunc;
+        private readonly Func<bool, ConsoleKeyInfo> _readKeyFunc;
 
-        private Action _onIdleAction;
+        private readonly Action<CancellationToken> _onIdleAction;
 
         public LegacyReadLine(
-            PsesInternalHost psesHost)
+            PsesInternalHost psesHost,
+            Func<bool, ConsoleKeyInfo> readKeyFunc,
+            Action<CancellationToken> onIdleAction)
         {
             _psesHost = psesHost;
             _readKeyTasks = new Task[2];
+            _readKeyFunc = readKeyFunc;
+            _onIdleAction = onIdleAction;
         }
 
         public override string ReadLine(CancellationToken cancellationToken)
@@ -376,18 +380,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             return null;
         }
 
-        public override bool TryOverrideIdleHandler(Action<CancellationToken> idleHandler)
-        {
-            _onIdleAction = idleHandler;
-            return true;
-        }
-
-        public override bool TryOverrideReadKey(Func<bool, ConsoleKeyInfo> readKeyOverride)
-        {
-            _readKeyFunc = readKeyOverride;
-            return true;
-        }
-
         protected override ConsoleKeyInfo ReadKey(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -421,7 +413,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
                     // The idle timed out
                     case 1:
-                        _onIdleAction();
+                        _onIdleAction(cancellationToken);
                         _readKeyTasks[1] = Task.Delay(millisecondsDelay: 300, cancellationToken);
                         continue;
                 }

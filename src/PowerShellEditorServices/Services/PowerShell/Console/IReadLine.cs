@@ -12,9 +12,5 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
         string ReadLine(CancellationToken cancellationToken);
 
         SecureString ReadSecureLine(CancellationToken cancellationToken);
-
-        bool TryOverrideReadKey(Func<bool, ConsoleKeyInfo> readKeyOverride);
-
-        bool TryOverrideIdleHandler(Action<CancellationToken> idleHandler);
     }
 }
