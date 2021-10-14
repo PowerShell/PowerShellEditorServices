@@ -36,7 +36,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                     switch (keyInfo.Key)
                     {
                         case ConsoleKey.Enter:
-                            // Break to return the completed string
+                            // Stop the while loop so we can realign the cursor
+                            // and then return the entered string
                             enterPressed = true;
                             continue;
 
