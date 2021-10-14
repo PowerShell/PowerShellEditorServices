@@ -158,17 +158,16 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             // We are forced to use a hack here so that we can reuse PowerShell's parameter binding
             var sb = new StringBuilder()
-                .Append("& '")
-                .Append(command.Replace("'", "''"))
-                .Append("'");
+                .Append("& ")
+                .Append(StringEscaping.SingleQuoteAndEscape(command));
 
             foreach (string arg in arguments)
             {
                 sb.Append(' ');
 
-                if (ArgumentNeedsEscaping(arg))
+                if (StringEscaping.PowerShellArgumentNeedsEscaping(arg))
                 {
-                    sb.Append('\'').Append(arg.Replace("'", "''")).Append('\'');
+                    sb.Append(StringEscaping.SingleQuoteAndEscape(arg));
                 }
                 else
                 {
@@ -177,26 +176,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             return new PSCommand().AddScript(sb.ToString());
-        }
-
-        private static bool ArgumentNeedsEscaping(string argument)
-        {
-            foreach (char c in argument)
-            {
-                switch (c)
-                {
-                    case '\'':
-                    case '"':
-                    case '|':
-                    case '&':
-                    case ';':
-                    case ':':
-                    case char w when char.IsWhiteSpace(w):
-                        return true;
-                }
-            }
-
-            return false;
         }
     }
 }
