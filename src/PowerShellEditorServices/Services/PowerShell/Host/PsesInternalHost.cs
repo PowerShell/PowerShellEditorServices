@@ -630,11 +630,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 // If we've been configured to use it, or if we can't load PSReadLine, use the legacy readline
                 if (hostStartupInfo.UsesLegacyReadLine || !TryLoadPSReadLine(pwsh, engineIntrinsics, out IReadLine readLine))
                 {
-                    readLine = new LegacyReadLine(this);
+                    readLine = new LegacyReadLine(this, ReadKey, OnPowerShellIdle);
                 }
 
-                readLine.TryOverrideReadKey(ReadKey);
-                readLine.TryOverrideIdleHandler(OnPowerShellIdle);
                 readLineProvider.OverrideReadLine(readLine);
                 System.Console.CancelKeyPress += OnCancelKeyPress;
                 System.Console.InputEncoding = Encoding.UTF8;
@@ -833,7 +831,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             try
             {
                 var psrlProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, pwsh);
-                psrlReadLine = new PsrlReadLine(psrlProxy, this, engineIntrinsics);
+                psrlReadLine = new PsrlReadLine(psrlProxy, this, engineIntrinsics, ReadKey, OnPowerShellIdle);
                 return true;
             }
             catch (Exception e)

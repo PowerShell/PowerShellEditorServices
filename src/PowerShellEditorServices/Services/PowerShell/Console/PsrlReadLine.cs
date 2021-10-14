@@ -23,11 +23,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
         public PsrlReadLine(
             PSReadLineProxy psrlProxy,
             PsesInternalHost psesHost,
-            EngineIntrinsics engineIntrinsics)
+            EngineIntrinsics engineIntrinsics,
+            Func<bool, ConsoleKeyInfo> readKeyFunc,
+            Action<CancellationToken> onIdleAction)
         {
             _psrlProxy = psrlProxy;
             _psesHost = psesHost;
             _engineIntrinsics = engineIntrinsics;
+            _psrlProxy.OverrideReadKey(readKeyFunc);
+            _psrlProxy.OverrideIdleHandler(onIdleAction);
         }
 
         #endregion
@@ -37,18 +41,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
         public override string ReadLine(CancellationToken cancellationToken)
         {
             return _psesHost.InvokeDelegate<string>(representation: "ReadLine", new ExecutionOptions { MustRunInForeground = true }, InvokePSReadLine, cancellationToken);
-        }
-
-        public override bool TryOverrideReadKey(Func<bool, ConsoleKeyInfo> readKeyFunc)
-        {
-            _psrlProxy.OverrideReadKey(readKeyFunc);
-            return true;
-        }
-
-        public override bool TryOverrideIdleHandler(Action<CancellationToken> idleHandler)
-        {
-            _psrlProxy.OverrideIdleHandler(idleHandler);
-            return true;
         }
 
         protected override ConsoleKeyInfo ReadKey(CancellationToken cancellationToken)
