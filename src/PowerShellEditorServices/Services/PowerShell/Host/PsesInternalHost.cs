@@ -625,12 +625,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             var engineIntrinsics = (EngineIntrinsics)runspace.SessionStateProxy.GetVariable("ExecutionContext");
 
-            if (hostStartupInfo.ConsoleReplEnabled && !hostStartupInfo.UsesLegacyReadLine)
+            if (hostStartupInfo.ConsoleReplEnabled)
             {
-                var psrlProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, pwsh);
-                var readLine = new ConsoleReadLine(psrlProxy, this, engineIntrinsics);
-                readLine.TryOverrideReadKey(ReadKey);
-                readLine.TryOverrideIdleHandler(OnPowerShellIdle);
+                // If we've been configured to use it, or if we can't load PSReadLine, use the legacy readline
+                if (hostStartupInfo.UsesLegacyReadLine || !TryLoadPSReadLine(pwsh, engineIntrinsics, out IReadLine readLine))
+                {
+                    readLine = new LegacyReadLine(this, ReadKey, OnPowerShellIdle);
+                }
+
                 readLineProvider.OverrideReadLine(readLine);
                 System.Console.CancelKeyPress += OnCancelKeyPress;
                 System.Console.InputEncoding = Encoding.UTF8;
@@ -747,9 +749,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private bool LastKeyWasCtrlC()
         {
             return _lastKey.HasValue
-                && _lastKey.Value.Key == ConsoleKey.C
-                && (_lastKey.Value.Modifiers & ConsoleModifiers.Control) != 0
-                && (_lastKey.Value.Modifiers & ConsoleModifiers.Alt) == 0;
+                && _lastKey.Value.IsCtrlC();
         }
 
         private void OnDebuggerStopped(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
@@ -823,6 +823,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                     }
                 },
                 CancellationToken.None);
+        }
+
+        private bool TryLoadPSReadLine(PowerShell pwsh, EngineIntrinsics engineIntrinsics, out IReadLine psrlReadLine)
+        {
+            psrlReadLine = null;
+            try
+            {
+                var psrlProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, pwsh);
+                psrlReadLine = new PsrlReadLine(psrlProxy, this, engineIntrinsics, ReadKey, OnPowerShellIdle);
+                return true;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Unable to load PSReadLine. Will fall back to legacy readline implementation.");
+                return false;
+            }
         }
 
         private record RunspaceFrame(
