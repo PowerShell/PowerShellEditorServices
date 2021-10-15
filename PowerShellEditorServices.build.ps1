@@ -210,7 +210,7 @@ task SetupHelpForTests {
     }
 }
 
-task Build BinClean,{
+Task Build {
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetRuntime.Standard }
     exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.PS7 }
     if (-not $script:IsNix)
