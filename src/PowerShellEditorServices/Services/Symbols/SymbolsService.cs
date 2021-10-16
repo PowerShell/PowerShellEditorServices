@@ -60,11 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var codeLensProviders = new List<ICodeLensProvider>
             {
                 new ReferencesCodeLensProvider(_workspaceService, this),
-            };
-            if (configurationService.CurrentSettings.Pester.CodeLens) {
-                codeLensProviders.Add(
-                    new PesterCodeLensProvider(configurationService)
-                );
+                new PesterCodeLensProvider(configurationService)
             };
 
             foreach (ICodeLensProvider codeLensProvider in codeLensProviders)

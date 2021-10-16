@@ -829,6 +829,50 @@ Describe 'DescribeName' {
 
         [Trait("Category", "LSP")]
         [Fact]
+        public async Task NoMessageIfPesterCodeLensDisabled()
+        {
+            // Make sure Pester legacy CodeLens is disabled because we'll need it in this test.
+            PsesLanguageClient.Workspace.DidChangeConfiguration(
+                new DidChangeConfigurationParams
+                {
+                    Settings = JObject.Parse(@"
+{
+    ""powershell"": {
+        ""pester"": {
+            ""codeLens"": false
+        }
+    }
+}
+")
+                });
+
+            string filePath = NewTestFile(@"
+Describe 'DescribeName' {
+    Context 'ContextName' {
+        It 'ItName' {
+            1 | Should - Be 1
+        }
+    }
+}
+", isPester: true);
+
+            CodeLensContainer codeLenses = await PsesLanguageClient
+                .SendRequest<CodeLensParams>(
+                    "textDocument/codeLens",
+                    new CodeLensParams
+                    {
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = new Uri(filePath)
+                        }
+                    })
+                .Returning<CodeLensContainer>(CancellationToken.None).ConfigureAwait(false);
+
+            Assert.Empty(codeLenses);
+        }
+
+        [Trait("Category", "LSP")]
+        [Fact]
         public async Task CanSendReferencesCodeLensRequestAsync()
         {
             string filePath = NewTestFile(@"

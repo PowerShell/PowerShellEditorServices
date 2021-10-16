@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-
+using System;
 using System.Collections.Generic;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
@@ -101,6 +101,12 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// <returns>All Pester CodeLenses for the given script file.</returns>
         public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile)
         {
+            // Don't return anything if codelens setting is disabled
+            if (!this._configurationService.CurrentSettings.Pester.CodeLens)
+            {
+                return Array.Empty<CodeLens>();
+            }
+
             var lenses = new List<CodeLens>();
             foreach (SymbolReference symbol in _symbolProvider.ProvideDocumentSymbols(scriptFile))
             {
