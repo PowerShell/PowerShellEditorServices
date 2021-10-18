@@ -56,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                         logger);
                     this.CodeFormatting = new CodeFormattingSettings(settings.CodeFormatting);
                     this.CodeFolding.Update(settings.CodeFolding, logger);
-                    this.Pester = new PesterSettings(settings.Pester);
+                    this.Pester.Update(settings.Pester, logger);
                     this.Cwd = settings.Cwd;
                 }
             }
@@ -384,19 +384,39 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
     /// </summary>
     public class PesterSettings
     {
-        public PesterSettings()
-        {
-        }
-
-        public PesterSettings(PesterSettings settings)
-        {
-            UseLegacyCodeLens = settings.UseLegacyCodeLens;
-        }
+        /// <summary>
+        /// If specified, the lenses "run tests" and "debug tests" will appear above all Pester tests
+        /// </summary>
+        public bool CodeLens { get; set; } = true;
 
         /// <summary>
         /// Whether integration features specific to Pester v5 are enabled
         /// </summary>
-        public bool UseLegacyCodeLens { get; set; }
+        public bool UseLegacyCodeLens { get; set; } = false;
+
+        /// <summary>
+        /// Update these settings from another settings object
+        /// </summary>
+        public void Update(
+            PesterSettings settings,
+            ILogger logger)
+        {
+            if (settings is null) {
+                return;
+            }
+
+            if (this.CodeLens != settings.CodeLens)
+            {
+                this.CodeLens = settings.CodeLens;
+                logger.LogTrace(string.Format("Using Pester Code Lens - {0}", this.CodeLens));
+            }
+
+            if (this.UseLegacyCodeLens != settings.UseLegacyCodeLens)
+            {
+                this.UseLegacyCodeLens = settings.UseLegacyCodeLens;
+                logger.LogTrace(string.Format("Using Pester Legacy Code Lens - {0}", this.UseLegacyCodeLens));
+            }
+        }
     }
 
     /// <summary>

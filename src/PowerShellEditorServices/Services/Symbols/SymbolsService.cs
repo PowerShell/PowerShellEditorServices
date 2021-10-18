@@ -60,8 +60,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var codeLensProviders = new ICodeLensProvider[]
             {
                 new ReferencesCodeLensProvider(_workspaceService, this),
-                new PesterCodeLensProvider(configurationService),
+                new PesterCodeLensProvider(configurationService)
             };
+
             foreach (ICodeLensProvider codeLensProvider in codeLensProviders)
             {
                 _codeLensProviders.TryAdd(codeLensProvider.ProviderId, codeLensProvider);
