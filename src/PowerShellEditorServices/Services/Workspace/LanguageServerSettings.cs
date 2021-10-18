@@ -404,11 +404,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
             if (settings is null) {
                 return;
             }
+
             if (this.CodeLens != settings.CodeLens)
             {
                 this.CodeLens = settings.CodeLens;
                 logger.LogTrace(string.Format("Using Pester Code Lens - {0}", this.CodeLens));
             }
+
             if (this.UseLegacyCodeLens != settings.UseLegacyCodeLens)
             {
                 this.UseLegacyCodeLens = settings.UseLegacyCodeLens;
