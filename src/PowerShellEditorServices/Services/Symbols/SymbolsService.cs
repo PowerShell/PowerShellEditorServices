@@ -57,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _workspaceService = workspaceService;
 
             _codeLensProviders = new ConcurrentDictionary<string, ICodeLensProvider>();
-            var codeLensProviders = new List<ICodeLensProvider>
+            var codeLensProviders = new ICodeLensProvider[]
             {
                 new ReferencesCodeLensProvider(_workspaceService, this),
                 new PesterCodeLensProvider(configurationService)
