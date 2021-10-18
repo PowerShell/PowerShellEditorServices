@@ -401,15 +401,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
             PesterSettings settings,
             ILogger logger)
         {
-            if (settings != null) {
-                if (this.CodeLens != settings.CodeLens) {
-                    this.CodeLens = settings.CodeLens;
-                    logger.LogTrace(string.Format("Using Pester Code Lens - {0}", this.CodeLens));
-                }
-                if (this.UseLegacyCodeLens != settings.UseLegacyCodeLens) {
-                    this.UseLegacyCodeLens = settings.UseLegacyCodeLens;
-                    logger.LogTrace(string.Format("Using Pester Legacy Code Lens - {0}", this.UseLegacyCodeLens));
-                }
+            if (settings is null) {
+                return;
+            }
+            if (this.CodeLens != settings.CodeLens)
+            {
+                this.CodeLens = settings.CodeLens;
+                logger.LogTrace(string.Format("Using Pester Code Lens - {0}", this.CodeLens));
+            }
+            if (this.UseLegacyCodeLens != settings.UseLegacyCodeLens)
+            {
+                this.UseLegacyCodeLens = settings.UseLegacyCodeLens;
+                logger.LogTrace(string.Format("Using Pester Legacy Code Lens - {0}", this.UseLegacyCodeLens));
             }
         }
     }
