@@ -1,5 +1,12 @@
 # PowerShell Editor Services Release History
 
+## v2.5.2
+### Monday, October 18, 2021
+
+- ✨ 👷 [PowerShellEditorServices #1589](https://github.com/PowerShell/PowerShellEditorServices/pull/1589) - Remove `BinClean` dependency from build task. (Thanks @JustinGrote!)
+- #️⃣ 🙏 [PowerShellEditorServices #1585](https://github.com/PowerShell/PowerShellEditorServices/pull/1585) - Setting to Disable Pester Code Lens. (Thanks @JustinGrote!)
+- #️⃣ 🙏 [PowerShellEditorServices #1578](https://github.com/PowerShell/PowerShellEditorServices/pull/1578) - Fix typo in comments. (Thanks @glennsarti!)
+
 ## v2.5.1
 ### Tuesday, September 07, 2021
 
