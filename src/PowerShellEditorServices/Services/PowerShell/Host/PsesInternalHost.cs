@@ -471,7 +471,39 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 task.ExecuteSynchronously(CancellationToken.None);
             }
 
-            RunExecutionLoop();
+            if (_hostInfo.ConsoleReplEnabled)
+            {
+                RunExecutionLoop();
+            }
+            else
+            {
+                RunNoPromptExecutionLoop();
+            }
+        }
+
+        private void RunNoPromptExecutionLoop()
+        {
+            while (!_shouldExit)
+            {
+                using (CancellationScope cancellationScope = _cancellationContext.EnterScope(isIdleScope: false))
+                {
+                    string taskRepresentation = null;
+                    try
+                    {
+                        ISynchronousTask task = _taskQueue.Take(cancellationScope.CancellationToken);
+                        taskRepresentation = task.ToString();
+                        task.ExecuteSynchronously(cancellationScope.CancellationToken);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // Just continue
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, $"Fatal exception occurred with task '{taskRepresentation ?? "<null task>"}'");
+                    }
+                }
+            }
         }
 
         private void RunDebugExecutionLoop()
