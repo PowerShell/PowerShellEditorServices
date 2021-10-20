@@ -107,7 +107,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         public void SetDebugResuming(DebuggerResumeAction debuggerResumeAction)
         {
             _psesHost.SetExit();
-            LastStopEventArgs.ResumeAction = debuggerResumeAction;
+
+            if (LastStopEventArgs is not null)
+            {
+                LastStopEventArgs.ResumeAction = debuggerResumeAction;
+            }
+
             // We need to tell whatever is happening right now in the debug prompt to wrap up so we can continue
             _psesHost.CancelCurrentTask();
         }

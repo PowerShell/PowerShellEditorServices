@@ -45,6 +45,8 @@ namespace PowerShellEditorServices.Test.E2E
             _serverStartInfo = serverStartInfo;
         }
 
+        public int ProcessId => _serverProcess.Id;
+
         /// <summary>
         ///     The process ID of the server process, useful for attaching a debugger.
         /// </summary>
@@ -104,6 +106,7 @@ namespace PowerShellEditorServices.Test.E2E
             _serverStartInfo.UseShellExecute = false;
             _serverStartInfo.RedirectStandardInput = true;
             _serverStartInfo.RedirectStandardOutput = true;
+            _serverStartInfo.RedirectStandardError = true;
 
             Process serverProcess = _serverProcess = new Process
             {
@@ -136,6 +139,8 @@ namespace PowerShellEditorServices.Test.E2E
             await ServerExitCompletion.Task.ConfigureAwait(false);
         }
 
+        public event EventHandler<ProcessExitedArgs> ProcessExited;
+
         /// <summary>
         ///     Called when the server process has exited.
         /// </summary>
@@ -149,9 +154,49 @@ namespace PowerShellEditorServices.Test.E2E
         {
             Log.LogDebug("Server process has exited.");
 
+            var serverProcess = (Process)sender;
+
+            int exitCode = serverProcess.ExitCode;
+            string errorMsg = serverProcess.StandardError.ReadToEnd();
+
             OnExited();
-            ServerExitCompletion.TrySetResult(null);
+            ProcessExited?.Invoke(this, new ProcessExitedArgs(exitCode, errorMsg));
+            if (exitCode != 0)
+            {
+                ServerExitCompletion.TrySetException(new ProcessExitedException("Stdio server process exited unexpectedly", exitCode, errorMsg));
+            }
+            else
+            {
+                ServerExitCompletion.TrySetResult(null);
+            }
             ServerStartCompletion = new TaskCompletionSource<object>();
         }
+    }
+
+    public class ProcessExitedException : Exception
+    {
+        public ProcessExitedException(string message, int exitCode, string errorMessage)
+            : base(message)
+        {
+            ExitCode = exitCode;
+            ErrorMessage = errorMessage;
+        }
+
+        public int ExitCode { get; init; }
+
+        public string ErrorMessage { get; init; }
+    }
+
+    public class ProcessExitedArgs : EventArgs
+    {
+        public ProcessExitedArgs(int exitCode, string errorMessage)
+        {
+            ExitCode = exitCode;
+            ErrorMessage = errorMessage;
+        }
+
+        public int ExitCode { get; init; }
+
+        public string ErrorMessage { get; init; }
     }
 }

@@ -92,7 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     _logger.LogTrace("Loading profiles...");
                 }
 
-                await _psesHost.StartAsync(new HostStartOptions(), CancellationToken.None).ConfigureAwait(false);
+                await _psesHost.TryStartAsync(new HostStartOptions { LoadProfiles = loadProfiles }, CancellationToken.None).ConfigureAwait(false);
 
                 if (loadProfiles)
                 {
