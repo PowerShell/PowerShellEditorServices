@@ -1199,6 +1199,8 @@ function CanSendGetCommentHelpRequest {
         [Fact]
         public async Task CanSendEvaluateRequestAsync()
         {
+            using var cancellationSource = new CancellationTokenSource(millisecondsDelay: 5000);
+
             EvaluateResponseBody evaluateResponseBody =
                 await PsesLanguageClient
                     .SendRequest<EvaluateRequestArguments>(
@@ -1207,7 +1209,7 @@ function CanSendGetCommentHelpRequest {
                         {
                             Expression = "Get-ChildItem"
                         })
-                    .Returning<EvaluateResponseBody>(CancellationToken.None).ConfigureAwait(false);
+                    .Returning<EvaluateResponseBody>(cancellationSource.Token).ConfigureAwait(false);
 
             // These always gets returned so this test really just makes sure we get _any_ response.
             Assert.Equal("", evaluateResponseBody.Result);
