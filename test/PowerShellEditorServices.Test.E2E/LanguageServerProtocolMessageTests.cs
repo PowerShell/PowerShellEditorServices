@@ -41,6 +41,7 @@ namespace PowerShellEditorServices.Test.E2E
         private readonly List<Diagnostic> Diagnostics;
         private readonly List<PsesTelemetryEvent> TelemetryEvents;
         private readonly string PwshExe;
+        private readonly LSPTestsFixture _fixture;
 
         public LanguageServerProtocolMessageTests(ITestOutputHelper output, LSPTestsFixture data)
         {
@@ -50,6 +51,7 @@ namespace PowerShellEditorServices.Test.E2E
             Diagnostics.Clear();
             TelemetryEvents = data.TelemetryEvents;
             TelemetryEvents.Clear();
+            _fixture = data;
 
             PwshExe = PsesStdioProcess.PwshExe;
         }

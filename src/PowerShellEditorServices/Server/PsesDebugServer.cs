@@ -3,6 +3,7 @@
 
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -28,7 +29,9 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
         private DebugAdapterServer _debugAdapterServer;
 
-        private PowerShellDebugContext _debugContext;
+        private PsesInternalHost _psesHost;
+
+        private bool _startedPses;
 
         protected readonly ILoggerFactory _loggerFactory;
 
@@ -61,8 +64,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
             {
                 // We need to let the PowerShell Context Service know that we are in a debug session
                 // so that it doesn't send the powerShell/startDebugger message.
-                _debugContext = ServiceProvider.GetService<PsesInternalHost>().DebugContext;
-                _debugContext.IsDebugServerActive = true;
+                _psesHost = ServiceProvider.GetService<PsesInternalHost>();
+                _psesHost.DebugContext.IsDebugServerActive = true;
 
                 options
                     .WithInput(_inputStream)
@@ -88,8 +91,11 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     // The OnInitialize delegate gets run when we first receive the _Initialize_ request:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
                     .OnInitialize(async (server, request, cancellationToken) => {
+                        // We need to make sure the host has been started
+                        _startedPses = !(await _psesHost.TryStartAsync(new HostStartOptions(), CancellationToken.None).ConfigureAwait(false));
+
                         // Ensure the debugger mode is set correctly - this is required for remote debugging to work
-                        _debugContext.EnableDebugMode();
+                        _psesHost.DebugContext.EnableDebugMode();
 
                         var breakpointService = server.GetService<BreakpointService>();
                         // Clear any existing breakpoints before proceeding
@@ -115,7 +121,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
             // Note that the lifetime of the DebugContext is longer than the debug server;
             // It represents the debugger on the PowerShell process we're in,
             // while a new debug server is spun up for every debugging session
-            _debugContext.IsDebugServerActive = false;
+            _psesHost.DebugContext.IsDebugServerActive = false;
             _debugAdapterServer.Dispose();
             _inputStream.Dispose();
             _outputStream.Dispose();
@@ -126,6 +132,13 @@ namespace Microsoft.PowerShell.EditorServices.Server
         public async Task WaitForShutdown()
         {
             await _serverStopped.Task.ConfigureAwait(false);
+
+            // If we started the host, we need to ensure any errors are marshalled back to us like this
+            if (_startedPses)
+            {
+                _psesHost.TriggerShutdown();
+                await _psesHost.Shutdown.ConfigureAwait(false);
+            }
         }
 
         #region Events

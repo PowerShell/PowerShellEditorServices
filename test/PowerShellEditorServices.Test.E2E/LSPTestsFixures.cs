@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -44,6 +45,7 @@ namespace PowerShellEditorServices.Test.E2E
             var factory = new LoggerFactory();
             _psesProcess = new PsesStdioProcess(factory, IsDebugAdapterTests);
             await _psesProcess.Start().ConfigureAwait(false);
+            //Debugger.Launch();
 
             Diagnostics = new List<Diagnostic>();
             TelemetryEvents = new List<PsesTelemetryEvent>();
