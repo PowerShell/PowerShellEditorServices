@@ -74,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
 
             var psesHost = new PsesInternalHost(loggerFactory, null, testHostDetails);
 
-            psesHost.StartAsync(new HostStartOptions { LoadProfiles = true }, CancellationToken.None).GetAwaiter().GetResult();
+            psesHost.TryStartAsync(new HostStartOptions { LoadProfiles = true }, CancellationToken.None).GetAwaiter().GetResult();
 
             return psesHost;
         }
