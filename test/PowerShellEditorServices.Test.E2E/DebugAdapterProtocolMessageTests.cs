@@ -263,7 +263,7 @@ namespace PowerShellEditorServices.Test.E2E
             string filePath = NewTestFile(string.Join(Environment.NewLine, new []
                 {
                     "Add-Type -AssemblyName System.Windows.Forms",
-                    "$form = New-Object System.Windows.Forms.Form",
+                    "$global:form = New-Object System.Windows.Forms.Form",
                     "Write-Host $form"
                 }));
 
