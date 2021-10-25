@@ -128,15 +128,15 @@ namespace PowerShellEditorServices.Test.E2E
         /// <summary>
         ///     Stop or disconnect from the server.
         /// </summary>
-        public override async Task Stop()
+        public override Task Stop()
         {
             Process serverProcess = Interlocked.Exchange(ref _serverProcess, null);
+            ServerExitCompletion.TrySetResult(null);
             if (serverProcess != null && !serverProcess.HasExited)
             {
                 serverProcess.Kill();
             }
-
-            await ServerExitCompletion.Task.ConfigureAwait(false);
+            return ServerExitCompletion.Task;
         }
 
         public event EventHandler<ProcessExitedArgs> ProcessExited;
