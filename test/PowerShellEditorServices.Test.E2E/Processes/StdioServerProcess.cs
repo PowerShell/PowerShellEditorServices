@@ -78,12 +78,12 @@ namespace PowerShellEditorServices.Test.E2E
         /// <summary>
         ///     The server's input stream.
         /// </summary>
-        public override Stream InputStream => _serverProcess?.StandardInput?.BaseStream;
+        protected override Stream GetInputStream() => _serverProcess?.StandardInput?.BaseStream;
 
         /// <summary>
         ///     The server's output stream.
         /// </summary>
-        public override Stream OutputStream => _serverProcess?.StandardOutput?.BaseStream;
+        protected override Stream GetOutputStream() => _serverProcess?.StandardOutput?.BaseStream;
 
         /// <summary>
         ///     Start or connect to the server.
