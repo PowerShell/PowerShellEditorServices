@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -36,7 +37,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _executionService.ExecutePSCommandAsync(
                 new PSCommand().AddScript(request.Expression),
                 CancellationToken.None,
-                new PowerShellExecutionOptions { WriteInputToHost = true, WriteOutputToHost = true, AddToHistory = true, ThrowOnError = false, InterruptCurrentForeground = true });
+                new PowerShellExecutionOptions { WriteInputToHost = true, WriteOutputToHost = true, AddToHistory = true, ThrowOnError = false, InterruptCurrentForeground = true })
+                .HandleErrorsAsync(_logger);
 
             return Task.FromResult(new EvaluateResponseBody
             {
