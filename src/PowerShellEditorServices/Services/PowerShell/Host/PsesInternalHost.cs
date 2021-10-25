@@ -103,7 +103,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             Version = hostInfo.Version;
 
             DebugContext = new PowerShellDebugContext(loggerFactory, languageServer, this);
-            UI = new EditorServicesConsolePSHostUserInterface(loggerFactory, _readLineProvider, hostInfo.PSHost.UI);
+            UI = hostInfo.ConsoleReplEnabled
+                ? new EditorServicesConsolePSHostUserInterface(loggerFactory, _readLineProvider, hostInfo.PSHost.UI)
+                : new NullPSHostUI();
         }
 
         public override CultureInfo CurrentCulture => _hostInfo.PSHost.CurrentCulture;
@@ -590,6 +592,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void DoOneRepl(CancellationToken cancellationToken)
         {
+            if (!_hostInfo.ConsoleReplEnabled)
+            {
+                return;
+            }
+
             // When a task must run in the foreground, we cancel out of the idle loop and return to the top level.
             // At that point, we would normally run a REPL, but we need to immediately execute the task.
             // So we set _skipNextPrompt to do that.
