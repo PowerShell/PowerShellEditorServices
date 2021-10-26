@@ -3,21 +3,24 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
+using System.Management.Automation;
+using System.Management.Automation.Host;
 using System.Management.Automation.Runspaces;
+using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Hosting;
-using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Test
 {
-    internal static class PowerShellContextFactory
+    internal static class PsesHostFactory
     {
         // NOTE: These paths are arbitrarily chosen just to verify that the profile paths
         //       can be set to whatever they need to be for the given host.
@@ -38,10 +41,8 @@ namespace Microsoft.PowerShell.EditorServices.Test
 
         public static System.Management.Automation.Runspaces.Runspace InitialRunspace;
 
-        public static PowerShellContextService Create(ILogger logger)
+        public static PsesInternalHost Create(ILoggerFactory loggerFactory)
         {
-            PowerShellContextService powerShellContext = new PowerShellContextService(logger, null, isPSReadLineEnabled: false);
-
             // We intentionally use `CreateDefault2()` as it loads `Microsoft.PowerShell.Core` only,
             // which is a more minimal and therefore safer state.
             var initialSessionState = InitialSessionState.CreateDefault2();
@@ -60,66 +61,23 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 "PowerShell Editor Services Test Host",
                 "Test.PowerShellEditorServices",
                 new Version("1.0.0"),
-                null,
+                psHost: null,
                 TestProfilePaths,
-                new List<string>(),
-                new List<string>(),
+                featureFlags: Array.Empty<string>(),
+                additionalModules: Array.Empty<string>(),
                 initialSessionState,
-                null,
-                0,
+                logPath: null,
+                (int)LogLevel.None,
                 consoleReplEnabled: false,
                 usesLegacyReadLine: false,
                 bundledModulePath: BundledModulePath);
 
-            InitialRunspace = PowerShellContextService.CreateTestRunspace(
-                    testHostDetails,
-                    powerShellContext,
-                    new TestPSHostUserInterface(powerShellContext, logger),
-                    logger);
+            var psesHost = new PsesInternalHost(loggerFactory, null, testHostDetails);
 
-            powerShellContext.Initialize(
-                TestProfilePaths,
-                InitialRunspace,
-                ownsInitialRunspace: true,
-                consoleHost: null);
+            psesHost.TryStartAsync(new HostStartOptions { LoadProfiles = true }, CancellationToken.None).GetAwaiter().GetResult();
 
-            return powerShellContext;
-        }
-    }
-
-    internal class TestPSHostUserInterface : EditorServicesPSHostUserInterface
-    {
-        public TestPSHostUserInterface(
-            PowerShellContextService powerShellContext,
-            ILogger logger)
-            : base(
-                powerShellContext,
-                new SimplePSHostRawUserInterface(logger),
-                NullLogger.Instance)
-        {
-        }
-
-        public override void WriteOutput(string outputString, bool includeNewLine, OutputType outputType, ConsoleColor foregroundColor, ConsoleColor backgroundColor)
-        {
-        }
-
-        protected override ChoicePromptHandler OnCreateChoicePromptHandler()
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override InputPromptHandler OnCreateInputPromptHandler()
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override Task<string> ReadCommandLineAsync(CancellationToken cancellationToken)
-        {
-            return Task.FromResult("USER COMMAND");
-        }
-
-        protected override void UpdateProgress(long sourceId, ProgressDetails progressDetails)
-        {
+            return psesHost;
         }
     }
 }
+

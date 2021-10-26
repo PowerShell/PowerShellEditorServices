@@ -4,11 +4,11 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Console
 {
+    /*
     public class ChoicePromptHandlerTests
     {
         private readonly ChoiceDetails[] Choices =
@@ -121,5 +121,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             this.TimesPrompted++;
         }
     }
+    */
 }
 

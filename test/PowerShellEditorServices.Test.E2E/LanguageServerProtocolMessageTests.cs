@@ -24,6 +24,8 @@ using Xunit.Abstractions;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.Template;
 
 namespace PowerShellEditorServices.Test.E2E
 {
@@ -39,6 +41,7 @@ namespace PowerShellEditorServices.Test.E2E
         private readonly List<Diagnostic> Diagnostics;
         private readonly List<PsesTelemetryEvent> TelemetryEvents;
         private readonly string PwshExe;
+        private readonly LSPTestsFixture _fixture;
 
         public LanguageServerProtocolMessageTests(ITestOutputHelper output, LSPTestsFixture data)
         {
@@ -48,6 +51,7 @@ namespace PowerShellEditorServices.Test.E2E
             Diagnostics.Clear();
             TelemetryEvents = data.TelemetryEvents;
             TelemetryEvents.Clear();
+            _fixture = data;
 
             PwshExe = PsesStdioProcess.PwshExe;
         }
@@ -1151,6 +1155,8 @@ function CanSendGetCommentHelpRequest {
         [Fact]
         public async Task CanSendEvaluateRequestAsync()
         {
+            using var cancellationSource = new CancellationTokenSource(millisecondsDelay: 5000);
+
             EvaluateResponseBody evaluateResponseBody =
                 await PsesLanguageClient
                     .SendRequest<EvaluateRequestArguments>(
@@ -1159,7 +1165,7 @@ function CanSendGetCommentHelpRequest {
                         {
                             Expression = "Get-ChildItem"
                         })
-                    .Returning<EvaluateResponseBody>(CancellationToken.None).ConfigureAwait(false);
+                    .Returning<EvaluateResponseBody>(cancellationSource.Token).ConfigureAwait(false);
 
             // These always gets returned so this test really just makes sure we get _any_ response.
             Assert.Equal("", evaluateResponseBody.Result);

@@ -57,9 +57,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private readonly IdempotentLatch _isRunningLatch = new();
 
+        private readonly TaskCompletionSource<bool> _started = new();
+
+        private readonly TaskCompletionSource<bool> _stopped = new();
+
         private EngineIntrinsics _mainRunspaceEngineIntrinsics;
 
         private bool _shouldExit = false;
+
+        private int _shuttingDown = 0;
 
         private string _localComputerName;
 
@@ -90,14 +96,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 Name = "PSES Pipeline Execution Thread",
             };
 
-            _pipelineThread.SetApartmentState(ApartmentState.STA);
+            if (VersionUtils.IsWindows)
+            {
+                _pipelineThread.SetApartmentState(ApartmentState.STA);
+            }
 
             PublicHost = new EditorServicesConsolePSHost(this);
             Name = hostInfo.Name;
             Version = hostInfo.Version;
 
             DebugContext = new PowerShellDebugContext(loggerFactory, languageServer, this);
-            UI = new EditorServicesConsolePSHostUserInterface(loggerFactory, _readLineProvider, hostInfo.PSHost.UI);
+            UI = hostInfo.ConsoleReplEnabled
+                ? new EditorServicesConsolePSHostUserInterface(loggerFactory, _readLineProvider, hostInfo.PSHost.UI)
+                : new NullPSHostUI();
         }
 
         public override CultureInfo CurrentCulture => _hostInfo.PSHost.CurrentCulture;
@@ -128,11 +139,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public string InitialWorkingDirectory { get; private set; }
 
+        public Task Shutdown => _stopped.Task;
+
         IRunspaceInfo IRunspaceContext.CurrentRunspace => CurrentRunspace;
 
         private PowerShellContextFrame CurrentFrame => _psFrameStack.Peek();
 
         public event Action<object, RunspaceChangedEventArgs> RunspaceChanged;
+
+        private bool ShouldExitExecutionLoop => _shouldExit || _shuttingDown != 0;
 
         public override void EnterNestedPrompt()
         {
@@ -172,13 +187,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             SetExit();
         }
 
-        public async Task StartAsync(HostStartOptions startOptions, CancellationToken cancellationToken)
+        /// <summary>
+        /// Try to start the PowerShell loop in the host.
+        /// If the host is already started, this is idempotent.
+        /// Returns when the host is in a valid initialized state.
+        /// </summary>
+        /// <param name="startOptions">Options to configure host startup.</param>
+        /// <param name="cancellationToken">A token to cancel startup.</param>
+        /// <returns>A task that resolves when the host has finished startup, with the value true if the caller started the host, and false otherwise.</returns>
+        public async Task<bool> TryStartAsync(HostStartOptions startOptions, CancellationToken cancellationToken)
         {
             _logger.LogInformation("Host starting");
             if (!_isRunningLatch.TryEnter())
             {
-                _logger.LogDebug("Host start requested after already started");
-                return;
+                _logger.LogDebug("Host start requested after already started.");
+                await _started.Task.ConfigureAwait(false);
+                return false;
             }
 
             _pipelineThread.Start();
@@ -198,6 +222,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             {
                 await SetInitialWorkingDirectoryAsync(startOptions.InitialWorkingDirectory, CancellationToken.None).ConfigureAwait(false);
             }
+
+            await _started.Task.ConfigureAwait(false);
+            return true;
+        }
+
+        public void TriggerShutdown()
+        {
+            Interlocked.Exchange(ref _shuttingDown, 1);
+            _cancellationContext.CancelCurrentTaskStack();
         }
 
         public void SetExit()
@@ -349,11 +382,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void Run()
         {
-            (PowerShell pwsh, RunspaceInfo localRunspaceInfo, EngineIntrinsics engineIntrinsics) = CreateInitialPowerShellSession();
-            _mainRunspaceEngineIntrinsics = engineIntrinsics;
-            _localComputerName = localRunspaceInfo.SessionDetails.ComputerName;
-            _runspaceStack.Push(new RunspaceFrame(pwsh.Runspace, localRunspaceInfo));
-            PushPowerShellAndRunLoop(pwsh, PowerShellFrameType.Normal, localRunspaceInfo);
+            try
+            {
+                (PowerShell pwsh, RunspaceInfo localRunspaceInfo, EngineIntrinsics engineIntrinsics) = CreateInitialPowerShellSession();
+                _mainRunspaceEngineIntrinsics = engineIntrinsics;
+                _localComputerName = localRunspaceInfo.SessionDetails.ComputerName;
+                _runspaceStack.Push(new RunspaceFrame(pwsh.Runspace, localRunspaceInfo));
+                PushPowerShellAndRunLoop(pwsh, PowerShellFrameType.Normal, localRunspaceInfo);
+            }
+            catch (Exception e)
+            {
+                _started.TrySetException(e);
+                _stopped.TrySetException(e);
+            }
         }
 
         private (PowerShell, RunspaceInfo, EngineIntrinsics) CreateInitialPowerShellSession()
@@ -465,13 +506,60 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void RunTopLevelExecutionLoop()
         {
-            // Make sure we execute any startup tasks first
-            while (_taskQueue.TryTake(out ISynchronousTask task))
+            try
             {
-                task.ExecuteSynchronously(CancellationToken.None);
+                // Make sure we execute any startup tasks first
+                while (_taskQueue.TryTake(out ISynchronousTask task))
+                {
+                    task.ExecuteSynchronously(CancellationToken.None);
+                }
+
+                // Signal that we are ready for outside services to use
+                _started.TrySetResult(true);
+
+                if (_hostInfo.ConsoleReplEnabled)
+                {
+                    RunExecutionLoop();
+                }
+                else
+                {
+                    RunNoPromptExecutionLoop();
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "PSES pipeline thread loop experienced an unexpected top-level exception");
+                _stopped.TrySetException(e);
+                return;
             }
 
-            RunExecutionLoop();
+            _logger.LogInformation("PSES pipeline thread loop shutting down");
+            _stopped.SetResult(true);
+        }
+
+        private void RunNoPromptExecutionLoop()
+        {
+            while (!ShouldExitExecutionLoop)
+            {
+                using (CancellationScope cancellationScope = _cancellationContext.EnterScope(isIdleScope: false))
+                {
+                    string taskRepresentation = null;
+                    try
+                    {
+                        ISynchronousTask task = _taskQueue.Take(cancellationScope.CancellationToken);
+                        taskRepresentation = task.ToString();
+                        task.ExecuteSynchronously(cancellationScope.CancellationToken);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // Just continue
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, $"Fatal exception occurred with task '{taskRepresentation ?? "<null task>"}'");
+                    }
+                }
+            }
         }
 
         private void RunDebugExecutionLoop()
@@ -489,13 +577,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void RunExecutionLoop()
         {
-            while (!_shouldExit)
+            while (!ShouldExitExecutionLoop)
             {
                 using (CancellationScope cancellationScope = _cancellationContext.EnterScope(isIdleScope: false))
                 {
                     DoOneRepl(cancellationScope.CancellationToken);
 
-                    while (!_shouldExit
+                    while (!ShouldExitExecutionLoop
                         && !cancellationScope.CancellationToken.IsCancellationRequested
                         && _taskQueue.TryTake(out ISynchronousTask task))
                     {
@@ -507,6 +595,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void DoOneRepl(CancellationToken cancellationToken)
         {
+            if (!_hostInfo.ConsoleReplEnabled)
+            {
+                return;
+            }
+
             // When a task must run in the foreground, we cancel out of the idle loop and return to the top level.
             // At that point, we would normally run a REPL, but we need to immediately execute the task.
             // So we set _skipNextPrompt to do that.
@@ -774,7 +867,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void OnRunspaceStateChanged(object sender, RunspaceStateEventArgs runspaceStateEventArgs)
         {
-            if (!_shouldExit && !_resettingRunspace && !runspaceStateEventArgs.RunspaceStateInfo.IsUsable())
+            if (!ShouldExitExecutionLoop && !_resettingRunspace && !runspaceStateEventArgs.RunspaceStateInfo.IsUsable())
             {
                 _resettingRunspace = true;
                 PopOrReinitializeRunspaceAsync().HandleErrorsAsync(_logger);

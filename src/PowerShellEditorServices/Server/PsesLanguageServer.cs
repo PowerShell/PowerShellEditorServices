@@ -10,6 +10,7 @@ using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Extension;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.Template;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Server;
@@ -31,6 +32,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
         private readonly Stream _outputStream;
         private readonly HostStartupInfo _hostDetails;
         private readonly TaskCompletionSource<bool> _serverStart;
+
+        private PsesInternalHost _psesHost;
 
         /// <summary>
         /// Create a new language server instance.
@@ -75,8 +78,12 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 options
                     .WithInput(_inputStream)
                     .WithOutput(_outputStream)
-                    .WithServices(serviceCollection => serviceCollection
-                        .AddPsesLanguageServices(_hostDetails)) // NOTE: This adds a lot of services!
+                    .WithServices(serviceCollection =>
+                    {
+
+                        // NOTE: This adds a lot of services!
+                        serviceCollection.AddPsesLanguageServices(_hostDetails);
+                    })
                     .ConfigureLogging(builder => builder
                         .AddSerilog(Log.Logger) // TODO: Set dispose to true?
                         .AddLanguageProtocolLogging()
@@ -116,6 +123,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
                             IServiceProvider serviceProvider = languageServer.Services;
 
+                            _psesHost = serviceProvider.GetService<PsesInternalHost>();
+
                             var workspaceService = serviceProvider.GetService<WorkspaceService>();
 
                             // Grab the workspace path from the parameters
@@ -150,6 +159,10 @@ namespace Microsoft.PowerShell.EditorServices.Server
             Log.Logger.Debug("Shutting down OmniSharp Language Server");
             await _serverStart.Task.ConfigureAwait(false);
             await LanguageServer.WaitForExit.ConfigureAwait(false);
+
+            // Doing this means we're able to route through any exceptions experienced on the pipeline thread
+            _psesHost.TriggerShutdown();
+            await _psesHost.Shutdown.ConfigureAwait(false);
         }
     }
 }

@@ -45,6 +45,8 @@ namespace PowerShellEditorServices.Test.E2E
             _serverStartInfo = serverStartInfo;
         }
 
+        public int ProcessId => _serverProcess.Id;
+
         /// <summary>
         ///     Dispose of resources being used by the launcher.
         /// </summary>
@@ -76,12 +78,12 @@ namespace PowerShellEditorServices.Test.E2E
         /// <summary>
         ///     The server's input stream.
         /// </summary>
-        public override Stream InputStream => _serverProcess?.StandardInput?.BaseStream;
+        protected override Stream GetInputStream() => _serverProcess?.StandardInput?.BaseStream;
 
         /// <summary>
         ///     The server's output stream.
         /// </summary>
-        public override Stream OutputStream => _serverProcess?.StandardOutput?.BaseStream;
+        protected override Stream GetOutputStream() => _serverProcess?.StandardOutput?.BaseStream;
 
         /// <summary>
         ///     Start or connect to the server.
@@ -94,6 +96,7 @@ namespace PowerShellEditorServices.Test.E2E
             _serverStartInfo.UseShellExecute = false;
             _serverStartInfo.RedirectStandardInput = true;
             _serverStartInfo.RedirectStandardOutput = true;
+            _serverStartInfo.RedirectStandardError = true;
 
             Process serverProcess = _serverProcess = new Process
             {
@@ -115,16 +118,18 @@ namespace PowerShellEditorServices.Test.E2E
         /// <summary>
         ///     Stop or disconnect from the server.
         /// </summary>
-        public override async Task Stop()
+        public override Task Stop()
         {
             Process serverProcess = Interlocked.Exchange(ref _serverProcess, null);
+            ServerExitCompletion.TrySetResult(null);
             if (serverProcess != null && !serverProcess.HasExited)
             {
                 serverProcess.Kill();
             }
-
-            await ServerExitCompletion.Task.ConfigureAwait(false);
+            return ServerExitCompletion.Task;
         }
+
+        public event EventHandler<ProcessExitedArgs> ProcessExited;
 
         /// <summary>
         ///     Called when the server process has exited.
@@ -139,9 +144,49 @@ namespace PowerShellEditorServices.Test.E2E
         {
             Log.LogDebug("Server process has exited.");
 
+            var serverProcess = (Process)sender;
+
+            int exitCode = serverProcess.ExitCode;
+            string errorMsg = serverProcess.StandardError.ReadToEnd();
+
             OnExited();
-            ServerExitCompletion.TrySetResult(null);
+            ProcessExited?.Invoke(this, new ProcessExitedArgs(exitCode, errorMsg));
+            if (exitCode != 0)
+            {
+                ServerExitCompletion.TrySetException(new ProcessExitedException("Stdio server process exited unexpectedly", exitCode, errorMsg));
+            }
+            else
+            {
+                ServerExitCompletion.TrySetResult(null);
+            }
             ServerStartCompletion = new TaskCompletionSource<object>();
         }
+    }
+
+    public class ProcessExitedException : Exception
+    {
+        public ProcessExitedException(string message, int exitCode, string errorMessage)
+            : base(message)
+        {
+            ExitCode = exitCode;
+            ErrorMessage = errorMessage;
+        }
+
+        public int ExitCode { get; init; }
+
+        public string ErrorMessage { get; init; }
+    }
+
+    public class ProcessExitedArgs : EventArgs
+    {
+        public ProcessExitedArgs(int exitCode, string errorMessage)
+        {
+            ExitCode = exitCode;
+            ErrorMessage = errorMessage;
+        }
+
+        public int ExitCode { get; init; }
+
+        public string ErrorMessage { get; init; }
     }
 }

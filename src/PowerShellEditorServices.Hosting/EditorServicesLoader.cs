@@ -120,6 +120,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             {
                 AppDomain.CurrentDomain.AssemblyLoad += (object sender, AssemblyLoadEventArgs args) =>
                 {
+                    if (args.LoadedAssembly.IsDynamic)
+                    {
+                        return;
+                    }
+
                     logger.Log(
                         PsesLogLevel.Diagnostic,
                         $"Loaded '{args.LoadedAssembly.GetName()}' from '{args.LoadedAssembly.Location}'");
