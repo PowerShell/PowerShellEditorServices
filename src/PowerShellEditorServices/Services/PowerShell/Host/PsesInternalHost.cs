@@ -96,7 +96,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 Name = "PSES Pipeline Execution Thread",
             };
 
-            _pipelineThread.SetApartmentState(ApartmentState.STA);
+            if (VersionUtils.IsWindows)
+            {
+                _pipelineThread.SetApartmentState(ApartmentState.STA);
+            }
 
             PublicHost = new EditorServicesConsolePSHost(this);
             Name = hostInfo.Name;
