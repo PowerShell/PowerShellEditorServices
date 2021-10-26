@@ -46,9 +46,6 @@ namespace PowerShellEditorServices.Test.E2E
             var factory = new LoggerFactory();
             _psesProcess = new PsesStdioProcess(factory, IsDebugAdapterTests);
             await _psesProcess.Start().ConfigureAwait(false);
-            Console.WriteLine("PowerShell Editor Services Server started with PID {0}", ProcessId);
-            // TIP: Add Breakpoint here and attach debugger using the PID from the above message
-            //Debugger.Launch();
 
             Diagnostics = new List<Diagnostic>();
             TelemetryEvents = new List<PsesTelemetryEvent>();
