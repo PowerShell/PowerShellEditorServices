@@ -246,18 +246,11 @@ namespace PowerShellEditorServices.Test.E2E
         // to be created, breaking the extension. It's most evident when debugging PowerShell
         // scripts that use System.Windows.Forms. It required fixing both Editor Services and
         // OmniSharp.
-        //
-        // This test depends on PowerShell being able to load System.Windows.Forms, which only works
-        // reliably with Windows PowerShell. It works with PowerShell Core in the real-world;
-        // however, our host executable is xUnit, not PowerShell. So by restricting to Windows
-        // PowerShell, we avoid all issues with our test project (and the xUnit executable) not
-        // having System.Windows.Forms deployed, and can instead rely on the Windows Global Assembly
-        // Cache (GAC) to find it.
         [Trait("Category", "DAP")]
         [SkippableFact]
         public async Task CanStepPastSystemWindowsForms()
         {
-            Skip.IfNot(PsesStdioProcess.IsWindowsPowerShell);
+            Skip.IfNot(s_isWindows);
             Skip.If(PsesStdioProcess.RunningInConstainedLanguageMode);
 
             string filePath = NewTestFile(string.Join(Environment.NewLine, new []
