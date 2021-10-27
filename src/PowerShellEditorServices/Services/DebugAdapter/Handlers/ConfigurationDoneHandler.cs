@@ -140,42 +140,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 await _executionService
                     .ExecutePSCommandAsync(
-                        BuildPSCommandFromArguments(scriptToLaunch, _debugStateService.Arguments),
+                        PSCommandHelpers.BuildPSCommandFromArguments(scriptToLaunch, _debugStateService.Arguments),
                         CancellationToken.None,
                         s_debuggerExecutionOptions)
                     .ConfigureAwait(false);
             }
 
             _debugAdapterServer.SendNotification(EventNames.Terminated);
-        }
-
-        private static PSCommand BuildPSCommandFromArguments(string command, IReadOnlyList<string> arguments)
-        {
-            if (arguments is null or { Count: 0 })
-            {
-                return new PSCommand().AddCommand(command);
-            }
-
-            // We are forced to use a hack here so that we can reuse PowerShell's parameter binding
-            var sb = new StringBuilder()
-                .Append("& ")
-                .Append(StringEscaping.SingleQuoteAndEscape(command));
-
-            foreach (string arg in arguments)
-            {
-                sb.Append(' ');
-
-                if (StringEscaping.PowerShellArgumentNeedsEscaping(arg))
-                {
-                    sb.Append(StringEscaping.SingleQuoteAndEscape(arg));
-                }
-                else
-                {
-                    sb.Append(arg);
-                }
-            }
-
-            return new PSCommand().AddScript(sb.ToString());
         }
     }
 }

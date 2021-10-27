@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
@@ -10,11 +11,11 @@ using System.Text;
 
 namespace Microsoft.PowerShell.EditorServices.Utility
 {
-    internal static class PSCommandExtensions
+    internal static class PSCommandHelpers
     {
         private static readonly Func<CommandInfo, Command> s_commandCtor;
 
-        static PSCommandExtensions()
+        static PSCommandHelpers()
         {
             var ctor = typeof(Command).GetConstructor(
                 BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
@@ -28,6 +29,35 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 Expression.New(ctor, commandInfo),
                 new[] { commandInfo })
                 .Compile();
+        }
+
+        public static PSCommand BuildPSCommandFromArguments(string command, IReadOnlyList<string> arguments)
+        {
+            if (arguments is null or { Count: 0 })
+            {
+                return new PSCommand().AddCommand(command);
+            }
+
+            // We are forced to use a hack here so that we can reuse PowerShell's parameter binding
+            var sb = new StringBuilder()
+                .Append("& ")
+                .Append(StringEscaping.SingleQuoteAndEscape(command));
+
+            foreach (string arg in arguments)
+            {
+                sb.Append(' ');
+
+                if (StringEscaping.PowerShellArgumentNeedsEscaping(arg))
+                {
+                    sb.Append(StringEscaping.SingleQuoteAndEscape(arg));
+                }
+                else
+                {
+                    sb.Append(arg);
+                }
+            }
+
+            return new PSCommand().AddScript(sb.ToString());
         }
 
         // PowerShell's missing an API for us to AddCommand using a CommandInfo.
