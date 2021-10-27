@@ -54,7 +54,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
         public void Dispose()
         {
-            // TODO: Dispose of the host
             _psesHost.StopAsync().GetAwaiter().GetResult();
         }
 
