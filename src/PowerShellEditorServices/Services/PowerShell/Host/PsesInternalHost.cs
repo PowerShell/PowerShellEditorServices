@@ -227,10 +227,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return true;
         }
 
+        public Task StopAsync()
+        {
+            TriggerShutdown();
+            return Shutdown;
+        }
+
         public void TriggerShutdown()
         {
-            Interlocked.Exchange(ref _shuttingDown, 1);
-            _cancellationContext.CancelCurrentTaskStack();
+            if (Interlocked.Exchange(ref _shuttingDown, 1) == 0)
+            {
+                _cancellationContext.CancelCurrentTaskStack();
+            }
         }
 
         public void SetExit()

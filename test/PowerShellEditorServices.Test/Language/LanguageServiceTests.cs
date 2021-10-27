@@ -27,7 +27,6 @@ using Xunit.Abstractions;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Language
 {
-    /*
     public class LanguageServiceTests : IDisposable
     {
         private readonly WorkspaceService workspace;
@@ -55,7 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
         public void Dispose()
         {
-            // TODO: Dispose of the host
+            _psesHost.StopAsync().GetAwaiter().GetResult();
         }
 
         [Trait("Category", "Completions")]
@@ -526,5 +525,4 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                     GetScriptFile(scriptRegion));
         }
     }
-    */
 }
