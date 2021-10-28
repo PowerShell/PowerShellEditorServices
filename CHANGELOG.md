@@ -21,7 +21,7 @@ This lead to overhead, threading issues
 and a complex implementation intended to work around
 the asymmetry between PowerShell as a synchronous,
 single-threaded runtime and a language server
-as an asynchronous, multi-threader service.
+as an asynchronous, multi-threaded service.
 
 Now, PowerShell Editor Services maintains its own dedicated pipeline thread,
 which is able to service requests similar to JavaScript's event loop,
