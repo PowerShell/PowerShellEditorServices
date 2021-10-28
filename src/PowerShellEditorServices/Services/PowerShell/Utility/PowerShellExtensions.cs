@@ -9,7 +9,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System.Collections.Generic;
-using System.IO;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 {
@@ -166,10 +165,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         {
             var profileVariable = new PSObject();
 
-            pwsh.AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.AllUsersAllHosts), profilePaths.AllUsersAllHosts)
-                .AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.AllUsersCurrentHost), profilePaths.AllUsersCurrentHost)
-                .AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.CurrentUserAllHosts), profilePaths.CurrentUserAllHosts)
-                .AddProfileMemberAndLoadIfExists(profileVariable, nameof(profilePaths.CurrentUserCurrentHost), profilePaths.CurrentUserCurrentHost);
+            var psCommand = new PSCommand()
+                .AddProfileLoadIfExists(profileVariable, nameof(profilePaths.AllUsersAllHosts), profilePaths.AllUsersAllHosts)
+                .AddProfileLoadIfExists(profileVariable, nameof(profilePaths.AllUsersCurrentHost), profilePaths.AllUsersCurrentHost)
+                .AddProfileLoadIfExists(profileVariable, nameof(profilePaths.CurrentUserAllHosts), profilePaths.CurrentUserAllHosts)
+                .AddProfileLoadIfExists(profileVariable, nameof(profilePaths.CurrentUserCurrentHost), profilePaths.CurrentUserCurrentHost);
+
+            pwsh.InvokeCommand(psCommand);
 
             pwsh.Runspace.SessionStateProxy.SetVariable("PROFILE", profileVariable);
         }
@@ -198,22 +200,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             }
 
             return sb.ToString();
-        }
-
-        private static PowerShell AddProfileMemberAndLoadIfExists(this PowerShell pwsh, PSObject profileVariable, string profileName, string profilePath)
-        {
-            profileVariable.Members.Add(new PSNoteProperty(profileName, profilePath));
-
-            if (File.Exists(profilePath))
-            {
-                var psCommand = new PSCommand()
-                    .AddScript(profilePath, useLocalScope: false)
-                    .AddOutputCommand();
-
-                pwsh.InvokeCommand(psCommand);
-            }
-
-            return pwsh;
         }
 
         private static StringBuilder AddErrorString(this StringBuilder sb, ErrorRecord error, int errorIndex)
