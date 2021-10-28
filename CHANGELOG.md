@@ -1,5 +1,17 @@
 # PowerShell Editor Services Release History
 
+## v3.0.0
+### Thursday, October 28, 2021
+
+- #️⃣ 🙏 [PowerShellEditorServices #1598](https://github.com/PowerShell/PowerShellEditorServices/pull/1598) - Reinstate language service unit tests.
+- #️⃣ 🙏 [PowerShellEditorServices #1593](https://github.com/PowerShell/PowerShellEditorServices/pull/1593) - Remove defunct internal cmdlets.
+- #️⃣ 🙏 [PowerShellEditorServices #1588](https://github.com/PowerShell/PowerShellEditorServices/pull/1588) - Fix testing for pipeline consumer branch.
+- #️⃣ 🙏 [PowerShellEditorServices #1587](https://github.com/PowerShell/PowerShellEditorServices/pull/1587) - Convert PSRL OnIdle handler to take a CancellationToken.
+- 🐛 🚂 [PowerShellEditorServices #1436](https://github.com/PowerShell/PowerShellEditorServices/pull/1584) - Re-implement legacy readline support.
+- 🐛 🚂 [PowerShellEditorServices #1433](https://github.com/PowerShell/PowerShellEditorServices/pull/1581) - Implement OnIdle engine events.
+- #️⃣ 🙏 [PowerShellEditorServices #1580](https://github.com/PowerShell/PowerShellEditorServices/pull/1580) - Fix usings and copyright headers.
+- #️⃣ 🙏 [PowerShellEditorServices #1578](https://github.com/PowerShell/PowerShellEditorServices/pull/1578) - Fix typo in comments. (Thanks @glennsarti!)
+
 ## v2.5.1
 ### Tuesday, September 07, 2021
 
