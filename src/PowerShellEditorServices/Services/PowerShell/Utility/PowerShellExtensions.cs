@@ -170,7 +170,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 .AddProfileLoadIfExists(profileVariable, nameof(profilePaths.AllUsersCurrentHost), profilePaths.AllUsersCurrentHost)
                 .AddProfileLoadIfExists(profileVariable, nameof(profilePaths.CurrentUserAllHosts), profilePaths.CurrentUserAllHosts)
                 .AddProfileLoadIfExists(profileVariable, nameof(profilePaths.CurrentUserCurrentHost), profilePaths.CurrentUserCurrentHost)
-                .AddOutputCommand();
 
             pwsh.InvokeCommand(psCommand);
 

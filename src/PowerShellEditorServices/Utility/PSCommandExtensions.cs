@@ -70,6 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             {
                 psCommand
                     .AddCommand(profilePath, useLocalScope: false)
+                    .AddOutputCommand()
                     .AddStatement();
             }
 
