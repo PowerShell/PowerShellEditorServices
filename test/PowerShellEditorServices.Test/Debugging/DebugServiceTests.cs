@@ -76,10 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
         void debugService_DebuggerStopped(object sender, DebuggerStoppedEventArgs e)
         {
-            // We need to ensure this is run on a different thread than the one it's
-            // called on because it can cause PowerShellContext.OnDebuggerStopped to
-            // never hit the while loop.
-            Task.Run(() => _debuggerStoppedQueue.Add(e));
+            _debuggerStoppedQueue.Add(e);
         }
 
         public void Dispose()
