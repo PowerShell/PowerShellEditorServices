@@ -3,34 +3,36 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
+using MediatR;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
-using Microsoft.PowerShell.EditorServices.Utility;
+using Newtonsoft.Json.Linq;
+using OmniSharp.Extensions.JsonRpc;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Progress;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 {
+    /*
     public class DebugServiceTests : IDisposable
     {
         private WorkspaceService workspace;
         private DebugService debugService;
         private ScriptFile debugScriptFile;
         private ScriptFile variableScriptFile;
-        private PowerShellContextService powerShellContext;
-
-        private AsyncQueue<DebuggerStoppedEventArgs> debuggerStoppedQueue =
-            new AsyncQueue<DebuggerStoppedEventArgs>();
-        private AsyncQueue<SessionStateChangedEventArgs> sessionStateQueue =
-            new AsyncQueue<SessionStateChangedEventArgs>();
 
         private ScriptFile GetDebugScript(string fileName)
         {
@@ -44,6 +46,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
         public DebugServiceTests()
         {
+            var loggerFactory = new NullLoggerFactory();
+
             var logger = NullLogger.Instance;
 
             this.powerShellContext = PowerShellContextFactory.Create(logger);
@@ -1067,4 +1071,5 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
                         .AddParameter("Script", scriptFile.FilePath)).ConfigureAwait(false);
         }
     }
+    */
 }

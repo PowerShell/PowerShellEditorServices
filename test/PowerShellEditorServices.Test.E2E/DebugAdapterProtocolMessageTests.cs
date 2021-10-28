@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -44,6 +45,13 @@ namespace PowerShellEditorServices.Test.E2E
             await _psesProcess.Start().ConfigureAwait(false);
 
             var initialized = new TaskCompletionSource<bool>();
+
+            _psesProcess.ProcessExited += (sender, args) =>
+            {
+                initialized.TrySetException(new ProcessExitedException("Initialization failed due to process failure", args.ExitCode, args.ErrorMessage));
+                Started.TrySetException(new ProcessExitedException("Startup failed due to process failure", args.ExitCode, args.ErrorMessage));
+            };
+
             PsesDebugAdapterClient = DebugAdapterClient.Create(options =>
             {
                 options
@@ -61,6 +69,11 @@ namespace PowerShellEditorServices.Test.E2E
                         initialized.SetResult(true);
                         return Task.CompletedTask;
                     });
+
+                options.OnUnhandledException = (exception) => {
+                    initialized.SetException(exception);
+                    Started.SetException(exception);
+                };
             });
 
             // PSES follows the following flow:
@@ -250,7 +263,7 @@ namespace PowerShellEditorServices.Test.E2E
             string filePath = NewTestFile(string.Join(Environment.NewLine, new []
                 {
                     "Add-Type -AssemblyName System.Windows.Forms",
-                    "$form = New-Object System.Windows.Forms.Form",
+                    "$global:form = New-Object System.Windows.Forms.Form",
                     "Write-Host $form"
                 }));
 

@@ -8,7 +8,6 @@ using Xunit;
 using System;
 using System.Threading;
 using System.Security;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Console

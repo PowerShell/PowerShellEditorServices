@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Utility;
 using System.Management.Automation;
 
@@ -26,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// </summary>
         public bool IsRemoteSession
         {
-            get { return this.RunspaceDetails.Location == RunspaceLocation.Remote; }
+            get => RunspaceInfo.RunspaceOrigin != RunspaceOrigin.Local;
         }
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <summary>
         /// Gets the RunspaceDetails for the current runspace.
         /// </summary>
-        public RunspaceDetails RunspaceDetails { get; private set; }
+        public IRunspaceInfo RunspaceInfo { get; private set; }
 
         /// <summary>
         /// Gets the line number at which the debugger stopped execution.
@@ -77,8 +77,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <param name="runspaceDetails">The RunspaceDetails of the runspace which raised this event.</param>
         public DebuggerStoppedEventArgs(
             DebuggerStopEventArgs originalEvent,
-            RunspaceDetails runspaceDetails)
-            : this(originalEvent, runspaceDetails, null)
+            IRunspaceInfo runspaceInfo)
+            : this(originalEvent, runspaceInfo, null)
         {
         }
 
@@ -90,11 +90,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <param name="localScriptPath">The local path of the remote script being debugged.</param>
         public DebuggerStoppedEventArgs(
             DebuggerStopEventArgs originalEvent,
-            RunspaceDetails runspaceDetails,
+            IRunspaceInfo runspaceInfo,
             string localScriptPath)
         {
             Validate.IsNotNull(nameof(originalEvent), originalEvent);
-            Validate.IsNotNull(nameof(runspaceDetails), runspaceDetails);
+            Validate.IsNotNull(nameof(runspaceInfo), runspaceInfo);
 
             if (!string.IsNullOrEmpty(localScriptPath))
             {
@@ -107,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             }
 
             this.OriginalEvent = originalEvent;
-            this.RunspaceDetails = runspaceDetails;
+            this.RunspaceInfo = runspaceInfo;
         }
 
         #endregion

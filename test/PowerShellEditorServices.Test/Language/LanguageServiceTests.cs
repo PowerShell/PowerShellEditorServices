@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
@@ -31,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         private readonly WorkspaceService workspace;
         private readonly SymbolsService symbolsService;
         private readonly PsesCompletionHandler completionHandler;
-        private readonly PowerShellContextService powerShellContext;
+        private readonly PsesInternalHost _psesHost;
         private static readonly string s_baseSharedScriptPath =
             Path.Combine(
                     Path.GetDirectoryName(VersionUtils.IsWindows
@@ -44,16 +45,16 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
         public LanguageServiceTests()
         {
-            var logger = NullLogger.Instance;
-            powerShellContext = PowerShellContextFactory.Create(logger);
+            _psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
+
             workspace = new WorkspaceService(NullLoggerFactory.Instance);
-            symbolsService = new SymbolsService(NullLoggerFactory.Instance, powerShellContext, workspace, new ConfigurationService());
-            completionHandler = new PsesCompletionHandler(NullLoggerFactory.Instance, powerShellContext, workspace);
+            symbolsService = new SymbolsService(NullLoggerFactory.Instance, _psesHost, _psesHost, workspace, new ConfigurationService());
+            completionHandler = new PsesCompletionHandler(NullLoggerFactory.Instance, _psesHost, _psesHost, workspace);
         }
 
         public void Dispose()
         {
-            this.powerShellContext.Close();
+            _psesHost.StopAsync().GetAwaiter().GetResult();
         }
 
         [Trait("Category", "Completions")]
@@ -463,14 +464,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                     scriptRegion.StartColumnNumber).ConfigureAwait(false);
         }
 
-        private async Task<ParameterSetSignatures> GetParamSetSignatures(ScriptRegion scriptRegion)
+        private Task<ParameterSetSignatures> GetParamSetSignatures(ScriptRegion scriptRegion)
         {
-            return
-                await this.symbolsService.FindParameterSetsInFileAsync(
+            return this.symbolsService.FindParameterSetsInFileAsync(
                     GetScriptFile(scriptRegion),
                     scriptRegion.StartLineNumber,
-                    scriptRegion.StartColumnNumber,
-                    powerShellContext).ConfigureAwait(false);
+                    scriptRegion.StartColumnNumber);
         }
 
         private async Task<SymbolReference> GetDefinition(ScriptRegion scriptRegion)

@@ -8,14 +8,6 @@ variables:
   - name: DOTNET_CLI_TELEMETRY_OPTOUT
     value: 'true'
 
-trigger:
-  branches:
-    include:
-      - master
-
-pr:
-- master
-
 jobs:
 - job: PS51_Win2016
   displayName: PowerShell 5.1 - Windows Server 2016

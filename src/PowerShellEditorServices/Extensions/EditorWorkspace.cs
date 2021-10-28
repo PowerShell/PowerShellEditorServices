@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Threading.Tasks;
-
 namespace Microsoft.PowerShell.EditorServices.Extensions
 {
     /// <summary>

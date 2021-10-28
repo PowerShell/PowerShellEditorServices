@@ -42,6 +42,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Extensions\Api\DocumentSymbolService.cs"/>
+    <Compile Remove="Extensions\Api\DocumentSymbolService.cs" />
+    <Compile Remove="Services\Extension\Templating\**" />
+    <EmbeddedResource Remove="Services\Extension\Templating\**" />
+    <None Remove="Services\Extension\Templating\**" />
   </ItemGroup>
 </Project>
