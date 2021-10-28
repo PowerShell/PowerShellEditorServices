@@ -47,6 +47,9 @@ While most of our testing has been re-enabled
 there are bound to be issues with this new implementation.
 Please give this a try and let us know if you run into anything.
 
+We also want to thank [@SeeminglyScience](https://github.com/SeeminglyScience)
+for his help and knowledge as we've made this migration.
+
 Finally, a crude breakdown of the work from the commits:
 
 - An initial dedicated pipeline thread consumer implementation
