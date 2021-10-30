@@ -9,9 +9,9 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         public static StringBuilder SingleQuoteAndEscape(string s)
         {
             return new StringBuilder(s.Length)
-                .Append("'")
+                .Append('\'')
                 .Append(s.Replace("'", "''"))
-                .Append("'");
+                .Append('\'');
         }
 
         public static bool PowerShellArgumentNeedsEscaping(string argument)
