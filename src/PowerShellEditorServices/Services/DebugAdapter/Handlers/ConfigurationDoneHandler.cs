@@ -163,16 +163,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             foreach (string arg in arguments)
             {
-                sb.Append(' ');
-
-                if (StringEscaping.PowerShellArgumentNeedsEscaping(arg))
-                {
-                    sb.Append(StringEscaping.SingleQuoteAndEscape(arg));
-                }
-                else
-                {
-                    sb.Append(arg);
-                }
+                sb
+                .Append(' ')
+                .Append(StringEscaping.EscapePowershellArgument(arg));
             }
 
             return new PSCommand().AddScript(sb.ToString());
