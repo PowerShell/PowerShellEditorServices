@@ -16,6 +16,14 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
         public static bool PowerShellArgumentNeedsEscaping(string argument)
         {
+            //Already quoted arguments dont require escaping unless there is a quote inside as well
+            if (argument.StartsWith("'") && argument.EndsWith("'"))
+            {
+                var dequotedString = argument.TrimStart('\'').TrimEnd('\'');
+                // need to escape if there is a quote between single quotes
+                return dequotedString.Contains("'");
+            }
+
             foreach (char c in argument)
             {
                 switch (c)
@@ -33,5 +41,18 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
             return false;
         }
+
+        public static string EscapePowershellArgument(string argument)
+        {
+            if (PowerShellArgumentNeedsEscaping(argument))
+            {
+                return SingleQuoteAndEscape(argument).ToString();
+            }
+            else
+            {
+                return argument;
+            }
+        }
+
     }
 }
