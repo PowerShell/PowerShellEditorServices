@@ -20,6 +20,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         [InlineData("[brackets]areOK", "[brackets]areOK")]
         [InlineData("$(expressionsAreOK)", "$(expressionsAreOK)")]
         [InlineData("{scriptBlocksAreOK}", "{scriptBlocksAreOK}")]
+        [InlineData("'quote ' in middle of argument'", "'quote `' in middle of argument'")]
+
         public void CorrectlyEscapesPowerShellArguments(string Arg, string expectedArg)
         {
             string quotedArg = StringEscaping.EscapePowershellArgument(Arg);
@@ -37,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         [InlineData(":colon", ":colon")]
         [InlineData(" has space s", " has space s")]
         [InlineData("[brackets]areOK", "[brackets]areOK")]
-        // [InlineData("$(echo 'expressionsAreOK')", "expressionsAreOK")]
+        [InlineData("$(echo 'expressionsAreOK')", "expressionsAreOK")]
         // [InlineData("{scriptBlocksAreOK}", "{scriptBlocksAreOK}")]
         public void CanEvaluateArgumentsSafely(string Arg, string expectedOutput)
         {
@@ -45,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             var psCommand = new PSCommand().AddScript($"& Write-Output {escapedArg}");
             using var pwsh = System.Management.Automation.PowerShell.Create();
             pwsh.Commands = psCommand;
-            var scriptOutput = pwsh.Invoke<string>().SingleOrDefault();
+            var scriptOutput = pwsh.Invoke<string>().First();
             Assert.Equal(expectedOutput, scriptOutput);
         }
     }

@@ -8,9 +8,11 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     {
         public static StringBuilder SingleQuoteAndEscape(string s)
         {
+            var dequotedString = s.TrimStart('\'').TrimEnd('\'');
+            var psEscapedInnerQuotes = dequotedString.Replace("'", "`'");
             return new StringBuilder(s.Length)
                 .Append('\'')
-                .Append(s.Replace("'", "''"))
+                .Append(psEscapedInnerQuotes)
                 .Append('\'');
         }
 
@@ -20,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             if (argument.StartsWith("'") && argument.EndsWith("'"))
             {
                 var dequotedString = argument.TrimStart('\'').TrimEnd('\'');
-                // need to escape if there is a quote between single quotes
+                // need to escape if there is a single quote between single quotes
                 return dequotedString.Contains("'");
             }
 
