@@ -1,7 +1,7 @@
 # https://help.github.com/articles/about-codeowners/
 
 # Global reviewers
-* @andschwa @rjmholt
+* @andschwa
 
 # Area: Analysis & Formatting
 src/PowerShellEditorServices/Analysis/                 @rjmholt
