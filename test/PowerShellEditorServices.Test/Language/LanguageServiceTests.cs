@@ -34,16 +34,19 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         private readonly PsesCompletionHandler completionHandler;
         private readonly PsesInternalHost _psesHost;
         private static readonly string s_baseSharedScriptPath =
-            Path.Combine(
-                    Path.GetDirectoryName(VersionUtils.IsWindows
 #pragma warning disable SYSLIB0001 // We still test on 4.6.1 for PS 5.1 compatibility
-                        // On non-Windows platforms, CodeBase has file:// in it.
-                        // On Windows, Location points to a temp directory.
+            Path.Combine(
+                Path.GetDirectoryName(
+                    // On non-Windows platforms, CodeBase has file:// in it.
+                    // On Windows, Location points to a temp directory.
+                    VersionUtils.IsWindows
                         ? typeof(LanguageServiceTests).Assembly.CodeBase
-                        : typeof(LanguageServiceTests).Assembly.Location),
+                        : typeof(LanguageServiceTests).Assembly.Location
+                ),
+                "..", "..", "..", "..",
+                "PowerShellEditorServices.Test.Shared"
+            );
 #pragma warning restore SYSLIB0001
-                    "..","..","..","..",
-                    "PowerShellEditorServices.Test.Shared");
 
         public LanguageServiceTests()
         {
