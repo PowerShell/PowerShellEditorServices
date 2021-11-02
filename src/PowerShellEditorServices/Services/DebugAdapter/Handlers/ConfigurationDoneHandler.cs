@@ -159,7 +159,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // HACK: We use AddScript instead of AddArgument/AddParameter to reuse Powershell parameter binding logic.
             // We quote the command parameter so that expressions can still be used in the arguments.
             var sb = new StringBuilder()
-                .Append("& ")
+                .Append('&')
                 .Append('"')
                 .Append(command)
                 .Append('"');
