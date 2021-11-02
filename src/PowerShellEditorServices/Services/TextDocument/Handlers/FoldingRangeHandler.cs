@@ -36,19 +36,21 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                _logger.LogDebug("FoldingRange request canceled for file: {0}", request.TextDocument.Uri);
+                _logger.LogDebug("FoldingRange request canceled for file: {uri}", request.TextDocument.Uri);
                 return Task.FromResult(new Container<FoldingRange>());
             }
 
+            var noFoldingRanges = Task.FromResult<Container<FoldingRange>>(null);
+
             // TODO Should be using dynamic registrations
-            if (!_configurationService.CurrentSettings.CodeFolding.Enable) { return null; }
+            if (!_configurationService.CurrentSettings.CodeFolding.Enable) { return noFoldingRanges; }
 
             // Avoid crash when using untitled: scheme or any other scheme where the document doesn't
             // have a backing file.  https://github.com/PowerShell/vscode-powershell/issues/1676
             // Perhaps a better option would be to parse the contents of the document as a string
             // as opposed to reading a file but the scenario of "no backing file" probably doesn't
             // warrant the extra effort.
-            if (!_workspaceService.TryGetFile(request.TextDocument.Uri, out ScriptFile scriptFile)) { return null; }
+            if (!_workspaceService.TryGetFile(request.TextDocument.Uri, out ScriptFile scriptFile)) { return noFoldingRanges; }
 
             var result = new List<FoldingRange>();
 

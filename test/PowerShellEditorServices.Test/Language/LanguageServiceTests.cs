@@ -36,10 +36,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         private static readonly string s_baseSharedScriptPath =
             Path.Combine(
                     Path.GetDirectoryName(VersionUtils.IsWindows
+#pragma warning disable SYSLIB0001 // We still test on 4.6.1 for PS 5.1 compatibility
                         // On non-Windows platforms, CodeBase has file:// in it.
                         // On Windows, Location points to a temp directory.
                         ? typeof(LanguageServiceTests).Assembly.CodeBase
                         : typeof(LanguageServiceTests).Assembly.Location),
+#pragma warning restore SYSLIB0001
                     "..","..","..","..",
                     "PowerShellEditorServices.Test.Shared");
 
