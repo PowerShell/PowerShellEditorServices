@@ -27,10 +27,8 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 {
                     return Arg;
                 }
-                else
-                {
-                    return "\"" + Arg + "\"";
-                }
+
+                return "\"" + Arg + "\"";
             }
 
             return Arg;

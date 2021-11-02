@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         [Theory]
         [InlineData("NormalScript.ps1")]
         [InlineData("Bad&name4script.ps1")]
-        [InlineData("[Truly] b&d Name_4_script.ps1")]
+        [InlineData("[Truly] b&d `Name_4_script.ps1")]
         public void CanDotSourcePath(string rawFileName)
         {
             var ScriptAssetPath = @"..\..\..\..\PowerShellEditorServices.Test.Shared\scriptassets";
