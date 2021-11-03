@@ -1,5 +1,12 @@
 # PowerShell Editor Services Release History
 
+## v3.0.1
+### Wednesday, November 03, 2021
+
+- 🐛 🔍 [PowerShellEditorServices #1608](https://github.com/PowerShell/PowerShellEditorServices/pull/1611) - Improve PowerShell command and argument escaping. (Thanks @JustinGrote!)
+- 🐛 📟 [PowerShellEditorServices #1603](https://github.com/PowerShell/PowerShellEditorServices/pull/1606) - Add `LengthInBufferCells` back to `EditorServicesConsolePSHostRawUserInterface`.
+- #️⃣ 🙏 [PowerShellEditorServices #1604](https://github.com/PowerShell/PowerShellEditorServices/pull/1604) - Fix profile loading and `$PROFILE` variable.
+
 ## v3.0.0
 ### Thursday, October 28, 2021
 
