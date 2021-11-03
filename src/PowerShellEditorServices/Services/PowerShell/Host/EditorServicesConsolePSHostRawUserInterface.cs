@@ -263,6 +263,53 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _internalRawUI.SetBufferContents(origin, contents);
         }
 
+        /// <summary>
+        /// Determines the number of BufferCells a character occupies.
+        /// </summary>
+        /// <param name="source">
+        /// The character whose length we want to know.
+        /// </param>
+        /// <returns>
+        /// The length in buffer cells according to the original host
+        /// implementation for the process.
+        /// </returns>
+        public override int LengthInBufferCells(char source)
+        {
+            return _internalRawUI.LengthInBufferCells(source);
+        }
+        /// <summary>
+        /// Determines the number of BufferCells a string occupies.
+        /// </summary>
+        /// <param name="source">
+        /// The string whose length we want to know.
+        /// </param>
+        /// <returns>
+        /// The length in buffer cells according to the original host
+        /// implementation for the process.
+        /// </returns>
+        public override int LengthInBufferCells(string source)
+        {
+            return _internalRawUI.LengthInBufferCells(source);
+        }
+
+        /// <summary>
+        /// Determines the number of BufferCells a substring of a string occupies.
+        /// </summary>
+        /// <param name="source">
+        /// The string whose substring length we want to know.
+        /// </param>
+        /// <param name="offset">
+        /// Offset where the substring begins in <paramref name="source"/>
+        /// </param>
+        /// <returns>
+        /// The length in buffer cells according to the original host
+        /// implementation for the process.
+        /// </returns>
+        public override int LengthInBufferCells(string source, int offset)
+        {
+            return _internalRawUI.LengthInBufferCells(source, offset);
+        }
+
         #endregion
 
         /// <summary>
