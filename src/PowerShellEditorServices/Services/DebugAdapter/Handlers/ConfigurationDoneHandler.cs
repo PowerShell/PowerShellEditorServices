@@ -156,23 +156,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return new PSCommand().AddCommand(command);
             }
 
-            // We are forced to use a hack here so that we can reuse PowerShell's parameter binding
+            // HACK: We use AddScript instead of AddArgument/AddParameter to reuse Powershell parameter binding logic.
+            // We quote the command parameter so that expressions can still be used in the arguments.
             var sb = new StringBuilder()
-                .Append("& ")
-                .Append(StringEscaping.SingleQuoteAndEscape(command));
+                .Append('&')
+                .Append('"')
+                .Append(command)
+                .Append('"');
 
             foreach (string arg in arguments)
             {
-                sb.Append(' ');
-
-                if (StringEscaping.PowerShellArgumentNeedsEscaping(arg))
-                {
-                    sb.Append(StringEscaping.SingleQuoteAndEscape(arg));
-                }
-                else
-                {
-                    sb.Append(arg);
-                }
+                sb
+                .Append(' ')
+                .Append(ArgumentEscaping.Escape(arg));
             }
 
             return new PSCommand().AddScript(sb.ToString());
