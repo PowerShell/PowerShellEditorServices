@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.IO;
 using System.Linq.Expressions;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
@@ -58,6 +59,22 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             Command lastCommand = psCommand.Commands[psCommand.Commands.Count - 1];
             lastCommand.MergeMyResults(PipelineResultTypes.Error, PipelineResultTypes.Output);
             lastCommand.MergeMyResults(PipelineResultTypes.Information, PipelineResultTypes.Output);
+            return psCommand;
+        }
+
+        public static PSCommand AddProfileLoadIfExists(this PSCommand psCommand, PSObject profileVariable, string profileName, string profilePath)
+        {
+            // This path should be added regardless of the existence of the file.
+            profileVariable.Members.Add(new PSNoteProperty(profileName, profilePath));
+
+            if (File.Exists(profilePath))
+            {
+                psCommand
+                    .AddCommand(profilePath, useLocalScope: false)
+                    .AddOutputCommand()
+                    .AddStatement();
+            }
+
             return psCommand;
         }
 
