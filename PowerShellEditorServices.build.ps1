@@ -106,8 +106,7 @@ task SetupDotNet -Before Clean, Build, TestServerWinPS, TestServerPS7, TestServe
     $dotnetExePath = if ($script:IsNix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
 
     if (!(Test-Path $dotnetExePath)) {
-        # TODO: Test .NET 5 with PowerShell 7.1
-        Install-Dotnet -Channel '3.1','5.0','6.0'
+        Install-Dotnet -Channel '6.0'
     }
 
     # This variable is used internally by 'dotnet' to know where it's installed
