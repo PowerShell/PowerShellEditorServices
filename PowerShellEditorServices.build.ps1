@@ -52,12 +52,16 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
 
 function Install-Dotnet {
     param (
-        [string[]]$Channel
+        [string[]]$Channel,
+        [switch]$Runtime
     )
 
     $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
 
-    Write-Host "Installing .NET channels $Channel" -ForegroundColor Green
+    $components = if ($Runtime) { "Runtime " } else { "SDK and Runtime " }
+    $components += $Channel -join ', '
+
+    Write-Host "Installing .NET $components" -ForegroundColor Green
 
     # The install script is platform-specific
     $installScriptExt = if ($script:IsNix) { "sh" } else { "ps1" }
@@ -70,18 +74,13 @@ function Install-Dotnet {
     # Download and install the different .NET channels
     foreach ($dotnetChannel in $Channel)
     {
-        Write-Host "`n### Installing .NET CLI $Version...`n"
-
         if ($script:IsNix) {
             chmod +x $installScriptPath
         }
 
-        $params = if ($script:IsNix)
-        {
+        $params = if ($script:IsNix) {
             @('-Channel', $dotnetChannel, '-InstallDir', $env:DOTNET_INSTALL_DIR, '-NoPath', '-Verbose')
-        }
-        else
-        {
+        } else {
             @{
                 Channel = $dotnetChannel
                 InstallDir = $env:DOTNET_INSTALL_DIR
@@ -90,9 +89,13 @@ function Install-Dotnet {
             }
         }
 
-        & $installScriptPath @params
+        # Install just the runtime, not the SDK
+        if ($Runtime) {
+            if ($script:IsNix) { $params += @('-Runtime', 'dotnet') }
+            else { $params['Runtime'] = 'dotnet' }
+        }
 
-        Write-Host "`n### Installation complete for version $Version."
+        exec { & $installScriptPath @params }
     }
 
     $env:PATH = $env:DOTNET_INSTALL_DIR + [System.IO.Path]::PathSeparator + $env:PATH
@@ -107,7 +110,8 @@ task SetupDotNet -Before Clean, Build, TestServerWinPS, TestServerPS7, TestServe
 
     if (!(Test-Path $dotnetExePath)) {
         # TODO: Test .NET 5 with PowerShell 7.1
-        Install-Dotnet -Channel '3.1','5.0','6.0'
+        Install-Dotnet -Channel '6.0' # SDK and runtime
+        Install-Dotnet -Channel '3.1','5.0' -Runtime # Runtime only
     }
 
     # This variable is used internally by 'dotnet' to know where it's installed
