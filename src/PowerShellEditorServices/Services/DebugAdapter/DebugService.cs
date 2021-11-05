@@ -687,8 +687,22 @@ namespace Microsoft.PowerShell.EditorServices.Services
             var scopeVariableContainer = new VariableContainerDetails(this.nextVariableId++, "Scope: " + scope);
             this.variables.Add(scopeVariableContainer);
 
-            IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, CancellationToken.None)
-                .ConfigureAwait(false);
+            IReadOnlyList<PSObject> results;
+            try
+            {
+                results = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, CancellationToken.None)
+                    .ConfigureAwait(false);
+            }
+            catch (CmdletInvocationException ex)
+            {
+                if (!(
+                    ex.ErrorRecord.CategoryInfo.Reason.Equals("PSArgumentOutOfRangeException") &&
+                    ex.Message.Contains("exceeds the number of active scopes")))
+                {
+                    throw;
+                }
+                results = null;
+            }
 
             if (results != null)
             {
