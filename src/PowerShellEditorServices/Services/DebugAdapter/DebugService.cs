@@ -697,9 +697,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             catch (CmdletInvocationException ex)
             {
                 if (!(
-                    ex.ErrorRecord.CategoryInfo.Reason.Equals("PSArgumentOutOfRangeException") &&
-                    ex.Message.Contains("exceeds the number of active scopes")))
-                {
+                    ex.ErrorRecord.CategoryInfo.Reason.Equals("PSArgumentOutOfRangeException")                {
                     throw;
                 }
                 results = null;
