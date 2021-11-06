@@ -696,8 +696,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
             catch (CmdletInvocationException ex)
             {
-                if (!(
-                    ex.ErrorRecord.CategoryInfo.Reason.Equals("PSArgumentOutOfRangeException")                {
+                if (!ex.ErrorRecord.CategoryInfo.Reason.Equals("PSArgumentOutOfRangeException"))
+                {
                     throw;
                 }
                 results = null;
@@ -806,7 +806,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             PSCommand psCommand = new PSCommand();
             // The serialization depth to retrieve variables from remote runspaces.
-            var serializationDepth = 10;
+            var serializationDepth = 3;
 
             // This glorious hack ensures that Get-PSCallStack returns a list of CallStackFrame
             // objects (or "deserialized" CallStackFrames) when attached to a runspace in another
@@ -816,22 +816,34 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             var getPSCallStack = $"Get-PSCallStack | % {{ [void]{callStackVarName}.add(@($PSItem,$PSItem.GetFrameVariables())) }}";
 
+            // If we're attached to a remote runspace, we need to serialize the callstack prior to transport
+            // because the default depth is too shallow
+            var isOnRemoteMachine = _psesHost.CurrentRunspace.IsOnRemoteMachine;
+            var returnSerializedIfOnRemoteMachine = isOnRemoteMachine
+                ? $"[Management.Automation.PSSerializer]::Serialize({callStackVarName}, {serializationDepth})"
+                : callStackVarName;
+
             // We have to deal with a shallow serialization depth with ExecutePSCommandAsync as well, hence the serializer to get full var information
             // TODO: Don't use serializer for local runspaces, or implement a way to specify depth ExecutePSCommandAsync
-            string getPSCallStackScript = $"[Collections.ArrayList]{callStackVarName}=@();{getPSCallStack};[Management.Automation.PSSerializer]::Serialize({callStackVarName}, {serializationDepth})";
+            string getPSCallStackScript = $"[Collections.ArrayList]{callStackVarName}=@();{getPSCallStack};{returnSerializedIfOnRemoteMachine}";
             psCommand.AddScript(getPSCallStackScript);
+
 
             // PSObject is used here instead of the specific type because we get deserialized objects from remote sessions and want a common interface
             var results = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, CancellationToken.None).ConfigureAwait(false);
-            string serializedResult = results[0].BaseObject as string;
-            var callStack = (PSSerializer.Deserialize(serializedResult) as PSObject).BaseObject as ArrayList;
+
+            IEnumerable callStack = isOnRemoteMachine
+                ? (PSSerializer.Deserialize(results[0].BaseObject as string) as PSObject).BaseObject as IList
+                : results;
 
             List<StackFrameDetails> stackFrameDetailList = new();
             foreach (var callStackFrameItem in callStack)
             {
-                var callStackFrameComponents = (callStackFrameItem as PSObject).BaseObject as ArrayList;
+                var callStackFrameComponents = (callStackFrameItem as PSObject).BaseObject as IList;
                 var callStackFrame = callStackFrameComponents[0] as PSObject;
-                var callStackVariables = (callStackFrameComponents[1] as PSObject).BaseObject as IDictionary;
+                IDictionary callStackVariables = isOnRemoteMachine
+                    ? (callStackFrameComponents[1] as PSObject).BaseObject as IDictionary
+                    : callStackFrameComponents[1] as IDictionary;
 
                 VariableContainerDetails autoVariables = new(
                     nextVariableId++,
@@ -845,8 +857,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 foreach (DictionaryEntry entry in callStackVariables)
                 {
                     // TODO: This should be deduplicated into a new function for the other variable handling as well
-                    var psVar = entry.Value as PSObject;
-                    var variableDetails = new VariableDetails(entry.Key.ToString(), psVar.Properties["Value"].Value) { Id = nextVariableId++ };
+                    object psVarValue = isOnRemoteMachine
+                        ? (entry.Value as PSObject).Properties["Value"].Value
+                        : (entry.Value as PSVariable).Value;
+                    var variableDetails = new VariableDetails(entry.Key.ToString(), psVarValue) { Id = nextVariableId++ };
                     variables.Add(variableDetails);
                     localVariables.Children.Add(variableDetails.Name, variableDetails);
 
