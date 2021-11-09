@@ -814,7 +814,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // an array of strings containing the formatted output of the CallStackFrame list.
             string callStackVarName = $"$global:{PsesGlobalVariableNamePrefix}CallStack";
 
-            var getPSCallStack = $"Get-PSCallStack | % {{ [void]{callStackVarName}.add(@($PSItem,$PSItem.GetFrameVariables())) }}";
+            string getPSCallStack = $"Get-PSCallStack | % {{ [void]{callStackVarName}.add(@($PSItem,$PSItem.GetFrameVariables())) }}";
 
             // If we're attached to a remote runspace, we need to serialize the callstack prior to transport
             // because the default depth is too shallow
