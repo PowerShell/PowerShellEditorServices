@@ -812,7 +812,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // objects (or "deserialized" CallStackFrames) when attached to a runspace in another
             // process.  Without the intermediate variable Get-PSCallStack inexplicably returns
             // an array of strings containing the formatted output of the CallStackFrame list.
-            var callStackVarName = $"$GLOBAL:{PsesGlobalVariableNamePrefix}CallStack";
+            string callStackVarName = $"$global:{PsesGlobalVariableNamePrefix}CallStack";
 
             var getPSCallStack = $"Get-PSCallStack | % {{ [void]{callStackVarName}.add(@($PSItem,$PSItem.GetFrameVariables())) }}";
 
