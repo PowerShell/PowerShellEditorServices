@@ -806,7 +806,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             PSCommand psCommand = new PSCommand();
             // The serialization depth to retrieve variables from remote runspaces.
-            var serializationDepth = 3;
+            const int serializationDepth = 3;
 
             // This glorious hack ensures that Get-PSCallStack returns a list of CallStackFrame
             // objects (or "deserialized" CallStackFrames) when attached to a runspace in another
