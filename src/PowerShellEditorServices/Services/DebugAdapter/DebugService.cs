@@ -818,7 +818,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // If we're attached to a remote runspace, we need to serialize the callstack prior to transport
             // because the default depth is too shallow
-            var isOnRemoteMachine = _psesHost.CurrentRunspace.IsOnRemoteMachine;
+            bool isOnRemoteMachine = _psesHost.CurrentRunspace.IsOnRemoteMachine;
             var returnSerializedIfOnRemoteMachine = isOnRemoteMachine
                 ? $"[Management.Automation.PSSerializer]::Serialize({callStackVarName}, {serializationDepth})"
                 : callStackVarName;
