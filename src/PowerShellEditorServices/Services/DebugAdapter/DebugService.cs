@@ -814,7 +814,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // an array of strings containing the formatted output of the CallStackFrame list.
             string callStackVarName = $"$global:{PsesGlobalVariableNamePrefix}CallStack";
 
-            string getPSCallStack = $"Get-PSCallStack | % {{ [void]{callStackVarName}.add(@($PSItem,$PSItem.GetFrameVariables())) }}";
+            string getPSCallStack = $"Get-PSCallStack | ForEach-Object {{ [void]{callStackVarName}.add(@($PSItem,$PSItem.GetFrameVariables())) }}";
 
             // If we're attached to a remote runspace, we need to serialize the callstack prior to transport
             // because the default depth is too shallow
@@ -824,9 +824,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 : callStackVarName;
 
             // We have to deal with a shallow serialization depth with ExecutePSCommandAsync as well, hence the serializer to get full var information
-            // TODO: Don't use serializer for local runspaces, or implement a way to specify depth ExecutePSCommandAsync
-            string getPSCallStackScript = $"[Collections.ArrayList]{callStackVarName}=@();{getPSCallStack};{returnSerializedIfOnRemoteMachine}";
-            psCommand.AddScript(getPSCallStackScript);
+            psCommand.AddScript($"[Collections.ArrayList]{callStackVarName} = @(); {getPSCallStack}; {returnSerializedIfOnRemoteMachine}");
 
 
             // PSObject is used here instead of the specific type because we get deserialized objects from remote sessions and want a common interface
@@ -851,7 +849,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 variables.Add(autoVariables);
 
-                var localVariables = new VariableContainerDetails(this.nextVariableId++, callStackFrame.ToString());
+                var localVariables = new VariableContainerDetails(nextVariableId++, callStackFrame.ToString());
                 variables.Add(localVariables);
 
                 foreach (DictionaryEntry entry in callStackVariables)
@@ -870,16 +868,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     }
                 }
 
-                var stackFrameDetailsEntry = StackFrameDetails.Create(callStackFrame, autoVariables, localVariables, workspaceRootPath: null);
+                var stackFrameDetailsEntry = StackFrameDetails.Create(callStackFrame, autoVariables, localVariables, workspaceRootPath: _psesHost.InitialWorkingDirectory);
 
                 string stackFrameScriptPath = stackFrameDetailsEntry.ScriptPath;
-                if (scriptNameOverride != null &&
+                if (scriptNameOverride is not null &&
                     string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
                 {
                     stackFrameDetailsEntry.ScriptPath = scriptNameOverride;
                 }
-                else if (_psesHost.CurrentRunspace.IsOnRemoteMachine
-                    && remoteFileManager != null
+                else if (isOnRemoteMachine
+                    && remoteFileManager is not null
                     && !string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
                 {
                     stackFrameDetailsEntry.ScriptPath =
