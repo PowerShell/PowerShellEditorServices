@@ -17,12 +17,14 @@
     <ProjectReference Include="..\PowerShellEditorServices.Test.Shared\PowerShellEditorServices.Test.Shared.csproj" />
   </ItemGroup>
 
+  <!-- This is for testing PowerShell 7.2 LTS -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.0-preview.3" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.0" />
   </ItemGroup>
 
+  <!-- This is for testing PowerShell 7.0 LTS -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.0.6" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.0.8" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
