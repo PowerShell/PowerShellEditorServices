@@ -830,13 +830,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
 
             // PSObject is used here instead of the specific type because we get deserialized objects from remote sessions and want a common interface
-            var results = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, CancellationToken.None).ConfigureAwait(false);
+            IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, CancellationToken.None).ConfigureAwait(false);
 
             IEnumerable callStack = isOnRemoteMachine
                 ? (PSSerializer.Deserialize(results[0].BaseObject as string) as PSObject).BaseObject as IList
                 : results;
 
-            List<StackFrameDetails> stackFrameDetailList = new();
+            List<StackFrameDetails> stackFrameDetailList = new List<StackFrameDetails>();
             foreach (var callStackFrameItem in callStack)
             {
                 var callStackFrameComponents = (callStackFrameItem as PSObject).BaseObject as IList;
@@ -845,7 +845,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     ? (callStackFrameComponents[1] as PSObject).BaseObject as IDictionary
                     : callStackFrameComponents[1] as IDictionary;
 
-                VariableContainerDetails autoVariables = new(
+                var autoVariables = new VariableContainerDetails(
                     nextVariableId++,
                     VariableContainerDetails.AutoVariablesName);
 
@@ -864,13 +864,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     variables.Add(variableDetails);
                     localVariables.Children.Add(variableDetails.Name, variableDetails);
 
-                    if (AddToAutoVariables(new PSObject(entry.Value), null))
+                    if (AddToAutoVariables(new PSObject(entry.Value), scope: null))
                     {
                         autoVariables.Children.Add(variableDetails.Name, variableDetails);
                     }
                 }
 
-                var stackFrameDetailsEntry = StackFrameDetails.Create(callStackFrame, autoVariables, localVariables, null);
+                var stackFrameDetailsEntry = StackFrameDetails.Create(callStackFrame, autoVariables, localVariables, workspaceRootPath: null);
 
                 string stackFrameScriptPath = stackFrameDetailsEntry.ScriptPath;
                 if (scriptNameOverride != null &&
@@ -889,8 +889,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 }
 
                 stackFrameDetailList.Add(
-                    stackFrameDetailsEntry
-                );
+                    stackFrameDetailsEntry);
             }
 
             stackFrameDetails = stackFrameDetailList.ToArray();
