@@ -842,7 +842,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     object psVarValue = isOnRemoteMachine
                         ? (entry.Value as PSObject).Properties["Value"].Value
                         : (entry.Value as PSVariable).Value;
-                    var variableDetails = new VariableDetails(entry.Key.ToString(), psVarValue) { Id = nextVariableId++ };
+                    // The constructor we are using here does not automatically add the dollar prefix
+                    string psVarName = VariableDetails.DollarPrefix + entry.Key.ToString();
+                    var variableDetails = new VariableDetails(psVarName, psVarValue) { Id = nextVariableId++ };
                     variables.Add(variableDetails);
 
                     if (AddToAutoVariables(new PSObject(entry.Value), scope: null))
