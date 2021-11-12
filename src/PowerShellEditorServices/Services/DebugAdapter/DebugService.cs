@@ -660,7 +660,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     await FetchVariableContainerAsync(VariableContainerDetails.ScriptScopeName, null).ConfigureAwait(false);
 
                 this.localScopeVariables =
-                    await FetchVariableContainerAsync(VariableContainerDetails.ScriptScopeName, null).ConfigureAwait(false);
+                    await FetchVariableContainerAsync(VariableContainerDetails.LocalScopeName, null).ConfigureAwait(false);
 
                 await FetchStackFramesAsync(scriptNameOverride).ConfigureAwait(false);
 
