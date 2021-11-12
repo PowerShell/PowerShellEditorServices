@@ -756,7 +756,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // Some local variables, if they exist, should be displayed by default
             if (psvariable.TypeNames[0].EndsWith("LocalVariable"))
             {
-                if (variableName.Equals("PSItem"))
+                if (variableName.Equals("PSItem") || variableName.Equals("_"))
                 {
                     return true;
                 }
