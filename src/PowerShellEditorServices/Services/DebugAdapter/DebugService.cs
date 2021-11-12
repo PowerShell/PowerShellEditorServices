@@ -46,6 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private List<VariableDetailsBase> variables;
         private VariableContainerDetails globalScopeVariables;
         private VariableContainerDetails scriptScopeVariables;
+        private VariableContainerDetails localScopeVariables;
         private StackFrameDetails[] stackFrameDetails;
         private readonly PropertyInfo invocationTypeScriptPositionProperty;
 
@@ -446,11 +447,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 for (int i = 0; i < stackFrames.Length; i++)
                 {
                     var stackFrame = stackFrames[i];
-                    if (stackFrame.LocalVariables.ContainsVariable(variable.Id))
-                    {
-                        scope = i.ToString();
-                        break;
-                    }
                 }
             }
 
@@ -627,13 +623,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public VariableScope[] GetVariableScopes(int stackFrameId)
         {
             var stackFrames = this.GetStackFrames();
-            int localStackFrameVariableId = stackFrames[stackFrameId].LocalVariables.Id;
             int autoVariablesId = stackFrames[stackFrameId].AutoVariables.Id;
 
             return new VariableScope[]
             {
                 new VariableScope(autoVariablesId, VariableContainerDetails.AutoVariablesName),
-                new VariableScope(localStackFrameVariableId, VariableContainerDetails.LocalScopeName),
+                new VariableScope(this.localScopeVariables.Id, VariableContainerDetails.LocalScopeName),
                 new VariableScope(this.scriptScopeVariables.Id, VariableContainerDetails.ScriptScopeName),
                 new VariableScope(this.globalScopeVariables.Id, VariableContainerDetails.GlobalScopeName),
             };
@@ -656,25 +651,24 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     new VariableDetails("Dummy", null)
                 };
 
-                // Must retrieve global/script variales before stack frame variables
-                // as we check stack frame variables against globals.
-                await FetchGlobalAndScriptVariablesAsync().ConfigureAwait(false);
+
+                // Must retrieve in order of broadest to narrowest scope for efficient deduplication: global, script, local
+                this.globalScopeVariables =
+                    await FetchVariableContainerAsync(VariableContainerDetails.GlobalScopeName, null).ConfigureAwait(false);
+
+                this.scriptScopeVariables =
+                    await FetchVariableContainerAsync(VariableContainerDetails.ScriptScopeName, null).ConfigureAwait(false);
+
+                this.localScopeVariables =
+                    await FetchVariableContainerAsync(VariableContainerDetails.ScriptScopeName, null).ConfigureAwait(false);
+
                 await FetchStackFramesAsync(scriptNameOverride).ConfigureAwait(false);
+
             }
             finally
             {
                 this.debugInfoHandle.Release();
             }
-        }
-
-        private async Task FetchGlobalAndScriptVariablesAsync()
-        {
-            // Retrieve globals first as script variable retrieval needs to search globals.
-            this.globalScopeVariables =
-                await FetchVariableContainerAsync(VariableContainerDetails.GlobalScopeName, null).ConfigureAwait(false);
-
-            this.scriptScopeVariables =
-                await FetchVariableContainerAsync(VariableContainerDetails.ScriptScopeName, null).ConfigureAwait(false);
         }
 
         private async Task<VariableContainerDetails> FetchVariableContainerAsync(
@@ -849,9 +843,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 variables.Add(autoVariables);
 
-                var localVariables = new VariableContainerDetails(nextVariableId++, callStackFrame.ToString());
-                variables.Add(localVariables);
-
                 foreach (DictionaryEntry entry in callStackVariables)
                 {
                     // TODO: This should be deduplicated into a new function for the other variable handling as well
@@ -860,7 +851,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         : (entry.Value as PSVariable).Value;
                     var variableDetails = new VariableDetails(entry.Key.ToString(), psVarValue) { Id = nextVariableId++ };
                     variables.Add(variableDetails);
-                    localVariables.Children.Add(variableDetails.Name, variableDetails);
 
                     if (AddToAutoVariables(new PSObject(entry.Value), scope: null))
                     {
@@ -868,7 +858,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     }
                 }
 
-                var stackFrameDetailsEntry = StackFrameDetails.Create(callStackFrame, autoVariables, localVariables, workspaceRootPath: _psesHost.InitialWorkingDirectory);
+                var stackFrameDetailsEntry = StackFrameDetails.Create(callStackFrame, autoVariables);
 
                 string stackFrameScriptPath = stackFrameDetailsEntry.ScriptPath;
                 if (scriptNameOverride is not null &&

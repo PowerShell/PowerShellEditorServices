@@ -64,11 +64,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// </summary>
         public VariableContainerDetails AutoVariables { get; private set; }
 
-        /// <summary>
-        /// Gets or sets the VariableContainerDetails that contains the local variables.
-        /// </summary>
-        public VariableContainerDetails LocalVariables { get; private set; }
-
         #endregion
 
         #region Constructors
@@ -93,14 +88,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <returns>A new instance of the StackFrameDetails class.</returns>
         static internal StackFrameDetails Create(
             PSObject callStackFrameObject,
-            VariableContainerDetails autoVariables,
-            VariableContainerDetails localVariables,
-            string workspaceRootPath = null)
+            VariableContainerDetails autoVariables)
         {
-            string moduleId = string.Empty;
             var isExternal = false;
-
-            var invocationInfo = callStackFrameObject.Properties["InvocationInfo"]?.Value as InvocationInfo;
             string scriptPath = (callStackFrameObject.Properties["ScriptName"].Value as string) ?? NoFileScriptPath;
             int startLineNumber = (int)(callStackFrameObject.Properties["ScriptLineNumber"].Value ?? 0);
 
@@ -122,7 +112,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 StartColumnNumber = 0,   // Column number isn't given in PowerShell stack frames
                 EndColumnNumber = 0,
                 AutoVariables = autoVariables,
-                LocalVariables = localVariables,
                 IsExternalCode = isExternal
             };
         }
