@@ -654,13 +654,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 // Must retrieve in order of broadest to narrowest scope for efficient deduplication: global, script, local
                 this.globalScopeVariables =
-                    await FetchVariableContainerAsync(VariableContainerDetails.GlobalScopeName, null).ConfigureAwait(false);
+                    await FetchVariableContainerAsync(VariableContainerDetails.GlobalScopeName).ConfigureAwait(false);
 
                 this.scriptScopeVariables =
-                    await FetchVariableContainerAsync(VariableContainerDetails.ScriptScopeName, null).ConfigureAwait(false);
+                    await FetchVariableContainerAsync(VariableContainerDetails.ScriptScopeName).ConfigureAwait(false);
 
                 this.localScopeVariables =
-                    await FetchVariableContainerAsync(VariableContainerDetails.LocalScopeName, null).ConfigureAwait(false);
+                    await FetchVariableContainerAsync(VariableContainerDetails.LocalScopeName).ConfigureAwait(false);
 
                 await FetchStackFramesAsync(scriptNameOverride).ConfigureAwait(false);
 
@@ -671,9 +671,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        private async Task<VariableContainerDetails> FetchVariableContainerAsync(
-            string scope,
-            VariableContainerDetails autoVariables)
+        private async Task<VariableContainerDetails> FetchVariableContainerAsync(string scope)
         {
             PSCommand psCommand = new PSCommand()
                 .AddCommand("Get-Variable")
@@ -711,11 +709,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     var variableDetails = new VariableDetails(psVariableObject) { Id = this.nextVariableId++ };
                     this.variables.Add(variableDetails);
                     scopeVariableContainer.Children.Add(variableDetails.Name, variableDetails);
-
-                    if ((autoVariables != null) && AddToAutoVariables(psVariableObject, scope))
-                    {
-                        autoVariables.Children.Add(variableDetails.Name, variableDetails);
-                    }
                 }
             }
 
@@ -763,7 +756,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // Some local variables, if they exist, should be displayed by default
             if (psvariable.TypeNames[0].EndsWith("LocalVariable"))
             {
-                if (variableName.Equals("_"))
+                if (variableName.Equals("PSItem"))
                 {
                     return true;
                 }
