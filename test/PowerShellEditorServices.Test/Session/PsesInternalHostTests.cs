@@ -45,14 +45,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact] // https://github.com/PowerShell/vscode-powershell/issues/3677
         public async Task CanHandleThrow()
         {
-            // TODO: Fix this so it doesn't throw!
-            _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
-            {
-                return psesHost.ExecutePSCommandAsync(
-                    new PSCommand().AddScript("throw"),
-                    CancellationToken.None,
-                    new PowerShellExecutionOptions { ThrowOnError = false });
-            }).ConfigureAwait(true);
+            await psesHost.ExecutePSCommandAsync(
+                new PSCommand().AddScript("throw"),
+                CancellationToken.None,
+                new PowerShellExecutionOptions { ThrowOnError = false }).ConfigureAwait(true);
         }
 
         [Fact]
