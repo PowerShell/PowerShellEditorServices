@@ -290,7 +290,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                         childVariables.AddRange(
                             psObject
                                 .Properties
-                                .Where(p => p.MemberType == PSMemberTypes.NoteProperty)
+                                // Here we check the object's MemberType against the `Properties`
+                                // bit-mask to determine if this is a property. Hence the selection
+                                // will only include properties.
+                                .Where(p => (PSMemberTypes.Properties & p.MemberType) is not 0)
                                 .Select(p => new VariableDetails(p)));
 
                         obj = psObject.BaseObject;
