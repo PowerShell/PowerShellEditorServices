@@ -668,6 +668,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
             catch (CmdletInvocationException ex)
             {
+                // It's possible to be asked to run `Get-Variable -Scope N` where N is a number that
+                // exceeds the available scopes. In this case, the command throws this exception,
+                // but there's nothing we can do about it, nor can we know the number of scopes that
+                // exist, and we shouldn't crash the debugger, so we just return no results instead.
+                // All other exceptions should be thrown again.
                 if (!ex.ErrorRecord.CategoryInfo.Reason.Equals("PSArgumentOutOfRangeException"))
                 {
                     throw;
@@ -757,6 +762,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (((variableScope & constantAllScope) == constantAllScope)
                 || ((variableScope & readonlyAllScope) == readonlyAllScope))
             {
+                // The constructor we are using here does not automatically add the dollar prefix,
+                // so we do it manually.
                 string prefixedVariableName = VariableDetails.DollarPrefix + variableName;
                 if (globalScopeVariables.Children.ContainsKey(prefixedVariableName))
                 {
@@ -769,30 +776,27 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private async Task FetchStackFramesAsync(string scriptNameOverride)
         {
-            PSCommand psCommand = new PSCommand();
-            // The serialization depth to retrieve variables from remote runspaces.
-            const int serializationDepth = 3;
-
             // This glorious hack ensures that Get-PSCallStack returns a list of CallStackFrame
             // objects (or "deserialized" CallStackFrames) when attached to a runspace in another
-            // process.  Without the intermediate variable Get-PSCallStack inexplicably returns
-            // an array of strings containing the formatted output of the CallStackFrame list.
-            string callStackVarName = $"$global:{PsesGlobalVariableNamePrefix}CallStack";
+            // process. Without the intermediate variable Get-PSCallStack inexplicably returns an
+            // array of strings containing the formatted output of the CallStackFrame list. So we
+            // run a script that builds the list of CallStackFrames and their variables.
+            const string callStackVarName = $"$global:{PsesGlobalVariableNamePrefix}CallStack";
+            const string getPSCallStack = $"Get-PSCallStack | ForEach-Object {{ [void]{callStackVarName}.Add(@($PSItem, $PSItem.GetFrameVariables())) }}";
 
-            string getPSCallStack = $"Get-PSCallStack | ForEach-Object {{ [void]{callStackVarName}.add(@($PSItem,$PSItem.GetFrameVariables())) }}";
-
-            // If we're attached to a remote runspace, we need to serialize the callstack prior to transport
-            // because the default depth is too shallow
+            // If we're attached to a remote runspace, we need to serialize the list prior to
+            // transport because the default depth is too shallow. From testing, we determined the
+            // correct depth is 3. The script always calls `Get-PSCallStack`. On a local machine, we
+            // just return its results. On a remote machine we serialize it first and then later
+            // deserialize it.
             bool isOnRemoteMachine = _psesHost.CurrentRunspace.IsOnRemoteMachine;
             string returnSerializedIfOnRemoteMachine = isOnRemoteMachine
-                ? $"[Management.Automation.PSSerializer]::Serialize({callStackVarName}, {serializationDepth})"
+                ? $"[Management.Automation.PSSerializer]::Serialize({callStackVarName}, 3)"
                 : callStackVarName;
 
-            // We have to deal with a shallow serialization depth with ExecutePSCommandAsync as well, hence the serializer to get full var information
-            psCommand.AddScript($"[Collections.ArrayList]{callStackVarName} = @(); {getPSCallStack}; {returnSerializedIfOnRemoteMachine}");
-
-
-            // PSObject is used here instead of the specific type because we get deserialized objects from remote sessions and want a common interface
+            // PSObject is used here instead of the specific type because we get deserialized
+            // objects from remote sessions and want a common interface.
+            var psCommand = new PSCommand().AddScript($"[Collections.ArrayList]{callStackVarName} = @(); {getPSCallStack}; {returnSerializedIfOnRemoteMachine}");
             IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, CancellationToken.None).ConfigureAwait(false);
 
             IEnumerable callStack = isOnRemoteMachine
@@ -816,11 +820,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 foreach (DictionaryEntry entry in callStackVariables)
                 {
-                    // TODO: This should be deduplicated into a new function for the other variable handling as well
+                    // TODO: This should be deduplicated into a new function.
                     object psVarValue = isOnRemoteMachine
                         ? (entry.Value as PSObject).Properties["Value"].Value
                         : (entry.Value as PSVariable).Value;
-                    // The constructor we are using here does not automatically add the dollar prefix
+
+                    // The constructor we are using here does not automatically add the dollar
+                    // prefix, so we do it manually.
                     string psVarName = VariableDetails.DollarPrefix + entry.Key.ToString();
                     var variableDetails = new VariableDetails(psVarName, psVarValue) { Id = nextVariableId++ };
                     variables.Add(variableDetails);
