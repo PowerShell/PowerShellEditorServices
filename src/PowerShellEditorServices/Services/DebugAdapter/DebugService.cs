@@ -320,9 +320,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// walk the cached variable data for the specified stack frame.
         /// </summary>
         /// <param name="variableExpression">The variable expression string to evaluate.</param>
-        /// <param name="stackFrameId">The ID of the stack frame in which the expression should be evaluated.</param>
         /// <returns>A VariableDetailsBase object containing the result.</returns>
-        public VariableDetailsBase GetVariableFromExpression(string variableExpression, int stackFrameId)
+        public VariableDetailsBase GetVariableFromExpression(string variableExpression)
         {
             // NOTE: From a watch we will get passed expressions that are not naked variables references.
             // Probably the right way to do this would be to examine the AST of the expr before calling
@@ -517,14 +516,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// PowerShellContext.
         /// </summary>
         /// <param name="expressionString">The expression string to execute.</param>
-        /// <param name="stackFrameId">The ID of the stack frame in which the expression should be executed.</param>
         /// <param name="writeResultAsOutput">
         /// If true, writes the expression result as host output rather than returning the results.
         /// In this case, the return value of this function will be null.</param>
         /// <returns>A VariableDetails object containing the result.</returns>
         public async Task<VariableDetails> EvaluateExpressionAsync(
             string expressionString,
-            int stackFrameId,
             bool writeResultAsOutput)
         {
             var command = new PSCommand().AddScript(expressionString);
