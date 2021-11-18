@@ -423,29 +423,23 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             VariableDetailsBase variable = variableContainer.Children[name];
-            // Determine scope in which the variable lives. This is required later for the call to Get-Variable -Scope.
-            string scope = null;
-            if (variableContainerReferenceId == this.scriptScopeVariables.Id)
+            // Determine scope in which the variable lives so we can pass it to `Get-Variable -Scope`.
+            string scope = null; // TODO: Can this use a fancy pattern matcher?
+            if (variableContainerReferenceId == localScopeVariables.Id)
             {
-                scope = "Script";
+                scope = VariableContainerDetails.LocalScopeName;
             }
-            else if (variableContainerReferenceId == this.globalScopeVariables.Id)
+            else if (variableContainerReferenceId == scriptScopeVariables.Id)
             {
-                scope = "Global";
+                scope = VariableContainerDetails.ScriptScopeName;
+            }
+            else if (variableContainerReferenceId == globalScopeVariables.Id)
+            {
+                scope = VariableContainerDetails.GlobalScopeName;
             }
             else
             {
-                // Determine which stackframe's local scope the variable is in.
-                StackFrameDetails[] stackFrames = await this.GetStackFramesAsync().ConfigureAwait(false);
-                for (int i = 0; i < stackFrames.Length; i++)
-                {
-                    var stackFrame = stackFrames[i];
-                }
-            }
-
-            if (scope == null)
-            {
-                // Hmm, this would be unexpected.  No scope means do not pass GO, do not collect $200.
+                // Hmm, this would be unexpected. No scope means do not pass GO, do not collect $200.
                 throw new Exception("Could not find the scope for this variable.");
             }
 
