@@ -64,11 +64,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// </summary>
         public VariableContainerDetails AutoVariables { get; private set; }
 
-        /// <summary>
-        /// Gets or sets the VariableContainerDetails that contains the local variables.
-        /// </summary>
-        public VariableContainerDetails LocalVariables { get; private set; }
-
         #endregion
 
         #region Constructors
@@ -83,35 +78,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <param name="autoVariables">
         /// A variable container with all the filtered, auto variables for this stack frame.
         /// </param>
-        /// <param name="localVariables">
-        /// A variable container with all the local variables for this stack frame.
-        /// </param>
-        /// <param name="workspaceRootPath">
-        /// Specifies the path to the root of an open workspace, if one is open. This path is used to
-        /// determine whether individua stack frames are external to the workspace.
-        /// </param>
         /// <returns>A new instance of the StackFrameDetails class.</returns>
         static internal StackFrameDetails Create(
             PSObject callStackFrameObject,
-            VariableContainerDetails autoVariables,
-            VariableContainerDetails localVariables,
-            string workspaceRootPath = null)
+            VariableContainerDetails autoVariables)
         {
-            string moduleId = string.Empty;
-            var isExternal = false;
-
-            var invocationInfo = callStackFrameObject.Properties["InvocationInfo"]?.Value as InvocationInfo;
             string scriptPath = (callStackFrameObject.Properties["ScriptName"].Value as string) ?? NoFileScriptPath;
             int startLineNumber = (int)(callStackFrameObject.Properties["ScriptLineNumber"].Value ?? 0);
-
-            // TODO: RKH 2019-03-07 Temporarily disable "external" code until I have a chance to add
-            // settings to control this feature.
-            //if (workspaceRootPath != null &&
-            //    invocationInfo != null &&
-            //    !scriptPath.StartsWith(workspaceRootPath, StringComparison.OrdinalIgnoreCase))
-            //{
-            //    isExternal = true;
-            //}
 
             return new StackFrameDetails
             {
@@ -119,11 +92,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 FunctionName = callStackFrameObject.Properties["FunctionName"].Value as string,
                 StartLineNumber = startLineNumber,
                 EndLineNumber = startLineNumber, // End line number isn't given in PowerShell stack frames
-                StartColumnNumber = 0,   // Column number isn't given in PowerShell stack frames
+                StartColumnNumber = 0, // Column number isn't given in PowerShell stack frames
                 EndColumnNumber = 0,
                 AutoVariables = autoVariables,
-                LocalVariables = localVariables,
-                IsExternalCode = isExternal
+                // TODO: Re-enable `isExternal` detection along with a setting. Will require
+                // `workspaceRootPath`, see Git blame.
+                IsExternalCode = false
             };
         }
 

@@ -17,6 +17,7 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
+using System.Collections;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -45,6 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private List<VariableDetailsBase> variables;
         private VariableContainerDetails globalScopeVariables;
         private VariableContainerDetails scriptScopeVariables;
+        private VariableContainerDetails localScopeVariables;
         private StackFrameDetails[] stackFrameDetails;
         private readonly PropertyInfo invocationTypeScriptPositionProperty;
 
@@ -445,11 +447,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 for (int i = 0; i < stackFrames.Length; i++)
                 {
                     var stackFrame = stackFrames[i];
-                    if (stackFrame.LocalVariables.ContainsVariable(variable.Id))
-                    {
-                        scope = i.ToString();
-                        break;
-                    }
                 }
             }
 
@@ -626,13 +623,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public VariableScope[] GetVariableScopes(int stackFrameId)
         {
             var stackFrames = this.GetStackFrames();
-            int localStackFrameVariableId = stackFrames[stackFrameId].LocalVariables.Id;
             int autoVariablesId = stackFrames[stackFrameId].AutoVariables.Id;
 
             return new VariableScope[]
             {
                 new VariableScope(autoVariablesId, VariableContainerDetails.AutoVariablesName),
-                new VariableScope(localStackFrameVariableId, VariableContainerDetails.LocalScopeName),
+                new VariableScope(this.localScopeVariables.Id, VariableContainerDetails.LocalScopeName),
                 new VariableScope(this.scriptScopeVariables.Id, VariableContainerDetails.ScriptScopeName),
                 new VariableScope(this.globalScopeVariables.Id, VariableContainerDetails.GlobalScopeName),
             };
@@ -655,10 +651,19 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     new VariableDetails("Dummy", null)
                 };
 
-                // Must retrieve global/script variales before stack frame variables
-                // as we check stack frame variables against globals.
-                await FetchGlobalAndScriptVariablesAsync().ConfigureAwait(false);
+
+                // Must retrieve in order of broadest to narrowest scope for efficient deduplication: global, script, local
+                this.globalScopeVariables =
+                    await FetchVariableContainerAsync(VariableContainerDetails.GlobalScopeName).ConfigureAwait(false);
+
+                this.scriptScopeVariables =
+                    await FetchVariableContainerAsync(VariableContainerDetails.ScriptScopeName).ConfigureAwait(false);
+
+                this.localScopeVariables =
+                    await FetchVariableContainerAsync(VariableContainerDetails.LocalScopeName).ConfigureAwait(false);
+
                 await FetchStackFramesAsync(scriptNameOverride).ConfigureAwait(false);
+
             }
             finally
             {
@@ -666,19 +671,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        private async Task FetchGlobalAndScriptVariablesAsync()
-        {
-            // Retrieve globals first as script variable retrieval needs to search globals.
-            this.globalScopeVariables =
-                await FetchVariableContainerAsync(VariableContainerDetails.GlobalScopeName, null).ConfigureAwait(false);
-
-            this.scriptScopeVariables =
-                await FetchVariableContainerAsync(VariableContainerDetails.ScriptScopeName, null).ConfigureAwait(false);
-        }
-
-        private async Task<VariableContainerDetails> FetchVariableContainerAsync(
-            string scope,
-            VariableContainerDetails autoVariables)
+        private async Task<VariableContainerDetails> FetchVariableContainerAsync(string scope)
         {
             PSCommand psCommand = new PSCommand()
                 .AddCommand("Get-Variable")
@@ -704,11 +697,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     var variableDetails = new VariableDetails(psVariableObject) { Id = this.nextVariableId++ };
                     this.variables.Add(variableDetails);
                     scopeVariableContainer.Children.Add(variableDetails.Name, variableDetails);
-
-                    if ((autoVariables != null) && AddToAutoVariables(psVariableObject, scope))
-                    {
-                        autoVariables.Children.Add(variableDetails.Name, variableDetails);
-                    }
                 }
             }
 
@@ -792,55 +780,90 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private async Task FetchStackFramesAsync(string scriptNameOverride)
         {
             PSCommand psCommand = new PSCommand();
+            // The serialization depth to retrieve variables from remote runspaces.
+            const int serializationDepth = 3;
 
             // This glorious hack ensures that Get-PSCallStack returns a list of CallStackFrame
             // objects (or "deserialized" CallStackFrames) when attached to a runspace in another
             // process.  Without the intermediate variable Get-PSCallStack inexplicably returns
             // an array of strings containing the formatted output of the CallStackFrame list.
-            var callStackVarName = $"$global:{PsesGlobalVariableNamePrefix}CallStack";
-            psCommand.AddScript($"{callStackVarName} = Get-PSCallStack; {callStackVarName}");
+            string callStackVarName = $"$global:{PsesGlobalVariableNamePrefix}CallStack";
 
-            var results = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, CancellationToken.None).ConfigureAwait(false);
+            string getPSCallStack = $"Get-PSCallStack | ForEach-Object {{ [void]{callStackVarName}.add(@($PSItem,$PSItem.GetFrameVariables())) }}";
 
-            var callStackFrames = results.ToArray();
+            // If we're attached to a remote runspace, we need to serialize the callstack prior to transport
+            // because the default depth is too shallow
+            bool isOnRemoteMachine = _psesHost.CurrentRunspace.IsOnRemoteMachine;
+            string returnSerializedIfOnRemoteMachine = isOnRemoteMachine
+                ? $"[Management.Automation.PSSerializer]::Serialize({callStackVarName}, {serializationDepth})"
+                : callStackVarName;
 
-            this.stackFrameDetails = new StackFrameDetails[callStackFrames.Length];
+            // We have to deal with a shallow serialization depth with ExecutePSCommandAsync as well, hence the serializer to get full var information
+            psCommand.AddScript($"[Collections.ArrayList]{callStackVarName} = @(); {getPSCallStack}; {returnSerializedIfOnRemoteMachine}");
 
-            for (int i = 0; i < callStackFrames.Length; i++)
+
+            // PSObject is used here instead of the specific type because we get deserialized objects from remote sessions and want a common interface
+            IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, CancellationToken.None).ConfigureAwait(false);
+
+            IEnumerable callStack = isOnRemoteMachine
+                ? (PSSerializer.Deserialize(results[0].BaseObject as string) as PSObject).BaseObject as IList
+                : results;
+
+            List<StackFrameDetails> stackFrameDetailList = new List<StackFrameDetails>();
+            foreach (var callStackFrameItem in callStack)
             {
-                VariableContainerDetails autoVariables =
-                    new VariableContainerDetails(
-                        this.nextVariableId++,
-                        VariableContainerDetails.AutoVariablesName);
+                var callStackFrameComponents = (callStackFrameItem as PSObject).BaseObject as IList;
+                var callStackFrame = callStackFrameComponents[0] as PSObject;
+                IDictionary callStackVariables = isOnRemoteMachine
+                    ? (callStackFrameComponents[1] as PSObject).BaseObject as IDictionary
+                    : callStackFrameComponents[1] as IDictionary;
 
-                this.variables.Add(autoVariables);
+                var autoVariables = new VariableContainerDetails(
+                    nextVariableId++,
+                    VariableContainerDetails.AutoVariablesName);
 
-                VariableContainerDetails localVariables =
-                    await FetchVariableContainerAsync(i.ToString(), autoVariables).ConfigureAwait(false);
+                variables.Add(autoVariables);
 
-                // When debugging, this is the best way I can find to get what is likely the workspace root.
-                // This is controlled by the "cwd:" setting in the launch config.
-                string workspaceRootPath = _psesHost.InitialWorkingDirectory;
+                foreach (DictionaryEntry entry in callStackVariables)
+                {
+                    // TODO: This should be deduplicated into a new function for the other variable handling as well
+                    object psVarValue = isOnRemoteMachine
+                        ? (entry.Value as PSObject).Properties["Value"].Value
+                        : (entry.Value as PSVariable).Value;
+                    // The constructor we are using here does not automatically add the dollar prefix
+                    string psVarName = VariableDetails.DollarPrefix + entry.Key.ToString();
+                    var variableDetails = new VariableDetails(psVarName, psVarValue) { Id = nextVariableId++ };
+                    variables.Add(variableDetails);
 
-                this.stackFrameDetails[i] =
-                    StackFrameDetails.Create(callStackFrames[i], autoVariables, localVariables, workspaceRootPath);
+                    if (AddToAutoVariables(new PSObject(entry.Value), scope: null))
+                    {
+                        autoVariables.Children.Add(variableDetails.Name, variableDetails);
+                    }
+                }
 
-                string stackFrameScriptPath = this.stackFrameDetails[i].ScriptPath;
-                if (scriptNameOverride != null &&
+                var stackFrameDetailsEntry = StackFrameDetails.Create(callStackFrame, autoVariables);
+
+                string stackFrameScriptPath = stackFrameDetailsEntry.ScriptPath;
+                if (scriptNameOverride is not null &&
                     string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
                 {
-                    this.stackFrameDetails[i].ScriptPath = scriptNameOverride;
+                    stackFrameDetailsEntry.ScriptPath = scriptNameOverride;
                 }
-                else if (_psesHost.CurrentRunspace.IsOnRemoteMachine
-                    && this.remoteFileManager != null
+                else if (isOnRemoteMachine
+                    && remoteFileManager is not null
                     && !string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
                 {
-                    this.stackFrameDetails[i].ScriptPath =
-                        this.remoteFileManager.GetMappedPath(
+                    stackFrameDetailsEntry.ScriptPath =
+                        remoteFileManager.GetMappedPath(
                             stackFrameScriptPath,
                             _psesHost.CurrentRunspace);
                 }
+
+                stackFrameDetailList.Add(
+                    stackFrameDetailsEntry);
             }
+
+            stackFrameDetails = stackFrameDetailList.ToArray();
         }
 
         private static string TrimScriptListingLine(PSObject scriptLineObj, ref int prefixLength)
