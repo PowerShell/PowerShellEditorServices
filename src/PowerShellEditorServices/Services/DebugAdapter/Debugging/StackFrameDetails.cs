@@ -64,6 +64,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// </summary>
         public VariableContainerDetails AutoVariables { get; private set; }
 
+        /// <summary>
+        /// Gets or sets the VariableContainerDetails that contains the call stack frame variables.
+        /// </summary>
+        public VariableContainerDetails CommandVariables { get; private set; }
+
         #endregion
 
         #region Constructors
@@ -81,7 +86,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <returns>A new instance of the StackFrameDetails class.</returns>
         static internal StackFrameDetails Create(
             PSObject callStackFrameObject,
-            VariableContainerDetails autoVariables)
+            VariableContainerDetails autoVariables,
+            VariableContainerDetails commandVariables)
         {
             string scriptPath = (callStackFrameObject.Properties["ScriptName"].Value as string) ?? NoFileScriptPath;
             int startLineNumber = (int)(callStackFrameObject.Properties["ScriptLineNumber"].Value ?? 0);
@@ -95,6 +101,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 StartColumnNumber = 0, // Column number isn't given in PowerShell stack frames
                 EndColumnNumber = 0,
                 AutoVariables = autoVariables,
+                CommandVariables = commandVariables,
                 // TODO: Re-enable `isExternal` detection along with a setting. Will require
                 // `workspaceRootPath`, see Git blame.
                 IsExternalCode = false

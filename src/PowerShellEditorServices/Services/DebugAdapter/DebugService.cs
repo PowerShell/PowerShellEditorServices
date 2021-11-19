@@ -609,10 +609,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             var stackFrames = GetStackFrames();
             int autoVariablesId = stackFrames[stackFrameId].AutoVariables.Id;
+            int commandVariablesId = stackFrames[stackFrameId].CommandVariables.Id;
 
             return new VariableScope[]
             {
                 new VariableScope(autoVariablesId, VariableContainerDetails.AutoVariablesName),
+                new VariableScope(commandVariablesId, VariableContainerDetails.CommandVariablesName),
                 new VariableScope(localScopeVariables.Id, VariableContainerDetails.LocalScopeName),
                 new VariableScope(scriptScopeVariables.Id, VariableContainerDetails.ScriptScopeName),
                 new VariableScope(globalScopeVariables.Id, VariableContainerDetails.GlobalScopeName),
@@ -810,6 +812,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 variables.Add(autoVariables);
 
+                var commandVariables = new VariableContainerDetails(
+                    nextVariableId++,
+                    VariableContainerDetails.CommandVariablesName);
+
+                variables.Add(commandVariables);
+
                 foreach (DictionaryEntry entry in callStackVariables)
                 {
                     // TODO: This should be deduplicated into a new function.
@@ -823,13 +831,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     var variableDetails = new VariableDetails(psVarName, psVarValue) { Id = nextVariableId++ };
                     variables.Add(variableDetails);
 
+                    commandVariables.Children.Add(variableDetails.Name, variableDetails);
                     if (AddToAutoVariables(new PSObject(entry.Value)))
                     {
                         autoVariables.Children.Add(variableDetails.Name, variableDetails);
                     }
                 }
 
-                var stackFrameDetailsEntry = StackFrameDetails.Create(callStackFrame, autoVariables);
+                var stackFrameDetailsEntry = StackFrameDetails.Create(callStackFrame, autoVariables, commandVariables);
 
                 string stackFrameScriptPath = stackFrameDetailsEntry.ScriptPath;
                 if (scriptNameOverride is not null
