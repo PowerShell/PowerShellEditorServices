@@ -700,17 +700,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return scopeVariableContainer;
         }
 
-        private bool AddToAutoVariables(PSObject psvariable, string scope)
+        // TODO: This function needs explanation, thought, and improvement.
+        private bool AddToAutoVariables(PSObject psvariable)
         {
-            if ((scope == VariableContainerDetails.GlobalScopeName)
-                || (scope == VariableContainerDetails.ScriptScopeName))
-            {
-                // We don't A) have a good way of distinguishing built-in from user created variables
-                // and B) globalScopeVariables.Children.ContainsKey() doesn't work for built-in variables
-                // stored in a child variable container within the globals variable container.
-                return false;
-            }
-
             string variableName = psvariable.Properties["Name"].Value as string;
             object variableValue = psvariable.Properties["Value"].Value;
 
@@ -831,7 +823,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     var variableDetails = new VariableDetails(psVarName, psVarValue) { Id = nextVariableId++ };
                     variables.Add(variableDetails);
 
-                    if (AddToAutoVariables(new PSObject(entry.Value), scope: null))
+                    if (AddToAutoVariables(new PSObject(entry.Value)))
                     {
                         autoVariables.Children.Add(variableDetails.Name, variableDetails);
                     }
