@@ -41,6 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly IPowerShellDebugContext _debugContext;
 
+        // The LSP protocol refers to variables by individual IDs, this is an iterator for that purpose.
         private int nextVariableId;
         private string temporaryScriptListingPath;
         private List<VariableDetailsBase> variables;
@@ -654,7 +655,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        private async Task<VariableContainerDetails> FetchVariableContainerAsync(string scope)
+        private Task<VariableContainerDetails> FetchVariableContainerAsync(string scope)
+        {
+            return FetchVariableContainerAsync(scope, autoVarsOnly: false);
+        }
+
+        private async Task<VariableContainerDetails> FetchVariableContainerAsync(string scope, bool autoVarsOnly)
         {
             PSCommand psCommand = new PSCommand()
                 .AddCommand("Get-Variable")
@@ -692,8 +698,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     {
                         continue;
                     }
+                    var variableInfo = TryVariableInfo(psVariableObject);
+                    if (variableInfo is null || !ShouldAddAsVariable(variableInfo))
+                    {
+                        continue;
+                    }
+                    if (autoVarsOnly && !ShouldAddToAutoVariables(variableInfo))
+                    {
+                        continue;
+                    }
 
-                    var variableDetails = new VariableDetails(psVariableObject) { Id = nextVariableId++ };
+                    var variableDetails = new VariableDetails(variableInfo.Variable) { Id = nextVariableId++ };
                     variables.Add(variableDetails);
                     scopeVariableContainer.Children.Add(variableDetails.Name, variableDetails);
                 }
@@ -702,70 +717,95 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return scopeVariableContainer;
         }
 
-        // TODO: This function needs explanation, thought, and improvement.
-        private bool AddToAutoVariables(PSObject psvariable)
+        // This is a helper type for FetchStackFramesAsync to preserve the variable Type after deserialization.
+        private record VariableInfo(string[] Types, PSVariable Variable);
+
+        // Create a VariableInfo for both serialized and deserialized variables.
+        private static VariableInfo TryVariableInfo(PSObject psObject)
         {
-            string variableName = psvariable.Properties["Name"].Value as string;
-            object variableValue = psvariable.Properties["Value"].Value;
-
-            // Don't put any variables created by PSES in the Auto variable container.
-            if (variableName.StartsWith(PsesGlobalVariableNamePrefix)
-                || variableName.Equals("PSDebugContext"))
+            if (psObject.TypeNames.Contains("System.Management.Automation.PSVariable"))
             {
-                return false;
+                return new VariableInfo(psObject.TypeNames.ToArray(), psObject.BaseObject as PSVariable);
+            }
+            if (psObject.TypeNames.Contains("Deserialized.System.Management.Automation.PSVariable"))
+            {
+                // Rehydrate the relevant variable properties and recreate it.
+                ScopedItemOptions options = (ScopedItemOptions)Enum.Parse(typeof(ScopedItemOptions), psObject.Properties["Options"].Value.ToString());
+                PSVariable reconstructedVar = new(
+                    psObject.Properties["Name"].Value.ToString(),
+                    psObject.Properties["Value"].Value,
+                    options
+                );
+                return new VariableInfo(psObject.TypeNames.ToArray(), reconstructedVar);
             }
 
-            ScopedItemOptions variableScope = ScopedItemOptions.None;
-            PSPropertyInfo optionsProperty = psvariable.Properties["Options"];
-            if (string.Equals(optionsProperty.TypeNameOfValue, "System.String"))
-            {
-                if (!Enum.TryParse<ScopedItemOptions>(
-                        optionsProperty.Value as string,
-                        out variableScope))
-                {
-                    _logger.LogWarning($"Could not parse a variable's ScopedItemOptions value of '{optionsProperty.Value}'");
-                }
-            }
-            else if (optionsProperty.Value is ScopedItemOptions)
-            {
-                variableScope = (ScopedItemOptions)optionsProperty.Value;
-            }
+            return null;
+        }
 
-            // Some local variables, if they exist, should be displayed by default
-            if (psvariable.TypeNames[0].EndsWith("LocalVariable"))
-            {
-                if (variableName.Equals("PSItem") || variableName.Equals("_"))
-                {
-                    return true;
-                }
-                else if (variableName.Equals("args", StringComparison.OrdinalIgnoreCase))
-                {
-                    return variableValue is Array array && array.Length > 0;
-                }
-
-                return false;
-            }
-            else if (!psvariable.TypeNames[0].EndsWith(nameof(PSVariable)))
-            {
-                return false;
-            }
-
+        /// <summary>
+        /// Filters out variables we don't care about such as built-ins
+        /// </summary>
+        private static bool ShouldAddAsVariable(VariableInfo variableInfo)
+        {
+            // Filter built-in constant or readonly variables like $true, $false, $null, etc.
+            ScopedItemOptions variableScope = variableInfo.Variable.Options;
             var constantAllScope = ScopedItemOptions.AllScope | ScopedItemOptions.Constant;
             var readonlyAllScope = ScopedItemOptions.AllScope | ScopedItemOptions.ReadOnly;
-
             if (((variableScope & constantAllScope) == constantAllScope)
                 || ((variableScope & readonlyAllScope) == readonlyAllScope))
             {
-                // The constructor we are using here does not automatically add the dollar prefix,
-                // so we do it manually.
-                string prefixedVariableName = VariableDetails.DollarPrefix + variableName;
-                if (globalScopeVariables.Children.ContainsKey(prefixedVariableName))
-                {
-                    return false;
-                }
+                return false;
+            }
+
+            if (variableInfo.Variable.Name switch { "null" => true, _ => false })
+            {
+                return false;
             }
 
             return true;
+        }
+
+        // This method curates variables that should be added to the "auto" view, which we define as variables that are
+        // very likely to be contextually relevant to the user, in an attempt to reduce noise when debugging.
+        // Variables not listed here can still be found in the other containers like local and script, this is
+        // provided as a convenience.
+        private bool ShouldAddToAutoVariables(VariableInfo variableInfo)
+        {
+            var variableToAdd = variableInfo.Variable;
+            if (!ShouldAddAsVariable(variableInfo))
+            {
+                return false;
+            }
+
+            // Filter internal variables created by Powershell Editor Services.
+            if (variableToAdd.Name.StartsWith(PsesGlobalVariableNamePrefix)
+                || variableToAdd.Name.Equals("PSDebugContext"))
+            {
+                return false;
+            }
+
+            // Filter Global-Scoped variables. We first cast to VariableDetails to ensure the prefix
+            // is added for purposes of comparison.
+            VariableDetails variableToAddDetails = new(variableToAdd);
+            if (globalScopeVariables.Children.ContainsKey(variableToAddDetails.Name))
+            {
+                return false;
+            }
+
+            // We curate a list of LocalVariables that, if they exist, should be displayed by default.
+            if (variableInfo.Types[0].EndsWith("LocalVariable"))
+            {
+                return variableToAdd.Name switch
+                {
+                    "PSItem" or "_" or "" => true,
+                    "args" or "input" => variableToAdd.Value is Array array && array.Length > 0,
+                    "PSBoundParameters" => variableToAdd.Value is IDictionary dict && dict.Count > 0,
+                    _ => false
+                };
+            }
+
+            // Any other PSVariables that survive the above criteria should be included.
+            return variableInfo.Types[0].EndsWith("PSVariable");
         }
 
         private async Task FetchStackFramesAsync(string scriptNameOverride)
@@ -798,8 +838,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 : results;
 
             var stackFrameDetailList = new List<StackFrameDetails>();
+            bool isTopStackFrame = true;
             foreach (var callStackFrameItem in callStack)
             {
+                // We have to use reflection to get the variable dictionary.
                 var callStackFrameComponents = (callStackFrameItem as PSObject).BaseObject as IList;
                 var callStackFrame = callStackFrameComponents[0] as PSObject;
                 IDictionary callStackVariables = isOnRemoteMachine
@@ -820,27 +862,47 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 foreach (DictionaryEntry entry in callStackVariables)
                 {
-                    // TODO: This should be deduplicated into a new function.
-                    object psVarValue = isOnRemoteMachine
-                        ? (entry.Value as PSObject).Properties["Value"].Value
-                        : (entry.Value as PSVariable).Value;
+                    VariableInfo psVarInfo = TryVariableInfo(new PSObject(entry.Value));
+                    if (psVarInfo is null)
+                    {
+                        _logger.LogError($"A object was received that is not a PSVariable object");
+                        continue;
+                    }
 
-                    // The constructor we are using here does not automatically add the dollar
-                    // prefix, so we do it manually.
-                    string psVarName = VariableDetails.DollarPrefix + entry.Key.ToString();
-                    var variableDetails = new VariableDetails(psVarName, psVarValue) { Id = nextVariableId++ };
+                    var variableDetails = new VariableDetails(psVarInfo.Variable) { Id = nextVariableId++ };
                     variables.Add(variableDetails);
 
                     commandVariables.Children.Add(variableDetails.Name, variableDetails);
-                    if (AddToAutoVariables(new PSObject(entry.Value)))
+
+                    if (ShouldAddToAutoVariables(psVarInfo))
                     {
                         autoVariables.Children.Add(variableDetails.Name, variableDetails);
                     }
                 }
 
-                var stackFrameDetailsEntry = StackFrameDetails.Create(callStackFrame, autoVariables, commandVariables);
+                // If this is the top stack frame, we also want to add relevant local variables to
+                // the "Auto" container (not to be confused with Automatic PowerShell variables).
+                //
+                // TODO: We can potentially use `Get-Variable -Scope x` to add relevant local
+                // variables to other frames but frames and scopes are not perfectly analagous and
+                // we'd need a way to detect things such as module borders and dot-sourced files.
+                if (isTopStackFrame)
+                {
+                    var localScopeAutoVariables = await FetchVariableContainerAsync(VariableContainerDetails.LocalScopeName, autoVarsOnly: true).ConfigureAwait(false);
+                    foreach (KeyValuePair<string, VariableDetailsBase> entry in localScopeAutoVariables.Children)
+                    {
+                        // NOTE: `TryAdd` doesn't work on `IDictionary`.
+                        if (!autoVariables.Children.ContainsKey(entry.Key))
+                        {
+                            autoVariables.Children.Add(entry.Key, entry.Value);
+                        }
+                    }
+                    isTopStackFrame = false;
+                }
 
+                var stackFrameDetailsEntry = StackFrameDetails.Create(callStackFrame, autoVariables, commandVariables);
                 string stackFrameScriptPath = stackFrameDetailsEntry.ScriptPath;
+
                 if (scriptNameOverride is not null
                     && string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
                 {
