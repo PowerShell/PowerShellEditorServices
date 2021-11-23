@@ -61,8 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 if (_debugContext.IsStopped)
                 {
                     // First check to see if the watch expression refers to a naked variable reference.
-                    result =
-                        _debugService.GetVariableFromExpression(request.Expression, request.FrameId);
+                    result = _debugService.GetVariableFromExpression(request.Expression);
 
                     // If the expression is not a naked variable reference, then evaluate the expression.
                     if (result == null)
@@ -70,7 +69,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         result =
                             await _debugService.EvaluateExpressionAsync(
                                 request.Expression,
-                                request.FrameId,
                                 isFromRepl).ConfigureAwait(false);
                     }
                 }
