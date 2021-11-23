@@ -157,9 +157,15 @@ contribute code, documentation, tests, or bug reports, please read our [Contribu
 
 ## Maintainers
 
+- [Justin Grote](https://github.com/JustinGrote) - [@JustinWGrote](https://twitter.com/justinwgrote)
 - [Patrick Meinecke](https://github.com/SeeminglyScience) - [@SeeminglyScienc](http://twitter.com/SeeminglyScienc)
-- [Rob Holt](https://github.com/rjmholt) - [@rjmholt](https://twitter.com/rjmholt)
 - [Andy Schwartzmeyer](https://github.com/andschwa) - [andschwa.com](https://andschwa.com/)
+
+### Emeriti
+
+- [Rob Holt](https://github.com/rjmholt) - [@rjmholt](https://twitter.com/rjmholt)
+- [Tyler Leonhardt](https://github.com/TylerLeonhardt) - [tylerleonhardt.com](https://tylerleonhardt.com)
+- [David Wilson](https://github.com/daviwil) - [@daviwil](https://twitter.com/daviwil)
 
 ## License
 
