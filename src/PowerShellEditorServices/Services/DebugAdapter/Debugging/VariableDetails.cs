@@ -6,6 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Management.Automation;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
@@ -27,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// </summary>
         public const string DollarPrefix = "$";
 
-        private object valueObject;
+        protected object valueObject;
         private VariableDetails[] cachedChildren;
 
         #endregion
@@ -366,10 +367,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
             return childVariables.ToArray();
         }
-
-        private static void AddDotNetProperties(object obj, List<VariableDetails> childVariables)
+        protected static void AddDotNetProperties(object obj, List<VariableDetails> childVariables, bool noRawView = false)
         {
             Type objectType = obj.GetType();
+
+            // For certain array or dictionary types, we want to hide additional properties under a "raw view" header
+            // to reduce noise. This is inspired by the C# vscode extension.
+            if (!noRawView &&
+                (
+                    obj is IEnumerable
+                    || obj is IDictionary
+                )
+            )
+            {
+                childVariables.Add(new VariableDetailsRawView(obj));
+                return;
+            }
+
             var properties =
                 objectType.GetProperties(
                     BindingFlags.Public | BindingFlags.Instance);
@@ -422,6 +436,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             {
                 return "<" + Message + ">";
             }
+        }
+    }
+
+    /// <summary>
+    /// A VariableDetails that only returns the raw view properties of the object, rather than its values.
+    /// </summary>
+    internal class VariableDetailsRawView : VariableDetails
+    {
+        private const string RawViewName = "Raw View";
+        public VariableDetailsRawView(object value) : base(RawViewName, value) { }
+        public override VariableDetailsBase[] GetChildren(ILogger logger)
+        {
+            List<VariableDetails> childVariables = new();
+            AddDotNetProperties(valueObject, childVariables, noRawView: true);
+            return childVariables.ToArray();
         }
     }
 }
