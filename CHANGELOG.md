@@ -1,5 +1,14 @@
 # PowerShell Editor Services Release History
 
+## v3.0.2
+### Monday, November 22, 2021
+
+- ✨ 📖 [PowerShellEditorServices #1631](https://github.com/PowerShell/PowerShellEditorServices/pull/1631) - Add Justin Grote as maintainer.
+- 🐛 🔍 [vscode-powershell #3667](https://github.com/PowerShell/PowerShellEditorServices/pull/1630) - Improve debugger's variable population mechanism. (Thanks @JustinGrote and @SeeminglyScience!)
+- 🐛 👷 [PowerShellEditorServices #1628](https://github.com/PowerShell/PowerShellEditorServices/pull/1628) - Fix build for Apple M1 when running PowerShell 7.2 (arm64).
+- 🐛 👷 [PowerShellEditorServices #1626](https://github.com/PowerShell/PowerShellEditorServices/pull/1626) - Remove Windows Server 2016 from CI.
+- ✨ 👷 [PowerShellEditorServices #1619](https://github.com/PowerShell/PowerShellEditorServices/pull/1619) - Install a single `dotnet` SDK.
+
 ## v3.0.1
 ### Wednesday, November 03, 2021
 
