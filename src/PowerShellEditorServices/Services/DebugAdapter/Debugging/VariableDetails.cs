@@ -6,7 +6,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Management.Automation;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
