@@ -534,7 +534,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         {
             await debugService.SetLineBreakpointsAsync(
                 variableScriptFile,
-                new[] { BreakpointDetails.Create(variableScriptFile.FilePath, 14) }).ConfigureAwait(true);
+                new[] { BreakpointDetails.Create(variableScriptFile.FilePath, 21) }).ConfigureAwait(true);
 
             Task _ = ExecuteVariableScriptFile();
             AssertDebuggerStopped(variableScriptFile.FilePath);
@@ -567,6 +567,16 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             var classChildren = debugService.GetVariables(classVar.Id);
             Assert.Equal(2, classChildren.Length);
+
+            var trueVar = Array.Find(variables, v => v.Name == "$trueVar");
+            Assert.NotNull(trueVar);
+            Assert.Equal("boolean", trueVar.Type);
+            Assert.Equal("$true", trueVar.ValueString);
+
+            var falseVar = Array.Find(variables, v => v.Name == "$falseVar");
+            Assert.NotNull(falseVar);
+            Assert.Equal("boolean", falseVar.Type);
+            Assert.Equal("$false", falseVar.ValueString);
         }
 
         [Trait("Category", "DebugService")]
