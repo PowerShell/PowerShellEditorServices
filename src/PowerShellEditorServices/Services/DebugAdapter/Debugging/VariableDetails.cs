@@ -445,6 +445,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
     internal class VariableDetailsRawView : VariableDetails
     {
         private const string RawViewName = "Raw View";
+
         public VariableDetailsRawView(object value) : base(RawViewName, value) { }
         public override VariableDetailsBase[] GetChildren(ILogger logger)
         {
