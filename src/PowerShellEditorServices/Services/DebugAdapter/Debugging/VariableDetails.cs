@@ -371,12 +371,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
             // For certain array or dictionary types, we want to hide additional properties under a "raw view" header
             // to reduce noise. This is inspired by the C# vscode extension.
-            if (!noRawView &&
-                (
-                    obj is IEnumerable
-                    || obj is IDictionary
-                )
-            )
+            if (!noRawView && obj is IEnumerable)
             {
                 childVariables.Add(new VariableDetailsRawView(obj));
                 return;
