@@ -441,7 +441,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
     /// <summary>
     /// A VariableDetails that only returns the raw view properties of the object, rather than its values.
     /// </summary>
-    internal class VariableDetailsRawView : VariableDetails
+    internal sealed class VariableDetailsRawView : VariableDetails
     {
         private const string RawViewName = "Raw View";
 
