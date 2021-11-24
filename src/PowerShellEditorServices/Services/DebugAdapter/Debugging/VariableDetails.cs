@@ -446,7 +446,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
     {
         private const string RawViewName = "Raw View";
 
-        public VariableDetailsRawView(object value) : base(RawViewName, value) { }
+        public VariableDetailsRawView(object value) : base(RawViewName, value)
+        {
+        }
+
         public override VariableDetailsBase[] GetChildren(ILogger logger)
         {
             List<VariableDetails> childVariables = new();
