@@ -26,8 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// Provides a constant for the dollar sign variable prefix string.
         /// </summary>
         public const string DollarPrefix = "$";
-
-        protected object valueObject;
+        protected object ValueObject { get; }
         private VariableDetails[] cachedChildren;
 
         #endregion
@@ -81,7 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <param name="value">The variable's value.</param>
         public VariableDetails(string name, object value)
         {
-            this.valueObject = value;
+            this.ValueObject = value;
 
             this.Id = -1; // Not been assigned a variable reference id yet
             this.Name = name;
@@ -109,7 +108,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             {
                 if (this.cachedChildren == null)
                 {
-                    this.cachedChildren = GetChildren(this.valueObject, logger);
+                    this.cachedChildren = GetChildren(this.ValueObject, logger);
                 }
 
                 return this.cachedChildren;
@@ -175,13 +174,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             if (value is bool)
             {
                 // Set to identifier recognized by PowerShell to make setVariable from the debug UI more natural.
-                valueString = (bool) value ? "$true" : "$false";
+                valueString = (bool)value ? "$true" : "$false";
 
                 // We need to use this "magic value" to highlight in vscode properly
                 // These "magic values" are analagous to TypeScript and are visible in VSCode here:
                 // https://github.com/microsoft/vscode/blob/57ca9b99d5b6a59f2d2e0f082ae186559f45f1d8/src/vs/workbench/contrib/debug/browser/baseDebugView.ts#L68-L78
-                // NOTE: we don't do numbers and strings since they (so far) seem to get detected properly by 
-                //serialization, and the original .NET type can be preserved so it shows up in the variable name 
+                // NOTE: we don't do numbers and strings since they (so far) seem to get detected properly by
+                //serialization, and the original .NET type can be preserved so it shows up in the variable name
                 //type hover as the original .NET type.
                 typeName = "boolean";
             }
@@ -452,7 +451,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         public override VariableDetailsBase[] GetChildren(ILogger logger)
         {
             List<VariableDetails> childVariables = new();
-            AddDotNetProperties(valueObject, childVariables, noRawView: true);
+            AddDotNetProperties(ValueObject, childVariables, noRawView: true);
             return childVariables.ToArray();
         }
     }
