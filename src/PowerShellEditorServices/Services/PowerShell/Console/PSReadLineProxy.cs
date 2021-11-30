@@ -44,37 +44,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private static readonly Type[] s_addToHistoryTypes = { typeof(string) };
 
-        private static readonly string _psReadLineModulePath = Path.GetFullPath(
-            Path.Combine(
-                Path.GetDirectoryName(typeof(PSReadLineProxy).Assembly.Location),
-                "..",
-                "..",
-                "..",
-                "PSReadLine"));
-
-        private static readonly string ReadLineInitScript = $@"
-            [System.Diagnostics.DebuggerHidden()]
-            [System.Diagnostics.DebuggerStepThrough()]
-            param()
-            end {{
-                $module = Get-Module -ListAvailable PSReadLine |
-                    Where-Object {{ $_.Version -ge '2.2.1' }} |
-                    Sort-Object -Descending Version |
-                    Select-Object -First 1
-                if (-not $module) {{
-                    Import-Module '{_psReadLineModulePath.Replace("'", "''")}'
-                    return [Microsoft.PowerShell.PSConsoleReadLine]
-                }}
-
-                Import-Module -ModuleInfo $module
-                return [Microsoft.PowerShell.PSConsoleReadLine]
-            }}";
-
         public static PSReadLineProxy LoadAndCreate(
             ILoggerFactory loggerFactory,
+            string bundledModulePath,
             SMA.PowerShell pwsh)
         {
-            Type psConsoleReadLineType = pwsh.AddScript(ReadLineInitScript).InvokeAndClear<Type>().FirstOrDefault();
+            pwsh.ImportModule(Path.Combine(bundledModulePath, "PSReadLine"));
+            Type psConsoleReadLineType = pwsh.AddScript("return [Microsoft.PowerShell.PSConsoleReadLine]")
+                .InvokeAndClear<Type>().FirstOrDefault();
 
             RuntimeHelpers.RunClassConstructor(psConsoleReadLineType.TypeHandle);
 
