@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using Microsoft.Extensions.Logging;
@@ -13,10 +13,8 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
-using System.Collections.Generic;
 using System.Management.Automation;
 using System.Management.Automation.Language;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -140,38 +138,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 await _executionService
                     .ExecutePSCommandAsync(
-                        BuildPSCommandFromArguments(scriptToLaunch, _debugStateService.Arguments),
+                        PSCommandHelpers.BuildCommandFromArguments(scriptToLaunch, _debugStateService.Arguments),
                         CancellationToken.None,
                         s_debuggerExecutionOptions)
                     .ConfigureAwait(false);
             }
 
             _debugAdapterServer.SendNotification(EventNames.Terminated);
-        }
-
-        private static PSCommand BuildPSCommandFromArguments(string command, IReadOnlyList<string> arguments)
-        {
-            if (arguments is null or { Count: 0 })
-            {
-                return new PSCommand().AddCommand(command);
-            }
-
-            // HACK: We use AddScript instead of AddArgument/AddParameter to reuse Powershell parameter binding logic.
-            // We quote the command parameter so that expressions can still be used in the arguments.
-            var sb = new StringBuilder()
-                .Append('&')
-                .Append('"')
-                .Append(command)
-                .Append('"');
-
-            foreach (string arg in arguments)
-            {
-                sb
-                .Append(' ')
-                .Append(ArgumentEscaping.Escape(arg));
-            }
-
-            return new PSCommand().AddScript(sb.ToString());
         }
     }
 }
