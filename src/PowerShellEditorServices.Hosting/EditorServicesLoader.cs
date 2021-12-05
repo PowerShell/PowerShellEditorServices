@@ -269,9 +269,13 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             }
 
             string psModulePath = Environment.GetEnvironmentVariable("PSModulePath").TrimEnd(Path.PathSeparator);
+            if ($"{psModulePath}{Path.PathSeparator}".Contains($"{_hostConfig.BundledModulePath}{Path.PathSeparator}"))
+            {
+                _logger.Log(PsesLogLevel.Diagnostic, "BundledModulePath already set, skipping");
+                return;
+            }
             psModulePath = $"{psModulePath}{Path.PathSeparator}{_hostConfig.BundledModulePath}";
             Environment.SetEnvironmentVariable("PSModulePath", psModulePath);
-
             _logger.Log(PsesLogLevel.Verbose, $"Updated PSModulePath to: '{psModulePath}'");
         }
 
