@@ -183,6 +183,12 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         public SwitchParameter DebugServiceOnly { get; set; }
 
         /// <summary>
+        /// When set, do not enable debug adapter, only the LSP service.
+        /// </summary>
+        [Parameter]
+        public SwitchParameter LanguageServiceOnly { get; set; }
+
+        /// <summary>
         /// When set with a debug build, startup will wait for a debugger to attach.
         /// </summary>
         [Parameter]
@@ -465,6 +471,11 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Configuring debug transport");
 
+            if(LanguageServiceOnly)
+            {
+                _logger.Log(PsesLogLevel.Diagnostic, "No Debug transport: PSES is language service only");
+                return null;
+            }
             if (Stdio)
             {
                 if (DebugServiceOnly)

@@ -66,6 +66,9 @@ param(
     [switch]
     $DebugServiceOnly,
 
+    [switch]
+    $LanguageServiceOnly,
+
     [string[]]
     $AdditionalModules,
 
