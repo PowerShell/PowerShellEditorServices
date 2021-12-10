@@ -183,7 +183,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         public SwitchParameter DebugServiceOnly { get; set; }
 
         /// <summary>
-        /// When set, do not enable debug adapter, only the LSP service.
+        /// When set, do not enable debug adapter, only the language service.
         /// </summary>
         [Parameter]
         public SwitchParameter LanguageServiceOnly { get; set; }
