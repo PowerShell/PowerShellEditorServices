@@ -471,11 +471,12 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Configuring debug transport");
 
-            if(LanguageServiceOnly)
+            if (LanguageServiceOnly)
             {
                 _logger.Log(PsesLogLevel.Diagnostic, "No Debug transport: PSES is language service only");
                 return null;
             }
+
             if (Stdio)
             {
                 if (DebugServiceOnly)
