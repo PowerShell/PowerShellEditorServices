@@ -106,6 +106,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         public void SetDebugResuming(DebuggerResumeAction debuggerResumeAction)
         {
+            // NOTE: We exit because the paused/stopped debugger is currently in a prompt REPL, and
+            // to resume the debugger we must exit that REPL.
             _psesHost.SetExit();
 
             if (LastStopEventArgs is not null)
@@ -113,8 +115,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                 LastStopEventArgs.ResumeAction = debuggerResumeAction;
             }
 
-            // We need to tell whatever is happening right now in the debug prompt to wrap up so we can continue
-            _psesHost.CancelCurrentTask();
+            // We need to tell whatever is happening right now in the debug prompt to wrap up so we
+            // can continue. However, if the host was initialized with the console REPL disabled,
+            // then we'd accidentally cancel the debugged task since no prompt is running. We can
+            // test this by checking if the UI's type is NullPSHostUI which is used specifically in
+            // this scenario. This mostly applies to unit tests.
+            if (_psesHost.UI is not NullPSHostUI)
+            {
+                _psesHost.CancelCurrentTask();
+            }
         }
 
         // This must be called AFTER the new PowerShell has been pushed
