@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using Microsoft.Extensions.Logging;
@@ -70,33 +70,30 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (_debugStateService.OwnsEditorSession)
             {
-                // If this is a debug-only session, we need to start
-                // the command loop manually
+                // TODO: If this is a debug-only session, we need to start the command loop manually
+                //
                 //_powerShellContextService.ConsoleReader.StartCommandLoop();
             }
 
             if (!string.IsNullOrEmpty(_debugStateService.ScriptToLaunch))
             {
-                LaunchScriptAsync(_debugStateService.ScriptToLaunch)
-                    .HandleErrorsAsync(_logger);
+                LaunchScriptAsync(_debugStateService.ScriptToLaunch).HandleErrorsAsync(_logger);
             }
 
-            if (_debugStateService.IsInteractiveDebugSession)
+            if (_debugStateService.IsInteractiveDebugSession && _debugService.IsDebuggerStopped)
             {
-                if (_debugService.IsDebuggerStopped)
+                if (_debugService.CurrentDebuggerStoppedEventArgs is not null)
                 {
-                    if (_debugService.CurrentDebuggerStoppedEventArgs != null)
-                    {
-                        // If this is an interactive session and there's a pending breakpoint,
-                        // send that information along to the debugger client
-                        _debugEventHandlerService.TriggerDebuggerStopped(_debugService.CurrentDebuggerStoppedEventArgs);
-                    }
-                    else
-                    {
-                        // If this is an interactive session and there's a pending breakpoint that has not been propagated through
-                        // the debug service, fire the debug service's OnDebuggerStop event.
-                        _debugService.OnDebuggerStopAsync(null, _debugContext.LastStopEventArgs);
-                    }
+                    // If this is an interactive session and there's a pending breakpoint, send that
+                    // information along to the debugger client.
+                    _debugEventHandlerService.TriggerDebuggerStopped(_debugService.CurrentDebuggerStoppedEventArgs);
+                }
+                else
+                {
+                    // If this is an interactive session and there's a pending breakpoint that has
+                    // not been propagated through the debug service, fire the debug service's
+                    // OnDebuggerStop event.
+                    _debugService.OnDebuggerStopAsync(null, _debugContext.LastStopEventArgs);
                 }
             }
 
@@ -119,6 +116,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     ScriptBlockAst ast = Parser.ParseInput(untitledScript.Contents, untitledScript.DocumentUri.ToString(), out Token[] tokens, out ParseError[] errors);
 
                     // This seems to be the simplest way to invoke a script block (which contains breakpoint information) via the PowerShell API.
+                    //
+                    // TODO: Fix this so the added script doesn't show up.
                     var cmd = new PSCommand().AddScript(". $args[0]").AddArgument(ast.GetScriptBlock());
                     await _executionService
                         .ExecutePSCommandAsync<object>(cmd, CancellationToken.None, s_debuggerExecutionOptions)
