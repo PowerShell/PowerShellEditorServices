@@ -151,7 +151,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         public void ProcessDebuggerResult(DebuggerCommandResults debuggerResult)
         {
-            if (debuggerResult.ResumeAction != null)
+            if (debuggerResult.ResumeAction is not null)
             {
                 SetDebugResuming(debuggerResult.ResumeAction.Value);
                 RaiseDebuggerResumingEvent(new DebuggerResumingEventArgs(debuggerResult.ResumeAction.Value));

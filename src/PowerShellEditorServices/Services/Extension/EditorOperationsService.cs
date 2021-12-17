@@ -264,7 +264,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer(warnUser: false))
             {
                 return;
-            };
+            }
 
             _languageServer.SendNotification("editor/clearTerminal");
         }

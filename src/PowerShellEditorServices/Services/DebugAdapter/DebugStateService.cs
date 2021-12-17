@@ -46,8 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal async Task WaitForSetBreakpointHandleAsync()
         {
-            await _setBreakpointInProgressHandle.WaitAsync()
-                .ConfigureAwait(continueOnCapturedContext: false);
+            await _setBreakpointInProgressHandle.WaitAsync().ConfigureAwait(false);
         }
     }
 }

@@ -36,11 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         request.Name,
                         request.Value).ConfigureAwait(false);
 
-                return new SetVariableResponse
-                {
-                    Value = updatedValue
-                };
-
+                return new SetVariableResponse { Value = updatedValue };
             }
                 catch (Exception ex) when(ex is ArgumentTransformationMetadataException ||
                                            ex is InvalidPowerShellExpressionException ||
