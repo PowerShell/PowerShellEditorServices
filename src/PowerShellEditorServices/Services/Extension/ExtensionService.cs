@@ -104,15 +104,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 
             // Assign the new EditorObject to be the static instance available to binary APIs
             EditorObject.SetAsStaticInstance();
+            // This is constant so Remove-Variable cannot remove it.
+            PSVariable psEditor = new(PSEditorVariableName, EditorObject, ScopedItemOptions.Constant);
 
             // Register the editor object in the runspace
             return ExecutionService.ExecuteDelegateAsync(
                 $"Create ${PSEditorVariableName} object",
                 ExecutionOptions.Default,
-                (pwsh, cancellationToken) =>
-                {
-                    pwsh.Runspace.SessionStateProxy.PSVariable.Set(PSEditorVariableName, EditorObject);
-                },
+                (pwsh, _) => pwsh.Runspace.SessionStateProxy.PSVariable.Set(psEditor),
                 CancellationToken.None);
         }
 
