@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -502,15 +502,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             PowerShellContextFrame frame = _psFrameStack.Pop();
             try
             {
-                // If we're changing runspace, make sure we move the handlers over
-                RunspaceFrame previousRunspaceFrame = _runspaceStack.Peek();
-                if (previousRunspaceFrame.Runspace != CurrentPowerShell.Runspace)
+                // If we're changing runspace, make sure we move the handlers over. If we just
+                // popped the last frame, then we're exiting and should pop the runspace too.
+                if (_psFrameStack.Count == 0
+                    || _runspaceStack.Peek().Runspace != _psFrameStack.Peek().PowerShell.Runspace)
                 {
-                    _runspaceStack.Pop();
-                    RunspaceFrame currentRunspaceFrame = _runspaceStack.Peek();
+                    RunspaceFrame previousRunspaceFrame = _runspaceStack.Pop();
                     RemoveRunspaceEventHandlers(previousRunspaceFrame.Runspace);
-                    AddRunspaceEventHandlers(currentRunspaceFrame.Runspace);
-                    RunspaceChanged?.Invoke(this, new RunspaceChangedEventArgs(runspaceChangeAction, previousRunspaceFrame.RunspaceInfo, currentRunspaceFrame.RunspaceInfo));
+
+                    // If there is still a runspace on the stack, then we need to re-register the
+                    // handlers. Otherwise we're exiting and so don't need to run 'RunspaceChanged'.
+                    if (_runspaceStack.Count > 0)
+                    {
+                        RunspaceFrame newRunspaceFrame = _runspaceStack.Peek();
+                        AddRunspaceEventHandlers(newRunspaceFrame.Runspace);
+                        RunspaceChanged?.Invoke(
+                            this,
+                            new RunspaceChangedEventArgs(
+                                runspaceChangeAction,
+                                previousRunspaceFrame.RunspaceInfo,
+                                newRunspaceFrame.RunspaceInfo));
+                    }
                 }
             }
             finally
