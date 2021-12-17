@@ -2,18 +2,12 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
-using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Management.Automation.Runspaces;
-using System.Security;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
@@ -23,11 +17,11 @@ namespace Microsoft.PowerShell.EditorServices.Test
 {
     internal static class PsesHostFactory
     {
-        // NOTE: These paths are arbitrarily chosen just to verify that the profile paths
-        //       can be set to whatever they need to be for the given host.
+        // NOTE: These paths are arbitrarily chosen just to verify that the profile paths can be set
+        // to whatever they need to be for the given host.
 
         public static readonly ProfilePathInfo TestProfilePaths =
-            new ProfilePathInfo(
+            new(
                     Path.GetFullPath(
                         TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Profile/Test.PowerShellEditorServices_profile.ps1")),
                     Path.GetFullPath(
@@ -58,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 initialSessionState.ExecutionPolicy = ExecutionPolicy.Bypass;
             }
 
-            HostStartupInfo testHostDetails = new HostStartupInfo(
+            HostStartupInfo testHostDetails = new(
                 "PowerShell Editor Services Test Host",
                 "Test.PowerShellEditorServices",
                 new Version("1.0.0"),
@@ -75,50 +69,29 @@ namespace Microsoft.PowerShell.EditorServices.Test
 
             var psesHost = new PsesInternalHost(loggerFactory, null, testHostDetails);
 
-            psesHost.TryStartAsync(new HostStartOptions { LoadProfiles = true }, CancellationToken.None).GetAwaiter().GetResult();
+            // NOTE: Because this is used by constructors it can't use await.
+            // TODO: Should we actually load profiles here?
+            if (psesHost.TryStartAsync(new HostStartOptions { LoadProfiles = true }, CancellationToken.None).GetAwaiter().GetResult())
+            {
+                return psesHost;
+            }
 
-            return psesHost;
+            throw new Exception("Host didn't start!");
         }
     }
 
     internal class NullPSHost : PSHost
     {
         public override CultureInfo CurrentCulture => CultureInfo.CurrentCulture;
-
         public override CultureInfo CurrentUICulture => CultureInfo.CurrentUICulture;
-
         public override Guid InstanceId { get; } = Guid.NewGuid();
-
         public override string Name => nameof(NullPSHost);
-
         public override PSHostUserInterface UI { get; } = new NullPSHostUI();
-
         public override Version Version { get; } = new Version(1, 0, 0);
-
-        public override void EnterNestedPrompt()
-        {
-            // Do nothing
-        }
-
-        public override void ExitNestedPrompt()
-        {
-            // Do nothing
-        }
-
-        public override void NotifyBeginApplication()
-        {
-            // Do nothing
-        }
-
-        public override void NotifyEndApplication()
-        {
-            // Do nothing
-        }
-
-        public override void SetShouldExit(int exitCode)
-        {
-            // Do nothing
-        }
+        public override void EnterNestedPrompt() { /* Do nothing */ }
+        public override void ExitNestedPrompt() { /* Do nothing */ }
+        public override void NotifyBeginApplication() { /* Do nothing */ }
+        public override void NotifyEndApplication() { /* Do nothing */ }
+        public override void SetShouldExit(int exitCode) { /* Do nothing */ }
     }
 }
-
