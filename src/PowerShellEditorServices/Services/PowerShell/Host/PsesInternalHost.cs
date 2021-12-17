@@ -549,16 +549,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 // Signal that we are ready for outside services to use
                 _started.TrySetResult(true);
 
-                if (_hostInfo.ConsoleReplEnabled)
-                {
-                    RunExecutionLoop();
-                }
-                else
-                {
-                    // TODO: Is this really necessary? The other 'RunExecutionLoop' already handles
-                    // the case where the console REPL isn't enabled.
-                    RunNoPromptExecutionLoop();
-                }
+                RunExecutionLoop();
             }
             catch (Exception e)
             {
@@ -571,30 +562,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _stopped.SetResult(true);
         }
 
-        private void RunNoPromptExecutionLoop()
-        {
-            while (!ShouldExitExecutionLoop)
-            {
-                using (CancellationScope cancellationScope = _cancellationContext.EnterScope(isIdleScope: false))
-                {
-                    string taskRepresentation = null;
-                    try
-                    {
-                        ISynchronousTask task = _taskQueue.Take(cancellationScope.CancellationToken);
-                        taskRepresentation = task.ToString();
-                        task.ExecuteSynchronously(cancellationScope.CancellationToken);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        // Just continue
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.LogError(e, $"Fatal exception occurred with task '{taskRepresentation ?? "<null task>"}'");
-                    }
-                }
-            }
-        }
 
         private void RunDebugExecutionLoop()
         {
