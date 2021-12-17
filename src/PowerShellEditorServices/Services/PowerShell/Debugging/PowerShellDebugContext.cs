@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -118,11 +118,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         }
 
         // This must be called AFTER the new PowerShell has been pushed
-        public void EnterDebugLoop(CancellationToken loopCancellationToken)
+        public void EnterDebugLoop()
         {
             RaiseDebuggerStoppedEvent();
         }
-
 
         // This must be called BEFORE the debug PowerShell has been popped
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "This method may acquire an implementation later, at which point it will need instance data")]

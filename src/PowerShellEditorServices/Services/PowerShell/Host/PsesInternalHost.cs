@@ -593,7 +593,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         {
             try
             {
-                DebugContext.EnterDebugLoop(CancellationToken.None);
+                DebugContext.EnterDebugLoop();
                 RunExecutionLoop();
             }
             finally
