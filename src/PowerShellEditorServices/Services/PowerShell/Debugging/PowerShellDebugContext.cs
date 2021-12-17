@@ -167,7 +167,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         {
             if (!IsDebugServerActive)
             {
-                _languageServer.SendNotification("powerShell/startDebugger");
+                // NOTE: The language server is not necessarily connected, so this must be
+                // conditional access. This shows up in unit tests.
+                _languageServer?.SendNotification("powerShell/startDebugger");
             }
 
             DebuggerStopped?.Invoke(this, LastStopEventArgs);
