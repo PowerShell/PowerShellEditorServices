@@ -39,6 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// </summary>
         public string Id
         {
+            // TODO: Is this why the drive letter changes?
             get { return this.FilePath.ToLower(); }
         }
 

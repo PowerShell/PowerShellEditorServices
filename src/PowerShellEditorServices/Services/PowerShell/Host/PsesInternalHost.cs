@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -245,6 +245,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             if (Interlocked.Exchange(ref _shuttingDown, 1) == 0)
             {
                 _cancellationContext.CancelCurrentTaskStack();
+                // NOTE: This is mostly for sanity's sake, as during debugging of tests I became
+                // concerned that the repeated creation and disposal of the host was not also
+                // joining and disposing this thread, leaving the tests in a weird state. Because
+                // the tasks have been canceled, we should be able to join this thread.
+                _pipelineThread.Join();
             }
         }
 
@@ -550,6 +555,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 }
                 else
                 {
+                    // TODO: Is this really necessary? The other 'RunExecutionLoop' already handles
+                    // the case where the console REPL isn't enabled.
                     RunNoPromptExecutionLoop();
                 }
             }
