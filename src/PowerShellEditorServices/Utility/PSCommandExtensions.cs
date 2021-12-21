@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq.Expressions;
 using System.Management.Automation;
@@ -11,11 +12,11 @@ using System.Text;
 
 namespace Microsoft.PowerShell.EditorServices.Utility
 {
-    internal static class PSCommandExtensions
+    internal static class PSCommandHelpers
     {
         private static readonly Func<CommandInfo, Command> s_commandCtor;
 
-        static PSCommandExtensions()
+        static PSCommandHelpers()
         {
             var ctor = typeof(Command).GetConstructor(
                 BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
@@ -31,9 +32,14 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 .Compile();
         }
 
-        // PowerShell's missing an API for us to AddCommand using a CommandInfo.
-        // An issue was filed here: https://github.com/PowerShell/PowerShell/issues/12295
-        // This works around this by creating a `Command` and passing it into PSCommand.AddCommand(Command command)
+        /// <summary>
+        /// PowerShell's missing an API for us to AddCommand using a CommandInfo.
+        /// An issue was filed here: https://github.com/PowerShell/PowerShell/issues/12295
+        /// This works around this by creating a `Command` and passing it into PSCommand.AddCommand(Command command)
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="commandInfo"></param>
+        /// <returns></returns>
         public static PSCommand AddCommand(this PSCommand command, CommandInfo commandInfo)
         {
             var rsCommand = s_commandCtor(commandInfo);
@@ -81,6 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <summary>
         /// Get a representation of the PSCommand, for logging purposes.
         /// </summary>
+        /// <param name="command"></param>
         public static string GetInvocationText(this PSCommand command)
         {
             Command currentCommand = command.Commands[0];
@@ -118,6 +125,32 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             }
 
             return sb;
+        }
+
+        public static PSCommand BuildCommandFromArguments(string command, IReadOnlyList<string> arguments)
+        {
+            if (arguments is null or { Count: 0 })
+            {
+                return new PSCommand().AddCommand(command);
+            }
+
+            // HACK: We use AddScript instead of AddArgument/AddParameter to reuse Powershell parameter binding logic.
+            // We quote the command parameter so that expressions can still be used in the arguments.
+            var sb = new StringBuilder()
+                .Append('&')
+                .Append(' ')
+                .Append('"')
+                .Append(command)
+                .Append('"');
+
+            foreach (string arg in arguments)
+            {
+                sb
+                .Append(' ')
+                .Append(ArgumentEscaping.Escape(arg));
+            }
+
+            return new PSCommand().AddScript(sb.ToString());
         }
     }
 }

@@ -1,9 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System.Management.Automation;
+using System.Security.Cryptography;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Utility;
-using System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 {

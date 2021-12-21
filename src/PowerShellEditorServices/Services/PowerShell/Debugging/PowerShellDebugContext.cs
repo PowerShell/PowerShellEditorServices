@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -106,6 +106,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         public void SetDebugResuming(DebuggerResumeAction debuggerResumeAction)
         {
+            // NOTE: We exit because the paused/stopped debugger is currently in a prompt REPL, and
+            // to resume the debugger we must exit that REPL.
             _psesHost.SetExit();
 
             if (LastStopEventArgs is not null)
@@ -113,16 +115,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                 LastStopEventArgs.ResumeAction = debuggerResumeAction;
             }
 
-            // We need to tell whatever is happening right now in the debug prompt to wrap up so we can continue
-            _psesHost.CancelCurrentTask();
+            // We need to tell whatever is happening right now in the debug prompt to wrap up so we
+            // can continue. However, if the host was initialized with the console REPL disabled,
+            // then we'd accidentally cancel the debugged task since no prompt is running. We can
+            // test this by checking if the UI's type is NullPSHostUI which is used specifically in
+            // this scenario. This mostly applies to unit tests.
+            if (_psesHost.UI is not NullPSHostUI)
+            {
+                _psesHost.CancelCurrentTask();
+            }
         }
 
         // This must be called AFTER the new PowerShell has been pushed
-        public void EnterDebugLoop(CancellationToken loopCancellationToken)
+        public void EnterDebugLoop()
         {
             RaiseDebuggerStoppedEvent();
         }
-
 
         // This must be called BEFORE the debug PowerShell has been popped
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "This method may acquire an implementation later, at which point it will need instance data")]
@@ -143,7 +151,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         public void ProcessDebuggerResult(DebuggerCommandResults debuggerResult)
         {
-            if (debuggerResult.ResumeAction != null)
+            if (debuggerResult.ResumeAction is not null)
             {
                 SetDebugResuming(debuggerResult.ResumeAction.Value);
                 RaiseDebuggerResumingEvent(new DebuggerResumingEventArgs(debuggerResult.ResumeAction.Value));
@@ -159,7 +167,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         {
             if (!IsDebugServerActive)
             {
-                _languageServer.SendNotification("powerShell/startDebugger");
+                // NOTE: The language server is not necessarily connected, so this must be
+                // conditional access. This shows up in unit tests.
+                _languageServer?.SendNotification("powerShell/startDebugger");
             }
 
             DebuggerStopped?.Invoke(this, LastStopEventArgs);

@@ -238,6 +238,10 @@ task TestServer TestServerWinPS,TestServerPS7,TestServerPS72
 
 task TestServerWinPS -If (-not $script:IsNix) {
     Set-Location .\test\PowerShellEditorServices.Test\
+    # TODO: See https://github.com/dotnet/sdk/issues/18353 for x64 test host
+    # that is debuggable! If architecture is added, the assembly path gets an
+    # additional folder, necesstiating fixes to find the commands definition
+    # file and test files.
     exec { & $script:dotnetExe $script:dotnetTestArgs $script:NetRuntime.Desktop }
 }
 

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Management.Automation;
@@ -131,8 +131,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _debugAdapterServer.SendNotification(EventNames.Continued,
                 new ContinuedEvent
                 {
-                    AllThreadsContinued = true,
                     ThreadId = ThreadsHandler.PipelineThread.Id,
+                    AllThreadsContinued = true,
                 });
         }
 
@@ -151,7 +151,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     BreakpointDetails.Create(e.Breakpoint, e.UpdateType)
                 );
 
-                string reason = (e.UpdateType) switch {
+                string reason = e.UpdateType switch {
                     BreakpointUpdateType.Set => BreakpointEventReason.New,
                     BreakpointUpdateType.Removed => BreakpointEventReason.Removed,
                     BreakpointUpdateType.Enabled => BreakpointEventReason.Changed,

@@ -245,6 +245,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             if (Interlocked.Exchange(ref _shuttingDown, 1) == 0)
             {
                 _cancellationContext.CancelCurrentTaskStack();
+                // NOTE: This is mostly for sanity's sake, as during debugging of tests I became
+                // concerned that the repeated creation and disposal of the host was not also
+                // joining and disposing this thread, leaving the tests in a weird state. Because
+                // the tasks have been canceled, we should be able to join this thread.
+                _pipelineThread.Join();
             }
         }
 
@@ -502,15 +507,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             PowerShellContextFrame frame = _psFrameStack.Pop();
             try
             {
-                // If we're changing runspace, make sure we move the handlers over
-                RunspaceFrame previousRunspaceFrame = _runspaceStack.Peek();
-                if (previousRunspaceFrame.Runspace != CurrentPowerShell.Runspace)
+                // If we're changing runspace, make sure we move the handlers over. If we just
+                // popped the last frame, then we're exiting and should pop the runspace too.
+                if (_psFrameStack.Count == 0
+                    || _runspaceStack.Peek().Runspace != _psFrameStack.Peek().PowerShell.Runspace)
                 {
-                    _runspaceStack.Pop();
-                    RunspaceFrame currentRunspaceFrame = _runspaceStack.Peek();
+                    RunspaceFrame previousRunspaceFrame = _runspaceStack.Pop();
                     RemoveRunspaceEventHandlers(previousRunspaceFrame.Runspace);
-                    AddRunspaceEventHandlers(currentRunspaceFrame.Runspace);
-                    RunspaceChanged?.Invoke(this, new RunspaceChangedEventArgs(runspaceChangeAction, previousRunspaceFrame.RunspaceInfo, currentRunspaceFrame.RunspaceInfo));
+
+                    // If there is still a runspace on the stack, then we need to re-register the
+                    // handlers. Otherwise we're exiting and so don't need to run 'RunspaceChanged'.
+                    if (_runspaceStack.Count > 0)
+                    {
+                        RunspaceFrame newRunspaceFrame = _runspaceStack.Peek();
+                        AddRunspaceEventHandlers(newRunspaceFrame.Runspace);
+                        RunspaceChanged?.Invoke(
+                            this,
+                            new RunspaceChangedEventArgs(
+                                runspaceChangeAction,
+                                previousRunspaceFrame.RunspaceInfo,
+                                newRunspaceFrame.RunspaceInfo));
+                    }
                 }
             }
             finally
@@ -532,14 +549,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 // Signal that we are ready for outside services to use
                 _started.TrySetResult(true);
 
-                if (_hostInfo.ConsoleReplEnabled)
-                {
-                    RunExecutionLoop();
-                }
-                else
-                {
-                    RunNoPromptExecutionLoop();
-                }
+                RunExecutionLoop();
             }
             catch (Exception e)
             {
@@ -552,36 +562,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _stopped.SetResult(true);
         }
 
-        private void RunNoPromptExecutionLoop()
-        {
-            while (!ShouldExitExecutionLoop)
-            {
-                using (CancellationScope cancellationScope = _cancellationContext.EnterScope(isIdleScope: false))
-                {
-                    string taskRepresentation = null;
-                    try
-                    {
-                        ISynchronousTask task = _taskQueue.Take(cancellationScope.CancellationToken);
-                        taskRepresentation = task.ToString();
-                        task.ExecuteSynchronously(cancellationScope.CancellationToken);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        // Just continue
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.LogError(e, $"Fatal exception occurred with task '{taskRepresentation ?? "<null task>"}'");
-                    }
-                }
-            }
-        }
 
         private void RunDebugExecutionLoop()
         {
             try
             {
-                DebugContext.EnterDebugLoop(CancellationToken.None);
+                DebugContext.EnterDebugLoop();
                 RunExecutionLoop();
             }
             finally

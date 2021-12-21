@@ -180,7 +180,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             pwsh.Runspace.SessionStateProxy.SetVariable("PROFILE", profileVariable);
 
             pwsh.InvokeCommand(psCommand);
-
         }
 
         public static void ImportModule(this PowerShell pwsh, string moduleNameOrPath)
@@ -189,7 +188,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 .AddParameter("-Name", moduleNameOrPath)
                 .InvokeAndClear();
         }
-
 
         public static string GetErrorString(this PowerShell pwsh)
         {

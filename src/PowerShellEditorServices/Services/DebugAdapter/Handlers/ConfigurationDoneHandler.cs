@@ -13,10 +13,8 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
-using System.Collections.Generic;
 using System.Management.Automation;
 using System.Management.Automation.Language;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -72,33 +70,30 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (_debugStateService.OwnsEditorSession)
             {
-                // If this is a debug-only session, we need to start
-                // the command loop manually
+                // TODO: If this is a debug-only session, we need to start the command loop manually
+                //
                 //_powerShellContextService.ConsoleReader.StartCommandLoop();
             }
 
             if (!string.IsNullOrEmpty(_debugStateService.ScriptToLaunch))
             {
-                LaunchScriptAsync(_debugStateService.ScriptToLaunch)
-                    .HandleErrorsAsync(_logger);
+                LaunchScriptAsync(_debugStateService.ScriptToLaunch).HandleErrorsAsync(_logger);
             }
 
-            if (_debugStateService.IsInteractiveDebugSession)
+            if (_debugStateService.IsInteractiveDebugSession && _debugService.IsDebuggerStopped)
             {
-                if (_debugService.IsDebuggerStopped)
+                if (_debugService.CurrentDebuggerStoppedEventArgs is not null)
                 {
-                    if (_debugService.CurrentDebuggerStoppedEventArgs != null)
-                    {
-                        // If this is an interactive session and there's a pending breakpoint,
-                        // send that information along to the debugger client
-                        _debugEventHandlerService.TriggerDebuggerStopped(_debugService.CurrentDebuggerStoppedEventArgs);
-                    }
-                    else
-                    {
-                        // If this is an interactive session and there's a pending breakpoint that has not been propagated through
-                        // the debug service, fire the debug service's OnDebuggerStop event.
-                        _debugService.OnDebuggerStopAsync(null, _debugContext.LastStopEventArgs);
-                    }
+                    // If this is an interactive session and there's a pending breakpoint, send that
+                    // information along to the debugger client.
+                    _debugEventHandlerService.TriggerDebuggerStopped(_debugService.CurrentDebuggerStoppedEventArgs);
+                }
+                else
+                {
+                    // If this is an interactive session and there's a pending breakpoint that has
+                    // not been propagated through the debug service, fire the debug service's
+                    // OnDebuggerStop event.
+                    _debugService.OnDebuggerStopAsync(null, _debugContext.LastStopEventArgs);
                 }
             }
 
@@ -121,6 +116,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     ScriptBlockAst ast = Parser.ParseInput(untitledScript.Contents, untitledScript.DocumentUri.ToString(), out Token[] tokens, out ParseError[] errors);
 
                     // This seems to be the simplest way to invoke a script block (which contains breakpoint information) via the PowerShell API.
+                    //
+                    // TODO: Fix this so the added script doesn't show up.
                     var cmd = new PSCommand().AddScript(". $args[0]").AddArgument(ast.GetScriptBlock());
                     await _executionService
                         .ExecutePSCommandAsync<object>(cmd, CancellationToken.None, s_debuggerExecutionOptions)
@@ -140,38 +137,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 await _executionService
                     .ExecutePSCommandAsync(
-                        BuildPSCommandFromArguments(scriptToLaunch, _debugStateService.Arguments),
+                        PSCommandHelpers.BuildCommandFromArguments(scriptToLaunch, _debugStateService.Arguments),
                         CancellationToken.None,
                         s_debuggerExecutionOptions)
                     .ConfigureAwait(false);
             }
 
             _debugAdapterServer.SendNotification(EventNames.Terminated);
-        }
-
-        private static PSCommand BuildPSCommandFromArguments(string command, IReadOnlyList<string> arguments)
-        {
-            if (arguments is null or { Count: 0 })
-            {
-                return new PSCommand().AddCommand(command);
-            }
-
-            // HACK: We use AddScript instead of AddArgument/AddParameter to reuse Powershell parameter binding logic.
-            // We quote the command parameter so that expressions can still be used in the arguments.
-            var sb = new StringBuilder()
-                .Append('&')
-                .Append('"')
-                .Append(command)
-                .Append('"');
-
-            foreach (string arg in arguments)
-            {
-                sb
-                .Append(' ')
-                .Append(ArgumentEscaping.Escape(arg));
-            }
-
-            return new PSCommand().AddScript(sb.ToString());
         }
     }
 }
