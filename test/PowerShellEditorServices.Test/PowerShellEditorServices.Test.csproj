@@ -19,7 +19,7 @@
 
   <!-- This is for testing PowerShell 7.2 LTS -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.0" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.1" />
   </ItemGroup>
 
   <!-- This is for testing PowerShell 7.0 LTS -->
