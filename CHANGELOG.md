@@ -1,5 +1,10 @@
 # PowerShell Editor Services Release History
 
+## v2.5.3
+### Wednesday, December 22, 2021
+
+No changes. We're re-releasing to update signatures with a new certificate.
+
 ## v3.0.3
 ### Monday, December 20, 2021
 
