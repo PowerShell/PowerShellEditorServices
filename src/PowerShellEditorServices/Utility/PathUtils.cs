@@ -2,7 +2,9 @@
 // Licensed under the MIT License.
 
 using System.IO;
+using System.Management.Automation;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Microsoft.PowerShell.EditorServices.Utility
 {
@@ -34,6 +36,24 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         public static string NormalizePathSeparators(string path)
         {
             return string.IsNullOrWhiteSpace(path) ? path : path.Replace(AlternatePathSeparator, DefaultPathSeparator);
+        }
+
+        /// <summary>
+        /// Return the given path with all PowerShell globbing characters escaped,
+        /// plus optionally the whitespace.
+        /// </summary>
+        /// <param name="path">The path to process.</param>
+        /// <param name="escapeSpaces">Specify True to escape spaces in the path, otherwise False.</param>
+        /// <returns>The path with *, ?, [, and ] escaped, including spaces if required</returns>
+        internal static string WildcardEscapePath(string path, bool escapeSpaces = false)
+        {
+            var wildcardEscapedPath = WildcardPattern.Escape(path);
+
+            if (escapeSpaces)
+            {
+                wildcardEscapedPath = wildcardEscapedPath.Replace(" ", "` ");
+            }
+            return wildcardEscapedPath;
         }
     }
 }

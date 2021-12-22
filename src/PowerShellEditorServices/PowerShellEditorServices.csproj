@@ -26,13 +26,13 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="5.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
     <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.19.5" />
     <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Server" Version="0.19.5" />
     <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" />
     <PackageReference Include="Serilog" Version="2.10.0" />
-    <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0" />
     <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     <PackageReference Include="System.IO.Pipes.AccessControl" Version="5.0.0" />
@@ -42,6 +42,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Extensions\Api\DocumentSymbolService.cs"/>
+    <Compile Remove="Extensions\Api\DocumentSymbolService.cs" />
+    <Compile Remove="Services\Extension\Templating\**" />
+    <EmbeddedResource Remove="Services\Extension\Templating\**" />
+    <None Remove="Services\Extension\Templating\**" />
   </ItemGroup>
 </Project>

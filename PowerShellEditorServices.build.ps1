@@ -29,7 +29,9 @@ $script:dotnetTestArgs = @(
 )
 
 $script:IsNix = $IsLinux -or $IsMacOS
-$script:IsRosetta = $IsMacOS -and (sysctl -n sysctl.proc_translated) -eq 1 # Mac M1
+# For Apple M1, pwsh might be getting emulated, in which case we need to check
+# for the proc_translated flag, otherwise we can check the architecture.
+$script:IsAppleM1 = $IsMacOS -and ((sysctl -n sysctl.proc_translated) -eq 1 -or (uname -m) -eq "arm64")
 $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Hosting", "BuildInfo.cs")
 $script:PsesCommonProps = [xml](Get-Content -Raw "$PSScriptRoot/PowerShellEditorServices.Common.props")
 
@@ -52,12 +54,16 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
 
 function Install-Dotnet {
     param (
-        [string[]]$Channel
+        [string[]]$Channel,
+        [switch]$Runtime
     )
 
     $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
 
-    Write-Host "Installing .NET channels $Channel" -ForegroundColor Green
+    $components = if ($Runtime) { "Runtime " } else { "SDK and Runtime " }
+    $components += $Channel -join ', '
+
+    Write-Host "Installing .NET $components" -ForegroundColor Green
 
     # The install script is platform-specific
     $installScriptExt = if ($script:IsNix) { "sh" } else { "ps1" }
@@ -70,18 +76,13 @@ function Install-Dotnet {
     # Download and install the different .NET channels
     foreach ($dotnetChannel in $Channel)
     {
-        Write-Host "`n### Installing .NET CLI $Version...`n"
-
         if ($script:IsNix) {
             chmod +x $installScriptPath
         }
 
-        $params = if ($script:IsNix)
-        {
+        $params = if ($script:IsNix) {
             @('-Channel', $dotnetChannel, '-InstallDir', $env:DOTNET_INSTALL_DIR, '-NoPath', '-Verbose')
-        }
-        else
-        {
+        } else {
             @{
                 Channel = $dotnetChannel
                 InstallDir = $env:DOTNET_INSTALL_DIR
@@ -90,9 +91,13 @@ function Install-Dotnet {
             }
         }
 
-        & $installScriptPath @params
+        # Install just the runtime, not the SDK
+        if ($Runtime) {
+            if ($script:IsNix) { $params += @('-Runtime', 'dotnet') }
+            else { $params['Runtime'] = 'dotnet' }
+        }
 
-        Write-Host "`n### Installation complete for version $Version."
+        exec { & $installScriptPath @params }
     }
 
     $env:PATH = $env:DOTNET_INSTALL_DIR + [System.IO.Path]::PathSeparator + $env:PATH
@@ -107,7 +112,12 @@ task SetupDotNet -Before Clean, Build, TestServerWinPS, TestServerPS7, TestServe
 
     if (!(Test-Path $dotnetExePath)) {
         # TODO: Test .NET 5 with PowerShell 7.1
-        Install-Dotnet -Channel '3.1','5.0','6.0'
+        #
+        # We use the .NET 6 SDK, so we always install it and its runtime.
+        Install-Dotnet -Channel '6.0' # SDK and runtime
+        # Anywhere other than on a Mac with an M1 processor, we additionally
+        # install the .NET 3.1 and 5.0 runtimes (but not their SDKs).
+        if (!$script:IsAppleM1) { Install-Dotnet -Channel '3.1','5.0' -Runtime }
     }
 
     # This variable is used internally by 'dotnet' to know where it's installed
@@ -228,10 +238,14 @@ task TestServer TestServerWinPS,TestServerPS7,TestServerPS72
 
 task TestServerWinPS -If (-not $script:IsNix) {
     Set-Location .\test\PowerShellEditorServices.Test\
+    # TODO: See https://github.com/dotnet/sdk/issues/18353 for x64 test host
+    # that is debuggable! If architecture is added, the assembly path gets an
+    # additional folder, necesstiating fixes to find the commands definition
+    # file and test files.
     exec { & $script:dotnetExe $script:dotnetTestArgs $script:NetRuntime.Desktop }
 }
 
-task TestServerPS7 -If (-not $script:IsRosetta) {
+task TestServerPS7 -If (-not $script:IsAppleM1) {
     Set-Location .\test\PowerShellEditorServices.Test\
     exec { & $script:dotnetExe $script:dotnetTestArgs $script:NetRuntime.PS7 }
 }
@@ -245,7 +259,7 @@ task TestE2E {
     Set-Location .\test\PowerShellEditorServices.Test.E2E\
 
     $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
-    $NetRuntime = if ($IsRosetta) { $script:NetRuntime.PS72 } else { $script:NetRuntime.PS7 }
+    $NetRuntime = if ($IsAppleM1) { $script:NetRuntime.PS72 } else { $script:NetRuntime.PS7 }
     exec { & $script:dotnetExe $script:dotnetTestArgs $NetRuntime }
 
     # Run E2E tests in ConstrainedLanguage mode.

@@ -20,17 +20,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
     internal class VariableContainerDetails : VariableDetailsBase
     {
         /// <summary>
-        /// Provides a constant for the name of the Global scope.
+        /// Provides a constant for the name of the filtered auto variables.
         /// </summary>
         public const string AutoVariablesName = "Auto";
 
         /// <summary>
-        /// Provides a constant for the name of the Global scope.
+        /// Provides a constant for the name of the current stack frame variables.
+        /// </summary>
+        public const string CommandVariablesName = "Command";
+
+        /// <summary>
+        /// Provides a constant for the name of the global scope variables.
         /// </summary>
         public const string GlobalScopeName = "Global";
 
         /// <summary>
-        /// Provides a constant for the name of the Local scope.
+        /// Provides a constant for the name of the local scope variables.
         /// </summary>
         public const string LocalScopeName = "Local";
 

@@ -2,15 +2,12 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Linq;
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
-using Microsoft.PowerShell.EditorServices.Utility;
-using OmniSharp.Extensions.DebugAdapter.Protocol.Models;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 using OmniSharp.Extensions.JsonRpc;
 
@@ -39,11 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         request.Name,
                         request.Value).ConfigureAwait(false);
 
-                return new SetVariableResponse
-                {
-                    Value = updatedValue
-                };
-
+                return new SetVariableResponse { Value = updatedValue };
             }
                 catch (Exception ex) when(ex is ArgumentTransformationMetadataException ||
                                            ex is InvalidPowerShellExpressionException ||

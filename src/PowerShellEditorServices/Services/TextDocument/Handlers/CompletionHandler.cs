@@ -9,7 +9,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
@@ -23,10 +25,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class PsesCompletionHandler : ICompletionHandler, ICompletionResolveHandler
     {
         const int DefaultWaitTimeoutMilliseconds = 5000;
-        private readonly SemaphoreSlim _completionLock = AsyncUtils.CreateSimpleLockingSemaphore();
-        private readonly SemaphoreSlim _completionResolveLock = AsyncUtils.CreateSimpleLockingSemaphore();
         private readonly ILogger _logger;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly IRunspaceContext _runspaceContext;
+        private readonly IInternalPowerShellExecutionService _executionService;
         private readonly WorkspaceService _workspaceService;
         private CompletionResults _mostRecentCompletions;
         private int _mostRecentRequestLine;
@@ -38,11 +39,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public PsesCompletionHandler(
             ILoggerFactory factory,
-            PowerShellContextService powerShellContextService,
+            IRunspaceContext runspaceContext,
+            IInternalPowerShellExecutionService executionService,
             WorkspaceService workspaceService)
         {
             _logger = factory.CreateLogger<PsesCompletionHandler>();
-            _powerShellContextService = powerShellContextService;
+            _runspaceContext = runspaceContext;
+            _executionService = executionService;
             _workspaceService = workspaceService;
         }
 
@@ -60,47 +63,30 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
-            try
-            {
-                await _completionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
+            if (cancellationToken.IsCancellationRequested)
             {
                 _logger.LogDebug("Completion request canceled for file: {0}", request.TextDocument.Uri);
                 return Array.Empty<CompletionItem>();
             }
 
-            try
+            CompletionResults completionResults =
+                await GetCompletionsInFileAsync(
+                    scriptFile,
+                    cursorLine,
+                    cursorColumn).ConfigureAwait(false);
+
+            if (completionResults == null)
             {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    _logger.LogDebug("Completion request canceled for file: {0}", request.TextDocument.Uri);
-                    return Array.Empty<CompletionItem>();
-                }
-
-                CompletionResults completionResults =
-                    await GetCompletionsInFileAsync(
-                        scriptFile,
-                        cursorLine,
-                        cursorColumn).ConfigureAwait(false);
-
-                if (completionResults == null)
-                {
-                    return Array.Empty<CompletionItem>();
-                }
-
-                CompletionItem[] completionItems = new CompletionItem[completionResults.Completions.Length];
-                for (int i = 0; i < completionItems.Length; i++)
-                {
-                    completionItems[i] = CreateCompletionItem(completionResults.Completions[i], completionResults.ReplacedRange, i + 1);
-                }
-
-                return completionItems;
+                return Array.Empty<CompletionItem>();
             }
-            finally
+
+            CompletionItem[] completionItems = new CompletionItem[completionResults.Completions.Length];
+            for (int i = 0; i < completionItems.Length; i++)
             {
-                _completionLock.Release();
+                completionItems[i] = CreateCompletionItem(completionResults.Completions[i], completionResults.ReplacedRange, i + 1);
             }
+
+            return completionItems;
         }
 
         public static bool CanResolve(CompletionItem value)
@@ -123,39 +109,23 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return request;
             }
 
-            try
-            {
-                await _completionResolveLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogDebug("CompletionItemResolve request canceled for item: {0}", request.Label);
-                return request;
-            }
+            // Get the documentation for the function
+            CommandInfo commandInfo =
+                await CommandHelpers.GetCommandInfoAsync(
+                    request.Label,
+                    _runspaceContext.CurrentRunspace,
+                    _executionService).ConfigureAwait(false);
 
-            try
+            if (commandInfo != null)
             {
-                // Get the documentation for the function
-                CommandInfo commandInfo =
-                    await CommandHelpers.GetCommandInfoAsync(
-                        request.Label,
-                        _powerShellContextService).ConfigureAwait(false);
-
-                if (commandInfo != null)
+                request = request with
                 {
-                    request = request with
-                    {
-                        Documentation = await CommandHelpers.GetCommandSynopsisAsync(commandInfo, _powerShellContextService).ConfigureAwait(false)
-                    };
-                }
+                    Documentation = await CommandHelpers.GetCommandSynopsisAsync(commandInfo, _executionService).ConfigureAwait(false)
+                };
+            }
 
-                // Send back the updated CompletionItem
-                return request;
-            }
-            finally
-            {
-                _completionResolveLock.Release();
-            }
+            // Send back the updated CompletionItem
+            return request;
         }
 
         public void SetCapability(CompletionCapability capability, ClientCapabilities clientCapabilities)
@@ -201,7 +171,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         scriptFile.ScriptAst,
                         scriptFile.ScriptTokens,
                         fileOffset,
-                        _powerShellContextService,
+                        _executionService,
                         _logger,
                         cts.Token).ConfigureAwait(false);
             }

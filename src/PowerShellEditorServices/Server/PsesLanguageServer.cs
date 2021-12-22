@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,6 +9,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.Extension;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.Template;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Server;
 using Serilog;
@@ -28,6 +32,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
         private readonly Stream _outputStream;
         private readonly HostStartupInfo _hostDetails;
         private readonly TaskCompletionSource<bool> _serverStart;
+
+        private PsesInternalHost _psesHost;
 
         /// <summary>
         /// Create a new language server instance.
@@ -72,8 +78,12 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 options
                     .WithInput(_inputStream)
                     .WithOutput(_outputStream)
-                    .WithServices(serviceCollection => serviceCollection
-                        .AddPsesLanguageServices(_hostDetails)) // NOTE: This adds a lot of services!
+                    .WithServices(serviceCollection =>
+                    {
+
+                        // NOTE: This adds a lot of services!
+                        serviceCollection.AddPsesLanguageServices(_hostDetails);
+                    })
                     .ConfigureLogging(builder => builder
                         .AddSerilog(Log.Logger) // TODO: Set dispose to true?
                         .AddLanguageProtocolLogging()
@@ -107,12 +117,14 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     // _Initialize_ request:
                     // https://microsoft.github.io/language-server-protocol/specifications/specification-current/#initialize
                     .OnInitialize(
-                        // TODO: Either fix or ignore "method lacks 'await'" warning.
-                        async (languageServer, request, cancellationToken) =>
+                        (languageServer, request, cancellationToken) =>
                         {
                             Log.Logger.Debug("Initializing OmniSharp Language Server");
 
-                            var serviceProvider = languageServer.Services;
+                            IServiceProvider serviceProvider = languageServer.Services;
+
+                            _psesHost = serviceProvider.GetService<PsesInternalHost>();
+
                             var workspaceService = serviceProvider.GetService<WorkspaceService>();
 
                             // Grab the workspace path from the parameters
@@ -130,6 +142,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
                                     break;
                                 }
                             }
+
+                            return Task.CompletedTask;
                         });
             }).ConfigureAwait(false);
 
@@ -145,6 +159,10 @@ namespace Microsoft.PowerShell.EditorServices.Server
             Log.Logger.Debug("Shutting down OmniSharp Language Server");
             await _serverStart.Task.ConfigureAwait(false);
             await LanguageServer.WaitForExit.ConfigureAwait(false);
+
+            // Doing this means we're able to route through any exceptions experienced on the pipeline thread
+            _psesHost.TriggerShutdown();
+            await _psesHost.Shutdown.ConfigureAwait(false);
         }
     }
 }

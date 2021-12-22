@@ -5,17 +5,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
     internal class BreakpointService
     {
         private readonly ILogger<BreakpointService> _logger;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly IInternalPowerShellExecutionService _executionService;
+        private readonly PsesInternalHost _editorServicesHost;
         private readonly DebugStateService _debugStateService;
 
         // TODO: This needs to be managed per nested session
@@ -27,39 +31,41 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public BreakpointService(
             ILoggerFactory factory,
-            PowerShellContextService powerShellContextService,
+            IInternalPowerShellExecutionService executionService,
+            PsesInternalHost editorServicesHost,
             DebugStateService debugStateService)
         {
             _logger = factory.CreateLogger<BreakpointService>();
-            _powerShellContextService = powerShellContextService;
+            _executionService = executionService;
+            _editorServicesHost = editorServicesHost;
             _debugStateService = debugStateService;
         }
 
         public async Task<List<Breakpoint>> GetBreakpointsAsync()
         {
-            if (BreakpointApiUtils.SupportsBreakpointApis)
+            if (BreakpointApiUtils.SupportsBreakpointApis(_editorServicesHost.CurrentRunspace))
             {
                 return BreakpointApiUtils.GetBreakpoints(
-                    _powerShellContextService.CurrentRunspace.Runspace.Debugger,
+                    _editorServicesHost.Runspace.Debugger,
                     _debugStateService.RunspaceId);
             }
 
             // Legacy behavior
-            PSCommand psCommand = new PSCommand();
-            psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
-            IEnumerable<Breakpoint> breakpoints = await _powerShellContextService.ExecuteCommandAsync<Breakpoint>(psCommand).ConfigureAwait(false);
+            PSCommand psCommand = new PSCommand()
+                .AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
+            IEnumerable<Breakpoint> breakpoints = await _executionService.ExecutePSCommandAsync<Breakpoint>(psCommand, CancellationToken.None).ConfigureAwait(false);
             return breakpoints.ToList();
         }
 
         public async Task<IEnumerable<BreakpointDetails>> SetBreakpointsAsync(string escapedScriptPath, IEnumerable<BreakpointDetails> breakpoints)
         {
-            if (BreakpointApiUtils.SupportsBreakpointApis)
+            if (BreakpointApiUtils.SupportsBreakpointApis(_editorServicesHost.CurrentRunspace))
             {
                 foreach (BreakpointDetails breakpointDetails in breakpoints)
                 {
                     try
                     {
-                        BreakpointApiUtils.SetBreakpoint(_powerShellContextService.CurrentRunspace.Runspace.Debugger, breakpointDetails, _debugStateService.RunspaceId);
+                        BreakpointApiUtils.SetBreakpoint(_editorServicesHost.Runspace.Debugger, breakpointDetails, _debugStateService.RunspaceId);
                     }
                     catch(InvalidOperationException e)
                     {
@@ -133,7 +139,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (psCommand != null)
             {
                 IEnumerable<Breakpoint> setBreakpoints =
-                    await _powerShellContextService.ExecuteCommandAsync<Breakpoint>(psCommand).ConfigureAwait(false);
+                    await _executionService.ExecutePSCommandAsync<Breakpoint>(psCommand, CancellationToken.None).ConfigureAwait(false);
                 configuredBreakpoints.AddRange(
                     setBreakpoints.Select((breakpoint) => BreakpointDetails.Create(breakpoint))
                 );
@@ -144,13 +150,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task<IEnumerable<CommandBreakpointDetails>> SetCommandBreakpoints(IEnumerable<CommandBreakpointDetails> breakpoints)
         {
-            if (BreakpointApiUtils.SupportsBreakpointApis)
+            if (BreakpointApiUtils.SupportsBreakpointApis(_editorServicesHost.CurrentRunspace))
             {
                 foreach (CommandBreakpointDetails commandBreakpointDetails in breakpoints)
                 {
                     try
                     {
-                        BreakpointApiUtils.SetBreakpoint(_powerShellContextService.CurrentRunspace.Runspace.Debugger, commandBreakpointDetails, _debugStateService.RunspaceId);
+                        BreakpointApiUtils.SetBreakpoint(_editorServicesHost.Runspace.Debugger, commandBreakpointDetails, _debugStateService.RunspaceId);
                     }
                     catch(InvalidOperationException e)
                     {
@@ -211,7 +217,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (psCommand != null)
             {
                 IEnumerable<Breakpoint> setBreakpoints =
-                    await _powerShellContextService.ExecuteCommandAsync<Breakpoint>(psCommand).ConfigureAwait(false);
+                    await _executionService.ExecutePSCommandAsync<Breakpoint>(psCommand, CancellationToken.None).ConfigureAwait(false);
                 configuredBreakpoints.AddRange(
                     setBreakpoints.Select(CommandBreakpointDetails.Create));
             }
@@ -226,16 +232,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             try
             {
-                if (BreakpointApiUtils.SupportsBreakpointApis)
+                if (BreakpointApiUtils.SupportsBreakpointApis(_editorServicesHost.CurrentRunspace))
                 {
                     foreach (Breakpoint breakpoint in BreakpointApiUtils.GetBreakpoints(
-                            _powerShellContextService.CurrentRunspace.Runspace.Debugger,
+                            _editorServicesHost.Runspace.Debugger,
                             _debugStateService.RunspaceId))
                     {
                         if (scriptPath == null || scriptPath == breakpoint.Script)
                         {
                             BreakpointApiUtils.RemoveBreakpoint(
-                                _powerShellContextService.CurrentRunspace.Runspace.Debugger,
+                                _editorServicesHost.Runspace.Debugger,
                                 breakpoint,
                                 _debugStateService.RunspaceId);
                         }
@@ -256,7 +262,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint");
 
-                await _powerShellContextService.ExecuteCommandAsync<object>(psCommand).ConfigureAwait(false);
+                await _executionService.ExecutePSCommandAsync<object>(psCommand, CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -266,12 +272,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task RemoveBreakpointsAsync(IEnumerable<Breakpoint> breakpoints)
         {
-            if (BreakpointApiUtils.SupportsBreakpointApis)
+            if (BreakpointApiUtils.SupportsBreakpointApis(_editorServicesHost.CurrentRunspace))
             {
                 foreach (Breakpoint breakpoint in breakpoints)
                 {
                     BreakpointApiUtils.RemoveBreakpoint(
-                        _powerShellContextService.CurrentRunspace.Runspace.Debugger,
+                        _editorServicesHost.Runspace.Debugger,
                         breakpoint,
                         _debugStateService.RunspaceId);
 
@@ -302,7 +308,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint");
                 psCommand.AddParameter("Id", breakpoints.Select(b => b.Id).ToArray());
 
-                await _powerShellContextService.ExecuteCommandAsync<object>(psCommand).ConfigureAwait(false);
+                await _executionService.ExecutePSCommandAsync<object>(psCommand, CancellationToken.None).ConfigureAwait(false);
             }
         }
 

@@ -15,6 +15,11 @@ namespace PowerShellEditorServices.Test.E2E
     public abstract class ServerProcess : IDisposable
     {
         private readonly ISubject<System.Reactive.Unit> _exitedSubject;
+
+        private readonly Lazy<Stream> _inStreamLazy;
+
+        private readonly Lazy<Stream> _outStreamLazy;
+
         /// <summary>
         ///     Create a new <see cref="ServerProcess"/>.
         /// </summary>
@@ -37,6 +42,9 @@ namespace PowerShellEditorServices.Test.E2E
             ServerExitCompletion.SetResult(null); // Start out as if the server has already exited.
 
             Exited = _exitedSubject = new AsyncSubject<System.Reactive.Unit>();
+
+            _inStreamLazy = new Lazy<Stream>(() => new LoggingStream(GetInputStream()));
+            _outStreamLazy = new Lazy<Stream>(() => new LoggingStream(GetOutputStream()));
         }
 
         /// <summary>
@@ -105,13 +113,17 @@ namespace PowerShellEditorServices.Test.E2E
         /// </summary>
         public Task HasExited => ServerExitCompletion.Task;
 
+        protected abstract Stream GetInputStream();
+
+        protected abstract Stream GetOutputStream();
+
         /// <summary>
         ///     The server's input stream.
         /// </summary>
         /// <remarks>
         ///     The connection will write to the server's input stream, and read from its output stream.
         /// </remarks>
-        public abstract Stream InputStream { get; }
+        public Stream InputStream => _inStreamLazy.Value;
 
         /// <summary>
         ///     The server's output stream.
@@ -119,7 +131,7 @@ namespace PowerShellEditorServices.Test.E2E
         /// <remarks>
         ///     The connection will read from the server's output stream, and write to its input stream.
         /// </remarks>
-        public abstract Stream OutputStream { get; }
+        public Stream OutputStream => _outStreamLazy.Value;
 
         /// <summary>
         ///     Start or connect to the server.

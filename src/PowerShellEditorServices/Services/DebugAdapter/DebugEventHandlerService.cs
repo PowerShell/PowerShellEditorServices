@@ -1,10 +1,13 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Management.Automation;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
@@ -14,53 +17,57 @@ namespace Microsoft.PowerShell.EditorServices.Services
     internal class DebugEventHandlerService
     {
         private readonly ILogger<DebugEventHandlerService> _logger;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly IInternalPowerShellExecutionService _executionService;
         private readonly DebugService _debugService;
         private readonly DebugStateService _debugStateService;
         private readonly IDebugAdapterServerFacade _debugAdapterServer;
 
+        private readonly IPowerShellDebugContext _debugContext;
+
         public DebugEventHandlerService(
             ILoggerFactory factory,
-            PowerShellContextService powerShellContextService,
+            IInternalPowerShellExecutionService executionService,
             DebugService debugService,
             DebugStateService debugStateService,
-            IDebugAdapterServerFacade debugAdapterServer)
+            IDebugAdapterServerFacade debugAdapterServer,
+            IPowerShellDebugContext debugContext)
         {
             _logger = factory.CreateLogger<DebugEventHandlerService>();
-            _powerShellContextService = powerShellContextService;
+            _executionService = executionService;
             _debugService = debugService;
             _debugStateService = debugStateService;
             _debugAdapterServer = debugAdapterServer;
+            _debugContext = debugContext;
         }
 
         internal void RegisterEventHandlers()
         {
-            _powerShellContextService.RunspaceChanged += PowerShellContext_RunspaceChanged;
-            _debugService.BreakpointUpdated += DebugService_BreakpointUpdated;
-            _debugService.DebuggerStopped += DebugService_DebuggerStopped;
-            _powerShellContextService.DebuggerResumed += PowerShellContext_DebuggerResumed;
+            _executionService.RunspaceChanged += OnRunspaceChanged;
+            _debugService.BreakpointUpdated += OnBreakpointUpdated;
+            _debugService.DebuggerStopped += OnDebuggerStopped;
+            _debugContext.DebuggerResuming += OnDebuggerResuming;
         }
 
         internal void UnregisterEventHandlers()
         {
-            _powerShellContextService.RunspaceChanged -= PowerShellContext_RunspaceChanged;
-            _debugService.BreakpointUpdated -= DebugService_BreakpointUpdated;
-            _debugService.DebuggerStopped -= DebugService_DebuggerStopped;
-            _powerShellContextService.DebuggerResumed -= PowerShellContext_DebuggerResumed;
+            _executionService.RunspaceChanged -= OnRunspaceChanged;
+            _debugService.BreakpointUpdated -= OnBreakpointUpdated;
+            _debugService.DebuggerStopped -= OnDebuggerStopped;
+            _debugContext.DebuggerResuming -= OnDebuggerResuming;
         }
 
         #region Public methods
 
         internal void TriggerDebuggerStopped(DebuggerStoppedEventArgs e)
         {
-            DebugService_DebuggerStopped(null, e);
+            OnDebuggerStopped(null, e);
         }
 
         #endregion
 
         #region Event Handlers
 
-        private void DebugService_DebuggerStopped(object sender, DebuggerStoppedEventArgs e)
+        private void OnDebuggerStopped(object sender, DebuggerStoppedEventArgs e)
         {
             // Provide the reason for why the debugger has stopped script execution.
             // See https://github.com/Microsoft/vscode/issues/3648
@@ -86,44 +93,50 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 });
         }
 
-        private void PowerShellContext_RunspaceChanged(object sender, RunspaceChangedEventArgs e)
+        private void OnRunspaceChanged(object sender, RunspaceChangedEventArgs e)
         {
-            if (_debugStateService.WaitingForAttach &&
-                e.ChangeAction == RunspaceChangeAction.Enter &&
-                e.NewRunspace.Context == RunspaceContext.DebuggedRunspace)
+            switch (e.ChangeAction)
             {
-                // Sends the InitializedEvent so that the debugger will continue
-                // sending configuration requests
-                _debugStateService.WaitingForAttach = false;
-                _debugStateService.ServerStarted.SetResult(true);
-            }
-            else if (
-                e.ChangeAction == RunspaceChangeAction.Exit &&
-                _powerShellContextService.IsDebuggerStopped)
-            {
-                // Exited the session while the debugger is stopped,
-                // send a ContinuedEvent so that the client changes the
-                // UI to appear to be running again
-                _debugAdapterServer.SendNotification(EventNames.Continued,
-                    new ContinuedEvent
+                case RunspaceChangeAction.Enter:
+                    if (_debugStateService.WaitingForAttach
+                        && e.NewRunspace.RunspaceOrigin == RunspaceOrigin.DebuggedRunspace)
                     {
-                        ThreadId = 1,
-                        AllThreadsContinued = true
-                    });
+                        // Sends the InitializedEvent so that the debugger will continue
+                        // sending configuration requests
+                        _debugStateService.WaitingForAttach = false;
+                        _debugStateService.ServerStarted.SetResult(true);
+                    }
+                    return;
+
+                case RunspaceChangeAction.Exit:
+                    if (_debugContext.IsStopped)
+                    {
+                        // Exited the session while the debugger is stopped,
+                        // send a ContinuedEvent so that the client changes the
+                        // UI to appear to be running again
+                        _debugAdapterServer.SendNotification(
+                            EventNames.Continued,
+                            new ContinuedEvent
+                            {
+                                ThreadId = ThreadsHandler.PipelineThread.Id,
+                                AllThreadsContinued = true,
+                            });
+                    }
+                    return;
             }
         }
 
-        private void PowerShellContext_DebuggerResumed(object sender, DebuggerResumeAction e)
+        private void OnDebuggerResuming(object sender, DebuggerResumingEventArgs e)
         {
             _debugAdapterServer.SendNotification(EventNames.Continued,
                 new ContinuedEvent
                 {
-                    ThreadId = 1,
-                    AllThreadsContinued = true
+                    ThreadId = ThreadsHandler.PipelineThread.Id,
+                    AllThreadsContinued = true,
                 });
         }
 
-        private void DebugService_BreakpointUpdated(object sender, BreakpointUpdatedEventArgs e)
+        private void OnBreakpointUpdated(object sender, BreakpointUpdatedEventArgs e)
         {
             // Don't send breakpoint update notifications when setting
             // breakpoints on behalf of the client.
@@ -138,7 +151,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     BreakpointDetails.Create(e.Breakpoint, e.UpdateType)
                 );
 
-                string reason = (e.UpdateType) switch {
+                string reason = e.UpdateType switch {
                     BreakpointUpdateType.Set => BreakpointEventReason.New,
                     BreakpointUpdateType.Removed => BreakpointEventReason.Removed,
                     BreakpointUpdateType.Enabled => BreakpointEventReason.Changed,

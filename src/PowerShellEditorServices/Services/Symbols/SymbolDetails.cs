@@ -4,7 +4,9 @@
 using System.Diagnostics;
 using System.Management.Automation;
 using System.Threading.Tasks;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {
@@ -36,9 +38,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 
         #region Constructors
 
-        static internal async Task<SymbolDetails> CreateAsync(
+        internal static async Task<SymbolDetails> CreateAsync(
             SymbolReference symbolReference,
-            PowerShellContextService powerShellContext)
+            IRunspaceInfo currentRunspace,
+            IInternalPowerShellExecutionService executionService)
         {
             SymbolDetails symbolDetails = new SymbolDetails
             {
@@ -50,14 +53,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 case SymbolType.Function:
                     CommandInfo commandInfo = await CommandHelpers.GetCommandInfoAsync(
                         symbolReference.SymbolName,
-                        powerShellContext).ConfigureAwait(false);
+                        currentRunspace,
+                        executionService).ConfigureAwait(false);
 
                     if (commandInfo != null)
                     {
                         symbolDetails.Documentation =
                             await CommandHelpers.GetCommandSynopsisAsync(
                                 commandInfo,
-                                powerShellContext).ConfigureAwait(false);
+                                executionService).ConfigureAwait(false);
 
                         if (commandInfo.CommandType == CommandTypes.Application)
                         {

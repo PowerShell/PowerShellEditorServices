@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal bool NoDebug { get; set; }
 
-        internal string Arguments { get; set; }
+        internal string[] Arguments { get; set; }
 
         internal bool IsRemoteAttach { get; set; }
 
@@ -46,8 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal async Task WaitForSetBreakpointHandleAsync()
         {
-            await _setBreakpointInProgressHandle.WaitAsync()
-                .ConfigureAwait(continueOnCapturedContext: false);
+            await _setBreakpointInProgressHandle.WaitAsync().ConfigureAwait(false);
         }
     }
 }

@@ -2,13 +2,15 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Server;
 using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
@@ -16,23 +18,26 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class DisconnectHandler : IDisconnectHandler
     {
         private readonly ILogger<DisconnectHandler> _logger;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly IInternalPowerShellExecutionService _executionService;
         private readonly DebugService _debugService;
         private readonly DebugStateService _debugStateService;
         private readonly DebugEventHandlerService _debugEventHandlerService;
         private readonly PsesDebugServer _psesDebugServer;
+        private readonly IRunspaceContext _runspaceContext;
 
         public DisconnectHandler(
             ILoggerFactory factory,
             PsesDebugServer psesDebugServer,
-            PowerShellContextService powerShellContextService,
+            IRunspaceContext runspaceContext,
+            IInternalPowerShellExecutionService executionService,
             DebugService debugService,
             DebugStateService debugStateService,
             DebugEventHandlerService debugEventHandlerService)
         {
             _logger = factory.CreateLogger<DisconnectHandler>();
             _psesDebugServer = psesDebugServer;
-            _powerShellContextService = powerShellContextService;
+            _runspaceContext = runspaceContext;
+            _executionService = executionService;
             _debugService = debugService;
             _debugStateService = debugStateService;
             _debugEventHandlerService = debugEventHandlerService;
@@ -40,25 +45,34 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<DisconnectResponse> Handle(DisconnectArguments request, CancellationToken cancellationToken)
         {
+            // TODO: We need to sort out the proper order of operations here.
+            //       Currently we just tear things down in some order without really checking what the debugger is doing.
+            //       We should instead ensure that the debugger is in some valid state, lock it and then tear things down
+
             _debugEventHandlerService.UnregisterEventHandlers();
-            if (_debugStateService.ExecutionCompleted == false)
+
+            if (!_debugStateService.ExecutionCompleted)
             {
                 _debugStateService.ExecutionCompleted = true;
-                _powerShellContextService.AbortExecution(shouldAbortDebugSession: true);
+                _debugService.Abort();
 
                 if (_debugStateService.IsInteractiveDebugSession && _debugStateService.IsAttachSession)
                 {
                     // Pop the sessions
-                    if (_powerShellContextService.CurrentRunspace.Context == RunspaceContext.EnteredProcess)
+                    if (_runspaceContext.CurrentRunspace.RunspaceOrigin == RunspaceOrigin.EnteredProcess)
                     {
                         try
                         {
-                            await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSHostProcess").ConfigureAwait(false);
+                            await _executionService.ExecutePSCommandAsync(
+                                new PSCommand().AddCommand("Exit-PSHostProcess"),
+                                CancellationToken.None).ConfigureAwait(false);
 
                             if (_debugStateService.IsRemoteAttach &&
-                                _powerShellContextService.CurrentRunspace.Location == RunspaceLocation.Remote)
+                                _runspaceContext.CurrentRunspace.RunspaceOrigin == RunspaceOrigin.EnteredProcess)
                             {
-                                await _powerShellContextService.ExecuteScriptStringAsync("Exit-PSSession").ConfigureAwait(false);
+                                await _executionService.ExecutePSCommandAsync(
+                                    new PSCommand().AddCommand("Exit-PSSession"),
+                                    CancellationToken.None).ConfigureAwait(false);
                             }
                         }
                         catch (Exception e)
@@ -67,7 +81,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         }
                     }
                 }
-
                 _debugService.IsClientAttached = false;
             }
 

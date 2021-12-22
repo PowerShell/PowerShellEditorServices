@@ -16,7 +16,7 @@ namespace PSLanguageService.Test
     {
 
 #if CoreCLR
-        private static readonly Version PowerShellVersion = new Version(6, 2);
+        private static readonly Version PowerShellVersion = new Version(7, 2);
 #else
         private static readonly Version PowerShellVersion = new Version(5, 1);
 #endif

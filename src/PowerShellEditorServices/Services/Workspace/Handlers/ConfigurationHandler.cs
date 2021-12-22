@@ -12,11 +12,13 @@ using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
 using Newtonsoft.Json.Linq;
-using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Window;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.Extension;
+
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -25,10 +27,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
         private readonly ConfigurationService _configurationService;
-        private readonly PowerShellContextService _powerShellContextService;
+        private readonly ExtensionService _extensionService;
+        private readonly PsesInternalHost _psesHost;
         private readonly ILanguageServerFacade _languageServer;
         private bool _profilesLoaded;
-        private bool _consoleReplStarted;
+        private bool _extensionServiceInitialized;
         private bool _cwdSet;
 
         public PsesConfigurationHandler(
@@ -36,14 +39,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             WorkspaceService workspaceService,
             AnalysisService analysisService,
             ConfigurationService configurationService,
-            PowerShellContextService powerShellContextService,
-            ILanguageServerFacade languageServer)
+            ILanguageServerFacade languageServer,
+            ExtensionService extensionService,
+            PsesInternalHost psesHost)
         {
             _logger = factory.CreateLogger<PsesConfigurationHandler>();
             _workspaceService = workspaceService;
             _configurationService = configurationService;
-            _powerShellContextService = powerShellContextService;
             _languageServer = languageServer;
+            _extensionService = extensionService;
+            _psesHost = psesHost;
+
             ConfigurationUpdated += analysisService.OnConfigurationUpdated;
         }
 
@@ -70,56 +76,68 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 _workspaceService.WorkspacePath,
                 _logger);
 
+            // We need to load the profiles if:
+            // - Profile loading is configured, AND
+            //   - Profiles haven't been loaded before, OR
+            //   - The profile loading configuration just changed
+            bool loadProfiles = _configurationService.CurrentSettings.EnableProfileLoading
+                && (!_profilesLoaded || !profileLoadingPreviouslyEnabled);
+
+            if (!_psesHost.IsRunning)
+            {
+                _logger.LogTrace("Starting command loop");
+
+                if (loadProfiles)
+                {
+                    _logger.LogTrace("Loading profiles...");
+                }
+
+                await _psesHost.TryStartAsync(new HostStartOptions { LoadProfiles = loadProfiles }, CancellationToken.None).ConfigureAwait(false);
+
+                if (loadProfiles)
+                {
+                    _profilesLoaded = true;
+                    _logger.LogTrace("Loaded!");
+                }
+            }
+
+            // TODO: Load profiles when the host is already running
+
             if (!this._cwdSet)
             {
                 if (!string.IsNullOrEmpty(_configurationService.CurrentSettings.Cwd)
                     && Directory.Exists(_configurationService.CurrentSettings.Cwd))
                 {
                     this._logger.LogTrace($"Setting CWD (from config) to {_configurationService.CurrentSettings.Cwd}");
-                    await _powerShellContextService.SetWorkingDirectoryAsync(
+                    await _psesHost.SetInitialWorkingDirectoryAsync(
                         _configurationService.CurrentSettings.Cwd,
-                        isPathAlreadyEscaped: false).ConfigureAwait(false);
+                        CancellationToken.None).ConfigureAwait(false);
 
-                } else if (_workspaceService.WorkspacePath != null
+                }
+                else if (_workspaceService.WorkspacePath != null
                     && Directory.Exists(_workspaceService.WorkspacePath))
                 {
                     this._logger.LogTrace($"Setting CWD (from workspace) to {_workspaceService.WorkspacePath}");
-                    await _powerShellContextService.SetWorkingDirectoryAsync(
+                    await _psesHost.SetInitialWorkingDirectoryAsync(
                         _workspaceService.WorkspacePath,
-                        isPathAlreadyEscaped: false).ConfigureAwait(false);
-                } else {
+                        CancellationToken.None).ConfigureAwait(false);
+                }
+                else
+                {
                     this._logger.LogTrace("Tried to set CWD but in bad state");
                 }
 
                 this._cwdSet = true;
             }
 
-            // We need to load the profiles if:
-            // - Profile loading is configured, AND
-            //   - Profiles haven't been loaded before, OR
-            //   - The profile loading configuration just changed
-            if (_configurationService.CurrentSettings.EnableProfileLoading
-                && (!this._profilesLoaded || !profileLoadingPreviouslyEnabled))
+            if (!_extensionServiceInitialized)
             {
-                this._logger.LogTrace("Loading profiles...");
-                await _powerShellContextService.LoadHostProfilesAsync().ConfigureAwait(false);
-                this._profilesLoaded = true;
-                this._logger.LogTrace("Loaded!");
-            }
-
-            // Wait until after profiles are loaded (or not, if that's the
-            // case) before starting the interactive console.
-            if (!this._consoleReplStarted)
-            {
-                // Start the interactive terminal
-                this._logger.LogTrace("Starting command loop");
-                _powerShellContextService.ConsoleReader.StartCommandLoop();
-                this._consoleReplStarted = true;
+                await _extensionService.InitializeAsync().ConfigureAwait(false);
             }
 
             // Run any events subscribed to configuration updates
             this._logger.LogTrace("Running configuration update event handlers");
-            ConfigurationUpdated(this, _configurationService.CurrentSettings);
+            ConfigurationUpdated?.Invoke(this, _configurationService.CurrentSettings);
 
             // Convert the editor file glob patterns into an array for the Workspace
             // Both the files.exclude and search.exclude hash tables look like (glob-text, is-enabled):

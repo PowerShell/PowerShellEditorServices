@@ -9,13 +9,13 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.PowerShellContext;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Console
 {
+    /*
     public class PowerShellContextTests : IDisposable
     {
         // Borrowed from `VersionUtils` which can't be used here due to an initialization problem.
@@ -174,4 +174,5 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
         #endregion
     }
+    */
 }

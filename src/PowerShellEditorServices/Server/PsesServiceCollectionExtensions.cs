@@ -2,12 +2,16 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Collections.Generic;
-using System.Management.Automation.Host;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.Extension;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
+using Microsoft.PowerShell.EditorServices.Services.Template;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Server
 {
@@ -17,33 +21,36 @@ namespace Microsoft.PowerShell.EditorServices.Server
             this IServiceCollection collection,
             HostStartupInfo hostStartupInfo)
         {
-            return collection.AddSingleton<WorkspaceService>()
+            return collection
+                .AddSingleton<HostStartupInfo>(hostStartupInfo)
+                .AddSingleton<WorkspaceService>()
                 .AddSingleton<SymbolsService>()
+                .AddSingleton<PsesInternalHost>()
+                .AddSingleton<IRunspaceContext>(
+                    (provider) => provider.GetService<PsesInternalHost>())
+                .AddSingleton<IInternalPowerShellExecutionService>(
+                    (provider) => provider.GetService<PsesInternalHost>())
                 .AddSingleton<ConfigurationService>()
-                .AddSingleton<PowerShellContextService>(
-                    (provider) =>
-                        PowerShellContextService.Create(
-                            provider.GetService<ILoggerFactory>(),
-                            // NOTE: Giving the context service access to the language server this
-                            // early is dangerous because it allows it to start sending
-                            // notifications etc. before it has initialized, potentially resulting
-                            // in deadlocks. We're working on a solution to this.
-                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade>(),
-                            hostStartupInfo))
-                .AddSingleton<TemplateService>() // TODO: What's the difference between this and the TemplateHandler?
+                .AddSingleton<IPowerShellDebugContext>(
+                    (provider) => provider.GetService<PsesInternalHost>().DebugContext)
+                .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<RemoteFileManagerService>()
-                .AddSingleton<ExtensionService>(
-                    (provider) =>
+                .AddSingleton<ExtensionService>((provider) =>
                     {
                         var extensionService = new ExtensionService(
-                            provider.GetService<PowerShellContextService>(),
-                            // NOTE: See above warning.
-                            provider.GetService<OmniSharp.Extensions.LanguageServer.Protocol.Server.ILanguageServerFacade>());
-                        extensionService.InitializeAsync(
-                            serviceProvider: provider,
-                            editorOperations: provider.GetService<EditorOperationsService>())
-                            .Wait();
+                            provider.GetService<ILanguageServerFacade>(),
+                            provider,
+                            provider.GetService<EditorOperationsService>(),
+                            provider.GetService<IInternalPowerShellExecutionService>());
+
+                        // This is where we create the $psEditor variable
+                        // so that when the console is ready, it will be available
+                        // TODO: Improve the sequencing here so that:
+                        //  - The variable is guaranteed to be initialized when the console first appears
+                        //  - Any errors that occur are handled rather than lost by the unawaited task
+                        extensionService.InitializeAsync();
+
                         return extensionService;
                     })
                 .AddSingleton<AnalysisService>();
@@ -55,7 +62,13 @@ namespace Microsoft.PowerShell.EditorServices.Server
             PsesDebugServer psesDebugServer,
             bool useTempSession)
         {
-            return collection.AddSingleton(languageServiceProvider.GetService<PowerShellContextService>())
+            PsesInternalHost internalHost = languageServiceProvider.GetService<PsesInternalHost>();
+
+            return collection
+                .AddSingleton<PsesInternalHost>(internalHost)
+                .AddSingleton<IRunspaceContext>(internalHost)
+                .AddSingleton<IPowerShellDebugContext>(internalHost.DebugContext)
+                .AddSingleton(languageServiceProvider.GetService<IInternalPowerShellExecutionService>())
                 .AddSingleton(languageServiceProvider.GetService<WorkspaceService>())
                 .AddSingleton(languageServiceProvider.GetService<RemoteFileManagerService>())
                 .AddSingleton<PsesDebugServer>(psesDebugServer)
