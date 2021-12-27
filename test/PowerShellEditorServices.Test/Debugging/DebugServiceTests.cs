@@ -81,13 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
         private ScriptFile GetDebugScript(string fileName)
         {
-            return workspace.GetFile(
-                TestUtilities.NormalizePath(Path.Combine(
-                    Path.GetDirectoryName(typeof(DebugServiceTests).Assembly.Location),
-                    // TODO: When testing net461 with x64 host, another .. is needed!
-                    "../../../../PowerShellEditorServices.Test.Shared/Debugging",
-                    fileName
-                )));
+            return workspace.GetFile(TestUtilities.GetSharedPath(Path.Combine("Debugging", fileName)));
         }
 
         private VariableDetailsBase[] GetVariables(string scopeName)
