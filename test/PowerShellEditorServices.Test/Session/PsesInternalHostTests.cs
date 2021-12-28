@@ -6,8 +6,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Console
@@ -39,6 +40,19 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             var task = psesHost.ExecutePSCommandAsync<string>(command, CancellationToken.None);
             var result = await task.ConfigureAwait(true);
             Assert.Equal("foo", result[0]);
+        }
+
+        [Fact] // https://github.com/PowerShell/vscode-powershell/issues/3677
+        public async Task CanHandleThrow()
+        {
+            // TODO: Fix this so it doesn't throw!
+            _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            {
+                return psesHost.ExecutePSCommandAsync(
+                    new PSCommand().AddScript("throw"),
+                    CancellationToken.None,
+                    new PowerShellExecutionOptions { ThrowOnError = false });
+            }).ConfigureAwait(true);
         }
 
         [Fact]
