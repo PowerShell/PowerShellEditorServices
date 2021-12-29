@@ -129,21 +129,16 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
         public static PSCommand BuildCommandFromArguments(string command, IReadOnlyList<string> arguments)
         {
-            if (arguments is null or { Count: 0 })
-            {
-                return new PSCommand().AddCommand(command);
-            }
-
             // HACK: We use AddScript instead of AddArgument/AddParameter to reuse Powershell parameter binding logic.
             // We quote the command parameter so that expressions can still be used in the arguments.
             var sb = new StringBuilder()
-                .Append('&')
+                .Append('.')
                 .Append(' ')
                 .Append('"')
                 .Append(command)
                 .Append('"');
 
-            foreach (string arg in arguments)
+            foreach (string arg in arguments ?? System.Linq.Enumerable.Empty<string>())
             {
                 sb
                 .Append(' ')

@@ -90,6 +90,14 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
                 )));
         }
 
+        private VariableDetailsBase[] GetVariables(string scopeName)
+        {
+            VariableScope scope = Array.Find(
+                debugService.GetVariableScopes(0),
+                s => s.Name == scopeName);
+            return debugService.GetVariables(scope.Id);
+        }
+
         private Task ExecutePowerShellCommand(string command, params string[] args)
         {
             return psesHost.ExecutePSCommandAsync(
@@ -158,10 +166,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
             Assert.Equal(StackFrameDetails.NoFileScriptPath, stackFrames[0].ScriptPath);
-            VariableDetailsBase[] variables = debugService.GetVariables(debugService.globalScopeVariables.Id);
 
             // NOTE: This assertion will fail if any error occurs. Notably this happens in testing
             // when the assembly path changes and the commands definition file can't be found.
+            VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.GlobalScopeName);
             var var = Array.Find(variables, v => v.Name == "$Error");
             Assert.NotNull(var);
             Assert.True(var.IsExpandable);
@@ -197,8 +205,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             AssertDebuggerStopped(debugWithParamsFile.FilePath, 3);
 
-            StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
-            VariableDetailsBase[] variables = debugService.GetVariables(stackFrames[0].AutoVariables.Id);
+            VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.LocalScopeName);
 
             var var = Array.Find(variables, v => v.Name == "$Param1");
             Assert.NotNull(var);
@@ -220,6 +227,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.True(var.IsExpandable);
 
             // NOTE: $args are no longer found in AutoVariables but CommandVariables instead.
+            StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
             variables = debugService.GetVariables(stackFrames[0].CommandVariables.Id);
             var = Array.Find(variables, v => v.Name == "$args");
             Assert.NotNull(var);
@@ -266,8 +274,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Task _ = ExecuteDebugFile();
             AssertDebuggerStopped(debugScriptFile.FilePath, 6);
 
-            StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
-            VariableDetailsBase[] variables = debugService.GetVariables(stackFrames[0].AutoVariables.Id);
+            VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.LocalScopeName);
 
             // Verify the function breakpoint broke at Write-Host and $i is 1
             var i = Array.Find(variables, v => v.Name == "$i");
@@ -279,8 +286,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             debugService.Continue();
             AssertDebuggerStopped(debugScriptFile.FilePath, 6);
 
-            stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
-            variables = debugService.GetVariables(stackFrames[0].AutoVariables.Id);
+            variables = GetVariables(VariableContainerDetails.LocalScopeName);
 
             // Verify the function breakpoint broke at Write-Host and $i is 1
             i = Array.Find(variables, v => v.Name == "$i");
@@ -356,8 +362,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Task _ = ExecuteDebugFile();
             AssertDebuggerStopped(debugScriptFile.FilePath, 7);
 
-            StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
-            VariableDetailsBase[] variables = debugService.GetVariables(stackFrames[0].AutoVariables.Id);
+            VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.LocalScopeName);
 
             // Verify the breakpoint only broke at the condition ie. $i -eq breakpointValue1
             var i = Array.Find(variables, v => v.Name == "$i");
@@ -370,8 +375,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             debugService.Continue();
             AssertDebuggerStopped(debugScriptFile.FilePath, 7);
 
-            stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
-            variables = debugService.GetVariables(stackFrames[0].AutoVariables.Id);
+            variables = GetVariables(VariableContainerDetails.LocalScopeName);
 
             // Verify the breakpoint only broke at the condition ie. $i -eq breakpointValue1
             i = Array.Find(variables, v => v.Name == "$i");
@@ -395,8 +399,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Task _ = ExecuteDebugFile();
             AssertDebuggerStopped(debugScriptFile.FilePath, 6);
 
-            StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
-            VariableDetailsBase[] variables = debugService.GetVariables(stackFrames[0].AutoVariables.Id);
+            VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.LocalScopeName);
 
             // Verify the breakpoint only broke at the condition ie. $i -eq breakpointValue1
             var i = Array.Find(variables, v => v.Name == "$i");
@@ -418,8 +421,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Task _ = ExecuteDebugFile();
             AssertDebuggerStopped(debugScriptFile.FilePath, 6);
 
-            StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
-            VariableDetailsBase[] variables = debugService.GetVariables(stackFrames[0].AutoVariables.Id);
+            VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.LocalScopeName);
 
             // Verify the breakpoint only broke at the condition ie. $i -eq breakpointValue1
             var i = Array.Find(variables, v => v.Name == "$i");
@@ -519,8 +521,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Task _ = ExecuteVariableScriptFile();
             AssertDebuggerStopped(variableScriptFile.FilePath);
 
-            StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
-            VariableDetailsBase[] variables = debugService.GetVariables(stackFrames[0].AutoVariables.Id);
+            VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.LocalScopeName);
 
             var var = Array.Find(variables, v => v.Name == "$strVar");
             Assert.NotNull(var);
@@ -539,8 +540,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Task _ = ExecuteVariableScriptFile();
             AssertDebuggerStopped(variableScriptFile.FilePath);
 
-            StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
-            VariableDetailsBase[] variables = debugService.GetVariables(stackFrames[0].AutoVariables.Id);
+            VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.LocalScopeName);
 
             // TODO: Add checks for correct value strings as well
             var strVar = Array.Find(variables, v => v.Name == "$strVar");
@@ -580,7 +580,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         }
 
         [Trait("Category", "DebugService")]
-        [Fact(Skip = "Variable setting is broken")]
+        [Fact]
         public async Task DebuggerSetsVariablesNoConversion()
         {
             await debugService.SetLineBreakpointsAsync(
@@ -590,15 +590,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Task _ = ExecuteVariableScriptFile();
             AssertDebuggerStopped(variableScriptFile.FilePath);
 
-            StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
-            VariableDetailsBase[] variables = debugService.GetVariables(stackFrames[0].AutoVariables.Id);
+            VariableScope[] scopes = debugService.GetVariableScopes(0);
+            VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.LocalScopeName);
 
             // Test set of a local string variable (not strongly typed)
-            const string newStrValue = "\"Goodbye\"";
-            string setStrValue = await debugService.SetVariableAsync(stackFrames[0].AutoVariables.Id, "$strVar", newStrValue).ConfigureAwait(true);
+            const string newStrValue = "Goodbye";
+            VariableScope localScope = Array.Find(scopes, s => s.Name == VariableContainerDetails.LocalScopeName);
+            // TODO: Fix this so it has the second quotes again?
+            string setStrValue = await debugService.SetVariableAsync(localScope.Id, "$strVar", '"' + newStrValue + '"').ConfigureAwait(true);
             Assert.Equal(newStrValue, setStrValue);
-
-            VariableScope[] scopes = debugService.GetVariableScopes(0);
 
             // Test set of script scope int variable (not strongly typed)
             VariableScope scriptScope = Array.Find(scopes, s => s.Name == VariableContainerDetails.ScriptScopeName);
@@ -615,33 +615,27 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             // The above just tests that the debug service returns the correct new value string.
             // Let's step the debugger and make sure the values got set to the new values.
-            debugService.StepOver();
+            await Task.Run(() => debugService.StepOver()).ConfigureAwait(true);
             AssertDebuggerStopped(variableScriptFile.FilePath);
 
-            stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
-
             // Test set of a local string variable (not strongly typed)
-            variables = debugService.GetVariables(stackFrames[0].AutoVariables.Id);
+            variables = GetVariables(VariableContainerDetails.LocalScopeName);
             var strVar = Array.Find(variables, v => v.Name == "$strVar");
             Assert.Equal(newStrValue, strVar.ValueString);
 
-            scopes = debugService.GetVariableScopes(0);
-
             // Test set of script scope int variable (not strongly typed)
-            scriptScope = Array.Find(scopes, s => s.Name == VariableContainerDetails.ScriptScopeName);
-            variables = debugService.GetVariables(scriptScope.Id);
+            variables = GetVariables(VariableContainerDetails.ScriptScopeName);
             var intVar = Array.Find(variables, v => v.Name == "$scriptInt");
             Assert.Equal(newIntValue, intVar.ValueString);
 
             // Test set of global scope int variable (not strongly typed)
-            globalScope = Array.Find(scopes, s => s.Name == VariableContainerDetails.GlobalScopeName);
-            variables = debugService.GetVariables(globalScope.Id);
+            variables = GetVariables(VariableContainerDetails.GlobalScopeName);
             var intGlobalVar = Array.Find(variables, v => v.Name == "$MaximumHistoryCount");
             Assert.Equal(newGlobalIntValue, intGlobalVar.ValueString);
         }
 
         [Trait("Category", "DebugService")]
-        [Fact(Skip = "Variable setting is broken")]
+        [Fact(Skip = "Variable conversion is broken")]
         public async Task DebuggerSetsVariablesWithConversion()
         {
             await debugService.SetLineBreakpointsAsync(
@@ -652,16 +646,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Task _ = ExecuteVariableScriptFile();
             AssertDebuggerStopped(variableScriptFile.FilePath);
 
-            StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
-            VariableDetailsBase[] variables = debugService.GetVariables(stackFrames[0].AutoVariables.Id);
+            VariableScope[] scopes = debugService.GetVariableScopes(0);
+            VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.LocalScopeName);
 
             // Test set of a local string variable (not strongly typed but force conversion)
-            const string newStrValue = "\"False\"";
+            const string newStrValue = "False";
             const string newStrExpr = "$false";
-            string setStrValue = await debugService.SetVariableAsync(stackFrames[0].AutoVariables.Id, "$strVar2", newStrExpr).ConfigureAwait(true);
+            VariableScope localScope = Array.Find(scopes, s => s.Name == VariableContainerDetails.LocalScopeName);
+            string setStrValue = await debugService.SetVariableAsync(localScope.Id, "$strVar2", newStrExpr).ConfigureAwait(true);
             Assert.Equal(newStrValue, setStrValue);
-
-            VariableScope[] scopes = debugService.GetVariableScopes(0);
 
             // Test set of script scope bool variable (strongly typed)
             VariableScope scriptScope = Array.Find(scopes, s => s.Name == VariableContainerDetails.ScriptScopeName);
@@ -679,27 +672,23 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             // The above just tests that the debug service returns the correct new value string.
             // Let's step the debugger and make sure the values got set to the new values.
-            debugService.StepOver();
+            await Task.Run(() => debugService.StepOver()).ConfigureAwait(true);
             AssertDebuggerStopped(variableScriptFile.FilePath);
 
-            stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
-
             // Test set of a local string variable (not strongly typed but force conversion)
-            variables = debugService.GetVariables(stackFrames[0].AutoVariables.Id);
+            variables = GetVariables(VariableContainerDetails.LocalScopeName);
             var strVar = Array.Find(variables, v => v.Name == "$strVar2");
             Assert.Equal(newStrValue, strVar.ValueString);
 
             scopes = debugService.GetVariableScopes(0);
 
             // Test set of script scope bool variable (strongly typed)
-            scriptScope = Array.Find(scopes, s => s.Name == VariableContainerDetails.ScriptScopeName);
-            variables = debugService.GetVariables(scriptScope.Id);
+            variables = GetVariables(VariableContainerDetails.ScriptScopeName);
             var boolVar = Array.Find(variables, v => v.Name == "$scriptBool");
             Assert.Equal(newBoolValue, boolVar.ValueString);
 
             // Test set of global scope ActionPreference variable (strongly typed)
-            globalScope = Array.Find(scopes, s => s.Name == VariableContainerDetails.GlobalScopeName);
-            variables = debugService.GetVariables(globalScope.Id);
+            variables = GetVariables(VariableContainerDetails.GlobalScopeName);
             var globalVar = Array.Find(variables, v => v.Name == "$VerbosePreference");
             Assert.Equal(newGlobalValue, globalVar.ValueString);
         }
