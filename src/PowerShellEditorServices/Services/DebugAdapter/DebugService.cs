@@ -372,7 +372,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // Evaluate the expression to get back a PowerShell object from the expression string.
             // This may throw, in which case the exception is propagated to the caller
             PSCommand evaluateExpressionCommand = new PSCommand().AddScript(value);
-            var expressionResults = await _executionService.ExecutePSCommandAsync<object>(evaluateExpressionCommand, CancellationToken.None).ConfigureAwait(false);
+            IReadOnlyList<object> expressionResults = await _executionService.ExecutePSCommandAsync<object>(evaluateExpressionCommand, CancellationToken.None).ConfigureAwait(false);
             if (expressionResults.Count == 0)
             {
                 throw new InvalidPowerShellExpressionException("Expected an expression result.");
@@ -426,7 +426,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 .AddParameter("Name", name.TrimStart('$'))
                 .AddParameter("Scope", scope);
 
-            var psVariables = await _executionService.ExecutePSCommandAsync<PSVariable>(getVariableCommand, CancellationToken.None).ConfigureAwait(false);
+            IReadOnlyList<PSVariable> psVariables = await _executionService.ExecutePSCommandAsync<PSVariable>(getVariableCommand, CancellationToken.None).ConfigureAwait(false);
             if (psVariables.Count == 0)
             {
                 throw new Exception("Failed to retrieve PSVariables");
