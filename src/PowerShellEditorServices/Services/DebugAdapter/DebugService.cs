@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private int nextVariableId;
         private string temporaryScriptListingPath;
         private List<VariableDetailsBase> variables;
-        internal VariableContainerDetails globalScopeVariables; // Internal for unit testing.
+        private VariableContainerDetails globalScopeVariables;
         private VariableContainerDetails scriptScopeVariables;
         private VariableContainerDetails localScopeVariables;
         private StackFrameDetails[] stackFrameDetails;
@@ -372,9 +372,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // Evaluate the expression to get back a PowerShell object from the expression string.
             // This may throw, in which case the exception is propagated to the caller
             PSCommand evaluateExpressionCommand = new PSCommand().AddScript(value);
-            object expressionResult =
-                (await _executionService.ExecutePSCommandAsync<object>(evaluateExpressionCommand, CancellationToken.None)
-                .ConfigureAwait(false)).FirstOrDefault();
+            IReadOnlyList<object> expressionResults = await _executionService.ExecutePSCommandAsync<object>(evaluateExpressionCommand, CancellationToken.None).ConfigureAwait(false);
+            if (expressionResults.Count == 0)
+            {
+                throw new InvalidPowerShellExpressionException("Expected an expression result.");
+            }
+            object expressionResult = expressionResults[0];
 
             // If PowerShellContext.ExecuteCommand returns an ErrorRecord as output, the expression failed evaluation.
             // Ideally we would have a separate means from communicating error records apart from normal output.
@@ -423,7 +426,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 .AddParameter("Name", name.TrimStart('$'))
                 .AddParameter("Scope", scope);
 
-            PSVariable psVariable = (await _executionService.ExecutePSCommandAsync<PSVariable>(getVariableCommand, CancellationToken.None).ConfigureAwait(false)).FirstOrDefault();
+            IReadOnlyList<PSVariable> psVariables = await _executionService.ExecutePSCommandAsync<PSVariable>(getVariableCommand, CancellationToken.None).ConfigureAwait(false);
+            if (psVariables.Count == 0)
+            {
+                throw new Exception("Failed to retrieve PSVariables");
+            }
+
+            PSVariable psVariable = psVariables[0];
             if (psVariable is null)
             {
                 throw new Exception($"Failed to retrieve PSVariable object for '{name}' from scope '{scope}'.");
@@ -449,6 +458,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 _logger.LogTrace($"Setting variable '{name}' using conversion to value: {expressionResult ?? "<null>"}");
 
+                // TODO: This is throwing a 'PSInvalidOperationException' thus causing
+                // 'DebuggerSetsVariablesWithConversion' to fail.
                 psVariable.Value = await _executionService.ExecuteDelegateAsync(
                     "PS debugger argument converter",
                     ExecutionOptions.Default,

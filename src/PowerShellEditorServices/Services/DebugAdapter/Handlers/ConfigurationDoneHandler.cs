@@ -135,6 +135,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
             else
             {
+                // TODO: Fix this so the added script doesn't show up.
                 await _executionService
                     .ExecutePSCommandAsync(
                         PSCommandHelpers.BuildCommandFromArguments(scriptToLaunch, _debugStateService.Arguments),
