@@ -33,15 +33,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         private readonly SymbolsService symbolsService;
         private readonly PsesCompletionHandler completionHandler;
         private readonly PsesInternalHost _psesHost;
-        private static readonly string s_baseSharedScriptPath =
-            Path.Combine(
-                    Path.GetDirectoryName(VersionUtils.IsWindows
-                        // On non-Windows platforms, CodeBase has file:// in it.
-                        // On Windows, Location points to a temp directory.
-                        ? typeof(LanguageServiceTests).Assembly.CodeBase
-                        : typeof(LanguageServiceTests).Assembly.Location),
-                    "..","..","..","..",
-                    "PowerShellEditorServices.Test.Shared");
 
         public LanguageServiceTests()
         {
@@ -55,6 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         public void Dispose()
         {
             _psesHost.StopAsync().GetAwaiter().GetResult();
+            GC.SuppressFinalize(this);
         }
 
         [Trait("Category", "Completions")]
@@ -444,14 +436,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
         private ScriptFile GetScriptFile(ScriptRegion scriptRegion)
         {
-            string resolvedPath =
-                Path.Combine(
-                    s_baseSharedScriptPath,
-                    scriptRegion.File);
-
-            return
-                this.workspace.GetFile(
-                    resolvedPath);
+            return workspace.GetFile(TestUtilities.GetSharedPath(scriptRegion.File));
         }
 
         private async Task<CompletionResults> GetCompletionResults(ScriptRegion scriptRegion)
