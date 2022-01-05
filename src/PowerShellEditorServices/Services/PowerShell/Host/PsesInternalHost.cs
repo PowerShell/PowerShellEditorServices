@@ -216,12 +216,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             if (startOptions.LoadProfiles)
             {
-                await ExecuteDelegateAsync(
-                    "LoadProfiles",
-                    new PowerShellExecutionOptions { MustRunInForeground = true, ThrowOnError = false },
-                    (pwsh, _) => pwsh.LoadProfiles(_hostInfo.ProfilePaths),
-                    cancellationToken).ConfigureAwait(false);
-
+                await LoadHostProfilesAsync(cancellationToken).ConfigureAwait(false);
                 _logger.LogInformation("Profiles loaded");
             }
 
@@ -389,6 +384,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         {
             var task = new SynchronousPSDelegateTask(_logger, this, representation, executionOptions, action, cancellationToken);
             task.ExecuteAndGetResult(cancellationToken);
+        }
+
+        internal Task LoadHostProfilesAsync(CancellationToken cancellationToken)
+        {
+            return ExecuteDelegateAsync(
+                "LoadProfiles",
+                new PowerShellExecutionOptions { MustRunInForeground = true, ThrowOnError = false },
+                (pwsh, _) => pwsh.LoadProfiles(_hostInfo.ProfilePaths),
+                cancellationToken);
         }
 
         public Task SetInitialWorkingDirectoryAsync(string path, CancellationToken cancellationToken)
@@ -919,7 +923,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 CancellationToken.None);
         }
 
-        private bool TryLoadPSReadLine(PowerShell pwsh, EngineIntrinsics engineIntrinsics, out IReadLine psrlReadLine)
+        internal bool TryLoadPSReadLine(PowerShell pwsh, EngineIntrinsics engineIntrinsics, out IReadLine psrlReadLine)
         {
             psrlReadLine = null;
             try

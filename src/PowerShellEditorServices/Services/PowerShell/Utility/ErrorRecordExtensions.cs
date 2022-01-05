@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 s_setWriteStreamProperty = Expression.Lambda<Action<PSObject>>(
                     Expression.Call(
                         errorObjectParameter,
-                        writeStreamProperty.GetSetMethod(),
+                        writeStreamProperty.GetSetMethod(nonPublic: true),
                         Expression.Constant(errorStreamType)),
                     errorObjectParameter)
                     .Compile();

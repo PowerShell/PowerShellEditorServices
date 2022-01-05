@@ -19,6 +19,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using Xunit;
 namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 {
+    [Trait("Category", "DebugService")]
     public class DebugServiceTests : IDisposable
     {
         private readonly PsesInternalHost psesHost;
@@ -81,13 +82,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
         private ScriptFile GetDebugScript(string fileName)
         {
-            return workspace.GetFile(
-                TestUtilities.NormalizePath(Path.Combine(
-                    Path.GetDirectoryName(typeof(DebugServiceTests).Assembly.Location),
-                    // TODO: When testing net461 with x64 host, another .. is needed!
-                    "../../../../PowerShellEditorServices.Test.Shared/Debugging",
-                    fileName
-                )));
+            return workspace.GetFile(TestUtilities.GetSharedPath(Path.Combine("Debugging", fileName)));
         }
 
         private VariableDetailsBase[] GetVariables(string scopeName)
@@ -147,7 +142,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
                 CancellationToken.None);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         // This regression test asserts that `ExecuteScriptWithArgsAsync` works for both script
         // files and, in this case, in-line scripts (commands). The bug was that the cwd was
@@ -176,7 +170,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal("[ArrayList: 0]", var.ValueString);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerAcceptsScriptArgs()
         {
@@ -238,7 +231,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal("\"Extra1\"", childVars[0].ValueString);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerSetsAndClearsFunctionBreakpoints()
         {
@@ -264,7 +256,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Empty(breakpoints);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerStopsOnFunctionBreakpoints()
         {
@@ -295,7 +286,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal("2", i.ValueString);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerSetsAndClearsLineBreakpoints()
         {
@@ -329,7 +319,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Empty(remainingBreakpoints);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerStopsOnLineBreakpoints()
         {
@@ -346,7 +335,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             AssertDebuggerStopped(debugScriptFile.FilePath, 7);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerStopsOnConditionalBreakpoints()
         {
@@ -384,7 +372,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal($"{breakpointValue2}", i.ValueString);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerStopsOnHitConditionBreakpoint()
         {
@@ -408,7 +395,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal($"{hitCount}", i.ValueString);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerStopsOnConditionalAndHitConditionBreakpoint()
         {
@@ -431,7 +417,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal("10", i.ValueString);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerProvidesMessageForInvalidConditionalBreakpoint()
         {
@@ -460,7 +445,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Contains("Unexpected token '-ez'", breakpoints[0].Message);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerFindsParseableButInvalidSimpleBreakpointConditions()
         {
@@ -483,7 +467,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Contains("Use '-gt' instead of '>'", breakpoints[1].Message);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerBreaksWhenRequested()
         {
@@ -495,7 +478,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             AssertDebuggerPaused();
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerRunsCommandsWhileStopped()
         {
@@ -510,7 +492,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal(17, (await executeTask.ConfigureAwait(true))[0]);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerVariableStringDisplaysCorrectly()
         {
@@ -529,7 +510,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.False(var.IsExpandable);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerGetsVariables()
         {
@@ -579,7 +559,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal("$false", falseVar.ValueString);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerSetsVariablesNoConversion()
         {
@@ -634,7 +613,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal(newGlobalIntValue, intGlobalVar.ValueString);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact(Skip = "Variable conversion is broken")]
         public async Task DebuggerSetsVariablesWithConversion()
         {
@@ -693,7 +671,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal(newGlobalValue, globalVar.ValueString);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerVariableEnumDisplaysCorrectly()
         {
@@ -714,7 +691,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.False(var.IsExpandable);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerVariableHashtableDisplaysCorrectly()
         {
@@ -751,7 +727,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             }
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerVariableNullStringDisplaysCorrectly()
         {
@@ -772,7 +747,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.True(nullStringVar.IsExpandable);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerVariablePSObjectDisplaysCorrectly()
         {
@@ -800,7 +774,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal("\"John\"", childVars["Name"]);
         }
 
-        [Trait("Category", "DebugService")]
         [Fact]
         public async Task DebuggerVariablePSCustomObjectDisplaysCorrectly()
         {
@@ -830,7 +803,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
         // Verifies fix for issue #86, $proc = Get-Process foo displays just the ETS property set
         // and not all process properties.
-        [Trait("Category", "DebugService")]
         [Fact(Skip = "Length of child vars is wrong now")]
         public async Task DebuggerVariableProcessObjDisplaysCorrectly()
         {
