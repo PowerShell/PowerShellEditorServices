@@ -149,9 +149,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             Assert.Equal("./ReferenceFileE.ps1", definitionResult.SymbolName);
         }
 
-        [Fact(Skip = "TODO Fix this test. A possible bug in PSES product code.")]
+        [Fact]
         public async Task FindsFunctionDefinitionInWorkspace()
         {
+            workspace.WorkspacePath = TestUtilities.GetSharedPath("References");
             SymbolReference definitionResult = await GetDefinition(FindsFunctionDefinitionInWorkspaceData.SourceDetails).ConfigureAwait(true);
             Assert.EndsWith("ReferenceFileE.ps1", definitionResult.FilePath);
             Assert.Equal("My-FunctionInFileE", definitionResult.SymbolName);
