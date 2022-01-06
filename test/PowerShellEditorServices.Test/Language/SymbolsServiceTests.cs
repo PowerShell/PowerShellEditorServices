@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             return symbolsService.GetDefinitionOfSymbolAsync(scriptFile, symbolReference);
         }
 
-        private List<SymbolReference> GetReferences(ScriptRegion scriptRegion)
+        private Task<List<SymbolReference>> GetReferences(ScriptRegion scriptRegion)
         {
             ScriptFile scriptFile = GetScriptFile(scriptRegion);
 
@@ -126,9 +126,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
-         public void FindsReferencesOnFunction()
+         public async Task FindsReferencesOnFunction()
         {
-            List<SymbolReference> referencesResult = GetReferences(FindsReferencesOnFunctionData.SourceDetails);
+            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
             Assert.Equal(3, referencesResult.Count);
             Assert.Equal(1, referencesResult[0].ScriptRegion.StartLineNumber);
             Assert.Equal(10, referencesResult[0].ScriptRegion.StartColumnNumber);
@@ -177,9 +177,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
-        public void FindsReferencesOnVariable()
+        public async Task FindsReferencesOnVariable()
         {
-            List<SymbolReference> referencesResult = GetReferences(FindsReferencesOnVariableData.SourceDetails);
+            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnVariableData.SourceDetails).ConfigureAwait(true);
             Assert.Equal(3, referencesResult.Count);
             Assert.Equal(10, referencesResult[referencesResult.Count - 1].ScriptRegion.StartLineNumber);
             Assert.Equal(13, referencesResult[referencesResult.Count - 1].ScriptRegion.StartColumnNumber);
@@ -204,9 +204,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
-        public void FindsReferencesOnCommandWithAlias()
+        public async Task FindsReferencesOnCommandWithAlias()
         {
-            List<SymbolReference> referencesResult = GetReferences(FindsReferencesOnBuiltInCommandWithAliasData.SourceDetails);
+            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnBuiltInCommandWithAliasData.SourceDetails).ConfigureAwait(true);
             Assert.Equal(4, referencesResult.Count);
             Assert.Equal("gci", referencesResult[1].SymbolName);
             Assert.Equal("dir", referencesResult[2].SymbolName);
@@ -214,16 +214,16 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
-        public void FindsReferencesOnFileWithReferencesFileB()
+        public async Task FindsReferencesOnFileWithReferencesFileB()
         {
-            List<SymbolReference> referencesResult = GetReferences(FindsReferencesOnFunctionMultiFileDotSourceFileB.SourceDetails);
+            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionMultiFileDotSourceFileB.SourceDetails).ConfigureAwait(true);
             Assert.Equal(4, referencesResult.Count);
         }
 
         [Fact]
-        public void FindsReferencesOnFileWithReferencesFileC()
+        public async Task FindsReferencesOnFileWithReferencesFileC()
         {
-            List<SymbolReference> referencesResult = GetReferences(FindsReferencesOnFunctionMultiFileDotSourceFileC.SourceDetails);
+            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionMultiFileDotSourceFileC.SourceDetails).ConfigureAwait(true);
             Assert.Equal(4, referencesResult.Count);
         }
 

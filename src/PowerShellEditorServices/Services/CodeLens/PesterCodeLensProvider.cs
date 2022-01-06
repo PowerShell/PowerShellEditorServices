@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -133,11 +134,11 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// <param name="codeLens">The code lens to resolve.</param>
         /// <param name="scriptFile">The script file.</param>
         /// <returns>The given CodeLens, wrapped in a task.</returns>
-        public CodeLens ResolveCodeLens(CodeLens codeLens, ScriptFile scriptFile)
+        public Task<CodeLens> ResolveCodeLens(CodeLens codeLens, ScriptFile scriptFile)
         {
             // This provider has no specific behavior for
             // resolving CodeLenses.
-            return codeLens;
+            return Task.FromResult(codeLens);
         }
     }
 }

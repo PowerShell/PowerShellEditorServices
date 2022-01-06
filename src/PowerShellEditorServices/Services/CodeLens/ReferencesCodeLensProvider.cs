@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -79,10 +80,10 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// Take a codelens and create a new codelens object with updated references.
         /// </summary>
         /// <param name="codeLens">The old code lens to get updated references for.</param>
+        /// <param name="scriptFile"></param>
         /// <returns>A new code lens object describing the same data as the old one but with updated references.</returns>
-        public CodeLens ResolveCodeLens(CodeLens codeLens, ScriptFile scriptFile)
+        public async Task<CodeLens> ResolveCodeLens(CodeLens codeLens, ScriptFile scriptFile)
         {
-
             ScriptFile[] references = _workspaceService.ExpandScriptReferences(
                 scriptFile);
 
@@ -91,10 +92,10 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                 codeLens.Range.Start.Line + 1,
                 codeLens.Range.Start.Character + 1);
 
-            List<SymbolReference> referencesResult = _symbolsService.FindReferencesOfSymbol(
+            List<SymbolReference> referencesResult = await _symbolsService.FindReferencesOfSymbol(
                 foundSymbol,
                 references,
-                _workspaceService);
+                _workspaceService).ConfigureAwait(false);
 
             Location[] referenceLocations;
             if (referencesResult == null)
