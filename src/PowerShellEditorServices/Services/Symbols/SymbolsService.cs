@@ -39,7 +39,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly ConcurrentDictionary<string, ICodeLensProvider> _codeLensProviders;
         private readonly ConcurrentDictionary<string, IDocumentSymbolProvider> _documentSymbolProviders;
-
+        private readonly Dictionary<String, List<String>> _cmdletToAliasDictionary;
+        private readonly Dictionary<String, String> _aliasToCmdletDictionary;
         #endregion
 
         #region Constructors
@@ -84,6 +85,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 _documentSymbolProviders.TryAdd(documentSymbolProvider.ProviderId, documentSymbolProvider);
             }
+
+            _cmdletToAliasDictionary = new Dictionary<String, List<String>>(StringComparer.OrdinalIgnoreCase);
+            _aliasToCmdletDictionary = new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase);
+            GetAliases();
         }
 
         #endregion
@@ -186,8 +191,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return null;
             }
 
-            // NOTE: we use to make sure aliases were loaded but took it out because we needed the pipeline thread.
-
             // We want to look for references first in referenced files, hence we use ordered dictionary
             // TODO: File system case-sensitivity is based on filesystem not OS, but OS is a much cheaper heuristic
             var fileMap = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
@@ -221,7 +224,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 IEnumerable<SymbolReference> references = AstOperations.FindReferencesOfSymbol(
                     file.ScriptAst,
                     foundSymbol,
-                    needsAliases: false);
+                    _cmdletToAliasDictionary,
+                    _aliasToCmdletDictionary);
 
                 foreach (SymbolReference reference in references)
                 {
@@ -488,6 +492,36 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             return foundDefinition;
+        }
+
+        /// <summary>
+        /// Gets all aliases found in the runspace
+        /// </summary>
+        private async void GetAliases()
+        {
+            IEnumerable<CommandInfo> aliases = await _executionService.ExecuteDelegateAsync<IEnumerable<CommandInfo>>(
+                nameof(GetAliases),
+                PowerShell.Execution.ExecutionOptions.Default,
+                (pwsh, _) =>
+                {
+                    CommandInvocationIntrinsics invokeCommand = pwsh.Runspace.SessionStateProxy.InvokeCommand;
+                    return invokeCommand.GetCommands("*", CommandTypes.Alias, nameIsPattern: true);
+                },
+                System.Threading.CancellationToken.None).ConfigureAwait(false);
+
+            foreach (AliasInfo aliasInfo in aliases)
+            {
+                if (!_cmdletToAliasDictionary.ContainsKey(aliasInfo.Definition))
+                {
+                    _cmdletToAliasDictionary.Add(aliasInfo.Definition, new List<String>() { aliasInfo.Name });
+                }
+                else
+                {
+                    _cmdletToAliasDictionary[aliasInfo.Definition].Add(aliasInfo.Name);
+                }
+
+                _aliasToCmdletDictionary.Add(aliasInfo.Name, aliasInfo.Definition);
+            }
         }
 
         /// <summary>

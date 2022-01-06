@@ -17,16 +17,4 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.References
             endColumnNumber: 0,
             endOffset: 0);
     }
-    public static class FindsReferencesOnBuiltInAliasData
-    {
-        public static readonly ScriptRegion SourceDetails = new(
-            file: TestUtilities.NormalizePath("References/SimpleFile.ps1"),
-            text: string.Empty,
-            startLineNumber: 15,
-            startColumnNumber: 2,
-            startOffset: 0,
-            endLineNumber: 0,
-            endColumnNumber: 0,
-            endOffset: 0);
-    }
 }

@@ -203,20 +203,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             Assert.Equal(3, occurrencesResult[occurrencesResult.Count - 1].ScriptRegion.StartLineNumber);
         }
 
-        [Fact(Skip = "TODO Fix this test. A possible bug in PSES product code.")]
+        [Fact]
         public void FindsReferencesOnCommandWithAlias()
         {
             List<SymbolReference> referencesResult = GetReferences(FindsReferencesOnBuiltInCommandWithAliasData.SourceDetails);
             Assert.Equal(4, referencesResult.Count);
             Assert.Equal("gci", referencesResult[1].SymbolName);
-            Assert.Equal("Get-ChildItem", referencesResult[referencesResult.Count - 1].SymbolName);
-        }
-
-        [Fact(Skip = "TODO Fix this test. A possible bug in PSES product code.")]
-        public void FindsReferencesOnAlias()
-        {
-            List<SymbolReference> referencesResult = GetReferences(FindsReferencesOnBuiltInCommandWithAliasData.SourceDetails);
-            Assert.Equal(4, referencesResult.Count);
             Assert.Equal("dir", referencesResult[2].SymbolName);
             Assert.Equal("Get-ChildItem", referencesResult[referencesResult.Count - 1].SymbolName);
         }
