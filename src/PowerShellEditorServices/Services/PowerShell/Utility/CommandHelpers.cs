@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Collections.Concurrent;
@@ -50,8 +50,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             };
 
         private static readonly ConcurrentDictionary<string, CommandInfo> s_commandInfoCache = new();
-
         private static readonly ConcurrentDictionary<string, string> s_synopsisCache = new();
+        private static readonly ConcurrentDictionary<string, List<string>> s_cmdletToAliasCache = new(System.StringComparer.OrdinalIgnoreCase);
+        private static readonly ConcurrentDictionary<string, string> s_aliasToCmdletCache = new(System.StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Gets the CommandInfo instance for a command with a particular name.
@@ -170,6 +171,45 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             }
 
             return synopsisString;
+        }
+
+        /// <summary>
+        /// Gets all aliases found in the runspace
+        /// </summary>
+        /// <param name="executionService"></param>
+        public static async Task<(ConcurrentDictionary<string, List<string>>, ConcurrentDictionary<string, string>)> GetAliasesAsync(IInternalPowerShellExecutionService executionService)
+        {
+            Validate.IsNotNull(nameof(executionService), executionService);
+
+            // TODO: Should we return the caches if they're not empty, or always update?
+            // if (!s_cmdletToAliasCache.IsEmpty || !s_aliasToCmdletCache.IsEmpty)
+            // {
+            //     return (s_cmdletToAliasCache, s_aliasToCmdletCache);
+            // }
+
+            IEnumerable<CommandInfo> aliases = await executionService.ExecuteDelegateAsync<IEnumerable<CommandInfo>>(
+                nameof(GetAliasesAsync),
+                Execution.ExecutionOptions.Default,
+                (pwsh, _) =>
+                {
+                    CommandInvocationIntrinsics invokeCommand = pwsh.Runspace.SessionStateProxy.InvokeCommand;
+                    return invokeCommand.GetCommands("*", CommandTypes.Alias, nameIsPattern: true);
+                },
+                CancellationToken.None).ConfigureAwait(false);
+
+            foreach (AliasInfo aliasInfo in aliases)
+            {
+                // TODO: When we move to netstandard2.1, we can use another overload which generates
+                // static delegates and thus reduces allocations.
+                s_cmdletToAliasCache.AddOrUpdate(
+                    aliasInfo.Definition,
+                    (_) => new List<string> { aliasInfo.Name },
+                    (_, v) => { v.Add(aliasInfo.Name); return v; });
+
+                s_aliasToCmdletCache.TryAdd(aliasInfo.Name, aliasInfo.Definition);
+            }
+
+            return (s_cmdletToAliasCache, s_aliasToCmdletCache);
         }
     }
 }
