@@ -264,10 +264,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return null;
             }
 
-            return AstOperations.FindReferencesOfSymbol(
-                file.ScriptAst,
-                foundSymbol,
-                needsAliases: false).ToArray();
+            return AstOperations.FindReferencesOfSymbol(file.ScriptAst, foundSymbol).ToArray();
         }
 
         /// <summary>

@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -153,42 +154,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// </summary>
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <param name="symbolReference">The symbol that we are looking for referneces of</param>
-        /// <param name="CmdletToAliasDictionary">Dictionary maping cmdlets to aliases for finding alias references</param>
-        /// <param name="AliasToCmdletDictionary">Dictionary maping aliases to cmdlets for finding alias references</param>
+        /// <param name="cmdletToAliasDictionary">Dictionary maping cmdlets to aliases for finding alias references</param>
+        /// <param name="aliasToCmdletDictionary">Dictionary maping aliases to cmdlets for finding alias references</param>
         /// <returns></returns>
         public static IEnumerable<SymbolReference> FindReferencesOfSymbol(
             Ast scriptAst,
             SymbolReference symbolReference,
-            Dictionary<String, List<String>> CmdletToAliasDictionary,
-            Dictionary<String, String> AliasToCmdletDictionary)
+            ConcurrentDictionary<string, List<string>> cmdletToAliasDictionary = default,
+            ConcurrentDictionary<string, string> aliasToCmdletDictionary = default)
         {
             // find the symbol evaluators for the node types we are handling
-            FindReferencesVisitor referencesVisitor =
-                new FindReferencesVisitor(
-                    symbolReference,
-                    CmdletToAliasDictionary,
-                    AliasToCmdletDictionary);
-            scriptAst.Visit(referencesVisitor);
+            FindReferencesVisitor referencesVisitor = new(
+                symbolReference,
+                cmdletToAliasDictionary,
+                aliasToCmdletDictionary);
 
-            return referencesVisitor.FoundReferences;
-        }
-
-        /// <summary>
-        /// Finds all references (not including aliases) in a script for the given symbol
-        /// </summary>
-        /// <param name="scriptAst">The abstract syntax tree of the given script</param>
-        /// <param name="foundSymbol">The symbol that we are looking for referneces of</param>
-        /// <param name="needsAliases">If this reference search needs aliases.
-        /// This should always be false and used for occurence requests</param>
-        /// <returns>A collection of SymbolReference objects that are refrences to the symbolRefrence
-        /// not including aliases</returns>
-        public static IEnumerable<SymbolReference> FindReferencesOfSymbol(
-            ScriptBlockAst scriptAst,
-            SymbolReference foundSymbol,
-            bool needsAliases)
-        {
-            FindReferencesVisitor referencesVisitor =
-                new FindReferencesVisitor(foundSymbol);
             scriptAst.Visit(referencesVisitor);
 
             return referencesVisitor.FoundReferences;
