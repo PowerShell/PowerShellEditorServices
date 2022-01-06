@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Collections.Concurrent;
@@ -17,8 +17,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
     /// </summary>
     internal static class CommandHelpers
     {
-        private static readonly HashSet<string> s_nounExclusionList = new HashSet<string>
-            {
+        private static readonly HashSet<string> s_nounExclusionList = new()
+        {
                 // PowerShellGet v2 nouns
                 "CredsFromCredentialProvider",
                 "DscResource",
@@ -36,8 +36,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             };
 
         // This is used when a noun exists in multiple modules (for example, "Command" is used in Microsoft.PowerShell.Core and also PowerShellGet)
-        private static readonly HashSet<string> s_cmdletExclusionList = new HashSet<string>
-            {
+        private static readonly HashSet<string> s_cmdletExclusionList = new()
+        {
                 // Commands in PowerShellGet with conflicting nouns
                 "Find-Command",
                 "Find-Module",
@@ -49,17 +49,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 "Update-ModuleManifest",
             };
 
-        private static readonly ConcurrentDictionary<string, CommandInfo> s_commandInfoCache =
-            new ConcurrentDictionary<string, CommandInfo>();
+        private static readonly ConcurrentDictionary<string, CommandInfo> s_commandInfoCache = new();
 
-        private static readonly ConcurrentDictionary<string, string> s_synopsisCache =
-            new ConcurrentDictionary<string, string>();
+        private static readonly ConcurrentDictionary<string, string> s_synopsisCache = new();
 
         /// <summary>
         /// Gets the CommandInfo instance for a command with a particular name.
         /// </summary>
         /// <param name="commandName">The name of the command.</param>
-        /// <param name="powerShellContext">The PowerShellContext to use for running Get-Command.</param>
+        /// <param name="currentRunspace">The current runspace.</param>
+        /// <param name="executionService">The execution service.</param>
         /// <returns>A CommandInfo object with details about the specified command.</returns>
         public static async Task<CommandInfo> GetCommandInfoAsync(
             string commandName,
@@ -97,7 +96,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 .AddArgument(commandName)
                 .AddParameter("ErrorAction", "Ignore");
 
-            CommandInfo commandInfo = (await executionService.ExecutePSCommandAsync<CommandInfo>(command, CancellationToken.None).ConfigureAwait(false)).FirstOrDefault();
+            IReadOnlyList<CommandInfo> results = await executionService
+                .ExecutePSCommandAsync<CommandInfo>(command, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            CommandInfo commandInfo = results.Count > 0 ? results[0] : null;
 
             // Only cache CmdletInfos since they're exposed in binaries they are likely to not change throughout the session.
             if (commandInfo?.CommandType == CommandTypes.Cmdlet)
@@ -112,8 +115,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         /// Gets the command's "Synopsis" documentation section.
         /// </summary>
         /// <param name="commandInfo">The CommandInfo instance for the command.</param>
-        /// <param name="executionService">The PowerShellContext to use for getting command documentation.</param>
-        /// <returns></returns>
+        /// <param name="executionService">The exeuction service to use for getting command documentation.</param>
+        /// <returns>The synopsis.</returns>
         public static async Task<string> GetCommandSynopsisAsync(
             CommandInfo commandInfo,
             IInternalPowerShellExecutionService executionService)
@@ -146,13 +149,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 .AddParameter("Online", false)
                 .AddParameter("ErrorAction", "Ignore");
 
-            IReadOnlyList<PSObject> results = await executionService.ExecutePSCommandAsync<PSObject>(command, CancellationToken.None).ConfigureAwait(false);
-            PSObject helpObject = results.FirstOrDefault();
+            IReadOnlyList<PSObject> results = await executionService
+                .ExecutePSCommandAsync<PSObject>(command, CancellationToken.None)
+                .ConfigureAwait(false);
 
             // Extract the synopsis string from the object
-            string synopsisString =
-                (string)helpObject?.Properties["synopsis"].Value ??
-                string.Empty;
+            PSObject helpObject = results.Count > 0 ? results[0] : null;
+            string synopsisString = (string)helpObject?.Properties["synopsis"].Value ?? string.Empty;
 
             // Only cache cmdlet infos because since they're exposed in binaries, the can never change throughout the session.
             if (commandInfo.CommandType == CommandTypes.Cmdlet)
