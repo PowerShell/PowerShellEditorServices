@@ -126,6 +126,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
+         public void FindsReferencesOnFunction()
+        {
+            List<SymbolReference> referencesResult = GetReferences(FindsReferencesOnFunctionData.SourceDetails);
+            Assert.Equal(3, referencesResult.Count);
+            Assert.Equal(1, referencesResult[0].ScriptRegion.StartLineNumber);
+            Assert.Equal(10, referencesResult[0].ScriptRegion.StartColumnNumber);
+        }
+
+        [Fact]
         public async Task FindsFunctionDefinitionInDotSourceReference()
         {
             SymbolReference definitionResult = await GetDefinition(FindsFunctionDefinitionInDotSourceReferenceData.SourceDetails).ConfigureAwait(true);
@@ -165,6 +174,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             Assert.Equal(6, definitionResult.ScriptRegion.StartLineNumber);
             Assert.Equal(1, definitionResult.ScriptRegion.StartColumnNumber);
             Assert.Equal("$things", definitionResult.SymbolName);
+        }
+
+        [Fact]
+        public void FindsReferencesOnVariable()
+        {
+            List<SymbolReference> referencesResult = GetReferences(FindsReferencesOnVariableData.SourceDetails);
+            Assert.Equal(3, referencesResult.Count);
+            Assert.Equal(10, referencesResult[referencesResult.Count - 1].ScriptRegion.StartLineNumber);
+            Assert.Equal(13, referencesResult[referencesResult.Count - 1].ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
