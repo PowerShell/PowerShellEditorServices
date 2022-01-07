@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Management.Automation.Language;
 
@@ -14,8 +13,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     internal class FindReferencesVisitor : AstVisitor
     {
         private readonly SymbolReference _symbolRef;
-        private readonly ConcurrentDictionary<string, List<string>> _cmdletToAliasDictionary;
-        private readonly ConcurrentDictionary<string, string> _aliasToCmdletDictionary;
+        private readonly IDictionary<string, List<string>> _cmdletToAliasDictionary;
+        private readonly IDictionary<string, string> _aliasToCmdletDictionary;
         private readonly string _symbolRefCommandName;
         private readonly bool _needsAliases;
 
@@ -29,8 +28,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <param name="aliasToCmdletDictionary">Dictionary maping aliases to cmdlets for finding alias references</param>
         public FindReferencesVisitor(
             SymbolReference symbolReference,
-            ConcurrentDictionary<string, List<string>> cmdletToAliasDictionary = default,
-            ConcurrentDictionary<string, string> aliasToCmdletDictionary = default)
+            IDictionary<string, List<string>> cmdletToAliasDictionary = default,
+            IDictionary<string, string> aliasToCmdletDictionary = default)
         {
             _symbolRef = symbolReference;
             FoundReferences = new List<SymbolReference>();

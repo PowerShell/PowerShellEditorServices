@@ -189,7 +189,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return null;
             }
 
-            (ConcurrentDictionary<string, List<string>> cmdletToAliases, ConcurrentDictionary<string, string> aliasToCmdlets) = await CommandHelpers.GetAliasesAsync(_executionService).ConfigureAwait(false);
+            (Dictionary<string, List<string>> cmdletToAliases, Dictionary<string, string> aliasToCmdlets) = await CommandHelpers.GetAliasesAsync(_executionService).ConfigureAwait(false);
 
             // We want to look for references first in referenced files, hence we use ordered dictionary
             // TODO: File system case-sensitivity is based on filesystem not OS, but OS is a much cheaper heuristic

@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -160,8 +159,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         public static IEnumerable<SymbolReference> FindReferencesOfSymbol(
             Ast scriptAst,
             SymbolReference symbolReference,
-            ConcurrentDictionary<string, List<string>> cmdletToAliasDictionary = default,
-            ConcurrentDictionary<string, string> aliasToCmdletDictionary = default)
+            IDictionary<string, List<string>> cmdletToAliasDictionary = default,
+            IDictionary<string, string> aliasToCmdletDictionary = default)
         {
             // find the symbol evaluators for the node types we are handling
             FindReferencesVisitor referencesVisitor = new(

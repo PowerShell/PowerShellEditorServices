@@ -177,15 +177,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         /// Gets all aliases found in the runspace
         /// </summary>
         /// <param name="executionService"></param>
-        public static async Task<(ConcurrentDictionary<string, List<string>>, ConcurrentDictionary<string, string>)> GetAliasesAsync(IInternalPowerShellExecutionService executionService)
+        public static async Task<(Dictionary<string, List<string>>, Dictionary<string, string>)> GetAliasesAsync(IInternalPowerShellExecutionService executionService)
         {
             Validate.IsNotNull(nameof(executionService), executionService);
-
-            // TODO: Should we return the caches if they're not empty, or always update?
-            // if (!s_cmdletToAliasCache.IsEmpty || !s_aliasToCmdletCache.IsEmpty)
-            // {
-            //     return (s_cmdletToAliasCache, s_aliasToCmdletCache);
-            // }
 
             IEnumerable<CommandInfo> aliases = await executionService.ExecuteDelegateAsync<IEnumerable<CommandInfo>>(
                 nameof(GetAliasesAsync),
@@ -209,7 +203,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 s_aliasToCmdletCache.TryAdd(aliasInfo.Name, aliasInfo.Definition);
             }
 
-            return (s_cmdletToAliasCache, s_aliasToCmdletCache);
+            return (new Dictionary<string, List<string>>(s_cmdletToAliasCache),
+                new Dictionary<string, string>(s_aliasToCmdletCache));
         }
     }
 }
