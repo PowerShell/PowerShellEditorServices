@@ -85,7 +85,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public async Task CanCancelExecutionWithToken()
         {
-            _ = await Assert.ThrowsAsync<TaskCanceledException>(() =>
+            await Assert.ThrowsAsync<TaskCanceledException>(() =>
             {
                 return psesHost.ExecutePSCommandAsync(
                     new PSCommand().AddScript("Start-Sleep 10"),
@@ -103,7 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             // Wait until our task has started.
             Thread.Sleep(2000);
             psesHost.CancelCurrentTask();
-            _ = await Assert.ThrowsAsync<TaskCanceledException>(() => executeTask).ConfigureAwait(true);
+            await Assert.ThrowsAsync<TaskCanceledException>(() => executeTask).ConfigureAwait(true);
             Assert.True(executeTask.IsCanceled);
         }
 

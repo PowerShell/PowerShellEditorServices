@@ -1,41 +1,48 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.PowerShell.EditorServices.Extensions;
-using Microsoft.PowerShell.EditorServices.Extensions.Services;
-using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Test.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.PowerShell.EditorServices.Extensions;
+using Microsoft.PowerShell.EditorServices.Extensions.Services;
+using Microsoft.PowerShell.EditorServices.Services.Extension;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Extensions
 {
-    // TODO:
-    // These tests require being able to instantiate a language server and use the service provider.
-    // Re-enable them when we have mocked out more infrastructure for testing.
-
-    /*
+    [Trait("Category", "Extensions")]
     public class ExtensionCommandTests : IDisposable
     {
-        private readonly PowerShellContextService _powershellContextService;
+        private readonly PsesInternalHost psesHost;
 
-        private readonly IExtensionCommandService _extensionCommandService;
-
-        private readonly ExtensionService _extensionService;
+        private readonly ExtensionCommandService extensionCommandService;
 
         public ExtensionCommandTests()
         {
-            _powershellContextService = PowerShellContextFactory.Create(NullLogger.Instance);
-            _extensionCommandService = EditorObject.Instance.GetExtensionServiceProvider().ExtensionCommands;
+            psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
+            ExtensionService extensionService = new(
+                languageServer: null,
+                serviceProvider: null,
+                editorOperations: null,
+                executionService: psesHost);
+            extensionService.InitializeAsync().Wait();
+            extensionCommandService = new(extensionService);
         }
 
-        [Trait("Category", "Extensions")]
+        public void Dispose()
+        {
+            psesHost.StopAsync().Wait();
+            GC.SuppressFinalize(this);
+        }
+
         [Fact]
         public async Task CanRegisterAndInvokeCommandWithCmdletName()
         {
@@ -48,34 +55,30 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
                 BufferRange.None);
 
             EditorCommand commandAdded = null;
-            _extensionCommandService.CommandAdded += (object sender, EditorCommand command) =>
-            {
-                commandAdded = command;
-            };
+            extensionCommandService.CommandAdded += (object _, EditorCommand command) => commandAdded = command;
 
-            string commandName = "test.function";
-            string commandDisplayName = "Function extension";
+            const string commandName = "test.function";
+            const string commandDisplayName = "Function extension";
 
-
-            await _powershellContextService.ExecuteScriptStringAsync(
-                TestUtilities.NormalizeNewlines($@"
-function Invoke-Extension {{ $global:testValue = 5 }}
-Register-EditorCommand -Name {commandName} -DisplayName ""{commandDisplayName}"" -Function Invoke-Extension"));
+            await psesHost.ExecutePSCommandAsync(
+                new PSCommand().AddScript(
+                    "function Invoke-Extension { $global:extensionValue = 5 }; " +
+                    $"Register-EditorCommand -Name {commandName} -DisplayName \"{commandDisplayName}\" -Function Invoke-Extension"),
+                CancellationToken.None).ConfigureAwait(true);
 
             Assert.NotNull(commandAdded);
             Assert.Equal(commandAdded.Name, commandName);
             Assert.Equal(commandAdded.DisplayName, commandDisplayName);
 
             // Invoke the command
-            await _extensionCommandService.InvokeCommandAsync(commandName, editorContext);
+            await extensionCommandService.InvokeCommandAsync(commandName, editorContext).ConfigureAwait(true);
 
             // Assert the expected value
             PSCommand psCommand = new PSCommand().AddScript("$global:extensionValue");
-            IEnumerable<int> results = await _powershellContextService.ExecuteCommandAsync<int>(psCommand);
+            IEnumerable<int> results = await psesHost.ExecutePSCommandAsync<int>(psCommand, CancellationToken.None).ConfigureAwait(true);
             Assert.Equal(5, results.FirstOrDefault());
         }
 
-        [Trait("Category", "Extensions")]
         [Fact]
         public async Task CanRegisterAndInvokeCommandWithScriptBlock()
         {
@@ -87,54 +90,49 @@ Register-EditorCommand -Name {commandName} -DisplayName ""{commandDisplayName}""
                 new BufferPosition(line: 1, column: 1),
                 BufferRange.None);
 
-
             EditorCommand commandAdded = null;
-            _extensionCommandService.CommandAdded += (object sender, EditorCommand command) =>
-            {
-                commandAdded = command;
-            };
+            extensionCommandService.CommandAdded += (object _, EditorCommand command) => commandAdded = command;
 
+            const string commandName = "test.scriptblock";
+            const string commandDisplayName = "ScriptBlock extension";
 
-            string commandName = "test.scriptblock";
-            string commandDisplayName = "ScriptBlock extension";
-
-            await _powershellContextService.ExecuteCommandAsync(new PSCommand()
-                .AddCommand("Register-EditorCommand")
-                .AddParameter("Name", commandName)
-                .AddParameter("DisplayName", commandDisplayName)
-                .AddParameter("ScriptBlock", ScriptBlock.Create("$global:extensionValue = 10")));
+            await psesHost.ExecutePSCommandAsync(
+                new PSCommand()
+                    .AddCommand("Register-EditorCommand")
+                    .AddParameter("Name", commandName)
+                    .AddParameter("DisplayName", commandDisplayName)
+                    .AddParameter("ScriptBlock", ScriptBlock.Create("$global:extensionValue = 10")),
+                CancellationToken.None).ConfigureAwait(true);
 
             Assert.NotNull(commandAdded);
             Assert.Equal(commandName, commandAdded.Name);
             Assert.Equal(commandDisplayName, commandAdded.DisplayName);
 
             // Invoke the command
-            await _extensionCommandService.InvokeCommandAsync("test.scriptblock", editorContext);
+            await extensionCommandService.InvokeCommandAsync("test.scriptblock", editorContext).ConfigureAwait(true);
 
             // Assert the expected value
             PSCommand psCommand = new PSCommand().AddScript("$global:extensionValue");
-            IEnumerable<int> results = await _powershellContextService.ExecuteCommandAsync<int>(psCommand);
+            IEnumerable<int> results = await psesHost.ExecutePSCommandAsync<int>(psCommand, CancellationToken.None).ConfigureAwait(true);
             Assert.Equal(10, results.FirstOrDefault());
         }
 
-        [Trait("Category", "Extensions")]
         [Fact]
         public async Task CanUpdateRegisteredCommand()
         {
             EditorCommand updatedCommand = null;
-            _extensionCommandService.CommandUpdated += (object sender, EditorCommand command) =>
-            {
-                updatedCommand = command;
-            };
+            extensionCommandService.CommandUpdated += (object _, EditorCommand command) => updatedCommand = command;
 
-            string commandName = "test.function";
-            string commandDisplayName = "Updated function extension";
+            const string commandName = "test.function";
+            const string commandDisplayName = "Updated function extension";
 
             // Register a command and then update it
-            await _powershellContextService.ExecuteScriptStringAsync(TestUtilities.NormalizeNewlines(
-                "function Invoke-Extension { Write-Output \"Extension output!\" }\n" +
-                $"Register-EditorCommand -Name \"{commandName}\" -DisplayName \"Old function extension\" -Function \"Invoke-Extension\"\n" +
-                $"Register-EditorCommand -Name \"{commandName}\" -DisplayName \"{commandDisplayName}\" -Function \"Invoke-Extension\""));
+            await psesHost.ExecutePSCommandAsync(
+                new PSCommand().AddScript(
+                    "function Invoke-Extension { Write-Output \"Extension output!\" }; " +
+                    $"Register-EditorCommand -Name {commandName} -DisplayName \"Old function extension\" -Function Invoke-Extension; " +
+                    $"Register-EditorCommand -Name {commandName} -DisplayName \"{commandDisplayName}\" -Function Invoke-Extension"),
+                CancellationToken.None).ConfigureAwait(true);
 
             // Wait for the add and update events
             Assert.NotNull(updatedCommand);
@@ -142,7 +140,6 @@ Register-EditorCommand -Name {commandName} -DisplayName ""{commandDisplayName}""
             Assert.Equal(commandDisplayName, updatedCommand.DisplayName);
         }
 
-        [Trait("Category", "Extensions")]
         [Fact]
         public async Task CanUnregisterCommand()
         {
@@ -154,41 +151,33 @@ Register-EditorCommand -Name {commandName} -DisplayName ""{commandDisplayName}""
                 new BufferPosition(line: 1, column: 1),
                 BufferRange.None);
 
-            string commandName = "test.scriptblock";
-            string commandDisplayName = "ScriptBlock extension";
+            const string commandName = "test.scriptblock";
+            const string commandDisplayName = "ScriptBlock extension";
 
             EditorCommand removedCommand = null;
-            _extensionCommandService.CommandRemoved += (object sender, EditorCommand command) =>
-            {
-                removedCommand = command;
-            };
+            extensionCommandService.CommandRemoved += (object _, EditorCommand command) => removedCommand = command;
 
             // Add the command and wait for the add event
-            await _powershellContextService.ExecuteCommandAsync(new PSCommand()
-                .AddCommand("Register-EditorCommand")
-                .AddParameter("Name", commandName)
-                .AddParameter("DisplayName", commandDisplayName)
-                .AddParameter("ScriptBlock", ScriptBlock.Create("Write-Output \"Extension output!\"")));
+            await psesHost.ExecutePSCommandAsync(
+                new PSCommand()
+                    .AddCommand("Register-EditorCommand")
+                    .AddParameter("Name", commandName)
+                    .AddParameter("DisplayName", commandDisplayName)
+                    .AddParameter("ScriptBlock", ScriptBlock.Create("Write-Output \"Extension output!\"")),
+                CancellationToken.None).ConfigureAwait(true);
 
             // Remove the command and wait for the remove event
-            await _powershellContextService.ExecuteCommandAsync(new PSCommand()
-                .AddCommand("Unregister-EditorCommand")
-                .AddParameter("Name", commandName));
+            await psesHost.ExecutePSCommandAsync(
+                new PSCommand().AddCommand("Unregister-EditorCommand").AddParameter("Name", commandName),
+                CancellationToken.None).ConfigureAwait(true);
 
             Assert.NotNull(removedCommand);
             Assert.Equal(commandName, removedCommand.Name);
             Assert.Equal(commandDisplayName, removedCommand.DisplayName);
 
             // Ensure that the command has been unregistered
-            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _extensionCommandService.InvokeCommandAsync("test.scriptblock", editorContext));
-        }
-
-        public void Dispose()
-        {
-            _powershellContextService.Dispose();
+            await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => extensionCommandService.InvokeCommandAsync("test.scriptblock", editorContext)).ConfigureAwait(true);
         }
     }
-    */
 }
-

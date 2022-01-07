@@ -24,12 +24,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 
         #region Fields
 
-        private readonly Dictionary<string, EditorCommand> editorCommands =
-            new Dictionary<string, EditorCommand>();
+        private readonly Dictionary<string, EditorCommand> editorCommands = new();
 
         private readonly ILanguageServerFacade _languageServer;
 
-        private IdempotentLatch _initializedLatch = new();
+        private readonly IdempotentLatch _initializedLatch = new();
 
         #endregion
 
@@ -39,18 +38,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         /// Gets the IEditorOperations implementation used to invoke operations
         /// in the host editor.
         /// </summary>
-        public IEditorOperations EditorOperations { get; private set; }
+        public IEditorOperations EditorOperations { get; }
 
         /// <summary>
         /// Gets the EditorObject which exists in the PowerShell session as the
         /// '$psEditor' variable.
         /// </summary>
-        public EditorObject EditorObject { get; private set; }
+        public EditorObject EditorObject { get; }
 
         /// <summary>
         /// Gets the PowerShellContext in which extension code will be executed.
         /// </summary>
-        internal IInternalPowerShellExecutionService ExecutionService { get; private set; }
+        internal IInternalPowerShellExecutionService ExecutionService { get; }
 
         #endregion
 
@@ -62,7 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         /// </summary>
         /// <param name="languageServer">The PSES language server instance.</param>
         /// <param name="serviceProvider">Services for dependency injection into the editor object.</param>
-        /// <param name="editorOptions">Options object to configure the editor.</param>
+        /// <param name="editorOperations">The interface for operating an editor.</param>
         /// <param name="executionService">PowerShell execution service to run PowerShell execution requests.</param>
         internal ExtensionService(
             ILanguageServerFacade languageServer,
@@ -73,16 +72,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             ExecutionService = executionService;
             _languageServer = languageServer;
 
-            EditorObject =
-                new EditorObject(
-                    serviceProvider,
-                    this,
-                    editorOperations);
+            EditorObject = new EditorObject(
+                serviceProvider,
+                this,
+                editorOperations);
 
             // Attach to ExtensionService events
-            CommandAdded += ExtensionService_ExtensionAddedAsync;
-            CommandUpdated += ExtensionService_ExtensionUpdatedAsync;
-            CommandRemoved += ExtensionService_ExtensionRemovedAsync;
+            CommandAdded += ExtensionService_ExtensionAdded;
+            CommandUpdated += ExtensionService_ExtensionUpdated;
+            CommandRemoved += ExtensionService_ExtensionRemoved;
         }
 
         #endregion
@@ -93,7 +91,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         /// Initializes this ExtensionService using the provided IEditorOperations
         /// implementation for future interaction with the host editor.
         /// </summary>
-        /// <param name="editorOperations">An IEditorOperations implementation.</param>
         /// <returns>A Task that can be awaited for completion.</returns>
         internal Task InitializeAsync()
         {
@@ -121,28 +118,29 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         /// <param name="commandName">The unique name of the command to be invoked.</param>
         /// <param name="editorContext">The context in which the command is being invoked.</param>
         /// <returns>A Task that can be awaited for completion.</returns>
+        /// <exception cref="KeyNotFoundException">The command being invoked was not registered.</exception>
         public async Task InvokeCommandAsync(string commandName, EditorContext editorContext)
         {
-
-            if (this.editorCommands.TryGetValue(commandName, out EditorCommand editorCommand))
+            if (editorCommands.TryGetValue(commandName, out EditorCommand editorCommand))
             {
-                PSCommand executeCommand = new PSCommand();
-                executeCommand.AddCommand("Invoke-Command");
-                executeCommand.AddParameter("ScriptBlock", editorCommand.ScriptBlock);
-                executeCommand.AddParameter("ArgumentList", new object[] { editorContext });
+                PSCommand executeCommand = new PSCommand()
+                    .AddCommand("Invoke-Command")
+                    .AddParameter("ScriptBlock", editorCommand.ScriptBlock)
+                    .AddParameter("ArgumentList", new object[] { editorContext });
 
                 await ExecutionService.ExecutePSCommandAsync(
                     executeCommand,
                     CancellationToken.None,
-                    new PowerShellExecutionOptions { WriteOutputToHost = !editorCommand.SuppressOutput, ThrowOnError = false, AddToHistory = !editorCommand.SuppressOutput })
-                    .ConfigureAwait(false);
+                    new PowerShellExecutionOptions
+                    {
+                        WriteOutputToHost = !editorCommand.SuppressOutput,
+                        ThrowOnError = false,
+                        AddToHistory = !editorCommand.SuppressOutput
+                    }).ConfigureAwait(false);
             }
             else
             {
-                throw new KeyNotFoundException(
-                    string.Format(
-                        "Editor command not found: '{0}'",
-                        commandName));
+                throw new KeyNotFoundException($"Editor command not found: '{commandName}'");
             }
         }
 
@@ -156,20 +154,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         {
             Validate.IsNotNull(nameof(editorCommand), editorCommand);
 
-            bool commandExists =
-                this.editorCommands.ContainsKey(
-                    editorCommand.Name);
+            bool commandExists = editorCommands.ContainsKey(editorCommand.Name);
 
             // Add or replace the editor command
-            this.editorCommands[editorCommand.Name] = editorCommand;
+            editorCommands[editorCommand.Name] = editorCommand;
 
             if (!commandExists)
             {
-                this.OnCommandAdded(editorCommand);
+                OnCommandAdded(editorCommand);
             }
             else
             {
-                this.OnCommandUpdated(editorCommand);
+                OnCommandUpdated(editorCommand);
             }
 
             return !commandExists;
@@ -179,19 +175,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         /// Unregisters an existing EditorCommand based on its registered name.
         /// </summary>
         /// <param name="commandName">The name of the command to be unregistered.</param>
+        /// <exception cref="KeyNotFoundException">The command being unregistered was not registered.</exception>
         public void UnregisterCommand(string commandName)
         {
-            if (this.editorCommands.TryGetValue(commandName, out EditorCommand existingCommand))
+            if (editorCommands.TryGetValue(commandName, out EditorCommand existingCommand))
             {
-                this.editorCommands.Remove(commandName);
-                this.OnCommandRemoved(existingCommand);
+                editorCommands.Remove(commandName);
+                OnCommandRemoved(existingCommand);
             }
             else
             {
-                throw new KeyNotFoundException(
-                    string.Format(
-                        "Command '{0}' is not registered",
-                        commandName));
+                throw new KeyNotFoundException($"Command '{commandName}' is not registered");
             }
         }
 
@@ -201,8 +195,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         /// <returns>An Array of all registered EditorCommands.</returns>
         public EditorCommand[] GetCommands()
         {
-            EditorCommand[] commands = new EditorCommand[this.editorCommands.Count];
-            this.editorCommands.Values.CopyTo(commands,0);
+            EditorCommand[] commands = new EditorCommand[editorCommands.Count];
+            editorCommands.Values.CopyTo(commands, 0);
             return commands;
         }
 
@@ -217,7 +211,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 
         private void OnCommandAdded(EditorCommand command)
         {
-            this.CommandAdded?.Invoke(this, command);
+            CommandAdded?.Invoke(this, command);
         }
 
         /// <summary>
@@ -227,7 +221,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 
         private void OnCommandUpdated(EditorCommand command)
         {
-            this.CommandUpdated?.Invoke(this, command);
+            CommandUpdated?.Invoke(this, command);
         }
 
         /// <summary>
@@ -237,35 +231,31 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 
         private void OnCommandRemoved(EditorCommand command)
         {
-            this.CommandRemoved?.Invoke(this, command);
+            CommandRemoved?.Invoke(this, command);
         }
 
-        private void ExtensionService_ExtensionAddedAsync(object sender, EditorCommand e)
+        private void ExtensionService_ExtensionAdded(object sender, EditorCommand e)
         {
-            _languageServer?.SendNotification<ExtensionCommandAddedNotification>("powerShell/extensionCommandAdded",
+            _languageServer?.SendNotification<ExtensionCommandAddedNotification>(
+                "powerShell/extensionCommandAdded",
                 new ExtensionCommandAddedNotification
-                {
-                    Name = e.Name,
-                    DisplayName = e.DisplayName
-                });
+                { Name = e.Name, DisplayName = e.DisplayName });
         }
 
-        private void ExtensionService_ExtensionUpdatedAsync(object sender, EditorCommand e)
+        private void ExtensionService_ExtensionUpdated(object sender, EditorCommand e)
         {
-            _languageServer?.SendNotification<ExtensionCommandUpdatedNotification>("powerShell/extensionCommandUpdated",
+            _languageServer?.SendNotification<ExtensionCommandUpdatedNotification>(
+                "powerShell/extensionCommandUpdated",
                 new ExtensionCommandUpdatedNotification
-                {
-                    Name = e.Name,
-                });
+                { Name = e.Name, });
         }
 
-        private void ExtensionService_ExtensionRemovedAsync(object sender, EditorCommand e)
+        private void ExtensionService_ExtensionRemoved(object sender, EditorCommand e)
         {
-            _languageServer?.SendNotification<ExtensionCommandRemovedNotification>("powerShell/extensionCommandRemoved",
+            _languageServer?.SendNotification<ExtensionCommandRemovedNotification>(
+                "powerShell/extensionCommandRemoved",
                 new ExtensionCommandRemovedNotification
-                {
-                    Name = e.Name,
-                });
+                { Name = e.Name, });
         }
 
         #endregion
