@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             DocumentSelector = LspUtils.PowerShellDocumentSelector
         };
 
-        public override Task<LocationContainer> Handle(ReferenceParams request, CancellationToken cancellationToken)
+        public async override Task<LocationContainer> Handle(ReferenceParams request, CancellationToken cancellationToken)
         {
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
@@ -45,10 +45,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     request.Position.Character + 1);
 
             List<SymbolReference> referencesResult =
-                _symbolsService.FindReferencesOfSymbol(
+                await _symbolsService.FindReferencesOfSymbol(
                     foundSymbol,
                     _workspaceService.ExpandScriptReferences(scriptFile),
-                    _workspaceService);
+                    _workspaceService).ConfigureAwait(false);
 
             var locations = new List<Location>();
 
@@ -64,7 +64,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
             }
 
-            return Task.FromResult(new LocationContainer(locations));
+            return new LocationContainer(locations);
         }
 
         private static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)

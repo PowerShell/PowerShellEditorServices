@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
@@ -34,13 +35,12 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// The CodeLens to resolve.
         /// </param>
         /// <param name="scriptFile">
-        /// A CancellationToken which can be used to cancel the
-        /// request.
+        /// The ScriptFile to resolve it in (sometimes unused).
         /// </param>
         /// <returns>
         /// A Task which returns the resolved CodeLens when completed.
         /// </returns>
-        CodeLens ResolveCodeLens(
+        Task<CodeLens> ResolveCodeLens(
             CodeLens codeLens,
             ScriptFile scriptFile);
     }

@@ -7,13 +7,13 @@ using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Services.Symbols
 {
+    [Trait("Category", "AstOperations")]
     public class AstOperationsTests
     {
-        private static string s_scriptString = @"function BasicFunction {}
+        private const string s_scriptString = @"function BasicFunction {}
 BasicFunction
 
 function          FunctionWithExtraSpace
@@ -36,9 +36,8 @@ function
 
     FunctionNameOnDifferentLine
 ";
-        private static ScriptBlockAst s_ast = (ScriptBlockAst) ScriptBlock.Create(s_scriptString).Ast;
+        private static readonly ScriptBlockAst s_ast = (ScriptBlockAst) ScriptBlock.Create(s_scriptString).Ast;
 
-        [Trait("Category", "AstOperations")]
         [Theory]
         [InlineData(2, 3, "BasicFunction")]
         [InlineData(7, 18, "FunctionWithExtraSpace")]
@@ -50,14 +49,13 @@ function
             Assert.Equal(expectedName, reference.SymbolName);
         }
 
-        [Trait("Category", "AstOperations")]
         [Theory]
-        [MemberData(nameof(FindReferencesOfSymbolAtPostionData), parameters: 3)]
+        [MemberData(nameof(FindReferencesOfSymbolAtPostionData))]
         public void CanFindReferencesOfSymbolAtPostion(int lineNumber, int columnNumber, Position[] positions)
         {
             SymbolReference symbol = AstOperations.FindSymbolAtPosition(s_ast, lineNumber, columnNumber);
 
-            IEnumerable<SymbolReference> references = AstOperations.FindReferencesOfSymbol(s_ast, symbol, needsAliases: false);
+            IEnumerable<SymbolReference> references = AstOperations.FindReferencesOfSymbol(s_ast, symbol);
 
             int positionsIndex = 0;
             foreach (SymbolReference reference in references)
@@ -69,9 +67,7 @@ function
             }
         }
 
-        public static object[][] FindReferencesOfSymbolAtPostionData => s_findReferencesOfSymbolAtPostionData;
-
-        private static readonly object[][] s_findReferencesOfSymbolAtPostionData = new object[][]
+        public static object[][] FindReferencesOfSymbolAtPostionData { get; } = new object[][]
         {
             new object[] { 2, 3, new[] { new Position(1, 10), new Position(2, 1) } },
             new object[] { 7, 18, new[] { new Position(4, 19), new Position(7, 3) } },

@@ -75,8 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 _workspaceService.GetFile(
                     codeLensData.Uri);
 
-            var resolvedCodeLens = originalProvider.ResolveCodeLens(request, scriptFile);
-            return Task.FromResult(resolvedCodeLens);
+            return originalProvider.ResolveCodeLens(request, scriptFile);
         }
 
         public void SetCapability(CodeLensCapability capability)

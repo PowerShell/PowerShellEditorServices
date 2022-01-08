@@ -12,11 +12,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// </summary>
     internal class FindReferencesVisitor : AstVisitor
     {
-        private SymbolReference symbolRef;
-        private Dictionary<String, List<String>> CmdletToAliasDictionary;
-        private Dictionary<String, String> AliasToCmdletDictionary;
-        private string symbolRefCommandName;
-        private bool needsAliases;
+        private readonly SymbolReference _symbolRef;
+        private readonly IDictionary<string, List<string>> _cmdletToAliasDictionary;
+        private readonly IDictionary<string, string> _aliasToCmdletDictionary;
+        private readonly string _symbolRefCommandName;
+        private readonly bool _needsAliases;
 
         public List<SymbolReference> FoundReferences { get; set; }
 
@@ -24,36 +24,35 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// Constructor used when searching for aliases is needed
         /// </summary>
         /// <param name="symbolReference">The found symbolReference that other symbols are being compared to</param>
-        /// <param name="CmdletToAliasDictionary">Dictionary maping cmdlets to aliases for finding alias references</param>
-        /// <param name="AliasToCmdletDictionary">Dictionary maping aliases to cmdlets for finding alias references</param>
+        /// <param name="cmdletToAliasDictionary">Dictionary maping cmdlets to aliases for finding alias references</param>
+        /// <param name="aliasToCmdletDictionary">Dictionary maping aliases to cmdlets for finding alias references</param>
         public FindReferencesVisitor(
             SymbolReference symbolReference,
-            Dictionary<String, List<String>> CmdletToAliasDictionary,
-            Dictionary<String, String> AliasToCmdletDictionary)
+            IDictionary<string, List<string>> cmdletToAliasDictionary = default,
+            IDictionary<string, string> aliasToCmdletDictionary = default)
         {
-            this.symbolRef = symbolReference;
-            this.FoundReferences = new List<SymbolReference>();
-            this.needsAliases = true;
-            this.CmdletToAliasDictionary = CmdletToAliasDictionary;
-            this.AliasToCmdletDictionary = AliasToCmdletDictionary;
+            _symbolRef = symbolReference;
+            FoundReferences = new List<SymbolReference>();
 
-            // Try to get the symbolReference's command name of an alias,
-            // if a command name does not exists (if the symbol isn't an alias to a command)
-            // set symbolRefCommandName to and empty string value
-            AliasToCmdletDictionary.TryGetValue(symbolReference.ScriptRegion.Text, out symbolRefCommandName);
-            if (symbolRefCommandName == null) { symbolRefCommandName = string.Empty; }
+            if (cmdletToAliasDictionary is null || aliasToCmdletDictionary is null)
+            {
+                _needsAliases = false;
+                return;
+            }
 
-        }
+            _needsAliases = true;
+            _cmdletToAliasDictionary = cmdletToAliasDictionary;
+            _aliasToCmdletDictionary = aliasToCmdletDictionary;
 
-        /// <summary>
-        /// Constructor used when searching for aliases is not needed
-        /// </summary>
-        /// <param name="foundSymbol">The found symbolReference that other symbols are being compared to</param>
-        public FindReferencesVisitor(SymbolReference foundSymbol)
-        {
-            this.symbolRef = foundSymbol;
-            this.FoundReferences = new List<SymbolReference>();
-            this.needsAliases = false;
+            // Try to get the symbolReference's command name of an alias. If a command name does not
+            // exists (if the symbol isn't an alias to a command) set symbolRefCommandName to an
+            // empty string.
+            aliasToCmdletDictionary.TryGetValue(symbolReference.ScriptRegion.Text, out _symbolRefCommandName);
+
+            if (_symbolRefCommandName == null)
+            {
+                _symbolRefCommandName = string.Empty;
+            }
         }
 
         /// <summary>
@@ -68,50 +67,44 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             Ast commandNameAst = commandAst.CommandElements[0];
             string commandName = commandNameAst.Extent.Text;
 
-            if(symbolRef.SymbolType.Equals(SymbolType.Function))
+            if (_symbolRef.SymbolType.Equals(SymbolType.Function))
             {
-                if (needsAliases)
+                if (_needsAliases)
                 {
-                    // Try to get the commandAst's name and aliases,
-                    // if a command does not exists (if the symbol isn't an alias to a command)
-                    // set command to and empty string value string command
-                    // if the aliases do not exist (if the symvol isn't a command that has aliases)
+                    // Try to get the commandAst's name and aliases.
+                    //
+                    // If a command does not exist (if the symbol isn't an alias to a command) set
+                    // command to an empty string value string command.
+                    //
+                    // If the aliases do not exist (if the symbol isn't a command that has aliases)
                     // set aliases to an empty List<string>
-                    string command;
-                    List<string> alaises;
-                    CmdletToAliasDictionary.TryGetValue(commandName, out alaises);
-                    AliasToCmdletDictionary.TryGetValue(commandName, out command);
-                    if (alaises == null) { alaises = new List<string>(); }
+                    _cmdletToAliasDictionary.TryGetValue(commandName, out List<string> aliases);
+                    _aliasToCmdletDictionary.TryGetValue(commandName, out string command);
+                    if (aliases == null) { aliases = new List<string>(); }
                     if (command == null) { command = string.Empty; }
 
-                    if (symbolRef.SymbolType.Equals(SymbolType.Function))
+                    // Check if the found symbol's name is the same as the commandAst's name OR
+                    // if the symbol's name is an alias for this commandAst's name (commandAst is a cmdlet) OR
+                    // if the symbol's name is the same as the commandAst's cmdlet name (commandAst is a alias)
+                    if (commandName.Equals(_symbolRef.SymbolName, StringComparison.OrdinalIgnoreCase)
+                        // Note that PowerShell command names and aliases are case insensitive.
+                        || aliases.Exists((match) => string.Equals(match, _symbolRef.ScriptRegion.Text, StringComparison.OrdinalIgnoreCase))
+                        || command.Equals(_symbolRef.ScriptRegion.Text, StringComparison.OrdinalIgnoreCase)
+                        || (!string.IsNullOrEmpty(command)
+                            && command.Equals(_symbolRefCommandName, StringComparison.OrdinalIgnoreCase)))
                     {
-                        // Check if the found symbol's name is the same as the commandAst's name OR
-                        // if the symbol's name is an alias for this commandAst's name (commandAst is a cmdlet) OR
-                        // if the symbol's name is the same as the commandAst's cmdlet name (commandAst is a alias)
-                        if (commandName.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase) ||
-                        alaises.Contains(symbolRef.ScriptRegion.Text.ToLower()) ||
-                        command.Equals(symbolRef.ScriptRegion.Text, StringComparison.CurrentCultureIgnoreCase) ||
-                        (!string.IsNullOrEmpty(command) && command.Equals(symbolRefCommandName, StringComparison.CurrentCultureIgnoreCase)))
-                        {
-                            this.FoundReferences.Add(new SymbolReference(
-                                SymbolType.Function,
-                                commandNameAst.Extent));
-                        }
+                        FoundReferences.Add(new SymbolReference(SymbolType.Function, commandNameAst.Extent));
                     }
-
                 }
                 else // search does not include aliases
                 {
-                    if (commandName.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+                    if (commandName.Equals(_symbolRef.SymbolName, StringComparison.OrdinalIgnoreCase))
                     {
-                        this.FoundReferences.Add(new SymbolReference(
-                            SymbolType.Function,
-                            commandNameAst.Extent));
+                        FoundReferences.Add(new SymbolReference(SymbolType.Function, commandNameAst.Extent));
                     }
                 }
-
             }
+
             return base.VisitCommand(commandAst);
         }
 
@@ -135,12 +128,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 File = functionDefinitionAst.Extent.File
             };
 
-            if (symbolRef.SymbolType.Equals(SymbolType.Function) &&
-                nameExtent.Text.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+            if (_symbolRef.SymbolType.Equals(SymbolType.Function) &&
+                nameExtent.Text.Equals(_symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
-                this.FoundReferences.Add(new SymbolReference(
-                                          SymbolType.Function,
-                                          nameExtent));
+                FoundReferences.Add(new SymbolReference(SymbolType.Function, nameExtent));
             }
             return base.VisitFunctionDefinition(functionDefinitionAst);
         }
@@ -153,12 +144,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitCommandParameter(CommandParameterAst commandParameterAst)
         {
-            if (symbolRef.SymbolType.Equals(SymbolType.Parameter) &&
-                commandParameterAst.Extent.Text.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+            if (_symbolRef.SymbolType.Equals(SymbolType.Parameter) &&
+                commandParameterAst.Extent.Text.Equals(_symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
-                this.FoundReferences.Add(new SymbolReference(
-                                         SymbolType.Parameter,
-                                         commandParameterAst.Extent));
+                FoundReferences.Add(new SymbolReference(SymbolType.Parameter, commandParameterAst.Extent));
             }
             return AstVisitAction.Continue;
         }
@@ -171,12 +160,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
         {
-            if(symbolRef.SymbolType.Equals(SymbolType.Variable) &&
-                variableExpressionAst.Extent.Text.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+            if (_symbolRef.SymbolType.Equals(SymbolType.Variable)
+                && variableExpressionAst.Extent.Text.Equals(_symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
-                this.FoundReferences.Add(new SymbolReference(
-                                         SymbolType.Variable,
-                                         variableExpressionAst.Extent));
+                FoundReferences.Add(new SymbolReference(SymbolType.Variable, variableExpressionAst.Extent));
             }
             return AstVisitAction.Continue;
         }
@@ -186,7 +173,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         {
             int startColumnNumber = ast.Extent.StartColumnNumber;
             int startLineNumber = ast.Extent.StartLineNumber;
-            int astOffset = 0;
+            int astOffset;
 
             if (ast.IsFilter)
             {

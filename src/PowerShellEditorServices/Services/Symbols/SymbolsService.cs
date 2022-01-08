@@ -39,7 +39,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly ConcurrentDictionary<string, ICodeLensProvider> _codeLensProviders;
         private readonly ConcurrentDictionary<string, IDocumentSymbolProvider> _documentSymbolProviders;
-
         #endregion
 
         #region Constructors
@@ -49,6 +48,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// the given Runspace to execute language service operations.
         /// </summary>
         /// <param name="factory">An ILoggerFactory implementation used for writing log messages.</param>
+        /// <param name="runspaceContext"></param>
+        /// <param name="executionService"></param>
+        /// <param name="workspaceService"></param>
+        /// <param name="configurationService"></param>
         public SymbolsService(
             ILoggerFactory factory,
             IRunspaceContext runspaceContext,
@@ -176,7 +179,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="referencedFiles">An array of scriptFiles too search for references in</param>
         /// <param name="workspace">The workspace that will be searched for symbols</param>
         /// <returns>FindReferencesResult</returns>
-        public List<SymbolReference> FindReferencesOfSymbol(
+        public async Task<List<SymbolReference>> FindReferencesOfSymbol(
             SymbolReference foundSymbol,
             ScriptFile[] referencedFiles,
             WorkspaceService workspace)
@@ -186,7 +189,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return null;
             }
 
-            // NOTE: we use to make sure aliases were loaded but took it out because we needed the pipeline thread.
+            (Dictionary<string, List<string>> cmdletToAliases, Dictionary<string, string> aliasToCmdlets) = await CommandHelpers.GetAliasesAsync(_executionService).ConfigureAwait(false);
 
             // We want to look for references first in referenced files, hence we use ordered dictionary
             // TODO: File system case-sensitivity is based on filesystem not OS, but OS is a much cheaper heuristic
@@ -221,7 +224,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 IEnumerable<SymbolReference> references = AstOperations.FindReferencesOfSymbol(
                     file.ScriptAst,
                     foundSymbol,
-                    needsAliases: false);
+                    cmdletToAliases,
+                    aliasToCmdlets);
 
                 foreach (SymbolReference reference in references)
                 {
@@ -264,10 +268,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return null;
             }
 
-            return AstOperations.FindReferencesOfSymbol(
-                file.ScriptAst,
-                foundSymbol,
-                needsAliases: false).ToArray();
+            return AstOperations.FindReferencesOfSymbol(file.ScriptAst, foundSymbol).ToArray();
         }
 
         /// <summary>
@@ -306,7 +307,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="lineNumber">The line number at which the symbol can be located.</param>
         /// <param name="columnNumber">The column number at which the symbol can be located.</param>
         /// <returns></returns>
-        public async Task<SymbolDetails> FindSymbolDetailsAtLocationAsync(
+        public Task<SymbolDetails> FindSymbolDetailsAtLocationAsync(
             ScriptFile scriptFile,
             int lineNumber,
             int columnNumber)
@@ -319,16 +320,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (symbolReference == null)
             {
-                return null;
+                return Task.FromResult<SymbolDetails>(null);
             }
 
             symbolReference.FilePath = scriptFile.FilePath;
-            SymbolDetails symbolDetails = await SymbolDetails.CreateAsync(
+            return SymbolDetails.CreateAsync(
                 symbolReference,
                 _runspaceContext.CurrentRunspace,
-                _executionService).ConfigureAwait(false);
-
-            return symbolDetails;
+                _executionService);
         }
 
         /// <summary>
@@ -446,8 +445,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (foundDefinition == null)
             {
                 // Get a list of all powershell files in the workspace path
-                IEnumerable<string> allFiles = _workspaceService.EnumeratePSFiles();
-                foreach (string file in allFiles)
+                foreach (string file in _workspaceService.EnumeratePSFiles())
                 {
                     if (filesSearched.Contains(file))
                     {
@@ -543,7 +541,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             string modPath = moduleInfo.Path;
-            List<ScriptFile> scriptFiles = new List<ScriptFile>();
+            List<ScriptFile> scriptFiles = new();
             ScriptFile newFile;
 
             // find any files where the moduleInfo's path ends with ps1 or psm1
@@ -598,7 +596,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             IEnumerable<Ast> foundAsts = scriptFile.ScriptAst.FindAll(
                 ast =>
                 {
-                    if (!(ast is FunctionDefinitionAst fdAst))
+                    if (ast is not FunctionDefinitionAst fdAst)
                     {
                         return false;
                     }
@@ -608,7 +606,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 },
                 true);
 
-            if (foundAsts == null || !foundAsts.Any())
+            if (foundAsts?.Any() != true)
             {
                 helpLocation = null;
                 return null;
