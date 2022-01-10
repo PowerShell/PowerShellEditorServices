@@ -1,5 +1,17 @@
 # PowerShell Editor Services Release History
 
+## v3.1.0
+### Monday, January 10, 2022
+
+So many more tests have been turned back on!
+
+- ✨ 🙏 [PowerShellEditorServices #1658](https://github.com/PowerShell/PowerShellEditorServices/pull/1658) - Bump PSReadLine module to 2.2.0-beta5.
+- 🐛 🚨 [PowerShellEditorServices #1444](https://github.com/PowerShell/PowerShellEditorServices/pull/1657) - Re-enable `ExtensionCommandTests.cs`.
+- 🐛 🙏 [PowerShellEditorServices #1656](https://github.com/PowerShell/PowerShellEditorServices/pull/1656) - Resurrect support to resolve aliased references.
+- 🐛 🚨 [PowerShellEditorServices #1445](https://github.com/PowerShell/PowerShellEditorServices/pull/1655) - Split and clean up `LanguageServiceTests.cs`.
+- 🐛 🔍 [vscode-powershell #3715](https://github.com/PowerShell/PowerShellEditorServices/pull/1652) - Fix regression with `F5` to use `.` instead of `&` operator.
+- ✨ 🚨 [vscode-powershell #3677](https://github.com/PowerShell/PowerShellEditorServices/pull/1651) - Enable `PsesInternalHostTests` (previously `PowerShellContextTests`).
+
 ## v2.5.3
 ### Wednesday, December 22, 2021
 
