@@ -405,6 +405,20 @@ namespace Microsoft.PowerShell.EditorServices.Services
             Validate.IsNotNull(nameof(sourceFile), sourceFile);
             Validate.IsNotNull(nameof(foundSymbol), foundSymbol);
 
+            // If symbol is an alias, resolve it.
+            (Dictionary<string, List<string>> _, Dictionary<string, string> aliasToCmdlets) =
+                await CommandHelpers.GetAliasesAsync(_executionService).ConfigureAwait(false);
+
+            if (aliasToCmdlets.ContainsKey(foundSymbol.SymbolName))
+            {
+                foundSymbol = new SymbolReference(
+                    foundSymbol.SymbolType,
+                    aliasToCmdlets[foundSymbol.SymbolName],
+                    foundSymbol.ScriptRegion,
+                    foundSymbol.FilePath,
+                    foundSymbol.SourceLine);
+            }
+
             ScriptFile[] referencedFiles =
                 _workspaceService.ExpandScriptReferences(
                     sourceFile);
