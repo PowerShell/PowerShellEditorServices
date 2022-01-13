@@ -400,8 +400,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             VariableDetailsBase variable = variableContainer.Children[name];
-            // Determine scope in which the variable lives so we can pass it to `Get-Variable -Scope`.
-            string scope = null; // TODO: Can this use a fancy pattern matcher?
+
+            // Determine scope in which the variable lives so we can pass it to `Get-Variable
+            // -Scope`. The default is scope 0 which is safe because if a user is able to see a
+            // variable in the debugger and so change it through this interface, it's either in the
+            // top-most scope or in one of the following named scopes. The default scope is most
+            // likely in the case of changing from the "auto variables" container.
+            string scope = "0";
+            // NOTE: This can't use a switch because the IDs aren't constant.
             if (variableContainerReferenceId == localScopeVariables.Id)
             {
                 scope = VariableContainerDetails.LocalScopeName;
@@ -413,11 +419,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             else if (variableContainerReferenceId == globalScopeVariables.Id)
             {
                 scope = VariableContainerDetails.GlobalScopeName;
-            }
-            else
-            {
-                // Hmm, this would be unexpected. No scope means do not pass GO, do not collect $200.
-                throw new Exception("Could not find the scope for this variable.");
             }
 
             // Now that we have the scope, get the associated PSVariable object for the variable to be set.
