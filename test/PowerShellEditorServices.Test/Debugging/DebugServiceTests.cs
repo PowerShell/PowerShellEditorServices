@@ -28,6 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         private readonly WorkspaceService workspace;
         private readonly ScriptFile debugScriptFile;
         private readonly ScriptFile variableScriptFile;
+        private readonly ScriptFile variableFileInfoTestFile;
 
         public DebugServiceTests()
         {
@@ -56,6 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             workspace = new WorkspaceService(NullLoggerFactory.Instance);
             debugScriptFile = GetDebugScript("DebugTest.ps1");
             variableScriptFile = GetDebugScript("VariableTest.ps1");
+            variableFileInfoTestFile = GetDebugScript("VariableFileInfoTest.ps1");
         }
 
         public void Dispose()
@@ -100,6 +102,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         private Task ExecuteDebugFile() => ExecutePowerShellCommand(debugScriptFile.FilePath);
 
         private Task ExecuteVariableScriptFile() => ExecutePowerShellCommand(variableScriptFile.FilePath);
+
+        private Task ExecuteVariableFileInfoTest() => ExecutePowerShellCommand(variableFileInfoTestFile.FilePath);
 
         private void AssertDebuggerPaused()
         {
@@ -527,6 +531,26 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal("\"Hello\"", var.ValueString);
             Assert.False(var.IsExpandable);
         }
+
+        // [Trait("Category", "DebugService")]
+        // [Fact]
+        // public async Task DebuggerFileInfoHasAllProperties()
+        // {
+        //     await debugService.SetLineBreakpointsAsync(
+        //         variableFileInfoTestFile,
+        //         new[] { BreakpointDetails.Create(variableFileInfoTestFile.FilePath, 2) }).ConfigureAwait(true);
+
+        //     Task _ = ExecuteVariableFileInfoTest();
+        //     AssertDebuggerStopped(variableFileInfoTestFile.FilePath);
+
+        //     StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
+        //     VariableDetailsBase[] variables = debugService.GetVariables(stackFrames[0].AutoVariables.Id);
+
+        //     var var = Array.Find(variables, v => v.Name == "$fileInfoItem");
+        //     Assert.NotNull(var);
+        //     Assert.Equal("\"Hello\"", var.ValueString);
+        //     Assert.False(var.IsExpandable);
+        // }
 
         [Trait("Category", "DebugService")]
         [Fact]

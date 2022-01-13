@@ -279,6 +279,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                     childVariables.AddRange(
                         psObject
                             .Properties
+                            // Exclude Script properties. TODO: Marshal script properties back to runspace
+                            .Where(p => p.MemberType != PSMemberTypes.ScriptProperty)
                             .Select(p => new VariableDetails(p)));
                 }
                 else
@@ -293,7 +295,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                                 // Here we check the object's MemberType against the `Properties`
                                 // bit-mask to determine if this is a property. Hence the selection
                                 // will only include properties.
-                                .Where(p => (PSMemberTypes.Properties & p.MemberType) is not 0)
+                                .Where(p =>
+                                    (PSMemberTypes.Properties & p.MemberType) is not 0 &&
+                                    // Exclude Script properties. TODO: Marshal script properties back to runspace
+                                    p.MemberType != PSMemberTypes.ScriptProperty
+                                )
                                 .Select(p => new VariableDetails(p)));
 
                         obj = psObject.BaseObject;
