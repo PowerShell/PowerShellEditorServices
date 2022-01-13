@@ -52,8 +52,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 File = functionDefinitionAst.Extent.File
             };
 
+            // We compare to the SymbolName instead of its text because it may have been resolved
+            // from an alias.
             if (symbolRef.SymbolType.Equals(SymbolType.Function) &&
-                nameExtent.Text.Equals(symbolRef.ScriptRegion.Text, StringComparison.CurrentCultureIgnoreCase))
+                nameExtent.Text.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
                 this.FoundDeclaration =
                     new SymbolReference(

@@ -51,8 +51,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
         private static readonly ConcurrentDictionary<string, CommandInfo> s_commandInfoCache = new();
         private static readonly ConcurrentDictionary<string, string> s_synopsisCache = new();
-        private static readonly ConcurrentDictionary<string, List<string>> s_cmdletToAliasCache = new(System.StringComparer.OrdinalIgnoreCase);
-        private static readonly ConcurrentDictionary<string, string> s_aliasToCmdletCache = new(System.StringComparer.OrdinalIgnoreCase);
+        internal static readonly ConcurrentDictionary<string, List<string>> s_cmdletToAliasCache = new(System.StringComparer.OrdinalIgnoreCase);
+        internal static readonly ConcurrentDictionary<string, string> s_aliasToCmdletCache = new(System.StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Gets the CommandInfo instance for a command with a particular name.

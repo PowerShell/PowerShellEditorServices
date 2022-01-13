@@ -16,3 +16,5 @@ gci
 dir
 Write-Host
 Get-ChildItem
+
+My-Alias

@@ -5,10 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Management.Automation;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
@@ -44,6 +47,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         public void Dispose()
         {
             psesHost.StopAsync().GetAwaiter().GetResult();
+            CommandHelpers.s_cmdletToAliasCache.Clear();
+            CommandHelpers.s_aliasToCmdletCache.Clear();
             GC.SuppressFinalize(this);
         }
 
@@ -126,10 +131,39 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         }
 
         [Fact]
-         public async Task FindsReferencesOnFunction()
+        public async Task FindsFunctionDefinitionForAlias()
+        {
+            // TODO: Eventually we should get the alises through the AST instead of relying on them
+            // being defined in the runspace.
+            await psesHost.ExecutePSCommandAsync(
+                new PSCommand().AddScript("Set-Alias -Name My-Alias -Value My-Function"),
+                CancellationToken.None).ConfigureAwait(true);
+
+            SymbolReference definitionResult = await GetDefinition(FindsFunctionDefinitionOfAliasData.SourceDetails).ConfigureAwait(true);
+            Assert.Equal(1, definitionResult.ScriptRegion.StartLineNumber);
+            Assert.Equal(10, definitionResult.ScriptRegion.StartColumnNumber);
+            Assert.Equal("My-Function", definitionResult.SymbolName);
+        }
+
+        [Fact]
+        public async Task FindsReferencesOnFunction()
         {
             List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
             Assert.Equal(3, referencesResult.Count);
+            Assert.Equal(1, referencesResult[0].ScriptRegion.StartLineNumber);
+            Assert.Equal(10, referencesResult[0].ScriptRegion.StartColumnNumber);
+        }
+
+        [Fact]
+        public async Task FindsReferencesOnFunctionIncludingAliases()
+        {
+            // TODO: Same as in FindsFunctionDefinitionForAlias.
+            await psesHost.ExecutePSCommandAsync(
+                new PSCommand().AddScript("Set-Alias -Name My-Alias -Value My-Function"),
+                CancellationToken.None).ConfigureAwait(true);
+
+            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
+            Assert.Equal(4, referencesResult.Count);
             Assert.Equal(1, referencesResult[0].ScriptRegion.StartLineNumber);
             Assert.Equal(10, referencesResult[0].ScriptRegion.StartColumnNumber);
         }
