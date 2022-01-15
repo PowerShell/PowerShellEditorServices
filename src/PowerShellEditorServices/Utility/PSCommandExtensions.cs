@@ -66,7 +66,6 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 // We need to do merge errors and output before rendering with an Out- cmdlet
                 Command lastCommand = psCommand.Commands[psCommand.Commands.Count - 1];
                 lastCommand.MergeMyResults(PipelineResultTypes.Error, PipelineResultTypes.Output);
-                lastCommand.MergeMyResults(PipelineResultTypes.Information, PipelineResultTypes.Output);
             }
             return psCommand;
         }
