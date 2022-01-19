@@ -613,7 +613,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal(newGlobalIntValue, intGlobalVar.ValueString);
         }
 
-        [Fact(Skip = "Variable conversion is broken")]
+        [Fact]
         public async Task DebuggerSetsVariablesWithConversion()
         {
             await debugService.SetLineBreakpointsAsync(
@@ -628,7 +628,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.LocalScopeName);
 
             // Test set of a local string variable (not strongly typed but force conversion)
-            const string newStrValue = "False";
+            const string newStrValue = "\"False\"";
             const string newStrExpr = "$false";
             VariableScope localScope = Array.Find(scopes, s => s.Name == VariableContainerDetails.LocalScopeName);
             string setStrValue = await debugService.SetVariableAsync(localScope.Id, "$strVar2", newStrExpr).ConfigureAwait(true);
@@ -657,8 +657,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             variables = GetVariables(VariableContainerDetails.LocalScopeName);
             var strVar = Array.Find(variables, v => v.Name == "$strVar2");
             Assert.Equal(newStrValue, strVar.ValueString);
-
-            scopes = debugService.GetVariableScopes(0);
 
             // Test set of script scope bool variable (strongly typed)
             variables = GetVariables(VariableContainerDetails.ScriptScopeName);

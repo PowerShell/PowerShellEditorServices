@@ -400,8 +400,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             VariableDetailsBase variable = variableContainer.Children[name];
-            // Determine scope in which the variable lives so we can pass it to `Get-Variable -Scope`.
-            string scope = null; // TODO: Can this use a fancy pattern matcher?
+
+            // Determine scope in which the variable lives so we can pass it to `Get-Variable
+            // -Scope`. The default is scope 0 which is safe because if a user is able to see a
+            // variable in the debugger and so change it through this interface, it's either in the
+            // top-most scope or in one of the following named scopes. The default scope is most
+            // likely in the case of changing from the "auto variables" container.
+            string scope = "0";
+            // NOTE: This can't use a switch because the IDs aren't constant.
             if (variableContainerReferenceId == localScopeVariables.Id)
             {
                 scope = VariableContainerDetails.LocalScopeName;
@@ -413,11 +419,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             else if (variableContainerReferenceId == globalScopeVariables.Id)
             {
                 scope = VariableContainerDetails.GlobalScopeName;
-            }
-            else
-            {
-                // Hmm, this would be unexpected. No scope means do not pass GO, do not collect $200.
-                throw new Exception("Could not find the scope for this variable.");
             }
 
             // Now that we have the scope, get the associated PSVariable object for the variable to be set.
@@ -456,22 +457,25 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (argTypeConverterAttr is not null)
             {
+                // PSVariable *is* strongly typed, so we have to convert it.
                 _logger.LogTrace($"Setting variable '{name}' using conversion to value: {expressionResult ?? "<null>"}");
 
-                // TODO: This is throwing a 'PSInvalidOperationException' thus causing
-                // 'DebuggerSetsVariablesWithConversion' to fail.
-                psVariable.Value = await _executionService.ExecuteDelegateAsync(
-                    "PS debugger argument converter",
-                    ExecutionOptions.Default,
-                    (pwsh, _) =>
-                    {
-                        var engineIntrinsics = (EngineIntrinsics)pwsh.Runspace.SessionStateProxy.GetVariable("ExecutionContext");
-
-                        // TODO: This is almost (but not quite) the same as LanguagePrimitives.Convert(), which does not require the pipeline thread.
-                        //       We should investigate changing it.
-                        return argTypeConverterAttr.Transform(engineIntrinsics, expressionResult);
-                    },
+                // NOTE: We use 'Get-Variable' here instead of 'SessionStateProxy.GetVariable()'
+                // because we already have a pipeline running (the debugger) and the latter cannot
+                // run concurrently (threw 'NoSessionStateProxyWhenPipelineInProgress').
+                IReadOnlyList<EngineIntrinsics> results = await _executionService.ExecutePSCommandAsync<EngineIntrinsics>(
+                    new PSCommand()
+                        .AddCommand(@"Microsoft.PowerShell.Utility\Get-Variable")
+                        .AddParameter("Name", "ExecutionContext")
+                        .AddParameter("ValueOnly"),
                     CancellationToken.None).ConfigureAwait(false);
+                EngineIntrinsics engineIntrinsics = results.Count > 0
+                    ? results[0]
+                    : throw new Exception("Couldn't get EngineIntrinsics!");
+
+                // TODO: This is almost (but not quite) the same as 'LanguagePrimitives.Convert()',
+                // which does not require the pipeline thread. We should investigate changing it.
+                psVariable.Value = argTypeConverterAttr.Transform(engineIntrinsics, expressionResult);
             }
             else
             {
@@ -641,7 +645,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private async Task<VariableContainerDetails> FetchVariableContainerAsync(string scope, bool autoVarsOnly)
         {
-            PSCommand psCommand = new PSCommand().AddCommand("Get-Variable").AddParameter("Scope", scope);
+            PSCommand psCommand = new PSCommand().AddCommand(@"Microsoft.PowerShell.Utility\Get-Variable").AddParameter("Scope", scope);
 
             var scopeVariableContainer = new VariableContainerDetails(nextVariableId++, "Scope: " + scope);
             variables.Add(scopeVariableContainer);

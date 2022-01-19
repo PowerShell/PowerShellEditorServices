@@ -94,6 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         }
 
         [Fact]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD003:Avoid awaiting foreign Tasks", Justification = "Explicitly checking task cancellation status.")]
         public async Task CanCancelExecutionWithMethod()
         {
             var executeTask = psesHost.ExecutePSCommandAsync(

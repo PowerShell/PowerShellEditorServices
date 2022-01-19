@@ -20,21 +20,13 @@ namespace Microsoft.PowerShell.EditorServices.Test
         // NOTE: These paths are arbitrarily chosen just to verify that the profile paths can be set
         // to whatever they need to be for the given host.
 
-        public static readonly ProfilePathInfo TestProfilePaths =
-            new(
-                    Path.GetFullPath(
-                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Profile/Test.PowerShellEditorServices_profile.ps1")),
-                    Path.GetFullPath(
-                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Profile/ProfileTest.ps1")),
-                    Path.GetFullPath(
-                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Test.PowerShellEditorServices_profile.ps1")),
-                    Path.GetFullPath(
-                        TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/ProfileTest.ps1")));
+        public static readonly ProfilePathInfo TestProfilePaths = new(
+            Path.GetFullPath(TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Profile/Test.PowerShellEditorServices_profile.ps1")),
+            Path.GetFullPath(TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Profile/ProfileTest.ps1")),
+            Path.GetFullPath(TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/Test.PowerShellEditorServices_profile.ps1")),
+            Path.GetFullPath(TestUtilities.NormalizePath("../../../../PowerShellEditorServices.Test.Shared/ProfileTest.ps1")));
 
-        public static readonly string BundledModulePath = Path.GetFullPath(
-            TestUtilities.NormalizePath("../../../../../module"));
-
-        public static System.Management.Automation.Runspaces.Runspace InitialRunspace;
+        public static readonly string BundledModulePath = Path.GetFullPath(TestUtilities.NormalizePath("../../../../../module"));
 
         public static PsesInternalHost Create(ILoggerFactory loggerFactory)
         {
@@ -53,16 +45,16 @@ namespace Microsoft.PowerShell.EditorServices.Test
             }
 
             HostStartupInfo testHostDetails = new(
-                "PowerShell Editor Services Test Host",
-                "Test.PowerShellEditorServices",
-                new Version("1.0.0"),
+                name: "PowerShell Editor Services Test Host",
+                profileId: "Test.PowerShellEditorServices",
+                version: new Version("1.0.0"),
                 psHost: new NullPSHost(),
-                TestProfilePaths,
+                profilePaths: TestProfilePaths,
                 featureFlags: Array.Empty<string>(),
                 additionalModules: Array.Empty<string>(),
-                initialSessionState,
+                initialSessionState: initialSessionState,
                 logPath: null,
-                (int)LogLevel.None,
+                logLevel: (int)LogLevel.None,
                 consoleReplEnabled: false,
                 usesLegacyReadLine: false,
                 bundledModulePath: BundledModulePath);
@@ -70,8 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
             var psesHost = new PsesInternalHost(loggerFactory, null, testHostDetails);
 
             // NOTE: Because this is used by constructors it can't use await.
-            // TODO: Should we actually load profiles here?
-            if (psesHost.TryStartAsync(new HostStartOptions { LoadProfiles = true }, CancellationToken.None).GetAwaiter().GetResult())
+            if (psesHost.TryStartAsync(new HostStartOptions { LoadProfiles = false }, CancellationToken.None).GetAwaiter().GetResult())
             {
                 return psesHost;
             }
