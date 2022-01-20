@@ -189,7 +189,7 @@ task CreateBuildInfo -Before Build {
         $buildOrigin = $env:PSES_BUILD_ORIGIN
     }
 
-    [string]$buildTime = [datetime]::Now.ToString("s", [System.Globalization.CultureInfo]::InvariantCulture)
+    [string]$buildTime = [datetime]::Today.ToString("s", [System.Globalization.CultureInfo]::InvariantCulture)
 
     $buildInfoContents = @"
 using System.Globalization;
@@ -206,7 +206,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 }
 "@
 
-    Set-Content -LiteralPath $script:BuildInfoPath -Value $buildInfoContents -Force
+    if (Compare-Object $buildInfoContents.Split([Environment]::NewLine) (Get-Content $script:BuildInfoPath)) {
+        Write-Host "Updating Build Info"
+        Set-Content -LiteralPath $script:BuildInfoPath -Value $buildInfoContents -Force
+    }
 }
 
 task SetupHelpForTests {
