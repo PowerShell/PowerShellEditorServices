@@ -134,6 +134,28 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             }
         }
 
+        private void AssertDebuggerStoppedCommand(
+            CommandBreakpointDetails commandBreakpointDetails,
+            string scriptPath = ""
+        )
+        {
+            var eventArgs = debuggerStoppedQueue.Take(new CancellationTokenSource(5000).Token);
+
+            Assert.True(psesHost.DebugContext.IsStopped);
+
+            if (scriptPath != "")
+            {
+                // TODO: The drive letter becomes lower cased on Windows for some reason.
+                Assert.Equal(scriptPath, eventArgs.ScriptPath, ignoreCase: true);
+            }
+            else
+            {
+                Assert.Equal(string.Empty, scriptPath);
+            }
+
+            Assert.Equal(commandBreakpointDetails.Name, eventArgs.OriginalEvent.InvocationInfo.MyCommand.Name);
+        }
+
         private Task<IReadOnlyList<LineBreakpoint>> GetConfirmedBreakpoints(ScriptFile scriptFile)
         {
             // TODO: Should we use the APIs in BreakpointService to get these?
@@ -770,6 +792,39 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Contains("Name", childVars.Keys);
             Assert.Equal("75", childVars["Age"]);
             Assert.Equal("\"John\"", childVars["Name"]);
+        }
+
+        [Fact]
+        public async Task DebuggerEnumerableShowsSummaryOnly()
+        {
+            var variableEnumerableScriptFile = GetDebugScript("VariableEnumerableTest.ps1");
+            CommandBreakpointDetails breakpoint = CommandBreakpointDetails.Create(
+                name: "__BreakDebuggerEnumerableShowsSummaryOnly"
+            );
+            await debugService.SetCommandBreakpointsAsync(
+                new[] { breakpoint }
+            ).ConfigureAwait(true);
+
+            // Execute the script and wait for the breakpoint to be hit
+            _ = ExecutePowerShellCommand(variableEnumerableScriptFile.FilePath);
+            AssertDebuggerStoppedCommand(breakpoint);
+
+            StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
+            VariableScope scriptScope = Array.Find(
+                debugService.GetVariableScopes(0),
+                scope => scope.Name == "Script"
+            );
+            Assert.NotNull(scriptScope);
+            VariableDetailsBase simpleArrayVariable = Array.Find(
+                debugService.GetVariables(scriptScope.Id),
+                variable => variable.Name == "$simpleArray"
+            );
+            Assert.NotNull(simpleArrayVariable);
+            VariableDetailsBase rawDetailsView = Array.Find(
+                simpleArrayVariable.GetChildren(NullLogger.Instance),
+                variable => variable.Name == "Raw View"
+            );
+            Assert.NotNull(rawDetailsView);
         }
 
         [Fact]
