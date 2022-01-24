@@ -24,3 +24,22 @@ function Test-Variables {
 Test-Variables
 # NOTE: If a line is added to the function above, the line numbers in the
 # associated unit tests MUST be adjusted accordingly.
+
+$SCRIPT:simpleDictionary = @{
+    item1 = 1
+    item2 = 2
+    item3 = 'red'
+    item4 = 'blue'
+}
+#This is a dummy function that the test will use to stop and evaluate the debug environment
+function __BreakDebuggerEnumerableShowsRawView{}; __BreakDebuggerEnumerableShowsRawView
+
+$SCRIPT:simpleArray = @(
+    1
+    2
+    'red'
+    'blue'
+)
+
+# This is a dummy function that the test will use to stop and evaluate the debug environment
+function __BreakDebuggerDictionaryShowsRawView{}; __BreakDebuggerDictionaryShowsRawView

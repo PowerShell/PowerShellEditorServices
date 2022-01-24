@@ -800,7 +800,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerEnumerableShowsRawView()
         {
-            var variableEnumerableScriptFile = GetDebugScript("VariableEnumerableTest.ps1");
             CommandBreakpointDetails breakpoint = CommandBreakpointDetails.Create(
                 name: "__BreakDebuggerEnumerableShowsRawView"
             );
@@ -809,7 +808,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             ).ConfigureAwait(true);
 
             // Execute the script and wait for the breakpoint to be hit
-            _ = ExecutePowerShellCommand(variableEnumerableScriptFile.FilePath);
+            Task _ = ExecuteVariableScriptFile();
             AssertDebuggerStoppedCommand(breakpoint);
 
             StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
@@ -845,6 +844,54 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal("$true", rawViewChildren[5].ValueString);
             Assert.Equal("IsSynchronized", rawViewChildren[6].Name);
             Assert.Equal("$false", rawViewChildren[6].ValueString);
+        }
+
+        [Fact]
+        public async Task DebuggerDictionaryShowsRawView()
+        {
+            CommandBreakpointDetails breakpoint = CommandBreakpointDetails.Create(
+                name: "__BreakDebuggerDictionaryShowsRawView"
+            );
+            await debugService.SetCommandBreakpointsAsync(
+                new[] { breakpoint }
+            ).ConfigureAwait(true);
+
+            // Execute the script and wait for the breakpoint to be hit
+            Task _ = ExecuteVariableScriptFile();
+            AssertDebuggerStoppedCommand(breakpoint);
+
+            StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
+            VariableScope scriptScope = Array.Find(
+                debugService.GetVariableScopes(0),
+                scope => scope.Name == "Script"
+            );
+            Assert.NotNull(scriptScope);
+            VariableDetailsBase simpleDictionaryVariable = Array.Find(
+                debugService.GetVariables(scriptScope.Id),
+                variable => variable.Name == "$simpleDictionary"
+            );
+            Assert.NotNull(simpleDictionaryVariable);
+            VariableDetailsBase rawDetailsView = Array.Find(
+                simpleDictionaryVariable.GetChildren(NullLogger.Instance),
+                variable => variable.Name == "Raw View"
+            );
+            Assert.NotNull(rawDetailsView);
+            Assert.Empty(rawDetailsView.Type);
+            Assert.Empty(rawDetailsView.ValueString);
+            VariableDetailsBase[] rawViewChildren = rawDetailsView.GetChildren(NullLogger.Instance);
+            Assert.Equal(7, rawViewChildren.Length);
+            Assert.Equal("IsReadOnly", rawViewChildren[0].Name);
+            Assert.Equal("$false", rawViewChildren[0].ValueString);
+            Assert.Equal("IsFixedSize", rawViewChildren[1].Name);
+            Assert.Equal("$false", rawViewChildren[1].ValueString);
+            Assert.Equal("IsSynchronized", rawViewChildren[2].Name);
+            Assert.Equal("$false", rawViewChildren[2].ValueString);
+            Assert.Equal("Keys", rawViewChildren[3].Name);
+            Assert.Equal("Values", rawViewChildren[4].Name);
+            Assert.Equal("[ValueCollection: 4]", rawViewChildren[4].ValueString);
+            Assert.Equal("SyncRoot", rawViewChildren[5].Name);
+            Assert.Equal("Count", rawViewChildren[6].Name);
+            Assert.Equal("4", rawViewChildren[6].ValueString);
         }
 
         [Fact]
