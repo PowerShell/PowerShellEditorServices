@@ -180,13 +180,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 // These "magic values" are analagous to TypeScript and are visible in VSCode here:
                 // https://github.com/microsoft/vscode/blob/57ca9b99d5b6a59f2d2e0f082ae186559f45f1d8/src/vs/workbench/contrib/debug/browser/baseDebugView.ts#L68-L78
                 // NOTE: we don't do numbers and strings since they (so far) seem to get detected properly by
-                //serialization, and the original .NET type can be preserved so it shows up in the variable name
-                //type hover as the original .NET type.
+                // serialization, and the original .NET type can be preserved so it shows up in the variable name
+                // type hover as the original .NET type.
                 typeName = "boolean";
             }
             else if (isExpandable)
             {
-
                 // Get the "value" for an expandable object.
                 if (value is DictionaryEntry)
                 {
@@ -365,6 +364,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
             return childVariables.ToArray();
         }
+
         protected static void AddDotNetProperties(object obj, List<VariableDetails> childVariables, bool noRawView = false)
         {
             Type objectType = obj.GetType();
@@ -377,9 +377,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 return;
             }
 
-            var properties =
-                objectType.GetProperties(
-                    BindingFlags.Public | BindingFlags.Instance);
+            var properties = objectType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
             foreach (var property in properties)
             {

@@ -31,7 +31,8 @@ $SCRIPT:simpleArray = @(
     'red'
     'blue'
 )
-#This is a dummy function that the test will use to stop and evaluate the debug environment
+
+# This is a dummy function that the test will use to stop and evaluate the debug environment
 function __BreakDebuggerEnumerableShowsRawView{}; __BreakDebuggerEnumerableShowsRawView
 
 $SCRIPT:simpleDictionary = @{
@@ -47,6 +48,6 @@ $sortedDictionary[1] = 1
 $sortedDictionary[2] = 2
 $sortedDictionary['red'] = 'red'
 $sortedDictionary['blue'] = 'red'
+
 # This is a dummy function that the test will use to stop and evaluate the debug environment
 function __BreakDebuggerDerivedDictionaryPropertyInRawView{}; __BreakDebuggerDerivedDictionaryPropertyInRawView
-

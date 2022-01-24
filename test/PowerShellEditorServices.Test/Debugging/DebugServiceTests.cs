@@ -112,7 +112,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
         private void AssertDebuggerStopped(
             string scriptPath = "",
-            int lineNumber = -1)
+            int lineNumber = -1,
+            CommandBreakpointDetails commandBreakpointDetails = default)
         {
             var eventArgs = debuggerStoppedQueue.Take(new CancellationTokenSource(5000).Token);
 
@@ -132,28 +133,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             {
                 Assert.Equal(lineNumber, eventArgs.LineNumber);
             }
-        }
 
-        private void AssertDebuggerStoppedCommand(
-            CommandBreakpointDetails commandBreakpointDetails,
-            string scriptPath = ""
-        )
-        {
-            var eventArgs = debuggerStoppedQueue.Take(new CancellationTokenSource(5000).Token);
-
-            Assert.True(psesHost.DebugContext.IsStopped);
-
-            if (scriptPath != "")
+            if (commandBreakpointDetails is not null)
             {
-                // TODO: The drive letter becomes lower cased on Windows for some reason.
-                Assert.Equal(scriptPath, eventArgs.ScriptPath, ignoreCase: true);
+                Assert.Equal(commandBreakpointDetails.Name, eventArgs.OriginalEvent.InvocationInfo.MyCommand.Name);
             }
-            else
-            {
-                Assert.Equal(string.Empty, scriptPath);
-            }
-
-            Assert.Equal(commandBreakpointDetails.Name, eventArgs.OriginalEvent.InvocationInfo.MyCommand.Name);
         }
 
         private Task<IReadOnlyList<LineBreakpoint>> GetConfirmedBreakpoints(ScriptFile scriptFile)
@@ -800,32 +784,20 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerEnumerableShowsRawView()
         {
-            CommandBreakpointDetails breakpoint = CommandBreakpointDetails.Create(
-                name: "__BreakDebuggerEnumerableShowsRawView"
-            );
-            await debugService.SetCommandBreakpointsAsync(
-                new[] { breakpoint }
-            ).ConfigureAwait(true);
+            CommandBreakpointDetails breakpoint = CommandBreakpointDetails.Create("__BreakDebuggerEnumerableShowsRawView");
+            await debugService.SetCommandBreakpointsAsync(new[] { breakpoint }).ConfigureAwait(true);
 
             // Execute the script and wait for the breakpoint to be hit
             Task _ = ExecuteVariableScriptFile();
-            AssertDebuggerStoppedCommand(breakpoint);
+            AssertDebuggerStopped(commandBreakpointDetails: breakpoint);
 
-            StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
-            VariableScope scriptScope = Array.Find(
-                debugService.GetVariableScopes(0),
-                scope => scope.Name == "Script"
-            );
-            Assert.NotNull(scriptScope);
-            VariableDetailsBase simpleArrayVariable = Array.Find(
-                debugService.GetVariables(scriptScope.Id),
-                variable => variable.Name == "$simpleArray"
-            );
-            Assert.NotNull(simpleArrayVariable);
+            VariableDetailsBase simpleArrayVar = Array.Find(
+                GetVariables(VariableContainerDetails.ScriptScopeName),
+                v => v.Name == "$simpleArray");
+            Assert.NotNull(simpleArrayVar);
             VariableDetailsBase rawDetailsView = Array.Find(
-                simpleArrayVariable.GetChildren(NullLogger.Instance),
-                variable => variable.Name == "Raw View"
-            );
+                simpleArrayVar.GetChildren(NullLogger.Instance),
+                v => v.Name == "Raw View");
             Assert.NotNull(rawDetailsView);
             Assert.Empty(rawDetailsView.Type);
             Assert.Empty(rawDetailsView.ValueString);
@@ -849,32 +821,20 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerDictionaryShowsRawView()
         {
-            CommandBreakpointDetails breakpoint = CommandBreakpointDetails.Create(
-                name: "__BreakDebuggerDictionaryShowsRawView"
-            );
-            await debugService.SetCommandBreakpointsAsync(
-                new[] { breakpoint }
-            ).ConfigureAwait(true);
+            CommandBreakpointDetails breakpoint = CommandBreakpointDetails.Create("__BreakDebuggerDictionaryShowsRawView");
+            await debugService.SetCommandBreakpointsAsync(new[] { breakpoint }).ConfigureAwait(true);
 
             // Execute the script and wait for the breakpoint to be hit
             Task _ = ExecuteVariableScriptFile();
-            AssertDebuggerStoppedCommand(breakpoint);
+            AssertDebuggerStopped(commandBreakpointDetails: breakpoint);
 
-            StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
-            VariableScope scriptScope = Array.Find(
-                debugService.GetVariableScopes(0),
-                scope => scope.Name == "Script"
-            );
-            Assert.NotNull(scriptScope);
-            VariableDetailsBase simpleDictionaryVariable = Array.Find(
-                debugService.GetVariables(scriptScope.Id),
-                variable => variable.Name == "$simpleDictionary"
-            );
-            Assert.NotNull(simpleDictionaryVariable);
+            VariableDetailsBase simpleDictionaryVar = Array.Find(
+                GetVariables(VariableContainerDetails.ScriptScopeName),
+                v => v.Name == "$simpleDictionary");
+            Assert.NotNull(simpleDictionaryVar);
             VariableDetailsBase rawDetailsView = Array.Find(
-                simpleDictionaryVariable.GetChildren(NullLogger.Instance),
-                variable => variable.Name == "Raw View"
-            );
+                simpleDictionaryVar.GetChildren(NullLogger.Instance),
+                v => v.Name == "Raw View");
             Assert.NotNull(rawDetailsView);
             Assert.Empty(rawDetailsView.Type);
             Assert.Empty(rawDetailsView.ValueString);
@@ -897,43 +857,29 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerDerivedDictionaryPropertyInRawView()
         {
-            CommandBreakpointDetails breakpoint = CommandBreakpointDetails.Create(
-                name: "__BreakDebuggerDerivedDictionaryPropertyInRawView"
-            );
-            await debugService.SetCommandBreakpointsAsync(
-                new[] { breakpoint }
-            ).ConfigureAwait(true);
+            CommandBreakpointDetails breakpoint = CommandBreakpointDetails.Create("__BreakDebuggerDerivedDictionaryPropertyInRawView");
+            await debugService.SetCommandBreakpointsAsync(new[] { breakpoint }).ConfigureAwait(true);
 
             // Execute the script and wait for the breakpoint to be hit
             Task _ = ExecuteVariableScriptFile();
-            AssertDebuggerStoppedCommand(breakpoint);
+            AssertDebuggerStopped(commandBreakpointDetails: breakpoint);
 
-            StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
-            VariableScope scriptScope = Array.Find(
-                debugService.GetVariableScopes(0),
-                scope => scope.Name == "Script"
-            );
-            Assert.NotNull(scriptScope);
-            VariableDetailsBase simpleDictionaryVariable = Array.Find(
-                debugService.GetVariables(scriptScope.Id),
-                variable => variable.Name == "$sortedDictionary"
-            );
-            Assert.NotNull(simpleDictionaryVariable);
-            var simpleDictionaryChildren = simpleDictionaryVariable.GetChildren(NullLogger.Instance);
+            VariableDetailsBase sortedDictionaryVar = Array.Find(
+                GetVariables(VariableContainerDetails.ScriptScopeName),
+                v => v.Name == "$sortedDictionary");
+            Assert.NotNull(sortedDictionaryVar);
+            VariableDetailsBase[] simpleDictionaryChildren = sortedDictionaryVar.GetChildren(NullLogger.Instance);
             // 4 items + Raw View
             Assert.Equal(5, simpleDictionaryChildren.Length);
             VariableDetailsBase rawDetailsView = Array.Find(
                 simpleDictionaryChildren,
-                variable => variable.Name == "Raw View"
-            );
+                v => v.Name == "Raw View");
             Assert.NotNull(rawDetailsView);
             Assert.Empty(rawDetailsView.Type);
             Assert.Empty(rawDetailsView.ValueString);
             VariableDetailsBase[] rawViewChildren = rawDetailsView.GetChildren(NullLogger.Instance);
             Assert.Equal(4, rawViewChildren.Length);
-            Assert.NotNull(
-                Array.Find(rawViewChildren, variable => variable.Name == "Comparer")
-            );
+            Assert.NotNull(Array.Find(rawViewChildren, v => v .Name == "Comparer"));
         }
 
         [Fact]
