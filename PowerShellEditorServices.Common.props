@@ -12,8 +12,8 @@
     <RepositoryUrl>https://github.com/PowerShell/PowerShellEditorServices</RepositoryUrl>
     <DebugType>portable</DebugType>
     <!-- See: https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/overview -->
-    <!-- TODO: Enable `EnforceCodeStyleInBuild` -->
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <!-- See: https://docs.microsoft.com/en-us/dotnet/core/compatibility/sdk/6.0/implicit-namespaces -->
     <DisableImplicitNamespaceImports>true</DisableImplicitNamespaceImports>
   </PropertyGroup>
