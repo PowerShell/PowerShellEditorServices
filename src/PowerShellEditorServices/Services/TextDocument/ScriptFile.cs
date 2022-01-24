@@ -411,7 +411,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <returns>The zero-based offset for the given file position.</returns>
         public int GetOffsetAtPosition(int lineNumber, int columnNumber)
         {
-            Validate.IsWithinRange("lineNumber", lineNumber, 1, this.FileLines.Count);
+            Validate.IsWithinRange("lineNumber", lineNumber, 1, this.FileLines.Count + 1);
             Validate.IsGreaterThan("columnNumber", columnNumber, 0);
 
             int offset = 0;
