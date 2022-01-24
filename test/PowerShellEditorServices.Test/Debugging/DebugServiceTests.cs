@@ -232,7 +232,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.True(var.IsExpandable);
 
             var childVars = debugService.GetVariables(var.Id);
-            Assert.Equal(9, childVars.Length);
+            // 2 variables plus "Raw View"
+            Assert.Equal(3, childVars.Length);
             Assert.Equal("\"Bar\"", childVars[0].ValueString);
             Assert.Equal("\"Baz\"", childVars[1].ValueString);
 
@@ -554,7 +555,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.True(objVar.IsExpandable);
 
             var objChildren = debugService.GetVariables(objVar.Id);
-            Assert.Equal(9, objChildren.Length);
+            // Two variables plus "Raw View"
+            Assert.Equal(3, objChildren.Length);
 
             var arrVar = Array.Find(variables, v => v.Name == "$arrVar");
             Assert.NotNull(arrVar);
@@ -731,7 +733,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.True(var.IsExpandable);
 
             VariableDetailsBase[] childVars = debugService.GetVariables(var.Id);
-            Assert.Equal(9, childVars.Length);
+            // 2 variables plus "Raw View"
+            Assert.Equal(3, childVars.Length);
             Assert.Equal("[0]", childVars[0].Name);
             Assert.Equal("[1]", childVars[1].Name);
 
