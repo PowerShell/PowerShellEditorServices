@@ -112,7 +112,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
         private void AssertDebuggerStopped(
             string scriptPath = "",
-            int lineNumber = -1)
+            int lineNumber = -1,
+            CommandBreakpointDetails commandBreakpointDetails = default)
         {
             var eventArgs = debuggerStoppedQueue.Take(new CancellationTokenSource(5000).Token);
 
@@ -131,6 +132,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             if (lineNumber > -1)
             {
                 Assert.Equal(lineNumber, eventArgs.LineNumber);
+            }
+
+            if (commandBreakpointDetails is not null)
+            {
+                Assert.Equal(commandBreakpointDetails.Name, eventArgs.OriginalEvent.InvocationInfo.MyCommand.Name);
             }
         }
 
@@ -210,7 +216,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.True(var.IsExpandable);
 
             var childVars = debugService.GetVariables(var.Id);
-            Assert.Equal(9, childVars.Length);
+            // 2 variables plus "Raw View"
+            Assert.Equal(3, childVars.Length);
             Assert.Equal("\"Bar\"", childVars[0].ValueString);
             Assert.Equal("\"Baz\"", childVars[1].ValueString);
 
@@ -227,7 +234,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.True(var.IsExpandable);
 
             childVars = debugService.GetVariables(var.Id);
-            Assert.Equal(8, childVars.Length);
+            Assert.Equal(2, childVars.Length);
             Assert.Equal("\"Extra1\"", childVars[0].ValueString);
         }
 
@@ -532,14 +539,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.True(objVar.IsExpandable);
 
             var objChildren = debugService.GetVariables(objVar.Id);
-            Assert.Equal(9, objChildren.Length);
+            // Two variables plus "Raw View"
+            Assert.Equal(3, objChildren.Length);
 
             var arrVar = Array.Find(variables, v => v.Name == "$arrVar");
             Assert.NotNull(arrVar);
             Assert.True(arrVar.IsExpandable);
 
             var arrChildren = debugService.GetVariables(arrVar.Id);
-            Assert.Equal(11, arrChildren.Length);
+            Assert.Equal(5, arrChildren.Length);
 
             var classVar = Array.Find(variables, v => v.Name == "$classVar");
             Assert.NotNull(classVar);
@@ -709,7 +717,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.True(var.IsExpandable);
 
             VariableDetailsBase[] childVars = debugService.GetVariables(var.Id);
-            Assert.Equal(9, childVars.Length);
+            // 2 variables plus "Raw View"
+            Assert.Equal(3, childVars.Length);
             Assert.Equal("[0]", childVars[0].Name);
             Assert.Equal("[1]", childVars[1].Name);
 
@@ -770,6 +779,107 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Contains("Name", childVars.Keys);
             Assert.Equal("75", childVars["Age"]);
             Assert.Equal("\"John\"", childVars["Name"]);
+        }
+
+        [Fact]
+        public async Task DebuggerEnumerableShowsRawView()
+        {
+            CommandBreakpointDetails breakpoint = CommandBreakpointDetails.Create("__BreakDebuggerEnumerableShowsRawView");
+            await debugService.SetCommandBreakpointsAsync(new[] { breakpoint }).ConfigureAwait(true);
+
+            // Execute the script and wait for the breakpoint to be hit
+            Task _ = ExecuteVariableScriptFile();
+            AssertDebuggerStopped(commandBreakpointDetails: breakpoint);
+
+            VariableDetailsBase simpleArrayVar = Array.Find(
+                GetVariables(VariableContainerDetails.ScriptScopeName),
+                v => v.Name == "$simpleArray");
+            Assert.NotNull(simpleArrayVar);
+            VariableDetailsBase rawDetailsView = Array.Find(
+                simpleArrayVar.GetChildren(NullLogger.Instance),
+                v => v.Name == "Raw View");
+            Assert.NotNull(rawDetailsView);
+            Assert.Empty(rawDetailsView.Type);
+            Assert.Empty(rawDetailsView.ValueString);
+            VariableDetailsBase[] rawViewChildren = rawDetailsView.GetChildren(NullLogger.Instance);
+            Assert.Equal(7, rawViewChildren.Length);
+            Assert.Equal("Length", rawViewChildren[0].Name);
+            Assert.Equal("4", rawViewChildren[0].ValueString);
+            Assert.Equal("LongLength", rawViewChildren[1].Name);
+            Assert.Equal("4", rawViewChildren[1].ValueString);
+            Assert.Equal("Rank", rawViewChildren[2].Name);
+            Assert.Equal("1", rawViewChildren[2].ValueString);
+            Assert.Equal("SyncRoot", rawViewChildren[3].Name);
+            Assert.Equal("IsReadOnly", rawViewChildren[4].Name);
+            Assert.Equal("$false", rawViewChildren[4].ValueString);
+            Assert.Equal("IsFixedSize", rawViewChildren[5].Name);
+            Assert.Equal("$true", rawViewChildren[5].ValueString);
+            Assert.Equal("IsSynchronized", rawViewChildren[6].Name);
+            Assert.Equal("$false", rawViewChildren[6].ValueString);
+        }
+
+        [Fact]
+        public async Task DebuggerDictionaryShowsRawView()
+        {
+            CommandBreakpointDetails breakpoint = CommandBreakpointDetails.Create("__BreakDebuggerDictionaryShowsRawView");
+            await debugService.SetCommandBreakpointsAsync(new[] { breakpoint }).ConfigureAwait(true);
+
+            // Execute the script and wait for the breakpoint to be hit
+            Task _ = ExecuteVariableScriptFile();
+            AssertDebuggerStopped(commandBreakpointDetails: breakpoint);
+
+            VariableDetailsBase simpleDictionaryVar = Array.Find(
+                GetVariables(VariableContainerDetails.ScriptScopeName),
+                v => v.Name == "$simpleDictionary");
+            Assert.NotNull(simpleDictionaryVar);
+            VariableDetailsBase rawDetailsView = Array.Find(
+                simpleDictionaryVar.GetChildren(NullLogger.Instance),
+                v => v.Name == "Raw View");
+            Assert.NotNull(rawDetailsView);
+            Assert.Empty(rawDetailsView.Type);
+            Assert.Empty(rawDetailsView.ValueString);
+            VariableDetailsBase[] rawViewChildren = rawDetailsView.GetChildren(NullLogger.Instance);
+            Assert.Equal(7, rawViewChildren.Length);
+            Assert.Equal("IsReadOnly", rawViewChildren[0].Name);
+            Assert.Equal("$false", rawViewChildren[0].ValueString);
+            Assert.Equal("IsFixedSize", rawViewChildren[1].Name);
+            Assert.Equal("$false", rawViewChildren[1].ValueString);
+            Assert.Equal("IsSynchronized", rawViewChildren[2].Name);
+            Assert.Equal("$false", rawViewChildren[2].ValueString);
+            Assert.Equal("Keys", rawViewChildren[3].Name);
+            Assert.Equal("Values", rawViewChildren[4].Name);
+            Assert.Equal("[ValueCollection: 4]", rawViewChildren[4].ValueString);
+            Assert.Equal("SyncRoot", rawViewChildren[5].Name);
+            Assert.Equal("Count", rawViewChildren[6].Name);
+            Assert.Equal("4", rawViewChildren[6].ValueString);
+        }
+
+        [Fact]
+        public async Task DebuggerDerivedDictionaryPropertyInRawView()
+        {
+            CommandBreakpointDetails breakpoint = CommandBreakpointDetails.Create("__BreakDebuggerDerivedDictionaryPropertyInRawView");
+            await debugService.SetCommandBreakpointsAsync(new[] { breakpoint }).ConfigureAwait(true);
+
+            // Execute the script and wait for the breakpoint to be hit
+            Task _ = ExecuteVariableScriptFile();
+            AssertDebuggerStopped(commandBreakpointDetails: breakpoint);
+
+            VariableDetailsBase sortedDictionaryVar = Array.Find(
+                GetVariables(VariableContainerDetails.ScriptScopeName),
+                v => v.Name == "$sortedDictionary");
+            Assert.NotNull(sortedDictionaryVar);
+            VariableDetailsBase[] simpleDictionaryChildren = sortedDictionaryVar.GetChildren(NullLogger.Instance);
+            // 4 items + Raw View
+            Assert.Equal(5, simpleDictionaryChildren.Length);
+            VariableDetailsBase rawDetailsView = Array.Find(
+                simpleDictionaryChildren,
+                v => v.Name == "Raw View");
+            Assert.NotNull(rawDetailsView);
+            Assert.Empty(rawDetailsView.Type);
+            Assert.Empty(rawDetailsView.ValueString);
+            VariableDetailsBase[] rawViewChildren = rawDetailsView.GetChildren(NullLogger.Instance);
+            Assert.Equal(4, rawViewChildren.Length);
+            Assert.NotNull(Array.Find(rawViewChildren, v => v .Name == "Comparer"));
         }
 
         [Fact]

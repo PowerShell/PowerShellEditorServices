@@ -26,8 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// Provides a constant for the dollar sign variable prefix string.
         /// </summary>
         public const string DollarPrefix = "$";
-
-        private object valueObject;
+        protected object ValueObject { get; }
         private VariableDetails[] cachedChildren;
 
         #endregion
@@ -81,7 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <param name="value">The variable's value.</param>
         public VariableDetails(string name, object value)
         {
-            this.valueObject = value;
+            this.ValueObject = value;
 
             this.Id = -1; // Not been assigned a variable reference id yet
             this.Name = name;
@@ -109,7 +108,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             {
                 if (this.cachedChildren == null)
                 {
-                    this.cachedChildren = GetChildren(this.valueObject, logger);
+                    this.cachedChildren = GetChildren(this.ValueObject, logger);
                 }
 
                 return this.cachedChildren;
@@ -175,19 +174,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             if (value is bool)
             {
                 // Set to identifier recognized by PowerShell to make setVariable from the debug UI more natural.
-                valueString = (bool) value ? "$true" : "$false";
+                valueString = (bool)value ? "$true" : "$false";
 
                 // We need to use this "magic value" to highlight in vscode properly
                 // These "magic values" are analagous to TypeScript and are visible in VSCode here:
                 // https://github.com/microsoft/vscode/blob/57ca9b99d5b6a59f2d2e0f082ae186559f45f1d8/src/vs/workbench/contrib/debug/browser/baseDebugView.ts#L68-L78
-                // NOTE: we don't do numbers and strings since they (so far) seem to get detected properly by 
-                //serialization, and the original .NET type can be preserved so it shows up in the variable name 
-                //type hover as the original .NET type.
+                // NOTE: we don't do numbers and strings since they (so far) seem to get detected properly by
+                // serialization, and the original .NET type can be preserved so it shows up in the variable name
+                // type hover as the original .NET type.
                 typeName = "boolean";
             }
             else if (isExpandable)
             {
-
                 // Get the "value" for an expandable object.
                 if (value is DictionaryEntry)
                 {
@@ -367,12 +365,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             return childVariables.ToArray();
         }
 
-        private static void AddDotNetProperties(object obj, List<VariableDetails> childVariables)
+        protected static void AddDotNetProperties(object obj, List<VariableDetails> childVariables, bool noRawView = false)
         {
             Type objectType = obj.GetType();
-            var properties =
-                objectType.GetProperties(
-                    BindingFlags.Public | BindingFlags.Instance);
+
+            // For certain array or dictionary types, we want to hide additional properties under a "raw view" header
+            // to reduce noise. This is inspired by the C# vscode extension.
+            if (!noRawView && obj is IEnumerable)
+            {
+                childVariables.Add(new VariableDetailsRawView(obj));
+                return;
+            }
+
+            var properties = objectType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
             foreach (var property in properties)
             {
@@ -422,6 +427,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             {
                 return "<" + Message + ">";
             }
+        }
+    }
+
+    /// <summary>
+    /// A VariableDetails that only returns the raw view properties of the object, rather than its values.
+    /// </summary>
+    internal sealed class VariableDetailsRawView : VariableDetails
+    {
+        private const string RawViewName = "Raw View";
+
+        public VariableDetailsRawView(object value) : base(RawViewName, value)
+        {
+            this.ValueString = "";
+            this.Type = "";
+        }
+
+        public override VariableDetailsBase[] GetChildren(ILogger logger)
+        {
+            List<VariableDetails> childVariables = new();
+            AddDotNetProperties(ValueObject, childVariables, noRawView: true);
+            return childVariables.ToArray();
         }
     }
 }
