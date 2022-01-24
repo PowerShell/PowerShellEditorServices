@@ -250,7 +250,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.True(var.IsExpandable);
 
             childVars = debugService.GetVariables(var.Id);
-            Assert.Equal(8, childVars.Length);
+            Assert.Equal(2, childVars.Length);
             Assert.Equal("\"Extra1\"", childVars[0].ValueString);
         }
 
@@ -563,7 +563,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.True(arrVar.IsExpandable);
 
             var arrChildren = debugService.GetVariables(arrVar.Id);
-            Assert.Equal(11, arrChildren.Length);
+            Assert.Equal(5, arrChildren.Length);
 
             var classVar = Array.Find(variables, v => v.Name == "$classVar");
             Assert.NotNull(classVar);
