@@ -32,16 +32,56 @@ dotnet_diagnostic.CA1823.severity = error
 dotnet_diagnostic.CA2007.severity = error
 # CA2016: Forward the CancellationToken parameter to methods that take one
 dotnet_diagnostic.CA2016.severity = error
-# All maintainability issues (dead code etc.)
+
+# TODO: Enable all maintainability issues (dead code etc.) and enforce
 # See: https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/maintainability-warnings
 dotnet_analyzer_diagnostic.category-Maintainability.severity = error
-# VSTHRD002: Synchronously waiting on tasks or awaiters may cause deadlocks
-# TODO: Fix all of these issues and explicitly ignore the intentional ones.
-dotnet_diagnostic.VSTHRD002.severity = silent
+
+# TODO: Fix all of these issues and explicitly ignore the intentional ones!
+
+# CA2016: Forward the CancellationToken parameter to methods that take one
+dotnet_diagnostic.CA2016.severity = suggestion
+# CS0618: A class member was marked with the Obsolete attribute
+dotnet_diagnostic.CS0618.severity = suggestion
+# CS0649: Uninitialized private or internal field declaration that is never assigned a value
+dotnet_diagnostic.CS0649.severity = suggestion
+# CS1998: This async method lacks 'await' operators and will run synchronously
+dotnet_diagnostic.CS1998.severity = suggestion
+# CS4014: Consider applying the await operator to the result of the call
+dotnet_diagnostic.CS4014.severity = suggestion
+
+# RCS1102: Make class static
+dotnet_diagnostic.RCS1102.severity = suggestion
+# RCS1139: Add summary element to documentation comment
+dotnet_diagnostic.RCS1139.severity = suggestion
+# RCS1194: Implement exception constructors
+dotnet_diagnostic.RCS1194.severity = suggestion
+# RCS1210: Return completed task instead of returning null
+dotnet_diagnostic.RCS1210.severity = suggestion
+# RCS1075: Avoid empty catch clause that catches System.Exception
+dotnet_diagnostic.RCS1075.severity = suggestion
+
+# VSTHRD002: Avoid problematic synchronous waits
+dotnet_diagnostic.VSTHRD002.severity = suggestion
+# VSTHRD003: Avoid awaiting foreign Tasks
+dotnet_diagnostic.VSTHRD003.severity = suggestion
+# VSTHRD105: Avoid method overloads that assume TaskScheduler.Current
+dotnet_diagnostic.VSTHRD105.severity = suggestion
+# VSTHRD100: Avoid async void methods
+dotnet_diagnostic.VSTHRD100.severity = suggestion
+# VSTHRD103: Call async methods when in an async method
+dotnet_diagnostic.VSTHRD103.severity = suggestion
+# VSTHRD110: Observe result of async calls
+dotnet_diagnostic.VSTHRD110.severity = suggestion
+# VSTHRD114: Avoid returning a null Task
+dotnet_diagnostic.VSTHRD114.severity = suggestion
 # VSTHRD200: Use "Async" suffix for awaitable methods
-dotnet_diagnostic.VSTHRD200.severity = silent
+dotnet_diagnostic.VSTHRD200.severity = suggestion
+
+# xUnit2013: Do not use equality check to check for collection size
+dotnet_diagnostic.xUnit2013.severity = suggestion
 # IDE0003: this and Me preferences
-dotnet_diagnostic.IDE0003.severity = silent
+dotnet_diagnostic.IDE0003.severity = suggestion
 
 [*.{json}]
 indent_size = 2
