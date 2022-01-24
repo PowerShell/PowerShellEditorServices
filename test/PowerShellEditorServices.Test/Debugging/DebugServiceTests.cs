@@ -798,11 +798,11 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         }
 
         [Fact]
-        public async Task DebuggerEnumerableShowsSummaryOnly()
+        public async Task DebuggerEnumerableShowsRawView()
         {
             var variableEnumerableScriptFile = GetDebugScript("VariableEnumerableTest.ps1");
             CommandBreakpointDetails breakpoint = CommandBreakpointDetails.Create(
-                name: "__BreakDebuggerEnumerableShowsSummaryOnly"
+                name: "__BreakDebuggerEnumerableShowsRawView"
             );
             await debugService.SetCommandBreakpointsAsync(
                 new[] { breakpoint }
@@ -828,6 +828,23 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
                 variable => variable.Name == "Raw View"
             );
             Assert.NotNull(rawDetailsView);
+            Assert.Empty(rawDetailsView.Type);
+            Assert.Empty(rawDetailsView.ValueString);
+            VariableDetailsBase[] rawViewChildren = rawDetailsView.GetChildren(NullLogger.Instance);
+            Assert.Equal(7, rawViewChildren.Length);
+            Assert.Equal("Length", rawViewChildren[0].Name);
+            Assert.Equal("4", rawViewChildren[0].ValueString);
+            Assert.Equal("LongLength", rawViewChildren[1].Name);
+            Assert.Equal("4", rawViewChildren[1].ValueString);
+            Assert.Equal("Rank", rawViewChildren[2].Name);
+            Assert.Equal("1", rawViewChildren[2].ValueString);
+            Assert.Equal("SyncRoot", rawViewChildren[3].Name);
+            Assert.Equal("IsReadOnly", rawViewChildren[4].Name);
+            Assert.Equal("$false", rawViewChildren[4].ValueString);
+            Assert.Equal("IsFixedSize", rawViewChildren[5].Name);
+            Assert.Equal("$true", rawViewChildren[5].ValueString);
+            Assert.Equal("IsSynchronized", rawViewChildren[6].Name);
+            Assert.Equal("$false", rawViewChildren[6].ValueString);
         }
 
         [Fact]

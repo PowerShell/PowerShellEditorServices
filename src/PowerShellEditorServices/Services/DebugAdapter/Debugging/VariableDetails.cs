@@ -441,6 +441,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
         public VariableDetailsRawView(object value) : base(RawViewName, value)
         {
+            this.ValueString = "";
+            this.Type = "";
         }
 
         public override VariableDetailsBase[] GetChildren(ILogger logger)
