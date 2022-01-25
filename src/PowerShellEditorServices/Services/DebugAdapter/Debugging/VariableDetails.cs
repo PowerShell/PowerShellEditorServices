@@ -191,11 +191,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 {
                     // For DictionaryEntry - display the key/value as the value.
                     var entry = (DictionaryEntry)value;
-                    valueString =
-                        string.Format(
-                            "[{0}, {1}]",
-                            entry.Key,
-                            GetValueStringAndType(entry.Value, GetIsExpandable(entry.Value), out typeName));
+                    valueString = GetValueStringAndType(entry.Value, GetIsExpandable(entry.Value), out typeName);
                 }
                 else
                 {
@@ -328,12 +324,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                         // function that defines parameters and has been passed parameters.
                         // If you open the $PSBoundParameters variable node in this scenario and see nothing,
                         // this code is broken.
-                        int i = 0;
                         foreach (DictionaryEntry entry in dictionary)
                         {
                             childVariables.Add(
                                 new VariableDetails(
-                                    "[" + i++ + "]",
+                                    "[" + entry.Key + "]",
                                     entry));
                         }
                     }
