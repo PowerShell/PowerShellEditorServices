@@ -719,19 +719,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             VariableDetailsBase[] childVars = debugService.GetVariables(var.Id);
             // 2 variables plus "Raw View"
             Assert.Equal(3, childVars.Length);
-            Assert.Equal("[firstChild]", childVars[0].Name);
-            Assert.Equal("[secondChild]", childVars[1].Name);
 
-            var childVarStrs = new HashSet<string>(childVars.Select(v => v.ValueString));
-            var expectedVars = new[] {
-                "\"Child\"",
-                "42"
-            };
+            // Hashtables are unordered hence the Linq examination, examination by index is unreliable
+            VariableDetailsBase firstChild = Array.Find(childVars, v => v.Name == "[firstChild]");
+            Assert.NotNull(firstChild);
+            Assert.Equal("\"Child\"", firstChild.ValueString);
 
-            foreach (string expectedVar in expectedVars)
-            {
-                Assert.Contains(expectedVar, childVarStrs);
-            }
+            VariableDetailsBase secondChild = Array.Find(childVars, v => v.Name == "[secondChild]");
+            Assert.NotNull(secondChild);
+            Assert.Equal("42", secondChild.ValueString);
         }
 
         [Fact]
