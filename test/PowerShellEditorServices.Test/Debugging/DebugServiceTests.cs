@@ -719,13 +719,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             VariableDetailsBase[] childVars = debugService.GetVariables(var.Id);
             // 2 variables plus "Raw View"
             Assert.Equal(3, childVars.Length);
-            Assert.Equal("[0]", childVars[0].Name);
-            Assert.Equal("[1]", childVars[1].Name);
+            Assert.Equal("[firstChild]", childVars[0].Name);
+            Assert.Equal("[secondChild]", childVars[1].Name);
 
             var childVarStrs = new HashSet<string>(childVars.Select(v => v.ValueString));
             var expectedVars = new[] {
-                "[firstChild, \"Child\"]",
-                "[secondChild, 42]"
+                "\"Child\"",
+                "42"
             };
 
             foreach (string expectedVar in expectedVars)
