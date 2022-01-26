@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -112,7 +112,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             Name = hostInfo.Name;
             Version = hostInfo.Version;
 
-            DebugContext = new PowerShellDebugContext(loggerFactory, languageServer, this);
+            DebugContext = new PowerShellDebugContext(loggerFactory, this);
             UI = hostInfo.ConsoleReplEnabled
                 ? new EditorServicesConsolePSHostUserInterface(loggerFactory, _readLineProvider, hostInfo.PSHost.UI)
                 : new NullPSHostUI();
@@ -852,7 +852,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void OnDebuggerStopped(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
         {
+            if (!DebugContext.IsDebugServerActive)
+            {
+                // If the we've hit a breakpoint and the debug server is not active, then we need to
+                // start it (and own stopping it later).
+                DebugContext.OwnsDebugServerState = true;
+                _languageServer?.SendNotification("powerShell/startDebugger");
+            }
+
             DebugContext.SetDebuggerStopped(debuggerStopEventArgs);
+
             try
             {
                 CurrentPowerShell.WaitForRemoteOutputIfNeeded();

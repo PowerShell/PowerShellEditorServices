@@ -4,10 +4,9 @@
 using System;
 using System.Management.Automation;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 {
@@ -38,23 +37,29 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
     {
         private readonly ILogger _logger;
 
-        private readonly ILanguageServerFacade _languageServer;
-
         private readonly PsesInternalHost _psesHost;
 
         public PowerShellDebugContext(
             ILoggerFactory loggerFactory,
-            ILanguageServerFacade languageServer,
             PsesInternalHost psesHost)
         {
             _logger = loggerFactory.CreateLogger<PowerShellDebugContext>();
-            _languageServer = languageServer;
             _psesHost = psesHost;
         }
 
         public bool IsStopped { get; private set; }
 
+        /// <summary>
+        /// Tracks the state of the LSP debug server (not the PowerShell debugger).
+        /// </summary>
         public bool IsDebugServerActive { get; set; }
+
+        /// <summary>
+        /// Tracks if the PowerShell session started the debug server itself (true), or if it was
+        /// started by an LSP notification (false). Essentially, this marks if we're responsible for
+        /// stopping the debug server (and thus need to send a notification to do so).
+        /// </summary>
+        public bool OwnsDebugServerState { get; set; }
 
         public DebuggerStopEventArgs LastStopEventArgs { get; private set; }
 
@@ -165,13 +170,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         private void RaiseDebuggerStoppedEvent()
         {
-            if (!IsDebugServerActive)
-            {
-                // NOTE: The language server is not necessarily connected, so this must be
-                // conditional access. This shows up in unit tests.
-                _languageServer?.SendNotification("powerShell/startDebugger");
-            }
-
             DebuggerStopped?.Invoke(this, LastStopEventArgs);
         }
 
