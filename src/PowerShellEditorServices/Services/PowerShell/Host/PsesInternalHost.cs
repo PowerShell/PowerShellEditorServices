@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private static string s_bundledModulePath = Path.GetFullPath(Path.Combine(
             Path.GetDirectoryName(typeof(PsesInternalHost).Assembly.Location), "..", "..", ".."));
 
-        private static string s_commandsModulePath => Path.GetFullPath(Path.Combine(
+        private static string CommandsModulePath => Path.GetFullPath(Path.Combine(
             s_bundledModulePath, "PowerShellEditorServices", "Commands", "PowerShellEditorServices.Commands.psd1"));
 
         private readonly ILoggerFactory _loggerFactory;
@@ -513,8 +513,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             {
                 // If we're changing runspace, make sure we move the handlers over. If we just
                 // popped the last frame, then we're exiting and should pop the runspace too.
-                if (_psFrameStack.Count == 0
-                    || _runspaceStack.Peek().Runspace != _psFrameStack.Peek().PowerShell.Runspace)
+                if (_psFrameStack.Count == 0 || CurrentRunspace.Runspace != CurrentPowerShell.Runspace)
                 {
                     RunspaceFrame previousRunspaceFrame = _runspaceStack.Pop();
                     RemoveRunspaceEventHandlers(previousRunspaceFrame.Runspace);
@@ -566,7 +565,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _stopped.SetResult(true);
         }
 
-
         private void RunDebugExecutionLoop()
         {
             try
@@ -584,16 +582,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         {
             while (!ShouldExitExecutionLoop)
             {
-                using (CancellationScope cancellationScope = _cancellationContext.EnterScope(isIdleScope: false))
-                {
-                    DoOneRepl(cancellationScope.CancellationToken);
+                using CancellationScope cancellationScope = _cancellationContext.EnterScope(isIdleScope: false);
+                DoOneRepl(cancellationScope.CancellationToken);
 
-                    while (!ShouldExitExecutionLoop
-                        && !cancellationScope.CancellationToken.IsCancellationRequested
-                        && _taskQueue.TryTake(out ISynchronousTask task))
-                    {
-                        task.ExecuteSynchronously(cancellationScope.CancellationToken);
-                    }
+                while (!ShouldExitExecutionLoop
+                    && !cancellationScope.CancellationToken.IsCancellationRequested
+                    && _taskQueue.TryTake(out ISynchronousTask task))
+                {
+                    task.ExecuteSynchronously(cancellationScope.CancellationToken);
                 }
             }
         }
@@ -742,7 +738,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 pwsh.SetCorrectExecutionPolicy(_logger);
             }
 
-            pwsh.ImportModule(s_commandsModulePath);
+            pwsh.ImportModule(CommandsModulePath);
 
             if (hostStartupInfo.AdditionalModules?.Count > 0)
             {
@@ -884,7 +880,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             if (!ShouldExitExecutionLoop && !_resettingRunspace && !runspaceStateEventArgs.RunspaceStateInfo.IsUsable())
             {
                 _resettingRunspace = true;
-                PopOrReinitializeRunspaceAsync().HandleErrorsAsync(_logger);
+                Task _ = PopOrReinitializeRunspaceAsync().HandleErrorsAsync(_logger);
             }
         }
 
@@ -898,7 +894,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return ExecuteDelegateAsync(
                 nameof(PopOrReinitializeRunspaceAsync),
                 new ExecutionOptions { InterruptCurrentForeground = true },
-                (cancellationToken) =>
+                (_) =>
                 {
                     while (_psFrameStack.Count > 0
                         && !_psFrameStack.Peek().PowerShell.Runspace.RunspaceStateInfo.IsUsable())
