@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -599,6 +599,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             if (!_hostInfo.ConsoleReplEnabled)
             {
                 return;
+            }
+
+            // If we started the debug server, then on each REPL we need to check if we're still
+            // actively debugging, and if not, stop the server.
+            if (DebugContext.OwnsDebugServerState && !CurrentRunspace.Runspace.Debugger.InBreakpoint)
+            {
+                DebugContext.OwnsDebugServerState = false;
+                _languageServer?.SendNotification("powerShell/stopDebugger");
             }
 
             // When a task must run in the foreground, we cancel out of the idle loop and return to the top level.
