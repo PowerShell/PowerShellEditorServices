@@ -601,12 +601,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 return;
             }
 
-            // If we started the debug server, then on each REPL we need to check if we're still
-            // actively debugging, and if not, stop the server.
-            if (DebugContext.OwnsDebugServerState && !CurrentRunspace.Runspace.Debugger.InBreakpoint)
+            // We use the REPL as a poll to check if the debug context is active but PowerShell
+            // indicates we're no longer debugging. This happens when PowerShell was used to start
+            // the debugger (instead of using a Code launch configuration) via Wait-Debugger or
+            // simply hitting a PSBreakpoint. We need to synchronize the state and stop the debug
+            // context (and likely the debug server).
+            if (DebugContext.IsActive && !CurrentRunspace.Runspace.Debugger.InBreakpoint)
             {
-                DebugContext.OwnsDebugServerState = false;
-                _languageServer?.SendNotification("powerShell/stopDebugger");
+                StopDebugContext();
             }
 
             // When a task must run in the foreground, we cancel out of the idle loop and return to the top level.
@@ -633,8 +635,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 // However, we must distinguish the last two scenarios, since PSRL will not print a new line in those cases.
                 if (string.IsNullOrEmpty(userInput))
                 {
-                    if (cancellationToken.IsCancellationRequested
-                        || LastKeyWasCtrlC())
+                    if (cancellationToken.IsCancellationRequested || LastKeyWasCtrlC())
                     {
                         UI.WriteLine();
                     }
@@ -834,7 +835,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
         {
+            // We need to cancel the current task.
             _cancellationContext.CancelCurrentTask();
+
+            // If the current task was running under the debugger, we need to synchronize the
+            // cancelation with our debug context (and likely the debug server).
+            StopDebugContext();
         }
 
         private ConsoleKeyInfo ReadKey(bool intercept)
@@ -854,13 +860,26 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 && _lastKey.Value.IsCtrlC();
         }
 
+        private void StopDebugContext()
+        {
+            // We are officially stopping the debugger.
+            DebugContext.IsActive = false;
+
+            // If the debug server is active, we need to synchronize state and stop it.
+            if (DebugContext.IsDebugServerActive)
+            {
+                _languageServer?.SendNotification("powerShell/stopDebugger");
+            }
+        }
+
         private void OnDebuggerStopped(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
         {
+            // The debugger has officially started. We use this to later check if we should stop it.
+            DebugContext.IsActive = true;
+
+            // If the debug server is NOT active, we need to synchronize state and start it.
             if (!DebugContext.IsDebugServerActive)
             {
-                // If the we've hit a breakpoint and the debug server is not active, then we need to
-                // start it (and own stopping it later).
-                DebugContext.OwnsDebugServerState = true;
                 _languageServer?.SendNotification("powerShell/startDebugger");
             }
 

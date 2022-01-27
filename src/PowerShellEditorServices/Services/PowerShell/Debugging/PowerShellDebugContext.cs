@@ -47,19 +47,26 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
             _psesHost = psesHost;
         }
 
+        /// <summary>
+        /// Tracks if the debugger is currently stopped at a breakpoint.
+        /// </summary>
         public bool IsStopped { get; private set; }
+
+        /// <summary>
+        /// Tracks the state of the PowerShell debugger. This is NOT the same as <see
+        /// cref="Debugger.IsActive">, which is true whenever breakpoints are set. Instead, this is
+        /// set to true when the first <see cref="PsesInternalHost.OnDebuggerStopped"> event is
+        /// fired, and set to false in <see cref="PsesInternalHost.DoOneRepl"> when <see
+        /// cref="Debugger.IsInBreakpoint"> is false. This is used to send the
+        /// 'powershell/stopDebugger' notification to the LSP debug server in the cases where the
+        /// server was started or ended by the PowerShell session instead of by Code's GUI.
+        /// </summary>
+        public bool IsActive { get; set; }
 
         /// <summary>
         /// Tracks the state of the LSP debug server (not the PowerShell debugger).
         /// </summary>
         public bool IsDebugServerActive { get; set; }
-
-        /// <summary>
-        /// Tracks if the PowerShell session started the debug server itself (true), or if it was
-        /// started by an LSP notification (false). Essentially, this marks if we're responsible for
-        /// stopping the debug server (and thus need to send a notification to do so).
-        /// </summary>
-        public bool OwnsDebugServerState { get; set; }
 
         public DebuggerStopEventArgs LastStopEventArgs { get; private set; }
 
