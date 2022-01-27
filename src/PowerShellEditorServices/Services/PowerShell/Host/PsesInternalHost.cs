@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private static string s_bundledModulePath = Path.GetFullPath(Path.Combine(
             Path.GetDirectoryName(typeof(PsesInternalHost).Assembly.Location), "..", "..", ".."));
 
-        private static string s_commandsModulePath => Path.GetFullPath(Path.Combine(
+        private static string CommandsModulePath => Path.GetFullPath(Path.Combine(
             s_bundledModulePath, "PowerShellEditorServices", "Commands", "PowerShellEditorServices.Commands.psd1"));
 
         private readonly ILoggerFactory _loggerFactory;
@@ -112,7 +112,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             Name = hostInfo.Name;
             Version = hostInfo.Version;
 
-            DebugContext = new PowerShellDebugContext(loggerFactory, languageServer, this);
+            DebugContext = new PowerShellDebugContext(loggerFactory, this);
             UI = hostInfo.ConsoleReplEnabled
                 ? new EditorServicesConsolePSHostUserInterface(loggerFactory, _readLineProvider, hostInfo.PSHost.UI)
                 : new NullPSHostUI();
@@ -513,8 +513,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             {
                 // If we're changing runspace, make sure we move the handlers over. If we just
                 // popped the last frame, then we're exiting and should pop the runspace too.
-                if (_psFrameStack.Count == 0
-                    || _runspaceStack.Peek().Runspace != _psFrameStack.Peek().PowerShell.Runspace)
+                if (_psFrameStack.Count == 0 || CurrentRunspace.Runspace != CurrentPowerShell.Runspace)
                 {
                     RunspaceFrame previousRunspaceFrame = _runspaceStack.Pop();
                     RemoveRunspaceEventHandlers(previousRunspaceFrame.Runspace);
@@ -566,7 +565,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _stopped.SetResult(true);
         }
 
-
         private void RunDebugExecutionLoop()
         {
             try
@@ -584,16 +582,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         {
             while (!ShouldExitExecutionLoop)
             {
-                using (CancellationScope cancellationScope = _cancellationContext.EnterScope(isIdleScope: false))
-                {
-                    DoOneRepl(cancellationScope.CancellationToken);
+                using CancellationScope cancellationScope = _cancellationContext.EnterScope(isIdleScope: false);
+                DoOneRepl(cancellationScope.CancellationToken);
 
-                    while (!ShouldExitExecutionLoop
-                        && !cancellationScope.CancellationToken.IsCancellationRequested
-                        && _taskQueue.TryTake(out ISynchronousTask task))
-                    {
-                        task.ExecuteSynchronously(cancellationScope.CancellationToken);
-                    }
+                while (!ShouldExitExecutionLoop
+                    && !cancellationScope.CancellationToken.IsCancellationRequested
+                    && _taskQueue.TryTake(out ISynchronousTask task))
+                {
+                    task.ExecuteSynchronously(cancellationScope.CancellationToken);
                 }
             }
         }
@@ -603,6 +599,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             if (!_hostInfo.ConsoleReplEnabled)
             {
                 return;
+            }
+
+            // We use the REPL as a poll to check if the debug context is active but PowerShell
+            // indicates we're no longer debugging. This happens when PowerShell was used to start
+            // the debugger (instead of using a Code launch configuration) via Wait-Debugger or
+            // simply hitting a PSBreakpoint. We need to synchronize the state and stop the debug
+            // context (and likely the debug server).
+            if (DebugContext.IsActive && !CurrentRunspace.Runspace.Debugger.InBreakpoint)
+            {
+                StopDebugContext();
             }
 
             // When a task must run in the foreground, we cancel out of the idle loop and return to the top level.
@@ -629,8 +635,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 // However, we must distinguish the last two scenarios, since PSRL will not print a new line in those cases.
                 if (string.IsNullOrEmpty(userInput))
                 {
-                    if (cancellationToken.IsCancellationRequested
-                        || LastKeyWasCtrlC())
+                    if (cancellationToken.IsCancellationRequested || LastKeyWasCtrlC())
                     {
                         UI.WriteLine();
                     }
@@ -742,7 +747,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 pwsh.SetCorrectExecutionPolicy(_logger);
             }
 
-            pwsh.ImportModule(s_commandsModulePath);
+            pwsh.ImportModule(CommandsModulePath);
 
             if (hostStartupInfo.AdditionalModules?.Count > 0)
             {
@@ -830,7 +835,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
         {
+            // We need to cancel the current task.
             _cancellationContext.CancelCurrentTask();
+
+            // If the current task was running under the debugger, we need to synchronize the
+            // cancelation with our debug context (and likely the debug server).
+            StopDebugContext();
         }
 
         private ConsoleKeyInfo ReadKey(bool intercept)
@@ -850,9 +860,31 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 && _lastKey.Value.IsCtrlC();
         }
 
+        private void StopDebugContext()
+        {
+            // We are officially stopping the debugger.
+            DebugContext.IsActive = false;
+
+            // If the debug server is active, we need to synchronize state and stop it.
+            if (DebugContext.IsDebugServerActive)
+            {
+                _languageServer?.SendNotification("powerShell/stopDebugger");
+            }
+        }
+
         private void OnDebuggerStopped(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
         {
+            // The debugger has officially started. We use this to later check if we should stop it.
+            DebugContext.IsActive = true;
+
+            // If the debug server is NOT active, we need to synchronize state and start it.
+            if (!DebugContext.IsDebugServerActive)
+            {
+                _languageServer?.SendNotification("powerShell/startDebugger");
+            }
+
             DebugContext.SetDebuggerStopped(debuggerStopEventArgs);
+
             try
             {
                 CurrentPowerShell.WaitForRemoteOutputIfNeeded();
@@ -875,7 +907,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             if (!ShouldExitExecutionLoop && !_resettingRunspace && !runspaceStateEventArgs.RunspaceStateInfo.IsUsable())
             {
                 _resettingRunspace = true;
-                PopOrReinitializeRunspaceAsync().HandleErrorsAsync(_logger);
+                Task _ = PopOrReinitializeRunspaceAsync().HandleErrorsAsync(_logger);
             }
         }
 
@@ -889,7 +921,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return ExecuteDelegateAsync(
                 nameof(PopOrReinitializeRunspaceAsync),
                 new ExecutionOptions { InterruptCurrentForeground = true },
-                (cancellationToken) =>
+                (_) =>
                 {
                     while (_psFrameStack.Count > 0
                         && !_psFrameStack.Peek().PowerShell.Runspace.RunspaceStateInfo.IsUsable())
