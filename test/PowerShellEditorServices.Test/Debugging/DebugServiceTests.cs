@@ -905,6 +905,26 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal("73", childVars[1].ValueString);
         }
 
+        /// <summary>
+        /// Verifies Issue #1686
+        /// </summary>
+        [Fact]
+        public async Task DebuggerToStringShouldMarshallToPipeline()
+        {
+            CommandBreakpointDetails breakpoint = CommandBreakpointDetails.Create("__BreakDebuggerToStringShouldMarshallToPipeline");
+            await debugService.SetCommandBreakpointsAsync(new[] { breakpoint }).ConfigureAwait(true);
+
+            // Execute the script and wait for the breakpoint to be hit
+            Task _ = ExecuteVariableScriptFile();
+            AssertDebuggerStopped(commandBreakpointDetails: breakpoint);
+
+            VariableDetailsBase variableArray = Array.Find(
+                GetVariables(VariableContainerDetails.ScriptScopeName),
+                v => v.Name == "$CustomToStrings"
+            );
+            Assert.NotNull(variableArray);
+        }
+
         // Verifies fix for issue #86, $proc = Get-Process foo displays just the ETS property set
         // and not all process properties.
         [Fact(Skip = "Length of child vars is wrong now")]

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
+using System.Management.Automation.Runspaces;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -263,7 +264,30 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 VariableDetailsBase parentVariable = variables[variableReferenceId];
                 if (parentVariable.IsExpandable)
                 {
-                    childVariables = parentVariable.GetChildren(_logger);
+                    // PERFORMANCE: Because of ToString calls that might be PS script properties, we want this
+                    // to run on the pipeline thread to avoid retry timeouts
+                    // TODO: Cancellation Token Maybe?
+                    // TODO: Maybe pass
+                    childVariables = _psesHost.InvokeDelegate<VariableDetailsBase[]>
+                    (
+                        representation: "GetChildren",
+                        ExecutionOptions.Default,
+                        (_) =>
+                        {
+                            var existingRunspace = Runspace.DefaultRunspace;
+                            try
+                            {
+                                Runspace.DefaultRunspace = _psesHost.CurrentRunspace.Runspace;
+                                return parentVariable.GetChildren(_logger);
+                            }
+                            finally
+                            {
+                                Runspace.DefaultRunspace = existingRunspace;
+                            }
+                        },
+                        CancellationToken.None
+                    );
+
                     foreach (var child in childVariables)
                     {
                         // Only add child if it hasn't already been added.
