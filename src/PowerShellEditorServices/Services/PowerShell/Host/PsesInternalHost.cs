@@ -674,6 +674,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return prompt;
         }
 
+        /// <summary>
+        /// This is used to write the invocation text of a command with the user's prompt so that,
+        /// for example, F8 (evaluate selection) appears as if the user typed it. Used when
+        /// 'WriteInputToHost' is true.
+        /// </summary>
+        /// <param name="command">The PSCommand we'll print after the prompt.</param>
+        /// <param name="cancellationToken"></param>
+        public void WriteWithPrompt(PSCommand command, CancellationToken cancellationToken)
+        {
+            UI.Write(GetPrompt(cancellationToken));
+            UI.Write(command.GetInvocationText());
+        }
+
         private string InvokeReadLine(CancellationToken cancellationToken)
         {
             return _readLineProvider.ReadLine.ReadLine(cancellationToken);
