@@ -684,7 +684,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public void WriteWithPrompt(PSCommand command, CancellationToken cancellationToken)
         {
             UI.Write(GetPrompt(cancellationToken));
-            UI.Write(command.GetInvocationText());
+            UI.WriteLine(command.GetInvocationText());
         }
 
         private string InvokeReadLine(CancellationToken cancellationToken)
