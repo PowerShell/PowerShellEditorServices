@@ -595,6 +595,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                         task.ExecuteSynchronously(cancellationScope.CancellationToken);
                     }
                 }
+                Thread.Sleep(100);
             }
         }
 
