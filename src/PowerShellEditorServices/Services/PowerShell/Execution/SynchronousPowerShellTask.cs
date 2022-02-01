@@ -1,16 +1,16 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
-using Microsoft.PowerShell.EditorServices.Utility;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Management.Automation;
 using System.Management.Automation.Remoting;
 using System.Threading;
+using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
+using Microsoft.PowerShell.EditorServices.Utility;
 using SMA = System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
@@ -49,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
             if (PowerShellExecutionOptions.WriteInputToHost)
             {
-                _psesHost.UI.WriteLine(_psCommand.GetInvocationText());
+                _psesHost.WriteWithPrompt(_psCommand, cancellationToken);
             }
 
             return _pwsh.Runspace.Debugger.InBreakpoint
@@ -234,7 +234,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
                 foreach (PSObject output in outputCollection)
                 {
-                    if (object.Equals(output?.BaseObject, false))
+                    if (Equals(output?.BaseObject, false))
                     {
                         _psesHost.DebugContext.ProcessDebuggerResult(new DebuggerCommandResults(DebuggerResumeAction.Stop, evaluatedByDebugger: true));
                         _logger.LogWarning("Cancelling debug session due to remote command cancellation causing the end of remote debugging session");
