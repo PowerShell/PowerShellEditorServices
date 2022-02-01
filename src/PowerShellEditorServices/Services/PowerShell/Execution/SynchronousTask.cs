@@ -55,10 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                     throw new OperationCanceledException();
                 }
 
-                if (_exceptionInfo is not null)
-                {
-                    _exceptionInfo.Throw();
-                }
+                _exceptionInfo?.Throw();
 
                 return _result;
             }
@@ -79,27 +76,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 return;
             }
 
-            using (var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(_taskRequesterCancellationToken, executorCancellationToken))
+            using var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(_taskRequesterCancellationToken, executorCancellationToken);
+            if (cancellationSource.IsCancellationRequested)
             {
-                if (cancellationSource.IsCancellationRequested)
-                {
-                    SetCanceled();
-                    return;
-                }
+                SetCanceled();
+                return;
+            }
 
-                try
-                {
-                    TResult result = Run(cancellationSource.Token);
-                    SetResult(result);
-                }
-                catch (OperationCanceledException)
-                {
-                    SetCanceled();
-                }
-                catch (Exception e)
-                {
-                    SetException(e);
-                }
+            try
+            {
+                TResult result = Run(cancellationSource.Token);
+                SetResult(result);
+            }
+            catch (OperationCanceledException)
+            {
+                SetCanceled();
+            }
+            catch (Exception e)
+            {
+                SetException(e);
             }
         }
 
