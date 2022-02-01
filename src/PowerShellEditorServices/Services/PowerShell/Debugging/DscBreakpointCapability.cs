@@ -164,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
             return psesHost.ExecuteDelegateAsync<DscBreakpointCapability>(
                 nameof(getDscBreakpointCapabilityFunc),
-                ExecutionOptions.Default,
+                executionOptions: null,
                 getDscBreakpointCapabilityFunc,
                 cancellationToken);
         }

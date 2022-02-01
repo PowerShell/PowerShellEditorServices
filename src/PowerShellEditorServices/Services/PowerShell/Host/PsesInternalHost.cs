@@ -307,7 +307,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             Func<PowerShell, CancellationToken, TResult> func,
             CancellationToken cancellationToken)
         {
-            return InvokeTaskOnPipelineThreadAsync(new SynchronousPSDelegateTask<TResult>(_logger, this, representation, executionOptions ?? ExecutionOptions.Default, func, cancellationToken));
+            return InvokeTaskOnPipelineThreadAsync(
+                new SynchronousPSDelegateTask<TResult>(_logger, this, representation, executionOptions, func, cancellationToken));
         }
 
         public Task ExecuteDelegateAsync(
@@ -316,7 +317,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             Action<PowerShell, CancellationToken> action,
             CancellationToken cancellationToken)
         {
-            return InvokeTaskOnPipelineThreadAsync(new SynchronousPSDelegateTask(_logger, this, representation, executionOptions ?? ExecutionOptions.Default, action, cancellationToken));
+            return InvokeTaskOnPipelineThreadAsync(
+                new SynchronousPSDelegateTask(_logger, this, representation, executionOptions, action, cancellationToken));
         }
 
         public Task<TResult> ExecuteDelegateAsync<TResult>(
@@ -325,7 +327,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             Func<CancellationToken, TResult> func,
             CancellationToken cancellationToken)
         {
-            return InvokeTaskOnPipelineThreadAsync(new SynchronousDelegateTask<TResult>(_logger, representation, executionOptions ?? ExecutionOptions.Default, func, cancellationToken));
+            return InvokeTaskOnPipelineThreadAsync(
+                new SynchronousDelegateTask<TResult>(_logger, representation, executionOptions, func, cancellationToken));
         }
 
         public Task ExecuteDelegateAsync(
@@ -334,7 +337,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             Action<CancellationToken> action,
             CancellationToken cancellationToken)
         {
-            return InvokeTaskOnPipelineThreadAsync(new SynchronousDelegateTask(_logger, representation, executionOptions ?? ExecutionOptions.Default, action, cancellationToken));
+            return InvokeTaskOnPipelineThreadAsync(
+                new SynchronousDelegateTask(_logger, representation, executionOptions, action, cancellationToken));
         }
 
         public Task<IReadOnlyList<TResult>> ExecutePSCommandAsync<TResult>(
@@ -342,18 +346,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             CancellationToken cancellationToken,
             PowerShellExecutionOptions executionOptions = null)
         {
-            return InvokeTaskOnPipelineThreadAsync(new SynchronousPowerShellTask<TResult>(
-                _logger,
-                this,
-                psCommand,
-                executionOptions ?? PowerShellExecutionOptions.Default,
-                cancellationToken));
+            return InvokeTaskOnPipelineThreadAsync(
+                new SynchronousPowerShellTask<TResult>(_logger, this, psCommand, executionOptions, cancellationToken));
         }
 
         public Task ExecutePSCommandAsync(
             PSCommand psCommand,
             CancellationToken cancellationToken,
-            PowerShellExecutionOptions executionOptions = null) => ExecutePSCommandAsync<PSObject>(psCommand, cancellationToken, executionOptions);
+            PowerShellExecutionOptions executionOptions = null)
+        {
+            return ExecutePSCommandAsync<PSObject>(psCommand, cancellationToken, executionOptions);
+        }
 
         public TResult InvokeDelegate<TResult>(string representation, ExecutionOptions executionOptions, Func<CancellationToken, TResult> func, CancellationToken cancellationToken)
         {
@@ -374,7 +377,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         }
 
         public void InvokePSCommand(PSCommand psCommand, PowerShellExecutionOptions executionOptions, CancellationToken cancellationToken)
-            => InvokePSCommand<PSObject>(psCommand, executionOptions, cancellationToken);
+        {
+            InvokePSCommand<PSObject>(psCommand, executionOptions, cancellationToken);
+        }
 
         public TResult InvokePSDelegate<TResult>(string representation, ExecutionOptions executionOptions, Func<PowerShell, CancellationToken, TResult> func, CancellationToken cancellationToken)
         {
@@ -662,7 +667,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private string GetPrompt(CancellationToken cancellationToken)
         {
             var command = new PSCommand().AddCommand("prompt");
-            IReadOnlyList<string> results = InvokePSCommand<string>(command, PowerShellExecutionOptions.Default, cancellationToken);
+            IReadOnlyList<string> results = InvokePSCommand<string>(command, executionOptions: null, cancellationToken);
             string prompt = results.Count > 0 ? results[0] : DefaultPrompt;
 
             if (CurrentRunspace.RunspaceOrigin != RunspaceOrigin.Local)
@@ -846,7 +851,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             // to force event processing
             if (runPipelineForEventProcessing)
             {
-                InvokePSCommand(new PSCommand().AddScript("0", useLocalScope: true), PowerShellExecutionOptions.Default, CancellationToken.None);
+                InvokePSCommand(new PSCommand().AddScript("0", useLocalScope: true), executionOptions: null, CancellationToken.None);
             }
         }
 

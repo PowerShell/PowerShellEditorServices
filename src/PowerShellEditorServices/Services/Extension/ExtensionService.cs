@@ -107,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             // Register the editor object in the runspace
             return ExecutionService.ExecuteDelegateAsync(
                 $"Create ${PSEditorVariableName} object",
-                ExecutionOptions.Default,
+                executionOptions: null,
                 (pwsh, _) => pwsh.Runspace.SessionStateProxy.PSVariable.Set(psEditor),
                 CancellationToken.None);
         }

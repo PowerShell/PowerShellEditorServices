@@ -183,7 +183,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
             IEnumerable<CommandInfo> aliases = await executionService.ExecuteDelegateAsync<IEnumerable<CommandInfo>>(
                 nameof(GetAliasesAsync),
-                Execution.ExecutionOptions.Default,
+                executionOptions: null,
                 (pwsh, _) =>
                 {
                     CommandInvocationIntrinsics invokeCommand = pwsh.Runspace.SessionStateProxy.InvokeCommand;
