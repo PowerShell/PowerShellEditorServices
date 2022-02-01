@@ -270,11 +270,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 //  - block the consumer thread from mutating the queue
                 //  - cancel any running task on the consumer thread
                 //  - place our task on the front of the queue
+                //  - skip the next prompt so the task runs instead
                 //  - unblock the consumer thread
                 using (_taskQueue.BlockConsumers())
                 {
                     CancelCurrentTask();
                     _taskQueue.Prepend(task);
+                    _skipNextPrompt = true;
                 }
 
                 return task.Task;
