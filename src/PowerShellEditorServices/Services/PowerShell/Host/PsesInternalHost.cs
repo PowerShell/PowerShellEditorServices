@@ -595,7 +595,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                         task.ExecuteSynchronously(cancellationScope.CancellationToken);
                     }
                 }
-                Thread.Sleep(100);
             }
         }
 
@@ -603,6 +602,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         {
             if (!_hostInfo.ConsoleReplEnabled)
             {
+                // Throttle the REPL loop with a sleep because we're not interactively reading input from the user.
+                Thread.Sleep(100);
                 return;
             }
 
