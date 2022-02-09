@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         private Task ExecutePowerShellCommand(string command, params string[] args)
         {
             return psesHost.ExecutePSCommandAsync(
-                PSCommandHelpers.BuildCommandFromArguments(command, args),
+                PSCommandHelpers.BuildCommandFromArguments(string.Concat('"', command, '"'), args),
                 CancellationToken.None);
         }
 

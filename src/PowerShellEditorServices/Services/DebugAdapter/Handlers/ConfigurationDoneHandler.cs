@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using Microsoft.Extensions.Logging;
@@ -77,7 +77,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (!string.IsNullOrEmpty(_debugStateService.ScriptToLaunch))
             {
-                LaunchScriptAsync(_debugStateService.ScriptToLaunch).HandleErrorsAsync(_logger);
+                // NOTE: This is an unawaited task because responding to "configuration done" means
+                // setting up the debugger, and in our case that means starting the script but not
+                // waiting for it to finish.
+                Task _ = LaunchScriptAsync(_debugStateService.ScriptToLaunch).HandleErrorsAsync(_logger);
             }
 
             if (_debugStateService.IsInteractiveDebugSession && _debugService.IsDebuggerStopped)
@@ -102,48 +105,18 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private async Task LaunchScriptAsync(string scriptToLaunch)
         {
-            // Is this an untitled script?
-            if (ScriptFile.IsUntitledPath(scriptToLaunch))
-            {
-                ScriptFile untitledScript = _workspaceService.GetFile(scriptToLaunch);
+            // TODO: Theoretically we can make PowerShell respect line breakpoints in untitled
+            // files, but the previous method was a hack that conflicted with correct passing of
+            // arguments to the debugged script. We are prioritizing the latter over the former, as
+            // command breakpoints and `Wait-Debugger` work fine.
+            string command = ScriptFile.IsUntitledPath(scriptToLaunch)
+                ? string.Concat("{ ", _workspaceService.GetFile(scriptToLaunch).Contents, " }")
+                : string.Concat('"', scriptToLaunch, '"');
 
-                if (BreakpointApiUtils.SupportsBreakpointApis(_runspaceContext.CurrentRunspace))
-                {
-                    // Parse untitled files with their `Untitled:` URI as the file name which will cache the URI & contents within the PowerShell parser.
-                    // By doing this, we light up the ability to debug Untitled files with breakpoints.
-                    // This is only possible via the direct usage of the breakpoint APIs in PowerShell because
-                    // Set-PSBreakpoint validates that paths are actually on the filesystem.
-                    ScriptBlockAst ast = Parser.ParseInput(untitledScript.Contents, untitledScript.DocumentUri.ToString(), out Token[] tokens, out ParseError[] errors);
-
-                    // This seems to be the simplest way to invoke a script block (which contains breakpoint information) via the PowerShell API.
-                    //
-                    // TODO: Fix this so the added script doesn't show up.
-                    var cmd = new PSCommand().AddScript(". $args[0]").AddArgument(ast.GetScriptBlock());
-                    await _executionService
-                        .ExecutePSCommandAsync<object>(cmd, CancellationToken.None, s_debuggerExecutionOptions)
-                        .ConfigureAwait(false);
-                }
-                else
-                {
-                    await _executionService
-                        .ExecutePSCommandAsync(
-                            new PSCommand().AddScript(untitledScript.Contents),
-                            CancellationToken.None,
-                            s_debuggerExecutionOptions)
-                        .ConfigureAwait(false);
-                }
-            }
-            else
-            {
-                // TODO: Fix this so the added script doesn't show up.
-                await _executionService
-                    .ExecutePSCommandAsync(
-                        PSCommandHelpers.BuildCommandFromArguments(scriptToLaunch, _debugStateService.Arguments),
-                        CancellationToken.None,
-                        s_debuggerExecutionOptions)
-                    .ConfigureAwait(false);
-            }
-
+            await _executionService.ExecutePSCommandAsync(
+                PSCommandHelpers.BuildCommandFromArguments(command, _debugStateService.Arguments),
+                CancellationToken.None,
+                s_debuggerExecutionOptions).ConfigureAwait(false);
             _debugAdapterServer.SendNotification(EventNames.Terminated);
         }
     }
