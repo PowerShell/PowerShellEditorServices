@@ -657,8 +657,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private Task RegisterPSEditFunctionAsync()
             => _executionService.ExecuteDelegateAsync(
                 "Register psedit function",
-                ExecutionOptions.Default,
-                (pwsh, cancellationToken) => RegisterPSEditFunction(pwsh.Runspace),
+                executionOptions: null,
+                (pwsh, _) => RegisterPSEditFunction(pwsh.Runspace),
                 CancellationToken.None);
 
         private void RegisterPSEditFunction(Runspace runspace)

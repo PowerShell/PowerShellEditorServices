@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             _logger = logger;
             _psesHost = psesHost;
             _psCommand = command;
-            PowerShellExecutionOptions = executionOptions;
+            PowerShellExecutionOptions = executionOptions ?? new PowerShellExecutionOptions();
         }
 
         public PowerShellExecutionOptions PowerShellExecutionOptions { get; }

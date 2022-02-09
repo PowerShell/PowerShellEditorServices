@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             CancellationToken cancellationToken)
             : base(logger, cancellationToken)
         {
-            ExecutionOptions = executionOptions;
+            ExecutionOptions = executionOptions ?? new ExecutionOptions();
             _representation = representation;
             _action = action;
         }
@@ -58,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         {
             _func = func;
             _representation = representation;
-            ExecutionOptions = executionOptions;
+            ExecutionOptions = executionOptions ?? new ExecutionOptions();
         }
 
         public override ExecutionOptions ExecutionOptions { get; }
@@ -94,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             _psesHost = psesHost;
             _action = action;
             _representation = representation;
-            ExecutionOptions = executionOptions;
+            ExecutionOptions = executionOptions ?? new ExecutionOptions();
         }
 
         public override ExecutionOptions ExecutionOptions { get; }
@@ -131,7 +131,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             _psesHost = psesHost;
             _func = func;
             _representation = representation;
-            ExecutionOptions = executionOptions;
+            ExecutionOptions = executionOptions ?? new ExecutionOptions();
         }
 
         public override ExecutionOptions ExecutionOptions { get; }

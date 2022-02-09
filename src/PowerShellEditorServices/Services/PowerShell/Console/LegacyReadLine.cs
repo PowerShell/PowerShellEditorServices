@@ -84,14 +84,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                                         .AddParameter("CursorColumn", currentCursorIndex)
                                         .AddParameter("Options", null);
 
-                                    currentCompletion = _psesHost.InvokePSCommand<CommandCompletion>(command, PowerShellExecutionOptions.Default, cancellationToken).FirstOrDefault();
+                                    currentCompletion = _psesHost.InvokePSCommand<CommandCompletion>(command, executionOptions: null, cancellationToken).FirstOrDefault();
                                 }
                                 else
                                 {
                                     currentCompletion = _psesHost.InvokePSDelegate(
                                         "Legacy readline inline command completion",
-                                        ExecutionOptions.Default,
-                                        (pwsh, cancellationToken) => CommandCompletion.CompleteInput(inputAfterCompletion, currentCursorIndex, options: null, pwsh),
+                                        executionOptions: null,
+                                        (pwsh, _) => CommandCompletion.CompleteInput(inputAfterCompletion, currentCursorIndex, options: null, pwsh),
                                         cancellationToken);
 
                                     if (currentCompletion.CompletionMatches.Count > 0)
@@ -198,7 +198,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                                 PSCommand command = new PSCommand()
                                     .AddCommand("Get-History");
 
-                                currentHistory = _psesHost.InvokePSCommand<PSObject>(command, PowerShellExecutionOptions.Default, cancellationToken);
+                                currentHistory = _psesHost.InvokePSCommand<PSObject>(command, executionOptions: null, cancellationToken);
 
                                 if (currentHistory != null)
                                 {

@@ -15,39 +15,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
     // Generally the executor will do the right thing though; some options just priority over others.
     public record ExecutionOptions
     {
-        public static ExecutionOptions Default = new()
-        {
-            Priority = ExecutionPriority.Normal,
-            MustRunInForeground = false,
-            InterruptCurrentForeground = false,
-        };
-
-        public ExecutionPriority Priority { get; init; }
-
+        public ExecutionPriority Priority { get; init; } = ExecutionPriority.Normal;
         public bool MustRunInForeground { get; init; }
-
         public bool InterruptCurrentForeground { get; init; }
     }
 
     public record PowerShellExecutionOptions : ExecutionOptions
     {
-        public static new PowerShellExecutionOptions Default = new()
-        {
-            Priority = ExecutionPriority.Normal,
-            MustRunInForeground = false,
-            InterruptCurrentForeground = false,
-            WriteOutputToHost = false,
-            WriteInputToHost = false,
-            ThrowOnError = true,
-            AddToHistory = false,
-        };
-
         public bool WriteOutputToHost { get; init; }
-
         public bool WriteInputToHost { get; init; }
-
-        public bool ThrowOnError { get; init; }
-
+        public bool ThrowOnError { get; init; } = true;
         public bool AddToHistory { get; init; }
     }
 }
