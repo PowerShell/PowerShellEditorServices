@@ -185,7 +185,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (breakpoints.Length > 0)
             {
-                resultBreakpointDetails = (await _breakpointService.SetCommandBreakpoints(breakpoints).ConfigureAwait(false)).ToArray();
+                resultBreakpointDetails = (await _breakpointService.SetCommandBreakpointsAsync(breakpoints).ConfigureAwait(false)).ToArray();
             }
 
             return resultBreakpointDetails ?? Array.Empty<CommandBreakpointDetails>();

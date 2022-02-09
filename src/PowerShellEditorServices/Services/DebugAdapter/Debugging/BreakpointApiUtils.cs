@@ -134,17 +134,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 }
             }
 
-            switch (breakpoint)
+            return breakpoint switch
             {
-                case BreakpointDetails lineBreakpoint:
-                    return SetLineBreakpointDelegate(debugger, lineBreakpoint.Source, lineBreakpoint.LineNumber, lineBreakpoint.ColumnNumber ?? 0, actionScriptBlock, runspaceId);
+                BreakpointDetails lineBreakpoint => SetLineBreakpointDelegate(
+                    debugger,
+                    lineBreakpoint.Source,
+                    lineBreakpoint.LineNumber,
+                    lineBreakpoint.ColumnNumber ?? 0,
+                    actionScriptBlock,
+                    runspaceId),
 
-                case CommandBreakpointDetails commandBreakpoint:
-                    return SetCommandBreakpointDelegate(debugger, commandBreakpoint.Name, null, null, runspaceId);
+                CommandBreakpointDetails commandBreakpoint => SetCommandBreakpointDelegate(debugger,
+                    commandBreakpoint.Name,
+                    null,
+                    null,
+                    runspaceId),
 
-                default:
-                    throw new NotImplementedException("Other breakpoints not supported yet");
-            }
+                _ => throw new NotImplementedException("Other breakpoints not supported yet"),
+            };
         }
 
         public static List<Breakpoint> GetBreakpoints(Debugger debugger, int? runspaceId = null)
@@ -173,20 +180,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
             try
             {
-                StringBuilder builder = new StringBuilder(
+                StringBuilder builder = new(
                     string.IsNullOrEmpty(logMessage)
                         ? "break"
                         : $"Microsoft.PowerShell.Utility\\Write-Host \"{logMessage.Replace("\"","`\"")}\"");
 
                 // If HitCondition specified, parse and verify it.
-                if (!(string.IsNullOrWhiteSpace(hitCondition)))
+                if (!string.IsNullOrWhiteSpace(hitCondition))
                 {
                     if (!int.TryParse(hitCondition, out int parsedHitCount))
                     {
                         throw new InvalidOperationException("Hit Count was not a valid integer.");
                     }
 
-                    if(string.IsNullOrWhiteSpace(condition))
+                    if (string.IsNullOrWhiteSpace(condition))
                     {
                         // In the HitCount only case, this is simple as we can just use the HitCount
                         // property on the breakpoint object which is represented by $_.
@@ -217,8 +224,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                     // Check for "advanced" condition syntax i.e. if the user has specified
                     // a "break" or  "continue" statement anywhere in their scriptblock,
                     // pass their scriptblock through to the Action parameter as-is.
-                    if (parsed.Ast.Find(ast =>
-                        (ast is BreakStatementAst || ast is ContinueStatementAst), true) != null)
+                    if (parsed.Ast.Find(ast => ast is BreakStatementAst || ast is ContinueStatementAst, true) is not null)
                     {
                         return parsed;
                     }
@@ -247,10 +253,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
             // We are only inspecting a few simple scenarios in the EndBlock only.
             if (conditionAst is ScriptBlockAst scriptBlockAst &&
-                scriptBlockAst.BeginBlock == null &&
-                scriptBlockAst.ProcessBlock == null &&
-                scriptBlockAst.EndBlock != null &&
-                scriptBlockAst.EndBlock.Statements.Count == 1)
+                scriptBlockAst.BeginBlock is null &&
+                scriptBlockAst.ProcessBlock is null &&
+                scriptBlockAst.EndBlock?.Statements.Count == 1)
             {
                 StatementAst statementAst = scriptBlockAst.EndBlock.Statements[0];
                 string condition = statementAst.Extent.Text;
