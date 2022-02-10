@@ -23,11 +23,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly DebugStateService _debugStateService;
 
         // TODO: This needs to be managed per nested session
-        internal readonly Dictionary<string, HashSet<Breakpoint>> BreakpointsPerFile =
-            new Dictionary<string, HashSet<Breakpoint>>();
+        internal readonly Dictionary<string, HashSet<Breakpoint>> BreakpointsPerFile = new();
 
-        internal readonly HashSet<Breakpoint> CommandBreakpoints =
-            new HashSet<Breakpoint>();
+        internal readonly HashSet<Breakpoint> CommandBreakpoints = new();
 
         public BreakpointService(
             ILoggerFactory factory,
@@ -51,9 +49,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             // Legacy behavior
-            PSCommand psCommand = new PSCommand()
-                .AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
-            IEnumerable<Breakpoint> breakpoints = await _executionService.ExecutePSCommandAsync<Breakpoint>(psCommand, CancellationToken.None).ConfigureAwait(false);
+            PSCommand psCommand = new PSCommand().AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
+            IEnumerable<Breakpoint> breakpoints = await _executionService
+                .ExecutePSCommandAsync<Breakpoint>(psCommand, CancellationToken.None)
+                .ConfigureAwait(false);
+
             return breakpoints.ToList();
         }
 
@@ -73,13 +73,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         breakpointDetails.Verified = false;
                     }
                 }
-
                 return breakpoints;
             }
 
             // Legacy behavior
             PSCommand psCommand = null;
-            List<BreakpointDetails> configuredBreakpoints = new List<BreakpointDetails>();
+            List<BreakpointDetails> configuredBreakpoints = new();
             foreach (BreakpointDetails breakpoint in breakpoints)
             {
                 ScriptBlock actionScriptBlock = null;
@@ -106,7 +105,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 // On first iteration psCommand will be null, every subsequent
                 // iteration will need to start a new statement.
-                if (psCommand == null)
+                if (psCommand is null)
                 {
                     psCommand = new PSCommand();
                 }
@@ -121,7 +120,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     .AddParameter("Line", breakpoint.LineNumber);
 
                 // Check if the user has specified the column number for the breakpoint.
-                if (breakpoint.ColumnNumber.HasValue && breakpoint.ColumnNumber.Value > 0)
+                if (breakpoint.ColumnNumber > 0)
                 {
                     // It bums me out that PowerShell will silently ignore a breakpoint
                     // where either the line or the column is invalid.  I'd rather have an
@@ -129,26 +128,24 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     psCommand.AddParameter("Column", breakpoint.ColumnNumber.Value);
                 }
 
-                if (actionScriptBlock != null)
+                if (actionScriptBlock is not null)
                 {
                     psCommand.AddParameter("Action", actionScriptBlock);
                 }
             }
 
             // If no PSCommand was created then there are no breakpoints to set.
-            if (psCommand != null)
+            if (psCommand is not null)
             {
-                IEnumerable<Breakpoint> setBreakpoints =
-                    await _executionService.ExecutePSCommandAsync<Breakpoint>(psCommand, CancellationToken.None).ConfigureAwait(false);
-                configuredBreakpoints.AddRange(
-                    setBreakpoints.Select((breakpoint) => BreakpointDetails.Create(breakpoint))
-                );
+                IEnumerable<Breakpoint> setBreakpoints = await _executionService
+                    .ExecutePSCommandAsync<Breakpoint>(psCommand, CancellationToken.None)
+                    .ConfigureAwait(false);
+                configuredBreakpoints.AddRange(setBreakpoints.Select((breakpoint) => BreakpointDetails.Create(breakpoint)));
             }
-
             return configuredBreakpoints;
         }
 
-        public async Task<IEnumerable<CommandBreakpointDetails>> SetCommandBreakpoints(IEnumerable<CommandBreakpointDetails> breakpoints)
+        public async Task<IEnumerable<CommandBreakpointDetails>> SetCommandBreakpointsAsync(IEnumerable<CommandBreakpointDetails> breakpoints)
         {
             if (BreakpointApiUtils.SupportsBreakpointApis(_editorServicesHost.CurrentRunspace))
             {
@@ -156,26 +153,28 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     try
                     {
-                        BreakpointApiUtils.SetBreakpoint(_editorServicesHost.Runspace.Debugger, commandBreakpointDetails, _debugStateService.RunspaceId);
+                        BreakpointApiUtils.SetBreakpoint(
+                            _editorServicesHost.Runspace.Debugger,
+                            commandBreakpointDetails,
+                            _debugStateService.RunspaceId);
                     }
-                    catch(InvalidOperationException e)
+                    catch (InvalidOperationException e)
                     {
                         commandBreakpointDetails.Message = e.Message;
                         commandBreakpointDetails.Verified = false;
                     }
                 }
-
                 return breakpoints;
             }
 
             // Legacy behavior
             PSCommand psCommand = null;
-            List<CommandBreakpointDetails> configuredBreakpoints = new List<CommandBreakpointDetails>();
+            List<CommandBreakpointDetails> configuredBreakpoints = new();
             foreach (CommandBreakpointDetails breakpoint in breakpoints)
             {
                 // On first iteration psCommand will be null, every subsequent
                 // iteration will need to start a new statement.
-                if (psCommand == null)
+                if (psCommand is null)
                 {
                     psCommand = new PSCommand();
                 }
@@ -208,20 +207,18 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         configuredBreakpoints.Add(breakpoint);
                         continue;
                     }
-
                     psCommand.AddParameter("Action", actionScriptBlock);
                 }
             }
 
             // If no PSCommand was created then there are no breakpoints to set.
-            if (psCommand != null)
+            if (psCommand is not null)
             {
-                IEnumerable<Breakpoint> setBreakpoints =
-                    await _executionService.ExecutePSCommandAsync<Breakpoint>(psCommand, CancellationToken.None).ConfigureAwait(false);
-                configuredBreakpoints.AddRange(
-                    setBreakpoints.Select(CommandBreakpointDetails.Create));
+                IEnumerable<Breakpoint> setBreakpoints = await _executionService
+                    .ExecutePSCommandAsync<Breakpoint>(psCommand, CancellationToken.None)
+                    .ConfigureAwait(false);
+                configuredBreakpoints.AddRange(setBreakpoints.Select(CommandBreakpointDetails.Create));
             }
-
             return configuredBreakpoints;
         }
 
@@ -238,7 +235,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             _editorServicesHost.Runspace.Debugger,
                             _debugStateService.RunspaceId))
                     {
-                        if (scriptPath == null || scriptPath == breakpoint.Script)
+                        if (scriptPath is null || scriptPath == breakpoint.Script)
                         {
                             BreakpointApiUtils.RemoveBreakpoint(
                                 _editorServicesHost.Runspace.Debugger,
@@ -246,14 +243,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                                 _debugStateService.RunspaceId);
                         }
                     }
-
                     return;
                 }
 
                 // Legacy behavior
-
-                PSCommand psCommand = new PSCommand();
-                psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
+                var psCommand = new PSCommand().AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
 
                 if (!string.IsNullOrEmpty(scriptPath))
                 {
@@ -261,7 +255,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 }
 
                 psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint");
-
                 await _executionService.ExecutePSCommandAsync<object>(psCommand, CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception e)
@@ -281,37 +274,26 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         breakpoint,
                         _debugStateService.RunspaceId);
 
-                    switch (breakpoint)
+                    _ = breakpoint switch
                     {
-                        case CommandBreakpoint commandBreakpoint:
-                            CommandBreakpoints.Remove(commandBreakpoint);
-                            break;
-                        case LineBreakpoint lineBreakpoint:
-                            if (BreakpointsPerFile.TryGetValue(lineBreakpoint.Script, out HashSet<Breakpoint> bps))
-                            {
-                                bps.Remove(lineBreakpoint);
-                            }
-                            break;
-                        default:
-                            throw new ArgumentException("Unsupported breakpoint type.");
-                    }
+                        CommandBreakpoint commandBreakpoint => CommandBreakpoints.Remove(commandBreakpoint),
+                        LineBreakpoint lineBreakpoint =>
+                            BreakpointsPerFile.TryGetValue(lineBreakpoint.Script, out HashSet<Breakpoint> bps) && bps.Remove(lineBreakpoint),
+                        _ => throw new NotImplementedException("Other breakpoints not supported yet"),
+                    };
                 }
-
                 return;
             }
 
             // Legacy behavior
-            var breakpointIds = breakpoints.Select(b => b.Id).ToArray();
-            if(breakpointIds.Length > 0)
+            var breakpointIds = breakpoints.Select(b => b.Id);
+            if (breakpointIds.Any())
             {
-                PSCommand psCommand = new PSCommand();
-                psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint");
-                psCommand.AddParameter("Id", breakpoints.Select(b => b.Id).ToArray());
-
+                PSCommand psCommand = new PSCommand()
+                    .AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint")
+                    .AddParameter("Id", breakpoints.Select(b => b.Id).ToArray());
                 await _executionService.ExecutePSCommandAsync<object>(psCommand, CancellationToken.None).ConfigureAwait(false);
             }
         }
-
-
     }
 }
