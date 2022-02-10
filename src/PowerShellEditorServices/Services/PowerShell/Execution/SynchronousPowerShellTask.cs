@@ -25,6 +25,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private SMA.PowerShell _pwsh;
 
+        private readonly static PowerShellExecutionOptions s_defaultPowerShellExecutionOptions = new();
+
         public SynchronousPowerShellTask(
             ILogger logger,
             PsesInternalHost psesHost,
@@ -36,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             _logger = logger;
             _psesHost = psesHost;
             _psCommand = command;
-            PowerShellExecutionOptions = executionOptions ?? new PowerShellExecutionOptions();
+            PowerShellExecutionOptions = executionOptions ?? s_defaultPowerShellExecutionOptions;
         }
 
         public PowerShellExecutionOptions PowerShellExecutionOptions { get; }

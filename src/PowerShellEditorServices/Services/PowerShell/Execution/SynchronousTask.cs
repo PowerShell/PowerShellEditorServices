@@ -65,6 +65,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public abstract ExecutionOptions ExecutionOptions { get; }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "RCS1158", Justification = "Field is not type-dependent")]
+        internal static readonly ExecutionOptions s_defaultExecutionOptions = new();
+
         public abstract TResult Run(CancellationToken cancellationToken);
 
         public abstract override string ToString();

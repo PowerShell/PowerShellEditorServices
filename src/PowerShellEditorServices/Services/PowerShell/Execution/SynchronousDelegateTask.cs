@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using System;
 using System.Threading;
+using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using SMA = System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             CancellationToken cancellationToken)
             : base(logger, cancellationToken)
         {
-            ExecutionOptions = executionOptions ?? new ExecutionOptions();
+            ExecutionOptions = executionOptions ?? s_defaultExecutionOptions;
             _representation = representation;
             _action = action;
         }
@@ -58,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         {
             _func = func;
             _representation = representation;
-            ExecutionOptions = executionOptions ?? new ExecutionOptions();
+            ExecutionOptions = executionOptions ?? s_defaultExecutionOptions;
         }
 
         public override ExecutionOptions ExecutionOptions { get; }
@@ -94,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             _psesHost = psesHost;
             _action = action;
             _representation = representation;
-            ExecutionOptions = executionOptions ?? new ExecutionOptions();
+            ExecutionOptions = executionOptions ?? s_defaultExecutionOptions;
         }
 
         public override ExecutionOptions ExecutionOptions { get; }
@@ -131,7 +131,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             _psesHost = psesHost;
             _func = func;
             _representation = representation;
-            ExecutionOptions = executionOptions ?? new ExecutionOptions();
+            ExecutionOptions = executionOptions ?? s_defaultExecutionOptions;
         }
 
         public override ExecutionOptions ExecutionOptions { get; }
