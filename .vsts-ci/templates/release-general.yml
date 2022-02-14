@@ -48,6 +48,23 @@ steps:
       **/Serilog*.dll
       **/UnixConsoleEcho.dll
 
+# The SBOM generation requires our original sources with the `dotnet restore`
+# produced `project.assets.json` files.
+- task: ExtractFiles@1
+  displayName: Extract source artifacts
+  inputs:
+    archiveFilePatterns: $(Pipeline.Workspace)/PowerShellEditorServices-Sources-*/PowerShellEditorServices-Sources.zip
+    destinationFolder: $(Pipeline.Workspace)/Sources
+    cleanDestinationFolder: true
+
+- template: Sbom.yml@ComplianceRepo
+  parameters:
+    BuildDropPath: $(Pipeline.Workspace)/ThirdPartySigned
+    Build_Repository_Uri: https://github.com/PowerShell/PowerShellEditorServices.git
+    packageName: PowerShellEditorServices
+    packageVersion: $(System.JobId)
+    sourceScanPath: $(Pipeline.Workspace)/Sources
+
 - task: ArchiveFiles@2
   displayName: Zip signed artifacts
   inputs:
@@ -65,8 +82,8 @@ steps:
     # binskim
     AnalyzeTarget: $(Pipeline.Workspace)/*.dll
     AnalyzeSymPath: 'SRV*'
-    # component-governance
-    sourceScanPath: $(Build.SourcesDirectory)/PowerShellEditorServices
+    # component-governance: requires the `project.assets.json` files
+    sourceScanPath: $(Pipeline.Workspace)/Sources
     # credscan
     suppressionsFile: ''
     # TermCheck AKA PoliCheck
