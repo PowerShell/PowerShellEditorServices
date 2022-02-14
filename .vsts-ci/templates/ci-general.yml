@@ -17,10 +17,17 @@ steps:
     filePath: tools/azurePipelinesBuild.ps1
     pwsh: ${{ parameters.pwsh }}
 
+- task: PublishTestResults@2
+  displayName: Publish test results
+  inputs:
+    testRunner: VSTest
+    testResultsFiles: '**/*.trx'
+  condition: succeededOrFailed()
+
 # NOTE: We zip the artifacts because they're ~20 MB compressed, but ~300 MB raw,
 # and we have limited pipeline artifact storage space.
 - task: ArchiveFiles@2
-  displayName: Zip pipeline artifacts
+  displayName: Zip build output
   inputs:
     rootFolderOrFile: module
     includeRootFolder: false
@@ -30,11 +37,17 @@ steps:
 
 - publish: PowerShellEditorServices-Build.zip
   artifact: PowerShellEditorServices-Build-$(System.JobId)
-  displayName: Publish unsigned pipeline artifacts
+  displayName: Publish build output archive
 
-- task: PublishTestResults@2
-  displayName: Publish test results
+- task: ArchiveFiles@2
+  displayName: Zip sources with `project.assets.json`
   inputs:
-    testRunner: VSTest
-    testResultsFiles: '**/*.trx'
-  condition: succeededOrFailed()
+    rootFolderOrFile: src
+    includeRootFolder: false
+    archiveType: zip
+    archiveFile: PowerShellEditorServices-Sources.zip
+    verbose: true
+
+- publish: PowerShellEditorServices-Sources.zip
+  artifact: PowerShellEditorServices-Sources-$(System.JobId)
+  displayName: Publish sources archive
