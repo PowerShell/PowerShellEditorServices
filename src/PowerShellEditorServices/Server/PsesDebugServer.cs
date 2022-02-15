@@ -23,7 +23,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
     {
         private readonly Stream _inputStream;
         private readonly Stream _outputStream;
-        private readonly bool _useTempSession;
         private readonly bool _usePSReadLine;
         private readonly TaskCompletionSource<bool> _serverStopped;
 
@@ -40,14 +39,12 @@ namespace Microsoft.PowerShell.EditorServices.Server
             Stream inputStream,
             Stream outputStream,
             IServiceProvider serviceProvider,
-            bool useTempSession,
             bool usePSReadLine)
         {
             _loggerFactory = factory;
             _inputStream = inputStream;
             _outputStream = outputStream;
             ServiceProvider = serviceProvider;
-            _useTempSession = useTempSession;
             _serverStopped = new TaskCompletionSource<bool>();
             _usePSReadLine = usePSReadLine;
         }
@@ -74,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         serviceCollection
                             .AddLogging()
                             .AddOptions()
-                            .AddPsesDebugServices(ServiceProvider, this, _useTempSession))
+                            .AddPsesDebugServices(ServiceProvider, this))
                     // TODO: Consider replacing all WithHandler with AddSingleton
                     .WithHandler<LaunchAndAttachHandler>()
                     .WithHandler<DisconnectHandler>()

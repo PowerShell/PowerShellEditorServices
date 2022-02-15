@@ -68,13 +68,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             _debugService.IsClientAttached = true;
 
-            if (_debugStateService.OwnsEditorSession)
-            {
-                // TODO: If this is a debug-only session, we need to start the command loop manually
-                //
-                //_powerShellContextService.ConsoleReader.StartCommandLoop();
-            }
-
             if (!string.IsNullOrEmpty(_debugStateService.ScriptToLaunch))
             {
                 // NOTE: This is an unawaited task because responding to "configuration done" means

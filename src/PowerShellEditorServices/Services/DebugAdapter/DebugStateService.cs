@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Threading;
@@ -24,8 +24,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         internal bool WaitingForAttach { get; set; }
 
         internal string ScriptToLaunch { get; set; }
-
-        internal bool OwnsEditorSession { get; set; }
 
         internal bool ExecutionCompleted { get; set; }
 

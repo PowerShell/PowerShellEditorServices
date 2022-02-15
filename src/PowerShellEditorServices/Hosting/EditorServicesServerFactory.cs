@@ -119,7 +119,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 inputStream,
                 outputStream,
                 languageServer.LanguageServer.Services,
-                useTempSession: false,
                 usePSReadLine);
         }
 
@@ -144,7 +143,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 inputStream,
                 outputStream,
                 debugServer.ServiceProvider,
-                useTempSession: false,
                 usePSReadLine);
         }
 
@@ -184,7 +182,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 inputStream,
                 outputStream,
                 serviceProvider,
-                useTempSession: true,
                 usePSReadLine: hostStartupInfo.ConsoleReplEnabled && !hostStartupInfo.UsesLegacyReadLine);
         }
 
