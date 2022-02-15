@@ -129,25 +129,11 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             return sb;
         }
 
-        public static PSCommand BuildCommandFromArguments(string command, IReadOnlyList<string> arguments)
+        public static PSCommand BuildCommandFromArguments(string command, IEnumerable<string> arguments)
         {
             // HACK: We use AddScript instead of AddArgument/AddParameter to reuse Powershell parameter binding logic.
-            // We quote the command parameter so that expressions can still be used in the arguments.
-            var sb = new StringBuilder()
-                .Append('.')
-                .Append(' ')
-                .Append('"')
-                .Append(command)
-                .Append('"');
-
-            foreach (string arg in arguments ?? System.Linq.Enumerable.Empty<string>())
-            {
-                sb
-                .Append(' ')
-                .Append(ArgumentEscaping.Escape(arg));
-            }
-
-            return new PSCommand().AddScript(sb.ToString());
+            string script = string.Concat(". ", command, " ", string.Join(" ", arguments ?? Array.Empty<string>()));
+            return new PSCommand().AddScript(script);
         }
     }
 }
