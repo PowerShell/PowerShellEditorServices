@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Threading;
@@ -37,14 +37,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         // This gets set at the end of the Launch/Attach handler which set debug state.
         internal TaskCompletionSource<bool> ServerStarted { get; set; }
 
-        internal void ReleaseSetBreakpointHandle()
-        {
-            _setBreakpointInProgressHandle.Release();
-        }
+        internal int ReleaseSetBreakpointHandle() => _setBreakpointInProgressHandle.Release();
 
-        internal async Task WaitForSetBreakpointHandleAsync()
-        {
-            await _setBreakpointInProgressHandle.WaitAsync().ConfigureAwait(false);
-        }
+        internal Task WaitForSetBreakpointHandleAsync() => _setBreakpointInProgressHandle.WaitAsync();
     }
 }

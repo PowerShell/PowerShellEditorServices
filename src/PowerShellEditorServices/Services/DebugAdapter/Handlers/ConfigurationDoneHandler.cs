@@ -1,22 +1,18 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
-using System.Management.Automation;
-using System.Management.Automation.Language;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -38,9 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly DebugEventHandlerService _debugEventHandlerService;
         private readonly IInternalPowerShellExecutionService _executionService;
         private readonly WorkspaceService _workspaceService;
-
         private readonly IPowerShellDebugContext _debugContext;
-        private readonly IRunspaceContext _runspaceContext;
 
         public ConfigurationDoneHandler(
             ILoggerFactory loggerFactory,
@@ -50,8 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             DebugEventHandlerService debugEventHandlerService,
             IInternalPowerShellExecutionService executionService,
             WorkspaceService workspaceService,
-            IPowerShellDebugContext debugContext,
-            IRunspaceContext runspaceContext)
+            IPowerShellDebugContext debugContext)
         {
             _logger = loggerFactory.CreateLogger<ConfigurationDoneHandler>();
             _debugAdapterServer = debugAdapterServer;
@@ -61,7 +54,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _executionService = executionService;
             _workspaceService = workspaceService;
             _debugContext = debugContext;
-            _runspaceContext = runspaceContext;
         }
 
         public Task<ConfigurationDoneResponse> Handle(ConfigurationDoneArguments request, CancellationToken cancellationToken)
