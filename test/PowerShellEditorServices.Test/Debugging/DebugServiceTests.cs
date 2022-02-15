@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         private Task ExecutePowerShellCommand(string command, params string[] args)
         {
             return psesHost.ExecutePSCommandAsync(
-                PSCommandHelpers.BuildCommandFromArguments(command, args),
+                PSCommandHelpers.BuildCommandFromArguments(string.Concat('"', command, '"'), args),
                 CancellationToken.None);
         }
 
@@ -176,8 +176,16 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal("[ArrayList: 0]", var.ValueString);
         }
 
-        [Fact]
-        public async Task DebuggerAcceptsScriptArgs()
+        // See https://www.thomasbogholm.net/2021/06/01/convenient-member-data-sources-with-xunit/
+        public static IEnumerable<object[]> DebuggerAcceptsScriptArgsTestData => new List<object[]>()
+        {
+            new object[] { new object[] { "Foo -Param2 @('Bar','Baz') -Force Extra1" } },
+            new object[] { new object[] { "Foo", "-Param2", "@('Bar','Baz')", "-Force", "Extra1" } }
+        };
+
+        [Theory]
+        [MemberData(nameof(DebuggerAcceptsScriptArgsTestData))]
+        public async Task DebuggerAcceptsScriptArgs(string[] args)
         {
             // The path is intentionally odd (some escaped chars but not all) because we are testing
             // the internal path escaping mechanism - it should escape certains chars ([, ] and space) but
@@ -197,9 +205,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
                 Assert.True(breakpoint.Verified);
             });
 
-            // TODO: This test used to also pass the args as a single string, but that doesn't seem
-            // to work any more. Perhaps that's a bug?
-            var args = new[] { "Foo", "-Param2", "@('Bar','Baz')", "-Force", "Extra1" };
             Task _ = ExecutePowerShellCommand(debugWithParamsFile.FilePath, args);
 
             AssertDebuggerStopped(debugWithParamsFile.FilePath, 3);

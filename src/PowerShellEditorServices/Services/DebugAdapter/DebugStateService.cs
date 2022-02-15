@@ -25,8 +25,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal string ScriptToLaunch { get; set; }
 
-        internal bool OwnsEditorSession { get; set; }
-
         internal bool ExecutionCompleted { get; set; }
 
         internal bool IsInteractiveDebugSession { get; set; }
@@ -39,14 +37,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         // This gets set at the end of the Launch/Attach handler which set debug state.
         internal TaskCompletionSource<bool> ServerStarted { get; set; }
 
-        internal void ReleaseSetBreakpointHandle()
-        {
-            _setBreakpointInProgressHandle.Release();
-        }
+        internal int ReleaseSetBreakpointHandle() => _setBreakpointInProgressHandle.Release();
 
-        internal async Task WaitForSetBreakpointHandleAsync()
-        {
-            await _setBreakpointInProgressHandle.WaitAsync().ConfigureAwait(false);
-        }
+        internal Task WaitForSetBreakpointHandleAsync() => _setBreakpointInProgressHandle.WaitAsync();
     }
 }

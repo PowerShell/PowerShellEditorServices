@@ -59,8 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
         public static IServiceCollection AddPsesDebugServices(
             this IServiceCollection collection,
             IServiceProvider languageServiceProvider,
-            PsesDebugServer psesDebugServer,
-            bool useTempSession)
+            PsesDebugServer psesDebugServer)
         {
             PsesInternalHost internalHost = languageServiceProvider.GetService<PsesInternalHost>();
 
@@ -74,10 +73,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 .AddSingleton<PsesDebugServer>(psesDebugServer)
                 .AddSingleton<DebugService>()
                 .AddSingleton<BreakpointService>()
-                .AddSingleton<DebugStateService>(new DebugStateService
-                {
-                     OwnsEditorSession = useTempSession
-                })
+                .AddSingleton<DebugStateService>()
                 .AddSingleton<DebugEventHandlerService>();
         }
     }
