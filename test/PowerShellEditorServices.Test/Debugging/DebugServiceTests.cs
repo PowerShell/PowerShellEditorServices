@@ -586,10 +586,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.LocalScopeName);
 
             // Test set of a local string variable (not strongly typed)
-            const string newStrValue = "Goodbye";
+            const string newStrValue = "\"Goodbye\"";
             VariableScope localScope = Array.Find(scopes, s => s.Name == VariableContainerDetails.LocalScopeName);
-            // TODO: Fix this so it has the second quotes again?
-            string setStrValue = await debugService.SetVariableAsync(localScope.Id, "$strVar", '"' + newStrValue + '"').ConfigureAwait(true);
+            string setStrValue = await debugService.SetVariableAsync(localScope.Id, "$strVar", newStrValue).ConfigureAwait(true);
             Assert.Equal(newStrValue, setStrValue);
 
             // Test set of script scope int variable (not strongly typed)

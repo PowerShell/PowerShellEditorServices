@@ -45,6 +45,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public override ExecutionOptions ExecutionOptions => PowerShellExecutionOptions;
 
+        // These are PowerShell's intrinsic debugger commands that must be run via
+        // `ProcessDebugCommand`.
+        private static readonly string[] DebuggerCommands = {"continue", "c", "k", "h", "?", "list", "l", "stepInto", "s", "stepOut", "o", "stepOver", "v", "quit", "q", "detach", "d"};
+
         public override IReadOnlyList<TResult> Run(CancellationToken cancellationToken)
         {
             _pwsh = _psesHost.CurrentPowerShell;
@@ -55,6 +59,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             }
 
             return _pwsh.Runspace.Debugger.InBreakpoint
+                && Array.Exists(
+                    DebuggerCommands,
+                    c => c.Equals(_psCommand.GetInvocationText(), StringComparison.CurrentCultureIgnoreCase))
                 ? ExecuteInDebugger(cancellationToken)
                 : ExecuteNormally(cancellationToken);
         }
@@ -89,9 +96,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 result = _pwsh.InvokeCommand<TResult>(_psCommand, invocationSettings);
                 cancellationToken.ThrowIfCancellationRequested();
             }
-            // Test if we've been cancelled. If we're remoting, PSRemotingDataStructureException effectively means the pipeline was stopped.
+            // Test if we've been cancelled. If we're remoting, PSRemotingDataStructureException
+            // effectively means the pipeline was stopped.
             catch (Exception e) when (cancellationToken.IsCancellationRequested || e is PipelineStoppedException || e is PSRemotingDataStructureException)
             {
+                // ExecuteNormally handles user commands in a debug session. Perhaps we should clean all this up somehow.
+                if (_pwsh.Runspace.Debugger.InBreakpoint)
+                {
+                    StopDebuggerIfRemoteDebugSessionFailed();
+                }
                 throw new OperationCanceledException();
             }
             // We only catch RuntimeExceptions here in case writing errors to output was requested
@@ -124,6 +137,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private IReadOnlyList<TResult> ExecuteInDebugger(CancellationToken cancellationToken)
         {
+            // TODO: How much of this method can we remove now that it only processes PowerShell's
+            // intrinsic debugger commands?
             cancellationToken.Register(CancelDebugExecution);
 
             var outputCollection = new PSDataCollection<PSObject>();
@@ -148,14 +163,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             DebuggerCommandResults debuggerResult = null;
             try
             {
-                // In the PowerShell debugger, extra debugger commands are made available, like "l", "s", "c", etc.
-                // Executing those commands produces a result that needs to be set on the debugger stop event args.
-                // So we use the Debugger.ProcessCommand() API to properly execute commands in the debugger
-                // and then call DebugContext.ProcessDebuggerResult() later to handle the command appropriately
+                // In the PowerShell debugger, intrinsic debugger commands are made available, like
+                // "l", "s", "c", etc. Executing those commands produces a result that needs to be
+                // set on the debugger stop event args. So we use the Debugger.ProcessCommand() API
+                // to properly execute commands in the debugger and then call
+                // DebugContext.ProcessDebuggerResult() later to handle the command appropriately
+                //
+                // Unfortunately, this API does not allow us to pass in the InvocationSettings,
+                // which means (for instance) that we cannot instruct it to avoid adding our
+                // debugger implmentation's commands to the history. So instead we now only call
+                // `ExecuteInDebugger` for PowerShell's own intrinsic debugger commands.
                 debuggerResult = _pwsh.Runspace.Debugger.ProcessCommand(_psCommand, outputCollection);
                 cancellationToken.ThrowIfCancellationRequested();
             }
-            // Test if we've been cancelled. If we're remoting, PSRemotingDataStructureException effectively means the pipeline was stopped.
+
+            // Test if we've been cancelled. If we're remoting, PSRemotingDataStructureException
+            // effectively means the pipeline was stopped.
             catch (Exception e) when (cancellationToken.IsCancellationRequested || e is PipelineStoppedException || e is PSRemotingDataStructureException)
             {
                 StopDebuggerIfRemoteDebugSessionFailed();
