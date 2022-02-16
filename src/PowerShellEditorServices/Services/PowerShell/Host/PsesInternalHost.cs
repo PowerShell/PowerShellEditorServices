@@ -666,9 +666,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private string GetPrompt(CancellationToken cancellationToken)
         {
-            var command = new PSCommand().AddCommand("prompt");
-            IReadOnlyList<string> results = InvokePSCommand<string>(command, executionOptions: null, cancellationToken);
-            string prompt = results.Count > 0 ? results[0] : DefaultPrompt;
+            string prompt = DefaultPrompt;
+            try
+            {
+                // TODO: Should we cache PSCommands like this as static members?
+                var command = new PSCommand().AddCommand("prompt");
+                IReadOnlyList<string> results = InvokePSCommand<string>(command, executionOptions: null, cancellationToken);
+                if (results.Count > 0)
+                {
+                    prompt = results[0];
+                }
+            }
+            catch (CommandNotFoundException) { } // Use default prompt
 
             if (CurrentRunspace.RunspaceOrigin != RunspaceOrigin.Local)
             {
