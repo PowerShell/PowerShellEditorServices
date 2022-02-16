@@ -81,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 string diagnosticId = AnalysisService.GetUniqueIdFromDiagnostic(diagnostic);
                 if (corrections.TryGetValue(diagnosticId, out MarkerCorrection correction))
                 {
-                    foreach(ScriptRegion edit in correction.Edits)
+                    foreach (ScriptRegion edit in correction.Edits)
                     {
                         codeActions.Add(new CodeAction
                         {
