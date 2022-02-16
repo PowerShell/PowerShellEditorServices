@@ -25,6 +25,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public override string Name => _internalHost.Name;
 
+        public override System.Management.Automation.PSObject PrivateData => _internalHost.PrivateData;
+
         public override PSHostUserInterface UI => _internalHost.UI;
 
         public override Version Version => _internalHost.Version;
