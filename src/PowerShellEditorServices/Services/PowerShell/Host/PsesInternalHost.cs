@@ -861,8 +861,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _cancellationContext.CancelCurrentTask();
 
             // If the current task was running under the debugger, we need to synchronize the
-            // cancelation with our debug context (and likely the debug server).
-            StopDebugContext();
+            // cancelation with our debug context (and likely the debug server). Note that if we're
+            // currently stopped in a breakpoint, that means the task is _not_ under the debugger.
+            if (!CurrentRunspace.Runspace.Debugger.InBreakpoint)
+            {
+                StopDebugContext();
+            }
         }
 
         private ConsoleKeyInfo ReadKey(bool intercept)
