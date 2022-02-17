@@ -19,7 +19,8 @@ param(
     [string[]]$TestArgs = @("--logger", "trx")
 )
 
-#Requires -Modules @{ModuleName="InvokeBuild";ModuleVersion="3.2.1"}
+#Requires -Modules @{ModuleName="InvokeBuild"; ModuleVersion="5.0.0"}
+#Requires -Modules @{ModuleName="platyPS"; ModuleVersion="0.14.0"}
 
 $script:dotnetTestArgs = @(
     "test"
@@ -107,8 +108,7 @@ task CreateBuildInfo {
         $propsBody = $propsXml.Project.PropertyGroup
         $buildVersion = $propsBody.VersionPrefix
 
-        if ($propsBody.VersionSuffix)
-        {
+        if ($propsBody.VersionSuffix) {
             $buildVersion += '-' + $propsBody.VersionSuffix
         }
     }
@@ -214,8 +214,7 @@ task LayoutModule -After Build {
     $psesCoreHostPath = "$psesBinOutputPath/Core"
     $psesDeskHostPath = "$psesBinOutputPath/Desktop"
 
-    foreach ($dir in $psesDepsPath,$psesCoreHostPath,$psesDeskHostPath,$psesVSCodeBinOutputPath)
-    {
+    foreach ($dir in $psesDepsPath,$psesCoreHostPath,$psesDeskHostPath,$psesVSCodeBinOutputPath) {
         New-Item -Force -Path $dir -ItemType Directory
     }
 
@@ -228,37 +227,29 @@ task LayoutModule -After Build {
     [void]$includedDlls.Add('System.Management.Automation.dll')
 
     # PSES/bin/Common
-    foreach ($psesComponent in Get-ChildItem $script:PsesOutput)
-    {
+    foreach ($psesComponent in Get-ChildItem $script:PsesOutput) {
         if ($psesComponent.Name -eq 'System.Management.Automation.dll' -or
-            $psesComponent.Name -eq 'System.Runtime.InteropServices.RuntimeInformation.dll')
-        {
+            $psesComponent.Name -eq 'System.Runtime.InteropServices.RuntimeInformation.dll') {
             continue
         }
 
-        if ($psesComponent.Extension)
-        {
+        if ($psesComponent.Extension) {
             [void]$includedDlls.Add($psesComponent.Name)
             Copy-Item -Path $psesComponent.FullName -Destination $psesDepsPath -Force
         }
     }
 
     # PSES/bin/Core
-    foreach ($hostComponent in Get-ChildItem $script:HostCoreOutput)
-    {
-        if (-not $includedDlls.Contains($hostComponent.Name))
-        {
+    foreach ($hostComponent in Get-ChildItem $script:HostCoreOutput) {
+        if (-not $includedDlls.Contains($hostComponent.Name)) {
             Copy-Item -Path $hostComponent.FullName -Destination $psesCoreHostPath -Force
         }
     }
 
     # PSES/bin/Desktop
-    if (-not $script:IsNix)
-    {
-        foreach ($hostComponent in Get-ChildItem $script:HostDeskOutput)
-        {
-            if (-not $includedDlls.Contains($hostComponent.Name))
-            {
+    if (-not $script:IsNix) {
+        foreach ($hostComponent in Get-ChildItem $script:HostDeskOutput) {
+            if (-not $includedDlls.Contains($hostComponent.Name)) {
                 Copy-Item -Path $hostComponent.FullName -Destination $psesDeskHostPath -Force
             }
         }
@@ -266,10 +257,8 @@ task LayoutModule -After Build {
 
     # Assemble the PowerShellEditorServices.VSCode module
 
-    foreach ($vscodeComponent in Get-ChildItem $script:VSCodeOutput)
-    {
-        if (-not $includedDlls.Contains($vscodeComponent.Name))
-        {
+    foreach ($vscodeComponent in Get-ChildItem $script:VSCodeOutput) {
+        if (-not $includedDlls.Contains($vscodeComponent.Name)) {
             Copy-Item -Path $vscodeComponent.FullName -Destination $psesVSCodeBinOutputPath -Force
         }
     }
@@ -277,7 +266,7 @@ task LayoutModule -After Build {
 
 task RestorePsesModules -After Build {
     $submodulePath = (Resolve-Path $PsesSubmodulePath).Path + [IO.Path]::DirectorySeparatorChar
-    Write-Host "`nRestoring EditorServices modules..."
+    Write-Host "Restoring EditorServices modules..."
 
     # Read in the modules.json file as a hashtable so it can be splatted
     $moduleInfos = @{}
@@ -327,14 +316,12 @@ task RestorePsesModules -After Build {
 
         Save-Module @splatParameters
     }
-
-    Write-Host "`n"
 }
 
-task BuildCmdletHelp {
+Task BuildCmdletHelp -After LayoutModule {
     New-ExternalHelp -Path $PSScriptRoot\module\docs -OutputPath $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US -Force
     New-ExternalHelp -Path $PSScriptRoot\module\PowerShellEditorServices.VSCode\docs -OutputPath $PSScriptRoot\module\PowerShellEditorServices.VSCode\en-US -Force
 }
 
 # The default task is to run the entire CI build
-task . Clean, Build, Test, BuildCmdletHelp
+task . Clean, Build, Test

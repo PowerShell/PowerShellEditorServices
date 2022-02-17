@@ -17,7 +17,7 @@ if ($IsWindows -or $PSVersionTable.PSVersion.Major -lt 6) {
 Update-Help -Force -ErrorAction SilentlyContinue
 
 # Needed for build and docs gen.
-Install-Module -Name InvokeBuild -MaximumVersion 5.1.0 -Scope CurrentUser -Force
-Install-Module -Name PlatyPS -RequiredVersion 0.9.0 -Scope CurrentUser -Force
+Install-Module -Name InvokeBuild -RequiredVersion 5.9.7 -Scope CurrentUser -Force
+Install-Module -Name platyPS -RequiredVersion 0.14.2 -Scope CurrentUser -Force
 
 Invoke-Build -Configuration Release
