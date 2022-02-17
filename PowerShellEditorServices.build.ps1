@@ -52,84 +52,18 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
     git update-index --assume-unchanged "$PSScriptRoot/src/PowerShellEditorServices.Hosting/BuildInfo.cs"
 }
 
-function Install-Dotnet {
-    param (
-        [string[]]$Channel,
-        [switch]$Runtime
-    )
+task FindDotNet {
+    assert (Get-Command dotnet -ErrorAction SilentlyContinue) "dotnet not found, please install it: https://aka.ms/dotnet-cli"
+    assert ([Version](dotnet --version) -ge [Version]("6.0")) ".NET SDK 6.0 or higher is required, please update it: https://aka.ms/dotnet-cli"
 
-    $env:DOTNET_INSTALL_DIR = "$PSScriptRoot/.dotnet"
-
-    $components = if ($Runtime) { "Runtime " } else { "SDK and Runtime " }
-    $components += $Channel -join ', '
-
-    Write-Host "Installing .NET $components" -ForegroundColor Green
-
-    # The install script is platform-specific
-    $installScriptExt = if ($script:IsNix) { "sh" } else { "ps1" }
-    $installScript = "dotnet-install.$installScriptExt"
-
-    # Download the official installation script and run it
-    $installScriptPath = Join-Path ([System.IO.Path]::GetTempPath()) $installScript
-    Invoke-WebRequest "https://dot.net/v1/$installScript" -OutFile $installScriptPath
-
-    # Download and install the different .NET channels
-    foreach ($dotnetChannel in $Channel)
-    {
-        if ($script:IsNix) {
-            chmod +x $installScriptPath
-        }
-
-        $params = if ($script:IsNix) {
-            @('-Channel', $dotnetChannel, '-InstallDir', $env:DOTNET_INSTALL_DIR, '-NoPath', '-Verbose')
-        } else {
-            @{
-                Channel = $dotnetChannel
-                InstallDir = $env:DOTNET_INSTALL_DIR
-                NoPath = $true
-                Verbose = $true
-            }
-        }
-
-        # Install just the runtime, not the SDK
-        if ($Runtime) {
-            if ($script:IsNix) { $params += @('-Runtime', 'dotnet') }
-            else { $params['Runtime'] = 'dotnet' }
-        }
-
-        exec { & $installScriptPath @params }
+    # Anywhere other than on a Mac with an M1 processor, we additionally
+    # need the .NET 3.1 runtime for our netcoreapp3.1 framework.
+    if (!$script:IsAppleM1) {
+        $runtimes = dotnet --list-runtimes
+        assert ($runtimes -match "Microsoft.NETCore.App 3.1") ".NET Runtime 3.1 required but not found!"
     }
 
-    $env:PATH = $env:DOTNET_INSTALL_DIR + [System.IO.Path]::PathSeparator + $env:PATH
-
-    Write-Host '.NET installation complete' -ForegroundColor Green
-}
-
-task SetupDotNet -Before Clean, Build, TestServerWinPS, TestServerPS7, TestServerPS72, TestE2E {
-
-    $dotnetPath = "$PSScriptRoot/.dotnet"
-    $dotnetExePath = if ($script:IsNix) { "$dotnetPath/dotnet" } else { "$dotnetPath/dotnet.exe" }
-
-    if (!(Test-Path $dotnetExePath)) {
-        # TODO: Test .NET 5 with PowerShell 7.1
-        #
-        # We use the .NET 6 SDK, so we always install it and its runtime.
-        Install-Dotnet -Channel '6.0' # SDK and runtime
-        # Anywhere other than on a Mac with an M1 processor, we additionally
-        # install the .NET 3.1 and 5.0 runtimes (but not their SDKs).
-        if (!$script:IsAppleM1) { Install-Dotnet -Channel '3.1','5.0' -Runtime }
-    }
-
-    # This variable is used internally by 'dotnet' to know where it's installed
-    $script:dotnetExe = Resolve-Path $dotnetExePath
-    if (!$env:DOTNET_INSTALL_DIR)
-    {
-        $dotnetExeDir = [System.IO.Path]::GetDirectoryName($script:dotnetExe)
-        $env:PATH = $dotnetExeDir + [System.IO.Path]::PathSeparator + $env:PATH
-        $env:DOTNET_INSTALL_DIR = $dotnetExeDir
-    }
-
-    Write-Host "`n### Using dotnet v$(& $script:dotnetExe --version) at path $script:dotnetExe`n" -ForegroundColor Green
+    Write-Host "Using dotnet v$(dotnet --version) at path $((Get-Command dotnet).Source)" -ForegroundColor Green
 }
 
 task BinClean {
@@ -138,9 +72,8 @@ task BinClean {
     Remove-Item $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin -Recurse -Force -ErrorAction Ignore
 }
 
-task Clean BinClean,{
-    exec { & $script:dotnetExe restore }
-    exec { & $script:dotnetExe clean }
+task Clean FindDotNet, BinClean, {
+    exec { & dotnet clean }
     Get-ChildItem -Recurse $PSScriptRoot\src\*.nupkg | Remove-Item -Force -ErrorAction Ignore
     Get-ChildItem $PSScriptRoot\PowerShellEditorServices*.zip | Remove-Item -Force -ErrorAction Ignore
     Get-ChildItem $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US\*-help.xml | Remove-Item -Force -ErrorAction Ignore
@@ -155,7 +88,7 @@ task Clean BinClean,{
     }
 }
 
-task CreateBuildInfo -Before Build {
+task CreateBuildInfo {
     $buildVersion = "<development-build>"
     $buildOrigin = "Development"
     $buildCommit = git rev-parse HEAD
@@ -217,59 +150,55 @@ task SetupHelpForTests {
         Write-Host "Updating help for tests"
         Update-Help -Module Microsoft.PowerShell.Utility -Force -Scope CurrentUser
     }
-    else
-    {
-        Write-Host "Write-Host help found -- Update-Help skipped"
-    }
 }
 
-Task Build {
-    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetRuntime.Standard }
-    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.PS7 }
-    if (-not $script:IsNix)
-    {
-        exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Desktop }
+Task Build FindDotNet, CreateBuildInfo, {
+    exec { & dotnet restore }
+    exec { & dotnet publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetRuntime.Standard }
+    exec { & dotnet publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.PS7 }
+    if (-not $script:IsNix) {
+        exec { & dotnet publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Desktop }
     }
 
     # Build PowerShellEditorServices.VSCode module
-    exec { & $script:dotnetExe publish -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj -f $script:NetRuntime.Standard }
+    exec { & dotnet publish -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj -f $script:NetRuntime.Standard }
 }
 
-task Test SetupHelpForTests,TestServer,TestE2E
+task Test TestServer, TestE2E
 
-task TestServer TestServerWinPS,TestServerPS7,TestServerPS72
+task TestServer TestServerWinPS, TestServerPS7, TestServerPS72
 
-task TestServerWinPS -If (-not $script:IsNix) {
+Task TestServerWinPS -If (-not $script:IsNix) Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test\
     # TODO: See https://github.com/dotnet/sdk/issues/18353 for x64 test host
     # that is debuggable! If architecture is added, the assembly path gets an
     # additional folder, necesstiating fixes to find the commands definition
     # file and test files.
-    exec { & $script:dotnetExe $script:dotnetTestArgs $script:NetRuntime.Desktop }
+    exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.Desktop }
 }
 
-task TestServerPS7 -If (-not $script:IsAppleM1) {
+task TestServerPS7 -If (-not $script:IsAppleM1) Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test\
-    exec { & $script:dotnetExe $script:dotnetTestArgs $script:NetRuntime.PS7 }
+    exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS7 }
 }
 
-task TestServerPS72 {
+task TestServerPS72 Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test\
-    exec { & $script:dotnetExe $script:dotnetTestArgs $script:NetRuntime.PS72 }
+    exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS72 }
 }
 
-task TestE2E {
+task TestE2E Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test.E2E\
 
     $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
     $NetRuntime = if ($IsAppleM1) { $script:NetRuntime.PS72 } else { $script:NetRuntime.PS7 }
-    exec { & $script:dotnetExe $script:dotnetTestArgs $NetRuntime }
+    exec { & dotnet $script:dotnetTestArgs $NetRuntime }
 
     # Run E2E tests in ConstrainedLanguage mode.
     if (!$script:IsNix) {
         try {
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", "0x80000007", [System.EnvironmentVariableTarget]::Machine);
-            exec { & $script:dotnetExe $script:dotnetTestArgs $script:NetRuntime.PS7 }
+            exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS7 }
         } finally {
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", $null, [System.EnvironmentVariableTarget]::Machine);
         }
