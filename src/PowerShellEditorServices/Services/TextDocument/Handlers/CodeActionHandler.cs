@@ -81,24 +81,27 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 string diagnosticId = AnalysisService.GetUniqueIdFromDiagnostic(diagnostic);
                 if (corrections.TryGetValue(diagnosticId, out MarkerCorrection correction))
                 {
-                    codeActions.Add(new CodeAction
+                    foreach (ScriptRegion edit in correction.Edits)
                     {
-                        Title = correction.Name,
-                        Kind = CodeActionKind.QuickFix,
-                        Edit = new WorkspaceEdit
+                        codeActions.Add(new CodeAction
                         {
-                            DocumentChanges = new Container<WorkspaceEditDocumentChange>(
-                                new WorkspaceEditDocumentChange(
-                                    new TextDocumentEdit
-                                    {
-                                        TextDocument = new OptionalVersionedTextDocumentIdentifier
+                            Title = correction.Name,
+                            Kind = CodeActionKind.QuickFix,
+                            Edit = new WorkspaceEdit
+                            {
+                                DocumentChanges = new Container<WorkspaceEditDocumentChange>(
+                                    new WorkspaceEditDocumentChange(
+                                        new TextDocumentEdit
                                         {
-                                            Uri = request.TextDocument.Uri
-                                        },
-                                        Edits = new TextEditContainer(correction.Edits.Select(ScriptRegion.ToTextEdit))
-                                    }))
-                        }
-                    });
+                                            TextDocument = new OptionalVersionedTextDocumentIdentifier
+                                            {
+                                                Uri = request.TextDocument.Uri
+                                            },
+                                            Edits = new TextEditContainer(ScriptRegion.ToTextEdit(edit))
+                                        }))
+                            }
+                        });
+                    }
                 }
             }
 
