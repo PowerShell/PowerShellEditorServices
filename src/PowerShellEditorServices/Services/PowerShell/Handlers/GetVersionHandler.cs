@@ -91,10 +91,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
 
                 _logger.LogDebug("Old version of PackageManagement detected.");
+                var isAdmin = var isAdmin = System.Security.Principal.WindowsIdentity.GetCurrent().IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
 
                 if (_runspaceContext.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.FullLanguage)
                 {
-                    _languageServer.Window.ShowWarning("You have an older version of PackageManagement known to cause issues with the PowerShell extension. Please run the following command in a new Windows PowerShell session and then restart the PowerShell extension: `Install-Module PackageManagement -Force -AllowClobber -MinimumVersion 1.4.6`");
+                    var sessionRec = if(isAdmin) { "a new" } else { "an admin" };
+                    _languageServer.Window.ShowWarning($"You have an older version of PackageManagement known to cause issues with the PowerShell extension. Please run the following command in {sessionRec} Windows PowerShell session and then restart the PowerShell extension: `Install-Module PackageManagement -Force -AllowClobber -MinimumVersion 1.4.6`");
                     return;
                 }
 
@@ -120,7 +122,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 // If the user chose "Not now" ignore it for the rest of the session.
                 if (messageAction?.Title == takeActionText)
                 {
-                    var command = new PSCommand().AddScript("powershell.exe -NoLogo -NoProfile -Command 'Install-Module -Name PackageManagement -Force -MinimumVersion 1.4.6 -Scope CurrentUser -AllowClobber'");
+                    var command;
+                    if(isAdmin) {
+                        command = new PSCommand().AddScript("powershell.exe -NoLogo -NonInteractive -NoProfile -Command 'Install-Module -Name PackageManagement -Force -MinimumVersion 1.4.6 -Scope CurrentUser -AllowClobber'"); 
+                    } else {
+                        command = new PSCommand().AddScript("Start-Process -FilePath powershell.exe -ArgumentList @('-NoLogo','-NoProfile','-NonInteractive','-Command \"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Install-Module -Name PackageManagement -Force -MinimumVersion 1.4.6 -Scope CurrentUser -AllowClobber -Repository PSGallery\"') -Verb RunAs");
+                    }
 
                     await _executionService.ExecutePSCommandAsync(
                         command,
