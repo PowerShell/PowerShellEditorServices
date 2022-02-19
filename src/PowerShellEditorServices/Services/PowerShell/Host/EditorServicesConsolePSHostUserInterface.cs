@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Management.Automation;
@@ -21,6 +22,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private readonly PSHostUserInterface _underlyingHostUI;
 
         private readonly PSHostUserInterface _consoleHostUI;
+
+        /// <summary>
+        /// We use a ConcurrentDictionary because ConcurrentHashSet does not exist, hence the value
+        /// is never actually used, and `WriteProgress` must be thread-safe.
+        /// </summary>
+        private readonly ConcurrentDictionary<(long, int), object> _currentProgressRecords = new();
 
         public EditorServicesConsolePSHostUserInterface(
             ILoggerFactory loggerFactory,
@@ -103,7 +110,35 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public override void WriteLine(string value) => _underlyingHostUI.WriteLine(value);
 
-        public override void WriteProgress(long sourceId, ProgressRecord record) => _underlyingHostUI.WriteProgress(sourceId, record);
+        public override void WriteProgress(long sourceId, ProgressRecord record)
+        {
+            if (record.RecordType == ProgressRecordType.Completed)
+            {
+                _ = _currentProgressRecords.TryRemove((sourceId, record.ActivityId), out _);
+            }
+            else
+            {
+                _ = _currentProgressRecords.TryAdd((sourceId, record.ActivityId), null);
+            }
+            _underlyingHostUI.WriteProgress(sourceId, record);
+        }
+
+        public void ResetProgress()
+        {
+            // Mark all processed progress records as completed.
+            foreach ((long sourceId, int activityId) in _currentProgressRecords.Keys)
+            {
+                // NOTE: This initializer checks that string is not null nor empty, so it must have
+                // some text in it.
+                ProgressRecord record = new(activityId, "0", "0")
+                {
+                    RecordType = ProgressRecordType.Completed
+                };
+                _underlyingHostUI.WriteProgress(sourceId, record);
+                _currentProgressRecords.Clear();
+            }
+            // TODO: Maybe send the OSC sequence to turn off progress indicator.
+        }
 
         public override void WriteVerboseLine(string message) => _underlyingHostUI.WriteVerboseLine(message);
 

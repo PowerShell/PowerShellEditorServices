@@ -662,6 +662,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 UI.WriteErrorLine($"An error occurred while running the REPL loop:{Environment.NewLine}{e}");
                 _logger.LogError(e, "An error occurred while running the REPL loop");
             }
+            finally
+            {
+                // At the end of each REPL we need to complete all progress records so that the
+                // progress indicator is cleared.
+                if (UI is EditorServicesConsolePSHostUserInterface ui)
+                {
+                    ui.ResetProgress();
+                }
+            }
         }
 
         private string GetPrompt(CancellationToken cancellationToken)
