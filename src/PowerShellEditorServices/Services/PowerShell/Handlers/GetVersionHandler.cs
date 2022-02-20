@@ -124,9 +124,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 {
                     var command;
                     if(isAdmin) {
-                        command = new PSCommand().AddScript("powershell.exe -NoLogo -NonInteractive -NoProfile -Command 'Install-Module -Name PackageManagement -Force -MinimumVersion 1.4.6 -Scope CurrentUser -AllowClobber'"); 
+                        command = new PSCommand().AddScript("powershell.exe -NoLogo -NonInteractive -NoProfile -Command '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Install-PackageProvider -Name NuGet -Force; Install-Module -Name PowerShellGet -Force; Install-Module -Name PackageManagement -Force -MinimumVersion 1.4.6 -Scope CurrentUser -AllowClobber -Repository PSGallery'"); 
                     } else {
-                        command = new PSCommand().AddScript("Start-Process -FilePath powershell.exe -ArgumentList @('-NoLogo','-NoProfile','-NonInteractive','-Command \"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Install-Module -Name PackageManagement -Force -MinimumVersion 1.4.6 -Scope CurrentUser -AllowClobber -Repository PSGallery\"') -Verb RunAs");
+                        command = new PSCommand().AddScript("Start-Process -FilePath powershell.exe -ArgumentList @('-NoLogo','-NoProfile','-NonInteractive','-Command \"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Install-PackageProvider -Name NuGet -Force; Install-Module -Name PowerShellGet -Force; Install-Module -Name PackageManagement -Force -MinimumVersion 1.4.6 -Scope CurrentUser -AllowClobber -Repository PSGallery\"') -Verb RunAs");
                     }
 
                     await _executionService.ExecutePSCommandAsync(
