@@ -129,10 +129,11 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             return sb;
         }
 
-        public static PSCommand BuildCommandFromArguments(string command, IEnumerable<string> arguments)
+        public static PSCommand BuildDotSourceCommandWithArguments(string command, IEnumerable<string> arguments)
         {
+            string args = string.Join(" ", arguments ?? Array.Empty<string>());
+            string script = string.Concat(". ", command, string.IsNullOrEmpty(args) ? "" : " ", args);
             // HACK: We use AddScript instead of AddArgument/AddParameter to reuse Powershell parameter binding logic.
-            string script = string.Concat(". ", command, " ", string.Join(" ", arguments ?? Array.Empty<string>()));
             return new PSCommand().AddScript(script);
         }
     }
