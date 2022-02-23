@@ -1,13 +1,17 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System.Management.Automation;
+using System.Management.Automation.Language;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
@@ -18,6 +22,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class ConfigurationDoneHandler : IConfigurationDoneHandler
     {
+        // TODO: We currently set `WriteInputToHost` as true, which writes our debugged commands'
+        // `GetInvocationText` and that reveals some obscure implementation details we should
+        // instead hide from the user with pretty strings (or perhaps not write out at all).
         private static readonly PowerShellExecutionOptions s_debuggerExecutionOptions = new()
         {
             MustRunInForeground = true,
@@ -35,7 +42,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly IInternalPowerShellExecutionService _executionService;
         private readonly WorkspaceService _workspaceService;
         private readonly IPowerShellDebugContext _debugContext;
+        private readonly IRunspaceContext _runspaceContext;
 
+        // TODO: Decrease these arguments since they're a bunch of interfaces that can be simplified
+        // (i.e., `IRunspaceContext` should just be available on `IPowerShellExecutionService`).
         public ConfigurationDoneHandler(
             ILoggerFactory loggerFactory,
             IDebugAdapterServerFacade debugAdapterServer,
@@ -44,7 +54,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             DebugEventHandlerService debugEventHandlerService,
             IInternalPowerShellExecutionService executionService,
             WorkspaceService workspaceService,
-            IPowerShellDebugContext debugContext)
+            IPowerShellDebugContext debugContext,
+            IRunspaceContext runspaceContext)
         {
             _logger = loggerFactory.CreateLogger<ConfigurationDoneHandler>();
             _debugAdapterServer = debugAdapterServer;
@@ -54,6 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _executionService = executionService;
             _workspaceService = workspaceService;
             _debugContext = debugContext;
+            _runspaceContext = runspaceContext;
         }
 
         public Task<ConfigurationDoneResponse> Handle(ConfigurationDoneArguments request, CancellationToken cancellationToken)
@@ -90,16 +102,51 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private async Task LaunchScriptAsync(string scriptToLaunch)
         {
-            // TODO: Theoretically we can make PowerShell respect line breakpoints in untitled
-            // files, but the previous method was a hack that conflicted with correct passing of
-            // arguments to the debugged script. We are prioritizing the latter over the former, as
-            // command breakpoints and `Wait-Debugger` work fine.
-            string command = ScriptFile.IsUntitledPath(scriptToLaunch)
-                ? string.Concat("{ ", _workspaceService.GetFile(scriptToLaunch).Contents, " }")
-                : string.Concat('"', scriptToLaunch, '"');
+            PSCommand command;
+            if (ScriptFile.IsUntitledPath(scriptToLaunch))
+            {
+                ScriptFile untitledScript = _workspaceService.GetFile(scriptToLaunch);
+                if (BreakpointApiUtils.SupportsBreakpointApis(_runspaceContext.CurrentRunspace))
+                {
+                    // Parse untitled files with their `Untitled:` URI as the filename which will
+                    // cache the URI and contents within the PowerShell parser. By doing this, we
+                    // light up the ability to debug untitled files with line breakpoints. This is
+                    // only possible with PowerShell 7's new breakpoint APIs since the old API,
+                    // Set-PSBreakpoint, validates that the given path points to a real file.
+                    ScriptBlockAst ast = Parser.ParseInput(
+                        untitledScript.Contents,
+                        untitledScript.DocumentUri.ToString(),
+                        out Token[] _,
+                        out ParseError[] _);
+
+                    // In order to use utilize the parser's cache (and therefore hit line
+                    // breakpoints) we need to use the AST's `ScriptBlock` object. Due to
+                    // limitations in PowerShell's public API, this means we must use the
+                    // `PSCommand.AddArgument(object)` method, hence this hack where we dot-source
+                    // `$args[0]. Fortunately the dot-source operator maintains a stack of arguments
+                    // on each invocation, so passing the user's arguments directly in the initial
+                    // `AddScript` surprisingly works.
+                    command = PSCommandHelpers
+                        .BuildDotSourceCommandWithArguments("$args[0]", _debugStateService.Arguments)
+                        .AddArgument(ast.GetScriptBlock());
+                }
+                else
+                {
+                    // Without the new APIs we can only execute the untitled script's contents.
+                    // Command breakpoints and `Wait-Debugger` will work.
+                    command = PSCommandHelpers.BuildDotSourceCommandWithArguments(
+                        string.Concat("{ ", untitledScript.Contents, " }"), _debugStateService.Arguments);
+                }
+            }
+            else
+            {
+                // For a saved file we just execute its path (after escaping it).
+                command = PSCommandHelpers.BuildDotSourceCommandWithArguments(
+                    string.Concat('"', scriptToLaunch, '"'), _debugStateService.Arguments);
+            }
 
             await _executionService.ExecutePSCommandAsync(
-                PSCommandHelpers.BuildCommandFromArguments(command, _debugStateService.Arguments),
+                command,
                 CancellationToken.None,
                 s_debuggerExecutionOptions).ConfigureAwait(false);
             _debugAdapterServer.SendNotification(EventNames.Terminated);
