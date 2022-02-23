@@ -30,15 +30,21 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<EvaluateResponseBody> Handle(EvaluateRequestArguments request, CancellationToken cancellationToken)
         {
-            // TODO: Understand why we currently handle this asynchronously and why we return a dummy result value
-            //       instead of awaiting the execution and returing a real result of some kind
-
-            // This API is mostly used for F8 execution, so needs to interrupt the command prompt
+            // This API is mostly used for F8 execution, so it needs to interrupt the command prompt
+            // (or other foreground task).
             await _executionService.ExecutePSCommandAsync(
                 new PSCommand().AddScript(request.Expression),
                 CancellationToken.None,
-                new PowerShellExecutionOptions { WriteInputToHost = true, WriteOutputToHost = true, AddToHistory = true, ThrowOnError = false, InterruptCurrentForeground = true }).ConfigureAwait(false);
+                new PowerShellExecutionOptions
+                {
+                    WriteInputToHost = true,
+                    WriteOutputToHost = true,
+                    AddToHistory = true,
+                    ThrowOnError = false,
+                    InterruptCurrentForeground = true
+                }).ConfigureAwait(false);
 
+            // TODO: Should we return a more informative result?
             return new EvaluateResponseBody
             {
                 Result = "",
