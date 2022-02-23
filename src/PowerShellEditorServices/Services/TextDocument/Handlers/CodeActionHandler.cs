@@ -3,14 +3,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
-using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -21,21 +19,22 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     {
         private readonly ILogger _logger;
         private readonly AnalysisService _analysisService;
-        private readonly WorkspaceService _workspaceService;
 
-        public PsesCodeActionHandler(ILoggerFactory factory, AnalysisService analysisService, WorkspaceService workspaceService)
+        public PsesCodeActionHandler(ILoggerFactory factory, AnalysisService analysisService)
         {
             _logger = factory.CreateLogger<PsesCodeActionHandler>();
             _analysisService = analysisService;
-            _workspaceService = workspaceService;
         }
 
-        protected override CodeActionRegistrationOptions CreateRegistrationOptions(CodeActionCapability capability, ClientCapabilities clientCapabilities) => new CodeActionRegistrationOptions
+        protected override CodeActionRegistrationOptions CreateRegistrationOptions(CodeActionCapability capability, ClientCapabilities clientCapabilities)
+        {
+            return new()
             {
-            // TODO: What do we do with the arguments?
-            DocumentSelector = LspUtils.PowerShellDocumentSelector,
-            CodeActionKinds = new CodeActionKind[] { CodeActionKind.QuickFix }
-        };
+                // TODO: What do we do with the arguments?
+                DocumentSelector = LspUtils.PowerShellDocumentSelector,
+                CodeActionKinds = new CodeActionKind[] { CodeActionKind.QuickFix }
+            };
+        }
 
         // TODO: Either fix or ignore "method lacks 'await'" warning.
         public override async Task<CodeAction> Handle(CodeAction request, CancellationToken cancellationToken)
@@ -65,7 +64,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return Array.Empty<CommandOrCodeAction>();
             }
 
-            var codeActions = new List<CommandOrCodeAction>();
+            List<CommandOrCodeAction> codeActions = new();
 
             // If there are any code fixes, send these commands first so they appear at top of "Code Fix" menu in the client UI.
             foreach (Diagnostic diagnostic in request.Context.Diagnostics)
@@ -81,31 +80,34 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 string diagnosticId = AnalysisService.GetUniqueIdFromDiagnostic(diagnostic);
                 if (corrections.TryGetValue(diagnosticId, out MarkerCorrection correction))
                 {
-                    codeActions.Add(new CodeAction
+                    foreach (ScriptRegion edit in correction.Edits)
                     {
-                        Title = correction.Name,
-                        Kind = CodeActionKind.QuickFix,
-                        Edit = new WorkspaceEdit
+                        codeActions.Add(new CodeAction
                         {
-                            DocumentChanges = new Container<WorkspaceEditDocumentChange>(
-                                new WorkspaceEditDocumentChange(
-                                    new TextDocumentEdit
-                                    {
-                                        TextDocument = new OptionalVersionedTextDocumentIdentifier
+                            Title = correction.Name,
+                            Kind = CodeActionKind.QuickFix,
+                            Edit = new WorkspaceEdit
+                            {
+                                DocumentChanges = new Container<WorkspaceEditDocumentChange>(
+                                    new WorkspaceEditDocumentChange(
+                                        new TextDocumentEdit
                                         {
-                                            Uri = request.TextDocument.Uri
-                                        },
-                                        Edits = new TextEditContainer(correction.Edits.Select(ScriptRegion.ToTextEdit))
-                                    }))
-                        }
-                    });
+                                            TextDocument = new OptionalVersionedTextDocumentIdentifier
+                                            {
+                                                Uri = request.TextDocument.Uri
+                                            },
+                                            Edits = new TextEditContainer(ScriptRegion.ToTextEdit(edit))
+                                        }))
+                            }
+                        });
+                    }
                 }
             }
 
             // Add "show documentation" commands last so they appear at the bottom of the client UI.
             // These commands do not require code fixes. Sometimes we get a batch of diagnostics
             // to create commands for. No need to create multiple show doc commands for the same rule.
-            var ruleNamesProcessed = new HashSet<string>();
+            HashSet<string> ruleNamesProcessed = new();
             foreach (Diagnostic diagnostic in request.Context.Diagnostics)
             {
                 if (
@@ -119,8 +121,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 if (string.Equals(diagnostic.Source, "PSScriptAnalyzer", StringComparison.OrdinalIgnoreCase) &&
                     !ruleNamesProcessed.Contains(diagnostic.Code?.String))
                 {
-                    ruleNamesProcessed.Add(diagnostic.Code?.String);
-                    var title = $"Show documentation for: {diagnostic.Code?.String}";
+                    _ = ruleNamesProcessed.Add(diagnostic.Code?.String);
+                    string title = $"Show documentation for: {diagnostic.Code?.String}";
                     codeActions.Add(new CodeAction
                     {
                         Title = title,
@@ -132,7 +134,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         {
                             Title = title,
                             Name = "PowerShell.ShowCodeActionDocumentation",
-                            Arguments = JArray.FromObject(new[] { diagnostic.Code?.String })
+                            Arguments = Newtonsoft.Json.Linq.JArray.FromObject(new[] { diagnostic.Code?.String })
                         }
                     });
                 }
