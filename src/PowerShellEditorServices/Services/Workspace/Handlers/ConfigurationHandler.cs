@@ -19,7 +19,6 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.Extension;
 
-
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class PsesConfigurationHandler : DidChangeConfigurationHandlerBase
@@ -31,7 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly PsesInternalHost _psesHost;
         private readonly ILanguageServerFacade _languageServer;
         private bool _profilesLoaded;
-        private bool _extensionServiceInitialized;
+        private readonly bool _extensionServiceInitialized;
         private bool _cwdSet;
 
         public PsesConfigurationHandler(
@@ -56,10 +55,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public override async Task<Unit> Handle(DidChangeConfigurationParams request, CancellationToken cancellationToken)
         {
             LanguageServerSettingsWrapper incomingSettings = request.Settings.ToObject<LanguageServerSettingsWrapper>();
-            this._logger.LogTrace("Handling DidChangeConfiguration");
+            _logger.LogTrace("Handling DidChangeConfiguration");
             if (incomingSettings is null || incomingSettings.Powershell is null)
             {
-                this._logger.LogTrace("Incoming settings were null");
+                _logger.LogTrace("Incoming settings were null");
                 return await Unit.Task.ConfigureAwait(false);
             }
 
@@ -102,32 +101,31 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             // TODO: Load profiles when the host is already running
-
-            if (!this._cwdSet)
+            if (!_cwdSet)
             {
                 if (!string.IsNullOrEmpty(_configurationService.CurrentSettings.Cwd)
                     && Directory.Exists(_configurationService.CurrentSettings.Cwd))
                 {
-                    this._logger.LogTrace($"Setting CWD (from config) to {_configurationService.CurrentSettings.Cwd}");
+                    _logger.LogTrace($"Setting CWD (from config) to {_configurationService.CurrentSettings.Cwd}");
                     await _psesHost.SetInitialWorkingDirectoryAsync(
                         _configurationService.CurrentSettings.Cwd,
                         CancellationToken.None).ConfigureAwait(false);
 
                 }
-                else if (_workspaceService.WorkspacePath != null
+                else if (_workspaceService.WorkspacePath is not null
                     && Directory.Exists(_workspaceService.WorkspacePath))
                 {
-                    this._logger.LogTrace($"Setting CWD (from workspace) to {_workspaceService.WorkspacePath}");
+                    _logger.LogTrace($"Setting CWD (from workspace) to {_workspaceService.WorkspacePath}");
                     await _psesHost.SetInitialWorkingDirectoryAsync(
                         _workspaceService.WorkspacePath,
                         CancellationToken.None).ConfigureAwait(false);
                 }
                 else
                 {
-                    this._logger.LogTrace("Tried to set CWD but in bad state");
+                    _logger.LogTrace("Tried to set CWD but in bad state");
                 }
 
-                this._cwdSet = true;
+                _cwdSet = true;
             }
 
             if (!_extensionServiceInitialized)
@@ -136,7 +134,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             // Run any events subscribed to configuration updates
-            this._logger.LogTrace("Running configuration update event handlers");
+            _logger.LogTrace("Running configuration update event handlers");
             ConfigurationUpdated?.Invoke(this, _configurationService.CurrentSettings);
 
             // Convert the editor file glob patterns into an array for the Workspace
@@ -146,17 +144,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             //     "*.html": true,
             //     "build/*": true
             // }
-            var excludeFilePatterns = new List<string>();
-            if (incomingSettings.Files?.Exclude != null)
+            List<string> excludeFilePatterns = new();
+            if (incomingSettings.Files?.Exclude is not null)
             {
-                foreach(KeyValuePair<string, bool> patternEntry in incomingSettings.Files.Exclude)
+                foreach (KeyValuePair<string, bool> patternEntry in incomingSettings.Files.Exclude)
                 {
                     if (patternEntry.Value) { excludeFilePatterns.Add(patternEntry.Key); }
                 }
             }
-            if (incomingSettings.Search?.Exclude != null)
+            if (incomingSettings.Search?.Exclude is not null)
             {
-                foreach(KeyValuePair<string, bool> patternEntry in incomingSettings.Search.Exclude)
+                foreach (KeyValuePair<string, bool> patternEntry in incomingSettings.Search.Exclude)
                 {
                     if (patternEntry.Value && !excludeFilePatterns.Contains(patternEntry.Key)) { excludeFilePatterns.Add(patternEntry.Key); }
                 }
@@ -164,7 +162,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService.ExcludeFilesGlob = excludeFilePatterns;
 
             // Convert the editor file search options to Workspace properties
-            if (incomingSettings.Search?.FollowSymlinks != null)
+            if (incomingSettings.Search?.FollowSymlinks is not null)
             {
                 _workspaceService.FollowSymlinks = incomingSettings.Search.FollowSymlinks;
             }
@@ -176,11 +174,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             if (incomingSettings is null)
             {
-                this._logger.LogTrace("Incoming settings were null");
+                _logger.LogTrace("Incoming settings were null");
                 return;
             }
 
-            var configChanges = new Dictionary<string, bool>();
+            Dictionary<string, bool> configChanges = new();
             // Send telemetry if the user opted-out of ScriptAnalysis
             if (incomingSettings.Powershell.ScriptAnalysis.Enable == false &&
                 _configurationService.CurrentSettings.ScriptAnalysis.Enable != incomingSettings.Powershell.ScriptAnalysis.Enable)
