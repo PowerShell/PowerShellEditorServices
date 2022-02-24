@@ -11,13 +11,13 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
+using Microsoft.PowerShell.EditorServices.Services.Extension;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Window;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
-using Microsoft.PowerShell.EditorServices.Services.Extension;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -110,7 +110,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     await _psesHost.SetInitialWorkingDirectoryAsync(
                         _configurationService.CurrentSettings.Cwd,
                         CancellationToken.None).ConfigureAwait(false);
-
                 }
                 else if (_workspaceService.WorkspacePath is not null
                     && Directory.Exists(_workspaceService.WorkspacePath))
@@ -139,24 +138,35 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             // Convert the editor file glob patterns into an array for the Workspace
             // Both the files.exclude and search.exclude hash tables look like (glob-text, is-enabled):
+            //
             // "files.exclude" : {
             //     "Makefile": true,
             //     "*.html": true,
+            //     "**/*.js": { "when": "$(basename).ts" },
             //     "build/*": true
             // }
+            //
+            // TODO: We only support boolean values. The clause predicates are ignored, but perhaps
+            // they shouldn't be. At least it doesn't crash!
             List<string> excludeFilePatterns = new();
             if (incomingSettings.Files?.Exclude is not null)
             {
-                foreach (KeyValuePair<string, bool> patternEntry in incomingSettings.Files.Exclude)
+                foreach (KeyValuePair<string, object> patternEntry in incomingSettings.Files.Exclude)
                 {
-                    if (patternEntry.Value) { excludeFilePatterns.Add(patternEntry.Key); }
+                    if (patternEntry.Value is bool v && v)
+                    {
+                        excludeFilePatterns.Add(patternEntry.Key);
+                    }
                 }
             }
             if (incomingSettings.Search?.Exclude is not null)
             {
-                foreach (KeyValuePair<string, bool> patternEntry in incomingSettings.Search.Exclude)
+                foreach (KeyValuePair<string, object> patternEntry in incomingSettings.Search.Exclude)
                 {
-                    if (patternEntry.Value && !excludeFilePatterns.Contains(patternEntry.Key)) { excludeFilePatterns.Add(patternEntry.Key); }
+                    if (patternEntry.Value is bool v && v && !excludeFilePatterns.Contains(patternEntry.Key))
+                    {
+                        excludeFilePatterns.Add(patternEntry.Key);
+                    }
                 }
             }
             _workspaceService.ExcludeFilesGlob = excludeFilePatterns;

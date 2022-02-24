@@ -403,10 +403,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
     internal class EditorFileSettings
     {
         /// <summary>
-        /// Exclude files globs consists of hashtable with the key as the glob and a boolean value to indicate if the
-        /// the glob is in effect.
+        /// Exclude files globs consists of hashtable with the key as the glob and a boolean value
+        /// OR object with a predicate clause to indicate if the glob is in effect.
         /// </summary>
-        public Dictionary<string, bool> Exclude { get; set; }
+        public Dictionary<string, object> Exclude { get; set; }
     }
 
     /// <summary>
@@ -416,10 +416,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
     internal class EditorSearchSettings
     {
         /// <summary>
-        /// Exclude files globs consists of hashtable with the key as the glob and a boolean value to indicate if the
-        /// the glob is in effect.
+        /// Exclude files globs consists of hashtable with the key as the glob and a boolean value
+        /// OR object with a predicate clause to indicate if the glob is in effect.
         /// </summary>
-        public Dictionary<string, bool> Exclude { get; set; }
+        public Dictionary<string, object> Exclude { get; set; }
+
         /// <summary>
         /// Whether to follow symlinks when searching
         /// </summary>
