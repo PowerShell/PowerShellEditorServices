@@ -1,5 +1,15 @@
 # PowerShell Editor Services Release History
 
+## v3.1.4
+### Thursday, February 24, 2022
+
+- 🐛 🛫 [vscode-powershell #2658](https://github.com/PowerShell/PowerShellEditorServices/pull/1726) - Avoid error when `exclude` entry is a clause.
+- 🐛 🚂 [vscode-powershell #3691](https://github.com/PowerShell/PowerShellEditorServices/pull/1725) - Fix editor commands to interrupt current prompt.
+- ✨ 🔍 [PowerShellEditorServices #1724](https://github.com/PowerShell/PowerShellEditorServices/pull/1724) - Re-enable line breakpoints for untitled scripts.
+- ✨ 🙏 [PowerShellEditorServices #1709](https://github.com/PowerShell/PowerShellEditorServices/pull/1723) - Update PSReadLine to 2.2.2.
+- 🐛 📟 [vscode-powershell #3807](https://github.com/PowerShell/PowerShellEditorServices/pull/1719) - Reset progress messages at end of REPL.
+- 🐛 ‍🕵️ [PowerShellEditorServices #1718](https://github.com/PowerShell/PowerShellEditorServices/pull/1718) - Return a code action for each diagnostic record. (Thanks @bergmeister!)
+
 ## v3.1.3
 ### Wednesday, February 16, 2022
 
