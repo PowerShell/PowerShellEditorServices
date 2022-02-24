@@ -119,7 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         /// <param name="editorContext">The context in which the command is being invoked.</param>
         /// <returns>A Task that can be awaited for completion.</returns>
         /// <exception cref="KeyNotFoundException">The command being invoked was not registered.</exception>
-        public async Task InvokeCommandAsync(string commandName, EditorContext editorContext)
+        public Task InvokeCommandAsync(string commandName, EditorContext editorContext, CancellationToken cancellationToken)
         {
             if (editorCommands.TryGetValue(commandName, out EditorCommand editorCommand))
             {
@@ -128,20 +128,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
                     .AddParameter("ScriptBlock", editorCommand.ScriptBlock)
                     .AddParameter("ArgumentList", new object[] { editorContext });
 
-                await ExecutionService.ExecutePSCommandAsync(
+                // This API is used for editor command execution, so it needs to interrupt the
+                // current prompt (or other foreground task).
+                return ExecutionService.ExecutePSCommandAsync(
                     executeCommand,
-                    CancellationToken.None,
+                    cancellationToken,
                     new PowerShellExecutionOptions
                     {
                         WriteOutputToHost = !editorCommand.SuppressOutput,
+                        AddToHistory = !editorCommand.SuppressOutput,
                         ThrowOnError = false,
-                        AddToHistory = !editorCommand.SuppressOutput
-                    }).ConfigureAwait(false);
+                        InterruptCurrentForeground = true
+                    });
             }
-            else
-            {
-                throw new KeyNotFoundException($"Editor command not found: '{commandName}'");
-            }
+
+            throw new KeyNotFoundException($"Editor command not found: '{commandName}'");
         }
 
         /// <summary>

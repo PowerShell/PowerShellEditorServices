@@ -4,6 +4,7 @@
 using Microsoft.PowerShell.EditorServices.Services.Extension;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Extensions.Services
@@ -78,7 +79,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 
         public IReadOnlyList<EditorCommand> GetCommands() => _extensionService.GetCommands();
 
-        public Task InvokeCommandAsync(string commandName, EditorContext editorContext) => _extensionService.InvokeCommandAsync(commandName, editorContext);
+        public Task InvokeCommandAsync(string commandName, EditorContext editorContext) => _extensionService.InvokeCommandAsync(commandName, editorContext, CancellationToken.None);
 
         public bool RegisterCommand(EditorCommand editorCommand) => _extensionService.RegisterCommand(editorCommand);
 
