@@ -86,6 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 var invocationSettings = new PSInvocationSettings
                 {
                     AddToHistory = PowerShellExecutionOptions.AddToHistory,
+                    Host = _psesHost
                 };
 
                 if (PowerShellExecutionOptions.ThrowOnError)

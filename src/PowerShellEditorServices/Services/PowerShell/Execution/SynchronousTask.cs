@@ -1,11 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using Microsoft.Extensions.Logging;
 using System;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 {
@@ -23,6 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         private readonly TaskCompletionSource<TResult> _taskCompletionSource;
 
         private readonly CancellationToken _taskRequesterCancellationToken;
+        private CancellationTokenSource _cancellationSource;
 
         private bool _executionCanceled;
 
@@ -79,8 +80,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 return;
             }
 
-            using var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(_taskRequesterCancellationToken, executorCancellationToken);
-            if (cancellationSource.IsCancellationRequested)
+            _cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(_taskRequesterCancellationToken, executorCancellationToken);
+            if (executorCancellationToken.IsCancellationRequested)
             {
                 SetCanceled();
                 return;
@@ -88,7 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
             try
             {
-                TResult result = Run(cancellationSource.Token);
+                TResult result = Run(executorCancellationToken);
                 SetResult(result);
             }
             catch (OperationCanceledException)

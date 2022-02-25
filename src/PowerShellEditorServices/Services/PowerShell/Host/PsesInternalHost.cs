@@ -714,7 +714,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private string InvokeReadLine(CancellationToken cancellationToken)
         {
-            return _readLineProvider.ReadLine.ReadLine(cancellationToken);
+            if (Monitor.TryEnter(_readLineProvider))
+            {
+                try
+                {
+                    return _readLineProvider.ReadLine.ReadLine(cancellationToken);
+                }
+                finally
+                {
+                    Monitor.Exit(_readLineProvider);
+                }
+            }
+            else
+            {
+                var legacyReadLine = new LegacyReadLine(this, ReadKey, OnPowerShellIdle);
+                return legacyReadLine.ReadLine(cancellationToken);
+            }
         }
 
         private void InvokeInput(string input, CancellationToken cancellationToken)
