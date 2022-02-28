@@ -168,12 +168,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public override void NotifyBeginApplication()
         {
-            // TODO: Work out what to do here
+            _hostInfo.PSHost.NotifyBeginApplication();
         }
 
         public override void NotifyEndApplication()
         {
-            // TODO: Work out what to do here
+            _hostInfo.PSHost.NotifyEndApplication();
         }
 
         public void PopRunspace()
