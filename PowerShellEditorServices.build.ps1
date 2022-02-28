@@ -55,7 +55,10 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
 
 task FindDotNet {
     assert (Get-Command dotnet -ErrorAction SilentlyContinue) "dotnet not found, please install it: https://aka.ms/dotnet-cli"
-    assert ([Version](dotnet --version) -ge [Version]("6.0")) ".NET SDK 6.0 or higher is required, please update it: https://aka.ms/dotnet-cli"
+
+    # Strip out semantic version metadata so it can be cast to `Version`
+    $existingVersion, $null = (dotnet --version) -split '-'
+    assert ([Version]$existingVersion -ge [Version]("6.0")) ".NET SDK 6.0 or higher is required, please update it: https://aka.ms/dotnet-cli"
 
     # Anywhere other than on a Mac with an M1 processor, we additionally
     # need the .NET 3.1 runtime for our netcoreapp3.1 framework.
