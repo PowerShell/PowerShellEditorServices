@@ -63,17 +63,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private EngineIntrinsics _mainRunspaceEngineIntrinsics;
 
-        private bool _shouldExit = false;
+        private bool _shouldExit;
 
-        private int _shuttingDown = 0;
+        private int _shuttingDown;
 
         private string _localComputerName;
 
         private ConsoleKeyInfo? _lastKey;
 
-        private bool _skipNextPrompt = false;
+        private bool _skipNextPrompt;
 
-        private bool _resettingRunspace = false;
+        private bool _resettingRunspace;
 
         public PsesInternalHost(
             ILoggerFactory loggerFactory,
@@ -126,6 +126,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public override string Name { get; }
 
+        public override PSObject PrivateData => _hostInfo.PSHost.PrivateData;
+
         public override PSHostUserInterface UI { get; }
 
         public override Version Version { get; }
@@ -156,25 +158,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private bool ShouldExitExecutionLoop => _shouldExit || _shuttingDown != 0;
 
-        public override void EnterNestedPrompt()
-        {
-            PushPowerShellAndRunLoop(CreateNestedPowerShell(CurrentRunspace), PowerShellFrameType.Nested);
-        }
+        public override void EnterNestedPrompt() => PushPowerShellAndRunLoop(CreateNestedPowerShell(CurrentRunspace), PowerShellFrameType.Nested);
 
-        public override void ExitNestedPrompt()
-        {
-            SetExit();
-        }
+        public override void ExitNestedPrompt() => SetExit();
 
-        public override void NotifyBeginApplication()
-        {
-            _hostInfo.PSHost.NotifyBeginApplication();
-        }
+        public override void NotifyBeginApplication() => _hostInfo.PSHost.NotifyBeginApplication();
 
-        public override void NotifyEndApplication()
-        {
-            _hostInfo.PSHost.NotifyEndApplication();
-        }
+        public override void NotifyEndApplication() => _hostInfo.PSHost.NotifyEndApplication();
 
         public void PopRunspace()
         {
@@ -188,11 +178,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             PushPowerShellAndRunLoop(CreatePowerShellForRunspace(runspace), PowerShellFrameType.Remote);
         }
 
-        public override void SetShouldExit(int exitCode)
-        {
-            // TODO: Handle exit code if needed
-            SetExit();
-        }
+        // TODO: Handle exit code if needed
+        public override void SetShouldExit(int exitCode) => SetExit();
 
         /// <summary>
         /// Try to start the PowerShell loop in the host.
