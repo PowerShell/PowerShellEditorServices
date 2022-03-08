@@ -147,7 +147,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// Identifies a completion for a provider path (like a file system path) to a container.
         /// </summary>
-        Folder
+        Folder,
+
+        /// <summary>
+        /// Identifies a completion for history.
+        /// </summary>
+        History,
+
+        /// <summary>
+        /// Identifies a completion for just text.
+        /// </summary>
+        Text
     }
 
     /// <summary>
@@ -277,46 +287,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         private static CompletionType ConvertCompletionResultType(
             CompletionResultType completionResultType)
         {
-            switch (completionResultType)
+            return completionResultType switch
             {
-                case CompletionResultType.Command:
-                    return CompletionType.Command;
-
-                case CompletionResultType.Method:
-                    return CompletionType.Method;
-
-                case CompletionResultType.ParameterName:
-                    return CompletionType.ParameterName;
-
-                case CompletionResultType.ParameterValue:
-                    return CompletionType.ParameterValue;
-
-                case CompletionResultType.Property:
-                    return CompletionType.Property;
-
-                case CompletionResultType.Variable:
-                    return CompletionType.Variable;
-
-                case CompletionResultType.Namespace:
-                    return CompletionType.Namespace;
-
-                case CompletionResultType.Type:
-                    return CompletionType.Type;
-
-                case CompletionResultType.Keyword:
-                case CompletionResultType.DynamicKeyword:
-                    return CompletionType.Keyword;
-
-                case CompletionResultType.ProviderContainer:
-                    return CompletionType.Folder;
-
-                case CompletionResultType.ProviderItem:
-                    return CompletionType.File;
-
-                default:
-                    // TODO: Trace the unsupported CompletionResultType
-                    return CompletionType.Unknown;
-            }
+                CompletionResultType.Command => CompletionType.Command,
+                CompletionResultType.Method => CompletionType.Method,
+                CompletionResultType.ParameterName => CompletionType.ParameterName,
+                CompletionResultType.ParameterValue => CompletionType.ParameterValue,
+                CompletionResultType.Property => CompletionType.Property,
+                CompletionResultType.Variable => CompletionType.Variable,
+                CompletionResultType.Namespace => CompletionType.Namespace,
+                CompletionResultType.Type => CompletionType.Type,
+                CompletionResultType.Keyword or CompletionResultType.DynamicKeyword => CompletionType.Keyword,
+                CompletionResultType.ProviderContainer => CompletionType.Folder,
+                CompletionResultType.ProviderItem => CompletionType.File,
+                CompletionResultType.History => CompletionType.History,
+                CompletionResultType.Text => CompletionType.Text,
+                _ => CompletionType.Unknown,
+            };
         }
 
         private static string ExtractSymbolTypeNameFromToolTip(string toolTipText)
