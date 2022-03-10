@@ -80,30 +80,32 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         // Handler for "completionItem/resolve". In VSCode this is fired when a completion item is highlighted in the completion list.
         public async Task<CompletionItem> Handle(CompletionItem request, CancellationToken cancellationToken)
         {
-            // We currently only support this request for anything that returns a CommandInfo: functions, cmdlets, aliases.
-            if (request.Kind != CompletionItemKind.Function)
-            {
-                return request;
-            }
-
-            // No details means the module hasn't been imported yet and Intellisense shouldn't import the module to get this info.
-            if (request.Detail is null)
+            // We currently only support this request for anything that returns a CommandInfo:
+            // functions, cmdlets, aliases. No detail means the module hasn't been imported yet and
+            // IntelliSense shouldn't import the module to get this info.
+            if (request.Kind is not CompletionItemKind.Function || request.Detail is null)
             {
                 return request;
             }
 
             // Get the documentation for the function
-            CommandInfo commandInfo = await CommandHelpers.GetCommandInfoAsync(request.Label, _runspaceContext.CurrentRunspace, _executionService).ConfigureAwait(false);
+            CommandInfo commandInfo = await CommandHelpers.GetCommandInfoAsync(
+                request.Label,
+                _runspaceContext.CurrentRunspace,
+                _executionService,
+                cancellationToken).ConfigureAwait(false);
 
             if (commandInfo is not null)
             {
-                request = request with
+                return request with
                 {
-                    Documentation = await CommandHelpers.GetCommandSynopsisAsync(commandInfo, _executionService).ConfigureAwait(false)
+                    Documentation = await CommandHelpers.GetCommandSynopsisAsync(
+                        commandInfo,
+                        _executionService,
+                        cancellationToken).ConfigureAwait(false)
                 };
             }
 
-            // Send back the updated CompletionItem
             return request;
         }
 
