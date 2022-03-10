@@ -64,7 +64,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         public static async Task<CommandInfo> GetCommandInfoAsync(
             string commandName,
             IRunspaceInfo currentRunspace,
-            IInternalPowerShellExecutionService executionService)
+            IInternalPowerShellExecutionService executionService,
+            CancellationToken cancellationToken = default)
         {
             // This mechanism only works in-process
             if (currentRunspace.RunspaceOrigin != RunspaceOrigin.Local)
@@ -98,7 +99,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 .AddParameter("ErrorAction", "Ignore");
 
             IReadOnlyList<CommandInfo> results = await executionService
-                .ExecutePSCommandAsync<CommandInfo>(command, CancellationToken.None)
+                .ExecutePSCommandAsync<CommandInfo>(command, cancellationToken)
                 .ConfigureAwait(false);
 
             CommandInfo commandInfo = results.Count > 0 ? results[0] : null;
@@ -120,7 +121,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         /// <returns>The synopsis.</returns>
         public static async Task<string> GetCommandSynopsisAsync(
             CommandInfo commandInfo,
-            IInternalPowerShellExecutionService executionService)
+            IInternalPowerShellExecutionService executionService,
+            CancellationToken cancellationToken = default)
         {
             Validate.IsNotNull(nameof(commandInfo), commandInfo);
             Validate.IsNotNull(nameof(executionService), executionService);
@@ -151,7 +153,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 .AddParameter("ErrorAction", "Ignore");
 
             IReadOnlyList<PSObject> results = await executionService
-                .ExecutePSCommandAsync<PSObject>(command, CancellationToken.None)
+                .ExecutePSCommandAsync<PSObject>(command, cancellationToken)
                 .ConfigureAwait(false);
 
             // Extract the synopsis string from the object
