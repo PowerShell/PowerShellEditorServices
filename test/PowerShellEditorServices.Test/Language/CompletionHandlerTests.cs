@@ -66,26 +66,30 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             Assert.StartsWith(CompleteCommandFromModule.GetRandomDetail, actual.Detail);
         }
 
-        [SkippableFact]
+        [Fact]
         public async Task CompletesTypeName()
         {
-            Skip.If(
-                !VersionUtils.IsNetCore,
-                "In Windows PowerShell the CommandCompletion fails in the test harness, but works manually.");
-
             IEnumerable<CompletionItem> results = await GetCompletionResultsAsync(CompleteTypeName.SourceDetails).ConfigureAwait(true);
             CompletionItem actual = Assert.Single(results);
-            Assert.Equal(CompleteTypeName.ExpectedCompletion, actual);
+            if (VersionUtils.IsNetCore)
+            {
+                Assert.Equal(CompleteTypeName.ExpectedCompletion, actual);
+            }
+            else
+            {
+                // Windows PowerShell shows ArrayList as a Class.
+                Assert.Equal(CompleteTypeName.ExpectedCompletion with
+                {
+                    Kind = CompletionItemKind.Class,
+                    Detail = "Class System.Collections.ArrayList"
+                }, actual);
+            }
         }
 
         [Trait("Category", "Completions")]
-        [SkippableFact]
+        [Fact]
         public async Task CompletesNamespace()
         {
-            Skip.If(
-                !VersionUtils.IsNetCore,
-                "In Windows PowerShell the CommandCompletion fails in the test harness, but works manually.");
-
             IEnumerable<CompletionItem> results = await GetCompletionResultsAsync(CompleteNamespace.SourceDetails).ConfigureAwait(true);
             CompletionItem actual = Assert.Single(results);
             Assert.Equal(CompleteNamespace.ExpectedCompletion, actual);
