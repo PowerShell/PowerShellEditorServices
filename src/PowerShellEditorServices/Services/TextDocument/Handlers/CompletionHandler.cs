@@ -25,7 +25,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     // TODO: Use ABCs.
     internal class PsesCompletionHandler : ICompletionHandler, ICompletionResolveHandler
     {
-        private const int DefaultWaitTimeoutMilliseconds = 5000;
         private readonly ILogger _logger;
         private readonly IRunspaceContext _runspaceContext;
         private readonly IInternalPowerShellExecutionService _executionService;
@@ -60,14 +59,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             int cursorColumn = request.Position.Character + 1;
 
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
-
-            if (cancellationToken.IsCancellationRequested)
-            {
-                _logger.LogDebug("Completion request canceled for file: {0}", request.TextDocument.Uri);
-                return Array.Empty<CompletionItem>();
-            }
-
-            IEnumerable<CompletionItem> completionResults = await GetCompletionsInFileAsync(scriptFile, cursorLine, cursorColumn).ConfigureAwait(false);
+            IEnumerable<CompletionItem> completionResults = await GetCompletionsInFileAsync(
+                scriptFile,
+                cursorLine,
+                cursorColumn,
+                cancellationToken).ConfigureAwait(false);
 
             return new CompletionList(completionResults);
         }
@@ -133,21 +129,18 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public async Task<IEnumerable<CompletionItem>> GetCompletionsInFileAsync(
             ScriptFile scriptFile,
             int lineNumber,
-            int columnNumber)
+            int columnNumber,
+            CancellationToken cancellationToken)
         {
             Validate.IsNotNull(nameof(scriptFile), scriptFile);
 
-            CommandCompletion result = null;
-            using (CancellationTokenSource cts = new(DefaultWaitTimeoutMilliseconds))
-            {
-                result = await AstOperations.GetCompletionsAsync(
-                    scriptFile.ScriptAst,
-                    scriptFile.ScriptTokens,
-                    scriptFile.GetOffsetAtPosition(lineNumber, columnNumber),
-                    _executionService,
-                    _logger,
-                    cts.Token).ConfigureAwait(false);
-            }
+            CommandCompletion result = await AstOperations.GetCompletionsAsync(
+                scriptFile.ScriptAst,
+                scriptFile.ScriptTokens,
+                scriptFile.GetOffsetAtPosition(lineNumber, columnNumber),
+                _executionService,
+                _logger,
+                cancellationToken).ConfigureAwait(false);
 
             // Only calculate the replacement range if there are completions.
             BufferRange replacedRange = new(0, 0, 0, 0);

@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Handlers;
@@ -45,7 +46,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             return completionHandler.GetCompletionsInFileAsync(
                 GetScriptFile(scriptRegion),
                 scriptRegion.StartLineNumber,
-                scriptRegion.StartColumnNumber);
+                scriptRegion.StartColumnNumber,
+                CancellationToken.None);
         }
 
         [Fact]
