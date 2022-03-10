@@ -26,8 +26,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
         {
             Kind = CompletionItemKind.Function,
             Detail = "", // OS-dependent, checked separately.
-            InsertTextFormat = InsertTextFormat.PlainText,
-            InsertText = "Get-Random",
             FilterText = "Get-Random",
             Label = "Get-Random",
             SortText = "0001Get-Random",

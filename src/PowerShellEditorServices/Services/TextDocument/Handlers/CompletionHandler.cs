@@ -32,7 +32,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly WorkspaceService _workspaceService;
         private CompletionCapability _capability;
         private readonly Guid _id = Guid.NewGuid();
-        private static readonly Regex _typeRegex = new(@"^(\[.+\])");
 
         Guid ICanBeIdentifiedHandler.Id => _id;
 
@@ -168,163 +167,132 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         }
 
         internal static CompletionItem CreateCompletionItem(
-            CompletionResult completion,
+            CompletionResult result,
             BufferRange completionRange,
             int sortIndex)
         {
-            Validate.IsNotNull(nameof(completion), completion);
+            Validate.IsNotNull(nameof(result), result);
+
+            TextEdit textEdit = new()
+            {
+                NewText = result.CompletionText,
+                Range = new Range
+                {
+                    Start = new Position
+                    {
+                        Line = completionRange.Start.Line - 1,
+                        Character = completionRange.Start.Column - 1
+                    },
+                    End = new Position
+                    {
+                        Line = completionRange.End.Line - 1,
+                        Character = completionRange.End.Column - 1
+                    }
+                }
+            };
 
             // Some tooltips may have newlines or whitespace for unknown reasons.
-            string toolTipText = completion.ToolTip?.Trim();
+            string detail = result.ToolTip?.Trim();
 
-            string completionText = completion.CompletionText;
-            InsertTextFormat insertTextFormat = InsertTextFormat.PlainText;
-            CompletionItemKind kind;
-
-            // Force the client to maintain the sort order in which the original completion results
-            // were returned. We just need to make sure the default order also be the
-            // lexicographical order which we do by prefixing the ListItemText with a leading 0's
-            // four digit index.
-            string sortText = $"{sortIndex:D4}{completion.ListItemText}";
-
-            switch (completion.ResultType)
+            CompletionItem item = new()
             {
-                case CompletionResultType.Command:
-                    kind = CompletionItemKind.Function;
-                    break;
-                case CompletionResultType.History:
-                    kind = CompletionItemKind.Reference;
-                    break;
-                case CompletionResultType.Keyword:
-                case CompletionResultType.DynamicKeyword:
-                    kind = CompletionItemKind.Keyword;
-                    break;
-                case CompletionResultType.Method:
-                    kind = CompletionItemKind.Method;
-                    break;
-                case CompletionResultType.Namespace:
-                    kind = CompletionItemKind.Module;
-                    break;
-                case CompletionResultType.ParameterName:
-                    kind = CompletionItemKind.Variable;
-                    // Look for type encoded in the tooltip for parameters and variables.
-                    // Display PowerShell type names in [] to be consistent with PowerShell syntax
-                    // and how the debugger displays type names.
-                    MatchCollection matches = _typeRegex.Matches(toolTipText);
-                    if ((matches.Count > 0) && (matches[0].Groups.Count > 1))
+                Label = result.ListItemText,
+                Detail = result.ListItemText.Equals(detail, StringComparison.CurrentCulture)
+                    ? string.Empty : detail, // Don't repeat label.
+                // Retain PowerShell's sort order with the given index.
+                SortText = $"{sortIndex:D4}{result.ListItemText}",
+                FilterText = result.CompletionText,
+                TextEdit = textEdit // Used instead of InsertText.
+            };
+
+            return result.ResultType switch
+            {
+                CompletionResultType.Text => item with { Kind = CompletionItemKind.Text },
+                CompletionResultType.History => item with { Kind = CompletionItemKind.Reference },
+                CompletionResultType.Command => item with { Kind = CompletionItemKind.Function },
+                CompletionResultType.ProviderItem => item with { Kind = CompletionItemKind.File },
+                CompletionResultType.ProviderContainer => TryBuildSnippet(result.CompletionText, out string snippet)
+                    ? item with
                     {
-                        toolTipText = matches[0].Groups[1].Value;
+                        Kind = CompletionItemKind.Folder,
+                        InsertTextFormat = InsertTextFormat.Snippet,
+                        TextEdit = textEdit with { NewText = snippet }
                     }
+                    : item with { Kind = CompletionItemKind.Folder },
+                CompletionResultType.Property => item with { Kind = CompletionItemKind.Property },
+                CompletionResultType.Method => item with { Kind = CompletionItemKind.Method },
+                CompletionResultType.ParameterName => TryExtractType(detail, out string type)
+                    ? item with { Kind = CompletionItemKind.Variable, Detail = type }
                     // The comparison operators (-eq, -not, -gt, etc) unfortunately come across as
                     // ParameterName types but they don't have a type associated to them, so we can
-                    // deduce its an operator.
-                    else
-                    {
-                        kind = CompletionItemKind.Operator;
-                    }
-                    break;
-                case CompletionResultType.ParameterValue:
-                    kind = CompletionItemKind.Value;
-                    break;
-                case CompletionResultType.Property:
-                    kind = CompletionItemKind.Property;
-                    break;
-                case CompletionResultType.ProviderContainer:
-                    kind = CompletionItemKind.Folder;
-                    // Insert a final "tab stop" as identified by $0 in the snippet provided for
-                    // completion. For folder paths, we take the path returned by PowerShell e.g.
-                    // 'C:\Program Files' and insert the tab stop marker before the closing quote
-                    // char e.g. 'C:\Program Files$0'. This causes the editing cursor to be placed
-                    // *before* the final quote after completion, which makes subsequent path
-                    // completions work. See this part of the LSP spec for details:
-                    // https://microsoft.github.io/language-server-protocol/specification#textDocument_completion
-
-                    // Since we want to use a "tab stop" we need to escape a few things for Textmate
-                    // to render properly.
-                    if (EndsWithQuote(completionText))
-                    {
-                        StringBuilder sb = new StringBuilder(completionText)
-                            .Replace(@"\", @"\\")
-                            .Replace(@"}", @"\}")
-                            .Replace(@"$", @"\$");
-                        completionText = sb.Insert(sb.Length - 1, "$0").ToString();
-                        insertTextFormat = InsertTextFormat.Snippet;
-                    }
-                    break;
-                case CompletionResultType.ProviderItem:
-                    kind = CompletionItemKind.File;
-                    break;
-                case CompletionResultType.Text:
-                    kind = CompletionItemKind.Text;
-                    break;
-                case CompletionResultType.Type:
-                    kind = CompletionItemKind.TypeParameter;
+                    // deduce it is an operator.
+                    : item with { Kind = CompletionItemKind.Operator },
+                CompletionResultType.ParameterValue => item with { Kind = CompletionItemKind.Value },
+                CompletionResultType.Variable => TryExtractType(detail, out string type)
+                    ? item with { Kind = CompletionItemKind.Variable, Detail = type }
+                    : item with { Kind = CompletionItemKind.Variable },
+                CompletionResultType.Namespace => item with { Kind = CompletionItemKind.Module },
+                CompletionResultType.Type => detail.StartsWith("Class ", StringComparison.CurrentCulture)
                     // Custom classes come through as types but the PowerShell completion tooltip
                     // will start with "Class ", so we can more accurately display its icon.
-                    if (toolTipText.StartsWith("Class ", StringComparison.Ordinal))
-                    {
-                        kind = CompletionItemKind.Class;
-                    }
-                    break;
-                case CompletionResultType.Variable:
-                    kind = CompletionItemKind.Variable;
-                    // Look for type encoded in the tooltip for parameters and variables.
-                    // Display PowerShell type names in [] to be consistent with PowerShell syntax
-                    // and how the debugger displays type names.
-                    matches = _typeRegex.Matches(toolTipText);
-                    if ((matches.Count > 0) && (matches[0].Groups.Count > 1))
-                    {
-                        toolTipText = matches[0].Groups[1].Value;
-                    }
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(completion));
-            }
-
-            // Don't display tooltip if it is the same as the ListItemText.
-            if (completion.ListItemText.Equals(toolTipText, StringComparison.OrdinalIgnoreCase))
-            {
-                toolTipText = string.Empty;
-            }
-
-            Validate.IsNotNull(nameof(CompletionItemKind), kind);
-
-            // TODO: We used to extract the symbol type from the tooltip using a regex, but it
-            // wasn't actually used.
-            return new CompletionItem
-            {
-                Kind = kind,
-                TextEdit = new TextEdit
-                {
-                    NewText = completionText,
-                    Range = new Range
-                    {
-                        Start = new Position
-                        {
-                            Line = completionRange.Start.Line - 1,
-                            Character = completionRange.Start.Column - 1
-                        },
-                        End = new Position
-                        {
-                            Line = completionRange.End.Line - 1,
-                            Character = completionRange.End.Column - 1
-                        }
-                    }
-                },
-                InsertTextFormat = insertTextFormat,
-                InsertText = completionText,
-                FilterText = completion.CompletionText,
-                SortText = sortText,
-                // TODO: Documentation
-                Detail = toolTipText,
-                Label = completion.ListItemText,
-                // TODO: Command
+                    ? item with { Kind = CompletionItemKind.Class }
+                    : item with { Kind = CompletionItemKind.TypeParameter },
+                CompletionResultType.Keyword or CompletionResultType.DynamicKeyword =>
+                    item with { Kind = CompletionItemKind.Keyword },
+                _ => throw new ArgumentOutOfRangeException(nameof(result))
             };
         }
 
-        private static bool EndsWithQuote(string text)
+        private static readonly Regex s_typeRegex = new(@"^(\[.+\])", RegexOptions.Compiled);
+
+        /// <summary>
+        /// Look for type encoded in the tooltip for parameters and variables. Display PowerShell
+        /// type names in [] to be consistent with PowerShell syntax and how the debugger displays
+        /// type names.
+        /// </summary>
+        /// <param name="toolTipText"></param>
+        /// <param name="type"></param>
+        /// <returns>Whether or not the type was found.</returns>
+        private static bool TryExtractType(string toolTipText, out string type)
         {
-            return !string.IsNullOrEmpty(text) && text[text.Length - 1] is '"' or '\'';
+            MatchCollection matches = s_typeRegex.Matches(toolTipText);
+            type = string.Empty;
+            if ((matches.Count > 0) && (matches[0].Groups.Count > 1))
+            {
+                type = matches[0].Groups[1].Value;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Insert a final "tab stop" as identified by $0 in the snippet provided for completion.
+        /// For folder paths, we take the path returned by PowerShell e.g. 'C:\Program Files' and
+        /// insert the tab stop marker before the closing quote char e.g. 'C:\Program Files$0'. This
+        /// causes the editing cursor to be placed *before* the final quote after completion, which
+        /// makes subsequent path completions work. See this part of the LSP spec for details:
+        /// https://microsoft.github.io/language-server-protocol/specification#textDocument_completion
+        /// </summary>
+        /// <param name="completionText"></param>
+        /// <param name="snippet"></param>
+        /// <returns>
+        /// Whether or not the completion ended with a quote and so was a snippet.
+        /// </returns>
+        private static bool TryBuildSnippet(string completionText, out string snippet)
+        {
+            snippet = string.Empty;
+            if (!string.IsNullOrEmpty(completionText)
+                && completionText[completionText.Length - 1] is '"' or '\'')
+            {
+                // Since we want to use a "tab stop" we need to escape a few things.
+                StringBuilder sb = new StringBuilder(completionText)
+                    .Replace(@"\", @"\\")
+                    .Replace(@"}", @"\}")
+                    .Replace(@"$", @"\$");
+                snippet = sb.Insert(sb.Length - 1, "$0").ToString();
+                return true;
+            }
+            return false;
         }
     }
 }

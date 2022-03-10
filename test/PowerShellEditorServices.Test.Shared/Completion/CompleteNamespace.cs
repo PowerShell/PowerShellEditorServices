@@ -22,8 +22,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
         {
             Kind = CompletionItemKind.Module,
             Detail = "Namespace System.Collections",
-            InsertTextFormat = InsertTextFormat.PlainText,
-            InsertText = "System.Collections",
             FilterText = "System.Collections",
             Label = "Collections",
             SortText = "0001Collections",

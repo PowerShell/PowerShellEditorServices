@@ -22,8 +22,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
         {
             Kind = CompletionItemKind.Function,
             Detail = "",
-            InsertTextFormat = InsertTextFormat.PlainText,
-            InsertText = "Get-Something",
             FilterText = "Get-Something",
             Label = "Get-Something",
             SortText = "0001Get-Something",

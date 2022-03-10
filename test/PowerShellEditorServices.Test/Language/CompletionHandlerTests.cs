@@ -115,6 +115,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             IEnumerable<CompletionItem> results = await GetCompletionResultsAsync(CompleteFilePath.SourceDetails).ConfigureAwait(true);
             Assert.NotEmpty(results);
             CompletionItem actual = results.First();
+            // Paths are system dependent so we ignore the text and just check the type and range.
             Assert.Equal(actual.TextEdit.TextEdit with { NewText = "" }, CompleteFilePath.ExpectedEdit);
             Assert.All(results, r => Assert.True(r.Kind is CompletionItemKind.File or CompletionItemKind.Folder));
         }

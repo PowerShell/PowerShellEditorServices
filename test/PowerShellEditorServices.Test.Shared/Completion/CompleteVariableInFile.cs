@@ -22,8 +22,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
         {
             Kind = CompletionItemKind.Variable,
             Detail = "", // Same as label, so not shown.
-            InsertTextFormat = InsertTextFormat.PlainText,
-            InsertText = "$testVar1",
             FilterText = "$testVar1",
             Label = "testVar1",
             SortText = "0001testVar1",
