@@ -22,17 +22,12 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    // TODO: Use ABCs.
-    internal class PsesCompletionHandler : ICompletionHandler, ICompletionResolveHandler
+    internal class PsesCompletionHandler : CompletionHandlerBase
     {
         private readonly ILogger _logger;
         private readonly IRunspaceContext _runspaceContext;
         private readonly IInternalPowerShellExecutionService _executionService;
         private readonly WorkspaceService _workspaceService;
-        private CompletionCapability _capability;
-        private readonly Guid _id = Guid.NewGuid();
-
-        Guid ICanBeIdentifiedHandler.Id => _id;
 
         public PsesCompletionHandler(
             ILoggerFactory factory,
@@ -46,14 +41,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspaceService;
         }
 
-        public CompletionRegistrationOptions GetRegistrationOptions(CompletionCapability capability, ClientCapabilities clientCapabilities) => new()
+        protected override CompletionRegistrationOptions CreateRegistrationOptions(CompletionCapability capability, ClientCapabilities clientCapabilities) => new()
         {
+            // TODO: What do we do with the arguments?
             DocumentSelector = LspUtils.PowerShellDocumentSelector,
             ResolveProvider = true,
             TriggerCharacters = new[] { ".", "-", ":", "\\", "$" }
         };
 
-        public async Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
+        public override async Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
         {
             int cursorLine = request.Position.Line + 1;
             int cursorColumn = request.Position.Character + 1;
@@ -68,13 +64,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return new CompletionList(completionResults);
         }
 
-        public static bool CanResolve(CompletionItem value)
-        {
-            return value.Kind == CompletionItemKind.Function;
-        }
-
         // Handler for "completionItem/resolve". In VSCode this is fired when a completion item is highlighted in the completion list.
-        public async Task<CompletionItem> Handle(CompletionItem request, CancellationToken cancellationToken)
+        public override async Task<CompletionItem> Handle(CompletionItem request, CancellationToken cancellationToken)
         {
             // We currently only support this request for anything that returns a CommandInfo:
             // functions, cmdlets, aliases. No detail means the module hasn't been imported yet and
@@ -105,11 +96,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return request;
         }
 
-        public void SetCapability(CompletionCapability capability, ClientCapabilities clientCapabilities)
-        {
-            _capability = capability;
-        }
-
         /// <summary>
         /// Gets completions for a statement contained in the given
         /// script file at the specified line and column position.
@@ -126,7 +112,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         /// <returns>
         /// A CommandCompletion instance completions for the identified statement.
         /// </returns>
-        public async Task<IEnumerable<CompletionItem>> GetCompletionsInFileAsync(
+        internal async Task<IEnumerable<CompletionItem>> GetCompletionsInFileAsync(
             ScriptFile scriptFile,
             int lineNumber,
             int columnNumber,
@@ -142,14 +128,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 _logger,
                 cancellationToken).ConfigureAwait(false);
 
-            // Only calculate the replacement range if there are completions.
-            BufferRange replacedRange = new(0, 0, 0, 0);
-            if (result.CompletionMatches.Count > 0)
+            if (result.CompletionMatches.Count == 0)
             {
-                replacedRange = scriptFile.GetRangeBetweenOffsets(
-                    result.ReplacementIndex,
-                    result.ReplacementIndex + result.ReplacementLength);
+                return Array.Empty<CompletionItem>();
             }
+
+            BufferRange replacedRange = scriptFile.GetRangeBetweenOffsets(
+                result.ReplacementIndex,
+                result.ReplacementIndex + result.ReplacementLength);
 
             // Create OmniSharp CompletionItems from PowerShell CompletionResults. We use a for loop
             // because the index is used for sorting.
@@ -282,8 +268,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 // Since we want to use a "tab stop" we need to escape a few things.
                 StringBuilder sb = new StringBuilder(completionText)
                     .Replace(@"\", @"\\")
-                    .Replace(@"}", @"\}")
-                    .Replace(@"$", @"\$");
+                    .Replace("}", @"\}")
+                    .Replace("$", @"\$");
                 snippet = sb.Insert(sb.Length - 1, "$0").ToString();
                 return true;
             }
