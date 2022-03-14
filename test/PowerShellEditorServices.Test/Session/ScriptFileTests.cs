@@ -180,10 +180,10 @@ namespace PSLanguageService.Test
         public void FindsDotSourcedFiles()
         {
             string exampleScriptContents = TestUtilities.PlatformNormalize(
-                ". ./athing.ps1\n"+
-                ". ./somefile.ps1\n"+
-                ". ./somefile.ps1\n"+
-                "Do-Stuff $uri\n"+
+                ". ./athing.ps1\n" +
+                ". ./somefile.ps1\n" +
+                ". ./somefile.ps1\n" +
+                "Do-Stuff $uri\n" +
                 ". simpleps.ps1");
 
             using StringReader stringReader = new(exampleScriptContents);

@@ -177,7 +177,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 StringBuilder builder = new(
                     string.IsNullOrEmpty(logMessage)
                         ? "break"
-                        : $"Microsoft.PowerShell.Utility\\Write-Host \"{logMessage.Replace("\"","`\"")}\"");
+                        : $"Microsoft.PowerShell.Utility\\Write-Host \"{logMessage.Replace("\"", "`\"")}\"");
 
                 // If HitCondition specified, parse and verify it.
                 if (!string.IsNullOrWhiteSpace(hitCondition))

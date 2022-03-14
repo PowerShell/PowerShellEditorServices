@@ -60,7 +60,8 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         {
             return
                 filePaths?
-                    .Select(p => {
+                    .Select(p =>
+                    {
                         return
                             new Uri(
                                 Path.GetFullPath(p),

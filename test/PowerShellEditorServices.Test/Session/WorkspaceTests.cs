@@ -46,17 +46,18 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
 
         internal static WorkspaceService FixturesWorkspace()
         {
-            return new WorkspaceService(NullLoggerFactory.Instance) {
+            return new WorkspaceService(NullLoggerFactory.Instance)
+            {
                 WorkspacePath = TestUtilities.NormalizePath("Fixtures/Workspace")
             };
         }
 
         // These are the default values for the EnumeratePSFiles() method
         // in Microsoft.PowerShell.EditorServices.Workspace class
-        private static readonly string[] s_defaultExcludeGlobs        = Array.Empty<string>();
-        private static readonly string[] s_defaultIncludeGlobs        = new [] { "**/*" };
-        private static readonly int      s_defaultMaxDepth            = 64;
-        private static readonly bool     s_defaultIgnoreReparsePoints = false;
+        private static readonly string[] s_defaultExcludeGlobs = Array.Empty<string>();
+        private static readonly string[] s_defaultIncludeGlobs = new[] { "**/*" };
+        private static readonly int s_defaultMaxDepth = 64;
+        private static readonly bool s_defaultIgnoreReparsePoints = false;
 
         internal static List<string> ExecuteEnumeratePSFiles(
             WorkspaceService workspace,
@@ -139,8 +140,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             WorkspaceService workspace = FixturesWorkspace();
             List<string> fileList = ExecuteEnumeratePSFiles(
                 workspace: workspace,
-                excludeGlobs: new [] {"**/donotfind*"},         // Exclude any files starting with donotfind
-                includeGlobs: new [] {"**/*.ps1", "**/*.psd1"}, // Only include PS1 and PSD1 files
+                excludeGlobs: new[] { "**/donotfind*" },         // Exclude any files starting with donotfind
+                includeGlobs: new[] { "**/*.ps1", "**/*.psd1" }, // Only include PS1 and PSD1 files
                 maxDepth: s_defaultMaxDepth,
                 ignoreReparsePoints: s_defaultIgnoreReparsePoints
             );

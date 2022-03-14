@@ -152,7 +152,7 @@ Get-A*A
         [Fact]
         public void RecognizeEnum()
         {
-            string text =  @"
+            string text = @"
 enum MyEnum{
     one
     two

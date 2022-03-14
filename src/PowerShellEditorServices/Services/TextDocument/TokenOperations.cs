@@ -163,12 +163,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         {
             if (endToken.Extent.EndLineNumber == startToken.Extent.StartLineNumber) { return null; }
             // Extents are base 1, but LSP is base 0, so minus 1 off all lines and character positions
-            return new FoldingReference {
-                StartLine      = startToken.Extent.StartLineNumber - 1,
+            return new FoldingReference
+            {
+                StartLine = startToken.Extent.StartLineNumber - 1,
                 StartCharacter = startToken.Extent.StartColumnNumber - 1,
-                EndLine        = endToken.Extent.EndLineNumber - 1,
-                EndCharacter   = endToken.Extent.EndColumnNumber - 1,
-                Kind           = matchKind
+                EndLine = endToken.Extent.EndLineNumber - 1,
+                EndCharacter = endToken.Extent.EndColumnNumber - 1,
+                Kind = matchKind
             };
         }
 
@@ -183,12 +184,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         {
             if (endLine == (startToken.Extent.StartLineNumber - 1)) { return null; }
             // Extents are base 1, but LSP is base 0, so minus 1 off all lines and character positions
-            return new FoldingReference {
-                StartLine      = startToken.Extent.StartLineNumber - 1,
+            return new FoldingReference
+            {
+                StartLine = startToken.Extent.StartLineNumber - 1,
                 StartCharacter = startToken.Extent.StartColumnNumber - 1,
-                EndLine        = endLine,
-                EndCharacter   = 0,
-                Kind           = matchKind
+                EndLine = endLine,
+                EndCharacter = 0,
+                Kind = matchKind
             };
         }
 
@@ -199,7 +201,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// - Token text must start with a '#'.false  This is because comment regions
         ///   start with '&lt;#' but have the same TokenKind
         /// </summary>
-        private static bool IsBlockComment(int index, Token[] tokens) {
+        private static bool IsBlockComment(int index, Token[] tokens)
+        {
             Token thisToken = tokens[index];
             if (thisToken.Kind != TokenKind.Comment) { return false; }
             if (index == 0) { return true; }

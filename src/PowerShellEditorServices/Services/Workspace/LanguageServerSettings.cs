@@ -86,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                                 // In this case we should just log an error and let
                                 // the specified settings path go through even though
                                 // it will fail to load.
-                                logger.LogError( "Could not resolve Script Analyzer settings path due to null or empty workspaceRootPath.");
+                                logger.LogError("Could not resolve Script Analyzer settings path due to null or empty workspaceRootPath.");
                             }
                             else
                             {
@@ -252,24 +252,35 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         {
             Hashtable ruleConfigurations = new()
             {
-                { "PSPlaceOpenBrace", new Hashtable {
+                {
+                    "PSPlaceOpenBrace",
+                    new Hashtable {
                     { "Enable", true },
                     { "OnSameLine", OpenBraceOnSameLine },
                     { "NewLineAfter", NewLineAfterOpenBrace },
                     { "IgnoreOneLineBlock", IgnoreOneLineBlock }
-                }},
-                { "PSPlaceCloseBrace", new Hashtable {
+                }
+                },
+                {
+                    "PSPlaceCloseBrace",
+                    new Hashtable {
                     { "Enable", true },
                     { "NewLineAfter", NewLineAfterCloseBrace },
                     { "IgnoreOneLineBlock", IgnoreOneLineBlock }
-                }},
-                { "PSUseConsistentIndentation", new Hashtable {
+                }
+                },
+                {
+                    "PSUseConsistentIndentation",
+                    new Hashtable {
                     { "Enable", true },
                     { "IndentationSize", tabSize },
                     { "PipelineIndentation", PipelineIndentationStyle },
                     { "Kind", insertSpaces ? "space" : "tab" }
-                }},
-                { "PSUseConsistentWhitespace", new Hashtable {
+                }
+                },
+                {
+                    "PSUseConsistentWhitespace",
+                    new Hashtable {
                     { "Enable", true },
                     { "CheckOpenBrace", WhitespaceBeforeOpenBrace },
                     { "CheckOpenParen", WhitespaceBeforeOpenParen },
@@ -279,17 +290,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     { "CheckParameter", WhitespaceBetweenParameters },
                     { "CheckPipe", AddWhitespaceAroundPipe },
                     { "CheckPipeForRedundantWhitespace", TrimWhitespaceAroundPipe },
-                }},
-                { "PSAlignAssignmentStatement", new Hashtable {
+                }
+                },
+                {
+                    "PSAlignAssignmentStatement",
+                    new Hashtable {
                     { "Enable", true },
                     { "CheckHashtable", AlignPropertyValuePairs }
-                }},
-                { "PSUseCorrectCasing", new Hashtable {
+                }
+                },
+                {
+                    "PSUseCorrectCasing",
+                    new Hashtable {
                     { "Enable", UseCorrectCasing }
-                }},
-                { "PSAvoidUsingDoubleQuotesForConstantString", new Hashtable {
+                }
+                },
+                {
+                    "PSAvoidUsingDoubleQuotesForConstantString",
+                    new Hashtable {
                     { "Enable", UseConstantStrings }
-                }},
+                }
+                },
             };
 
             if (AutoCorrectAliases)

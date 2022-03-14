@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <param name="elements">An enumerable object of type T</param>
         /// <param name="comparer">A comparer for ordering elements of type T. The comparer should handle null values.</param>
         /// <returns>An object of type T. If the enumerable is empty or has all null elements, then the method returns null.</returns>
-        public static T MaxElement<T>(this IEnumerable<T> elements, Func<T,T,int> comparer) where T:class
+        public static T MaxElement<T>(this IEnumerable<T> elements, Func<T, T, int> comparer) where T : class
         {
             if (elements == null)
             {
@@ -57,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             }
 
             T maxElement = elements.First();
-            foreach(T element in elements.Skip(1))
+            foreach (T element in elements.Skip(1))
             {
                 if (element != null && comparer(element, maxElement) > 0)
                 {

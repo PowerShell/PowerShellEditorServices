@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         };
 
         // An array of globs which includes everything.
-        private static readonly string[] s_psIncludeAllGlob = new []
+        private static readonly string[] s_psIncludeAllGlob = new[]
         {
             "**/*"
         };

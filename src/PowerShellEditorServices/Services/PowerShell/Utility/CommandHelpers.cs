@@ -19,35 +19,35 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
     {
         private static readonly HashSet<string> s_nounExclusionList = new()
         {
-                // PowerShellGet v2 nouns
-                "CredsFromCredentialProvider",
-                "DscResource",
-                "InstalledModule",
-                "InstalledScript",
-                "PSRepository",
-                "RoleCapability",
-                "Script",
-                "ScriptFileInfo",
+            // PowerShellGet v2 nouns
+            "CredsFromCredentialProvider",
+            "DscResource",
+            "InstalledModule",
+            "InstalledScript",
+            "PSRepository",
+            "RoleCapability",
+            "Script",
+            "ScriptFileInfo",
 
-                // PackageManagement nouns
-                "Package",
-                "PackageProvider",
-                "PackageSource",
-            };
+            // PackageManagement nouns
+            "Package",
+            "PackageProvider",
+            "PackageSource",
+        };
 
         // This is used when a noun exists in multiple modules (for example, "Command" is used in Microsoft.PowerShell.Core and also PowerShellGet)
         private static readonly HashSet<string> s_cmdletExclusionList = new()
         {
-                // Commands in PowerShellGet with conflicting nouns
-                "Find-Command",
-                "Find-Module",
-                "Install-Module",
-                "Publish-Module",
-                "Save-Module",
-                "Uninstall-Module",
-                "Update-Module",
-                "Update-ModuleManifest",
-            };
+            // Commands in PowerShellGet with conflicting nouns
+            "Find-Command",
+            "Find-Module",
+            "Install-Module",
+            "Publish-Module",
+            "Save-Module",
+            "Uninstall-Module",
+            "Update-Module",
+            "Update-ModuleManifest",
+        };
 
         private static readonly ConcurrentDictionary<string, CommandInfo> s_commandInfoCache = new();
         private static readonly ConcurrentDictionary<string, string> s_synopsisCache = new();

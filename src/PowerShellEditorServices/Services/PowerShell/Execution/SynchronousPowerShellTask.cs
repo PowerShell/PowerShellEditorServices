@@ -47,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         // These are PowerShell's intrinsic debugger commands that must be run via
         // `ProcessDebugCommand`.
-        private static readonly string[] DebuggerCommands = {"continue", "c", "k", "h", "?", "list", "l", "stepInto", "s", "stepOut", "o", "stepOver", "v", "quit", "q", "detach", "d"};
+        private static readonly string[] DebuggerCommands = { "continue", "c", "k", "h", "?", "list", "l", "stepInto", "s", "stepOut", "o", "stepOver", "v", "quit", "q", "detach", "d" };
 
         public override IReadOnlyList<TResult> Run(CancellationToken cancellationToken)
         {

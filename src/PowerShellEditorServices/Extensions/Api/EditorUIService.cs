@@ -188,12 +188,12 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             {
                 choices[i] = new ChoiceDetails
                 {
-                    Label           = promptChoiceDetails[i].Label,
-                    HelpMessage     = promptChoiceDetails[i].HelpMessage,
+                    Label = promptChoiceDetails[i].Label,
+                    HelpMessage = promptChoiceDetails[i].HelpMessage,
                     // There were intended to enable hotkey use for choice selections,
                     // but currently VSCode does not do anything with them.
                     // They can be exposed once VSCode supports them.
-                    HotKeyIndex     = -1,
+                    HotKeyIndex = -1,
                     HotKeyCharacter = null,
                 };
             }

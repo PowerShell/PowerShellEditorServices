@@ -873,7 +873,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Empty(rawDetailsView.ValueString);
             VariableDetailsBase[] rawViewChildren = rawDetailsView.GetChildren(NullLogger.Instance);
             Assert.Equal(4, rawViewChildren.Length);
-            Assert.NotNull(Array.Find(rawViewChildren, v => v .Name == "Comparer"));
+            Assert.NotNull(Array.Find(rawViewChildren, v => v.Name == "Comparer"));
         }
 
         [Fact]

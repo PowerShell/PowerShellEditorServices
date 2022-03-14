@@ -101,7 +101,7 @@ namespace PowerShellEditorServices.Test.E2E
         private async Task WaitForTelemetryEventsAsync()
         {
             // Wait for PSSA to finish.
-            for ( int i = 0; TelemetryEvents.Count == 0; i++)
+            for (int i = 0; TelemetryEvents.Count == 0; i++)
             {
                 if (i >= 10)
                 {
@@ -189,7 +189,7 @@ function CanSendWorkspaceSymbolRequest {
             PsesLanguageClient.SendNotification("textDocument/didChange", new DidChangeTextDocumentParams
             {
                 // Include several content changes to test against duplicate Diagnostics showing up.
-                ContentChanges = new Container<TextDocumentContentChangeEvent>(new []
+                ContentChanges = new Container<TextDocumentContentChangeEvent>(new[]
                 {
                     new TextDocumentContentChangeEvent
                     {
@@ -386,16 +386,16 @@ Get-Process
                     {
                         Range = new Range
                         {
-                        Start = new Position
-                        {
-                            Line = 2,
-                            Character = 0
-                        },
-                        End = new Position
-                        {
-                            Line = 3,
-                            Character = 0
-                        }
+                            Start = new Position
+                            {
+                                Line = 2,
+                                Character = 0
+                            },
+                            End = new Position
+                            {
+                                Line = 3,
+                                Character = 0
+                            }
                         },
                         TextDocument = new TextDocumentIdentifier
                         {
@@ -440,7 +440,8 @@ CanSendDocumentSymbolRequest
                     .Returning<SymbolInformationOrDocumentSymbolContainer>(CancellationToken.None).ConfigureAwait(true);
 
             Assert.Collection(symbolInformationOrDocumentSymbols,
-                symInfoOrDocSym => {
+                symInfoOrDocSym =>
+                {
                     Range range = symInfoOrDocSym.SymbolInformation.Location.Range;
 
                     Assert.Equal(1, range.Start.Line);

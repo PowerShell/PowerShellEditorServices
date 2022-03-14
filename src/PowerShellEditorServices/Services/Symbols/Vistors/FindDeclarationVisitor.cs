@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         private readonly SymbolReference symbolRef;
         private readonly string variableName;
 
-        public SymbolReference FoundDeclaration{ get; private set; }
+        public SymbolReference FoundDeclaration { get; private set; }
 
         public FindDeclarationVisitor(SymbolReference symbolRef)
         {
@@ -102,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             private readonly SymbolReference symbolRef;
             private readonly string variableName;
 
-            public SymbolReference FoundDeclaration{ get; private set; }
+            public SymbolReference FoundDeclaration { get; private set; }
 
             public FindDeclarationVariableExpressionVisitor(SymbolReference symbolRef)
             {

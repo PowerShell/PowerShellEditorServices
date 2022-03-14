@@ -421,9 +421,9 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             }
 
             // TODO: Remove this when we drop support for PS6.
-            Hashtable psVersionTable = (Hashtable) SessionState.PSVariable.GetValue("PSVersionTable");
+            Hashtable psVersionTable = (Hashtable)SessionState.PSVariable.GetValue("PSVersionTable");
             dynamic version = psVersionTable["PSVersion"];
-            int majorVersion = (int) version.Major;
+            int majorVersion = (int)version.Major;
 
             if (UseLegacyReadLine || (!s_isWindows && majorVersion == 6))
             {

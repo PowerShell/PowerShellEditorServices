@@ -91,7 +91,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<DebugEvaluateHandler>()
                     // The OnInitialize delegate gets run when we first receive the _Initialize_ request:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
-                    .OnInitialize(async (server, request, cancellationToken) => {
+                    .OnInitialize(async (server, request, cancellationToken) =>
+                    {
                         // We need to make sure the host has been started
                         _startedPses = !await _psesHost.TryStartAsync(new HostStartOptions(), CancellationToken.None).ConfigureAwait(false);
 
@@ -104,7 +105,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     })
                     // The OnInitialized delegate gets run right before the server responds to the _Initialize_ request:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
-                    .OnInitialized((server, request, response, cancellationToken) => {
+                    .OnInitialized((server, request, response, cancellationToken) =>
+                    {
                         response.SupportsConditionalBreakpoints = true;
                         response.SupportsConfigurationDoneRequest = true;
                         response.SupportsFunctionBreakpoints = true;

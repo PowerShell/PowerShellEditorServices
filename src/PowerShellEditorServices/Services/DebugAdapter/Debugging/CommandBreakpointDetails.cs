@@ -36,7 +36,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         {
             Validate.IsNotNull(nameof(name), name);
 
-            return new CommandBreakpointDetails {
+            return new CommandBreakpointDetails
+            {
                 Name = name,
                 Condition = condition
             };

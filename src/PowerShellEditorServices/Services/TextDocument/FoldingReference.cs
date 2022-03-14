@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     /// <summary>
     /// A class that holds the information for a foldable region of text in a document
     /// </summary>
-    internal class FoldingReference: IComparable<FoldingReference>, IEquatable<FoldingReference>
+    internal class FoldingReference : IComparable<FoldingReference>, IEquatable<FoldingReference>
     {
         /// <summary>
         /// The zero-based line number from where the folded range starts.
@@ -40,7 +40,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// A custom comparable method which can properly sort FoldingReference objects
         /// </summary>
-        public int CompareTo(FoldingReference that) {
+        public int CompareTo(FoldingReference that)
+        {
             // Initially look at the start line
             if (StartLine < that.StartLine) { return -1; }
             if (StartLine > that.StartLine) { return 1; }

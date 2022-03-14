@@ -26,7 +26,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
         {
-            IScriptExtent nameExtent = new ScriptExtent() {
+            IScriptExtent nameExtent = new ScriptExtent()
+            {
                 Text = functionDefinitionAst.Name,
                 StartLineNumber = functionDefinitionAst.Extent.StartLineNumber,
                 EndLineNumber = functionDefinitionAst.Extent.EndLineNumber,

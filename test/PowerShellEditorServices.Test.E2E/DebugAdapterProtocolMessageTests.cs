@@ -56,18 +56,21 @@ namespace PowerShellEditorServices.Test.E2E
                     .WithOutput(_psesProcess.InputStream)
                     // The OnStarted delegate gets run when we receive the _Initialized_ event from the server:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Events_Initialized
-                    .OnStarted((client, token) => {
+                    .OnStarted((client, token) =>
+                    {
                         Started.SetResult(true);
                         return Task.CompletedTask;
                     })
                     // The OnInitialized delegate gets run when we first receive the _Initialize_ response:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
-                    .OnInitialized((client, request, response, token) => {
+                    .OnInitialized((client, request, response, token) =>
+                    {
                         initialized.SetResult(true);
                         return Task.CompletedTask;
                     });
 
-                options.OnUnhandledException = (exception) => {
+                options.OnUnhandledException = (exception) =>
+                {
                     initialized.SetException(exception);
                     Started.SetException(exception);
                 };
@@ -96,10 +99,10 @@ namespace PowerShellEditorServices.Test.E2E
             try
             {
                 await PsesDebugAdapterClient.RequestDisconnect(new DisconnectArguments
-                    {
-                        Restart = false,
-                        TerminateDebuggee = true
-                    }).ConfigureAwait(false);
+                {
+                    Restart = false,
+                    TerminateDebuggee = true
+                }).ConfigureAwait(false);
                 await _psesProcess.Stop().ConfigureAwait(false);
                 PsesDebugAdapterClient?.Dispose();
             }
@@ -254,7 +257,7 @@ namespace PowerShellEditorServices.Test.E2E
             Skip.IfNot(PsesStdioProcess.IsWindowsPowerShell);
             Skip.If(PsesStdioProcess.RunningInConstainedLanguageMode);
 
-            string filePath = NewTestFile(string.Join(Environment.NewLine, new []
+            string filePath = NewTestFile(string.Join(Environment.NewLine, new[]
                 {
                     "Add-Type -AssemblyName System.Windows.Forms",
                     "$global:form = New-Object System.Windows.Forms.Form",

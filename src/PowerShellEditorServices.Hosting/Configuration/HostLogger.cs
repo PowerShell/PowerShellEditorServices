@@ -237,209 +237,209 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public static StreamLogger CreateWithNewFile(string path)
         {
 
-/* Unmerged change from project 'PowerShellEditorServices.Hosting(net461)'
-Before:
-            var fileStream = new FileStream(
-                path,
-                FileMode.Create,
-                FileAccess.Write,
-                FileShare.Read,
-                bufferSize: 4096,
-                FileOptions.SequentialScan);
+            /* Unmerged change from project 'PowerShellEditorServices.Hosting(net461)'
+            Before:
+                        var fileStream = new FileStream(
+                            path,
+                            FileMode.Create,
+                            FileAccess.Write,
+                            FileShare.Read,
+                            bufferSize: 4096,
+                            FileOptions.SequentialScan);
 
-            return new StreamLogger(new StreamWriter(fileStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true)));
-        }
+                        return new StreamLogger(new StreamWriter(fileStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true)));
+                    }
 
-        private readonly StreamWriter _fileWriter;
+                    private readonly StreamWriter _fileWriter;
 
-        private readonly BlockingCollection<string> _messageQueue;
+                    private readonly BlockingCollection<string> _messageQueue;
 
-        private readonly CancellationTokenSource _cancellationSource;
+                    private readonly CancellationTokenSource _cancellationSource;
 
-        private readonly Thread _writerThread;
+                    private readonly Thread _writerThread;
 
-        // This cannot be a bool
-        // See https://stackoverflow.com/q/6164751
-        private int _hasCompleted;
+                    // This cannot be a bool
+                    // See https://stackoverflow.com/q/6164751
+                    private int _hasCompleted;
 
-        private IDisposable _unsubscriber;
+                    private IDisposable _unsubscriber;
 
-        public StreamLogger(StreamWriter streamWriter)
-        {
-            streamWriter.AutoFlush = true;
-            _fileWriter = streamWriter;
-            _hasCompleted = 0;
-            _cancellationSource = new CancellationTokenSource();
-            _messageQueue = new BlockingCollection<string>();
+                    public StreamLogger(StreamWriter streamWriter)
+                    {
+                        streamWriter.AutoFlush = true;
+                        _fileWriter = streamWriter;
+                        _hasCompleted = 0;
+                        _cancellationSource = new CancellationTokenSource();
+                        _messageQueue = new BlockingCollection<string>();
 
-            // Start writer listening to queue
-            _writerThread = new Thread(RunWriter)
-            {
-                Name = "PSES Stream Logger Thread",
-            };
-            _writerThread.Start();
-        }
+                        // Start writer listening to queue
+                        _writerThread = new Thread(RunWriter)
+                        {
+                            Name = "PSES Stream Logger Thread",
+                        };
+                        _writerThread.Start();
+                    }
 
-        public void OnCompleted()
-        {
-            // Ensure we only complete once
-            if (Interlocked.Exchange(ref _hasCompleted, 1) != 0)
-            {
-                return;
-            }
+                    public void OnCompleted()
+                    {
+                        // Ensure we only complete once
+                        if (Interlocked.Exchange(ref _hasCompleted, 1) != 0)
+                        {
+                            return;
+                        }
 
-            _cancellationSource.Cancel();
+                        _cancellationSource.Cancel();
 
-            _writerThread.Join();
+                        _writerThread.Join();
 
-            _unsubscriber.Dispose();
-            _fileWriter.Flush();
-            _fileWriter.Close();
-            _fileWriter.Dispose();
-            _cancellationSource.Dispose();
-            _messageQueue.Dispose();
-        }
+                        _unsubscriber.Dispose();
+                        _fileWriter.Flush();
+                        _fileWriter.Close();
+                        _fileWriter.Dispose();
+                        _cancellationSource.Dispose();
+                        _messageQueue.Dispose();
+                    }
 
-        public void OnError(Exception error)
-        {
-            OnNext((PsesLogLevel.Error, $"Error occurred while logging: {error}"));
-        }
+                    public void OnError(Exception error)
+                    {
+                        OnNext((PsesLogLevel.Error, $"Error occurred while logging: {error}"));
+                    }
 
-        public void OnNext((PsesLogLevel logLevel, string message) value)
-        {
-            string message = null;
-            switch (value.logLevel)
-            {
-                case PsesLogLevel.Diagnostic:
-                    message = $"[DBG]: {value.message}";
-                    break;
+                    public void OnNext((PsesLogLevel logLevel, string message) value)
+                    {
+                        string message = null;
+                        switch (value.logLevel)
+                        {
+                            case PsesLogLevel.Diagnostic:
+                                message = $"[DBG]: {value.message}";
+                                break;
 
-                case PsesLogLevel.Verbose:
-                    message = $"[VRB]: {value.message}";
-                    break;
+                            case PsesLogLevel.Verbose:
+                                message = $"[VRB]: {value.message}";
+                                break;
 
-                case PsesLogLevel.Normal:
-                    message = $"[INF]: {value.message}";
-                    break;
+                            case PsesLogLevel.Normal:
+                                message = $"[INF]: {value.message}";
+                                break;
 
-                case PsesLogLevel.Warning:
-                    message = $"[WRN]: {value.message}";
-                    break;
+                            case PsesLogLevel.Warning:
+                                message = $"[WRN]: {value.message}";
+                                break;
 
-                case PsesLogLevel.Error:
-                    message = $"[ERR]: {value.message}";
-                    break;
-            };
+                            case PsesLogLevel.Error:
+                                message = $"[ERR]: {value.message}";
+                                break;
+                        };
 
-            _messageQueue.Add(message);
-        }
+                        _messageQueue.Add(message);
+                    }
 
-        public void AddUnsubscriber(IDisposable unsubscriber)
-        {
-            _unsubscriber = unsubscriber;
-        }
+                    public void AddUnsubscriber(IDisposable unsubscriber)
+                    {
+                        _unsubscriber = unsubscriber;
+                    }
 
-        public void Dispose()
-        {
-            OnCompleted();
-        }
-After:
-            var fileStream = new(
-                path,
-                FileMode.Create,
-                FileAccess.Write,
-                FileShare.Read,
-                bufferSize: 4096,
-                FileOptions.SequentialScan);
+                    public void Dispose()
+                    {
+                        OnCompleted();
+                    }
+            After:
+                        var fileStream = new(
+                            path,
+                            FileMode.Create,
+                            FileAccess.Write,
+                            FileShare.Read,
+                            bufferSize: 4096,
+                            FileOptions.SequentialScan);
 
-            return new StreamLogger(new StreamWriter(fileStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true)));
-        }
+                        return new StreamLogger(new StreamWriter(fileStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true)));
+                    }
 
-        private readonly StreamWriter _fileWriter;
+                    private readonly StreamWriter _fileWriter;
 
-        private readonly BlockingCollection<string> _messageQueue;
+                    private readonly BlockingCollection<string> _messageQueue;
 
-        private readonly CancellationTokenSource _cancellationSource;
+                    private readonly CancellationTokenSource _cancellationSource;
 
-        private readonly Thread _writerThread;
+                    private readonly Thread _writerThread;
 
-        // This cannot be a bool
-        // See https://stackoverflow.com/q/6164751
-        private int _hasCompleted;
+                    // This cannot be a bool
+                    // See https://stackoverflow.com/q/6164751
+                    private int _hasCompleted;
 
-        private IDisposable _unsubscriber;
+                    private IDisposable _unsubscriber;
 
-        public StreamLogger(StreamWriter streamWriter)
-        {
-            streamWriter.AutoFlush = true;
-            _fileWriter = streamWriter;
-            _hasCompleted = 0;
-            _cancellationSource = new CancellationTokenSource();
-            _messageQueue = new BlockingCollection<string>();
+                    public StreamLogger(StreamWriter streamWriter)
+                    {
+                        streamWriter.AutoFlush = true;
+                        _fileWriter = streamWriter;
+                        _hasCompleted = 0;
+                        _cancellationSource = new CancellationTokenSource();
+                        _messageQueue = new BlockingCollection<string>();
 
-            // Start writer listening to queue
-            _writerThread = new Thread(RunWriter)
-            {
-                Name = "PSES Stream Logger Thread",
-            };
-            _writerThread.Start();
-        }
+                        // Start writer listening to queue
+                        _writerThread = new Thread(RunWriter)
+                        {
+                            Name = "PSES Stream Logger Thread",
+                        };
+                        _writerThread.Start();
+                    }
 
-        public void OnCompleted()
-        {
-            // Ensure we only complete once
-            if (Interlocked.Exchange(ref _hasCompleted, 1) != 0)
-            {
-                return;
-            }
+                    public void OnCompleted()
+                    {
+                        // Ensure we only complete once
+                        if (Interlocked.Exchange(ref _hasCompleted, 1) != 0)
+                        {
+                            return;
+                        }
 
-            _cancellationSource.Cancel();
+                        _cancellationSource.Cancel();
 
-            _writerThread.Join();
+                        _writerThread.Join();
 
-            _unsubscriber.Dispose();
-            _fileWriter.Flush();
-            _fileWriter.Close();
-            _fileWriter.Dispose();
-            _cancellationSource.Dispose();
-            _messageQueue.Dispose();
-        }
+                        _unsubscriber.Dispose();
+                        _fileWriter.Flush();
+                        _fileWriter.Close();
+                        _fileWriter.Dispose();
+                        _cancellationSource.Dispose();
+                        _messageQueue.Dispose();
+                    }
 
-        public void OnError(Exception error) => OnNext((PsesLogLevel.Error, $"Error occurred while logging: {error}"));
+                    public void OnError(Exception error) => OnNext((PsesLogLevel.Error, $"Error occurred while logging: {error}"));
 
-        public void OnNext((PsesLogLevel logLevel, string message) value)
-        {
-            string message = null;
-            switch (value.logLevel)
-            {
-                case PsesLogLevel.Diagnostic:
-                    message = $"[DBG]: {value.message}";
-                    break;
+                    public void OnNext((PsesLogLevel logLevel, string message) value)
+                    {
+                        string message = null;
+                        switch (value.logLevel)
+                        {
+                            case PsesLogLevel.Diagnostic:
+                                message = $"[DBG]: {value.message}";
+                                break;
 
-                case PsesLogLevel.Verbose:
-                    message = $"[VRB]: {value.message}";
-                    break;
+                            case PsesLogLevel.Verbose:
+                                message = $"[VRB]: {value.message}";
+                                break;
 
-                case PsesLogLevel.Normal:
-                    message = $"[INF]: {value.message}";
-                    break;
+                            case PsesLogLevel.Normal:
+                                message = $"[INF]: {value.message}";
+                                break;
 
-                case PsesLogLevel.Warning:
-                    message = $"[WRN]: {value.message}";
-                    break;
+                            case PsesLogLevel.Warning:
+                                message = $"[WRN]: {value.message}";
+                                break;
 
-                case PsesLogLevel.Error:
-                    message = $"[ERR]: {value.message}";
-                    break;
-            };
+                            case PsesLogLevel.Error:
+                                message = $"[ERR]: {value.message}";
+                                break;
+                        };
 
-            _messageQueue.Add(message);
-        }
+                        _messageQueue.Add(message);
+                    }
 
-        public void AddUnsubscriber(IDisposable unsubscriber) => _unsubscriber = unsubscriber;
+                    public void AddUnsubscriber(IDisposable unsubscriber) => _unsubscriber = unsubscriber;
 
-        public void Dispose() => OnCompleted();
-*/
+                    public void Dispose() => OnCompleted();
+            */
             FileStream fileStream = new(
                 path,
                 FileMode.Create,

@@ -23,7 +23,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
 
-        public PsesWorkspaceSymbolsHandler(ILoggerFactory loggerFactory, SymbolsService symbols, WorkspaceService workspace) {
+        public PsesWorkspaceSymbolsHandler(ILoggerFactory loggerFactory, SymbolsService symbols, WorkspaceService workspace)
+        {
             _logger = loggerFactory.CreateLogger<PsesWorkspaceSymbolsHandler>();
             _symbolsService = symbols;
             _workspaceService = workspace;

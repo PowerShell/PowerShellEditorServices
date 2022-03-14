@@ -67,7 +67,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             }
 
             // Ensure that the last argument of the command is a scriptblock
-            if (commandAst.CommandElements[commandAst.CommandElements.Count-1] is not ScriptBlockExpressionAst)
+            if (commandAst.CommandElements[commandAst.CommandElements.Count - 1] is not ScriptBlockExpressionAst)
             {
                 return false;
             }

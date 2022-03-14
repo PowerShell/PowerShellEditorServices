@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared
     /// </summary>
     public static class TestUtilities
     {
-        private static readonly char[] s_unixNewlines = new [] { '\n' };
+        private static readonly char[] s_unixNewlines = new[] { '\n' };
 
         /// <summary>
         /// Takes a UNIX-style path and converts it to the path appropriate to the platform.

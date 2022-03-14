@@ -349,13 +349,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     throw new RpcErrorException(0, "A positive integer must be specified for the RunspaceId field.");
                 }
 
-                _debugStateService.RunspaceId =  runspaceId;
+                _debugStateService.RunspaceId = runspaceId;
 
                 debugRunspaceCmd.AddParameter("Id", runspaceId);
             }
             else
             {
-                _debugStateService.RunspaceId =  1;
+                _debugStateService.RunspaceId = 1;
 
                 debugRunspaceCmd.AddParameter("Id", 1);
             }

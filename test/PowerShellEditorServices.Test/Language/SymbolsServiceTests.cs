@@ -26,7 +26,7 @@ using Xunit;
 namespace Microsoft.PowerShell.EditorServices.Test.Language
 {
     [Trait("Category", "Symbols")]
-    public class SymbolsServiceTests: IDisposable
+    public class SymbolsServiceTests : IDisposable
     {
         private readonly PsesInternalHost psesHost;
         private readonly WorkspaceService workspace;

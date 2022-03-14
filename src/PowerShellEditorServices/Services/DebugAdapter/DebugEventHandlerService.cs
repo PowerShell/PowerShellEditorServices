@@ -148,7 +148,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     BreakpointDetails.Create(e.Breakpoint, e.UpdateType)
                 );
 
-                string reason = e.UpdateType switch {
+                string reason = e.UpdateType switch
+                {
                     BreakpointUpdateType.Set => BreakpointEventReason.New,
                     BreakpointUpdateType.Removed => BreakpointEventReason.Removed,
                     BreakpointUpdateType.Enabled => BreakpointEventReason.Changed,
