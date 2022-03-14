@@ -68,15 +68,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// </summary>
         /// <returns>A new duplex named pipe transport configuration.</returns>
 
-        /* Unmerged change from project 'PowerShellEditorServices.Hosting(net461)'
-        Before:
-                public static DuplexNamedPipeTransportConfig Create(HostLogger logger)
-                {
-                    return new DuplexNamedPipeTransportConfig(logger, NamedPipeUtils.GenerateValidNamedPipeName());
-                }
-        After:
-                public static DuplexNamedPipeTransportConfig Create(HostLogger logger) => new(logger, NamedPipeUtils.GenerateValidNamedPipeName());
-        */
         public static DuplexNamedPipeTransportConfig Create(HostLogger logger) => new(logger, NamedPipeUtils.GenerateValidNamedPipeName());
 
         /// <summary>
@@ -151,15 +142,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             return SimplexNamedPipeTransportConfig.Create(logger, inPipeName, outPipeName);
         }
-
-        /* Unmerged change from project 'PowerShellEditorServices.Hosting(net461)'
-        Added:
-                /// <summary>
-                /// Create a pair of simplex named pipes using the given names.
-                /// </summary>
-                /// <returns>A new simplex named pipe transport config.</returns>
-                public static SimplexNamedPipeTransportConfig Create(HostLogger logger, string inPipeName, string outPipeName) => new(logger, inPipeName, outPipeName);
-        */
 
         /// <summary>
         /// Create a pair of simplex named pipes using the given names.
