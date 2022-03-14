@@ -72,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
 
                 _logger.LogTrace("Checking if Plaster is installed...");
 
-                PSObject moduleObject = (await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, CancellationToken.None).ConfigureAwait(false)).First();
+                PSObject moduleObject = (await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, CancellationToken.None).ConfigureAwait(false))[0];
 
                 isPlasterInstalled = moduleObject != null;
                 string installedQualifier =
@@ -135,7 +135,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
                 psCommand,
                 CancellationToken.None).ConfigureAwait(false);
 
-            _logger.LogTrace($"Found {templateObjects.Count()} Plaster templates");
+            _logger.LogTrace($"Found {templateObjects.Count} Plaster templates");
 
             return
                 templateObjects

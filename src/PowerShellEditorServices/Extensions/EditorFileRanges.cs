@@ -37,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
             if (offset >= fileText.Length)
             {
-                throw new ArgumentException(nameof(offset), "Offset greater than file length");
+                throw new ArgumentException("Offset greater than file length", nameof(offset));
             }
 
             int lastLineOffset = -1;

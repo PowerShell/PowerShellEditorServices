@@ -73,7 +73,7 @@ function __Expand-Alias {
 
             return new ExpandAliasResult
             {
-                Text = result.First()
+                Text = result[0]
             };
         }
     }

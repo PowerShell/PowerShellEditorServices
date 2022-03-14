@@ -128,7 +128,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
                 ignoreReparsePoints: s_defaultIgnoreReparsePoints
             );
 
-            Assert.Equal(1, fileList.Count);
+            Assert.Single(fileList);
             Assert.Equal(Path.Combine(workspace.WorkspacePath, "rootfile.ps1"), fileList[0]);
         }
 

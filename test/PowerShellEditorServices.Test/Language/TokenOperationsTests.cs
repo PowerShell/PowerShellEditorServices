@@ -181,7 +181,7 @@ $foo = 'bar'
             // The Foldable regions should be the same regardless of line ending type
             // Enforce CRLF line endings, if none exist
             string testString = allInOneScript;
-            if (testString.IndexOf("\r\n") == -1) {
+            if (!testString.Contains("\r\n")) {
                 testString = testString.Replace("\n", "\r\n");
             }
             // Ensure that there are CRLF characters in the string

@@ -39,17 +39,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             StringBuilder sb = new StringBuilder(256)
             .Append(diagnostic.Source ?? "?")
-            .Append("_")
+            .Append('_')
             .Append(diagnostic.Code?.IsString ?? true ? diagnostic.Code?.String : diagnostic.Code?.Long.ToString())
-            .Append("_")
+            .Append('_')
             .Append(diagnostic.Severity?.ToString() ?? "?")
-            .Append("_")
+            .Append('_')
             .Append(start.Line)
-            .Append(":")
+            .Append(':')
             .Append(start.Character)
-            .Append("-")
+            .Append('-')
             .Append(end.Line)
-            .Append(":")
+            .Append(':')
             .Append(end.Character);
 
             string id = sb.ToString();
@@ -210,7 +210,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (analysisResults.Length == 0
                 || analysisResults[0]?.Correction?.Edits == null
-                || analysisResults[0].Correction.Edits.Count() == 0)
+                || analysisResults[0].Correction.Edits.Length == 0)
             {
                 return null;
             }
