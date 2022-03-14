@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             ParameterExpression originalPosition = Expression.Parameter(typeof(IScriptPosition));
             ParameterExpression newOffset = Expression.Parameter(typeof(int));
 
-            var parameters = new ParameterExpression[] { originalPosition, newOffset };
+            ParameterExpression[] parameters = new ParameterExpression[] { originalPosition, newOffset };
             s_clonePositionWithNewOffset = Expression.Lambda<Func<IScriptPosition, int, IScriptPosition>>(
                 Expression.Call(
                     Expression.Convert(originalPosition, internalScriptPositionType),
@@ -83,7 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                     cursorPosition.LineNumber,
                     cursorPosition.ColumnNumber));
 
-            var stopwatch = new Stopwatch();
+            Stopwatch stopwatch = new();
 
             CommandCompletion commandCompletion = null;
             await executionService.ExecuteDelegateAsync(
@@ -123,7 +123,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             bool includeFunctionDefinitions = false)
         {
             FindSymbolVisitor symbolVisitor =
-                new FindSymbolVisitor(
+                new(
                     lineNumber,
                     columnNumber,
                     includeFunctionDefinitions);
@@ -142,7 +142,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <returns>SymbolReference of found command</returns>
         public static SymbolReference FindCommandAtPosition(Ast scriptAst, int lineNumber, int columnNumber)
         {
-            FindCommandVisitor commandVisitor = new FindCommandVisitor(lineNumber, columnNumber);
+            FindCommandVisitor commandVisitor = new(lineNumber, columnNumber);
             scriptAst.Visit(commandVisitor);
 
             return commandVisitor.FoundCommandReference;
@@ -184,7 +184,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             SymbolReference symbolReference)
         {
             FindDeclarationVisitor declarationVisitor =
-                new FindDeclarationVisitor(
+                new(
                     symbolReference);
             scriptAst.Visit(declarationVisitor);
 
@@ -213,7 +213,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             //            }
             //            else
 
-            FindSymbolsVisitor findSymbolsVisitor = new FindSymbolsVisitor();
+            FindSymbolsVisitor findSymbolsVisitor = new();
             scriptAst.Visit(findSymbolsVisitor);
             symbolReferences = findSymbolsVisitor.SymbolReferences;
             return symbolReferences;
@@ -240,9 +240,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                         0);
         }
 
-        static private bool IsPowerShellDataFileAstNode(dynamic node, Type[] levelAstMap, int level)
+        private static bool IsPowerShellDataFileAstNode(dynamic node, Type[] levelAstMap, int level)
         {
-            var levelAstTypeMatch = node.Item.GetType().Equals(levelAstMap[level]);
+            dynamic levelAstTypeMatch = node.Item.GetType().Equals(levelAstMap[level]);
             if (!levelAstTypeMatch)
             {
                 return false;
@@ -253,10 +253,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 return levelAstTypeMatch;
             }
 
-            var astsFound = (node.Item as Ast).FindAll(a => a is Ast, false);
+            IEnumerable<Ast> astsFound = (node.Item as Ast).FindAll(a => a is Ast, false);
             if (astsFound != null)
             {
-                foreach (var astFound in astsFound)
+                foreach (Ast astFound in astsFound)
                 {
                     if (!astFound.Equals(node.Item)
                         && node.Item.Equals(astFound.Parent)
@@ -281,7 +281,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <returns></returns>
         public static string[] FindDotSourcedIncludes(Ast scriptAst, string psScriptRoot)
         {
-            FindDotSourcedVisitor dotSourcedVisitor = new FindDotSourcedVisitor(psScriptRoot);
+            FindDotSourcedVisitor dotSourcedVisitor = new(psScriptRoot);
             scriptAst.Visit(dotSourcedVisitor);
 
             return dotSourcedVisitor.DotSourcedFiles.ToArray();

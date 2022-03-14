@@ -52,13 +52,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         {
             Validate.IsNotNull("breakpoint", breakpoint);
 
-            if (!(breakpoint is CommandBreakpoint commandBreakpoint))
+            if (breakpoint is not CommandBreakpoint commandBreakpoint)
             {
                 throw new ArgumentException(
                     "Unexpected breakpoint type: " + breakpoint.GetType().Name);
             }
 
-            var breakpointDetails = new CommandBreakpointDetails {
+            CommandBreakpointDetails breakpointDetails = new()
+            {
                 Verified = true,
                 Name = commandBreakpoint.Command,
                 Condition = commandBreakpoint.Action?.ToString()

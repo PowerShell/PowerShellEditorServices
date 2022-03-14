@@ -21,10 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
     {
         private readonly PsesInternalHost psesHost;
 
-        public PsesInternalHostTests()
-        {
-            psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
-        }
+        public PsesInternalHostTests() => psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
 
         public void Dispose()
         {
@@ -36,9 +33,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         public async Task CanExecutePSCommand()
         {
             Assert.True(psesHost.IsRunning);
-            var command = new PSCommand().AddScript("$a = \"foo\"; $a");
-            var task = psesHost.ExecutePSCommandAsync<string>(command, CancellationToken.None);
-            var result = await task.ConfigureAwait(true);
+            PSCommand command = new PSCommand().AddScript("$a = \"foo\"; $a");
+            Task<IReadOnlyList<string>> task = psesHost.ExecutePSCommandAsync<string>(command, CancellationToken.None);
+            IReadOnlyList<string> result = await task.ConfigureAwait(true);
             Assert.Equal("foo", result[0]);
         }
 
@@ -97,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD003:Avoid awaiting foreign Tasks", Justification = "Explicitly checking task cancellation status.")]
         public async Task CanCancelExecutionWithMethod()
         {
-            var executeTask = psesHost.ExecutePSCommandAsync(
+            Task executeTask = psesHost.ExecutePSCommandAsync(
                 new PSCommand().AddScript("Start-Sleep 10"),
                 CancellationToken.None);
 
@@ -132,7 +129,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 "$($profile.CurrentUserCurrentHost) " +
                 "$(Assert-ProfileLoaded)\"");
 
-            var result = await psesHost.ExecutePSCommandAsync<string>(psCommand, CancellationToken.None).ConfigureAwait(true);
+            IReadOnlyList<string> result = await psesHost.ExecutePSCommandAsync<string>(psCommand, CancellationToken.None).ConfigureAwait(true);
 
             string expectedString =
                 string.Format(

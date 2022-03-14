@@ -20,9 +20,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         // script. They are based on the defaults in the VS Code Language Configuration at;
         // https://github.com/Microsoft/vscode/blob/64186b0a26/extensions/powershell/language-configuration.json#L26-L31
         // https://github.com/Microsoft/vscode/issues/49070
-        static private readonly Regex s_startRegionTextRegex = new Regex(
+        private static readonly Regex s_startRegionTextRegex = new(
            @"^\s*#[rR]egion\b", RegexOptions.Compiled);
-        static private readonly Regex s_endRegionTextRegex = new Regex(
+        private static readonly Regex s_endRegionTextRegex = new(
            @"^\s*#[eE]nd[rR]egion\b", RegexOptions.Compiled);
 
         /// <summary>
@@ -31,10 +31,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         internal static FoldingReferenceList FoldableReferences(
             Token[] tokens)
         {
-            var refList = new FoldingReferenceList();
+            FoldingReferenceList refList = new();
 
-            Stack<Token> tokenCurlyStack = new Stack<Token>();
-            Stack<Token> tokenParenStack = new Stack<Token>();
+            Stack<Token> tokenCurlyStack = new();
+            Stack<Token> tokenParenStack = new();
             foreach (Token token in tokens)
             {
                 switch (token.Kind)
@@ -95,7 +95,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             //
             // Find comments regions <# -> #>
             // Match the token start and end of kind TokenKind.Comment
-            var tokenCommentRegionStack = new Stack<Token>();
+            Stack<Token> tokenCommentRegionStack = new();
             Token blockStartToken = null;
             int blockNextLine = -1;
 
@@ -156,7 +156,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// Creates an instance of a FoldingReference object from a start and end langauge Token
         /// Returns null if the line range is invalid
         /// </summary>
-        static private FoldingReference CreateFoldingReference(
+        private static FoldingReference CreateFoldingReference(
             Token startToken,
             Token endToken,
             FoldingRangeKind? matchKind)
@@ -176,7 +176,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// Creates an instance of a FoldingReference object from a start token and an end line
         /// Returns null if the line range is invalid
         /// </summary>
-        static private FoldingReference CreateFoldingReference(
+        private static FoldingReference CreateFoldingReference(
             Token startToken,
             int endLine,
             FoldingRangeKind? matchKind)
@@ -199,7 +199,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// - Token text must start with a '#'.false  This is because comment regions
         ///   start with '&lt;#' but have the same TokenKind
         /// </summary>
-        static private bool IsBlockComment(int index, Token[] tokens) {
+        private static bool IsBlockComment(int index, Token[] tokens) {
             Token thisToken = tokens[index];
             if (thisToken.Kind != TokenKind.Comment) { return false; }
             if (index == 0) { return true; }

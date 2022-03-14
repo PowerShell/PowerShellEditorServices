@@ -18,7 +18,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class PsesSemanticTokensHandler : SemanticTokensHandlerBase
     {
-        protected override SemanticTokensRegistrationOptions CreateRegistrationOptions(SemanticTokensCapability capability, ClientCapabilities clientCapabilities) => new SemanticTokensRegistrationOptions
+        protected override SemanticTokensRegistrationOptions CreateRegistrationOptions(SemanticTokensCapability capability, ClientCapabilities clientCapabilities) => new()
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector,
             Legend = new SemanticTokensLegend(),
@@ -72,7 +72,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     foreach (Token t in stringExpandableToken.NestedTokens)
                     {
                         foreach (SemanticToken subToken in ConvertToSemanticTokens(t))
+                        {
                             yield return subToken;
+                        }
                     }
                     yield break;
                 }
@@ -155,9 +157,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         protected override Task<SemanticTokensDocument> GetSemanticTokensDocument(
             ITextDocumentIdentifierParams @params,
-            CancellationToken cancellationToken)
-        {
-            return Task.FromResult(new SemanticTokensDocument(RegistrationOptions.Legend));
-        }
+            CancellationToken cancellationToken) => Task.FromResult(new SemanticTokensDocument(RegistrationOptions.Legend));
     }
 }

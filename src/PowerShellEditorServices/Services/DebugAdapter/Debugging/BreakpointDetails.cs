@@ -91,7 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                     "Unexpected breakpoint type: " + breakpoint.GetType().Name);
             }
 
-            var breakpointDetails = new BreakpointDetails
+            BreakpointDetails breakpointDetails = new()
             {
                 Id = breakpoint.Id,
                 Verified = updateType != BreakpointUpdateType.Disabled,

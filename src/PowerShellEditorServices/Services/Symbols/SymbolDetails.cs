@@ -43,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             IRunspaceInfo currentRunspace,
             IInternalPowerShellExecutionService executionService)
         {
-            SymbolDetails symbolDetails = new SymbolDetails
+            SymbolDetails symbolDetails = new()
             {
                 SymbolReference = symbolReference
             };

@@ -43,10 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     {
         private readonly HostLogger _logger;
 
-        public StdioTransportConfig(HostLogger logger)
-        {
-            _logger = logger;
-        }
+        public StdioTransportConfig(HostLogger logger) => _logger = logger;
 
         public string EndpointDetails => "<stdio>";
 
@@ -70,10 +67,17 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// Create a duplex named pipe transport config with an automatically generated pipe name.
         /// </summary>
         /// <returns>A new duplex named pipe transport configuration.</returns>
+
+/* Unmerged change from project 'PowerShellEditorServices.Hosting(net461)'
+Before:
         public static DuplexNamedPipeTransportConfig Create(HostLogger logger)
         {
             return new DuplexNamedPipeTransportConfig(logger, NamedPipeUtils.GenerateValidNamedPipeName());
         }
+After:
+        public static DuplexNamedPipeTransportConfig Create(HostLogger logger) => new(logger, NamedPipeUtils.GenerateValidNamedPipeName());
+*/
+        public static DuplexNamedPipeTransportConfig Create(HostLogger logger) => new(logger, NamedPipeUtils.GenerateValidNamedPipeName());
 
         /// <summary>
         /// Create a duplex named pipe transport config with the given pipe name.
@@ -129,10 +133,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// Create a pair of simplex named pipes using generated names.
         /// </summary>
         /// <returns>A new simplex named pipe transport config.</returns>
-        public static SimplexNamedPipeTransportConfig Create(HostLogger logger)
-        {
-            return SimplexNamedPipeTransportConfig.Create(logger, NamedPipeUtils.GenerateValidNamedPipeName(new[] { InPipePrefix, OutPipePrefix }));
-        }
+        public static SimplexNamedPipeTransportConfig Create(HostLogger logger) => SimplexNamedPipeTransportConfig.Create(logger, NamedPipeUtils.GenerateValidNamedPipeName(new[] { InPipePrefix, OutPipePrefix }));
 
         /// <summary>
         /// Create a pair of simplex named pipes using the given name as a base.
@@ -151,14 +152,20 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             return SimplexNamedPipeTransportConfig.Create(logger, inPipeName, outPipeName);
         }
 
+/* Unmerged change from project 'PowerShellEditorServices.Hosting(net461)'
+Added:
         /// <summary>
         /// Create a pair of simplex named pipes using the given names.
         /// </summary>
         /// <returns>A new simplex named pipe transport config.</returns>
-        public static SimplexNamedPipeTransportConfig Create(HostLogger logger, string inPipeName, string outPipeName)
-        {
-            return new SimplexNamedPipeTransportConfig(logger, inPipeName, outPipeName);
-        }
+        public static SimplexNamedPipeTransportConfig Create(HostLogger logger, string inPipeName, string outPipeName) => new(logger, inPipeName, outPipeName);
+*/
+
+        /// <summary>
+        /// Create a pair of simplex named pipes using the given names.
+        /// </summary>
+        /// <returns>A new simplex named pipe transport config.</returns>
+        public static SimplexNamedPipeTransportConfig Create(HostLogger logger, string inPipeName, string outPipeName) => new(logger, inPipeName, outPipeName);
 
         private readonly HostLogger _logger;
         private readonly string _inPipeName;

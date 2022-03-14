@@ -16,13 +16,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         /// Helper method to create a stub script file and then call FoldableRegions
         /// </summary>
         private static FoldingReference[] GetRegions(string text) {
-            ScriptFile scriptFile = new ScriptFile(
+            ScriptFile scriptFile = new(
                 // Use any absolute path. Even if it doesn't exist.
                 DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                 text,
                 Version.Parse("5.0"));
 
-            var result = TokenOperations.FoldableReferences(scriptFile.ScriptTokens).ToArray();
+            FoldingReference[] result = TokenOperations.FoldableReferences(scriptFile.ScriptTokens).ToArray();
             // The foldable regions need to be deterministic for testing so sort the array.
             Array.Sort(result);
             return result;
@@ -131,7 +131,7 @@ valid} = 5
 $foo = 'bar'
 #EnDReGion
 ";
-        private FoldingReference[] expectedAllInOneScriptFolds = {
+        private readonly FoldingReference[] expectedAllInOneScriptFolds = {
             CreateFoldingReference(0,   0,  4, 10, FoldingRangeKind.Region),
             CreateFoldingReference(1,   0,  3,  2, FoldingRangeKind.Comment),
             CreateFoldingReference(10,  0, 15,  2, FoldingRangeKind.Comment),

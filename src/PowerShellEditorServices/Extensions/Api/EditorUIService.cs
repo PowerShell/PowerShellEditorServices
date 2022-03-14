@@ -99,19 +99,16 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 
     internal class EditorUIService : IEditorUIService
     {
-        private static string[] s_choiceResponseLabelSeparators = new[] { ", " };
+        private static readonly string[] s_choiceResponseLabelSeparators = new[] { ", " };
 
         private readonly ILanguageServerFacade _languageServer;
 
-        public EditorUIService(ILanguageServerFacade languageServer)
-        {
-            _languageServer = languageServer;
-        }
+        public EditorUIService(ILanguageServerFacade languageServer) => _languageServer = languageServer;
 
         public async Task<string> PromptInputAsync(string message)
         {
             // The VSCode client currently doesn't use the Label field, so we ignore it
-            ShowInputPromptResponse response = await _languageServer.SendRequest<ShowInputPromptRequest>(
+            ShowInputPromptResponse response = await _languageServer.SendRequest(
                 "powerShell/showInputPrompt",
                 new ShowInputPromptRequest
                 {
@@ -135,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         {
             ChoiceDetails[] choiceDetails = GetChoiceDetails(choices);
 
-            ShowChoicePromptResponse response = await _languageServer.SendRequest<ShowChoicePromptRequest>(
+            ShowChoicePromptResponse response = await _languageServer.SendRequest(
                 "powerShell/showChoicePrompt",
                 new ShowChoicePromptRequest
                 {
@@ -163,7 +160,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         {
             ChoiceDetails[] choiceDetails = GetChoiceDetails(choices);
 
-            ShowChoicePromptResponse response = await _languageServer.SendRequest<ShowChoicePromptRequest>(
+            ShowChoicePromptResponse response = await _languageServer.SendRequest(
                 "powerShell/showChoicePrompt",
                 new ShowChoicePromptRequest
                 {
@@ -186,7 +183,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 
         private static ChoiceDetails[] GetChoiceDetails(IReadOnlyList<PromptChoiceDetails> promptChoiceDetails)
         {
-            var choices = new ChoiceDetails[promptChoiceDetails.Count];
+            ChoiceDetails[] choices = new ChoiceDetails[promptChoiceDetails.Count];
             for (int i = 0; i < promptChoiceDetails.Count; i++)
             {
                 choices[i] = new ChoiceDetails

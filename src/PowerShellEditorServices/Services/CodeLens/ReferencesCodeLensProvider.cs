@@ -26,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// <summary>
         /// The document symbol provider to supply symbols to generate the code lenses.
         /// </summary>
-        private IDocumentSymbolProvider _symbolProvider;
+        private readonly IDocumentSymbolProvider _symbolProvider;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
 
@@ -56,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// <returns>An array of CodeLenses describing all functions in the given script file.</returns>
         public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile)
         {
-            var acc = new List<CodeLens>();
+            List<CodeLens> acc = new();
             foreach (SymbolReference sym in _symbolProvider.ProvideDocumentSymbols(scriptFile))
             {
                 if (sym.SymbolType == SymbolType.Function)
@@ -104,7 +104,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             }
             else
             {
-                var acc = new List<Location>();
+                List<Location> acc = new();
                 foreach (SymbolReference foundReference in referencesResult)
                 {
                     if (IsReferenceDefinition(foundSymbol, foundReference))
@@ -183,7 +183,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                 return "1 reference";
             }
 
-            var sb = new StringBuilder(14); // "100 references".Length = 14
+            StringBuilder sb = new(14); // "100 references".Length = 14
             sb.Append(referenceCount);
             sb.Append(" references");
             return sb.ToString();

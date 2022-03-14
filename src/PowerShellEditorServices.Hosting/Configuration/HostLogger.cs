@@ -49,25 +49,13 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             private readonly IObserver<(int logLevel, string message)> _observer;
 
-            public LogObserver(IObserver<(int logLevel, string message)> observer)
-            {
-                _observer = observer;
-            }
+            public LogObserver(IObserver<(int logLevel, string message)> observer) => _observer = observer;
 
-            public void OnCompleted()
-            {
-                _observer.OnCompleted();
-            }
+            public void OnCompleted() => _observer.OnCompleted();
 
-            public void OnError(Exception error)
-            {
-                _observer.OnError(error);
-            }
+            public void OnError(Exception error) => _observer.OnError(error);
 
-            public void OnNext((PsesLogLevel logLevel, string message) value)
-            {
-                _observer.OnNext(((int)value.logLevel, value.message));
-            }
+            public void OnNext((PsesLogLevel logLevel, string message) value) => _observer.OnNext(((int)value.logLevel, value.message));
         }
 
         /// <summary>
@@ -86,10 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 _thisSubscriber = thisSubscriber;
             }
 
-            public void Dispose()
-            {
-                _subscribedObservers.TryRemove(_thisSubscriber, out bool _);
-            }
+            public void Dispose() => _subscribedObservers.TryRemove(_thisSubscriber, out bool _);
         }
 
         private readonly PsesLogLevel _minimumLogLevel;
@@ -185,10 +170,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             Exception exception,
             [CallerMemberName] string callerName = null,
             [CallerFilePath] string callerSourceFile = null,
-            [CallerLineNumber] int callerLineNumber = -1)
-        {
-            Log(PsesLogLevel.Error, $"{message}. Exception logged in {callerSourceFile} on line {callerLineNumber} in {callerName}:\n{exception}");
-        }
+            [CallerLineNumber] int callerLineNumber = -1) => Log(PsesLogLevel.Error, $"{message}. Exception logged in {callerSourceFile} on line {callerLineNumber} in {callerName}:\n{exception}");
 
     }
 
@@ -209,10 +191,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// Create a new PowerShell host logger.
         /// </summary>
         /// <param name="ui">The PowerShell host user interface object to log output to.</param>
-        public PSHostLogger(PSHostUserInterface ui)
-        {
-            _ui = ui;
-        }
+        public PSHostLogger(PSHostUserInterface ui) => _ui = ui;
 
         public void OnCompleted()
         {
@@ -220,10 +199,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             // we just stop writing to the host
         }
 
-        public void OnError(Exception error)
-        {
-            OnNext((PsesLogLevel.Error, $"Error occurred while logging: {error}"));
-        }
+        public void OnError(Exception error) => OnNext((PsesLogLevel.Error, $"Error occurred while logging: {error}"));
 
         public void OnNext((PsesLogLevel logLevel, string message) value)
         {
@@ -260,6 +236,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     {
         public static StreamLogger CreateWithNewFile(string path)
         {
+
+/* Unmerged change from project 'PowerShellEditorServices.Hosting(net461)'
+Before:
             var fileStream = new FileStream(
                 path,
                 FileMode.Create,
@@ -364,6 +343,198 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             OnCompleted();
         }
+After:
+            var fileStream = new(
+                path,
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.Read,
+                bufferSize: 4096,
+                FileOptions.SequentialScan);
+
+            return new StreamLogger(new StreamWriter(fileStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true)));
+        }
+
+        private readonly StreamWriter _fileWriter;
+
+        private readonly BlockingCollection<string> _messageQueue;
+
+        private readonly CancellationTokenSource _cancellationSource;
+
+        private readonly Thread _writerThread;
+
+        // This cannot be a bool
+        // See https://stackoverflow.com/q/6164751
+        private int _hasCompleted;
+
+        private IDisposable _unsubscriber;
+
+        public StreamLogger(StreamWriter streamWriter)
+        {
+            streamWriter.AutoFlush = true;
+            _fileWriter = streamWriter;
+            _hasCompleted = 0;
+            _cancellationSource = new CancellationTokenSource();
+            _messageQueue = new BlockingCollection<string>();
+
+            // Start writer listening to queue
+            _writerThread = new Thread(RunWriter)
+            {
+                Name = "PSES Stream Logger Thread",
+            };
+            _writerThread.Start();
+        }
+
+        public void OnCompleted()
+        {
+            // Ensure we only complete once
+            if (Interlocked.Exchange(ref _hasCompleted, 1) != 0)
+            {
+                return;
+            }
+
+            _cancellationSource.Cancel();
+
+            _writerThread.Join();
+
+            _unsubscriber.Dispose();
+            _fileWriter.Flush();
+            _fileWriter.Close();
+            _fileWriter.Dispose();
+            _cancellationSource.Dispose();
+            _messageQueue.Dispose();
+        }
+
+        public void OnError(Exception error) => OnNext((PsesLogLevel.Error, $"Error occurred while logging: {error}"));
+
+        public void OnNext((PsesLogLevel logLevel, string message) value)
+        {
+            string message = null;
+            switch (value.logLevel)
+            {
+                case PsesLogLevel.Diagnostic:
+                    message = $"[DBG]: {value.message}";
+                    break;
+
+                case PsesLogLevel.Verbose:
+                    message = $"[VRB]: {value.message}";
+                    break;
+
+                case PsesLogLevel.Normal:
+                    message = $"[INF]: {value.message}";
+                    break;
+
+                case PsesLogLevel.Warning:
+                    message = $"[WRN]: {value.message}";
+                    break;
+
+                case PsesLogLevel.Error:
+                    message = $"[ERR]: {value.message}";
+                    break;
+            };
+
+            _messageQueue.Add(message);
+        }
+
+        public void AddUnsubscriber(IDisposable unsubscriber) => _unsubscriber = unsubscriber;
+
+        public void Dispose() => OnCompleted();
+*/
+            FileStream fileStream = new(
+                path,
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.Read,
+                bufferSize: 4096,
+                FileOptions.SequentialScan);
+
+            return new StreamLogger(new StreamWriter(fileStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true)));
+        }
+
+        private readonly StreamWriter _fileWriter;
+
+        private readonly BlockingCollection<string> _messageQueue;
+
+        private readonly CancellationTokenSource _cancellationSource;
+
+        private readonly Thread _writerThread;
+
+        // This cannot be a bool
+        // See https://stackoverflow.com/q/6164751
+        private int _hasCompleted;
+
+        private IDisposable _unsubscriber;
+
+        public StreamLogger(StreamWriter streamWriter)
+        {
+            streamWriter.AutoFlush = true;
+            _fileWriter = streamWriter;
+            _hasCompleted = 0;
+            _cancellationSource = new CancellationTokenSource();
+            _messageQueue = new BlockingCollection<string>();
+
+            // Start writer listening to queue
+            _writerThread = new Thread(RunWriter)
+            {
+                Name = "PSES Stream Logger Thread",
+            };
+            _writerThread.Start();
+        }
+
+        public void OnCompleted()
+        {
+            // Ensure we only complete once
+            if (Interlocked.Exchange(ref _hasCompleted, 1) != 0)
+            {
+                return;
+            }
+
+            _cancellationSource.Cancel();
+
+            _writerThread.Join();
+
+            _unsubscriber.Dispose();
+            _fileWriter.Flush();
+            _fileWriter.Close();
+            _fileWriter.Dispose();
+            _cancellationSource.Dispose();
+            _messageQueue.Dispose();
+        }
+
+        public void OnError(Exception error) => OnNext((PsesLogLevel.Error, $"Error occurred while logging: {error}"));
+
+        public void OnNext((PsesLogLevel logLevel, string message) value)
+        {
+            string message = null;
+            switch (value.logLevel)
+            {
+                case PsesLogLevel.Diagnostic:
+                    message = $"[DBG]: {value.message}";
+                    break;
+
+                case PsesLogLevel.Verbose:
+                    message = $"[VRB]: {value.message}";
+                    break;
+
+                case PsesLogLevel.Normal:
+                    message = $"[INF]: {value.message}";
+                    break;
+
+                case PsesLogLevel.Warning:
+                    message = $"[WRN]: {value.message}";
+                    break;
+
+                case PsesLogLevel.Error:
+                    message = $"[ERR]: {value.message}";
+                    break;
+            };
+
+            _messageQueue.Add(message);
+        }
+
+        public void AddUnsubscriber(IDisposable unsubscriber) => _unsubscriber = unsubscriber;
+
+        public void Dispose() => OnCompleted();
 
         private void RunWriter()
         {

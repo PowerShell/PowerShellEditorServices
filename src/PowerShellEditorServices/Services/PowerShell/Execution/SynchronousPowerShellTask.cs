@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private SMA.PowerShell _pwsh;
 
-        private readonly static PowerShellExecutionOptions s_defaultPowerShellExecutionOptions = new();
+        private static readonly PowerShellExecutionOptions s_defaultPowerShellExecutionOptions = new();
 
         public SynchronousPowerShellTask(
             ILogger logger,
@@ -66,10 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 : ExecuteNormally(cancellationToken);
         }
 
-        public override string ToString()
-        {
-            return _psCommand.GetInvocationText();
-        }
+        public override string ToString() => _psCommand.GetInvocationText();
 
         private IReadOnlyList<TResult> ExecuteNormally(CancellationToken cancellationToken)
         {
@@ -83,7 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             Collection<TResult> result = null;
             try
             {
-                var invocationSettings = new PSInvocationSettings
+                PSInvocationSettings invocationSettings = new()
                 {
                     AddToHistory = PowerShellExecutionOptions.AddToHistory,
                 };
@@ -118,7 +115,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                     throw;
                 }
 
-                var command = new PSCommand()
+                PSCommand command = new PSCommand()
                     .AddOutputCommand()
                     .AddParameter("InputObject", e.ErrorRecord.AsPSObject());
 
@@ -141,7 +138,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             // intrinsic debugger commands?
             cancellationToken.Register(CancelDebugExecution);
 
-            var outputCollection = new PSDataCollection<PSObject>();
+            PSDataCollection<PSObject> outputCollection = new();
 
             // Out-Default doesn't work as needed in the debugger
             // Instead we add Out-String to the command and collect results in a PSDataCollection
@@ -195,7 +192,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                     throw;
                 }
 
-                var errorOutputCollection = new PSDataCollection<PSObject>();
+                PSDataCollection<PSObject> errorOutputCollection = new();
                 errorOutputCollection.DataAdded += (object sender, DataAddedEventArgs args) =>
                     {
                         for (int i = args.Index; i < outputCollection.Count; i++)
@@ -204,7 +201,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                         }
                     };
 
-                var command = new PSCommand()
+                PSCommand command = new PSCommand()
                     .AddDebugOutputCommand()
                     .AddParameter("InputObject", e.ErrorRecord.AsPSObject());
 
@@ -234,7 +231,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             }
 
             // Otherwise, convert things over
-            var results = new List<TResult>(outputCollection.Count);
+            List<TResult> results = new(outputCollection.Count);
             foreach (PSObject outputResult in outputCollection)
             {
                 if (LanguagePrimitives.TryConvertTo(outputResult, typeof(TResult), out object result))
@@ -252,9 +249,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             // Instead we have to query the remote directly
             if (_pwsh.Runspace.RunspaceIsRemote)
             {
-                var assessDebuggerCommand = new PSCommand().AddScript("$Host.Runspace.Debugger.InBreakpoint");
+                PSCommand assessDebuggerCommand = new PSCommand().AddScript("$Host.Runspace.Debugger.InBreakpoint");
 
-                var outputCollection = new PSDataCollection<PSObject>();
+                PSDataCollection<PSObject> outputCollection = new();
                 _pwsh.Runspace.Debugger.ProcessCommand(assessDebuggerCommand, outputCollection);
 
                 foreach (PSObject output in outputCollection)
@@ -269,14 +266,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             }
         }
 
-        private void CancelNormalExecution()
-        {
-            _pwsh.Stop();
-        }
+        private void CancelNormalExecution() => _pwsh.Stop();
 
-        private void CancelDebugExecution()
-        {
-            _pwsh.Runspace.Debugger.StopProcessCommand();
-        }
+        private void CancelDebugExecution() => _pwsh.Runspace.Debugger.StopProcessCommand();
     }
 }

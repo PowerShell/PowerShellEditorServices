@@ -65,49 +65,22 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
     {
         private readonly ILanguageServerFacade _languageServer;
 
-        internal LanguageServerService(ILanguageServerFacade languageServer)
-        {
-            _languageServer = languageServer;
-        }
+        internal LanguageServerService(ILanguageServerFacade languageServer) => _languageServer = languageServer;
 
-        public void SendNotification(string method)
-        {
-            _languageServer.SendNotification(method);
-        }
+        public void SendNotification(string method) => _languageServer.SendNotification(method);
 
-        public void SendNotification<T>(string method, T parameters)
-        {
-            _languageServer.SendNotification(method, parameters);
-        }
+        public void SendNotification<T>(string method, T parameters) => _languageServer.SendNotification(method, parameters);
 
-        public void SendNotification(string method, object parameters)
-        {
-            _languageServer.SendNotification(method, parameters);
-        }
+        public void SendNotification(string method, object parameters) => _languageServer.SendNotification(method, parameters);
 
-        public Task SendRequestAsync(string method)
-        {
-            return _languageServer.SendRequest(method).ReturningVoid(CancellationToken.None);
-        }
+        public Task SendRequestAsync(string method) => _languageServer.SendRequest(method).ReturningVoid(CancellationToken.None);
 
-        public Task SendRequestAsync<T>(string method, T parameters)
-        {
-            return _languageServer.SendRequest<T>(method, parameters).ReturningVoid(CancellationToken.None);
-        }
+        public Task SendRequestAsync<T>(string method, T parameters) => _languageServer.SendRequest(method, parameters).ReturningVoid(CancellationToken.None);
 
-        public Task<TResponse> SendRequestAsync<TResponse>(string method)
-        {
-            return _languageServer.SendRequest(method).Returning<TResponse>(CancellationToken.None);
-        }
+        public Task<TResponse> SendRequestAsync<TResponse>(string method) => _languageServer.SendRequest(method).Returning<TResponse>(CancellationToken.None);
 
-        public Task<TResponse> SendRequestAsync<T, TResponse>(string method, T parameters)
-        {
-            return _languageServer.SendRequest<T>(method, parameters).Returning<TResponse>(CancellationToken.None);
-        }
+        public Task<TResponse> SendRequestAsync<T, TResponse>(string method, T parameters) => _languageServer.SendRequest(method, parameters).Returning<TResponse>(CancellationToken.None);
 
-        public Task<object> SendRequestAsync(string method, object parameters)
-        {
-            return _languageServer.SendRequest<object>(method, parameters).Returning<object>(CancellationToken.None);
-        }
+        public Task<object> SendRequestAsync(string method, object parameters) => _languageServer.SendRequest(method, parameters).Returning<object>(CancellationToken.None);
     }
 }

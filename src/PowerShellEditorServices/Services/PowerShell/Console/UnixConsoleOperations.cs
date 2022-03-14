@@ -1,5 +1,5 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.Threading;
@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private const int ShortWaitForKeySpinUntilSleepTime = 30;
 
-        private static readonly ManualResetEventSlim s_waitHandle = new ManualResetEventSlim();
+        private static readonly ManualResetEventSlim s_waitHandle = new();
 
         private static readonly SemaphoreSlim s_readKeyHandle = AsyncUtils.CreateSimpleLockingSemaphore();
 
@@ -57,7 +57,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                 // The WaitForKeyAvailable delegate switches between a long delay between waits and
                 // a short timeout depending on how recently a key has been pressed. This allows us
                 // to let the CPU enter low power mode without compromising responsiveness.
-                while (!WaitForKeyAvailable(cancellationToken));
+                while (!WaitForKeyAvailable(cancellationToken))
+                {
+                    ;
+                }
             }
             finally
             {
@@ -94,7 +97,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
             try
             {
-                while (!await WaitForKeyAvailableAsync(cancellationToken).ConfigureAwait(false)) ;
+                while (!await WaitForKeyAvailableAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    ;
+                }
             }
             finally
             {
@@ -116,10 +122,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             }
         }
 
-        public int GetCursorLeft()
-        {
-            return GetCursorLeft(CancellationToken.None);
-        }
+        public int GetCursorLeft() => GetCursorLeft(CancellationToken.None);
 
         public int GetCursorLeft(CancellationToken cancellationToken)
         {
@@ -134,10 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             }
         }
 
-        public Task<int> GetCursorLeftAsync()
-        {
-            return GetCursorLeftAsync(CancellationToken.None);
-        }
+        public Task<int> GetCursorLeftAsync() => GetCursorLeftAsync(CancellationToken.None);
 
         public async Task<int> GetCursorLeftAsync(CancellationToken cancellationToken)
         {
@@ -152,10 +152,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             }
         }
 
-        public int GetCursorTop()
-        {
-            return GetCursorTop(CancellationToken.None);
-        }
+        public int GetCursorTop() => GetCursorTop(CancellationToken.None);
 
         public int GetCursorTop(CancellationToken cancellationToken)
         {
@@ -170,10 +167,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             }
         }
 
-        public Task<int> GetCursorTopAsync()
-        {
-            return GetCursorTopAsync(CancellationToken.None);
-        }
+        public Task<int> GetCursorTopAsync() => GetCursorTopAsync(CancellationToken.None);
 
         public async Task<int> GetCursorTopAsync(CancellationToken cancellationToken)
         {

@@ -85,19 +85,10 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 
         public void UnregisterCommand(string commandName) => _extensionService.UnregisterCommand(commandName);
 
-        private void OnCommandAdded(object sender, EditorCommand editorCommand)
-        {
-            CommandAdded?.Invoke(this, editorCommand);
-        }
+        private void OnCommandAdded(object sender, EditorCommand editorCommand) => CommandAdded?.Invoke(this, editorCommand);
 
-        private void OnCommandUpdated(object sender, EditorCommand editorCommand)
-        {
-            CommandUpdated?.Invoke(this, editorCommand);
-        }
+        private void OnCommandUpdated(object sender, EditorCommand editorCommand) => CommandUpdated?.Invoke(this, editorCommand);
 
-        private void OnCommandRemoved(object sender, EditorCommand editorCommand)
-        {
-            CommandRemoved?.Invoke(this, editorCommand);
-        }
+        private void OnCommandRemoved(object sender, EditorCommand editorCommand) => CommandRemoved?.Invoke(this, editorCommand);
     }
 }

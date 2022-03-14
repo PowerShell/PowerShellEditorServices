@@ -35,7 +35,7 @@ namespace PowerShellEditorServices.Test.E2E
         // Borrowed from `VersionUtils` which can't be used here due to an initialization problem.
         private static bool IsLinux { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
 
-        private readonly static string s_binDir =
+        private static readonly string s_binDir =
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
         private readonly ILanguageClient PsesLanguageClient;
@@ -258,7 +258,7 @@ function CanSendWorkspaceSymbolRequest {
                 });
 
             await WaitForTelemetryEventsAsync().ConfigureAwait(true);
-            var telemetryEvent = Assert.Single(TelemetryEvents);
+            PsesTelemetryEvent telemetryEvent = Assert.Single(TelemetryEvents);
             Assert.Equal("NonDefaultPsesFeatureConfiguration", telemetryEvent.EventName);
             Assert.False((bool)telemetryEvent.Data.GetValue("ScriptAnalysis"));
 
@@ -550,7 +550,7 @@ Write-Host 'Goodbye'
         [Fact]
         public async Task CanSendPowerShellGetPSHostProcessesRequestAsync()
         {
-            var process = new Process();
+            Process process = new();
             process.StartInfo.FileName = PwshExe;
             process.StartInfo.ArgumentList.Add("-NoProfile");
             process.StartInfo.ArgumentList.Add("-NoLogo");
@@ -591,7 +591,7 @@ Write-Host 'Goodbye'
         [Fact]
         public async Task CanSendPowerShellGetRunspaceRequestAsync()
         {
-            var process = new Process();
+            Process process = new();
             process.StartInfo.FileName = PwshExe;
             process.StartInfo.ArgumentList.Add("-NoProfile");
             process.StartInfo.ArgumentList.Add("-NoLogo");
@@ -1150,7 +1150,7 @@ function CanSendGetCommentHelpRequest {
         [Fact]
         public async Task CanSendEvaluateRequestAsync()
         {
-            using var cancellationSource = new CancellationTokenSource(millisecondsDelay: 5000);
+            using CancellationTokenSource cancellationSource = new(millisecondsDelay: 5000);
 
             EvaluateResponseBody evaluateResponseBody =
                 await PsesLanguageClient
@@ -1221,7 +1221,7 @@ function CanSendGetCommentHelpRequest {
 
             // More information about how this data is generated can be found at
             // https://github.com/microsoft/vscode-extension-samples/blob/5ae1f7787122812dcc84e37427ca90af5ee09f14/semantic-tokens-sample/vscode.proposed.d.ts#L71
-            var expectedArr = new int[5]
+            int[] expectedArr = new int[5]
                 {
                     // line, index, token length, token type, token modifiers
                     0, 0, scriptContent.Length, 1, 0 //function token: line 0, index 0, length of script, type 1 = keyword, no modifiers

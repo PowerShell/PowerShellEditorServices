@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal class GetVersionHandler : IGetVersionHandler
     {
         private readonly ILogger<GetVersionHandler> _logger;
-        private IRunspaceContext _runspaceContext;
+        private readonly IRunspaceContext _runspaceContext;
         private readonly IInternalPowerShellExecutionService _executionService;
         private readonly ILanguageServerFacade _languageServer;
         private readonly ConfigurationService _configurationService;
@@ -41,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<PowerShellVersion> Handle(GetVersionParams request, CancellationToken cancellationToken)
         {
-            var architecture = PowerShellProcessArchitecture.Unknown;
+            PowerShellProcessArchitecture architecture = PowerShellProcessArchitecture.Unknown;
             // This should be changed to using a .NET call sometime in the future... but it's just for logging purposes.
             string arch = Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
             if (arch != null)

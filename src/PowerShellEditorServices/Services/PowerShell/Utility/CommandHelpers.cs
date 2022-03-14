@@ -86,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             // This is currently necessary to make sure that Get-Command doesn't
             // load PackageManagement or PowerShellGet v2 because they cause
             // a major slowdown in IntelliSense.
-            var commandParts = commandName.Split('-');
+            string[] commandParts = commandName.Split('-');
             if ((commandParts.Length == 2 && s_nounExclusionList.Contains(commandParts[1]))
                     || s_cmdletExclusionList.Contains(commandName))
             {
@@ -128,9 +128,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             Validate.IsNotNull(nameof(executionService), executionService);
 
             // A small optimization to not run Get-Help on things like DSC resources.
-            if (commandInfo.CommandType != CommandTypes.Cmdlet &&
-                commandInfo.CommandType != CommandTypes.Function &&
-                commandInfo.CommandType != CommandTypes.Filter)
+            if (commandInfo.CommandType is not CommandTypes.Cmdlet and
+                not CommandTypes.Function and
+                not CommandTypes.Filter)
             {
                 return string.Empty;
             }
@@ -183,7 +183,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         {
             Validate.IsNotNull(nameof(executionService), executionService);
 
-            IEnumerable<CommandInfo> aliases = await executionService.ExecuteDelegateAsync<IEnumerable<CommandInfo>>(
+            IEnumerable<CommandInfo> aliases = await executionService.ExecuteDelegateAsync(
                 nameof(GetAliasesAsync),
                 executionOptions: null,
                 (pwsh, _) =>

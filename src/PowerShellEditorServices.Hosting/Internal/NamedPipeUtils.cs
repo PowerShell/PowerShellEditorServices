@@ -39,10 +39,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             // In .NET Framework, we must manually ACL the named pipes we create
 
-            var pipeSecurity = new PipeSecurity();
+            PipeSecurity pipeSecurity = new();
 
             WindowsIdentity identity = WindowsIdentity.GetCurrent();
-            WindowsPrincipal principal = new WindowsPrincipal(identity);
+            WindowsPrincipal principal = new(identity);
 
             if (principal.IsInRole(WindowsBuiltInRole.Administrator))
             {

@@ -38,9 +38,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 return new SetVariableResponse { Value = updatedValue };
             }
-                catch (Exception ex) when(ex is ArgumentTransformationMetadataException ||
-                                           ex is InvalidPowerShellExpressionException ||
-                                           ex is SessionStateUnauthorizedAccessException)
+                catch (Exception ex) when(ex is ArgumentTransformationMetadataException or
+                                           InvalidPowerShellExpressionException or
+                                           SessionStateUnauthorizedAccessException)
             {
                 // Catch common, innocuous errors caused by the user supplying a value that can't be converted or the variable is not settable.
                 _logger.LogTrace($"Failed to set variable: {ex.Message}");

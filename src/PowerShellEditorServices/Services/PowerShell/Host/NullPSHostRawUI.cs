@@ -10,10 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
     {
         private readonly BufferCell[,] _buffer;
 
-        public NullPSHostRawUI()
-        {
-            _buffer = new BufferCell[0, 0];
-        }
+        public NullPSHostRawUI() => _buffer = new BufferCell[0, 0];
 
         public override ConsoleColor BackgroundColor { get; set; }
         public override Size BufferSize { get; set; }
@@ -25,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public override Size MaxPhysicalWindowSize => MaxWindowSize;
 
-        public override Size MaxWindowSize => new Size { Width = _buffer.GetLength(0), Height = _buffer.GetLength(1) };
+        public override Size MaxWindowSize => new() { Width = _buffer.GetLength(0), Height = _buffer.GetLength(1) };
 
         public override Coordinates WindowPosition { get; set; }
         public override Size WindowSize { get; set; }

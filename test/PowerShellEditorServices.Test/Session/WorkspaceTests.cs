@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
 {
     public class WorkspaceTests
     {
-        private static readonly Lazy<string> s_lazyDriveLetter = new Lazy<string>(() => Path.GetFullPath("\\").Substring(0, 1));
+        private static readonly Lazy<string> s_lazyDriveLetter = new(() => Path.GetFullPath("\\").Substring(0, 1));
 
         public static string CurrentDriveLetter => RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
             ? s_lazyDriveLetter.Value
@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             string testPathOutside = TestUtilities.NormalizePath("c:/Test/PeerPath/FilePath.ps1");
             string testPathAnotherDrive = TestUtilities.NormalizePath("z:/TryAndFindMe/FilePath.ps1");
 
-            WorkspaceService workspace = new WorkspaceService(NullLoggerFactory.Instance);
+            WorkspaceService workspace = new(NullLoggerFactory.Instance);
 
             // Test without a workspace path
             Assert.Equal(testPathOutside, workspace.GetRelativePath(testPathOutside));
@@ -53,10 +53,10 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
 
         // These are the default values for the EnumeratePSFiles() method
         // in Microsoft.PowerShell.EditorServices.Workspace class
-        private static string[] s_defaultExcludeGlobs        = Array.Empty<string>();
-        private static string[] s_defaultIncludeGlobs        = new [] { "**/*" };
-        private static int      s_defaultMaxDepth            = 64;
-        private static bool     s_defaultIgnoreReparsePoints = false;
+        private static readonly string[] s_defaultExcludeGlobs        = Array.Empty<string>();
+        private static readonly string[] s_defaultIncludeGlobs        = new [] { "**/*" };
+        private static readonly int      s_defaultMaxDepth            = 64;
+        private static readonly bool     s_defaultIgnoreReparsePoints = false;
 
         internal static List<string> ExecuteEnumeratePSFiles(
             WorkspaceService workspace,
@@ -66,13 +66,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             bool ignoreReparsePoints
         )
         {
-            var result = workspace.EnumeratePSFiles(
+            IEnumerable<string> result = workspace.EnumeratePSFiles(
                 excludeGlobs: excludeGlobs,
                 includeGlobs: includeGlobs,
                 maxDepth: maxDepth,
                 ignoreReparsePoints: ignoreReparsePoints
             );
-            var fileList = new List<string>();
+            List<string> fileList = new();
             foreach (string file in result) { fileList.Add(file); }
             // Assume order is not important from EnumeratePSFiles and sort the array so we can use deterministic asserts
             fileList.Sort();
@@ -84,8 +84,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         [Trait("Category", "Workspace")]
         public void CanRecurseDirectoryTree()
         {
-            var workspace = FixturesWorkspace();
-            var fileList = ExecuteEnumeratePSFiles(
+            WorkspaceService workspace = FixturesWorkspace();
+            List<string> fileList = ExecuteEnumeratePSFiles(
                 workspace: workspace,
                 excludeGlobs: s_defaultExcludeGlobs,
                 includeGlobs: s_defaultIncludeGlobs,
@@ -119,8 +119,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         [Trait("Category", "Workspace")]
         public void CanRecurseDirectoryTreeWithLimit()
         {
-            var workspace = FixturesWorkspace();
-            var fileList = ExecuteEnumeratePSFiles(
+            WorkspaceService workspace = FixturesWorkspace();
+            List<string> fileList = ExecuteEnumeratePSFiles(
                 workspace: workspace,
                 excludeGlobs: s_defaultExcludeGlobs,
                 includeGlobs: s_defaultIncludeGlobs,
@@ -136,8 +136,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         [Trait("Category", "Workspace")]
         public void CanRecurseDirectoryTreeWithGlobs()
         {
-            var workspace = FixturesWorkspace();
-            var fileList = ExecuteEnumeratePSFiles(
+            WorkspaceService workspace = FixturesWorkspace();
+            List<string> fileList = ExecuteEnumeratePSFiles(
                 workspace: workspace,
                 excludeGlobs: new [] {"**/donotfind*"},         // Exclude any files starting with donotfind
                 includeGlobs: new [] {"**/*.ps1", "**/*.psd1"}, // Only include PS1 and PSD1 files

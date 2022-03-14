@@ -1,5 +1,5 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
@@ -38,15 +38,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         #region Public Methods
 
-        public override string ReadLine(CancellationToken cancellationToken)
-        {
-            return _psesHost.InvokeDelegate<string>(representation: "ReadLine", new ExecutionOptions { MustRunInForeground = true }, InvokePSReadLine, cancellationToken);
-        }
+        public override string ReadLine(CancellationToken cancellationToken) => _psesHost.InvokeDelegate(representation: "ReadLine", new ExecutionOptions { MustRunInForeground = true }, InvokePSReadLine, cancellationToken);
 
-        protected override ConsoleKeyInfo ReadKey(CancellationToken cancellationToken)
-        {
-            return ConsoleProxy.ReadKey(intercept: true, cancellationToken);
-        }
+        protected override ConsoleKeyInfo ReadKey(CancellationToken cancellationToken) => ConsoleProxy.ReadKey(intercept: true, cancellationToken);
 
         #endregion
 

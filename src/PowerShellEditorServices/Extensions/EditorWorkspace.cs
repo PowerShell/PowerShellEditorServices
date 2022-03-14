@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
     {
         #region Private Fields
 
-        private IEditorOperations editorOperations;
+        private readonly IEditorOperations editorOperations;
 
         #endregion
 
@@ -20,19 +20,13 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Gets the current workspace path if there is one or null otherwise.
         /// </summary>
-        public string Path
-        {
-            get { return this.editorOperations.GetWorkspacePath(); }
-        }
+        public string Path => editorOperations.GetWorkspacePath();
 
         #endregion
 
         #region Constructors
 
-        internal EditorWorkspace(IEditorOperations editorOperations)
-        {
-            this.editorOperations = editorOperations;
-        }
+        internal EditorWorkspace(IEditorOperations editorOperations) => this.editorOperations = editorOperations;
 
         #endregion
 
@@ -41,20 +35,14 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Creates a new file in the editor
         /// </summary>
-        public void NewFile()
-        {
-            this.editorOperations.NewFileAsync().Wait();
-        }
+        public void NewFile() => editorOperations.NewFileAsync().Wait();
 
         /// <summary>
         /// Opens a file in the workspace.  If the file is already open
         /// its buffer will be made active.
         /// </summary>
         /// <param name="filePath">The path to the file to be opened.</param>
-        public void OpenFile(string filePath)
-        {
-            this.editorOperations.OpenFileAsync(filePath).Wait();
-        }
+        public void OpenFile(string filePath) => editorOperations.OpenFileAsync(filePath).Wait();
 
         /// <summary>
         /// Opens a file in the workspace.  If the file is already open
@@ -63,10 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         /// <param name="filePath">The path to the file to be opened.</param>
         /// <param name="preview">Determines wether the file is opened as a preview or as a durable editor.</param>
-        public void OpenFile(string filePath, bool preview)
-        {
-            this.editorOperations.OpenFileAsync(filePath, preview).Wait();
-        }
+        public void OpenFile(string filePath, bool preview) => editorOperations.OpenFileAsync(filePath, preview).Wait();
 
         #endregion
     }

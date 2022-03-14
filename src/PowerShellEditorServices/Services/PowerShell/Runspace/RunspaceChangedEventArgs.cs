@@ -44,9 +44,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
         {
             Validate.IsNotNull(nameof(previousRunspace), previousRunspace);
 
-            this.ChangeAction = changeAction;
-            this.PreviousRunspace = previousRunspace;
-            this.NewRunspace = newRunspace;
+            ChangeAction = changeAction;
+            PreviousRunspace = previousRunspace;
+            NewRunspace = newRunspace;
         }
 
         /// <summary>

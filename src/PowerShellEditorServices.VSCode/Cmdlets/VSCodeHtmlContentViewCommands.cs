@@ -108,7 +108,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
         ///
         protected override void BeginProcessing()
         {
-            var htmlContent = new HtmlContent();
+            HtmlContent htmlContent = new();
             htmlContent.BodyContent = HtmlBodyContent;
             htmlContent.JavaScriptPaths = JavaScriptPaths;
             htmlContent.StyleSheetPaths = StyleSheetPaths;

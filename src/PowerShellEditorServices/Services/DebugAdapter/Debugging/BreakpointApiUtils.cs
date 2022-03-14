@@ -154,15 +154,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             };
         }
 
-        public static List<Breakpoint> GetBreakpoints(Debugger debugger, int? runspaceId = null)
-        {
-            return GetBreakpointsDelegate(debugger, runspaceId);
-        }
+        public static List<Breakpoint> GetBreakpoints(Debugger debugger, int? runspaceId = null) => GetBreakpointsDelegate(debugger, runspaceId);
 
-        public static bool RemoveBreakpoint(Debugger debugger, Breakpoint breakpoint, int? runspaceId = null)
-        {
-            return RemoveBreakpointDelegate(debugger, breakpoint, runspaceId);
-        }
+        public static bool RemoveBreakpoint(Debugger debugger, Breakpoint breakpoint, int? runspaceId = null) => RemoveBreakpointDelegate(debugger, breakpoint, runspaceId);
 
         /// <summary>
         /// Inspects the condition, putting in the appropriate scriptblock template
@@ -224,7 +218,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                     // Check for "advanced" condition syntax i.e. if the user has specified
                     // a "break" or  "continue" statement anywhere in their scriptblock,
                     // pass their scriptblock through to the Action parameter as-is.
-                    if (parsed.Ast.Find(ast => ast is BreakStatementAst || ast is ContinueStatementAst, true) is not null)
+                    if (parsed.Ast.Find(ast => ast is BreakStatementAst or ContinueStatementAst, true) is not null)
                     {
                         return parsed;
                     }
@@ -319,10 +313,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             return FormatInvalidBreakpointConditionMessage(condition, parseException.Message);
         }
 
-        private static string FormatInvalidBreakpointConditionMessage(string condition, string message)
-        {
-            return $"'{condition}' is not a valid PowerShell expression. {message}";
-        }
+        private static string FormatInvalidBreakpointConditionMessage(string condition, string message) => $"'{condition}' is not a valid PowerShell expression. {message}";
 
         #endregion
     }

@@ -123,11 +123,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             // casting psobject to dynamic allows us to access
             // the diagnostic record's properties directly i.e. <instance>.<propertyName>
             // without having to go through PSObject's Members property.
-            var diagnosticRecord = psObject as dynamic;
+            dynamic diagnosticRecord = psObject;
 
             if (diagnosticRecord.SuggestedCorrections != null)
             {
-                var editRegions = new List<ScriptRegion>();
+                List<ScriptRegion> editRegions = new();
                 string correctionMessage = null;
                 foreach (dynamic suggestedCorrection in diagnosticRecord.SuggestedCorrections)
                 {

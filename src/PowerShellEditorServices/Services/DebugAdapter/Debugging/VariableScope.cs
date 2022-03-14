@@ -28,8 +28,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <param name="name">The variable scope's name.</param>
         public VariableScope(int id, string name)
         {
-            this.Id = id;
-            this.Name = name;
+            Id = id;
+            Name = name;
         }
     }
 }

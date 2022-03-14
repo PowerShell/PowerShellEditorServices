@@ -18,12 +18,12 @@ namespace PowerShellEditorServices.Test.E2E
         /// <summary>
         ///     A <see cref="ProcessStartInfo"/> that describes how to start the server.
         /// </summary>
-        readonly ProcessStartInfo _serverStartInfo;
+        private readonly ProcessStartInfo _serverStartInfo;
 
         /// <summary>
         ///     The current server process (if any).
         /// </summary>
-        Process _serverProcess;
+        private Process _serverProcess;
 
         /// <summary>
         ///     Create a new <see cref="StdioServerProcess"/>.
@@ -35,27 +35,14 @@ namespace PowerShellEditorServices.Test.E2E
         ///     A <see cref="ProcessStartInfo"/> that describes how to start the server.
         /// </param>
         public StdioServerProcess(ILoggerFactory loggerFactory, ProcessStartInfo serverStartInfo)
-            : base(loggerFactory)
-        {
-            if (serverStartInfo == null)
-            {
-                throw new ArgumentNullException(nameof(serverStartInfo));
-            }
-
-            _serverStartInfo = serverStartInfo;
-        }
+            : base(loggerFactory) => _serverStartInfo = serverStartInfo ?? throw new ArgumentNullException(nameof(serverStartInfo));
 
         public int ProcessId => _serverProcess.Id;
 
         /// <summary>
         ///     The process ID of the server process, useful for attaching a debugger.
         /// </summary>
-        public int Id
-        {
-            get {
-                return _serverProcess.Id;
-            }
-        }
+        public int Id => _serverProcess.Id;
 
         /// <summary>
         ///     Dispose of resources being used by the launcher.
@@ -150,11 +137,11 @@ namespace PowerShellEditorServices.Test.E2E
         /// <param name="args">
         ///     The event arguments.
         /// </param>
-        void ServerProcess_Exit(object sender, EventArgs args)
+        private void ServerProcess_Exit(object sender, EventArgs args)
         {
             Log.LogDebug("Server process has exited.");
 
-            var serverProcess = (Process)sender;
+            Process serverProcess = (Process)sender;
 
             int exitCode = serverProcess.ExitCode;
             string errorMsg = serverProcess.StandardError.ReadToEnd();

@@ -125,7 +125,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
                             _psesHost = serviceProvider.GetService<PsesInternalHost>();
 
-                            var workspaceService = serviceProvider.GetService<WorkspaceService>();
+                            WorkspaceService workspaceService = serviceProvider.GetService<WorkspaceService>();
 
                             // Grab the workspace path from the parameters
                             if (request.RootUri != null)
@@ -136,7 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                             {
                                 // If RootUri isn't set, try to use the first WorkspaceFolder.
                                 // TODO: Support multi-workspace.
-                                foreach (var workspaceFolder in request.WorkspaceFolders)
+                                foreach (OmniSharp.Extensions.LanguageServer.Protocol.Models.WorkspaceFolder workspaceFolder in request.WorkspaceFolders)
                                 {
                                     workspaceService.WorkspacePath = workspaceFolder.Uri.GetFileSystemPath();
                                     break;

@@ -17,9 +17,9 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    class PsesTextDocumentHandler : TextDocumentSyncHandlerBase
+    internal class PsesTextDocumentHandler : TextDocumentSyncHandlerBase
     {
-        private static readonly Uri s_fakeUri = new Uri("Untitled:fake");
+        private static readonly Uri s_fakeUri = new("Untitled:fake");
 
         private readonly ILogger _logger;
         private readonly AnalysisService _analysisService;
@@ -59,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return Unit.Task;
         }
 
-        protected override TextDocumentSyncRegistrationOptions CreateRegistrationOptions(SynchronizationCapability capability, ClientCapabilities clientCapabilities) => new TextDocumentSyncRegistrationOptions()
+        protected override TextDocumentSyncRegistrationOptions CreateRegistrationOptions(SynchronizationCapability capability, ClientCapabilities clientCapabilities) => new()
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector,
             Change = Change,
@@ -91,7 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public override Task<Unit> Handle(DidCloseTextDocumentParams notification, CancellationToken token)
         {
             // Find and close the file in the current session
-            var fileToClose = _workspaceService.GetFile(notification.TextDocument.Uri);
+            ScriptFile fileToClose = _workspaceService.GetFile(notification.TextDocument.Uri);
 
             if (fileToClose != null)
             {
@@ -117,13 +117,16 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return Unit.Value;
         }
 
-        public override TextDocumentAttributes GetTextDocumentAttributes(DocumentUri uri) => new TextDocumentAttributes(uri, "powershell");
+        public override TextDocumentAttributes GetTextDocumentAttributes(DocumentUri uri) => new(uri, "powershell");
 
         private static FileChange GetFileChangeDetails(Range changeRange, string insertString)
         {
             // The protocol's positions are zero-based so add 1 to all offsets
 
-            if (changeRange == null) return new FileChange { InsertString = insertString, IsReload = true };
+            if (changeRange == null)
+            {
+                return new FileChange { InsertString = insertString, IsReload = true };
+            }
 
             return new FileChange
             {

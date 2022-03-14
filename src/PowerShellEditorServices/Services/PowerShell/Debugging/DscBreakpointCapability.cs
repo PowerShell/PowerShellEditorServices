@@ -1,5 +1,5 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license.
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,8 +23,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
     {
         private string[] dscResourceRootPaths = Array.Empty<string>();
 
-        private Dictionary<string, int[]> breakpointsPerFile =
-            new Dictionary<string, int[]>();
+        private readonly Dictionary<string, int[]> breakpointsPerFile =
+            new();
 
         public async Task<BreakpointDetails[]> SetLineBreakpointsAsync(
             IInternalPowerShellExecutionService executionService,
@@ -32,32 +32,32 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
             BreakpointDetails[] breakpoints)
         {
             List<BreakpointDetails> resultBreakpointDetails =
-                new List<BreakpointDetails>();
+                new();
 
             // We always get the latest array of breakpoint line numbers
             // so store that for future use
             if (breakpoints.Length > 0)
             {
                 // Set the breakpoints for this scriptPath
-                this.breakpointsPerFile[scriptPath] =
+                breakpointsPerFile[scriptPath] =
                     breakpoints.Select(b => b.LineNumber).ToArray();
             }
             else
             {
                 // No more breakpoints for this scriptPath, remove it
-                this.breakpointsPerFile.Remove(scriptPath);
+                breakpointsPerFile.Remove(scriptPath);
             }
 
             string hashtableString =
                 string.Join(
                     ", ",
-                    this.breakpointsPerFile
+                    breakpointsPerFile
                         .Select(file => $"@{{Path=\"{file.Key}\";Line=@({string.Join(",", file.Value)})}}"));
 
             // Run Enable-DscDebug as a script because running it as a PSCommand
             // causes an error which states that the Breakpoint parameter has not
             // been passed.
-            var dscCommand = new PSCommand().AddScript(
+            PSCommand dscCommand = new PSCommand().AddScript(
                 hashtableString.Length > 0
                     ? $"Enable-DscDebug -Breakpoint {hashtableString}"
                     : "Disable-DscDebug");
@@ -68,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                 .ConfigureAwait(false);
 
             // Verify all the breakpoints and return them
-            foreach (var breakpoint in breakpoints)
+            foreach (BreakpointDetails breakpoint in breakpoints)
             {
                 breakpoint.Verified = true;
             }
@@ -100,7 +100,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
             Func<SMA.PowerShell, CancellationToken, DscBreakpointCapability> getDscBreakpointCapabilityFunc = (pwsh, cancellationToken) =>
             {
-                var invocationSettings = new PSInvocationSettings
+                PSInvocationSettings invocationSettings = new()
                 {
                     AddToHistory = false,
                     ErrorActionPreference = ActionPreference.Stop
@@ -129,7 +129,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                 logger.LogTrace("Side-by-side DSC module found, gathering DSC resource paths...");
 
                 // The module was loaded, add the breakpoint capability
-                var capability = new DscBreakpointCapability();
+                DscBreakpointCapability capability = new();
 
                 pwsh.AddCommand("Microsoft.PowerShell.Utility\\Write-Host")
                     .AddArgument("Gathering DSC resource paths, this may take a while...")
@@ -162,7 +162,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                 return capability;
             };
 
-            return psesHost.ExecuteDelegateAsync<DscBreakpointCapability>(
+            return psesHost.ExecuteDelegateAsync(
                 nameof(getDscBreakpointCapabilityFunc),
                 executionOptions: null,
                 getDscBreakpointCapabilityFunc,

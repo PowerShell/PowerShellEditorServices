@@ -28,12 +28,7 @@ namespace PowerShellEditorServices.Test.E2E
         /// </param>
         protected ServerProcess(ILoggerFactory loggerFactory)
         {
-            if (loggerFactory == null)
-            {
-                throw new ArgumentNullException(nameof(loggerFactory));
-            }
-
-            LoggerFactory = loggerFactory;
+            LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
             Log = LoggerFactory.CreateLogger(categoryName: GetType().FullName);
 
             ServerStartCompletion = new TaskCompletionSource<object>();
@@ -58,10 +53,7 @@ namespace PowerShellEditorServices.Test.E2E
         /// <summary>
         ///     Dispose of resources being used by the launcher.
         /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-        }
+        public void Dispose() => Dispose(true);
 
         /// <summary>
         ///     Dispose of resources being used by the launcher.

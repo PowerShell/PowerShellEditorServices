@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<CommentHelpRequestResult> Handle(CommentHelpRequestParams request, CancellationToken cancellationToken)
         {
-            var result = new CommentHelpRequestResult();
+            CommentHelpRequestResult result = new();
 
             if (!_workspaceService.TryGetFile(request.DocumentUri, out ScriptFile scriptFile))
             {

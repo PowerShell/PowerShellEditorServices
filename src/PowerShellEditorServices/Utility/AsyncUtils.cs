@@ -19,10 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// max count of one.
         /// </summary>
         /// <returns>A simple single handle <see cref="SemaphoreSlim" />.</returns>
-        internal static SemaphoreSlim CreateSimpleLockingSemaphore()
-        {
-            return new SemaphoreSlim(initialCount: 1, maxCount: 1);
-        }
+        internal static SemaphoreSlim CreateSimpleLockingSemaphore() => new(initialCount: 1, maxCount: 1);
 
         internal static Task HandleErrorsAsync(
             this Task task,

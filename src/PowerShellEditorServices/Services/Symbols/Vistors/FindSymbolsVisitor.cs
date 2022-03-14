@@ -16,10 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     {
         public List<SymbolReference> SymbolReferences { get; private set; }
 
-        public FindSymbolsVisitor()
-        {
-            this.SymbolReferences = new List<SymbolReference>();
-        }
+        public FindSymbolsVisitor() => SymbolReferences = new List<SymbolReference>();
 
         /// <summary>
         /// Adds each function definition as a
@@ -42,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 functionDefinitionAst.IsWorkflow ?
                     SymbolType.Workflow : SymbolType.Function;
 
-            this.SymbolReferences.Add(
+            SymbolReferences.Add(
                 new SymbolReference(
                     symbolType,
                     nameExtent));
@@ -63,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 return AstVisitAction.Continue;
             }
 
-            this.SymbolReferences.Add(
+            SymbolReferences.Add(
                 new SymbolReference(
                     SymbolType.Variable,
                     variableExpressionAst.Extent));
@@ -74,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         private static bool IsAssignedAtScriptScope(VariableExpressionAst variableExpressionAst)
         {
             Ast parent = variableExpressionAst.Parent;
-            if (!(parent is AssignmentStatementAst))
+            if (parent is not AssignmentStatementAst)
             {
                 return false;
             }
@@ -102,10 +99,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <summary>
         /// Initializes a new instance of FindHashtableSymbolsVisitor class
         /// </summary>
-        public FindHashtableSymbolsVisitor()
-        {
-            SymbolReferences = new List<SymbolReference>();
-        }
+        public FindHashtableSymbolsVisitor() => SymbolReferences = new List<SymbolReference>();
 
         /// <summary>
         /// Adds keys in the input hashtable to the symbol reference
@@ -117,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 return AstVisitAction.Continue;
             }
 
-            foreach (var kvp in hashtableAst.KeyValuePairs)
+            foreach (System.Tuple<ExpressionAst, StatementAst> kvp in hashtableAst.KeyValuePairs)
             {
                 if (kvp.Item1 is StringConstantExpressionAst keyStrConstExprAst)
                 {
@@ -133,7 +127,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 
                     SymbolType symbolType = SymbolType.HashtableKey;
 
-                    this.SymbolReferences.Add(
+                    SymbolReferences.Add(
                         new SymbolReference(
                             symbolType,
                             nameExtent));

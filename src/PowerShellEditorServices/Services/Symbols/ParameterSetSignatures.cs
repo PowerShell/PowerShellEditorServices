@@ -40,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <param name="foundSymbol"> The SymbolReference of the command</param>
         public ParameterSetSignatures(IEnumerable<CommandParameterSetInfo> commandInfoSet, SymbolReference foundSymbol)
         {
-            List<ParameterSetSignature> paramSetSignatures = new List<ParameterSetSignature>();
+            List<ParameterSetSignature> paramSetSignatures = new();
             foreach (CommandParameterSetInfo setInfo in commandInfoSet)
             {
                 paramSetSignatures.Add(new ParameterSetSignature(setInfo));
@@ -57,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     internal class ParameterSetSignature
     {
         private static readonly ConcurrentDictionary<string, bool> commonParameterNames =
-            new ConcurrentDictionary<string, bool>();
+            new();
 
         static ParameterSetSignature()
         {
@@ -92,7 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <param name="commandParamInfoSet">Collection of parameter info</param>
         public ParameterSetSignature(CommandParameterSetInfo commandParamInfoSet)
         {
-            List<ParameterInfo> parameterInfo = new List<ParameterInfo>();
+            List<ParameterInfo> parameterInfo = new();
             foreach (CommandParameterInfo commandParameterInfo in commandParamInfoSet.Parameters)
             {
                 if (!commonParameterNames.ContainsKey(commandParameterInfo.Name))
@@ -144,11 +144,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <param name="parameterInfo">Parameter info of the parameter</param>
         public ParameterInfo(CommandParameterInfo parameterInfo)
         {
-            this.Name = "-" + parameterInfo.Name;
-            this.ParameterType = parameterInfo.ParameterType.FullName;
-            this.Position = parameterInfo.Position;
-            this.IsMandatory = parameterInfo.IsMandatory;
-            this.HelpMessage = parameterInfo.HelpMessage;
+            Name = "-" + parameterInfo.Name;
+            ParameterType = parameterInfo.ParameterType.FullName;
+            Position = parameterInfo.Position;
+            IsMandatory = parameterInfo.IsMandatory;
+            HelpMessage = parameterInfo.HelpMessage;
         }
     }
 }

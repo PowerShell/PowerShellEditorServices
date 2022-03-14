@@ -36,10 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             return null;
         }
 
-        public override string ToString()
-        {
-            return _representation;
-        }
+        public override string ToString() => _representation;
     }
 
     internal class SynchronousDelegateTask<TResult> : SynchronousTask<TResult>
@@ -63,15 +60,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public override ExecutionOptions ExecutionOptions { get; }
 
-        public override TResult Run(CancellationToken cancellationToken)
-        {
-            return _func(cancellationToken);
-        }
+        public override TResult Run(CancellationToken cancellationToken) => _func(cancellationToken);
 
-        public override string ToString()
-        {
-            return _representation;
-        }
+        public override string ToString() => _representation;
     }
 
     internal class SynchronousPSDelegateTask : SynchronousTask<object>
@@ -105,10 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             return null;
         }
 
-        public override string ToString()
-        {
-            return _representation;
-        }
+        public override string ToString() => _representation;
     }
 
     internal class SynchronousPSDelegateTask<TResult> : SynchronousTask<TResult>
@@ -136,14 +124,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public override ExecutionOptions ExecutionOptions { get; }
 
-        public override TResult Run(CancellationToken cancellationToken)
-        {
-            return _func(_psesHost.CurrentPowerShell, cancellationToken);
-        }
+        public override TResult Run(CancellationToken cancellationToken) => _func(_psesHost.CurrentPowerShell, cancellationToken);
 
-        public override string ToString()
-        {
-            return _representation;
-        }
+        public override string ToString() => _representation;
     }
 }

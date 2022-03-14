@@ -80,7 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             // In .NET Core, we add an event here to redirect dependency loading to the new AssemblyLoadContext we load PSES' dependencies into
             logger.Log(PsesLogLevel.Verbose, "Adding AssemblyResolve event handler for new AssemblyLoadContext dependency loading");
 
-            var psesLoadContext = new PsesLoadContext(s_psesDependencyDirPath);
+            PsesLoadContext psesLoadContext = new(s_psesDependencyDirPath);
 
             if (hostConfig.LogLevel == PsesLogLevel.Diagnostic)
             {
@@ -140,8 +140,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {args.Name}");
 #endif
 
-                var asmName = new AssemblyName(args.Name);
-                var dllName = $"{asmName.Name}.dll";
+                AssemblyName asmName = new(args.Name);
+                string dllName = $"{asmName.Name}.dll";
 
                 // First look for the required assembly in the .NET Framework DLL dir
                 string baseDirAsmPath = Path.Combine(s_psesBaseDirPath, dllName);
@@ -231,31 +231,27 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             // This is not high priority, since the PSES process shouldn't be reused
         }
 
-        private static void LoadEditorServices()
-        {
+        private static void LoadEditorServices() =>
             // This must be in its own method, since the actual load happens when the calling method is called
             // The call within this method is therefore a total no-op
             EditorServicesLoading.LoadEditorServicesForHost();
-        }
 
 #if !CoreCLR
         private void CheckNetFxVersion()
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Checking that .NET Framework version is at least 4.6.1");
-            using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Net Framework Setup\NDP\v4\Full"))
+            using RegistryKey key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Net Framework Setup\NDP\v4\Full");
+            object netFxValue = key?.GetValue("Release");
+            if (netFxValue == null || netFxValue is not int netFxVersion)
             {
-                object netFxValue = key?.GetValue("Release");
-                if (netFxValue == null || !(netFxValue is int netFxVersion))
-                {
-                    return;
-                }
+                return;
+            }
 
-                _logger.Log(PsesLogLevel.Verbose, $".NET registry version: {netFxVersion}");
+            _logger.Log(PsesLogLevel.Verbose, $".NET registry version: {netFxVersion}");
 
-                if (netFxVersion < Net461Version)
-                {
-                    _logger.Log(PsesLogLevel.Warning, $".NET Framework version {netFxVersion} lower than .NET 4.6.1. This runtime is not supported and you may experience errors. Please update your .NET runtime version.");
-                }
+            if (netFxVersion < Net461Version)
+            {
+                _logger.Log(PsesLogLevel.Warning, $".NET Framework version {netFxVersion} lower than .NET 4.6.1. This runtime is not supported and you may experience errors. Please update your .NET runtime version.");
             }
         }
 #endif
@@ -328,10 +324,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private static string GetPSOutputEncoding()
         {
-            using (var pwsh = SMA.PowerShell.Create())
-            {
-                return pwsh.AddScript("$OutputEncoding.EncodingName", useLocalScope: true).Invoke<string>()[0];
-            }
+            using SMA.PowerShell pwsh = SMA.PowerShell.Create();
+            return pwsh.AddScript("$OutputEncoding.EncodingName", useLocalScope: true).Invoke<string>()[0];
         }
 
         private void LogPowerShellDetails()

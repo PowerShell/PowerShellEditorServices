@@ -43,13 +43,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             };
 
             ClientEditorContext clientContext =
-                await _languageServer.SendRequest<GetEditorContextRequest>(
+                await _languageServer.SendRequest(
                     "editor/getEditorContext",
                     new GetEditorContextRequest())
                 .Returning<ClientEditorContext>(CancellationToken.None)
                 .ConfigureAwait(false);
 
-            return this.ConvertClientEditorContext(clientContext);
+            return ConvertClientEditorContext(clientContext);
         }
 
         public async Task InsertTextAsync(string filePath, string text, BufferRange insertRange)
@@ -180,10 +180,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
                 .ConfigureAwait(false);
         }
 
-        public Task SaveFileAsync(string filePath)
-        {
-            return SaveFileAsync(filePath, null);
-        }
+        public Task SaveFileAsync(string filePath) => SaveFileAsync(filePath, null);
 
         public async Task SaveFileAsync(string currentPath, string newSavePath)
         {
@@ -199,15 +196,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
         }
 
-        public string GetWorkspacePath()
-        {
-            return _workspaceService.WorkspacePath;
-        }
+        public string GetWorkspacePath() => _workspaceService.WorkspacePath;
 
-        public string GetWorkspaceRelativePath(string filePath)
-        {
-            return _workspaceService.GetRelativePath(filePath);
-        }
+        public string GetWorkspaceRelativePath(string filePath) => _workspaceService.GetRelativePath(filePath);
 
         public async Task ShowInformationMessageAsync(string message)
         {

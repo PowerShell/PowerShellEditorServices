@@ -37,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             Position start = diagnostic.Range.Start;
             Position end = diagnostic.Range.End;
 
-            var sb = new StringBuilder(256)
+            StringBuilder sb = new StringBuilder(256)
             .Append(diagnostic.Source ?? "?")
             .Append("_")
             .Append(diagnostic.Code?.IsString ?? true ? diagnostic.Code?.String : diagnostic.Code?.Long.ToString())
@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             .Append(":")
             .Append(end.Character);
 
-            var id = sb.ToString();
+            string id = sb.ToString();
             return id;
         }
 
@@ -144,7 +144,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             EnsureEngineSettingsCurrent();
 
             // If there's an existing task, we want to cancel it here;
-            var cancellationSource = new CancellationTokenSource();
+            CancellationTokenSource cancellationSource = new();
             CancellationTokenSource oldTaskCancellation = Interlocked.Exchange(ref _diagnosticsCancellationTokenSource, cancellationSource);
             if (oldTaskCancellation != null)
             {
@@ -164,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             }
 
-            var analysisTask = Task.Run(() => DelayThenInvokeDiagnosticsAsync(filesToAnalyze, _diagnosticsCancellationTokenSource.Token), _diagnosticsCancellationTokenSource.Token);
+            Task analysisTask = Task.Run(() => DelayThenInvokeDiagnosticsAsync(filesToAnalyze, _diagnosticsCancellationTokenSource.Token), _diagnosticsCancellationTokenSource.Token);
 
             // Ensure that any next corrections request will wait for this diagnostics publication
             foreach (ScriptFile file in filesToAnalyze)
@@ -242,10 +242,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="file">The file to clear markers in.</param>
         /// <returns>A task that ends when all markers in the file have been cleared.</returns>
-        public void ClearMarkers(ScriptFile file)
-        {
-            PublishScriptDiagnostics(file, Array.Empty<ScriptFileMarker>());
-        }
+        public void ClearMarkers(ScriptFile file) => PublishScriptDiagnostics(file, Array.Empty<ScriptFileMarker>());
 
         /// <summary>
         /// Event subscription method to be run when PSES configuration has been updated.
@@ -294,7 +291,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private PssaCmdletAnalysisEngine InstantiateAnalysisEngine()
         {
-            var pssaCmdletEngineBuilder = new PssaCmdletAnalysisEngine.Builder(_loggerFactory);
+            PssaCmdletAnalysisEngine.Builder pssaCmdletEngineBuilder = new(_loggerFactory);
 
             // If there's a settings file use that
             if (TryFindSettingsFile(out string settingsFilePath))
@@ -393,7 +390,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void PublishScriptDiagnostics(ScriptFile scriptFile, IReadOnlyList<ScriptFileMarker> markers)
         {
-            var diagnostics = new Diagnostic[markers.Count];
+            Diagnostic[] diagnostics = new Diagnostic[markers.Count];
 
             CorrectionTableEntry fileCorrections = _mostRecentCorrectionsByFile.GetOrAdd(
                 scriptFile,
@@ -423,11 +420,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             });
         }
 
-        private static ConcurrentDictionary<string, MarkerCorrection> CreateFileCorrectionsEntry(string fileUri)
-        {
-            return new ConcurrentDictionary<string, MarkerCorrection>();
-        }
-
         private static Diagnostic GetDiagnosticFromMarker(ScriptFileMarker scriptFileMarker)
         {
             return new Diagnostic
@@ -454,13 +446,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private static DiagnosticSeverity MapDiagnosticSeverity(ScriptFileMarkerLevel markerLevel)
         {
-            switch (markerLevel)
+            return markerLevel switch
             {
-                case ScriptFileMarkerLevel.Error:       return DiagnosticSeverity.Error;
-                case ScriptFileMarkerLevel.Warning:     return DiagnosticSeverity.Warning;
-                case ScriptFileMarkerLevel.Information: return DiagnosticSeverity.Information;
-                default:                                return DiagnosticSeverity.Error;
+                ScriptFileMarkerLevel.Error => DiagnosticSeverity.Error,
+                ScriptFileMarkerLevel.Warning => DiagnosticSeverity.Warning,
+                ScriptFileMarkerLevel.Information => DiagnosticSeverity.Information,
+                _ => DiagnosticSeverity.Error,
             };
+            ;
         }
 
         private static Hashtable GetCommentHelpRuleSettings(string helpLocation, bool forBlockComment)
@@ -500,11 +493,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
 
         // This code added to correctly implement the disposable pattern.
-        public void Dispose()
-        {
+        public void Dispose() =>
             // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
             Dispose(true);
-        }
         #endregion
 
         /// <summary>
@@ -516,10 +507,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         private class CorrectionTableEntry
         {
-            public static CorrectionTableEntry CreateForFile(ScriptFile file)
-            {
-                return new CorrectionTableEntry();
-            }
+            public static CorrectionTableEntry CreateForFile(ScriptFile file) => new();
 
             public CorrectionTableEntry()
             {
