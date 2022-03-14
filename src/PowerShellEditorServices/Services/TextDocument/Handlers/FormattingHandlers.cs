@@ -13,54 +13,44 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     // TODO: Add IDocumentOnTypeFormatHandler to support on-type formatting.
-    // TODO: Use ABCs.
-    internal class PsesDocumentFormattingHandlers : IDocumentFormattingHandler, IDocumentRangeFormattingHandler
+    internal class PsesDocumentFormattingHandler : DocumentFormattingHandlerBase
     {
         private readonly ILogger _logger;
         private readonly AnalysisService _analysisService;
         private readonly ConfigurationService _configurationService;
         private readonly WorkspaceService _workspaceService;
 
-        private DocumentFormattingCapability _documentFormattingCapability;
-        private DocumentRangeFormattingCapability _documentRangeFormattingCapability;
-
-        public PsesDocumentFormattingHandlers(
+        public PsesDocumentFormattingHandler(
             ILoggerFactory factory,
             AnalysisService analysisService,
             ConfigurationService configurationService,
             WorkspaceService workspaceService)
         {
-            _logger = factory.CreateLogger<PsesDocumentFormattingHandlers>();
+            _logger = factory.CreateLogger<PsesDocumentFormattingHandler>();
             _analysisService = analysisService;
             _configurationService = configurationService;
             _workspaceService = workspaceService;
         }
 
-        public DocumentFormattingRegistrationOptions GetRegistrationOptions(DocumentFormattingCapability capability, ClientCapabilities clientCapabilities) => new DocumentFormattingRegistrationOptions
+        protected override DocumentFormattingRegistrationOptions CreateRegistrationOptions(DocumentFormattingCapability capability, ClientCapabilities clientCapabilities) => new()
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector
         };
 
-        public DocumentRangeFormattingRegistrationOptions GetRegistrationOptions(DocumentRangeFormattingCapability capability, ClientCapabilities clientCapabilities) => new DocumentRangeFormattingRegistrationOptions
+        public override async Task<TextEditContainer> Handle(DocumentFormattingParams request, CancellationToken cancellationToken)
         {
-            DocumentSelector = LspUtils.PowerShellDocumentSelector
-        };
-
-        public async Task<TextEditContainer> Handle(DocumentFormattingParams request, CancellationToken cancellationToken)
-        {
-            var scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
-            var pssaSettings = _configurationService.CurrentSettings.CodeFormatting.GetPSSASettingsHashtable(
-                (int)request.Options.TabSize,
+            Services.TextDocument.ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
+            System.Collections.Hashtable pssaSettings = _configurationService.CurrentSettings.CodeFormatting.GetPSSASettingsHashtable(
+                request.Options.TabSize,
                 request.Options.InsertSpaces,
                 _logger);
 
-
-            // TODO raise an error event in case format returns null
+            // TODO: Raise an error event in case format returns null.
             string formattedScript;
             Range editRange;
-            var extent = scriptFile.ScriptAst.Extent;
+            System.Management.Automation.Language.IScriptExtent extent = scriptFile.ScriptAst.Extent;
 
-            // todo create an extension for converting range to script extent
+            // TODO: Create an extension for converting range to script extent.
             editRange = new Range
             {
                 Start = new Position
@@ -79,7 +69,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 scriptFile.Contents,
                 pssaSettings,
                 null).ConfigureAwait(false);
-            formattedScript = formattedScript ?? scriptFile.Contents;
+
+            if (formattedScript is null)
+            {
+                _logger.LogWarning($"Formatting returned null. Returning original contents for file: {scriptFile.DocumentUri}");
+                formattedScript = scriptFile.Contents;
+            }
 
             return new TextEditContainer(new TextEdit
             {
@@ -87,21 +82,46 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 Range = editRange
             });
         }
+    }
 
-        public async Task<TextEditContainer> Handle(DocumentRangeFormattingParams request, CancellationToken cancellationToken)
+    internal class PsesDocumentRangeFormattingHandler : DocumentRangeFormattingHandlerBase
+    {
+        private readonly ILogger _logger;
+        private readonly AnalysisService _analysisService;
+        private readonly ConfigurationService _configurationService;
+        private readonly WorkspaceService _workspaceService;
+
+        public PsesDocumentRangeFormattingHandler(
+            ILoggerFactory factory,
+            AnalysisService analysisService,
+            ConfigurationService configurationService,
+            WorkspaceService workspaceService)
         {
-            var scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
-            var pssaSettings = _configurationService.CurrentSettings.CodeFormatting.GetPSSASettingsHashtable(
-                (int)request.Options.TabSize,
+            _logger = factory.CreateLogger<PsesDocumentRangeFormattingHandler>();
+            _analysisService = analysisService;
+            _configurationService = configurationService;
+            _workspaceService = workspaceService;
+        }
+
+        protected override DocumentRangeFormattingRegistrationOptions CreateRegistrationOptions(DocumentRangeFormattingCapability capability, ClientCapabilities clientCapabilities) => new()
+        {
+            DocumentSelector = LspUtils.PowerShellDocumentSelector
+        };
+
+        public override async Task<TextEditContainer> Handle(DocumentRangeFormattingParams request, CancellationToken cancellationToken)
+        {
+            Services.TextDocument.ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
+            System.Collections.Hashtable pssaSettings = _configurationService.CurrentSettings.CodeFormatting.GetPSSASettingsHashtable(
+                request.Options.TabSize,
                 request.Options.InsertSpaces,
                 _logger);
 
-            // TODO raise an error event in case format returns null;
+            // TODO: Raise an error event in case format returns null.
             string formattedScript;
             Range editRange;
-            var extent = scriptFile.ScriptAst.Extent;
+            System.Management.Automation.Language.IScriptExtent extent = scriptFile.ScriptAst.Extent;
 
-            // TODO create an extension for converting range to script extent
+            // TODO: Create an extension for converting range to script extent.
             editRange = new Range
             {
                 Start = new Position
@@ -117,7 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             };
 
             Range range = request.Range;
-            var rangeList = range == null ? null : new int[]
+            int[] rangeList = range == null ? null : new int[]
             {
                 range.Start.Line + 1,
                 range.Start.Character + 1,
@@ -130,9 +150,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 pssaSettings,
                 rangeList).ConfigureAwait(false);
 
-            if (formattedScript == null)
+            if (formattedScript is null)
             {
-                _logger.LogWarning("Formatting returned null. Returning original contents for file: {0}", scriptFile.DocumentUri);
+                _logger.LogWarning($"Formatting returned null. Returning original contents for file: {scriptFile.DocumentUri}");
                 formattedScript = scriptFile.Contents;
             }
 
@@ -141,16 +161,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 NewText = formattedScript,
                 Range = editRange
             });
-        }
-
-        public void SetCapability(DocumentFormattingCapability capability)
-        {
-            _documentFormattingCapability = capability;
-        }
-
-        public void SetCapability(DocumentRangeFormattingCapability capability)
-        {
-            _documentRangeFormattingCapability = capability;
         }
     }
 }

@@ -26,15 +26,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _analysisService = analysisService;
         }
 
-        protected override CodeActionRegistrationOptions CreateRegistrationOptions(CodeActionCapability capability, ClientCapabilities clientCapabilities)
+        protected override CodeActionRegistrationOptions CreateRegistrationOptions(CodeActionCapability capability, ClientCapabilities clientCapabilities) => new()
         {
-            return new()
-            {
-                // TODO: What do we do with the arguments?
-                DocumentSelector = LspUtils.PowerShellDocumentSelector,
-                CodeActionKinds = new CodeActionKind[] { CodeActionKind.QuickFix }
-            };
-        }
+            // TODO: What do we do with the arguments?
+            DocumentSelector = LspUtils.PowerShellDocumentSelector,
+            CodeActionKinds = new CodeActionKind[] { CodeActionKind.QuickFix }
+        };
 
         // TODO: Either fix or ignore "method lacks 'await'" warning.
         public override async Task<CodeAction> Handle(CodeAction request, CancellationToken cancellationToken)

@@ -80,7 +80,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithOutput(_outputStream)
                     .WithServices(serviceCollection =>
                     {
-
                         // NOTE: This adds a lot of services!
                         serviceCollection.AddPsesLanguageServices(_hostDetails);
                     })
@@ -94,7 +93,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<GetVersionHandler>()
                     .WithHandler<PsesConfigurationHandler>()
                     .WithHandler<PsesFoldingRangeHandler>()
-                    .WithHandler<PsesDocumentFormattingHandlers>()
+                    .WithHandler<PsesDocumentFormattingHandler>()
+                    .WithHandler<PsesDocumentRangeFormattingHandler>()
                     .WithHandler<PsesReferencesHandler>()
                     .WithHandler<PsesDocumentSymbolHandler>()
                     .WithHandler<PsesDocumentHighlightHandler>()
