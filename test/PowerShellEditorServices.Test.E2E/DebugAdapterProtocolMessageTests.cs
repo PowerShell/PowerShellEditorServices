@@ -22,10 +22,10 @@ namespace PowerShellEditorServices.Test.E2E
     public class DebugAdapterProtocolMessageTests : IAsyncLifetime
     {
         private const string TestOutputFileName = "__dapTestOutputFile.txt";
-        private readonly static bool s_isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-        private readonly static string s_binDir =
+        private static readonly bool s_isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        private static readonly string s_binDir =
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        private readonly static string s_testOutputPath = Path.Combine(s_binDir, TestOutputFileName);
+        private static readonly string s_testOutputPath = Path.Combine(s_binDir, TestOutputFileName);
 
         private readonly ITestOutputHelper _output;
         private DebugAdapterClient PsesDebugAdapterClient;
@@ -33,18 +33,15 @@ namespace PowerShellEditorServices.Test.E2E
 
         public TaskCompletionSource<object> Started { get; } = new TaskCompletionSource<object>();
 
-        public DebugAdapterProtocolMessageTests(ITestOutputHelper output)
-        {
-            _output = output;
-        }
+        public DebugAdapterProtocolMessageTests(ITestOutputHelper output) => _output = output;
 
         public async Task InitializeAsync()
         {
-            var factory = new LoggerFactory();
+            LoggerFactory factory = new();
             _psesProcess = new PsesStdioProcess(factory, true);
             await _psesProcess.Start().ConfigureAwait(false);
 
-            var initialized = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> initialized = new();
 
             _psesProcess.ProcessExited += (sender, args) =>
             {
@@ -59,18 +56,21 @@ namespace PowerShellEditorServices.Test.E2E
                     .WithOutput(_psesProcess.InputStream)
                     // The OnStarted delegate gets run when we receive the _Initialized_ event from the server:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Events_Initialized
-                    .OnStarted((client, token) => {
+                    .OnStarted((client, token) =>
+                    {
                         Started.SetResult(true);
                         return Task.CompletedTask;
                     })
                     // The OnInitialized delegate gets run when we first receive the _Initialize_ response:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
-                    .OnInitialized((client, request, response, token) => {
+                    .OnInitialized((client, request, response, token) =>
+                    {
                         initialized.SetResult(true);
                         return Task.CompletedTask;
                     });
 
-                options.OnUnhandledException = (exception) => {
+                options.OnUnhandledException = (exception) =>
+                {
                     initialized.SetException(exception);
                     Started.SetException(exception);
                 };
@@ -99,10 +99,10 @@ namespace PowerShellEditorServices.Test.E2E
             try
             {
                 await PsesDebugAdapterClient.RequestDisconnect(new DisconnectArguments
-                    {
-                        Restart = false,
-                        TerminateDebuggee = true
-                    }).ConfigureAwait(false);
+                {
+                    Restart = false,
+                    TerminateDebuggee = true
+                }).ConfigureAwait(false);
                 await _psesProcess.Stop().ConfigureAwait(false);
                 PsesDebugAdapterClient?.Dispose();
             }
@@ -141,10 +141,7 @@ namespace PowerShellEditorServices.Test.E2E
             return builder.ToString();
         }
 
-        private static string[] GetLog()
-        {
-            return File.ReadLines(s_testOutputPath).ToArray();
-        }
+        private static string[] GetLog() => File.ReadLines(s_testOutputPath).ToArray();
 
         [Trait("Category", "DAP")]
         [Fact]
@@ -211,7 +208,7 @@ namespace PowerShellEditorServices.Test.E2E
                 SourceModified = false,
             }).ConfigureAwait(false);
 
-            var breakpoint = setBreakpointsResponse.Breakpoints.First();
+            Breakpoint breakpoint = setBreakpointsResponse.Breakpoints.First();
             Assert.True(breakpoint.Verified);
             Assert.Equal(filePath, breakpoint.Source.Path, ignoreCase: s_isWindows);
             Assert.Equal(2, breakpoint.Line);
@@ -260,7 +257,7 @@ namespace PowerShellEditorServices.Test.E2E
             Skip.IfNot(PsesStdioProcess.IsWindowsPowerShell);
             Skip.If(PsesStdioProcess.RunningInConstainedLanguageMode);
 
-            string filePath = NewTestFile(string.Join(Environment.NewLine, new []
+            string filePath = NewTestFile(string.Join(Environment.NewLine, new[]
                 {
                     "Add-Type -AssemblyName System.Windows.Forms",
                     "$global:form = New-Object System.Windows.Forms.Form",
@@ -269,14 +266,14 @@ namespace PowerShellEditorServices.Test.E2E
 
             await PsesDebugAdapterClient.LaunchScript(filePath, Started).ConfigureAwait(false);
 
-            var setBreakpointsResponse = await PsesDebugAdapterClient.SetFunctionBreakpoints(
+            SetFunctionBreakpointsResponse setBreakpointsResponse = await PsesDebugAdapterClient.SetFunctionBreakpoints(
                 new SetFunctionBreakpointsArguments
                 {
                     Breakpoints = new FunctionBreakpoint[]
                         { new FunctionBreakpoint { Name = "Write-Host", } }
                 }).ConfigureAwait(false);
 
-            var breakpoint = setBreakpointsResponse.Breakpoints.First();
+            Breakpoint breakpoint = setBreakpointsResponse.Breakpoints.First();
             Assert.True(breakpoint.Verified);
 
             ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(false);
@@ -285,13 +282,13 @@ namespace PowerShellEditorServices.Test.E2E
             // At this point the script should be running so lets give it time
             await Task.Delay(2000).ConfigureAwait(false);
 
-            var variablesResponse = await PsesDebugAdapterClient.RequestVariables(
+            VariablesResponse variablesResponse = await PsesDebugAdapterClient.RequestVariables(
                 new VariablesArguments
                 {
                     VariablesReference = 1
                 }).ConfigureAwait(false);
 
-            var form = variablesResponse.Variables.FirstOrDefault(v => v.Name == "$form");
+            Variable form = variablesResponse.Variables.FirstOrDefault(v => v.Name == "$form");
             Assert.NotNull(form);
             Assert.Equal("System.Windows.Forms.Form, Text: ", form.Value);
         }

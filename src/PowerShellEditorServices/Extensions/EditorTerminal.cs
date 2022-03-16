@@ -21,10 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// Creates a new instance of the EditorTerminal class.
         /// </summary>
         /// <param name="editorOperations">An IEditorOperations implementation which handles operations in the host editor.</param>
-        internal EditorTerminal(IEditorOperations editorOperations)
-        {
-            this.editorOperations = editorOperations;
-        }
+        internal EditorTerminal(IEditorOperations editorOperations) => this.editorOperations = editorOperations;
 
         #endregion
 
@@ -33,10 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Triggers to the editor to clear the terminal.
         /// </summary>
-        public void Clear()
-        {
-            this.editorOperations.ClearTerminal();
-        }
+        public void Clear() => editorOperations.ClearTerminal();
 
         #endregion
     }

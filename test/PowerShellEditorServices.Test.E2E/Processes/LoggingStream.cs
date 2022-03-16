@@ -14,10 +14,7 @@ namespace PowerShellEditorServices.Test.E2E
 
         private readonly Stream _underlyingStream;
 
-        public LoggingStream(Stream underlyingStream)
-        {
-            _underlyingStream = underlyingStream;
-        }
+        public LoggingStream(Stream underlyingStream) => _underlyingStream = underlyingStream;
 
         public override bool CanRead => _underlyingStream.CanRead;
 

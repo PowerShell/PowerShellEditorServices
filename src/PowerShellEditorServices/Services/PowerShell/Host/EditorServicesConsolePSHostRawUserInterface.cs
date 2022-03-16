@@ -45,8 +45,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// </summary>
         public override ConsoleColor BackgroundColor
         {
-            get { return System.Console.BackgroundColor; }
-            set { System.Console.BackgroundColor = value; }
+            get => System.Console.BackgroundColor;
+            set => System.Console.BackgroundColor = value;
         }
 
         /// <summary>
@@ -54,8 +54,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// </summary>
         public override ConsoleColor ForegroundColor
         {
-            get { return System.Console.ForegroundColor; }
-            set { System.Console.ForegroundColor = value; }
+            get => System.Console.ForegroundColor;
+            set => System.Console.ForegroundColor = value;
         }
 
         /// <summary>
@@ -72,12 +72,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// </summary>
         public override Coordinates CursorPosition
         {
-            get
-            {
-                return new Coordinates(
+            get => new(
                     ConsoleProxy.GetCursorLeft(),
                     ConsoleProxy.GetCursorTop());
-            }
 
             set => _internalRawUI.CursorPosition = value;
         }
@@ -170,7 +167,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             try
             {
                 System.Console.TreatControlCAsInput = true;
-                ConsoleKeyInfo key = ConsoleProxy.ReadKey(intercept, default(CancellationToken));
+                ConsoleKeyInfo key = ConsoleProxy.ReadKey(intercept, default);
 
                 if (IsCtrlC(key))
                 {
@@ -208,10 +205,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// </summary>
         /// <param name="rectangle">The rectangle inside which buffer contents will be accessed.</param>
         /// <returns>A BufferCell array with the requested buffer contents.</returns>
-        public override BufferCell[,] GetBufferContents(Rectangle rectangle)
-        {
-            return _internalRawUI.GetBufferContents(rectangle);
-        }
+        public override BufferCell[,] GetBufferContents(Rectangle rectangle) => _internalRawUI.GetBufferContents(rectangle);
 
         /// <summary>
         /// Scrolls the contents of the console buffer.
@@ -224,10 +218,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             Rectangle source,
             Coordinates destination,
             Rectangle clip,
-            BufferCell fill)
-        {
-            _internalRawUI.ScrollBufferContents(source, destination, clip, fill);
-        }
+            BufferCell fill) => _internalRawUI.ScrollBufferContents(source, destination, clip, fill);
 
         /// <summary>
         /// Sets the contents of the buffer inside the specified rectangle.
@@ -258,10 +249,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// <param name="contents">The new contents for the buffer at the given coordinate.</param>
         public override void SetBufferContents(
             Coordinates origin,
-            BufferCell[,] contents)
-        {
-            _internalRawUI.SetBufferContents(origin, contents);
-        }
+            BufferCell[,] contents) => _internalRawUI.SetBufferContents(origin, contents);
 
         /// <summary>
         /// Determines the number of BufferCells a character occupies.
@@ -273,10 +261,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// The length in buffer cells according to the original host
         /// implementation for the process.
         /// </returns>
-        public override int LengthInBufferCells(char source)
-        {
-            return _internalRawUI.LengthInBufferCells(source);
-        }
+        public override int LengthInBufferCells(char source) => _internalRawUI.LengthInBufferCells(source);
         /// <summary>
         /// Determines the number of BufferCells a string occupies.
         /// </summary>
@@ -287,10 +272,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// The length in buffer cells according to the original host
         /// implementation for the process.
         /// </returns>
-        public override int LengthInBufferCells(string source)
-        {
-            return _internalRawUI.LengthInBufferCells(source);
-        }
+        public override int LengthInBufferCells(string source) => _internalRawUI.LengthInBufferCells(source);
 
         /// <summary>
         /// Determines the number of BufferCells a substring of a string occupies.
@@ -305,10 +287,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// The length in buffer cells according to the original host
         /// implementation for the process.
         /// </returns>
-        public override int LengthInBufferCells(string source, int offset)
-        {
-            return _internalRawUI.LengthInBufferCells(source, offset);
-        }
+        public override int LengthInBufferCells(string source, int offset) => _internalRawUI.LengthInBufferCells(source, offset);
 
         #endregion
 
@@ -360,7 +339,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 states |= ControlKeyStates.ShiftPressed;
             }
 
-            var result = new KeyInfo((int)key.Key, key.KeyChar, states, isDown);
+            KeyInfo result = new((int)key.Key, key.KeyChar, states, isDown);
             if (isDown)
             {
                 _lastKeyDown = result;

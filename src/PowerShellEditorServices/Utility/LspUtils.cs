@@ -7,7 +7,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 {
     internal static class LspUtils
     {
-        public static DocumentSelector PowerShellDocumentSelector => new DocumentSelector(
+        public static DocumentSelector PowerShellDocumentSelector => new(
             DocumentFilter.ForLanguage("powershell"),
             DocumentFilter.ForLanguage("pwsh"),
 

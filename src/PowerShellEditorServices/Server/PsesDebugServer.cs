@@ -91,20 +91,22 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<DebugEvaluateHandler>()
                     // The OnInitialize delegate gets run when we first receive the _Initialize_ request:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
-                    .OnInitialize(async (server, request, cancellationToken) => {
+                    .OnInitialize(async (server, request, cancellationToken) =>
+                    {
                         // We need to make sure the host has been started
-                        _startedPses = !(await _psesHost.TryStartAsync(new HostStartOptions(), CancellationToken.None).ConfigureAwait(false));
+                        _startedPses = !await _psesHost.TryStartAsync(new HostStartOptions(), CancellationToken.None).ConfigureAwait(false);
 
                         // Ensure the debugger mode is set correctly - this is required for remote debugging to work
                         _psesHost.DebugContext.EnableDebugMode();
 
-                        var breakpointService = server.GetService<BreakpointService>();
+                        BreakpointService breakpointService = server.GetService<BreakpointService>();
                         // Clear any existing breakpoints before proceeding
                         await breakpointService.RemoveAllBreakpointsAsync().ConfigureAwait(false);
                     })
                     // The OnInitialized delegate gets run right before the server responds to the _Initialize_ request:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
-                    .OnInitialized((server, request, response, cancellationToken) => {
+                    .OnInitialized((server, request, response, cancellationToken) =>
+                    {
                         response.SupportsConditionalBreakpoints = true;
                         response.SupportsConfigurationDoneRequest = true;
                         response.SupportsFunctionBreakpoints = true;
@@ -146,10 +148,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
         public event EventHandler SessionEnded;
 
-        internal void OnSessionEnded()
-        {
-            SessionEnded?.Invoke(this, null);
-        }
+        internal void OnSessionEnded() => SessionEnded?.Invoke(this, null);
 
         #endregion
     }

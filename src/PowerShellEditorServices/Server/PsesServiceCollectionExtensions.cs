@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
             HostStartupInfo hostStartupInfo)
         {
             return collection
-                .AddSingleton<HostStartupInfo>(hostStartupInfo)
+                .AddSingleton(hostStartupInfo)
                 .AddSingleton<WorkspaceService>()
                 .AddSingleton<SymbolsService>()
                 .AddSingleton<PsesInternalHost>()
@@ -36,9 +36,9 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<RemoteFileManagerService>()
-                .AddSingleton<ExtensionService>((provider) =>
+                .AddSingleton((provider) =>
                     {
-                        var extensionService = new ExtensionService(
+                        ExtensionService extensionService = new(
                             provider.GetService<ILanguageServerFacade>(),
                             provider,
                             provider.GetService<EditorOperationsService>(),
@@ -64,13 +64,13 @@ namespace Microsoft.PowerShell.EditorServices.Server
             PsesInternalHost internalHost = languageServiceProvider.GetService<PsesInternalHost>();
 
             return collection
-                .AddSingleton<PsesInternalHost>(internalHost)
+                .AddSingleton(internalHost)
                 .AddSingleton<IRunspaceContext>(internalHost)
                 .AddSingleton<IPowerShellDebugContext>(internalHost.DebugContext)
                 .AddSingleton(languageServiceProvider.GetService<IInternalPowerShellExecutionService>())
                 .AddSingleton(languageServiceProvider.GetService<WorkspaceService>())
                 .AddSingleton(languageServiceProvider.GetService<RemoteFileManagerService>())
-                .AddSingleton<PsesDebugServer>(psesDebugServer)
+                .AddSingleton(psesDebugServer)
                 .AddSingleton<DebugService>()
                 .AddSingleton<BreakpointService>()
                 .AddSingleton<DebugStateService>()

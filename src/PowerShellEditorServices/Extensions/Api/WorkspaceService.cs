@@ -138,7 +138,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 
         public IReadOnlyList<IEditorScriptFile> GetOpenedFiles()
         {
-            var files = new List<IEditorScriptFile>();
+            List<IEditorScriptFile> files = new();
             foreach (ScriptFile openedFile in _workspaceService.GetOpenedFiles())
             {
                 files.Add(GetEditorFileFromScriptFile(openedFile));
@@ -146,9 +146,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             return files.AsReadOnly();
         }
 
-        private static IEditorScriptFile GetEditorFileFromScriptFile(ScriptFile file)
-        {
-            return new EditorScriptFile(file);
-        }
+        private static IEditorScriptFile GetEditorFileFromScriptFile(ScriptFile file) => new EditorScriptFile(file);
     }
 }

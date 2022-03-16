@@ -17,13 +17,10 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         public CustomViewFeatureBase(
             ILanguageServerService languageServer)
         {
-            this.viewIndex = new Dictionary<Guid, TView>();
+            viewIndex = new Dictionary<Guid, TView>();
             this.languageServer = languageServer;
         }
 
-        protected void AddView(TView view)
-        {
-            this.viewIndex.Add(view.Id, view);
-        }
+        protected void AddView(TView view) => viewIndex.Add(view.Id, view);
     }
 }

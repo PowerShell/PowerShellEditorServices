@@ -1,5 +1,5 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.Runtime.InteropServices;
@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
     /// </summary>
     internal static class ConsoleProxy
     {
-        private static IConsoleOperations s_consoleProxy;
+        private static readonly IConsoleOperations s_consoleProxy;
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1810:Initialize reference type static fields inline", Justification = "Platform specific initialization")]
         static ConsoleProxy()

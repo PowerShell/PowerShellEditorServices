@@ -25,22 +25,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
 
         public PowerShellVersion(PowerShellVersionDetails versionDetails)
         {
-            this.Version = versionDetails.VersionString;
-            this.DisplayVersion = $"{versionDetails.Version.Major}.{versionDetails.Version.Minor}";
-            this.Edition = versionDetails.Edition;
+            Version = versionDetails.VersionString;
+            DisplayVersion = $"{versionDetails.Version.Major}.{versionDetails.Version.Minor}";
+            Edition = versionDetails.Edition;
 
-            switch (versionDetails.Architecture)
+            Architecture = versionDetails.Architecture switch
             {
-                case PowerShellProcessArchitecture.X64:
-                    this.Architecture = "x64";
-                    break;
-                case PowerShellProcessArchitecture.X86:
-                    this.Architecture = "x86";
-                    break;
-                default:
-                    this.Architecture = "Architecture Unknown";
-                    break;
-            }
+                PowerShellProcessArchitecture.X64 => "x64",
+                PowerShellProcessArchitecture.X86 => "x86",
+                _ => "Architecture Unknown",
+            };
         }
     }
 }

@@ -25,11 +25,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public Task<PSHostProcessResponse[]> Handle(GetPSHostProcesssesParams request, CancellationToken cancellationToken)
         {
-            var psHostProcesses = new List<PSHostProcessResponse>();
+            List<PSHostProcessResponse> psHostProcesses = new();
 
             int processId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-            using (var pwsh = PowerShell.Create())
+            using (PowerShell pwsh = PowerShell.Create())
             {
                 pwsh.AddCommand("Get-PSHostProcessInfo")
                     .AddCommand("Where-Object")
@@ -37,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         .AddParameter("NE")
                         .AddParameter("Value", processId.ToString());
 
-                var processes = pwsh.Invoke<PSObject>();
+                System.Collections.ObjectModel.Collection<PSObject> processes = pwsh.Invoke<PSObject>();
 
                 if (processes != null)
                 {
@@ -72,23 +72,21 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (int.TryParse(request.ProcessId, out int pid))
             {
                 // Create a remote runspace that we will invoke Get-Runspace in.
-                using (var rs = RunspaceFactory.CreateRunspace(new NamedPipeConnectionInfo(pid)))
-                using (var ps = PowerShell.Create())
-                {
-                    rs.Open();
-                    ps.Runspace = rs;
-                    // Returns deserialized Runspaces. For simpler code, we use PSObject and rely on dynamic later.
-                    runspaces = ps.AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace").Invoke<PSObject>();
-                }
+                using Runspace rs = RunspaceFactory.CreateRunspace(new NamedPipeConnectionInfo(pid));
+                using PowerShell ps = PowerShell.Create();
+                rs.Open();
+                ps.Runspace = rs;
+                // Returns deserialized Runspaces. For simpler code, we use PSObject and rely on dynamic later.
+                runspaces = ps.AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace").Invoke<PSObject>();
             }
             else
             {
-                var psCommand = new PSCommand().AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace");
+                PSCommand psCommand = new PSCommand().AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace");
                 // returns (not deserialized) Runspaces. For simpler code, we use PSObject and rely on dynamic later.
                 runspaces = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, cancellationToken).ConfigureAwait(false);
             }
 
-            var runspaceResponses = new List<RunspaceResponse>();
+            List<RunspaceResponse> runspaceResponses = new();
 
             if (runspaces != null)
             {

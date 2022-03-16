@@ -20,13 +20,13 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
     {
         private static readonly Assembly s_psesAsm = typeof(EditorExtensionServiceProvider).Assembly;
 
-        private static readonly Lazy<object> s_psesAsmLoadContextLazy = new Lazy<object>(GetPsesAsmLoadContext);
+        private static readonly Lazy<object> s_psesAsmLoadContextLazy = new(GetPsesAsmLoadContext);
 
-        private static readonly Lazy<Type> s_asmLoadContextType = new Lazy<Type>(() => Type.GetType("System.Runtime.Loader.AssemblyLoadContext"));
+        private static readonly Lazy<Type> s_asmLoadContextType = new(() => Type.GetType("System.Runtime.Loader.AssemblyLoadContext"));
 
-        private static readonly Lazy<Func<IDisposable>> s_enterPsesReflectionContextLazy = new Lazy<Func<IDisposable>>(GetPsesAlcReflectionContextEntryFunc);
+        private static readonly Lazy<Func<IDisposable>> s_enterPsesReflectionContextLazy = new(GetPsesAlcReflectionContextEntryFunc);
 
-        private static readonly Lazy<Func<string, Assembly>> s_loadAssemblyInPsesAlc = new Lazy<Func<string, Assembly>>(GetPsesAlcLoadAsmFunc);
+        private static readonly Lazy<Func<string, Assembly>> s_loadAssemblyInPsesAlc = new(GetPsesAlcLoadAsmFunc);
 
         private static Type AsmLoadContextType => s_asmLoadContextType.Value;
 
@@ -146,10 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// meaning that a type of the seemingly correct name may fail to fetch to a service
         /// that is known under a type of the same name but loaded in a different context.
         /// </remarks>
-        public object GetService(Type serviceType)
-        {
-            return _serviceProvider.GetService(serviceType);
-        }
+        public object GetService(Type serviceType) => _serviceProvider.GetService(serviceType);
 
         /// <summary>
         /// Get the assembly load context the PSES loads its dependencies into.

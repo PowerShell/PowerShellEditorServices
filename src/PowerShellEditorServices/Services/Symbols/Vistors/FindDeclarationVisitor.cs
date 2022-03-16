@@ -11,10 +11,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// </summary>
     internal class FindDeclarationVisitor : AstVisitor
     {
-        private SymbolReference symbolRef;
-        private string variableName;
+        private readonly SymbolReference symbolRef;
+        private readonly string variableName;
 
-        public SymbolReference FoundDeclaration{ get; private set; }
+        public SymbolReference FoundDeclaration { get; private set; }
 
         public FindDeclarationVisitor(SymbolReference symbolRef)
         {
@@ -57,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             if (symbolRef.SymbolType.Equals(SymbolType.Function) &&
                 nameExtent.Text.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
-                this.FoundDeclaration =
+                FoundDeclaration =
                     new SymbolReference(
                         SymbolType.Function,
                         nameExtent);
@@ -83,7 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             }
 
             // We want to check VariableExpressionAsts from within this AssignmentStatementAst so we visit it.
-            FindDeclarationVariableExpressionVisitor visitor = new FindDeclarationVariableExpressionVisitor(symbolRef);
+            FindDeclarationVariableExpressionVisitor visitor = new(symbolRef);
             assignmentStatementAst.Left.Visit(visitor);
 
             if (visitor.FoundDeclaration != null)
@@ -99,10 +99,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// </summary>
         private class FindDeclarationVariableExpressionVisitor : AstVisitor
         {
-            private SymbolReference symbolRef;
-            private string variableName;
+            private readonly SymbolReference symbolRef;
+            private readonly string variableName;
 
-            public SymbolReference FoundDeclaration{ get; private set; }
+            public SymbolReference FoundDeclaration { get; private set; }
 
             public FindDeclarationVariableExpressionVisitor(SymbolReference symbolRef)
             {
@@ -131,17 +131,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 return AstVisitAction.Continue;
             }
 
-            public override AstVisitAction VisitMemberExpression(MemberExpressionAst functionDefinitionAst)
-            {
+            public override AstVisitAction VisitMemberExpression(MemberExpressionAst functionDefinitionAst) =>
                 // We don't want to discover any variables in member expressisons (`$something.Foo`)
-                return AstVisitAction.SkipChildren;
-            }
+                AstVisitAction.SkipChildren;
 
-            public override AstVisitAction VisitIndexExpression(IndexExpressionAst functionDefinitionAst)
-            {
+            public override AstVisitAction VisitIndexExpression(IndexExpressionAst functionDefinitionAst) =>
                 // We don't want to discover any variables in index expressions (`$something[0]`)
-                return AstVisitAction.SkipChildren;
-            }
+                AstVisitAction.SkipChildren;
         }
     }
 }

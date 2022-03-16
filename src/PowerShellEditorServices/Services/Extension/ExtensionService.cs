@@ -210,34 +210,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         /// </summary>
         public event EventHandler<EditorCommand> CommandAdded;
 
-        private void OnCommandAdded(EditorCommand command)
-        {
-            CommandAdded?.Invoke(this, command);
-        }
+        private void OnCommandAdded(EditorCommand command) => CommandAdded?.Invoke(this, command);
 
         /// <summary>
         /// Raised when an existing editor command is updated.
         /// </summary>
         public event EventHandler<EditorCommand> CommandUpdated;
 
-        private void OnCommandUpdated(EditorCommand command)
-        {
-            CommandUpdated?.Invoke(this, command);
-        }
+        private void OnCommandUpdated(EditorCommand command) => CommandUpdated?.Invoke(this, command);
 
         /// <summary>
         /// Raised when an existing editor command is removed.
         /// </summary>
         public event EventHandler<EditorCommand> CommandRemoved;
 
-        private void OnCommandRemoved(EditorCommand command)
-        {
-            CommandRemoved?.Invoke(this, command);
-        }
+        private void OnCommandRemoved(EditorCommand command) => CommandRemoved?.Invoke(this, command);
 
         private void ExtensionService_ExtensionAdded(object sender, EditorCommand e)
         {
-            _languageServer?.SendNotification<ExtensionCommandAddedNotification>(
+            _languageServer?.SendNotification(
                 "powerShell/extensionCommandAdded",
                 new ExtensionCommandAddedNotification
                 { Name = e.Name, DisplayName = e.DisplayName });
@@ -245,7 +236,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 
         private void ExtensionService_ExtensionUpdated(object sender, EditorCommand e)
         {
-            _languageServer?.SendNotification<ExtensionCommandUpdatedNotification>(
+            _languageServer?.SendNotification(
                 "powerShell/extensionCommandUpdated",
                 new ExtensionCommandUpdatedNotification
                 { Name = e.Name, });
@@ -253,7 +244,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 
         private void ExtensionService_ExtensionRemoved(object sender, EditorCommand e)
         {
-            _languageServer?.SendNotification<ExtensionCommandRemovedNotification>(
+            _languageServer?.SendNotification(
                 "powerShell/extensionCommandRemoved",
                 new ExtensionCommandRemovedNotification
                 { Name = e.Name, });

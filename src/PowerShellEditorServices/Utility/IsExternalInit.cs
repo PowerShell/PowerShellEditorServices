@@ -11,5 +11,5 @@ namespace System.Runtime.CompilerServices
     /// So instead we define the type in our own code.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    internal class IsExternalInit{}
+    internal class IsExternalInit { }
 }

@@ -34,19 +34,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// Information: This warning is trivial, but may be useful. They are recommended by PowerShell best practice.
         /// </summary>
-        Information = 0,
+        Information = 0,
         /// <summary>
         /// WARNING: This warning may cause a problem or does not follow PowerShell's recommended guidelines.
         /// </summary>
-        Warning = 1,
+        Warning = 1,
         /// <summary>
         /// ERROR: This warning is likely to cause a problem or does not follow PowerShell's required guidelines.
         /// </summary>
-        Error = 2,
+        Error = 2,
         /// <summary>
         /// ERROR: This diagnostic is caused by an actual parsing error, and is generated only by the engine.
         /// </summary>
-        ParseError = 3
+        ParseError = 3
     };
 
     /// <summary>
@@ -123,11 +123,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             // casting psobject to dynamic allows us to access
             // the diagnostic record's properties directly i.e. <instance>.<propertyName>
             // without having to go through PSObject's Members property.
-            var diagnosticRecord = psObject as dynamic;
+            dynamic diagnosticRecord = psObject;
 
             if (diagnosticRecord.SuggestedCorrections != null)
             {
-                var editRegions = new List<ScriptRegion>();
+                List<ScriptRegion> editRegions = new();
                 string correctionMessage = null;
                 foreach (dynamic suggestedCorrection in diagnosticRecord.SuggestedCorrections)
                 {

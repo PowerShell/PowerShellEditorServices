@@ -42,22 +42,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             CommandElementAst commandElementAst = commandAst.CommandElements[0];
             if (commandAst.InvocationOperator.Equals(TokenKind.Dot))
             {
-                string path;
-                switch (commandElementAst)
+                string path = commandElementAst switch
                 {
-                    case StringConstantExpressionAst stringConstantExpressionAst:
-                        path = stringConstantExpressionAst.Value;
-                        break;
-
-                    case ExpandableStringExpressionAst expandableStringExpressionAst:
-                        path = GetPathFromExpandableStringExpression(expandableStringExpressionAst);
-                        break;
-
-                    default:
-                        path = null;
-                        break;
-                }
-
+                    StringConstantExpressionAst stringConstantExpressionAst => stringConstantExpressionAst.Value,
+                    ExpandableStringExpressionAst expandableStringExpressionAst => GetPathFromExpandableStringExpression(expandableStringExpressionAst),
+                    _ => null,
+                };
                 if (!string.IsNullOrWhiteSpace(path))
                 {
                     DotSourcedFiles.Add(PathUtils.NormalizePathSeparators(path));
@@ -69,8 +59,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 
         private string GetPathFromExpandableStringExpression(ExpandableStringExpressionAst expandableStringExpressionAst)
         {
-            var path = expandableStringExpressionAst.Value;
-            foreach (var nestedExpression in expandableStringExpressionAst.NestedExpressions)
+            string path = expandableStringExpressionAst.Value;
+            foreach (ExpressionAst nestedExpression in expandableStringExpressionAst.NestedExpressions)
             {
                 // If the string contains the variable $PSScriptRoot, we replace it with the corresponding value.
                 if (!(nestedExpression is VariableExpressionAst variableAst

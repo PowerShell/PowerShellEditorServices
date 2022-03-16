@@ -25,10 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <summary>
         /// Returns true if the breakpoint was raised from a remote debugging session.
         /// </summary>
-        public bool IsRemoteSession
-        {
-            get => RunspaceInfo.RunspaceOrigin != RunspaceOrigin.Local;
-        }
+        public bool IsRemoteSession => RunspaceInfo.RunspaceOrigin != RunspaceOrigin.Local;
 
         /// <summary>
         /// Gets the original script path if 'IsRemoteSession' returns true.
@@ -43,24 +40,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <summary>
         /// Gets the line number at which the debugger stopped execution.
         /// </summary>
-        public int LineNumber
-        {
-            get
-            {
-                return this.OriginalEvent.InvocationInfo.ScriptLineNumber;
-            }
-        }
+        public int LineNumber => OriginalEvent.InvocationInfo.ScriptLineNumber;
 
         /// <summary>
         /// Gets the column number at which the debugger stopped execution.
         /// </summary>
-        public int ColumnNumber
-        {
-            get
-            {
-                return this.OriginalEvent.InvocationInfo.OffsetInLine;
-            }
-        }
+        public int ColumnNumber => OriginalEvent.InvocationInfo.OffsetInLine;
 
         /// <summary>
         /// Gets the original DebuggerStopEventArgs from the PowerShell engine.
@@ -99,16 +84,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
             if (!string.IsNullOrEmpty(localScriptPath))
             {
-                this.ScriptPath = localScriptPath;
-                this.RemoteScriptPath = originalEvent.InvocationInfo.ScriptName;
+                ScriptPath = localScriptPath;
+                RemoteScriptPath = originalEvent.InvocationInfo.ScriptName;
             }
             else
             {
-                this.ScriptPath = originalEvent.InvocationInfo.ScriptName;
+                ScriptPath = originalEvent.InvocationInfo.ScriptName;
             }
 
-            this.OriginalEvent = originalEvent;
-            this.RunspaceInfo = runspaceInfo;
+            OriginalEvent = originalEvent;
+            RunspaceInfo = runspaceInfo;
         }
 
         #endregion

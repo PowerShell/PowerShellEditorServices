@@ -54,10 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <summary>
         /// Gets or sets the starting script position of the extent.
         /// </summary>
-        public IScriptPosition StartScriptPosition
-        {
-            get { throw new NotImplementedException(); }
-        }
+        public IScriptPosition StartScriptPosition => throw new NotImplementedException();
         /// <summary>
         /// Gets or sets the text that is contained within the extent.
         /// </summary>
@@ -97,10 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <summary>
         /// Gets the ending script position of the extent.
         /// </summary>
-        public IScriptPosition EndScriptPosition
-        {
-            get { throw new NotImplementedException(); }
-        }
+        public IScriptPosition EndScriptPosition => throw new NotImplementedException();
 
         #endregion
     }

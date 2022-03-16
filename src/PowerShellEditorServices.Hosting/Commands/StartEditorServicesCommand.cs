@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
     public sealed class StartEditorServicesCommand : PSCmdlet
     {
         // TODO: Remove this when we drop support for PS6.
-        private readonly static bool s_isWindows =
+        private static readonly bool s_isWindows =
 #if CoreCLR
         RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 #else
@@ -237,15 +237,13 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 // Create the configuration from parameters
                 EditorServicesConfig editorServicesConfig = CreateConfigObject();
 
-                var sessionFileWriter = new SessionFileWriter(_logger, SessionDetailsPath);
+                SessionFileWriter sessionFileWriter = new(_logger, SessionDetailsPath);
                 _logger.Log(PsesLogLevel.Diagnostic, "Session file writer created");
 
-                using (var psesLoader = EditorServicesLoader.Create(_logger, editorServicesConfig, sessionFileWriter, _loggerUnsubscribers))
-                {
-                    _logger.Log(PsesLogLevel.Verbose, "Loading EditorServices");
-                    // Start editor services and wait here until it shuts down
-                    psesLoader.LoadAndRunEditorServicesAsync().GetAwaiter().GetResult();
-                }
+                using EditorServicesLoader psesLoader = EditorServicesLoader.Create(_logger, editorServicesConfig, sessionFileWriter, _loggerUnsubscribers);
+                _logger.Log(PsesLogLevel.Verbose, "Loading EditorServices");
+                // Start editor services and wait here until it shuts down
+                psesLoader.LoadAndRunEditorServicesAsync().GetAwaiter().GetResult();
             }
             catch (Exception e)
             {
@@ -277,7 +275,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             // if it's being used as a protocol transport
             if (!Stdio)
             {
-                var hostLogger = new PSHostLogger(Host.UI);
+                PSHostLogger hostLogger = new(Host.UI);
                 _loggerUnsubscribers.Add(_logger.Subscribe(hostLogger));
             }
 
@@ -292,7 +290,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 logPath = Path.Combine(logDirPath, $"StartEditorServices-temp{randomInt.ToString("X", CultureInfo.InvariantCulture.NumberFormat)}.log");
             }
 
-            var fileLogger = StreamLogger.CreateWithNewFile(logPath);
+            StreamLogger fileLogger = StreamLogger.CreateWithNewFile(logPath);
             _disposableResources.Add(fileLogger);
             IDisposable fileLoggerUnsubscriber = _logger.Subscribe(fileLogger);
             fileLogger.AddUnsubscriber(fileLoggerUnsubscriber);
@@ -316,23 +314,21 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         private void RemovePSReadLineForStartup()
         {
             _logger.Log(PsesLogLevel.Verbose, "Removing PSReadLine");
-            using (var pwsh = SMA.PowerShell.Create(RunspaceMode.CurrentRunspace))
+            using SMA.PowerShell pwsh = SMA.PowerShell.Create(RunspaceMode.CurrentRunspace);
+            bool hasPSReadLine = pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Get-Module", typeof(GetModuleCommand)))
+                .AddParameter("Name", "PSReadLine")
+                .Invoke()
+                .Any();
+
+            if (hasPSReadLine)
             {
-                bool hasPSReadLine = pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Get-Module", typeof(GetModuleCommand)))
+                pwsh.Commands.Clear();
+
+                pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Remove-Module", typeof(RemoveModuleCommand)))
                     .AddParameter("Name", "PSReadLine")
-                    .Invoke()
-                    .Any();
+                    .AddParameter("ErrorAction", "SilentlyContinue");
 
-                if (hasPSReadLine)
-                {
-                    pwsh.Commands.Clear();
-
-                    pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Remove-Module", typeof(RemoveModuleCommand)))
-                        .AddParameter("Name", "PSReadLine")
-                        .AddParameter("ErrorAction", "SilentlyContinue");
-
-                    _logger.Log(PsesLogLevel.Verbose, "Removed PSReadLine");
-                }
+                _logger.Log(PsesLogLevel.Verbose, "Removed PSReadLine");
             }
         }
 
@@ -352,14 +348,14 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                         bundledModulesPath));
             }
 
-            var profile = (PSObject)GetVariableValue("profile");
+            PSObject profile = (PSObject)GetVariableValue("profile");
 
-            var hostInfo = new HostInfo(HostName, HostProfileId, HostVersion);
+            HostInfo hostInfo = new(HostName, HostProfileId, HostVersion);
 
-            var initialSessionState = Runspace.DefaultRunspace.InitialSessionState;
+            InitialSessionState initialSessionState = Runspace.DefaultRunspace.InitialSessionState;
             initialSessionState.LanguageMode = Runspace.DefaultRunspace.SessionStateProxy.LanguageMode;
 
-            var editorServicesConfig = new EditorServicesConfig(
+            EditorServicesConfig editorServicesConfig = new(
                 hostInfo,
                 Host,
                 SessionDetailsPath,
@@ -425,9 +421,9 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             }
 
             // TODO: Remove this when we drop support for PS6.
-            var psVersionTable = (Hashtable) this.SessionState.PSVariable.GetValue("PSVersionTable");
+            Hashtable psVersionTable = (Hashtable)SessionState.PSVariable.GetValue("PSVersionTable");
             dynamic version = psVersionTable["PSVersion"];
-            var majorVersion = (int) version.Major;
+            int majorVersion = (int)version.Major;
 
             if (UseLegacyReadLine || (!s_isWindows && majorVersion == 6))
             {

@@ -194,53 +194,35 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         /// Sends a "continue" action to the debugger when stopped.
         /// </summary>
-        public void Continue()
-        {
-            _debugContext.Continue();
-        }
+        public void Continue() => _debugContext.Continue();
 
         /// <summary>
         /// Sends a "step over" action to the debugger when stopped.
         /// </summary>
-        public void StepOver()
-        {
-            _debugContext.StepOver();
-        }
+        public void StepOver() => _debugContext.StepOver();
 
         /// <summary>
         /// Sends a "step in" action to the debugger when stopped.
         /// </summary>
-        public void StepIn()
-        {
-            _debugContext.StepInto();
-        }
+        public void StepIn() => _debugContext.StepInto();
 
         /// <summary>
         /// Sends a "step out" action to the debugger when stopped.
         /// </summary>
-        public void StepOut()
-        {
-            _debugContext.StepOut();
-        }
+        public void StepOut() => _debugContext.StepOut();
 
         /// <summary>
         /// Causes the debugger to break execution wherever it currently
         /// is at the time. This is equivalent to clicking "Pause" in a
         /// debugger UI.
         /// </summary>
-        public void Break()
-        {
-            _debugContext.BreakExecution();
-        }
+        public void Break() => _debugContext.BreakExecution();
 
         /// <summary>
         /// Aborts execution of the debugger while it is running, even while
         /// it is stopped.  Equivalent to calling PowerShellContext.AbortExecution.
         /// </summary>
-        public void Abort()
-        {
-            _debugContext.Abort();
-        }
+        public void Abort() => _debugContext.Abort();
 
         /// <summary>
         /// Gets the list of variables that are children of the scope or variable
@@ -264,7 +246,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 if (parentVariable.IsExpandable)
                 {
                     childVariables = parentVariable.GetChildren(_logger);
-                    foreach (var child in childVariables)
+                    foreach (VariableDetailsBase child in childVariables)
                     {
                         // Only add child if it hasn't already been added.
                         if (child.Id < 0)
@@ -318,7 +300,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 debugInfoHandle.Release();
             }
 
-            foreach (var variableName in variablePathParts)
+            foreach (string variableName in variablePathParts)
             {
                 if (variableList is null)
                 {
@@ -422,7 +404,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             // Now that we have the scope, get the associated PSVariable object for the variable to be set.
-            var getVariableCommand = new PSCommand()
+            PSCommand getVariableCommand = new PSCommand()
                 .AddCommand(@"Microsoft.PowerShell.Utility\Get-Variable")
                 .AddParameter("Name", name.TrimStart('$'))
                 .AddParameter("Scope", scope);
@@ -486,7 +468,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // Use the VariableDetails.ValueString functionality to get the string representation for client debugger.
             // This makes the returned string consistent with the strings normally displayed for variables in the debugger.
-            var tempVariable = new VariableDetails(psVariable);
+            VariableDetails tempVariable = new(psVariable);
             _logger.LogTrace($"Set variable '{name}' to: {tempVariable.ValueString ?? "<null>"}");
             return tempVariable.ValueString;
         }
@@ -505,7 +487,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             string expressionString,
             bool writeResultAsOutput)
         {
-            var command = new PSCommand().AddScript(expressionString);
+            PSCommand command = new PSCommand().AddScript(expressionString);
             IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(
                 command,
                 CancellationToken.None,
@@ -594,7 +576,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>The list of VariableScope instances which describe the available variable scopes.</returns>
         public VariableScope[] GetVariableScopes(int stackFrameId)
         {
-            var stackFrames = GetStackFrames();
+            StackFrameDetails[] stackFrames = GetStackFrames();
             int autoVariablesId = stackFrames[stackFrameId].AutoVariables.Id;
             int commandVariablesId = stackFrames[stackFrameId].CommandVariables.Id;
 
@@ -638,16 +620,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        private Task<VariableContainerDetails> FetchVariableContainerAsync(string scope)
-        {
-            return FetchVariableContainerAsync(scope, autoVarsOnly: false);
-        }
+        private Task<VariableContainerDetails> FetchVariableContainerAsync(string scope) => FetchVariableContainerAsync(scope, autoVarsOnly: false);
 
         private async Task<VariableContainerDetails> FetchVariableContainerAsync(string scope, bool autoVarsOnly)
         {
             PSCommand psCommand = new PSCommand().AddCommand(@"Microsoft.PowerShell.Utility\Get-Variable").AddParameter("Scope", scope);
 
-            var scopeVariableContainer = new VariableContainerDetails(nextVariableId++, "Scope: " + scope);
+            VariableContainerDetails scopeVariableContainer = new(nextVariableId++, "Scope: " + scope);
             variables.Add(scopeVariableContainer);
 
             IReadOnlyList<PSObject> results;
@@ -675,7 +654,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     {
                         continue;
                     }
-                    var variableInfo = TryVariableInfo(psVariableObject);
+                    VariableInfo variableInfo = TryVariableInfo(psVariableObject);
                     if (variableInfo is null || !ShouldAddAsVariable(variableInfo))
                     {
                         continue;
@@ -685,7 +664,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         continue;
                     }
 
-                    var variableDetails = new VariableDetails(variableInfo.Variable) { Id = nextVariableId++ };
+                    VariableDetails variableDetails = new(variableInfo.Variable) { Id = nextVariableId++ };
                     variables.Add(variableDetails);
                     scopeVariableContainer.Children.Add(variableDetails.Name, variableDetails);
                 }
@@ -748,7 +727,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         // provided as a convenience.
         private bool ShouldAddToAutoVariables(VariableInfo variableInfo)
         {
-            var variableToAdd = variableInfo.Variable;
+            PSVariable variableToAdd = variableInfo.Variable;
             if (!ShouldAddAsVariable(variableInfo))
             {
                 return false;
@@ -807,31 +786,31 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // PSObject is used here instead of the specific type because we get deserialized
             // objects from remote sessions and want a common interface.
-            var psCommand = new PSCommand().AddScript($"[Collections.ArrayList]{callStackVarName} = @(); {getPSCallStack}; {returnSerializedIfOnRemoteMachine}");
+            PSCommand psCommand = new PSCommand().AddScript($"[Collections.ArrayList]{callStackVarName} = @(); {getPSCallStack}; {returnSerializedIfOnRemoteMachine}");
             IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, CancellationToken.None).ConfigureAwait(false);
 
             IEnumerable callStack = isOnRemoteMachine
                 ? (PSSerializer.Deserialize(results[0].BaseObject as string) as PSObject).BaseObject as IList
                 : results;
 
-            var stackFrameDetailList = new List<StackFrameDetails>();
+            List<StackFrameDetails> stackFrameDetailList = new();
             bool isTopStackFrame = true;
-            foreach (var callStackFrameItem in callStack)
+            foreach (object callStackFrameItem in callStack)
             {
                 // We have to use reflection to get the variable dictionary.
-                var callStackFrameComponents = (callStackFrameItem as PSObject).BaseObject as IList;
-                var callStackFrame = callStackFrameComponents[0] as PSObject;
+                IList callStackFrameComponents = (callStackFrameItem as PSObject).BaseObject as IList;
+                PSObject callStackFrame = callStackFrameComponents[0] as PSObject;
                 IDictionary callStackVariables = isOnRemoteMachine
                     ? (callStackFrameComponents[1] as PSObject).BaseObject as IDictionary
                     : callStackFrameComponents[1] as IDictionary;
 
-                var autoVariables = new VariableContainerDetails(
+                VariableContainerDetails autoVariables = new(
                     nextVariableId++,
                     VariableContainerDetails.AutoVariablesName);
 
                 variables.Add(autoVariables);
 
-                var commandVariables = new VariableContainerDetails(
+                VariableContainerDetails commandVariables = new(
                     nextVariableId++,
                     VariableContainerDetails.CommandVariablesName);
 
@@ -846,7 +825,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         continue;
                     }
 
-                    var variableDetails = new VariableDetails(psVarInfo.Variable) { Id = nextVariableId++ };
+                    VariableDetails variableDetails = new(psVarInfo.Variable) { Id = nextVariableId++ };
                     variables.Add(variableDetails);
 
                     commandVariables.Children.Add(variableDetails.Name, variableDetails);
@@ -865,7 +844,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // we'd need a way to detect things such as module borders and dot-sourced files.
                 if (isTopStackFrame)
                 {
-                    var localScopeAutoVariables = await FetchVariableContainerAsync(VariableContainerDetails.LocalScopeName, autoVarsOnly: true).ConfigureAwait(false);
+                    VariableContainerDetails localScopeAutoVariables = await FetchVariableContainerAsync(VariableContainerDetails.LocalScopeName, autoVarsOnly: true).ConfigureAwait(false);
                     foreach (KeyValuePair<string, VariableDetailsBase> entry in localScopeAutoVariables.Children)
                     {
                         // NOTE: `TryAdd` doesn't work on `IDictionary`.
@@ -877,7 +856,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     isTopStackFrame = false;
                 }
 
-                var stackFrameDetailsEntry = StackFrameDetails.Create(callStackFrame, autoVariables, commandVariables);
+                StackFrameDetails stackFrameDetailsEntry = StackFrameDetails.Create(callStackFrame, autoVariables, commandVariables);
                 string stackFrameScriptPath = stackFrameDetailsEntry.ScriptPath;
 
                 if (scriptNameOverride is not null
@@ -1008,10 +987,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             DebuggerStopped?.Invoke(sender, CurrentDebuggerStoppedEventArgs);
         }
 
-        private void OnDebuggerResuming(object sender, DebuggerResumingEventArgs debuggerResumingEventArgs)
-        {
-            CurrentDebuggerStoppedEventArgs = null;
-        }
+        private void OnDebuggerResuming(object sender, DebuggerResumingEventArgs debuggerResumingEventArgs) => CurrentDebuggerStoppedEventArgs = null;
 
         /// <summary>
         /// Raised when a breakpoint is added/removed/updated in the debugger.

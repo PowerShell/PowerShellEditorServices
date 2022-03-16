@@ -16,7 +16,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    class PsesReferencesHandler : ReferencesHandlerBase
+    internal class PsesReferencesHandler : ReferencesHandlerBase
     {
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
@@ -29,12 +29,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspaceService;
         }
 
-        protected override ReferenceRegistrationOptions CreateRegistrationOptions(ReferenceCapability capability, ClientCapabilities clientCapabilities) => new ReferenceRegistrationOptions
+        protected override ReferenceRegistrationOptions CreateRegistrationOptions(ReferenceCapability capability, ClientCapabilities clientCapabilities) => new()
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector
         };
 
-        public async override Task<LocationContainer> Handle(ReferenceParams request, CancellationToken cancellationToken)
+        public override async Task<LocationContainer> Handle(ReferenceParams request, CancellationToken cancellationToken)
         {
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     _workspaceService.ExpandScriptReferences(scriptFile),
                     _workspaceService).ConfigureAwait(false);
 
-            var locations = new List<Location>();
+            List<Location> locations = new();
 
             if (referencesResult != null)
             {

@@ -63,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Writing session failure");
 
-            var sessionObject = new Dictionary<string, object>
+            Dictionary<string, object> sessionObject = new()
             {
                 { "status", "failed" },
                 { "reason", reason },
@@ -86,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Writing session started");
 
-            var sessionObject = new Dictionary<string, object>
+            Dictionary<string, object> sessionObject = new()
             {
                 { "status", "started" },
             };
@@ -128,7 +128,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             string psModulePath = Environment.GetEnvironmentVariable("PSModulePath");
             string content = null;
-            using (var pwsh = SMA.PowerShell.Create(RunspaceMode.NewRunspace))
+            using (SMA.PowerShell pwsh = SMA.PowerShell.Create(RunspaceMode.NewRunspace))
             {
                 content = pwsh.AddCommand("ConvertTo-Json")
                     .AddParameter("InputObject", sessionObject)

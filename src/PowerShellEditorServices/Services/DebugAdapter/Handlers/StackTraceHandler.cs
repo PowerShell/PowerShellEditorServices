@@ -43,14 +43,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 });
             }
 
-            List<StackFrame> newStackFrames = new List<StackFrame>();
+            List<StackFrame> newStackFrames = new();
 
             long startFrameIndex = request.StartFrame ?? 0;
             long maxFrameCount = stackFrameDetails.Length;
 
             // If the number of requested levels == 0 (or null), that means get all stack frames
             // after the specified startFrame index. Otherwise get all the stack frames.
-            long requestedFrameCount = (request.Levels ?? 0);
+            long requestedFrameCount = request.Levels ?? 0;
             if (requestedFrameCount > 0)
             {
                 maxFrameCount = Math.Min(maxFrameCount, startFrameIndex + requestedFrameCount);

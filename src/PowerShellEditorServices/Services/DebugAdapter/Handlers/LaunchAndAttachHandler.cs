@@ -84,7 +84,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
     internal class LaunchAndAttachHandler : ILaunchHandler<PsesLaunchRequestArguments>, IAttachHandler<PsesAttachRequestArguments>, IOnDebugAdapterServerStarted
     {
-        private static readonly Version s_minVersionForCustomPipeName = new Version(6, 2);
+        private static readonly Version s_minVersionForCustomPipeName = new(6, 2);
         private readonly ILogger<LaunchAndAttachHandler> _logger;
         private readonly BreakpointService _breakpointService;
         private readonly DebugService _debugService;
@@ -161,7 +161,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 // the working dir should not be changed.
                 if (!string.IsNullOrEmpty(workingDir))
                 {
-                    var setDirCommand = new PSCommand().AddCommand("Set-Location").AddParameter("LiteralPath", workingDir);
+                    PSCommand setDirCommand = new PSCommand().AddCommand("Set-Location").AddParameter("LiteralPath", workingDir);
                     await _executionService.ExecutePSCommandAsync(setDirCommand, cancellationToken).ConfigureAwait(false);
                 }
 
@@ -243,7 +243,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     throw new RpcErrorException(0, "Cannot attach to a process in a remote session when already in a remote session.");
                 }
 
-                var enterPSSessionCommand = new PSCommand()
+                PSCommand enterPSSessionCommand = new PSCommand()
                     .AddCommand("Enter-PSSession")
                     .AddParameter("ComputerName", request.ComputerName);
 
@@ -268,7 +268,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     throw new RpcErrorException(0, $"Attaching to a process is only available with PowerShell 5 and higher (current session is {runspaceVersion.Version}).");
                 }
 
-                var enterPSHostProcessCommand = new PSCommand()
+                PSCommand enterPSHostProcessCommand = new PSCommand()
                     .AddCommand("Enter-PSHostProcess")
                     .AddParameter("Id", processId);
 
@@ -290,7 +290,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     throw new RpcErrorException(0, $"Attaching to a process with CustomPipeName is only available with PowerShell 6.2 and higher (current session is {runspaceVersion.Version}).");
                 }
 
-                var enterPSHostProcessCommand = new PSCommand()
+                PSCommand enterPSHostProcessCommand = new PSCommand()
                     .AddCommand("Enter-PSHostProcess")
                     .AddParameter("CustomPipeName", request.CustomPipeName);
 
@@ -318,17 +318,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // InitializedEvent will be sent as soon as the RunspaceChanged
             // event gets fired with the attached runspace.
 
-            var debugRunspaceCmd = new PSCommand().AddCommand("Debug-Runspace");
+            PSCommand debugRunspaceCmd = new PSCommand().AddCommand("Debug-Runspace");
             if (request.RunspaceName != null)
             {
-                var getRunspaceIdCommand = new PSCommand()
+                PSCommand getRunspaceIdCommand = new PSCommand()
                     .AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace")
                         .AddParameter("Name", request.RunspaceName)
                     .AddCommand("Microsoft.PowerShell.Utility\\Select-Object")
                         .AddParameter("ExpandProperty", "Id");
 
                 IEnumerable<int?> ids = await _executionService.ExecutePSCommandAsync<int?>(getRunspaceIdCommand, cancellationToken).ConfigureAwait(false);
-                foreach (var id in ids)
+                foreach (int? id in ids)
                 {
                     _debugStateService.RunspaceId = id;
                     break;
@@ -349,13 +349,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     throw new RpcErrorException(0, "A positive integer must be specified for the RunspaceId field.");
                 }
 
-                _debugStateService.RunspaceId =  runspaceId;
+                _debugStateService.RunspaceId = runspaceId;
 
                 debugRunspaceCmd.AddParameter("Id", runspaceId);
             }
             else
             {
-                _debugStateService.RunspaceId =  1;
+                _debugStateService.RunspaceId = 1;
 
                 debugRunspaceCmd.AddParameter("Id", 1);
             }
@@ -388,12 +388,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         // we can't send the Initialized event until _after_ we finish the Launch/Attach handler.
         // The flow above depicts this. To achieve this, we wait until _debugStateService.ServerStarted
         // is set, which will be done by the Launch/Attach handlers.
-        public async Task OnStarted(IDebugAdapterServer server, CancellationToken cancellationToken)
-        {
+        public async Task OnStarted(IDebugAdapterServer server, CancellationToken cancellationToken) =>
             // We wait for this task to be finished before triggering the initialized message to
             // be sent to the client.
             await _debugStateService.ServerStarted.Task.ConfigureAwait(false);
-        }
 
         private async Task OnExecutionCompletedAsync(Task executeTask)
         {

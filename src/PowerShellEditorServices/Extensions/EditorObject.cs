@@ -20,10 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         /// <param name="editorObject">The editor object ($psEditor).</param>
         /// <returns>The extension services provider.</returns>
-        public static EditorExtensionServiceProvider GetExtensionServiceProvider(this EditorObject editorObject)
-        {
-            return editorObject.Api;
-        }
+        public static EditorExtensionServiceProvider GetExtensionServiceProvider(this EditorObject editorObject) => editorObject.Api;
     }
 
     /// <summary>
@@ -32,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
     /// </summary>
     public class EditorObject
     {
-        private static readonly TaskCompletionSource<bool> s_editorObjectReady = new TaskCompletionSource<bool>();
+        private static readonly TaskCompletionSource<bool> s_editorObjectReady = new();
 
         /// <summary>
         /// A reference to the editor object instance. Only valid when <see cref="EditorObjectReady"/> completes.
@@ -59,10 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Gets the version of PowerShell Editor Services.
         /// </summary>
-        public Version EditorServicesVersion
-        {
-            get { return this.GetType().GetTypeInfo().Assembly.GetName().Version; }
-        }
+        public Version EditorServicesVersion => GetType().GetTypeInfo().Assembly.GetName().Version;
 
         /// <summary>
         /// Gets the workspace interface for the editor API.
@@ -86,12 +80,12 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             ExtensionService extensionService,
             IEditorOperations editorOperations)
         {
-            this._extensionService = extensionService;
-            this._editorOperations = editorOperations;
+            _extensionService = extensionService;
+            _editorOperations = editorOperations;
 
             // Create API area objects
-            this.Workspace = new EditorWorkspace(this._editorOperations);
-            this.Window = new EditorWindow(this._editorOperations);
+            Workspace = new EditorWorkspace(_editorOperations);
+            Window = new EditorWindow(_editorOperations);
 
             // Create this lazily so that dependency injection does not have a circular call dependency
             _apiLazy = new Lazy<EditorExtensionServiceProvider>(() => new EditorExtensionServiceProvider(serviceProvider));
@@ -102,37 +96,25 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         /// <param name="editorCommand">The EditorCommand to be registered.</param>
         /// <returns>True if the command is newly registered, false if the command already exists.</returns>
-        public bool RegisterCommand(EditorCommand editorCommand)
-        {
-            return this._extensionService.RegisterCommand(editorCommand);
-        }
+        public bool RegisterCommand(EditorCommand editorCommand) => _extensionService.RegisterCommand(editorCommand);
 
         /// <summary>
         /// Unregisters an existing EditorCommand based on its registered name.
         /// </summary>
         /// <param name="commandName">The name of the command to be unregistered.</param>
-        public void UnregisterCommand(string commandName)
-        {
-            this._extensionService.UnregisterCommand(commandName);
-        }
+        public void UnregisterCommand(string commandName) => _extensionService.UnregisterCommand(commandName);
 
         /// <summary>
         /// Returns all registered EditorCommands.
         /// </summary>
         /// <returns>An Array of all registered EditorCommands.</returns>
-        public EditorCommand[] GetCommands()
-        {
-            return this._extensionService.GetCommands();
-        }
+        public EditorCommand[] GetCommands() => _extensionService.GetCommands();
         /// <summary>
         /// Gets the EditorContext which contains the state of the editor
         /// at the time this method is invoked.
         /// </summary>
         /// <returns>A instance of the EditorContext class.</returns>
-        public EditorContext GetEditorContext()
-        {
-            return this._editorOperations.GetEditorContextAsync().Result;
-        }
+        public EditorContext GetEditorContext() => _editorOperations.GetEditorContextAsync().Result;
 
         internal void SetAsStaticInstance()
         {

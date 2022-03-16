@@ -20,8 +20,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
             ILogger logger,
             PowerShell pwsh)
         {
-            var psVersionDetails = PowerShellVersionDetails.GetVersionDetails(logger, pwsh);
-            var sessionDetails = SessionDetails.GetFromPowerShell(pwsh);
+            PowerShellVersionDetails psVersionDetails = PowerShellVersionDetails.GetVersionDetails(logger, pwsh);
+            SessionDetails sessionDetails = SessionDetails.GetFromPowerShell(pwsh);
 
             return new RunspaceInfo(
                 pwsh.Runspace,
@@ -36,8 +36,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
             PowerShell pwsh,
             string localComputerName)
         {
-            var psVersionDetails = PowerShellVersionDetails.GetVersionDetails(logger, pwsh);
-            var sessionDetails = SessionDetails.GetFromPowerShell(pwsh);
+            PowerShellVersionDetails psVersionDetails = PowerShellVersionDetails.GetVersionDetails(logger, pwsh);
+            SessionDetails sessionDetails = SessionDetails.GetFromPowerShell(pwsh);
 
             bool isOnLocalMachine = string.Equals(sessionDetails.ComputerName, localComputerName, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(sessionDetails.ComputerName, "localhost", StringComparison.OrdinalIgnoreCase);

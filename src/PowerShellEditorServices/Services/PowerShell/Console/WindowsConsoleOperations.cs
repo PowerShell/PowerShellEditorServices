@@ -1,5 +1,5 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.Threading;
@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
     {
         private ConsoleKeyInfo? _bufferedKey;
 
-        private SemaphoreSlim _readKeyHandle = AsyncUtils.CreateSimpleLockingSemaphore();
+        private readonly SemaphoreSlim _readKeyHandle = AsyncUtils.CreateSimpleLockingSemaphore();
 
         public int GetCursorLeft() => System.Console.CursorLeft;
 
@@ -58,9 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             try
             {
                 return
-                    _bufferedKey.HasValue
-                        ? _bufferedKey.Value
-                        : (_bufferedKey = System.Console.ReadKey(intercept)).Value;
+                    _bufferedKey ?? (_bufferedKey = System.Console.ReadKey(intercept)).Value;
             }
             finally
             {

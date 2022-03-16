@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             };
         }
 
-        protected override DocumentSymbolRegistrationOptions CreateRegistrationOptions(DocumentSymbolCapability capability, ClientCapabilities clientCapabilities) => new DocumentSymbolRegistrationOptions
+        protected override DocumentSymbolRegistrationOptions CreateRegistrationOptions(DocumentSymbolCapability capability, ClientCapabilities clientCapabilities) => new()
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector
         };
@@ -49,16 +49,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
             IEnumerable<ISymbolReference> foundSymbols =
-                this.ProvideDocumentSymbols(scriptFile);
+                ProvideDocumentSymbols(scriptFile);
 
             SymbolInformationOrDocumentSymbol[] symbols = null;
 
             string containerName = Path.GetFileNameWithoutExtension(scriptFile.FilePath);
 
-            if (foundSymbols != null)
-            {
-                symbols =
-                    foundSymbols
+            symbols = foundSymbols != null
+                ? foundSymbols
                         .Select(r =>
                         {
                             return new SymbolInformationOrDocumentSymbol(new SymbolInformation
@@ -73,12 +71,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                                 Name = GetDecoratedSymbolName(r)
                             });
                         })
-                        .ToArray();
-            }
-            else
-            {
-                symbols = Array.Empty<SymbolInformationOrDocumentSymbol>();
-            }
+                        .ToArray()
+                : Array.Empty<SymbolInformationOrDocumentSymbol>();
 
 
             return Task.FromResult(new SymbolInformationOrDocumentSymbolContainer(symbols));
@@ -88,7 +82,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             ScriptFile scriptFile)
         {
             return
-                this.InvokeProviders(p => p.ProvideDocumentSymbols(scriptFile))
+                InvokeProviders(p => p.ProvideDocumentSymbols(scriptFile))
                     .SelectMany(r => r);
         }
 
@@ -104,10 +98,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         protected IEnumerable<TResult> InvokeProviders<TResult>(
             Func<IDocumentSymbolProvider, TResult> invokeFunc)
         {
-            Stopwatch invokeTimer = new Stopwatch();
-            List<TResult> providerResults = new List<TResult>();
+            Stopwatch invokeTimer = new();
+            List<TResult> providerResults = new();
 
-            foreach (var provider in this._providers)
+            foreach (IDocumentSymbolProvider provider in _providers)
             {
                 try
                 {
@@ -117,12 +111,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                     invokeTimer.Stop();
 
-                    this._logger.LogTrace(
+                    _logger.LogTrace(
                         $"Invocation of provider '{provider.GetType().Name}' completed in {invokeTimer.ElapsedMilliseconds}ms.");
                 }
                 catch (Exception e)
                 {
-                    this._logger.LogException(
+                    _logger.LogException(
                         $"Exception caught while invoking provider {provider.GetType().Name}:",
                         e);
                 }
@@ -133,25 +127,20 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private static SymbolKind GetSymbolKind(SymbolType symbolType)
         {
-            switch (symbolType)
+            return symbolType switch
             {
-                case SymbolType.Configuration:
-                case SymbolType.Function:
-                case SymbolType.Workflow:
-                    return SymbolKind.Function;
-
-                default:
-                    return SymbolKind.Variable;
-            }
+                SymbolType.Configuration or SymbolType.Function or SymbolType.Workflow => SymbolKind.Function,
+                _ => SymbolKind.Variable,
+            };
         }
 
         private static string GetDecoratedSymbolName(ISymbolReference symbolReference)
         {
             string name = symbolReference.SymbolName;
 
-            if (symbolReference.SymbolType == SymbolType.Configuration ||
-                symbolReference.SymbolType == SymbolType.Function ||
-                symbolReference.SymbolType == SymbolType.Workflow)
+            if (symbolReference.SymbolType is SymbolType.Configuration or
+                SymbolType.Function or
+                SymbolType.Workflow)
             {
                 name += " { }";
             }

@@ -17,12 +17,12 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         public async Task<IHtmlContentView> CreateHtmlContentViewAsync(string viewTitle)
         {
             HtmlContentView htmlView =
-                new HtmlContentView(
+                new(
                     viewTitle,
                     languageServer);
 
             await htmlView.CreateAsync().ConfigureAwait(false);
-            this.AddView(htmlView);
+            AddView(htmlView);
 
             return htmlView;
         }

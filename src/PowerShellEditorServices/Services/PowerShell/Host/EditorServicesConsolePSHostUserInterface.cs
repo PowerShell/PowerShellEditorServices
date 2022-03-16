@@ -112,14 +112,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public override void WriteProgress(long sourceId, ProgressRecord record)
         {
-            if (record.RecordType == ProgressRecordType.Completed)
-            {
-                _ = _currentProgressRecords.TryRemove((sourceId, record.ActivityId), out _);
-            }
-            else
-            {
-                _ = _currentProgressRecords.TryAdd((sourceId, record.ActivityId), null);
-            }
+            _ = record.RecordType == ProgressRecordType.Completed
+                ? _currentProgressRecords.TryRemove((sourceId, record.ActivityId), out _)
+                : _currentProgressRecords.TryAdd((sourceId, record.ActivityId), null);
             _underlyingHostUI.WriteProgress(sourceId, record);
         }
 
@@ -156,9 +151,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return (PSHostUserInterface)externalUIField.GetValue(ui);
         }
 
-        private static void SetConsoleHostUIToInteractive(PSHostUserInterface ui)
-        {
-            ui.GetType().GetProperty("ThrowOnReadAndPrompt", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(ui, false);
-        }
+        private static void SetConsoleHostUIToInteractive(PSHostUserInterface ui) => ui.GetType().GetProperty("ThrowOnReadAndPrompt", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(ui, false);
     }
 }

@@ -55,21 +55,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         {
             Validate.IsNotNull(name, "name");
 
-            this.Id = id;
-            this.Name = name;
-            this.IsExpandable = true;
-            this.ValueString = " "; // An empty string isn't enough due to a temporary bug in VS Code.
+            Id = id;
+            Name = name;
+            IsExpandable = true;
+            ValueString = " "; // An empty string isn't enough due to a temporary bug in VS Code.
 
-            this.children = new Dictionary<string, VariableDetailsBase>();
+            children = new Dictionary<string, VariableDetailsBase>();
         }
 
         /// <summary>
         /// Gets the collection of child variables.
         /// </summary>
-        public IDictionary<string, VariableDetailsBase> Children
-        {
-            get { return this.children; }
-        }
+        public IDictionary<string, VariableDetailsBase> Children => children;
 
         /// <summary>
         /// Returns the details of the variable container's children.  If empty, returns an empty array.
@@ -77,8 +74,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <returns></returns>
         public override VariableDetailsBase[] GetChildren(ILogger logger)
         {
-            var variablesArray = new VariableDetailsBase[this.children.Count];
-            this.children.Values.CopyTo(variablesArray, 0);
+            VariableDetailsBase[] variablesArray = new VariableDetailsBase[children.Count];
+            children.Values.CopyTo(variablesArray, 0);
             return variablesArray;
         }
 
@@ -89,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <returns>Returns true if this variable container directly contains the specified variableReferenceId, false otherwise.</returns>
         public bool ContainsVariable(int variableReferenceId)
         {
-            foreach (VariableDetailsBase value in this.children.Values)
+            foreach (VariableDetailsBase value in children.Values)
             {
                 if (value.Id == variableReferenceId)
                 {

@@ -74,17 +74,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         public event Action<object, DebuggerResumingEventArgs> DebuggerResuming;
         public event Action<object, BreakpointUpdatedEventArgs> BreakpointUpdated;
 
-        public Task<DscBreakpointCapability> GetDscBreakpointCapabilityAsync(CancellationToken cancellationToken)
-        {
-            return _psesHost.CurrentRunspace.GetDscBreakpointCapabilityAsync(_logger, _psesHost, cancellationToken);
-        }
+        public Task<DscBreakpointCapability> GetDscBreakpointCapabilityAsync(CancellationToken cancellationToken) => _psesHost.CurrentRunspace.GetDscBreakpointCapabilityAsync(_logger, _psesHost, cancellationToken);
 
         // This is required by the PowerShell API so that remote debugging works. Without it, a
         // runspace may not have these options set and attempting to set breakpoints remotely fails.
-        public void EnableDebugMode()
-        {
-            _psesHost.Runspace.Debugger.SetDebugMode(DebugModes.LocalScript | DebugModes.RemoteScript);
-        }
+        public void EnableDebugMode() => _psesHost.Runspace.Debugger.SetDebugMode(DebugModes.LocalScript | DebugModes.RemoteScript);
 
         public void Abort() => SetDebugResuming(DebuggerResumeAction.Stop);
 
@@ -133,7 +127,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
             LastStopEventArgs = args;
         }
 
-        public void SetDebuggerResumed() { IsStopped = false; }
+        public void SetDebuggerResumed() => IsStopped = false;
 
         public void ProcessDebuggerResult(DebuggerCommandResults debuggerResult)
         {

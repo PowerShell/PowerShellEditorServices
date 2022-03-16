@@ -10,13 +10,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Utility
     {
         [Trait("Category", "VersionUtils")]
         [Fact]
-        public void IsNetCoreTest()
-        {
+        public void IsNetCoreTest() =>
 #if CoreCLR
             Assert.True(VersionUtils.IsNetCore);
 #else
             Assert.False(VersionUtils.IsNetCore);
 #endif
-        }
+
     }
 }

@@ -15,7 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
     {
         #region Private Fields
 
-        private string hotKeyString;
+        private readonly string hotKeyString;
 
         #endregion
 
@@ -68,22 +68,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         /// </param>
         public ChoiceDetails(string label, string helpMessage)
         {
-            this.HelpMessage = helpMessage;
+            HelpMessage = helpMessage;
 
-            this.HotKeyIndex = label.IndexOf('&');
-            if (this.HotKeyIndex >= 0)
+            HotKeyIndex = label.IndexOf('&');
+            if (HotKeyIndex >= 0)
             {
-                this.Label = label.Remove(this.HotKeyIndex, 1);
+                Label = label.Remove(HotKeyIndex, 1);
 
-                if (this.HotKeyIndex < this.Label.Length)
+                if (HotKeyIndex < Label.Length)
                 {
-                    this.hotKeyString = this.Label[this.HotKeyIndex].ToString().ToUpper();
-                    this.HotKeyCharacter = this.hotKeyString[0];
+                    hotKeyString = Label[HotKeyIndex].ToString().ToUpper();
+                    HotKeyCharacter = hotKeyString[0];
                 }
             }
             else
             {
-                this.Label = label;
+                Label = label;
             }
         }
 
@@ -121,8 +121,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 
             // Is it the hotkey?
             return
-                string.Equals(inputString, this.hotKeyString, StringComparison.CurrentCultureIgnoreCase) ||
-                string.Equals(inputString, this.Label, StringComparison.CurrentCultureIgnoreCase);
+                string.Equals(inputString, hotKeyString, StringComparison.CurrentCultureIgnoreCase) ||
+                string.Equals(inputString, Label, StringComparison.CurrentCultureIgnoreCase);
         }
 
         #endregion

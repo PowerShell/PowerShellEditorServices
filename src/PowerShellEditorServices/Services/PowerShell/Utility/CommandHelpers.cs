@@ -19,35 +19,35 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
     {
         private static readonly HashSet<string> s_nounExclusionList = new()
         {
-                // PowerShellGet v2 nouns
-                "CredsFromCredentialProvider",
-                "DscResource",
-                "InstalledModule",
-                "InstalledScript",
-                "PSRepository",
-                "RoleCapability",
-                "Script",
-                "ScriptFileInfo",
+            // PowerShellGet v2 nouns
+            "CredsFromCredentialProvider",
+            "DscResource",
+            "InstalledModule",
+            "InstalledScript",
+            "PSRepository",
+            "RoleCapability",
+            "Script",
+            "ScriptFileInfo",
 
-                // PackageManagement nouns
-                "Package",
-                "PackageProvider",
-                "PackageSource",
-            };
+            // PackageManagement nouns
+            "Package",
+            "PackageProvider",
+            "PackageSource",
+        };
 
         // This is used when a noun exists in multiple modules (for example, "Command" is used in Microsoft.PowerShell.Core and also PowerShellGet)
         private static readonly HashSet<string> s_cmdletExclusionList = new()
         {
-                // Commands in PowerShellGet with conflicting nouns
-                "Find-Command",
-                "Find-Module",
-                "Install-Module",
-                "Publish-Module",
-                "Save-Module",
-                "Uninstall-Module",
-                "Update-Module",
-                "Update-ModuleManifest",
-            };
+            // Commands in PowerShellGet with conflicting nouns
+            "Find-Command",
+            "Find-Module",
+            "Install-Module",
+            "Publish-Module",
+            "Save-Module",
+            "Uninstall-Module",
+            "Update-Module",
+            "Update-ModuleManifest",
+        };
 
         private static readonly ConcurrentDictionary<string, CommandInfo> s_commandInfoCache = new();
         private static readonly ConcurrentDictionary<string, string> s_synopsisCache = new();
@@ -86,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             // This is currently necessary to make sure that Get-Command doesn't
             // load PackageManagement or PowerShellGet v2 because they cause
             // a major slowdown in IntelliSense.
-            var commandParts = commandName.Split('-');
+            string[] commandParts = commandName.Split('-');
             if ((commandParts.Length == 2 && s_nounExclusionList.Contains(commandParts[1]))
                     || s_cmdletExclusionList.Contains(commandName))
             {
@@ -128,9 +128,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             Validate.IsNotNull(nameof(executionService), executionService);
 
             // A small optimization to not run Get-Help on things like DSC resources.
-            if (commandInfo.CommandType != CommandTypes.Cmdlet &&
-                commandInfo.CommandType != CommandTypes.Function &&
-                commandInfo.CommandType != CommandTypes.Filter)
+            if (commandInfo.CommandType is not CommandTypes.Cmdlet and
+                not CommandTypes.Function and
+                not CommandTypes.Filter)
             {
                 return string.Empty;
             }
@@ -183,7 +183,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         {
             Validate.IsNotNull(nameof(executionService), executionService);
 
-            IEnumerable<CommandInfo> aliases = await executionService.ExecuteDelegateAsync<IEnumerable<CommandInfo>>(
+            IEnumerable<CommandInfo> aliases = await executionService.ExecuteDelegateAsync(
                 nameof(GetAliasesAsync),
                 executionOptions: null,
                 (pwsh, _) =>
