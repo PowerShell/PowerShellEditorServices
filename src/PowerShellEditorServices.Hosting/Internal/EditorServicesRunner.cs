@@ -290,6 +290,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 (int)_config.LogLevel,
                 consoleReplEnabled: _config.ConsoleRepl != ConsoleReplKind.None,
                 usesLegacyReadLine: _config.ConsoleRepl == ConsoleReplKind.LegacyReadLine,
+                useHostReadKey: _config.UseHostReadKey,
                 bundledModulePath: _config.BundledModulePath);
         }
 

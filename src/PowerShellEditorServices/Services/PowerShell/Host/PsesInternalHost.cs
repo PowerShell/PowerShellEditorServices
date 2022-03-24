@@ -98,6 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _logger = loggerFactory.CreateLogger<PsesInternalHost>();
             _languageServer = languageServer;
             _hostInfo = hostInfo;
+            
 
             // Respect a user provided bundled module path.
             if (Directory.Exists(hostInfo.BundledModulePath))
@@ -136,6 +137,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             Version = hostInfo.Version;
 
             DebugContext = new PowerShellDebugContext(loggerFactory, this);
+            if (!_hostInfo.UseHostReadKey)
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    _consoleOperations = new WindowsConsoleOperations();
+                }
+                _consoleOperations = new UnixConsoleOperations();
+            }
             UI = hostInfo.ConsoleReplEnabled
                 ? new EditorServicesConsolePSHostUserInterface(loggerFactory, hostInfo.PSHost.UI)
                 : new NullPSHostUI();
@@ -955,7 +964,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 // If we've been configured to use it, or if we can't load PSReadLine, use the legacy readline
                 if (hostStartupInfo.UsesLegacyReadLine || !TryLoadPSReadLine(pwsh, engineIntrinsics, out IReadLine readLine))
                 {
-                    readLine = new LegacyReadLine(this, ReadKey, OnPowerShellIdle);
+                    readLine = new LegacyReadLine(this, ReadKey, OnPowerShellIdle, _consoleOperations);
                 }
 
                 readLineProvider.OverrideReadLine(readLine);
@@ -1071,7 +1080,55 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 StopDebugContext();
             }
         }
+        /// <summary>
+        /// This method is sent to PSReadLine as a workaround for issues with the System.Console
+        /// implementation. Functionally it is the same as System.Console.ReadKey,
+        /// with the exception that it will not lock the standard input stream.
+        /// </summary>
+        /// <param name="intercept">
+        /// Determines whether to display the pressed key in the console window.
+        /// true to not display the pressed key; otherwise, false.
+        /// </param>
+        /// <param name="cancellationToken">
+        /// The <see cref="CancellationToken" /> that can be used to cancel the request.
+        /// </param>
+        /// <returns>
+        /// An object that describes the ConsoleKey constant and Unicode character, if any,
+        /// that correspond to the pressed console key. The ConsoleKeyInfo object also describes,
+        /// in a bitwise combination of ConsoleModifiers values, whether one or more Shift, Alt,
+        /// or Ctrl modifier keys was pressed simultaneously with the console key.
+        /// </returns>
+        internal ConsoleKeyInfo SafeReadKey(bool intercept, CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (_consoleOperations is not null)
+                {
+                    return _consoleOperations.ReadKey(intercept, cancellationToken);
+                }
+                else
+                {
+                    var keyInfo = UI.RawUI.ReadKey(ReadKeyOptions.AllowCtrlC);
 
+                    return new ConsoleKeyInfo(
+                        keyChar: keyInfo.Character,
+                        key: ConsoleKey.DownArrow,
+                        shift: (keyInfo.ControlKeyState & ControlKeyStates.ShiftPressed) > 0,
+                        alt: (keyInfo.ControlKeyState & (ControlKeyStates.RightAltPressed | ControlKeyStates.LeftAltPressed)) > 0,
+                        control: (keyInfo.ControlKeyState > 0)
+                        );
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                return new ConsoleKeyInfo(
+                    keyChar: ' ',
+                    key: ConsoleKey.DownArrow,
+                    shift: false,
+                    alt: false,
+                    control: false);
+            }
+        }
         private ConsoleKeyInfo ReadKey(bool intercept)
         {
             // NOTE: This requests that the client (the Code extension) send a non-printing key back
@@ -1248,7 +1305,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             try
             {
                 PSReadLineProxy psrlProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, s_bundledModulePath, pwsh);
-                psrlReadLine = new PsrlReadLine(psrlProxy, this, engineIntrinsics, ReadKey, OnPowerShellIdle);
+                psrlReadLine = new PsrlReadLine(psrlProxy, this, engineIntrinsics, ReadKey, OnPowerShellIdle, _consoleOperations);
                 return true;
             }
             catch (Exception e)

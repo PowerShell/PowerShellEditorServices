@@ -24,15 +24,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private readonly Action<CancellationToken> _onIdleAction;
 
+        private IConsoleOperations _consoleOperations;
+
         public LegacyReadLine(
             PsesInternalHost psesHost,
             Func<bool, ConsoleKeyInfo> readKeyFunc,
-            Action<CancellationToken> onIdleAction)
+            Action<CancellationToken> onIdleAction,
+            IConsoleOperations consoleOperations)
         {
             _psesHost = psesHost;
             _readKeyTasks = new Task[2];
             _readKeyFunc = readKeyFunc;
             _onIdleAction = onIdleAction;
+            _consoleOperations = consoleOperations;
         }
 
         public override string ReadLine(CancellationToken cancellationToken)
@@ -46,12 +50,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
             StringBuilder inputLine = new();
 
-            int initialCursorCol = Console.CursorLeft;
-            int initialCursorRow = Console.CursorTop;
+            int initialCursorCol = _consoleOperations?.GetCursorLeft(cancellationToken) ?? _psesHost.UI.RawUI.CursorPosition.X;
+            int initialCursorRow = _consoleOperations?.GetCursorTop(cancellationToken) ?? _psesHost.UI.RawUI.CursorPosition.Y; ;
 
             int currentCursorIndex = 0;
-
-            Console.TreatControlCAsInput = true;
+            if(_consoleOperations != null)
+                Console.TreatControlCAsInput = true;
 
             try
             {
@@ -63,7 +67,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                     // because the window could have been resized before then
                     int promptStartCol = initialCursorCol;
                     int promptStartRow = initialCursorRow;
-                    int consoleWidth = Console.WindowWidth;
+
+                    int consoleWidth = _consoleOperations is not null ? Console.WindowWidth : _psesHost.UI.RawUI.WindowSize.Width;
 
                     switch (keyInfo.Key)
                     {

@@ -52,16 +52,19 @@ param(
     [ValidateSet("Diagnostic", "Verbose", "Normal", "Warning", "Error")]
     $LogLevel,
 
-	[Parameter(Mandatory=$true)]
-	[ValidateNotNullOrEmpty()]
-	[string]
-	$SessionDetailsPath,
+    [Parameter(Mandatory=$true)]
+    [ValidateNotNullOrEmpty()]
+    [string]
+    $SessionDetailsPath,
 
     [switch]
     $EnableConsoleRepl,
 
     [switch]
     $UseLegacyReadLine,
+
+    [switch]
+    $UseHostReadKey,
 
     [switch]
     $DebugServiceOnly,

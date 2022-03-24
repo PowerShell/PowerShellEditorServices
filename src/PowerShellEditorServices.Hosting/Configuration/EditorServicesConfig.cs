@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <summary>Use a REPL with the legacy readline implementation. This is generally used when PSReadLine is unavailable.</summary>
         LegacyReadLine = 1,
         /// <summary>Use a REPL with the PSReadLine module for console interaction.</summary>
-        PSReadLine = 2,
+        PSReadLine = 2
     }
 
     /// <summary>
@@ -39,13 +39,15 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             PSHost psHost,
             string sessionDetailsPath,
             string bundledModulePath,
-            string logPath)
+            string logPath,
+            bool useHostReadKey)
         {
             HostInfo = hostInfo;
             PSHost = psHost;
             SessionDetailsPath = sessionDetailsPath;
             BundledModulePath = bundledModulePath;
             LogPath = logPath;
+            UseHostReadKey = useHostReadKey;
         }
 
         /// <summary>
@@ -72,6 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// The path to use for logging for Editor Services.
         /// </summary>
         public string LogPath { get; }
+        public bool UseHostReadKey { get; }
 
         /// <summary>
         /// Names of or paths to any additional modules to load on startup.
@@ -88,7 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// (including none to disable the integrated console).
         /// </summary>
         public ConsoleReplKind ConsoleRepl { get; set; } = ConsoleReplKind.None;
-
+        
         /// <summary>
         /// The minimum log level to log events with.
         /// </summary>

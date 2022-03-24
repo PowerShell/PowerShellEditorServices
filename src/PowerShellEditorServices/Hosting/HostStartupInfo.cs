@@ -80,7 +80,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// If the console REPL is not enabled, this setting will be ignored.
         /// </summary>
         public bool UsesLegacyReadLine { get; }
-
+        /// <summary>
+        /// If true, the legacy PSES readline implementation but calls ReadKey in the provided host
+        /// If the console REPL is not enabled, this setting will be ignored.
+        /// </summary>
+        public bool UseHostReadKey { get; }
         /// <summary>
         /// The PowerShell host to use with Editor Services.
         /// </summary>
@@ -153,6 +157,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             int logLevel,
             bool consoleReplEnabled,
             bool usesLegacyReadLine,
+            bool useHostReadKey,
             string bundledModulePath)
         {
             Name = name ?? DefaultHostName;
@@ -167,6 +172,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             LogLevel = logLevel;
             ConsoleReplEnabled = consoleReplEnabled;
             UsesLegacyReadLine = usesLegacyReadLine;
+            UseHostReadKey = useHostReadKey;
             BundledModulePath = bundledModulePath;
         }
 

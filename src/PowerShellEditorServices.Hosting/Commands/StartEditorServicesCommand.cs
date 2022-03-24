@@ -162,6 +162,12 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         public SwitchParameter UseLegacyReadLine { get; set; }
 
         /// <summary>
+        /// When set and the console is enabled and legacy readline
+        /// is enabled, console operations will use PSHostreadline implementation will be used instead of PSReadLine.
+        /// </summary>
+        [Parameter]
+        public SwitchParameter UseHostReadKey { get; set; }
+        /// <summary>
         /// When set, do not enable LSP service, only the debug adapter.
         /// </summary>
         [Parameter]
@@ -345,8 +351,9 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 hostInfo,
                 Host,
                 SessionDetailsPath,
-                bundledModulesPath,
-                LogPath)
+                bundledModulesPath,                
+                LogPath,
+                UseHostReadKey)
             {
                 FeatureFlags = FeatureFlags,
                 LogLevel = LogLevel,
