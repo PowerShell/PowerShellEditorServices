@@ -107,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 // We only want the Editor Services DLL; the new ALC will lazily load its dependencies automatically
                 if (!string.Equals(asmName.Name, "Microsoft.PowerShell.EditorServices", StringComparison.Ordinal))
                 {
-                    //return null;
+                    return null;
                 }
 
                 string asmPath = Path.Combine(s_psesDependencyDirPath, $"{asmName.Name}.dll");
