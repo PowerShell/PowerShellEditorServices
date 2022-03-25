@@ -1,5 +1,10 @@
 # PowerShell Editor Services Release History
 
+## v3.1.6
+### Thursday, March 24, 2022
+
+- #️⃣ 🙏 [PowerShellEditorServices #1746](https://github.com/PowerShell/PowerShellEditorServices/pull/1746) - Replace `_consoleHostUI` with `_underlyingHostUI`.
+
 ## v3.1.5
 ### Thursday, March 10, 2022
 
