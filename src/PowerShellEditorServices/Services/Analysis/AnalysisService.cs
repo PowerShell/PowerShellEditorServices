@@ -402,7 +402,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 Diagnostic diagnostic = GetDiagnosticFromMarker(marker);
 
-                if (marker.Corrections != null)
+                if (marker.Corrections is not null)
                 {
                     string diagnosticId = GetUniqueIdFromDiagnostic(diagnostic);
                     fileCorrections.Corrections[diagnosticId] = marker.Corrections;

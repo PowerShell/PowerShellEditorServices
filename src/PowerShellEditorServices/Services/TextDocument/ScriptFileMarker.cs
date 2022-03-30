@@ -136,9 +136,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                                 suggestedCorrection.Text,
                                 startLineNumber: suggestedCorrection.StartLineNumber,
                                 startColumnNumber: suggestedCorrection.StartColumnNumber,
+                                startOffset: -1,
                                 endLineNumber: suggestedCorrection.EndLineNumber,
                                 endColumnNumber: suggestedCorrection.EndColumnNumber,
-                                startOffset: -1,
                                 endOffset: -1),
                     });
                 }
