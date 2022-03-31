@@ -208,7 +208,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             ScriptFileMarker[] analysisResults = await AnalysisEngine.AnalyzeScriptAsync(functionText, commentHelpSettings).ConfigureAwait(false);
 
-            if (analysisResults.Length == 0 || analysisResults[0].Corrections.Any())
+            if (analysisResults.Length == 0 || !analysisResults[0].Corrections.Any())
             {
                 return null;
             }
