@@ -21,9 +21,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         public string Name { get; set; }
 
         /// <summary>
-        /// Gets or sets the list of ScriptRegions that define the edits to be made by the correction.
+        /// Gets or sets the ScriptRegion that define the edit to be made by the correction.
         /// </summary>
-        public ScriptRegion[] Edits { get; set; }
+        public ScriptRegion Edit { get; set; }
     }
 
     /// <summary>
@@ -79,9 +79,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         public ScriptRegion ScriptRegion { get; set; }
 
         /// <summary>
-        /// Gets or sets an optional code correction that can be applied based on this marker.
+        /// Gets or sets a optional code corrections that can be applied based on its marker.
         /// </summary>
-        public MarkerCorrection Correction { get; set; }
+        public IEnumerable<MarkerCorrection> Corrections { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the marker's source like "PowerShell"
@@ -110,7 +110,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         internal static ScriptFileMarker FromDiagnosticRecord(PSObject psObject)
         {
             Validate.IsNotNull(nameof(psObject), psObject);
-            MarkerCorrection correction = null;
 
             // make sure psobject is of type DiagnosticRecord
             if (!psObject.TypeNames.Contains(
@@ -124,32 +123,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             // the diagnostic record's properties directly i.e. <instance>.<propertyName>
             // without having to go through PSObject's Members property.
             dynamic diagnosticRecord = psObject;
-
+            List<MarkerCorrection> markerCorrections = new();
             if (diagnosticRecord.SuggestedCorrections != null)
             {
-                List<ScriptRegion> editRegions = new();
-                string correctionMessage = null;
                 foreach (dynamic suggestedCorrection in diagnosticRecord.SuggestedCorrections)
                 {
-                    editRegions.Add(
-                        new ScriptRegion(
-                            diagnosticRecord.ScriptPath,
-                            suggestedCorrection.Text,
-                            startLineNumber: suggestedCorrection.StartLineNumber,
-                            startColumnNumber: suggestedCorrection.StartColumnNumber,
-                            endLineNumber: suggestedCorrection.EndLineNumber,
-                            endColumnNumber: suggestedCorrection.EndColumnNumber,
-                            startOffset: -1,
-                            endOffset: -1));
-
-                    correctionMessage = suggestedCorrection.Description;
+                    markerCorrections.Add(new MarkerCorrection
+                    {
+                        Name = suggestedCorrection.Description ?? diagnosticRecord.Message,
+                        Edit = new ScriptRegion(
+                                diagnosticRecord.ScriptPath,
+                                suggestedCorrection.Text,
+                                startLineNumber: suggestedCorrection.StartLineNumber,
+                                startColumnNumber: suggestedCorrection.StartColumnNumber,
+                                startOffset: -1,
+                                endLineNumber: suggestedCorrection.EndLineNumber,
+                                endColumnNumber: suggestedCorrection.EndColumnNumber,
+                                endOffset: -1),
+                    });
                 }
-
-                correction = new MarkerCorrection
-                {
-                    Name = correctionMessage ?? diagnosticRecord.Message,
-                    Edits = editRegions.ToArray()
-                };
             }
 
             string severity = diagnosticRecord.Severity.ToString();
@@ -166,7 +158,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                 RuleName = diagnosticRecord.RuleName as string ?? string.Empty,
                 Level = level,
                 ScriptRegion = ScriptRegion.Create(diagnosticRecord.Extent as IScriptExtent),
-                Correction = correction,
+                Corrections = markerCorrections,
                 Source = "PSScriptAnalyzer"
             };
         }

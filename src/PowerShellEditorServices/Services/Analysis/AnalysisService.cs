@@ -208,14 +208,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             ScriptFileMarker[] analysisResults = await AnalysisEngine.AnalyzeScriptAsync(functionText, commentHelpSettings).ConfigureAwait(false);
 
-            if (analysisResults.Length == 0
-                || analysisResults[0]?.Correction?.Edits == null
-                || analysisResults[0].Correction.Edits.Length == 0)
+            if (analysisResults.Length == 0 || !analysisResults[0].Corrections.Any())
             {
                 return null;
             }
 
-            return analysisResults[0].Correction.Edits[0].Text;
+            return analysisResults[0].Corrections.First().Edit.Text;
         }
 
         /// <summary>
@@ -223,7 +221,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="documentUri">The URI string of the file to get code actions for.</param>
         /// <returns>A threadsafe readonly dictionary of the code actions of the particular file.</returns>
-        public async Task<IReadOnlyDictionary<string, MarkerCorrection>> GetMostRecentCodeActionsForFileAsync(DocumentUri uri)
+        public async Task<IReadOnlyDictionary<string, IEnumerable<MarkerCorrection>>> GetMostRecentCodeActionsForFileAsync(DocumentUri uri)
         {
             if (!_workspaceService.TryGetFile(uri, out ScriptFile file)
                 || !_mostRecentCorrectionsByFile.TryGetValue(file, out CorrectionTableEntry corrections))
@@ -404,10 +402,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 Diagnostic diagnostic = GetDiagnosticFromMarker(marker);
 
-                if (marker.Correction != null)
+                if (marker.Corrections is not null)
                 {
                     string diagnosticId = GetUniqueIdFromDiagnostic(diagnostic);
-                    fileCorrections.Corrections[diagnosticId] = marker.Correction;
+                    fileCorrections.Corrections[diagnosticId] = marker.Corrections;
                 }
 
                 diagnostics[i] = diagnostic;
@@ -511,11 +509,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             public CorrectionTableEntry()
             {
-                Corrections = new ConcurrentDictionary<string, MarkerCorrection>();
+                Corrections = new ConcurrentDictionary<string, IEnumerable<MarkerCorrection>>();
                 DiagnosticPublish = Task.CompletedTask;
             }
 
-            public ConcurrentDictionary<string, MarkerCorrection> Corrections { get; }
+            public ConcurrentDictionary<string, IEnumerable<MarkerCorrection>> Corrections { get; }
 
             public Task DiagnosticPublish { get; set; }
         }
