@@ -47,35 +47,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             s_consoleProxy.ReadKey(intercept, cancellationToken);
 
         /// <summary>
-        /// Obtains the next character or function key pressed by the user asynchronously.
-        /// Does not block when other console API's are called.
-        /// </summary>
-        /// <param name="intercept">
-        /// Determines whether to display the pressed key in the console window. <see langword="true" />
-        /// to not display the pressed key; otherwise, <see langword="false" />.
-        /// </param>
-        /// <param name="cancellationToken">The CancellationToken to observe.</param>
-        /// <returns>
-        /// A task that will complete with a result of the key pressed by the user.
-        /// </returns>
-        public static Task<ConsoleKeyInfo> ReadKeyAsync(bool intercept, CancellationToken cancellationToken) =>
-            s_consoleProxy.ReadKeyAsync(intercept, cancellationToken);
-
-        /// <summary>
-        /// Obtains the horizontal position of the console cursor. Use this method
-        /// instead of <see cref="System.Console.CursorLeft" /> to avoid triggering
-        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(bool, CancellationToken)" />
-        /// on Unix platforms.
+        /// Obtains the horizontal position of the console cursor. TODO: Is this still necessary?
         /// </summary>
         /// <returns>The horizontal position of the console cursor.</returns>
-        public static int GetCursorLeft() =>
-            s_consoleProxy.GetCursorLeft();
+        public static int GetCursorLeft() => s_consoleProxy.GetCursorLeft();
 
         /// <summary>
-        /// Obtains the horizontal position of the console cursor. Use this method
-        /// instead of <see cref="System.Console.CursorLeft" /> to avoid triggering
-        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(bool, CancellationToken)" />
-        /// on Unix platforms.
+        /// Obtains the horizontal position of the console cursor. TODO: Is this still necessary?
         /// </summary>
         /// <param name="cancellationToken">The <see cref="CancellationToken" /> to observe.</param>
         /// <returns>The horizontal position of the console cursor.</returns>
@@ -83,83 +61,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             s_consoleProxy.GetCursorLeft(cancellationToken);
 
         /// <summary>
-        /// Obtains the horizontal position of the console cursor. Use this method
-        /// instead of <see cref="System.Console.CursorLeft" /> to avoid triggering
-        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(bool, CancellationToken)" />
-        /// on Unix platforms.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="Task{T}" /> representing the asynchronous operation. The
-        /// <see cref="Task{T}.Result" /> property will return the horizontal position
-        /// of the console cursor.
-        /// </returns>
-        public static Task<int> GetCursorLeftAsync() =>
-            s_consoleProxy.GetCursorLeftAsync();
-
-        /// <summary>
-        /// Obtains the horizontal position of the console cursor. Use this method
-        /// instead of <see cref="System.Console.CursorLeft" /> to avoid triggering
-        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(bool, CancellationToken)" />
-        /// on Unix platforms.
-        /// </summary>
-        /// <param name="cancellationToken">The <see cref="CancellationToken" /> to observe.</param>
-        /// <returns>
-        /// A <see cref="Task{T}" /> representing the asynchronous operation. The
-        /// <see cref="Task{T}.Result" /> property will return the horizontal position
-        /// of the console cursor.
-        /// </returns>
-        public static Task<int> GetCursorLeftAsync(CancellationToken cancellationToken) =>
-            s_consoleProxy.GetCursorLeftAsync(cancellationToken);
-
-        /// <summary>
-        /// Obtains the vertical position of the console cursor. Use this method
-        /// instead of <see cref="System.Console.CursorTop" /> to avoid triggering
-        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(bool, CancellationToken)" />
-        /// on Unix platforms.
+        /// Obtains the vertical position of the console cursor. TODO: Is this still necessary?
         /// </summary>
         /// <returns>The vertical position of the console cursor.</returns>
-        public static int GetCursorTop() =>
-            s_consoleProxy.GetCursorTop();
+        public static int GetCursorTop() => s_consoleProxy.GetCursorTop();
 
         /// <summary>
-        /// Obtains the vertical position of the console cursor. Use this method
-        /// instead of <see cref="System.Console.CursorTop" /> to avoid triggering
-        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(bool, CancellationToken)" />
-        /// on Unix platforms.
+        /// Obtains the vertical position of the console cursor. TODO: Is this still necessary?
         /// </summary>
         /// <param name="cancellationToken">The <see cref="CancellationToken" /> to observe.</param>
         /// <returns>The vertical position of the console cursor.</returns>
         public static int GetCursorTop(CancellationToken cancellationToken) =>
             s_consoleProxy.GetCursorTop(cancellationToken);
-
-        /// <summary>
-        /// Obtains the vertical position of the console cursor. Use this method
-        /// instead of <see cref="System.Console.CursorTop" /> to avoid triggering
-        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(bool, CancellationToken)" />
-        /// on Unix platforms.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="Task{T}" /> representing the asynchronous operation. The
-        /// <see cref="Task{T}.Result" /> property will return the vertical position
-        /// of the console cursor.
-        /// </returns>
-        public static Task<int> GetCursorTopAsync() =>
-            s_consoleProxy.GetCursorTopAsync();
-
-        /// <summary>
-        /// Obtains the vertical position of the console cursor. Use this method
-        /// instead of <see cref="System.Console.CursorTop" /> to avoid triggering
-        /// pending calls to <see cref="IConsoleOperations.ReadKeyAsync(bool, CancellationToken)" />
-        /// on Unix platforms.
-        /// </summary>
-        /// <param name="cancellationToken">The <see cref="CancellationToken" /> to observe.</param>
-        /// <returns>
-        /// A <see cref="Task{T}" /> representing the asynchronous operation. The
-        /// <see cref="Task{T}.Result" /> property will return the vertical position
-        /// of the console cursor.
-        /// </returns>
-        public static Task<int> GetCursorTopAsync(CancellationToken cancellationToken) =>
-            s_consoleProxy.GetCursorTopAsync(cancellationToken);
 
         /// <summary>
         /// This method is sent to PSReadLine as a workaround for issues with the System.Console

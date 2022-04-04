@@ -3,7 +3,6 @@
 
 using System;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
@@ -24,16 +23,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private Func<CancellationToken, bool> WaitForKeyAvailable;
 
-        private Func<CancellationToken, Task<bool>> WaitForKeyAvailableAsync;
-
-        internal UnixConsoleOperations()
-        {
-            // Switch between long and short wait periods depending on if the
-            // user has recently (last 5 seconds) pressed a key to avoid preventing
-            // the CPU from entering low power mode.
-            WaitForKeyAvailable = LongWaitForKey;
-            WaitForKeyAvailableAsync = LongWaitForKeyAsync;
-        }
+        /// <summary>
+        /// Switch between long and short wait periods depending on if the user has recently (last 5
+        /// seconds) pressed a key to avoid preventing the CPU from entering low power mode.
+        /// </summary>
+        internal UnixConsoleOperations() => WaitForKeyAvailable = LongWaitForKey;
 
         public ConsoleKeyInfo ReadKey(bool intercept, CancellationToken cancellationToken)
         {
@@ -67,50 +61,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             }
         }
 
-        public async Task<ConsoleKeyInfo> ReadKeyAsync(bool intercept, CancellationToken cancellationToken)
-        {
-            await s_readKeyHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
-
-            try
-            {
-                while (!await WaitForKeyAvailableAsync(cancellationToken).ConfigureAwait(false)) { }
-            }
-            finally
-            {
-                s_readKeyHandle.Release();
-            }
-
-            await s_stdInHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                return System.Console.ReadKey(intercept);
-            }
-            finally
-            {
-                s_stdInHandle.Release();
-            }
-        }
-
         public int GetCursorLeft() => GetCursorLeft(CancellationToken.None);
 
         public int GetCursorLeft(CancellationToken cancellationToken)
         {
             s_stdInHandle.Wait(cancellationToken);
-            try
-            {
-                return System.Console.CursorLeft;
-            }
-            finally
-            {
-                s_stdInHandle.Release();
-            }
-        }
-
-        public Task<int> GetCursorLeftAsync() => GetCursorLeftAsync(CancellationToken.None);
-
-        public async Task<int> GetCursorLeftAsync(CancellationToken cancellationToken)
-        {
-            await s_stdInHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 return System.Console.CursorLeft;
@@ -136,21 +91,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             }
         }
 
-        public Task<int> GetCursorTopAsync() => GetCursorTopAsync(CancellationToken.None);
-
-        public async Task<int> GetCursorTopAsync(CancellationToken cancellationToken)
-        {
-            await s_stdInHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                return System.Console.CursorTop;
-            }
-            finally
-            {
-                s_stdInHandle.Release();
-            }
-        }
-
         private bool LongWaitForKey(CancellationToken cancellationToken)
         {
             // Wait for a key to be buffered (in other words, wait for Console.KeyAvailable to become
@@ -163,17 +103,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             // As soon as a key is buffered, return true and switch the wait logic to be more
             // responsive, but also more expensive.
             WaitForKeyAvailable = ShortWaitForKey;
-            return true;
-        }
-
-        private async Task<bool> LongWaitForKeyAsync(CancellationToken cancellationToken)
-        {
-            while (!await IsKeyAvailableAsync(cancellationToken).ConfigureAwait(false))
-            {
-                await Task.Delay(LongWaitForKeySleepTime, cancellationToken).ConfigureAwait(false);
-            }
-
-            WaitForKeyAvailableAsync = ShortWaitForKeyAsync;
             return true;
         }
 
@@ -193,19 +122,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             return false;
         }
 
-        private async Task<bool> ShortWaitForKeyAsync(CancellationToken cancellationToken)
-        {
-            if (await SpinUntilKeyAvailableAsync(ShortWaitForKeyTimeout, cancellationToken).ConfigureAwait(false))
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                return true;
-            }
-
-            cancellationToken.ThrowIfCancellationRequested();
-            WaitForKeyAvailableAsync = LongWaitForKeyAsync;
-            return false;
-        }
-
         private static bool SpinUntilKeyAvailable(int millisecondsTimeout, CancellationToken cancellationToken)
         {
             return SpinWait.SpinUntil(
@@ -217,36 +133,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                 millisecondsTimeout);
         }
 
-        private static Task<bool> SpinUntilKeyAvailableAsync(int millisecondsTimeout, CancellationToken cancellationToken)
-        {
-            return Task<bool>.Factory.StartNew(
-                () => SpinWait.SpinUntil(
-                    () =>
-                    {
-                        // The wait handle is never set, it's just used to enable cancelling the wait.
-                        s_waitHandle.Wait(ShortWaitForKeySpinUntilSleepTime, cancellationToken);
-                        return IsKeyAvailable(cancellationToken);
-                    },
-                    millisecondsTimeout),
-                cancellationToken);
-        }
-
         private static bool IsKeyAvailable(CancellationToken cancellationToken)
         {
             s_stdInHandle.Wait(cancellationToken);
-            try
-            {
-                return System.Console.KeyAvailable;
-            }
-            finally
-            {
-                s_stdInHandle.Release();
-            }
-        }
-
-        private static async Task<bool> IsKeyAvailableAsync(CancellationToken cancellationToken)
-        {
-            await s_stdInHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 return System.Console.KeyAvailable;
