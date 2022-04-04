@@ -46,7 +46,6 @@ steps:
       **/Newtonsoft.Json.dll
       **/OmniSharp*.dll
       **/Serilog*.dll
-      **/UnixConsoleEcho.dll
 
 # The SBOM generation requires our original sources with the `dotnet restore`
 # produced `project.assets.json` files.

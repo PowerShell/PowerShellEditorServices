@@ -5,7 +5,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Utility;
-using UnixConsoleEcho;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
@@ -43,35 +42,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             // On Unix platforms System.Console.ReadKey has an internal lock on stdin.  Because
             // of this, if a ReadKey call is pending in one thread and in another thread
             // Console.CursorLeft is called, both threads block until a key is pressed.
-
-            // To work around this we wait for a key to be pressed before actually calling Console.ReadKey.
-            // However, any pressed keys during this time will be echoed to the console. To get around
-            // this we use the UnixConsoleEcho package to disable echo prior to waiting.
-            if (VersionUtils.IsPS6)
-            {
-                InputEcho.Disable();
-            }
-
             try
             {
                 // The WaitForKeyAvailable delegate switches between a long delay between waits and
                 // a short timeout depending on how recently a key has been pressed. This allows us
                 // to let the CPU enter low power mode without compromising responsiveness.
-                while (!WaitForKeyAvailable(cancellationToken))
-                {
-                    ;
-                }
+                while (!WaitForKeyAvailable(cancellationToken)) { }
             }
             finally
             {
-                if (VersionUtils.IsPS6)
-                {
-                    InputEcho.Disable();
-                }
                 s_readKeyHandle.Release();
             }
 
-            // A key has been pressed, so aquire a lock on our internal stdin handle. This is done
+            // A key has been pressed, so acquire a lock on our internal stdin handle. This is done
             // so any of our calls to cursor position API's do not release ReadKey.
             s_stdInHandle.Wait(cancellationToken);
             try
@@ -88,26 +71,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
         {
             await s_readKeyHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-            // I tried to replace this library with a call to `stty -echo`, but unfortunately
-            // the library also sets up allowing backspace to trigger `Console.KeyAvailable`.
-            if (VersionUtils.IsPS6)
-            {
-                InputEcho.Disable();
-            }
-
             try
             {
-                while (!await WaitForKeyAvailableAsync(cancellationToken).ConfigureAwait(false))
-                {
-                    ;
-                }
+                while (!await WaitForKeyAvailableAsync(cancellationToken).ConfigureAwait(false)) { }
             }
             finally
             {
-                if (VersionUtils.IsPS6)
-                {
-                    InputEcho.Enable();
-                }
                 s_readKeyHandle.Release();
             }
 

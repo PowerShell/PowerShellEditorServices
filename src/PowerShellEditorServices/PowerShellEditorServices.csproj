@@ -38,7 +38,6 @@
     <PackageReference Include="System.IO.Pipes.AccessControl" Version="5.0.0" />
     <PackageReference Include="System.Security.Principal" Version="4.3.0" />
     <PackageReference Include="System.Security.Principal.Windows" Version="5.0.0" />
-    <PackageReference Include="UnixConsoleEcho" Version="0.1.0" />
   </ItemGroup>
 
   <ItemGroup>
