@@ -1,14 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
@@ -46,8 +46,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
             StringBuilder inputLine = new();
 
-            int initialCursorCol = ConsoleProxy.GetCursorLeft(cancellationToken);
-            int initialCursorRow = ConsoleProxy.GetCursorTop(cancellationToken);
+            int initialCursorCol = Console.CursorLeft;
+            int initialCursorRow = Console.CursorTop;
 
             int currentCursorIndex = 0;
 

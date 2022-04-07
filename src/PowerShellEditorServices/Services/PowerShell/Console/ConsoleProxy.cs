@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
@@ -20,66 +19,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             shift: false,
             alt: false,
             control: false);
-
-        private static readonly IConsoleOperations s_consoleProxy;
-
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1810:Initialize reference type static fields inline", Justification = "Platform specific initialization")]
-        static ConsoleProxy()
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                s_consoleProxy = new WindowsConsoleOperations();
-                return;
-            }
-
-            s_consoleProxy = new UnixConsoleOperations();
-        }
-
-        /// <summary>
-        /// Obtains the next character or function key pressed by the user asynchronously.
-        /// Does not block when other console API's are called.
-        /// </summary>
-        /// <param name="intercept">
-        /// Determines whether to display the pressed key in the console window. <see langword="true" />
-        /// to not display the pressed key; otherwise, <see langword="false" />.
-        /// </param>
-        /// <param name="cancellationToken">The CancellationToken to observe.</param>
-        /// <returns>
-        /// An object that describes the <see cref="ConsoleKey" /> constant and Unicode character, if any,
-        /// that correspond to the pressed console key. The <see cref="ConsoleKeyInfo" /> object also
-        /// describes, in a bitwise combination of <see cref="ConsoleModifiers" /> values, whether
-        /// one or more Shift, Alt, or Ctrl modifier keys was pressed simultaneously with the console key.
-        /// </returns>
-        public static ConsoleKeyInfo ReadKey(bool intercept, CancellationToken cancellationToken) =>
-            s_consoleProxy.ReadKey(intercept, cancellationToken);
-
-        /// <summary>
-        /// Obtains the horizontal position of the console cursor. TODO: Is this still necessary?
-        /// </summary>
-        /// <returns>The horizontal position of the console cursor.</returns>
-        public static int GetCursorLeft() => s_consoleProxy.GetCursorLeft();
-
-        /// <summary>
-        /// Obtains the horizontal position of the console cursor. TODO: Is this still necessary?
-        /// </summary>
-        /// <param name="cancellationToken">The <see cref="CancellationToken" /> to observe.</param>
-        /// <returns>The horizontal position of the console cursor.</returns>
-        public static int GetCursorLeft(CancellationToken cancellationToken) =>
-            s_consoleProxy.GetCursorLeft(cancellationToken);
-
-        /// <summary>
-        /// Obtains the vertical position of the console cursor. TODO: Is this still necessary?
-        /// </summary>
-        /// <returns>The vertical position of the console cursor.</returns>
-        public static int GetCursorTop() => s_consoleProxy.GetCursorTop();
-
-        /// <summary>
-        /// Obtains the vertical position of the console cursor. TODO: Is this still necessary?
-        /// </summary>
-        /// <param name="cancellationToken">The <see cref="CancellationToken" /> to observe.</param>
-        /// <returns>The vertical position of the console cursor.</returns>
-        public static int GetCursorTop(CancellationToken cancellationToken) =>
-            s_consoleProxy.GetCursorTop(cancellationToken);
 
         /// <summary>
         /// This method is sent to PSReadLine as a workaround for issues with the System.Console
@@ -101,14 +40,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
         /// </returns>
         internal static ConsoleKeyInfo SafeReadKey(bool intercept, CancellationToken cancellationToken)
         {
-            try
-            {
-                return s_consoleProxy.ReadKey(intercept, cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                return s_nullKeyInfo;
-            }
+            ConsoleKeyInfo key = System.Console.ReadKey(intercept);
+            return cancellationToken.IsCancellationRequested ? s_nullKeyInfo : key;
         }
     }
 }

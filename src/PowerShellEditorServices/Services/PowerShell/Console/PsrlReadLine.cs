@@ -40,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         public override string ReadLine(CancellationToken cancellationToken) => _psesHost.InvokeDelegate(representation: "ReadLine", new ExecutionOptions { MustRunInForeground = true }, InvokePSReadLine, cancellationToken);
 
-        protected override ConsoleKeyInfo ReadKey(CancellationToken cancellationToken) => ConsoleProxy.ReadKey(intercept: true, cancellationToken);
+        protected override ConsoleKeyInfo ReadKey(CancellationToken cancellationToken) => ConsoleProxy.SafeReadKey(intercept: true, cancellationToken);
 
         #endregion
 

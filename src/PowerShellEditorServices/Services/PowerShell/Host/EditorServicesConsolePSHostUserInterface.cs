@@ -8,16 +8,12 @@ using System.Collections.ObjectModel;
 using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Security;
-using System.Threading;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 {
     internal class EditorServicesConsolePSHostUserInterface : PSHostUserInterface
     {
-        private readonly IReadLineProvider _readLineProvider;
-
         private readonly PSHostUserInterface _underlyingHostUI;
 
         /// <summary>
@@ -28,10 +24,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public EditorServicesConsolePSHostUserInterface(
             ILoggerFactory loggerFactory,
-            IReadLineProvider readLineProvider,
             PSHostUserInterface underlyingHostUI)
         {
-            _readLineProvider = readLineProvider;
             _underlyingHostUI = underlyingHostUI;
             RawUI = new EditorServicesConsolePSHostRawUserInterface(loggerFactory, underlyingHostUI.RawUI);
         }

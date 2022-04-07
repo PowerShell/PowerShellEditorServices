@@ -116,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             DebugContext = new PowerShellDebugContext(loggerFactory, this);
             UI = hostInfo.ConsoleReplEnabled
-                ? new EditorServicesConsolePSHostUserInterface(loggerFactory, _readLineProvider, hostInfo.PSHost.UI)
+                ? new EditorServicesConsolePSHostUserInterface(loggerFactory, hostInfo.PSHost.UI)
                 : new NullPSHostUI();
         }
 

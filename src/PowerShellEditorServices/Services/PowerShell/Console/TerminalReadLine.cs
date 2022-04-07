@@ -69,8 +69,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                     }
                     else if (previousInputLength > 0 && currentInputLength < previousInputLength)
                     {
-                        int row = ConsoleProxy.GetCursorTop(cancellationToken);
-                        int col = ConsoleProxy.GetCursorLeft(cancellationToken);
+                        int row = Console.CursorTop;
+                        int col = Console.CursorLeft;
 
                         // Back up the cursor before clearing the character
                         col--;

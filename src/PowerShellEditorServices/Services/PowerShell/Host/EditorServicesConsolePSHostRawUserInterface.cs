@@ -1,12 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 using System;
 using System.Management.Automation;
 using System.Management.Automation.Host;
-using System.Threading;
+using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 {
@@ -26,8 +25,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// Creates a new instance of the TerminalPSHostRawUserInterface
         /// class with the given IConsoleHost implementation.
         /// </summary>
-        /// <param name="logger">The ILogger implementation to use for this instance.</param>
-        /// <param name="internalHost">The InternalHost instance from the origin runspace.</param>
         public EditorServicesConsolePSHostRawUserInterface(
             ILoggerFactory loggerFactory,
             PSHostRawUserInterface internalRawUI)
@@ -72,10 +69,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// </summary>
         public override Coordinates CursorPosition
         {
-            get => new(
-                    ConsoleProxy.GetCursorLeft(),
-                    ConsoleProxy.GetCursorTop());
-
+            get => _internalRawUI.CursorPosition;
             set => _internalRawUI.CursorPosition = value;
         }
 
@@ -137,7 +131,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// <returns>A KeyInfo struct with details about the current keypress.</returns>
         public override KeyInfo ReadKey(ReadKeyOptions options)
         {
-
             bool includeUp = (options & ReadKeyOptions.IncludeKeyUp) != 0;
 
             // Key Up was requested and we have a cached key down we can return.
@@ -167,7 +160,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             try
             {
                 System.Console.TreatControlCAsInput = true;
-                ConsoleKeyInfo key = ConsoleProxy.ReadKey(intercept, default);
+                ConsoleKeyInfo key = ConsoleProxy.SafeReadKey(intercept, default);
 
                 if (IsCtrlC(key))
                 {
@@ -194,11 +187,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// <summary>
         /// Flushes the current input buffer.
         /// </summary>
-        public override void FlushInputBuffer()
-        {
-            _logger.LogWarning(
-                "PSHostRawUserInterface.FlushInputBuffer was called");
-        }
+        public override void FlushInputBuffer() => _logger.LogWarning("PSHostRawUserInterface.FlushInputBuffer was called");
 
         /// <summary>
         /// Gets the contents of the console buffer in a rectangular area.
