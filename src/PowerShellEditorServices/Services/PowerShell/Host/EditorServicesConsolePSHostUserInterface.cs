@@ -48,9 +48,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public override PSCredential PromptForCredential(string caption, string message, string userName, string targetName) => _underlyingHostUI.PromptForCredential(caption, message, userName, targetName);
 
-        public override string ReadLine() => _readLineProvider.ReadLine.ReadLine(CancellationToken.None);
+        public override string ReadLine() => _underlyingHostUI.ReadLine();
 
-        public override SecureString ReadLineAsSecureString() => _readLineProvider.ReadLine.ReadSecureLine(CancellationToken.None);
+        public override SecureString ReadLineAsSecureString() => _underlyingHostUI.ReadLineAsSecureString();
 
         public override void Write(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value) => _underlyingHostUI.Write(foregroundColor, backgroundColor, value);
 

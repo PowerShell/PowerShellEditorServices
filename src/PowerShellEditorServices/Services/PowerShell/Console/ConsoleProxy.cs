@@ -4,16 +4,23 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
     /// <summary>
     /// Provides asynchronous implementations of the <see cref="Console" /> API's as well as
     /// synchronous implementations that work around platform specific issues.
+    /// NOTE: We're missing GetCursorPosition.
     /// </summary>
     internal static class ConsoleProxy
     {
+        internal static readonly ConsoleKeyInfo s_nullKeyInfo = new(
+            keyChar: ' ',
+            ConsoleKey.DownArrow,
+            shift: false,
+            alt: false,
+            control: false);
+
         private static readonly IConsoleOperations s_consoleProxy;
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1810:Initialize reference type static fields inline", Justification = "Platform specific initialization")]
@@ -100,12 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             }
             catch (OperationCanceledException)
             {
-                return new ConsoleKeyInfo(
-                    keyChar: ' ',
-                    ConsoleKey.DownArrow,
-                    shift: false,
-                    alt: false,
-                    control: false);
+                return s_nullKeyInfo;
             }
         }
     }

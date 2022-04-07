@@ -73,6 +73,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private bool _skipNextPrompt;
 
+        private CancellationToken _readKeyCancellationToken;
+
         private bool _resettingRunspace;
 
         public PsesInternalHost(
@@ -690,7 +692,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             UI.WriteLine(command.GetInvocationText());
         }
 
-        private string InvokeReadLine(CancellationToken cancellationToken) => _readLineProvider.ReadLine.ReadLine(cancellationToken);
+        private string InvokeReadLine(CancellationToken cancellationToken)
+        {
+            try
+            {
+                _readKeyCancellationToken = cancellationToken;
+                return _readLineProvider.ReadLine.ReadLine(cancellationToken);
+            }
+            finally
+            {
+                _readKeyCancellationToken = CancellationToken.None;
+            }
+        }
 
         private void InvokeInput(string input, CancellationToken cancellationToken)
         {
@@ -869,7 +882,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             // This isn't functionally required,
             // but helps us determine when the prompt needs a newline added
 
-            _lastKey = ConsoleProxy.SafeReadKey(intercept, CancellationToken.None);
+            // NOTE: This requests that the client (the Code extension) send a non-printing key back
+            // to the terminal on stdin, emulating a user pressing a button. This allows
+            // PSReadLine's thread waiting on Console.ReadKey to return. Normally we'd just cancel
+            // this call, but the .NET API ReadKey is not cancellable, and is stuck until we send
+            // input. This leads to a myriad of problems, but we circumvent them by pretending to
+            // press a key.
+            using CancellationTokenRegistration registration = _readKeyCancellationToken.Register(
+                () => _languageServer?.SendNotification("powerShell/sendKeyPress")
+            );
+            _lastKey = ConsoleProxy.SafeReadKey(intercept, _readKeyCancellationToken);
             return _lastKey.Value;
         }
 
