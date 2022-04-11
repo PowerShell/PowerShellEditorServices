@@ -6,7 +6,9 @@ using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 {
@@ -68,6 +70,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         /// </summary>
         public bool IsDebugServerActive { get; set; }
 
+        /// <summary>
+        /// Tracks whether we are running <c>Debug-Runspace</c> in an out-of-process runspace.
+        /// </summary>
+        public bool IsDebuggingRemoteRunspace { get; set; }
+
         public DebuggerStopEventArgs LastStopEventArgs { get; private set; }
 
         public event Action<object, DebuggerStopEventArgs> DebuggerStopped;
@@ -76,6 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         public Task<DscBreakpointCapability> GetDscBreakpointCapabilityAsync(CancellationToken cancellationToken)
         {
+            _psesHost.Runspace.ThrowCancelledIfUnusable();
             return _psesHost.CurrentRunspace.GetDscBreakpointCapabilityAsync(_logger, _psesHost, cancellationToken);
         }
 
@@ -83,10 +91,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         // runspace may not have these options set and attempting to set breakpoints remotely fails.
         public void EnableDebugMode()
         {
+            _psesHost.Runspace.ThrowCancelledIfUnusable();
             _psesHost.Runspace.Debugger.SetDebugMode(DebugModes.LocalScript | DebugModes.RemoteScript);
         }
 
-        public void Abort() => SetDebugResuming(DebuggerResumeAction.Stop);
+        public void Abort() => SetDebugResuming(DebuggerResumeAction.Stop, isDisconnect: true);
 
         public void BreakExecution() => _psesHost.Runspace.Debugger.SetDebuggerStepMode(enabled: true);
 
@@ -98,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         public void StepOver() => SetDebugResuming(DebuggerResumeAction.StepOver);
 
-        public void SetDebugResuming(DebuggerResumeAction debuggerResumeAction)
+        public void SetDebugResuming(DebuggerResumeAction debuggerResumeAction, bool isDisconnect = false)
         {
             // NOTE: We exit because the paused/stopped debugger is currently in a prompt REPL, and
             // to resume the debugger we must exit that REPL.
@@ -114,7 +123,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
             // then we'd accidentally cancel the debugged task since no prompt is running. We can
             // test this by checking if the UI's type is NullPSHostUI which is used specifically in
             // this scenario. This mostly applies to unit tests.
-            if (_psesHost.UI is not NullPSHostUI)
+            if (_psesHost.UI is NullPSHostUI)
+            {
+                return;
+            }
+
+            if (debuggerResumeAction is DebuggerResumeAction.Stop)
+            {
+                if (isDisconnect)
+                {
+                    _psesHost.UnwindCallStack();
+                    return;
+                }
+
+                _psesHost.CancelIdleParentTask();
+                return;
+            }
+
+            if ((_psesHost.CurrentFrame.FrameType & PowerShellFrameType.Repl) is not 0)
             {
                 _psesHost.CancelCurrentTask();
             }
@@ -140,7 +166,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
             if (debuggerResult?.ResumeAction is not null)
             {
                 SetDebugResuming(debuggerResult.ResumeAction.Value);
+
+                // If a debugging command like `c` is specified in a nested remote
+                // debugging prompt we need to unwind the nested execution loop.
+                if ((_psesHost.CurrentFrame.FrameType & PowerShellFrameType.Remote) is not 0)
+                {
+                    _psesHost.ForceSetExit();
+                }
+
                 RaiseDebuggerResumingEvent(new DebuggerResumingEventArgs(debuggerResult.ResumeAction.Value));
+
+                // The Terminate exception is used by the engine for flow control
+                // when it needs to unwind the callstack out of the debugger.
+                if (debuggerResult.ResumeAction is DebuggerResumeAction.Stop)
+                {
+                    throw new TerminateException();
+                }
             }
         }
 

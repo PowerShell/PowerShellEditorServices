@@ -152,13 +152,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         IRunspaceInfo IRunspaceContext.CurrentRunspace => CurrentRunspace;
 
-        private PowerShellContextFrame CurrentFrame => _psFrameStack.Peek();
+        internal PowerShellContextFrame CurrentFrame => _psFrameStack.Peek();
 
         public event Action<object, RunspaceChangedEventArgs> RunspaceChanged;
 
         private bool ShouldExitExecutionLoop => _shouldExit || _shuttingDown != 0;
 
-        public override void EnterNestedPrompt() => PushPowerShellAndRunLoop(CreateNestedPowerShell(CurrentRunspace), PowerShellFrameType.Nested);
+        public override void EnterNestedPrompt() => PushPowerShellAndRunLoop(
+            CreateNestedPowerShell(CurrentRunspace),
+            PowerShellFrameType.Nested | PowerShellFrameType.Repl);
 
         public override void ExitNestedPrompt() => SetExit();
 
@@ -168,18 +170,38 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public void PopRunspace()
         {
+            if (!Runspace.RunspaceIsRemote)
+            {
+                return;
+            }
+
             IsRunspacePushed = false;
+            CurrentFrame.SessionExiting = true;
+            PopPowerShell();
             SetExit();
         }
 
         public void PushRunspace(Runspace runspace)
         {
             IsRunspacePushed = true;
-            PushPowerShellAndRunLoop(CreatePowerShellForRunspace(runspace), PowerShellFrameType.Remote);
+            PushPowerShellAndMaybeRunLoop(
+                CreatePowerShellForRunspace(runspace),
+                PowerShellFrameType.Remote | PowerShellFrameType.Repl,
+                skipRunLoop: true);
         }
 
         // TODO: Handle exit code if needed
-        public override void SetShouldExit(int exitCode) => SetExit();
+        public override void SetShouldExit(int exitCode)
+        {
+            if ((CurrentFrame.FrameType & PowerShellFrameType.Remote) is not 0)
+            {
+                // PopRunspace also calls SetExit.
+                PopRunspace();
+                return;
+            }
+
+            SetExit();
+        }
 
         /// <summary>
         /// Try to start the PowerShell loop in the host.
@@ -239,13 +261,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         {
             // Can't exit from the top level of PSES
             // since if you do, you lose all LSP services
-            if (_psFrameStack.Count <= 1)
+            PowerShellContextFrame frame = CurrentFrame;
+            if ((frame.FrameType & PowerShellFrameType.Repl) is 0 || _psFrameStack.Count <= 1)
             {
                 return;
             }
 
             _shouldExit = true;
         }
+
+        internal void ForceSetExit() => _shouldExit = true;
 
         public Task<T> InvokeTaskOnPipelineThreadAsync<T>(
             SynchronousTask<T> task)
@@ -286,6 +311,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public void CancelCurrentTask()
         {
             _cancellationContext.CancelCurrentTask();
+        }
+
+        public void CancelIdleParentTask()
+        {
+            _cancellationContext.CancelIdleParentTask();
+        }
+
+        public void UnwindCallStack()
+        {
+            _cancellationContext.CancelCurrentTaskStack();
         }
 
         public Task<TResult> ExecuteDelegateAsync<TResult>(
@@ -406,7 +441,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 _mainRunspaceEngineIntrinsics = engineIntrinsics;
                 _localComputerName = localRunspaceInfo.SessionDetails.ComputerName;
                 _runspaceStack.Push(new RunspaceFrame(pwsh.Runspace, localRunspaceInfo));
-                PushPowerShellAndRunLoop(pwsh, PowerShellFrameType.Normal, localRunspaceInfo);
+                PushPowerShellAndRunLoop(pwsh, PowerShellFrameType.Normal | PowerShellFrameType.Repl, localRunspaceInfo);
             }
             catch (Exception e)
             {
@@ -422,7 +457,30 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return (pwsh, localRunspaceInfo, engineIntrinsics);
         }
 
+        internal PowerShellContextFrame PushPowerShellForExecution()
+        {
+            PowerShellContextFrame frame = CurrentFrame;
+            PowerShellFrameType currentFrameType = frame.FrameType;
+            currentFrameType &= ~PowerShellFrameType.Repl;
+            PowerShellContextFrame newFrame = new(
+                frame.PowerShell.CloneForNewFrame(),
+                frame.RunspaceInfo,
+                currentFrameType);
+
+            PushPowerShell(newFrame);
+            return newFrame;
+        }
+
         private void PushPowerShellAndRunLoop(PowerShell pwsh, PowerShellFrameType frameType, RunspaceInfo newRunspaceInfo = null)
+        {
+            PushPowerShellAndMaybeRunLoop(pwsh, frameType, newRunspaceInfo, skipRunLoop: false);
+        }
+
+        private void PushPowerShellAndMaybeRunLoop(
+            PowerShell pwsh,
+            PowerShellFrameType frameType,
+            RunspaceInfo newRunspaceInfo = null,
+            bool skipRunLoop = false)
         {
             // TODO: Improve runspace origin detection here
             if (newRunspaceInfo is null)
@@ -437,7 +495,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 }
             }
 
-            PushPowerShellAndRunLoop(new PowerShellContextFrame(pwsh, newRunspaceInfo, frameType));
+            PushPowerShellAndMaybeRunLoop(new PowerShellContextFrame(pwsh, newRunspaceInfo, frameType), skipRunLoop);
         }
 
         private RunspaceInfo GetRunspaceInfoForPowerShell(PowerShell pwsh, out bool isNewRunspace, out RunspaceFrame oldRunspaceFrame)
@@ -462,9 +520,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return RunspaceInfo.CreateFromPowerShell(_logger, pwsh, _localComputerName);
         }
 
-        private void PushPowerShellAndRunLoop(PowerShellContextFrame frame)
+        private void PushPowerShellAndMaybeRunLoop(PowerShellContextFrame frame, bool skipRunLoop = false)
         {
             PushPowerShell(frame);
+            if (skipRunLoop)
+            {
+                return;
+            }
 
             try
             {
@@ -483,7 +545,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             }
             finally
             {
-                PopPowerShell();
+                if (CurrentFrame != frame)
+                {
+                    frame.IsAwaitingPop = true;
+                }
+                else
+                {
+                    PopPowerShell();
+                }
             }
         }
 
@@ -491,6 +560,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         {
             if (_psFrameStack.Count > 0)
             {
+                if (frame.PowerShell.Runspace == CurrentFrame.PowerShell.Runspace)
+                {
+                    _psFrameStack.Push(frame);
+                    return;
+                }
+
                 RemoveRunspaceEventHandlers(CurrentFrame.PowerShell.Runspace);
             }
 
@@ -499,15 +574,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _psFrameStack.Push(frame);
         }
 
+        internal void PopPowerShellForExecution(PowerShellContextFrame expectedFrame)
+        {
+            if (CurrentFrame != expectedFrame)
+            {
+                expectedFrame.IsAwaitingPop = true;
+                return;
+            }
+
+            PopPowerShellImpl();
+        }
+
         private void PopPowerShell(RunspaceChangeAction runspaceChangeAction = RunspaceChangeAction.Exit)
         {
             _shouldExit = false;
-            PowerShellContextFrame frame = _psFrameStack.Pop();
-            try
+            PopPowerShellImpl(_ =>
             {
                 // If we're changing runspace, make sure we move the handlers over. If we just
                 // popped the last frame, then we're exiting and should pop the runspace too.
-                if (_psFrameStack.Count == 0 || CurrentRunspace.Runspace != CurrentPowerShell.Runspace)
+                if (_psFrameStack.Count == 0 || Runspace != CurrentPowerShell.Runspace)
                 {
                     RunspaceFrame previousRunspaceFrame = _runspaceStack.Pop();
                     RemoveRunspaceEventHandlers(previousRunspaceFrame.Runspace);
@@ -526,11 +611,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                                 newRunspaceFrame.RunspaceInfo));
                     }
                 }
-            }
-            finally
+            });
+        }
+
+        private void PopPowerShellImpl(Action<PowerShellContextFrame> action = null)
+        {
+            do
             {
-                frame.Dispose();
+                PowerShellContextFrame frame = _psFrameStack.Pop();
+                try
+                {
+                    action?.Invoke(frame);
+                }
+                finally
+                {
+                    frame.Dispose();
+                }
             }
+            while (CurrentFrame.IsAwaitingPop);
         }
 
         private void RunTopLevelExecutionLoop()
@@ -546,7 +644,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 // Signal that we are ready for outside services to use
                 _started.TrySetResult(true);
 
-                RunExecutionLoop();
+                // While loop is purely so we can recover gracefully from a
+                // terminate exception.
+                while (true)
+                {
+                    try
+                    {
+                        RunExecutionLoop();
+                        break;
+                    }
+                    catch (TerminateException)
+                    {
+                        // Do nothing, since we are at the top level of the loop
+                        // the call stack has been unwound successfully.
+                    }
+                }
             }
             catch (Exception e)
             {
@@ -564,7 +676,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             try
             {
                 DebugContext.EnterDebugLoop();
-                RunExecutionLoop();
+                RunExecutionLoop(isForDebug: true);
             }
             finally
             {
@@ -572,11 +684,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             }
         }
 
-        private void RunExecutionLoop()
+        private void RunExecutionLoop(bool isForDebug = false)
         {
+            Runspace initialRunspace = Runspace;
             while (!ShouldExitExecutionLoop)
             {
-                using CancellationScope cancellationScope = _cancellationContext.EnterScope(isIdleScope: false);
+                if (isForDebug && !initialRunspace.RunspaceStateInfo.IsUsable())
+                {
+                    return;
+                }
+
+                using CancellationScope cancellationScope = _cancellationContext.EnterScope(false);
                 DoOneRepl(cancellationScope.CancellationToken);
 
                 while (!ShouldExitExecutionLoop
@@ -584,6 +702,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                     && _taskQueue.TryTake(out ISynchronousTask task))
                 {
                     task.ExecuteSynchronously(cancellationScope.CancellationToken);
+                    while (Runspace is { RunspaceIsRemote: true } remoteRunspace
+                        && !remoteRunspace.RunspaceStateInfo.IsUsable())
+                    {
+                        PopPowerShell(RunspaceChangeAction.Exit);
+                    }
+                }
+
+                if (_shouldExit
+                    && (CurrentFrame.FrameType & PowerShellFrameType.Remote) is not 0
+                    && (CurrentFrame.FrameType & PowerShellFrameType.Repl) is not 0
+                    && (CurrentFrame.FrameType & PowerShellFrameType.Nested) is 0)
+                {
+                    _shouldExit = false;
+                    PopPowerShell();
                 }
             }
         }
@@ -602,7 +734,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             // the debugger (instead of using a Code launch configuration) via Wait-Debugger or
             // simply hitting a PSBreakpoint. We need to synchronize the state and stop the debug
             // context (and likely the debug server).
-            if (DebugContext.IsActive && !CurrentRunspace.Runspace.Debugger.InBreakpoint)
+            if (!DebugContext.IsDebuggingRemoteRunspace
+                && DebugContext.IsActive
+                && !CurrentRunspace.Runspace.Debugger.InBreakpoint)
             {
                 StopDebugContext();
             }
@@ -644,6 +778,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             {
                 // Do nothing, since we were just cancelled
             }
+            // Propagate exceptions thrown from the debugger when quitting.
+            catch (TerminateException)
+            {
+                throw;
+            }
+            catch (FlowControlException)
+            {
+                // Do nothing, a break or continue statement was used outside of a loop.
+            }
             catch (Exception e)
             {
                 UI.WriteErrorLine($"An error occurred while running the REPL loop:{Environment.NewLine}{e}");
@@ -662,13 +805,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private string GetPrompt(CancellationToken cancellationToken)
         {
+            Runspace.ThrowCancelledIfUnusable();
             string prompt = DefaultPrompt;
             try
             {
                 // TODO: Should we cache PSCommands like this as static members?
                 var command = new PSCommand().AddCommand("prompt");
                 IReadOnlyList<string> results = InvokePSCommand<string>(command, executionOptions: null, cancellationToken);
-                if (results.Count > 0)
+                if (results?.Count > 0)
                 {
                     prompt = results[0];
                 }
@@ -903,28 +1047,59 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             }
         }
 
+        private readonly object _replFromAnotherThread = new();
+
+        internal void WaitForExternalDebuggerStops()
+        {
+            lock (_replFromAnotherThread)
+            {
+            }
+        }
+
         private void OnDebuggerStopped(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
         {
             // The debugger has officially started. We use this to later check if we should stop it.
             DebugContext.IsActive = true;
 
-            // If the debug server is NOT active, we need to synchronize state and start it.
-            if (!DebugContext.IsDebugServerActive)
+            // The local debugging architecture works mostly because we control the pipeline thread,
+            // but remote runspaces will trigger debugger stops on a separate thread. We lock here
+            // if we're on a different thread so in then event of a transport error, we can
+            // safely wind down REPL loops in a different thread.
+            bool isExternal = Environment.CurrentManagedThreadId != _pipelineThread.ManagedThreadId;
+            if (!isExternal)
             {
-                _languageServer?.SendNotification("powerShell/startDebugger");
+                OnDebuggerStoppedImpl(sender, debuggerStopEventArgs);
+                return;
             }
 
-            DebugContext.SetDebuggerStopped(debuggerStopEventArgs);
-
-            try
+            lock (_replFromAnotherThread)
             {
-                CurrentPowerShell.WaitForRemoteOutputIfNeeded();
-                PushPowerShellAndRunLoop(CreateNestedPowerShell(CurrentRunspace), PowerShellFrameType.Debug | PowerShellFrameType.Nested);
-                CurrentPowerShell.ResumeRemoteOutputIfNeeded();
+                OnDebuggerStoppedImpl(sender, debuggerStopEventArgs);
             }
-            finally
+
+            void OnDebuggerStoppedImpl(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
             {
-                DebugContext.SetDebuggerResumed();
+                    // If the debug server is NOT active, we need to synchronize state and start it.
+                    if (!DebugContext.IsDebugServerActive)
+                    {
+                        _languageServer?.SendNotification("powerShell/startDebugger");
+                    }
+
+                    DebugContext.SetDebuggerStopped(debuggerStopEventArgs);
+
+                    try
+                    {
+                        CurrentPowerShell.WaitForRemoteOutputIfNeeded();
+                        PowerShellFrameType frameBase = CurrentFrame.FrameType & PowerShellFrameType.Remote;
+                        PushPowerShellAndRunLoop(
+                            CreateNestedPowerShell(CurrentRunspace),
+                            frameBase | PowerShellFrameType.Debug | PowerShellFrameType.Nested | PowerShellFrameType.Repl);
+                        CurrentPowerShell.ResumeRemoteOutputIfNeeded();
+                    }
+                    finally
+                    {
+                        DebugContext.SetDebuggerResumed();
+                    }
             }
         }
 

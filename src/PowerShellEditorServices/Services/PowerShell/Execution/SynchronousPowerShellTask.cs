@@ -8,6 +8,7 @@ using System.Management.Automation;
 using System.Management.Automation.Remoting;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using Microsoft.PowerShell.EditorServices.Utility;
@@ -17,6 +18,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 {
     internal class SynchronousPowerShellTask<TResult> : SynchronousTask<IReadOnlyList<TResult>>
     {
+        private static readonly PowerShellExecutionOptions s_defaultPowerShellExecutionOptions = new();
+
         private readonly ILogger _logger;
 
         private readonly PsesInternalHost _psesHost;
@@ -25,7 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private SMA.PowerShell _pwsh;
 
-        private readonly static PowerShellExecutionOptions s_defaultPowerShellExecutionOptions = new();
+        private PowerShellContextFrame _frame;
 
         public SynchronousPowerShellTask(
             ILogger logger,
@@ -51,19 +54,26 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public override IReadOnlyList<TResult> Run(CancellationToken cancellationToken)
         {
-            _pwsh = _psesHost.CurrentPowerShell;
-
-            if (PowerShellExecutionOptions.WriteInputToHost)
+            _psesHost.Runspace.ThrowCancelledIfUnusable();
+            PowerShellContextFrame frame = _psesHost.PushPowerShellForExecution();
+            try
             {
-                _psesHost.WriteWithPrompt(_psCommand, cancellationToken);
-            }
+                _pwsh = _psesHost.CurrentPowerShell;
 
-            return _pwsh.Runspace.Debugger.InBreakpoint
-                && Array.Exists(
-                    DebuggerCommands,
-                    c => c.Equals(_psCommand.GetInvocationText(), StringComparison.CurrentCultureIgnoreCase))
-                ? ExecuteInDebugger(cancellationToken)
-                : ExecuteNormally(cancellationToken);
+                if (PowerShellExecutionOptions.WriteInputToHost)
+                {
+                    _psesHost.WriteWithPrompt(_psCommand, cancellationToken);
+                }
+
+                return _pwsh.Runspace.Debugger.InBreakpoint
+                    && (IsDebuggerCommand(_psCommand) || _pwsh.Runspace.RunspaceIsRemote)
+                    ? ExecuteInDebugger(cancellationToken)
+                    : ExecuteNormally(cancellationToken);
+            }
+            finally
+            {
+                _psesHost.PopPowerShellForExecution(frame);
+            }
         }
 
         public override string ToString()
@@ -71,8 +81,29 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             return _psCommand.GetInvocationText();
         }
 
+        private static bool IsDebuggerCommand(PSCommand command)
+        {
+            if (command.Commands.Count is not 1
+                || command.Commands[0] is { IsScript: false } or { Parameters.Count: > 0 })
+            {
+                return false;
+            }
+
+            string commandText = command.Commands[0].CommandText;
+            foreach (string knownCommand in DebuggerCommands)
+            {
+                if (commandText.Equals(knownCommand, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private IReadOnlyList<TResult> ExecuteNormally(CancellationToken cancellationToken)
         {
+            _frame = _psesHost.CurrentFrame;
             if (PowerShellExecutionOptions.WriteOutputToHost)
             {
                 _psCommand.AddOutputCommand();
@@ -96,6 +127,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 result = _pwsh.InvokeCommand<TResult>(_psCommand, invocationSettings);
                 cancellationToken.ThrowIfCancellationRequested();
             }
+            // Allow terminate exceptions to propogate for flow control.
+            catch (TerminateException)
+            {
+                throw;
+            }
             // Test if we've been cancelled. If we're remoting, PSRemotingDataStructureException
             // effectively means the pipeline was stopped.
             catch (Exception e) when (cancellationToken.IsCancellationRequested || e is PipelineStoppedException || e is PSRemotingDataStructureException)
@@ -111,6 +147,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             // Other errors are bubbled up to the caller
             catch (RuntimeException e)
             {
+                if (e is PSRemotingTransportException)
+                {
+                    _ = System.Threading.Tasks.Task.Run(
+                        () => _psesHost.UnwindCallStack(),
+                        CancellationToken.None)
+                        .HandleErrorsAsync(_logger);
+
+                    _psesHost.WaitForExternalDebuggerStops();
+                    throw new OperationCanceledException("The operation was canceled.", e);
+                }
+
                 Logger.LogWarning($"Runtime exception occurred while executing command:{Environment.NewLine}{Environment.NewLine}{e}");
 
                 if (PowerShellExecutionOptions.ThrowOnError)
@@ -122,7 +169,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                     .AddOutputCommand()
                     .AddParameter("InputObject", e.ErrorRecord.AsPSObject());
 
-                _pwsh.InvokeCommand(command);
+                if (_pwsh.Runspace.RunspaceStateInfo.IsUsable())
+                {
+                    _pwsh.InvokeCommand(command);
+                }
+                else
+                {
+                    _psesHost.UI.WriteErrorLine(e.ToString());
+                }
             }
             finally
             {
@@ -176,7 +230,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 debuggerResult = _pwsh.Runspace.Debugger.ProcessCommand(_psCommand, outputCollection);
                 cancellationToken.ThrowIfCancellationRequested();
             }
-
+            // Allow terminate exceptions to propogate for flow control.
+            catch (TerminateException)
+            {
+                throw;
+            }
             // Test if we've been cancelled. If we're remoting, PSRemotingDataStructureException
             // effectively means the pipeline was stopped.
             catch (Exception e) when (cancellationToken.IsCancellationRequested || e is PipelineStoppedException || e is PSRemotingDataStructureException)
@@ -188,6 +246,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             // Other errors are bubbled up to the caller
             catch (RuntimeException e)
             {
+                if (e is PSRemotingTransportException)
+                {
+                    _ = System.Threading.Tasks.Task.Run(
+                        () => _psesHost.UnwindCallStack(),
+                        CancellationToken.None)
+                        .HandleErrorsAsync(_logger);
+
+                    _psesHost.WaitForExternalDebuggerStops();
+                    throw new OperationCanceledException("The operation was canceled.", e);
+                }
+
                 Logger.LogWarning($"Runtime exception occurred while executing command:{Environment.NewLine}{Environment.NewLine}{e}");
 
                 if (PowerShellExecutionOptions.ThrowOnError)
@@ -195,14 +264,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                     throw;
                 }
 
-                var errorOutputCollection = new PSDataCollection<PSObject>();
-                errorOutputCollection.DataAdded += (object sender, DataAddedEventArgs args) =>
-                    {
-                        for (int i = args.Index; i < outputCollection.Count; i++)
-                        {
-                            _psesHost.UI.WriteLine(outputCollection[i].ToString());
-                        }
-                    };
+                using var errorOutputCollection = new PSDataCollection<PSObject>();
+                errorOutputCollection.DataAdding += (object sender, DataAddingEventArgs args)
+                    => _psesHost.UI.WriteLine(args.ItemAdded?.ToString());
 
                 var command = new PSCommand()
                     .AddDebugOutputCommand()
@@ -252,6 +316,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             // Instead we have to query the remote directly
             if (_pwsh.Runspace.RunspaceIsRemote)
             {
+                _pwsh.Runspace.ThrowCancelledIfUnusable();
                 var assessDebuggerCommand = new PSCommand().AddScript("$Host.Runspace.Debugger.InBreakpoint");
 
                 var outputCollection = new PSDataCollection<PSObject>();
@@ -271,11 +336,30 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private void CancelNormalExecution()
         {
+            if (!_pwsh.Runspace.RunspaceStateInfo.IsUsable())
+            {
+                return;
+            }
+
+            // If we're signaled to exit a runspace then that'll trigger a stop,
+            // if we block on that stop we'll never exit the runspace (
+            // and essentially deadlock).
+            if (_frame.SessionExiting)
+            {
+                _pwsh.BeginStop(null, null);
+                return;
+            }
+
             _pwsh.Stop();
         }
 
         private void CancelDebugExecution()
         {
+            if (!_pwsh.Runspace.RunspaceStateInfo.IsUsable())
+            {
+                return;
+            }
+
             _pwsh.Runspace.Debugger.StopProcessCommand();
         }
     }

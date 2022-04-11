@@ -12,6 +12,7 @@ using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -43,6 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             if (BreakpointApiUtils.SupportsBreakpointApis(_editorServicesHost.CurrentRunspace))
             {
+                _editorServicesHost.Runspace.ThrowCancelledIfUnusable();
                 return BreakpointApiUtils.GetBreakpoints(
                     _editorServicesHost.Runspace.Debugger,
                     _debugStateService.RunspaceId);

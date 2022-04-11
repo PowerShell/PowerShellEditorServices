@@ -14,6 +14,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         DebuggerStopEventArgs LastStopEventArgs { get; }
 
+        public bool IsDebuggingRemoteRunspace { get; set; }
+
         public event Action<object, DebuggerStopEventArgs> DebuggerStopped;
 
         public event Action<object, DebuggerResumingEventArgs> DebuggerResuming;

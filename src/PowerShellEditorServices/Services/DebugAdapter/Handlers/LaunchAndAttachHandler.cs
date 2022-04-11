@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Management.Automation;
+using System.Management.Automation.Remoting;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,7 @@ using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -261,6 +263,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 _debugStateService.IsRemoteAttach = true;
             }
 
+            // Set up a temporary runspace changed event handler so we can ensure
+            // that the context switch is complete before attempting to debug
+            // a runspace in the target.
+            TaskCompletionSource<bool> runspaceChanged = new();
+
+            void RunspaceChangedHandler(object s, RunspaceChangedEventArgs _)
+            {
+                ((IInternalPowerShellExecutionService)s).RunspaceChanged -= RunspaceChangedHandler;
+                runspaceChanged.TrySetResult(true);
+            }
+
+            _executionService.RunspaceChanged += RunspaceChangedHandler;
+
             if (processIdIsSet && int.TryParse(request.ProcessId, out int processId) && (processId > 0))
             {
                 if (runspaceVersion.Version.Major < 5)
@@ -274,11 +289,20 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 try
                 {
-                    await _executionService.ExecutePSCommandAsync(enterPSHostProcessCommand, cancellationToken).ConfigureAwait(false);
+                    await _executionService.ExecutePSCommandAsync(
+                        enterPSHostProcessCommand,
+                        cancellationToken,
+                        new PowerShellExecutionOptions()
+                        {
+                            MustRunInForeground = true,
+                            InterruptCurrentForeground = true,
+                            AddToHistory = false,
+                            Priority = ExecutionPriority.Next,
+                        }).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
-                    string msg = $"Could not attach to process '{processId}'";
+                    string msg = $"Could not attach to process with Id: '{request.ProcessId}'";
                     _logger.LogError(e, msg);
                     throw new RpcErrorException(0, msg);
                 }
@@ -313,6 +337,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 throw new RpcErrorException(0, "A positive integer must be specified for the processId field.");
             }
 
+            await runspaceChanged.Task.ConfigureAwait(false);
+
             // Execute the Debug-Runspace command but don't await it because it
             // will block the debug adapter initialization process.  The
             // InitializedEvent will be sent as soon as the RunspaceChanged
@@ -327,13 +353,27 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     .AddCommand("Microsoft.PowerShell.Utility\\Select-Object")
                         .AddParameter("ExpandProperty", "Id");
 
-                IEnumerable<int?> ids = await _executionService.ExecutePSCommandAsync<int?>(getRunspaceIdCommand, cancellationToken).ConfigureAwait(false);
-                foreach (var id in ids)
+                try
                 {
-                    _debugStateService.RunspaceId = id;
-                    break;
+                    IEnumerable<int?> ids = await _executionService.ExecutePSCommandAsync<int?>(
+                        getRunspaceIdCommand,
+                        cancellationToken)
+                        .ConfigureAwait(false);
 
-                    // TODO: If we don't end up setting this, we should throw
+                    foreach (var id in ids)
+                    {
+                        _debugStateService.RunspaceId = id;
+                        break;
+
+                        // TODO: If we don't end up setting this, we should throw
+                    }
+                }
+                catch (Exception getRunspaceException)
+                {
+                    _logger.LogError(
+                        getRunspaceException,
+                        "Unable to determine runspace to attach to. Message: {message}",
+                        getRunspaceException.Message);
                 }
 
                 // TODO: We have the ID, why not just use that?
@@ -363,6 +403,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // Clear any existing breakpoints before proceeding
             await _breakpointService.RemoveAllBreakpointsAsync().ConfigureAwait(continueOnCapturedContext: false);
 
+            _debugService.IsDebuggingRemoteRunspace = true;
             _debugStateService.WaitingForAttach = true;
             Task nonAwaitedTask = _executionService
                 .ExecutePSCommandAsync(debugRunspaceCmd, CancellationToken.None)
@@ -397,9 +438,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private async Task OnExecutionCompletedAsync(Task executeTask)
         {
+            bool isRunspaceClosed = false;
             try
             {
                 await executeTask.ConfigureAwait(false);
+            }
+            catch (PSRemotingTransportException)
+            {
+                isRunspaceClosed = true;
             }
             catch (Exception e)
             {
@@ -413,14 +459,24 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             _debugEventHandlerService.UnregisterEventHandlers();
 
-            if (_debugStateService.IsAttachSession)
+            _debugService.IsDebuggingRemoteRunspace = false;
+
+            if (!isRunspaceClosed && _debugStateService.IsAttachSession)
             {
                 // Pop the sessions
                 if (_runspaceContext.CurrentRunspace.RunspaceOrigin == RunspaceOrigin.EnteredProcess)
                 {
                     try
                     {
-                        await _executionService.ExecutePSCommandAsync(new PSCommand().AddCommand("Exit-PSHostProcess"), CancellationToken.None).ConfigureAwait(false);
+                        await _executionService.ExecutePSCommandAsync(
+                            new PSCommand().AddCommand("Exit-PSHostProcess"),
+                            CancellationToken.None,
+                            new PowerShellExecutionOptions()
+                            {
+                                MustRunInForeground = true,
+                                InterruptCurrentForeground = true,
+                                Priority = ExecutionPriority.Next,
+                            }).ConfigureAwait(false);
 
                         if (_debugStateService.IsRemoteAttach &&
                             _runspaceContext.CurrentRunspace.RunspaceOrigin != RunspaceOrigin.Local)

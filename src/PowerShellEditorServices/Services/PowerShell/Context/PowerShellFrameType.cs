@@ -8,10 +8,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
     [Flags]
     internal enum PowerShellFrameType
     {
-        Normal = 0x0,
-        Nested = 0x1,
-        Debug = 0x2,
-        Remote = 0x4,
-        NonInteractive = 0x8,
+        Normal = 0 << 0,
+        Nested = 1 << 0,
+        Debug = 1 << 1,
+        Remote = 1 << 2,
+        NonInteractive = 1 << 3,
+        Repl = 1 << 4,
     }
 }
