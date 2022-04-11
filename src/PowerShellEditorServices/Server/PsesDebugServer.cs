@@ -119,7 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
             // It represents the debugger on the PowerShell process we're in,
             // while a new debug server is spun up for every debugging session
             _psesHost.DebugContext.IsDebugServerActive = false;
-            _debugAdapterServer.Dispose();
+            _debugAdapterServer?.Dispose();
             _inputStream.Dispose();
             _outputStream.Dispose();
             _serverStopped.SetResult(true);
