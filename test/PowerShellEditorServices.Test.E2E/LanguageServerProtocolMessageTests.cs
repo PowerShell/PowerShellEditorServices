@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -963,7 +963,7 @@ CanSendReferencesCodeLensRequest
                 });
 
             CompletionItem completionItem = Assert.Single(completionItems,
-                completionItem1 => completionItem1.Label == "Write-Host");
+                completionItem1 => completionItem1.FilterText == "Write-Host");
 
             CompletionItem updatedCompletionItem = await PsesLanguageClient
                 .SendRequest("completionItem/resolve", completionItem)
