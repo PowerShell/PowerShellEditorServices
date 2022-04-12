@@ -199,6 +199,11 @@ task TestE2E Build, SetupHelpForTests, {
 
     # Run E2E tests in ConstrainedLanguage mode.
     if (!$script:IsNix) {
+        if (-not [Security.Principal.WindowsIdentity]::GetCurrent().Owner.IsWellKnown("BuiltInAdministratorsSid")) {
+            Write-Warning 'Skipping E2E CLM tests as they must be ran in an elevated process.'
+            return
+        }
+
         try {
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", "0x80000007", [System.EnvironmentVariableTarget]::Machine);
             exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS7 }
