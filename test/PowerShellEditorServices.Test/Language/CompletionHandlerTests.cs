@@ -2,6 +2,9 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Handlers;
@@ -11,6 +14,7 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Completion;
 using Microsoft.PowerShell.EditorServices.Utility;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Language
@@ -31,130 +35,95 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
         public void Dispose()
         {
-            psesHost.StopAsync().GetAwaiter().GetResult();
+            psesHost.StopAsync().Wait();
             GC.SuppressFinalize(this);
         }
 
         private ScriptFile GetScriptFile(ScriptRegion scriptRegion) => workspace.GetFile(TestUtilities.GetSharedPath(scriptRegion.File));
 
-        private async Task<CompletionResults> GetCompletionResults(ScriptRegion scriptRegion)
+        private Task<IEnumerable<CompletionItem>> GetCompletionResultsAsync(ScriptRegion scriptRegion)
         {
-            return await completionHandler.GetCompletionsInFileAsync(
+            return completionHandler.GetCompletionsInFileAsync(
                 GetScriptFile(scriptRegion),
                 scriptRegion.StartLineNumber,
-                scriptRegion.StartColumnNumber).ConfigureAwait(true);
+                scriptRegion.StartColumnNumber,
+                CancellationToken.None);
         }
 
         [Fact]
         public async Task CompletesCommandInFile()
         {
-            CompletionResults completionResults = await GetCompletionResults(CompleteCommandInFile.SourceDetails).ConfigureAwait(true);
-            Assert.NotEmpty(completionResults.Completions);
-            Assert.Equal(CompleteCommandInFile.ExpectedCompletion, completionResults.Completions[0]);
+            IEnumerable<CompletionItem> results = await GetCompletionResultsAsync(CompleteCommandInFile.SourceDetails).ConfigureAwait(true);
+            CompletionItem actual = Assert.Single(results);
+            Assert.Equal(CompleteCommandInFile.ExpectedCompletion, actual);
         }
 
         [Fact]
         public async Task CompletesCommandFromModule()
         {
-            CompletionResults completionResults = await GetCompletionResults(CompleteCommandFromModule.SourceDetails).ConfigureAwait(true);
-
-            Assert.NotEmpty(completionResults.Completions);
-
-            Assert.Equal(
-                CompleteCommandFromModule.ExpectedCompletion.CompletionText,
-                completionResults.Completions[0].CompletionText);
-
-            Assert.Equal(
-                CompleteCommandFromModule.ExpectedCompletion.CompletionType,
-                completionResults.Completions[0].CompletionType);
-
-            Assert.NotNull(completionResults.Completions[0].ToolTipText);
+            IEnumerable<CompletionItem> results = await GetCompletionResultsAsync(CompleteCommandFromModule.SourceDetails).ConfigureAwait(true);
+            CompletionItem actual = Assert.Single(results);
+            // NOTE: The tooltip varies across PowerShell and OS versions, so we ignore it.
+            Assert.Equal(CompleteCommandFromModule.ExpectedCompletion, actual with { Detail = "" });
+            Assert.StartsWith(CompleteCommandFromModule.GetRandomDetail, actual.Detail);
         }
 
-        [SkippableFact]
+        [Fact]
         public async Task CompletesTypeName()
         {
-            Skip.If(
-                !VersionUtils.IsNetCore,
-                "In Windows PowerShell the CommandCompletion fails in the test harness, but works manually.");
-
-            CompletionResults completionResults = await GetCompletionResults(CompleteTypeName.SourceDetails).ConfigureAwait(true);
-
-            Assert.NotEmpty(completionResults.Completions);
-
-            Assert.Equal(
-                CompleteTypeName.ExpectedCompletion.CompletionText,
-                completionResults.Completions[0].CompletionText);
-
-            Assert.Equal(
-                CompleteTypeName.ExpectedCompletion.CompletionType,
-                completionResults.Completions[0].CompletionType);
-
-            Assert.NotNull(completionResults.Completions[0].ToolTipText);
+            IEnumerable<CompletionItem> results = await GetCompletionResultsAsync(CompleteTypeName.SourceDetails).ConfigureAwait(true);
+            CompletionItem actual = Assert.Single(results);
+            if (VersionUtils.IsNetCore)
+            {
+                Assert.Equal(CompleteTypeName.ExpectedCompletion, actual);
+            }
+            else
+            {
+                // Windows PowerShell shows ArrayList as a Class.
+                Assert.Equal(CompleteTypeName.ExpectedCompletion with
+                {
+                    Kind = CompletionItemKind.Class,
+                    Detail = "Class System.Collections.ArrayList"
+                }, actual);
+            }
         }
 
         [Trait("Category", "Completions")]
-        [SkippableFact]
+        [Fact]
         public async Task CompletesNamespace()
         {
-            Skip.If(
-                !VersionUtils.IsNetCore,
-                "In Windows PowerShell the CommandCompletion fails in the test harness, but works manually.");
-
-            CompletionResults completionResults = await GetCompletionResults(CompleteNamespace.SourceDetails).ConfigureAwait(true);
-
-            Assert.NotEmpty(completionResults.Completions);
-
-            Assert.Equal(
-                CompleteNamespace.ExpectedCompletion.CompletionText,
-                completionResults.Completions[0].CompletionText);
-
-            Assert.Equal(
-                CompleteNamespace.ExpectedCompletion.CompletionType,
-                completionResults.Completions[0].CompletionType);
-
-            Assert.NotNull(completionResults.Completions[0].ToolTipText);
+            IEnumerable<CompletionItem> results = await GetCompletionResultsAsync(CompleteNamespace.SourceDetails).ConfigureAwait(true);
+            CompletionItem actual = Assert.Single(results);
+            Assert.Equal(CompleteNamespace.ExpectedCompletion, actual);
         }
 
         [Fact]
         public async Task CompletesVariableInFile()
         {
-            CompletionResults completionResults = await GetCompletionResults(CompleteVariableInFile.SourceDetails).ConfigureAwait(true);
-
-            Assert.Single(completionResults.Completions);
-
-            Assert.Equal(
-                CompleteVariableInFile.ExpectedCompletion,
-                completionResults.Completions[0]);
+            IEnumerable<CompletionItem> results = await GetCompletionResultsAsync(CompleteVariableInFile.SourceDetails).ConfigureAwait(true);
+            CompletionItem actual = Assert.Single(results);
+            Assert.Equal(CompleteVariableInFile.ExpectedCompletion, actual);
         }
 
         [Fact]
         public async Task CompletesAttributeValue()
         {
-            CompletionResults completionResults = await GetCompletionResults(CompleteAttributeValue.SourceDetails).ConfigureAwait(true);
-
-            Assert.NotEmpty(completionResults.Completions);
-
-            Assert.Equal(
-                CompleteAttributeValue.ExpectedRange,
-                completionResults.ReplacedRange);
+            IEnumerable<CompletionItem> results = await GetCompletionResultsAsync(CompleteAttributeValue.SourceDetails).ConfigureAwait(true);
+            Assert.Collection(results,
+                actual => Assert.Equal(actual, CompleteAttributeValue.ExpectedCompletion1),
+                acutal => Assert.Equal(acutal, CompleteAttributeValue.ExpectedCompletion2),
+                actual => Assert.Equal(actual, CompleteAttributeValue.ExpectedCompletion3));
         }
 
         [Fact]
         public async Task CompletesFilePath()
         {
-            CompletionResults completionResults = await GetCompletionResults(CompleteFilePath.SourceDetails).ConfigureAwait(true);
-
-            Assert.NotEmpty(completionResults.Completions);
-
-            // TODO: Since this is a path completion, this test will need to be
-            //       platform specific. Probably something like:
-            //         - Windows: C:\Program
-            //         - macOS:   /User
-            //         - Linux:   /hom
-            //Assert.Equal(
-            //    CompleteFilePath.ExpectedRange,
-            //    completionResults.ReplacedRange);
+            IEnumerable<CompletionItem> results = await GetCompletionResultsAsync(CompleteFilePath.SourceDetails).ConfigureAwait(true);
+            Assert.NotEmpty(results);
+            CompletionItem actual = results.First();
+            // Paths are system dependent so we ignore the text and just check the type and range.
+            Assert.Equal(actual.TextEdit.TextEdit with { NewText = "" }, CompleteFilePath.ExpectedEdit);
+            Assert.All(results, r => Assert.True(r.Kind is CompletionItemKind.File or CompletionItemKind.Folder));
         }
     }
 }

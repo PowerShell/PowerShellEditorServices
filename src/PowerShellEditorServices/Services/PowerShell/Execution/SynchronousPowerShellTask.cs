@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         // These are PowerShell's intrinsic debugger commands that must be run via
         // `ProcessDebugCommand`.
-        private static readonly string[] DebuggerCommands = {"continue", "c", "k", "h", "?", "list", "l", "stepInto", "s", "stepOut", "o", "stepOver", "v", "quit", "q", "detach", "d"};
+        private static readonly string[] DebuggerCommands = { "continue", "c", "k", "h", "?", "list", "l", "stepInto", "s", "stepOut", "o", "stepOver", "v", "quit", "q", "detach", "d" };
 
         public override IReadOnlyList<TResult> Run(CancellationToken cancellationToken)
         {
@@ -76,10 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             }
         }
 
-        public override string ToString()
-        {
-            return _psCommand.GetInvocationText();
-        }
+        public override string ToString() => _psCommand.GetInvocationText();
 
         private static bool IsDebuggerCommand(PSCommand command)
         {
@@ -114,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             Collection<TResult> result = null;
             try
             {
-                var invocationSettings = new PSInvocationSettings
+                PSInvocationSettings invocationSettings = new()
                 {
                     AddToHistory = PowerShellExecutionOptions.AddToHistory,
                 };
@@ -165,7 +162,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                     throw;
                 }
 
-                var command = new PSCommand()
+                PSCommand command = new PSCommand()
                     .AddOutputCommand()
                     .AddParameter("InputObject", e.ErrorRecord.AsPSObject());
 
@@ -195,7 +192,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             // intrinsic debugger commands?
             cancellationToken.Register(CancelDebugExecution);
 
-            var outputCollection = new PSDataCollection<PSObject>();
+            PSDataCollection<PSObject> outputCollection = new();
 
             // Out-Default doesn't work as needed in the debugger
             // Instead we add Out-String to the command and collect results in a PSDataCollection
@@ -264,11 +261,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                     throw;
                 }
 
-                using var errorOutputCollection = new PSDataCollection<PSObject>();
+                using PSDataCollection<PSObject> errorOutputCollection = new PSDataCollection<PSObject>();
                 errorOutputCollection.DataAdding += (object sender, DataAddingEventArgs args)
                     => _psesHost.UI.WriteLine(args.ItemAdded?.ToString());
 
-                var command = new PSCommand()
+                PSCommand command = new PSCommand()
                     .AddDebugOutputCommand()
                     .AddParameter("InputObject", e.ErrorRecord.AsPSObject());
 
@@ -298,7 +295,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             }
 
             // Otherwise, convert things over
-            var results = new List<TResult>(outputCollection.Count);
+            List<TResult> results = new(outputCollection.Count);
             foreach (PSObject outputResult in outputCollection)
             {
                 if (LanguagePrimitives.TryConvertTo(outputResult, typeof(TResult), out object result))
@@ -317,9 +314,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             if (_pwsh.Runspace.RunspaceIsRemote)
             {
                 _pwsh.Runspace.ThrowCancelledIfUnusable();
-                var assessDebuggerCommand = new PSCommand().AddScript("$Host.Runspace.Debugger.InBreakpoint");
+                PSCommand assessDebuggerCommand = new PSCommand().AddScript("$Host.Runspace.Debugger.InBreakpoint");
 
-                var outputCollection = new PSDataCollection<PSObject>();
+                PSDataCollection<PSObject> outputCollection = new();
                 _pwsh.Runspace.Debugger.ProcessCommand(assessDebuggerCommand, outputCollection);
 
                 foreach (PSObject output in outputCollection)

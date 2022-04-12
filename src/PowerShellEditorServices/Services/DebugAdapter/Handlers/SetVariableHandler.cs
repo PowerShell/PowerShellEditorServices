@@ -32,15 +32,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 string updatedValue =
                     await _debugService.SetVariableAsync(
-                        (int) request.VariablesReference,
+                        (int)request.VariablesReference,
                         request.Name,
                         request.Value).ConfigureAwait(false);
 
                 return new SetVariableResponse { Value = updatedValue };
             }
-                catch (Exception ex) when(ex is ArgumentTransformationMetadataException ||
-                                           ex is InvalidPowerShellExpressionException ||
-                                           ex is SessionStateUnauthorizedAccessException)
+            catch (Exception ex) when (ex is ArgumentTransformationMetadataException or
+                                       InvalidPowerShellExpressionException or
+                                       SessionStateUnauthorizedAccessException)
             {
                 // Catch common, innocuous errors caused by the user supplying a value that can't be converted or the variable is not settable.
                 _logger.LogTrace($"Failed to set variable: {ex.Message}");

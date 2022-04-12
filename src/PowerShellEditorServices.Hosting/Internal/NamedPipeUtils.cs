@@ -39,10 +39,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             // In .NET Framework, we must manually ACL the named pipes we create
 
-            var pipeSecurity = new PipeSecurity();
+            PipeSecurity pipeSecurity = new();
 
             WindowsIdentity identity = WindowsIdentity.GetCurrent();
-            WindowsPrincipal principal = new WindowsPrincipal(identity);
+            WindowsPrincipal principal = new(identity);
 
             if (principal.IsInRole(WindowsBuiltInRole.Administrator))
             {
@@ -137,6 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// </summary>
         /// <param name="pipeName">The simple name of the named pipe.</param>
         /// <returns>The full path of the named pipe.</returns>
+#pragma warning disable IDE0022
         public static string GetNamedPipePath(string pipeName)
         {
 #if CoreCLR
@@ -149,4 +150,5 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             return $@"\\.\pipe\{pipeName}";
         }
     }
+#pragma warning restore IDE0022
 }

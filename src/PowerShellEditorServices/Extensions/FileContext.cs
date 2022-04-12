@@ -27,13 +27,13 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Gets the parsed abstract syntax tree for the file.
         /// </summary>
-        public Ast Ast => this.scriptFile.ScriptAst;
+        public Ast Ast => scriptFile.ScriptAst;
 
         /// <summary>
         /// Gets a BufferRange which represents the entire content
         /// range of the file.
         /// </summary>
-        public IFileRange FileRange => new BufferFileRange(this.scriptFile.FileRange);
+        public IFileRange FileRange => new BufferFileRange(scriptFile.FileRange);
 
         /// <summary>
         /// Gets the language of the file.
@@ -43,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Gets the filesystem path of the file.
         /// </summary>
-        public string Path => this.scriptFile.FilePath;
+        public string Path => scriptFile.FilePath;
 
         /// <summary>
         /// Gets the URI of the file.
@@ -53,20 +53,13 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Gets the parsed token list for the file.
         /// </summary>
-        public IReadOnlyList<Token> Tokens => this.scriptFile.ScriptTokens;
+        public IReadOnlyList<Token> Tokens => scriptFile.ScriptTokens;
 
         /// <summary>
         /// Gets the workspace-relative path of the file.
         /// </summary>
-        public string WorkspacePath
-        {
-            get
-            {
-                return
-                    this.editorOperations.GetWorkspaceRelativePath(
-                        this.scriptFile.FilePath);
-            }
-        }
+        public string WorkspacePath => editorOperations.GetWorkspaceRelativePath(
+                        scriptFile.FilePath);
 
         #endregion
 
@@ -93,8 +86,8 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             this.scriptFile = scriptFile;
             this.editorContext = editorContext;
             this.editorOperations = editorOperations;
-            this.Language = language;
-            this.Uri = scriptFile.DocumentUri.ToUri();
+            Language = language;
+            Uri = scriptFile.DocumentUri.ToUri();
         }
 
         #endregion
@@ -105,10 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// Gets the complete file content as a string.
         /// </summary>
         /// <returns>A string containing the complete file content.</returns>
-        public string GetText()
-        {
-            return this.scriptFile.Contents;
-        }
+        public string GetText() => scriptFile.Contents;
 
         /// <summary>
         /// Gets the file content in the specified range as a string.
@@ -120,27 +110,21 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             return
                 string.Join(
                     Environment.NewLine,
-                    this.GetTextLines(bufferRange));
+                    GetTextLines(bufferRange));
         }
 
         /// <summary>
         /// Gets the complete file content as an array of strings.
         /// </summary>
         /// <returns>An array of strings, each representing a line in the file.</returns>
-        public string[] GetTextLines()
-        {
-            return this.scriptFile.FileLines.ToArray();
-        }
+        public string[] GetTextLines() => scriptFile.FileLines.ToArray();
 
         /// <summary>
         /// Gets the file content in the specified range as an array of strings.
         /// </summary>
         /// <param name="bufferRange">The buffer range for which content will be extracted.</param>
         /// <returns>An array of strings, each representing a line in the file within the specified range.</returns>
-        public string[] GetTextLines(FileRange fileRange)
-        {
-            return this.scriptFile.GetLinesInRange(fileRange.ToBufferRange());
-        }
+        public string[] GetTextLines(FileRange fileRange) => scriptFile.GetLinesInRange(fileRange.ToBufferRange());
 
         #endregion
 
@@ -154,17 +138,17 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public void InsertText(string textToInsert)
         {
             // Is there a selection?
-            if (this.editorContext.SelectedRange.HasRange())
+            if (editorContext.SelectedRange.HasRange())
             {
-                this.InsertText(
+                InsertText(
                     textToInsert,
-                    this.editorContext.SelectedRange);
+                    editorContext.SelectedRange);
             }
             else
             {
-                this.InsertText(
+                InsertText(
                     textToInsert,
-                    this.editorContext.CursorPosition);
+                    editorContext.CursorPosition);
             }
         }
 
@@ -175,7 +159,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="insertPosition">The position at which the text will be inserted.</param>
         public void InsertText(string textToInsert, IFilePosition insertPosition)
         {
-            this.InsertText(
+            InsertText(
                 textToInsert,
                 new FileRange(insertPosition, insertPosition));
         }
@@ -188,7 +172,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="insertColumn">The 1-based column number at which the text will be inserted.</param>
         public void InsertText(string textToInsert, int insertLine, int insertColumn)
         {
-            this.InsertText(
+            InsertText(
                 textToInsert,
                 new FilePosition(insertLine, insertColumn));
         }
@@ -211,7 +195,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             int endLine,
             int endColumn)
         {
-            this.InsertText(
+            InsertText(
                 textToInsert,
                 new FileRange(
                     new FilePosition(startLine, startColumn),
@@ -227,8 +211,8 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="insertRange">The buffer range which will be replaced by the string.</param>
         public void InsertText(string textToInsert, IFileRange insertRange)
         {
-            this.editorOperations
-                .InsertTextAsync(this.scriptFile.DocumentUri.ToString(), textToInsert, insertRange.ToBufferRange())
+            editorOperations
+                .InsertTextAsync(scriptFile.DocumentUri.ToString(), textToInsert, insertRange.ToBufferRange())
                 .Wait();
         }
 
@@ -239,10 +223,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Saves this file.
         /// </summary>
-        public void Save()
-        {
-            this.editorOperations.SaveFileAsync(this.scriptFile.FilePath);
-        }
+        public void Save() => editorOperations.SaveFileAsync(scriptFile.FilePath);
 
         /// <summary>
         /// Save this file under a new path and open a new editor window on that file.
@@ -256,14 +237,14 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             // Do some validation here so that we can provide a helpful error if the path won't work
             string absolutePath = System.IO.Path.IsPathRooted(newFilePath) ?
                 newFilePath :
-                System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(this.scriptFile.FilePath), newFilePath));
+                System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(scriptFile.FilePath), newFilePath));
 
             if (File.Exists(absolutePath))
             {
-                throw new IOException(String.Format("The file '{0}' already exists", absolutePath));
+                throw new IOException(string.Format("The file '{0}' already exists", absolutePath));
             }
 
-            this.editorOperations.SaveFileAsync(this.scriptFile.FilePath, newFilePath);
+            editorOperations.SaveFileAsync(scriptFile.FilePath, newFilePath);
         }
 
         #endregion

@@ -24,10 +24,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 
         public override AstVisitAction VisitPipeline(PipelineAst pipelineAst)
         {
-            if (this.lineNumber == pipelineAst.Extent.StartLineNumber)
+            if (lineNumber == pipelineAst.Extent.StartLineNumber)
             {
                 // Which command is the cursor in?
-                foreach (var commandAst in pipelineAst.PipelineElements.OfType<CommandAst>())
+                foreach (CommandAst commandAst in pipelineAst.PipelineElements.OfType<CommandAst>())
                 {
                     int trueEndColumnNumber = commandAst.Extent.EndColumnNumber;
                     string currentLine = commandAst.Extent.StartScriptPosition.Line;
@@ -54,7 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                     if (commandAst.Extent.StartColumnNumber <= columnNumber &&
                         trueEndColumnNumber >= columnNumber)
                     {
-                        this.FoundCommandReference =
+                        FoundCommandReference =
                             new SymbolReference(
                                 SymbolType.Function,
                                 commandAst.CommandElements[0].Extent);
@@ -65,21 +65,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             }
 
             return base.VisitPipeline(pipelineAst);
-        }
-
-        /// <summary>
-        /// Is the position of the given location is in the range of the start
-        /// of the first element to the character before the second element
-        /// </summary>
-        /// <param name="firstExtent">The script extent of the first element of the command ast</param>
-        /// <param name="secondExtent">The script extent of the second element of the command ast</param>
-        /// <returns>True if the given position is in the range of the start of
-        /// the first element to the character before the second element</returns>
-        private bool IsPositionInExtent(IScriptExtent firstExtent, IScriptExtent secondExtent)
-        {
-            return (firstExtent.StartLineNumber == lineNumber &&
-                    firstExtent.StartColumnNumber <= columnNumber &&
-                    secondExtent.StartColumnNumber >= columnNumber - 1);
         }
     }
 }

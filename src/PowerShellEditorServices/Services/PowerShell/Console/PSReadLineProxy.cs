@@ -1,5 +1,5 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using System;
 using System.IO;
@@ -140,15 +140,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         internal Func<Runspace, EngineIntrinsics, CancellationToken, bool?, string> ReadLine { get; }
 
-        internal void OverrideReadKey(Func<bool, ConsoleKeyInfo> readKeyFunc)
-        {
-            _readKeyOverrideField.SetValue(null, readKeyFunc);
-        }
+        internal void OverrideReadKey(Func<bool, ConsoleKeyInfo> readKeyFunc) => _readKeyOverrideField.SetValue(null, readKeyFunc);
 
-        internal void OverrideIdleHandler(Action<CancellationToken> idleAction)
-        {
-            _handleIdleOverrideField.SetValue(null, idleAction);
-        }
+        internal void OverrideIdleHandler(Action<CancellationToken> idleAction) => _handleIdleOverrideField.SetValue(null, idleAction);
 
         private static InvalidOperationException NewInvalidPSReadLineVersionException(
             string memberType,

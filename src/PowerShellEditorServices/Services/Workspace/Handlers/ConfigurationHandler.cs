@@ -203,13 +203,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 configChanges["CodeFolding"] = incomingSettings.Powershell.CodeFolding.Enable;
             }
 
-            // Send telemetry if the user opted-out of the prompt to update PackageManagement
-            if (!incomingSettings.Powershell.PromptToUpdatePackageManagement &&
-                _configurationService.CurrentSettings.PromptToUpdatePackageManagement != incomingSettings.Powershell.PromptToUpdatePackageManagement)
-            {
-                configChanges["PromptToUpdatePackageManagement"] = incomingSettings.Powershell.PromptToUpdatePackageManagement;
-            }
-
             // Send telemetry if the user opted-out of Profile loading
             if (!incomingSettings.Powershell.EnableProfileLoading &&
                 _configurationService.CurrentSettings.EnableProfileLoading != incomingSettings.Powershell.EnableProfileLoading)

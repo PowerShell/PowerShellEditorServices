@@ -1,5 +1,18 @@
 # PowerShell Editor Services Release History
 
+## v3.1.6
+### Thursday, March 24, 2022
+
+- #️⃣ 🙏 [PowerShellEditorServices #1746](https://github.com/PowerShell/PowerShellEditorServices/pull/1746) - Replace `_consoleHostUI` with `_underlyingHostUI`.
+
+## v3.1.5
+### Thursday, March 10, 2022
+
+- ✨ 🧠 [vscode-powershell #3364](https://github.com/PowerShell/PowerShellEditorServices/pull/1738) - Improve completion logic (more icons!).
+- 🐛 🛫 [PowerShellEditorServices #1576](https://github.com/PowerShell/PowerShellEditorServices/pull/1735) - Remove `PackageManagement` module update prompt.
+- 🐛 📟 [PowerShellEditorServices #1734](https://github.com/PowerShell/PowerShellEditorServices/pull/1734) - Finish redirection of `$Host.PrivateData`.
+- 🐛 📟 [PowerShellEditorServices #1639](https://github.com/PowerShell/PowerShellEditorServices/pull/1732) - Redirect `PSHost.Notify*Application` methods.
+
 ## v3.1.4
 ### Thursday, February 24, 2022
 

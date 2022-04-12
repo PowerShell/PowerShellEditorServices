@@ -35,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _executionService = executionService;
         }
 
-        protected override SignatureHelpRegistrationOptions CreateRegistrationOptions(SignatureHelpCapability capability, ClientCapabilities clientCapabilities) => new SignatureHelpRegistrationOptions
+        protected override SignatureHelpRegistrationOptions CreateRegistrationOptions(SignatureHelpCapability capability, ClientCapabilities clientCapabilities) => new()
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector,
             // A sane default of " ". We may be able to include others like "-".
@@ -63,10 +63,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return new SignatureHelp();
             }
 
-            var signatures = new SignatureInformation[parameterSets.Signatures.Length];
+            SignatureInformation[] signatures = new SignatureInformation[parameterSets.Signatures.Length];
             for (int i = 0; i < signatures.Length; i++)
             {
-                var parameters = new List<ParameterInformation>();
+                List<ParameterInformation> parameters = new();
                 foreach (ParameterInfo param in parameterSets.Signatures[i].Parameters)
                 {
                     parameters.Add(CreateParameterInfo(param));

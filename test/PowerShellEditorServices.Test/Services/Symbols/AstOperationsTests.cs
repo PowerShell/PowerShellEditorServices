@@ -36,7 +36,7 @@ function
 
     FunctionNameOnDifferentLine
 ";
-        private static readonly ScriptBlockAst s_ast = (ScriptBlockAst) ScriptBlock.Create(s_scriptString).Ast;
+        private static readonly ScriptBlockAst s_ast = (ScriptBlockAst)ScriptBlock.Create(s_scriptString).Ast;
 
         [Theory]
         [InlineData(2, 3, "BasicFunction")]

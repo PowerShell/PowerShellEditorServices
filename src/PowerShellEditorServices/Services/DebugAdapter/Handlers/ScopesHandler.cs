@@ -30,7 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             VariableScope[] variableScopes =
                 _debugService.GetVariableScopes(
-                    (int) request.FrameId);
+                    (int)request.FrameId);
 
             return Task.FromResult(new ScopesResponse
             {

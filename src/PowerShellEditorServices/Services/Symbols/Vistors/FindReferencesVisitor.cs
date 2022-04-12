@@ -173,21 +173,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         {
             int startColumnNumber = ast.Extent.StartColumnNumber;
             int startLineNumber = ast.Extent.StartLineNumber;
-            int astOffset;
-
-            if (ast.IsFilter)
-            {
-                astOffset = "filter".Length;
-            }
-            else if (ast.IsWorkflow)
-            {
-                astOffset = "workflow".Length;
-            }
-            else
-            {
-                astOffset = "function".Length;
-            }
-
+            int astOffset = ast.IsFilter ? "filter".Length : ast.IsWorkflow ? "workflow".Length : "function".Length;
             string astText = ast.Extent.Text;
             // The line offset represents the offset on the line that we're on where as
             // astOffset is the offset on the entire text of the AST.

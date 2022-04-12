@@ -15,30 +15,29 @@ namespace PowerShellEditorServices.Test.E2E
     /// </summary>
     public class PsesStdioProcess : StdioServerProcess
     {
-        protected readonly static string s_binDir =
+        protected static readonly string s_binDir =
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
         #region private static or constants members
 
-        private readonly static string s_bundledModulePath = new FileInfo(Path.Combine(
+        private static readonly string s_bundledModulePath = new FileInfo(Path.Combine(
             s_binDir,
             "..", "..", "..", "..", "..",
             "module")).FullName;
 
-        private readonly static string s_sessionDetailsPath = Path.Combine(
+        private static readonly string s_sessionDetailsPath = Path.Combine(
             s_binDir,
             $"pses_test_sessiondetails_{Path.GetRandomFileName()}");
 
-        private readonly static string s_logPath = Path.Combine(
+        private static readonly string s_logPath = Path.Combine(
             Environment.GetEnvironmentVariable("BUILD_ARTIFACTSTAGINGDIRECTORY") ?? s_binDir,
             $"pses_test_logs_{Path.GetRandomFileName()}");
-
-        const string s_logLevel = "Diagnostic";
-        readonly static string[] s_featureFlags = { "PSReadLine" };
-        const string s_hostName = "TestHost";
-        const string s_hostProfileId = "TestHost";
-        const string s_hostVersion = "1.0.0";
-        private readonly static string[] s_additionalModules = { "PowerShellEditorServices.VSCode" };
+        private const string s_logLevel = "Diagnostic";
+        private static readonly string[] s_featureFlags = { "PSReadLine" };
+        private const string s_hostName = "TestHost";
+        private const string s_hostProfileId = "TestHost";
+        private const string s_hostVersion = "1.0.0";
+        private static readonly string[] s_additionalModules = { "PowerShellEditorServices.VSCode" };
 
         #endregion
 
@@ -63,7 +62,7 @@ namespace PowerShellEditorServices.Test.E2E
 
         private static ProcessStartInfo GeneratePsesStartInfo(bool isDebugAdapter)
         {
-            ProcessStartInfo processStartInfo = new ProcessStartInfo
+            ProcessStartInfo processStartInfo = new()
             {
                 FileName = PwshExe
             };
@@ -78,19 +77,28 @@ namespace PowerShellEditorServices.Test.E2E
 
         private static string[] GeneratePsesArguments(bool isDebugAdapter)
         {
-            List<string> args = new List<string>
+            List<string> args = new()
             {
                 "&",
                 SingleQuoteEscape(Path.Combine(s_bundledModulePath, "PowerShellEditorServices", "Start-EditorServices.ps1")),
-                "-LogPath", SingleQuoteEscape(s_logPath),
-                "-LogLevel", s_logLevel,
-                "-SessionDetailsPath", SingleQuoteEscape(s_sessionDetailsPath),
-                "-FeatureFlags", string.Join(',', s_featureFlags),
-                "-HostName", s_hostName,
-                "-HostProfileId", s_hostProfileId,
-                "-HostVersion", s_hostVersion,
-                "-AdditionalModules", string.Join(',', s_additionalModules),
-                "-BundledModulesPath", SingleQuoteEscape(s_bundledModulePath),
+                "-LogPath",
+                SingleQuoteEscape(s_logPath),
+                "-LogLevel",
+                s_logLevel,
+                "-SessionDetailsPath",
+                SingleQuoteEscape(s_sessionDetailsPath),
+                "-FeatureFlags",
+                string.Join(',', s_featureFlags),
+                "-HostName",
+                s_hostName,
+                "-HostProfileId",
+                s_hostProfileId,
+                "-HostVersion",
+                s_hostVersion,
+                "-AdditionalModules",
+                string.Join(',', s_additionalModules),
+                "-BundledModulesPath",
+                SingleQuoteEscape(s_bundledModulePath),
                 "-Stdio"
             };
 
@@ -111,10 +119,7 @@ namespace PowerShellEditorServices.Test.E2E
             };
         }
 
-        private static string SingleQuoteEscape(string str)
-        {
-            return $"'{str.Replace("'", "''")}'";
-        }
+        private static string SingleQuoteEscape(string str) => $"'{str.Replace("'", "''")}'";
 
         #endregion
     }

@@ -26,15 +26,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _analysisService = analysisService;
         }
 
-        protected override CodeActionRegistrationOptions CreateRegistrationOptions(CodeActionCapability capability, ClientCapabilities clientCapabilities)
+        protected override CodeActionRegistrationOptions CreateRegistrationOptions(CodeActionCapability capability, ClientCapabilities clientCapabilities) => new()
         {
-            return new()
-            {
-                // TODO: What do we do with the arguments?
-                DocumentSelector = LspUtils.PowerShellDocumentSelector,
-                CodeActionKinds = new CodeActionKind[] { CodeActionKind.QuickFix }
-            };
-        }
+            // TODO: What do we do with the arguments?
+            DocumentSelector = LspUtils.PowerShellDocumentSelector,
+            CodeActionKinds = new CodeActionKind[] { CodeActionKind.QuickFix }
+        };
 
         // TODO: Either fix or ignore "method lacks 'await'" warning.
         public override async Task<CodeAction> Handle(CodeAction request, CancellationToken cancellationToken)
@@ -55,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return Array.Empty<CommandOrCodeAction>();
             }
 
-            IReadOnlyDictionary<string, MarkerCorrection> corrections = await _analysisService.GetMostRecentCodeActionsForFileAsync(
+            IReadOnlyDictionary<string, IEnumerable<MarkerCorrection>> corrections = await _analysisService.GetMostRecentCodeActionsForFileAsync(
                 request.TextDocument.Uri)
                 .ConfigureAwait(false);
 
@@ -78,13 +75,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
 
                 string diagnosticId = AnalysisService.GetUniqueIdFromDiagnostic(diagnostic);
-                if (corrections.TryGetValue(diagnosticId, out MarkerCorrection correction))
+                if (corrections.TryGetValue(diagnosticId, out IEnumerable<MarkerCorrection> markerCorrections))
                 {
-                    foreach (ScriptRegion edit in correction.Edits)
+                    foreach (MarkerCorrection markerCorrection in markerCorrections)
                     {
                         codeActions.Add(new CodeAction
                         {
-                            Title = correction.Name,
+                            Title = markerCorrection.Name,
                             Kind = CodeActionKind.QuickFix,
                             Edit = new WorkspaceEdit
                             {
@@ -96,7 +93,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                                             {
                                                 Uri = request.TextDocument.Uri
                                             },
-                                            Edits = new TextEditContainer(ScriptRegion.ToTextEdit(edit))
+                                            Edits = new TextEditContainer(ScriptRegion.ToTextEdit(markerCorrection.Edit))
                                         }))
                             }
                         });

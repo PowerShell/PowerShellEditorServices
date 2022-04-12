@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class PsesDocumentHighlightHandler : DocumentHighlightHandlerBase
     {
-        private static readonly DocumentHighlightContainer s_emptyHighlightContainer = new DocumentHighlightContainer();
+        private static readonly DocumentHighlightContainer s_emptyHighlightContainer = new();
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
         private readonly SymbolsService _symbolsService;
@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _logger.LogInformation("highlight handler loaded");
         }
 
-        protected override DocumentHighlightRegistrationOptions CreateRegistrationOptions(DocumentHighlightCapability capability, ClientCapabilities clientCapabilities) => new DocumentHighlightRegistrationOptions
+        protected override DocumentHighlightRegistrationOptions CreateRegistrationOptions(DocumentHighlightCapability capability, ClientCapabilities clientCapabilities) => new()
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector
         };
@@ -54,7 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return Task.FromResult(s_emptyHighlightContainer);
             }
 
-            var highlights = new DocumentHighlight[symbolOccurrences.Count];
+            DocumentHighlight[] highlights = new DocumentHighlight[symbolOccurrences.Count];
             for (int i = 0; i < symbolOccurrences.Count; i++)
             {
                 highlights[i] = new DocumentHighlight

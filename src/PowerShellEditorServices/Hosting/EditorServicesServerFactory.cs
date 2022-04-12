@@ -93,10 +93,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public PsesLanguageServer CreateLanguageServer(
             Stream inputStream,
             Stream outputStream,
-            HostStartupInfo hostStartupInfo)
-        {
-            return new PsesLanguageServer(_loggerFactory, inputStream, outputStream, hostStartupInfo);
-        }
+            HostStartupInfo hostStartupInfo) => new(_loggerFactory, inputStream, outputStream, hostStartupInfo);
 
         /// <summary>
         /// Create the debug server given a language server instance.
@@ -158,7 +155,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             Stream outputStream,
             HostStartupInfo hostStartupInfo)
         {
-            var serviceProvider = new ServiceCollection()
+            ServiceProvider serviceProvider = new ServiceCollection()
                 .AddLogging(builder => builder
                     .ClearProviders()
                     .AddSerilog()
@@ -189,7 +186,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// TODO: This class probably should not be <see cref="IDisposable"/> as the primary
         /// intention of that interface is to provide cleanup of unmanaged resources, which the
         /// logger certainly is not. Nor is this class used with a <see langword="using"/>. Instead,
-        /// this class should call <see cref="Serilog.Log.CloseAndFlush()"/> in a finalizer. This
+        /// this class should call <see cref="Log.CloseAndFlush()"/> in a finalizer. This
         /// could potentially even be done with <see
         /// cref="SerilogLoggerFactoryExtensions.AddSerilog"</> by passing <c>dispose=true</c>.
         /// </remarks>

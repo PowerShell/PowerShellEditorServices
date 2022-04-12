@@ -26,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
                 SetHtmlContentViewRequest.Method,
                 new SetHtmlContentViewRequest
                 {
-                    Id = this.Id,
+                    Id = Id,
                     HtmlContent = new HtmlContent { BodyContent = htmlBodyContent }
                 }
             );
@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
                 SetHtmlContentViewRequest.Method,
                 new SetHtmlContentViewRequest
                 {
-                    Id = this.Id,
+                    Id = Id,
                     HtmlContent = new HtmlContent()
                     {
                         BodyContent = htmlContent.BodyContent,
@@ -51,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
                 AppendHtmlContentViewRequest.Method,
                 new AppendHtmlContentViewRequest
                 {
-                    Id = this.Id,
+                    Id = Id,
                     AppendedHtmlBodyContent = appendedHtmlBodyContent
                 }
             );
@@ -60,7 +60,8 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
         {
             return
                 filePaths?
-                    .Select(p => {
+                    .Select(p =>
+                    {
                         return
                             new Uri(
                                 Path.GetFullPath(p),

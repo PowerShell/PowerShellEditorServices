@@ -63,17 +63,17 @@ function __Expand-Alias {
 }";
 
             // TODO: Refactor to not rerun the function definition every time.
-            var psCommand = new PSCommand();
+            PSCommand psCommand = new();
             psCommand
                 .AddScript(script)
                 .AddStatement()
                 .AddCommand("__Expand-Alias")
                 .AddArgument(request.Text);
-            var result = await _executionService.ExecutePSCommandAsync<string>(psCommand, cancellationToken).ConfigureAwait(false);
+            System.Collections.Generic.IReadOnlyList<string> result = await _executionService.ExecutePSCommandAsync<string>(psCommand, cancellationToken).ConfigureAwait(false);
 
             return new ExpandAliasResult
             {
-                Text = result.First()
+                Text = result[0]
             };
         }
     }

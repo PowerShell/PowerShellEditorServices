@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
         {
             Console.TreatControlCAsInput = true;
             int previousInputLength = 0;
-            SecureString secureString = new SecureString();
+            SecureString secureString = new();
             try
             {
                 bool enterPressed = false;

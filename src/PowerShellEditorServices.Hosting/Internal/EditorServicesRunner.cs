@@ -75,10 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// only because of the use of <see cref="_serverFactory"/> that this class is also
         /// disposable, and instead that class should be fixed.
         /// </remarks>
-        public void Dispose()
-        {
-            _serverFactory.Dispose();
-        }
+        public void Dispose() => _serverFactory.Dispose();
 
         /// <summary>
         /// This is the servers' entry point, e.g. <c>main</c>, as it instantiates, runs and waits
@@ -93,14 +90,14 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         ///     <description>Description</description>
         /// </listheader>
         /// <item>
-        ///     <term><see cref="Microsoft.PowerShell.EditorServices.Commands.StartEditorServicesCommand"/></term>
+        ///     <term><see cref="Commands.StartEditorServicesCommand"/></term>
         ///     <description>
         ///     The StartEditorServicesCommand PSCmdlet, our PowerShell cmdlet written in C# and
         ///     shipped in the module.
         ///     </description>
         /// </item>
         /// <item>
-        ///     <term><see cref="Microsoft.PowerShell.EditorServices.Commands.StartEditorServicesCommand.EndProcessing"/></term>
+        ///     <term><see cref="Commands.StartEditorServicesCommand.EndProcessing"/></term>
         ///     <description>
         ///     As a cmdlet, this is the end of its "process" block, and it instantiates <see
         ///     cref="EditorServicesLoader"/>.
@@ -309,7 +306,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         private void DebugServer_OnSessionEnded(object sender, EventArgs args)
         {
             _logger.Log(PsesLogLevel.Verbose, "Debug session ended, restarting debug service...");
-            var oldServer = (PsesDebugServer)sender;
+            PsesDebugServer oldServer = (PsesDebugServer)sender;
             oldServer.Dispose();
             _alreadySubscribedDebug = false;
             Task.Run(() =>

@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspaceService;
         }
 
-        protected override HoverRegistrationOptions CreateRegistrationOptions(HoverCapability capability, ClientCapabilities clientCapabilities) => new HoverRegistrationOptions
+        protected override HoverRegistrationOptions CreateRegistrationOptions(HoverCapability capability, ClientCapabilities clientCapabilities) => new()
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector
         };
@@ -57,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return null;
             }
 
-            List<MarkedString> symbolInfo = new List<MarkedString>();
+            List<MarkedString> symbolInfo = new();
             symbolInfo.Add(new MarkedString("PowerShell", symbolDetails.DisplayString));
 
             if (!string.IsNullOrEmpty(symbolDetails.Documentation))

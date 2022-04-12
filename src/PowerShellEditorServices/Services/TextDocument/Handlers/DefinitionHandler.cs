@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspaceService;
         }
 
-        protected override DefinitionRegistrationOptions CreateRegistrationOptions(DefinitionCapability capability, ClientCapabilities clientCapabilities) => new DefinitionRegistrationOptions
+        protected override DefinitionRegistrationOptions CreateRegistrationOptions(DefinitionCapability capability, ClientCapabilities clientCapabilities) => new()
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector
         };
@@ -47,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     request.Position.Line + 1,
                     request.Position.Character + 1);
 
-            List<LocationOrLocationLink> definitionLocations = new List<LocationOrLocationLink>();
+            List<LocationOrLocationLink> definitionLocations = new();
             if (foundSymbol != null)
             {
                 SymbolReference foundDefinition = await _symbolsService.GetDefinitionOfSymbolAsync(

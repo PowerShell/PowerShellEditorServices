@@ -14,26 +14,14 @@ namespace Microsoft.PowerShell.EditorServices.Logging
     {
         public string EventName
         {
-            get
-            {
-                return this["EventName"].ToString() ?? "PsesEvent";
-            }
-            set
-            {
-                this["EventName"] = value;
-            }
+            get => this["EventName"].ToString() ?? "PsesEvent";
+            set => this["EventName"] = value;
         }
 
         public JObject Data
         {
-            get
-            {
-                return this["Data"] as JObject ?? new JObject();
-            }
-            set
-            {
-                this["Data"] = value;
-            }
+            get => this["Data"] as JObject ?? new JObject();
+            set => this["Data"] = value;
         }
     }
 }

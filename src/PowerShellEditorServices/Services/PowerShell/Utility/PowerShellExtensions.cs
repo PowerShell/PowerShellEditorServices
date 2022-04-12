@@ -156,14 +156,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             // set to expected values, so we must sift through those.
 
             ExecutionPolicy policyToSet = ExecutionPolicy.Bypass;
-            var currentUserPolicy = (ExecutionPolicy)policies[policies.Count - 2].Members["ExecutionPolicy"].Value;
+            ExecutionPolicy currentUserPolicy = (ExecutionPolicy)policies[policies.Count - 2].Members["ExecutionPolicy"].Value;
             if (currentUserPolicy != ExecutionPolicy.Undefined)
             {
                 policyToSet = currentUserPolicy;
             }
             else
             {
-                var localMachinePolicy = (ExecutionPolicy)policies[policies.Count - 1].Members["ExecutionPolicy"].Value;
+                ExecutionPolicy localMachinePolicy = (ExecutionPolicy)policies[policies.Count - 1].Members["ExecutionPolicy"].Value;
                 if (localMachinePolicy != ExecutionPolicy.Undefined)
                 {
                     policyToSet = localMachinePolicy;
@@ -200,9 +200,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             // `$PROFILE` variable. Its type is `String`.
             //
             // https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_profiles?view=powershell-7.1#the-profile-variable
-            var profileVariable = PSObject.AsPSObject(profilePaths.CurrentUserCurrentHost);
+            PSObject profileVariable = PSObject.AsPSObject(profilePaths.CurrentUserCurrentHost);
 
-            var psCommand = new PSCommand()
+            PSCommand psCommand = new PSCommand()
                 .AddProfileLoadIfExists(profileVariable, nameof(profilePaths.AllUsersAllHosts), profilePaths.AllUsersAllHosts)
                 .AddProfileLoadIfExists(profileVariable, nameof(profilePaths.AllUsersCurrentHost), profilePaths.AllUsersCurrentHost)
                 .AddProfileLoadIfExists(profileVariable, nameof(profilePaths.CurrentUserAllHosts), profilePaths.CurrentUserAllHosts)
@@ -223,7 +223,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
         public static string GetErrorString(this PowerShell pwsh)
         {
-            var sb = new StringBuilder(capacity: 1024)
+            StringBuilder sb = new StringBuilder(capacity: 1024)
                 .Append("Execution of the following command(s) completed with errors:")
                 .AppendLine()
                 .AppendLine()

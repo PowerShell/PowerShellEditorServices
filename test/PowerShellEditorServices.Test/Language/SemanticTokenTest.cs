@@ -25,7 +25,7 @@ function Get-Sum {
     return $a + $b
 }
 ";
-            ScriptFile scriptFile = new ScriptFile(
+            ScriptFile scriptFile = new(
                 // Use any absolute path. Even if it doesn't exist.
                 DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                 text,
@@ -33,7 +33,7 @@ function Get-Sum {
 
             foreach (Token t in scriptFile.ScriptTokens)
             {
-                List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokensHandler.ConvertToSemanticTokens(t));
+                List<SemanticToken> mappedTokens = new(PsesSemanticTokensHandler.ConvertToSemanticTokens(t));
                 switch (t.Text)
                 {
                     case "function":
@@ -62,14 +62,14 @@ function Get-Sum {
         public void TokenizesStringExpansion()
         {
             string text = "Write-Host \"$(Test-Property Get-Whatever) $(Get-Whatever)\"";
-            ScriptFile scriptFile = new ScriptFile(
+            ScriptFile scriptFile = new(
                 // Use any absolute path. Even if it doesn't exist.
                 DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                 text,
                 Version.Parse("5.0"));
 
             Token commandToken = scriptFile.ScriptTokens[0];
-            List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokensHandler.ConvertToSemanticTokens(commandToken));
+            List<SemanticToken> mappedTokens = new(PsesSemanticTokensHandler.ConvertToSemanticTokens(commandToken));
             Assert.Single(mappedTokens, sToken => SemanticTokenType.Function == sToken.Type);
 
             Token stringExpandableToken = scriptFile.ScriptTokens[1];
@@ -89,7 +89,7 @@ function Get-A*A {
 }
 Get-A*A
 ";
-            ScriptFile scriptFile = new ScriptFile(
+            ScriptFile scriptFile = new(
                 // Use any absolute path. Even if it doesn't exist.
                 DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                 text,
@@ -97,7 +97,7 @@ Get-A*A
 
             foreach (Token t in scriptFile.ScriptTokens)
             {
-                List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokensHandler.ConvertToSemanticTokens(t));
+                List<SemanticToken> mappedTokens = new(PsesSemanticTokensHandler.ConvertToSemanticTokens(t));
                 switch (t.Text)
                 {
                     case "function":
@@ -114,7 +114,7 @@ Get-A*A
         public void RecognizesArrayPropertyInExpandableString()
         {
             string text = "\"$(@($Array).Count) OtherText\"";
-            ScriptFile scriptFile = new ScriptFile(
+            ScriptFile scriptFile = new(
                 // Use any absolute path. Even if it doesn't exist.
                 DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                 text,
@@ -122,7 +122,7 @@ Get-A*A
 
             foreach (Token t in scriptFile.ScriptTokens)
             {
-                List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokensHandler.ConvertToSemanticTokens(t));
+                List<SemanticToken> mappedTokens = new(PsesSemanticTokensHandler.ConvertToSemanticTokens(t));
                 switch (t.Text)
                 {
                     case "$Array":
@@ -139,27 +139,27 @@ Get-A*A
         public void RecognizesCurlyQuotedString()
         {
             string text = "“^[-'a-z]*”";
-            ScriptFile scriptFile = new ScriptFile(
+            ScriptFile scriptFile = new(
                 // Use any absolute path. Even if it doesn't exist.
                 DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                 text,
                 Version.Parse("5.0"));
 
-            List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokensHandler.ConvertToSemanticTokens(scriptFile.ScriptTokens[0]));
+            List<SemanticToken> mappedTokens = new(PsesSemanticTokensHandler.ConvertToSemanticTokens(scriptFile.ScriptTokens[0]));
             Assert.Single(mappedTokens, sToken => SemanticTokenType.String == sToken.Type);
         }
 
         [Fact]
         public void RecognizeEnum()
         {
-            string text =  @"
+            string text = @"
 enum MyEnum{
     one
     two
     three
 }
 ";
-            ScriptFile scriptFile = new ScriptFile(
+            ScriptFile scriptFile = new(
                 // Use any absolute path. Even if it doesn't exist.
                 DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                 text,
@@ -167,7 +167,7 @@ enum MyEnum{
 
             foreach (Token t in scriptFile.ScriptTokens)
             {
-                List<SemanticToken> mappedTokens = new List<SemanticToken>(PsesSemanticTokensHandler.ConvertToSemanticTokens(t));
+                List<SemanticToken> mappedTokens = new(PsesSemanticTokensHandler.ConvertToSemanticTokens(t));
                 switch (t.Text)
                 {
                     case "enum":

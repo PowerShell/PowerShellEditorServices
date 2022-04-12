@@ -75,10 +75,10 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             bool suppressOutput,
             ScriptBlock scriptBlock)
         {
-            this.Name = commandName;
-            this.DisplayName = displayName;
-            this.SuppressOutput = suppressOutput;
-            this.ScriptBlock = scriptBlock;
+            Name = commandName;
+            DisplayName = displayName;
+            SuppressOutput = suppressOutput;
+            ScriptBlock = scriptBlock;
         }
 
         #endregion

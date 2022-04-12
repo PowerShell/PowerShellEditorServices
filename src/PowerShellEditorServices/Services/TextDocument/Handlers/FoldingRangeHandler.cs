@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspaceService;
         }
 
-        protected override FoldingRangeRegistrationOptions CreateRegistrationOptions(FoldingRangeCapability capability, ClientCapabilities clientCapabilities) => new FoldingRangeRegistrationOptions
+        protected override FoldingRangeRegistrationOptions CreateRegistrationOptions(FoldingRangeCapability capability, ClientCapabilities clientCapabilities) => new()
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector
         };
@@ -50,19 +50,20 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // warrant the extra effort.
             if (!_workspaceService.TryGetFile(request.TextDocument.Uri, out ScriptFile scriptFile)) { return null; }
 
-            var result = new List<FoldingRange>();
+            List<FoldingRange> result = new();
 
             // If we're showing the last line, decrement the Endline of all regions by one.
             int endLineOffset = _configurationService.CurrentSettings.CodeFolding.ShowLastLine ? -1 : 0;
 
             foreach (FoldingReference fold in TokenOperations.FoldableReferences(scriptFile.ScriptTokens).References)
             {
-                result.Add(new FoldingRange {
-                    EndCharacter   = fold.EndCharacter,
-                    EndLine        = fold.EndLine + endLineOffset,
-                    Kind           = fold.Kind,
+                result.Add(new FoldingRange
+                {
+                    EndCharacter = fold.EndCharacter,
+                    EndLine = fold.EndLine + endLineOffset,
+                    Kind = fold.Kind,
                     StartCharacter = fold.StartCharacter,
-                    StartLine      = fold.StartLine
+                    StartLine = fold.StartLine
                 });
             }
 

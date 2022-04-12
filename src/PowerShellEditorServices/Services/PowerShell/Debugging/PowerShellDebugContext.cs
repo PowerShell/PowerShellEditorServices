@@ -159,7 +159,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
             LastStopEventArgs = args;
         }
 
-        public void SetDebuggerResumed() { IsStopped = false; }
+        public void SetDebuggerResumed() => IsStopped = false;
 
         public void ProcessDebuggerResult(DebuggerCommandResults debuggerResult)
         {

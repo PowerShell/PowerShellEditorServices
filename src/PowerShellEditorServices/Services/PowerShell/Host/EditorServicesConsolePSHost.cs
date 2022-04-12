@@ -12,10 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private readonly PsesInternalHost _internalHost;
 
         internal EditorServicesConsolePSHost(
-            PsesInternalHost internalHost)
-        {
-            _internalHost = internalHost;
-        }
+            PsesInternalHost internalHost) => _internalHost = internalHost;
 
         public override CultureInfo CurrentCulture => _internalHost.CurrentCulture;
 

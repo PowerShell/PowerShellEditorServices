@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
             PowerShellFrameType frameType,
             string localComputerName)
         {
-            var runspaceInfo = RunspaceInfo.CreateFromPowerShell(logger, pwsh, localComputerName);
+            RunspaceInfo runspaceInfo = RunspaceInfo.CreateFromPowerShell(logger, pwsh, localComputerName);
             return new PowerShellContextFrame(pwsh, runspaceInfo, frameType);
         }
 

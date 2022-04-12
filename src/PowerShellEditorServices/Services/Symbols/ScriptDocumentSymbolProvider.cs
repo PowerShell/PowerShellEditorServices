@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <param name="powerShellVersion">The PowerShell version the Ast was generated from</param>
         /// <returns>A collection of SymbolReference objects</returns>
-        static public IEnumerable<SymbolReference> FindSymbolsInDocument(Ast scriptAst)
+        public static IEnumerable<SymbolReference> FindSymbolsInDocument(Ast scriptAst)
         {
             IEnumerable<SymbolReference> symbolReferences = null;
 
@@ -48,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             //            }
             //            else
 
-            FindSymbolsVisitor findSymbolsVisitor = new FindSymbolsVisitor();
+            FindSymbolsVisitor findSymbolsVisitor = new();
             scriptAst.Visit(findSymbolsVisitor);
             symbolReferences = findSymbolsVisitor.SymbolReferences;
             return symbolReferences;

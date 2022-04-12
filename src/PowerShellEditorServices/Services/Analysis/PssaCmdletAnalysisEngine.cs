@@ -38,10 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             /// Create a builder for PssaCmdletAnalysisEngine construction.
             /// </summary>
             /// <param name="logger">The logger to use.</param>
-            public Builder(ILoggerFactory loggerFactory)
-            {
-                _loggerFactory = loggerFactory;
-            }
+            public Builder(ILoggerFactory loggerFactory) => _loggerFactory = loggerFactory;
 
             /// <summary>
             /// Uses a settings file for PSSA rule configuration.
@@ -136,20 +133,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             RunspacePool analysisRunspacePool,
             PSModuleInfo pssaModuleInfo,
             string[] rulesToInclude)
-            : this(logger, analysisRunspacePool, pssaModuleInfo)
-        {
-            _rulesToInclude = rulesToInclude;
-        }
+            : this(logger, analysisRunspacePool, pssaModuleInfo) => _rulesToInclude = rulesToInclude;
 
         private PssaCmdletAnalysisEngine(
             ILogger logger,
             RunspacePool analysisRunspacePool,
             PSModuleInfo pssaModuleInfo,
             object analysisSettingsParameter)
-            : this(logger, analysisRunspacePool, pssaModuleInfo)
-        {
-            _settingsParameter = analysisSettingsParameter;
-        }
+            : this(logger, analysisRunspacePool, pssaModuleInfo) => _settingsParameter = analysisSettingsParameter;
 
         private PssaCmdletAnalysisEngine(
             ILogger logger,
@@ -178,7 +169,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                 return scriptDefinition;
             }
 
-            var psCommand = new PSCommand()
+            PSCommand psCommand = new PSCommand()
                 .AddCommand("Invoke-Formatter")
                 .AddParameter("ScriptDefinition", scriptDefinition)
                 .AddParameter("Settings", formatSettings);
@@ -198,7 +189,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 
             if (result.HasErrors)
             {
-                var errorBuilder = new StringBuilder().Append(s_indentJoin);
+                StringBuilder errorBuilder = new StringBuilder().Append(s_indentJoin);
                 foreach (ErrorRecord err in result.Errors)
                 {
                     errorBuilder.Append(err).Append(s_indentJoin);
@@ -243,7 +234,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                 return Task.FromResult(Array.Empty<ScriptFileMarker>());
             }
 
-            var command = new PSCommand()
+            PSCommand command = new PSCommand()
                 .AddCommand("Invoke-ScriptAnalyzer")
                 .AddParameter("ScriptDefinition", scriptContent)
                 .AddParameter("Severity", s_scriptMarkerLevels);
@@ -261,20 +252,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             return GetSemanticMarkersFromCommandAsync(command);
         }
 
-        public PssaCmdletAnalysisEngine RecreateWithNewSettings(string settingsPath)
-        {
-            return new PssaCmdletAnalysisEngine(_logger, _analysisRunspacePool, _pssaModuleInfo, settingsPath);
-        }
+        public PssaCmdletAnalysisEngine RecreateWithNewSettings(string settingsPath) => new(_logger, _analysisRunspacePool, _pssaModuleInfo, settingsPath);
 
-        public PssaCmdletAnalysisEngine RecreateWithNewSettings(Hashtable settingsHashtable)
-        {
-            return new PssaCmdletAnalysisEngine(_logger, _analysisRunspacePool, _pssaModuleInfo, settingsHashtable);
-        }
+        public PssaCmdletAnalysisEngine RecreateWithNewSettings(Hashtable settingsHashtable) => new(_logger, _analysisRunspacePool, _pssaModuleInfo, settingsHashtable);
 
-        public PssaCmdletAnalysisEngine RecreateWithRules(string[] rules)
-        {
-            return new PssaCmdletAnalysisEngine(_logger, _analysisRunspacePool, _pssaModuleInfo, rules);
-        }
+        public PssaCmdletAnalysisEngine RecreateWithRules(string[] rules) => new(_logger, _analysisRunspacePool, _pssaModuleInfo, rules);
 
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
@@ -293,11 +275,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         }
 
         // This code added to correctly implement the disposable pattern.
-        public void Dispose()
-        {
+        public void Dispose() =>
             // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
             Dispose(true);
-        }
 
         #endregion
 
@@ -306,9 +286,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             PowerShellResult result = await InvokePowerShellAsync(command).ConfigureAwait(false);
 
             IReadOnlyCollection<PSObject> diagnosticResults = result?.Output ?? s_emptyDiagnosticResult;
-            _logger.LogDebug(String.Format("Found {0} violations", diagnosticResults.Count));
+            _logger.LogDebug(string.Format("Found {0} violations", diagnosticResults.Count));
 
-            var scriptMarkers = new ScriptFileMarker[diagnosticResults.Count];
+            ScriptFileMarker[] scriptMarkers = new ScriptFileMarker[diagnosticResults.Count];
             int i = 0;
             foreach (PSObject diagnostic in diagnosticResults)
             {
@@ -319,41 +299,36 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             return scriptMarkers;
         }
 
-        private Task<PowerShellResult> InvokePowerShellAsync(PSCommand command)
-        {
-            return Task.Run(() => InvokePowerShell(command));
-        }
+        private Task<PowerShellResult> InvokePowerShellAsync(PSCommand command) => Task.Run(() => InvokePowerShell(command));
 
         private PowerShellResult InvokePowerShell(PSCommand command)
         {
-            using (var powerShell = System.Management.Automation.PowerShell.Create(RunspaceMode.NewRunspace))
+            using System.Management.Automation.PowerShell powerShell = System.Management.Automation.PowerShell.Create(RunspaceMode.NewRunspace);
+            powerShell.RunspacePool = _analysisRunspacePool;
+            powerShell.Commands = command;
+            PowerShellResult result = null;
+            try
             {
-                powerShell.RunspacePool = _analysisRunspacePool;
-                powerShell.Commands = command;
-                PowerShellResult result = null;
-                try
-                {
-                    Collection<PSObject> output = InvokePowerShellWithModulePathPreservation(powerShell);
-                    PSDataCollection<ErrorRecord> errors = powerShell.Streams.Error;
-                    result = new PowerShellResult(output, errors, powerShell.HadErrors);
-                }
-                catch (CommandNotFoundException ex)
-                {
-                    // This exception is possible if the module path loaded
-                    // is wrong even though PSScriptAnalyzer is available as a module
-                    _logger.LogError(ex.Message);
-                }
-                catch (CmdletInvocationException ex)
-                {
-                    // We do not want to crash EditorServices for exceptions caused by cmdlet invocation.
-                    // Two main reasons that cause the exception are:
-                    // * PSCmdlet.WriteOutput being called from another thread than Begin/Process
-                    // * CompositionContainer.ComposeParts complaining that "...Only one batch can be composed at a time"
-                    _logger.LogError(ex.Message);
-                }
-
-                return result;
+                Collection<PSObject> output = InvokePowerShellWithModulePathPreservation(powerShell);
+                PSDataCollection<ErrorRecord> errors = powerShell.Streams.Error;
+                result = new PowerShellResult(output, errors, powerShell.HadErrors);
             }
+            catch (CommandNotFoundException ex)
+            {
+                // This exception is possible if the module path loaded
+                // is wrong even though PSScriptAnalyzer is available as a module
+                _logger.LogError(ex.Message);
+            }
+            catch (CmdletInvocationException ex)
+            {
+                // We do not want to crash EditorServices for exceptions caused by cmdlet invocation.
+                // Two main reasons that cause the exception are:
+                // * PSCmdlet.WriteOutput being called from another thread than Begin/Process
+                // * CompositionContainer.ComposeParts complaining that "...Only one batch can be composed at a time"
+                _logger.LogError(ex.Message);
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -387,7 +362,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                 throw new FileNotFoundException("Unable to find loaded PSScriptAnalyzer module for logging");
             }
 
-            var sb = new StringBuilder();
+            StringBuilder sb = new();
             sb.AppendLine("PSScriptAnalyzer successfully imported:");
 
             // Log version
@@ -425,8 +400,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                 return Enumerable.Empty<string>();
             }
 
-            var ruleNames = new List<string>(getRuleResult.Output.Count);
-            foreach (var rule in getRuleResult.Output)
+            List<string> ruleNames = new(getRuleResult.Output.Count);
+            foreach (PSObject rule in getRuleResult.Output)
             {
                 ruleNames.Add((string)rule.Members["RuleName"].Value);
             }
@@ -441,55 +416,53 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         /// <returns>A runspace pool with PSScriptAnalyzer loaded for running script analysis tasks.</returns>
         private static RunspacePool CreatePssaRunspacePool(out PSModuleInfo pssaModuleInfo)
         {
-            using (var ps = System.Management.Automation.PowerShell.Create(RunspaceMode.NewRunspace))
+            using System.Management.Automation.PowerShell ps = System.Management.Automation.PowerShell.Create(RunspaceMode.NewRunspace);
+            // Run `Get-Module -ListAvailable -Name "PSScriptAnalyzer"`
+            ps.AddCommand("Get-Module")
+                .AddParameter("ListAvailable")
+                .AddParameter("Name", PSSA_MODULE_NAME);
+
+            try
             {
-                // Run `Get-Module -ListAvailable -Name "PSScriptAnalyzer"`
-                ps.AddCommand("Get-Module")
-                    .AddParameter("ListAvailable")
-                    .AddParameter("Name", PSSA_MODULE_NAME);
-
-                try
-                {
-                    using (PSModulePathPreserver.Take())
-                    {
-                        // Get the latest version of PSScriptAnalyzer we can find
-                        pssaModuleInfo = ps.Invoke<PSModuleInfo>()?
-                            .OrderByDescending(moduleInfo => moduleInfo.Version)
-                            .FirstOrDefault();
-                    }
-                }
-                catch (Exception e)
-                {
-                    throw new FileNotFoundException("Unable to find PSScriptAnalyzer module on the module path", e);
-                }
-
-                if (pssaModuleInfo == null)
-                {
-                    throw new FileNotFoundException("Unable to find PSScriptAnalyzer module on the module path");
-                }
-
-                // Now that we know where the PSScriptAnalyzer we want to use is, create a base
-                // session state with PSScriptAnalyzer loaded
-                //
-                // We intentionally use `CreateDefault2()` as it loads `Microsoft.PowerShell.Core`
-                // only, which is a more minimal and therefore safer state.
-                InitialSessionState sessionState = InitialSessionState.CreateDefault2();
-
-                sessionState.ImportPSModule(new [] { pssaModuleInfo.ModuleBase });
-
-                RunspacePool runspacePool = RunspaceFactory.CreateRunspacePool(sessionState);
-
-                runspacePool.SetMaxRunspaces(1);
-                runspacePool.ThreadOptions = PSThreadOptions.ReuseThread;
-
-                // Open the runspace pool here so we can deterministically handle the PSModulePath change issue
                 using (PSModulePathPreserver.Take())
                 {
-                    runspacePool.Open();
+                    // Get the latest version of PSScriptAnalyzer we can find
+                    pssaModuleInfo = ps.Invoke<PSModuleInfo>()?
+                        .OrderByDescending(moduleInfo => moduleInfo.Version)
+                        .FirstOrDefault();
                 }
-
-                return runspacePool;
             }
+            catch (Exception e)
+            {
+                throw new FileNotFoundException("Unable to find PSScriptAnalyzer module on the module path", e);
+            }
+
+            if (pssaModuleInfo == null)
+            {
+                throw new FileNotFoundException("Unable to find PSScriptAnalyzer module on the module path");
+            }
+
+            // Now that we know where the PSScriptAnalyzer we want to use is, create a base
+            // session state with PSScriptAnalyzer loaded
+            //
+            // We intentionally use `CreateDefault2()` as it loads `Microsoft.PowerShell.Core`
+            // only, which is a more minimal and therefore safer state.
+            InitialSessionState sessionState = InitialSessionState.CreateDefault2();
+
+            sessionState.ImportPSModule(new[] { pssaModuleInfo.ModuleBase });
+
+            RunspacePool runspacePool = RunspaceFactory.CreateRunspacePool(sessionState);
+
+            runspacePool.SetMaxRunspaces(1);
+            runspacePool.ThreadOptions = PSThreadOptions.ReuseThread;
+
+            // Open the runspace pool here so we can deterministically handle the PSModulePath change issue
+            using (PSModulePathPreserver.Take())
+            {
+                runspacePool.Open();
+            }
+
+            return runspacePool;
         }
 
         /// <summary>
@@ -524,7 +497,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         /// </remarks>
         private struct PSModulePathPreserver : IDisposable
         {
-            private static object s_psModulePathMutationLock = new object();
+            private static readonly object s_psModulePathMutationLock = new();
 
             public static PSModulePathPreserver Take()
             {
@@ -534,10 +507,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 
             private readonly string _psModulePath;
 
-            private PSModulePathPreserver(string psModulePath)
-            {
-                _psModulePath = psModulePath;
-            }
+            private PSModulePathPreserver(string psModulePath) => _psModulePath = psModulePath;
 
             public void Dispose()
             {

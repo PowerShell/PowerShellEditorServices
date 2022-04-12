@@ -10,9 +10,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// </summary>
     internal class FindSymbolVisitor : AstVisitor
     {
-        private int lineNumber;
-        private int columnNumber;
-        private bool includeFunctionDefinitions;
+        private readonly int lineNumber;
+        private readonly int columnNumber;
+        private readonly bool includeFunctionDefinitions;
 
         public SymbolReference FoundSymbolReference { get; private set; }
 
@@ -36,9 +36,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         {
             Ast commandNameAst = commandAst.CommandElements[0];
 
-            if (this.IsPositionInExtent(commandNameAst.Extent))
+            if (IsPositionInExtent(commandNameAst.Extent))
             {
-                this.FoundSymbolReference =
+                FoundSymbolReference =
                     new SymbolReference(
                         SymbolType.Function,
                         commandNameAst.Extent);
@@ -59,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         {
             int startColumnNumber = 1;
 
-            if (!this.includeFunctionDefinitions)
+            if (!includeFunctionDefinitions)
             {
                 startColumnNumber =
                     functionDefinitionAst.Extent.Text.IndexOf(
@@ -76,9 +76,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 File = functionDefinitionAst.Extent.File
             };
 
-            if (this.IsPositionInExtent(nameExtent))
+            if (IsPositionInExtent(nameExtent))
             {
-                this.FoundSymbolReference =
+                FoundSymbolReference =
                     new SymbolReference(
                         SymbolType.Function,
                         nameExtent);
@@ -97,9 +97,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitCommandParameter(CommandParameterAst commandParameterAst)
         {
-            if (this.IsPositionInExtent(commandParameterAst.Extent))
+            if (IsPositionInExtent(commandParameterAst.Extent))
             {
-                this.FoundSymbolReference =
+                FoundSymbolReference =
                     new SymbolReference(
                         SymbolType.Parameter,
                         commandParameterAst.Extent);
@@ -116,9 +116,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
         {
-            if (this.IsPositionInExtent(variableExpressionAst.Extent))
+            if (IsPositionInExtent(variableExpressionAst.Extent))
             {
-                this.FoundSymbolReference =
+                FoundSymbolReference =
                     new SymbolReference(
                         SymbolType.Variable,
                         variableExpressionAst.Extent);
@@ -136,9 +136,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <returns>True if the given position is in the range of the element's extent </returns>
         private bool IsPositionInExtent(IScriptExtent extent)
         {
-            return (extent.StartLineNumber == lineNumber &&
+            return extent.StartLineNumber == lineNumber &&
                     extent.StartColumnNumber <= columnNumber &&
-                    extent.EndColumnNumber >= columnNumber);
+                    extent.EndColumnNumber >= columnNumber;
         }
     }
 }

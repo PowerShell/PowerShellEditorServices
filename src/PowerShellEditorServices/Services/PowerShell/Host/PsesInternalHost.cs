@@ -308,10 +308,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return task.Task;
         }
 
-        public void CancelCurrentTask()
-        {
-            _cancellationContext.CancelCurrentTask();
-        }
+        public void CancelCurrentTask() => _cancellationContext.CancelCurrentTask();
 
         public void CancelIdleParentTask()
         {
@@ -375,43 +372,37 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public Task ExecutePSCommandAsync(
             PSCommand psCommand,
             CancellationToken cancellationToken,
-            PowerShellExecutionOptions executionOptions = null)
-        {
-            return ExecutePSCommandAsync<PSObject>(psCommand, cancellationToken, executionOptions);
-        }
+            PowerShellExecutionOptions executionOptions = null) => ExecutePSCommandAsync<PSObject>(psCommand, cancellationToken, executionOptions);
 
         public TResult InvokeDelegate<TResult>(string representation, ExecutionOptions executionOptions, Func<CancellationToken, TResult> func, CancellationToken cancellationToken)
         {
-            var task = new SynchronousDelegateTask<TResult>(_logger, representation, executionOptions, func, cancellationToken);
+            SynchronousDelegateTask<TResult> task = new(_logger, representation, executionOptions, func, cancellationToken);
             return task.ExecuteAndGetResult(cancellationToken);
         }
 
         public void InvokeDelegate(string representation, ExecutionOptions executionOptions, Action<CancellationToken> action, CancellationToken cancellationToken)
         {
-            var task = new SynchronousDelegateTask(_logger, representation, executionOptions, action, cancellationToken);
+            SynchronousDelegateTask task = new(_logger, representation, executionOptions, action, cancellationToken);
             task.ExecuteAndGetResult(cancellationToken);
         }
 
         public IReadOnlyList<TResult> InvokePSCommand<TResult>(PSCommand psCommand, PowerShellExecutionOptions executionOptions, CancellationToken cancellationToken)
         {
-            var task = new SynchronousPowerShellTask<TResult>(_logger, this, psCommand, executionOptions, cancellationToken);
+            SynchronousPowerShellTask<TResult> task = new(_logger, this, psCommand, executionOptions, cancellationToken);
             return task.ExecuteAndGetResult(cancellationToken);
         }
 
-        public void InvokePSCommand(PSCommand psCommand, PowerShellExecutionOptions executionOptions, CancellationToken cancellationToken)
-        {
-            InvokePSCommand<PSObject>(psCommand, executionOptions, cancellationToken);
-        }
+        public void InvokePSCommand(PSCommand psCommand, PowerShellExecutionOptions executionOptions, CancellationToken cancellationToken) => InvokePSCommand<PSObject>(psCommand, executionOptions, cancellationToken);
 
         public TResult InvokePSDelegate<TResult>(string representation, ExecutionOptions executionOptions, Func<PowerShell, CancellationToken, TResult> func, CancellationToken cancellationToken)
         {
-            var task = new SynchronousPSDelegateTask<TResult>(_logger, this, representation, executionOptions, func, cancellationToken);
+            SynchronousPSDelegateTask<TResult> task = new(_logger, this, representation, executionOptions, func, cancellationToken);
             return task.ExecuteAndGetResult(cancellationToken);
         }
 
         public void InvokePSDelegate(string representation, ExecutionOptions executionOptions, Action<PowerShell, CancellationToken> action, CancellationToken cancellationToken)
         {
-            var task = new SynchronousPSDelegateTask(_logger, this, representation, executionOptions, action, cancellationToken);
+            SynchronousPSDelegateTask task = new(_logger, this, representation, executionOptions, action, cancellationToken);
             task.ExecuteAndGetResult(cancellationToken);
         }
 
@@ -810,7 +801,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             try
             {
                 // TODO: Should we cache PSCommands like this as static members?
-                var command = new PSCommand().AddCommand("prompt");
+                PSCommand command = new PSCommand().AddCommand("prompt");
                 IReadOnlyList<string> results = InvokePSCommand<string>(command, executionOptions: null, cancellationToken);
                 if (results?.Count > 0)
                 {
@@ -843,14 +834,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             UI.WriteLine(command.GetInvocationText());
         }
 
-        private string InvokeReadLine(CancellationToken cancellationToken)
-        {
-            return _readLineProvider.ReadLine.ReadLine(cancellationToken);
-        }
+        private string InvokeReadLine(CancellationToken cancellationToken) => _readLineProvider.ReadLine.ReadLine(cancellationToken);
 
         private void InvokeInput(string input, CancellationToken cancellationToken)
         {
-            var command = new PSCommand().AddScript(input, useLocalScope: false);
+            PSCommand command = new PSCommand().AddScript(input, useLocalScope: false);
             InvokePSCommand(command, new PowerShellExecutionOptions { AddToHistory = true, ThrowOnError = false, WriteOutputToHost = true }, cancellationToken);
         }
 
@@ -878,14 +866,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             // PowerShell.CreateNestedPowerShell() sets IsNested but not IsChild
             // This means it throws due to the parent pipeline not running...
             // So we must use the RunspaceMode.CurrentRunspace option on PowerShell.Create() instead
-            var pwsh = PowerShell.Create(RunspaceMode.CurrentRunspace);
+            PowerShell pwsh = PowerShell.Create(RunspaceMode.CurrentRunspace);
             pwsh.Runspace.ThreadOptions = PSThreadOptions.UseCurrentThread;
             return pwsh;
         }
 
         private static PowerShell CreatePowerShellForRunspace(Runspace runspace)
         {
-            var pwsh = PowerShell.Create();
+            PowerShell pwsh = PowerShell.Create();
             pwsh.Runspace = runspace;
             return pwsh;
         }
@@ -897,7 +885,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             Runspace runspace = CreateInitialRunspace(hostStartupInfo.InitialSessionState);
             PowerShell pwsh = CreatePowerShellForRunspace(runspace);
 
-            var engineIntrinsics = (EngineIntrinsics)runspace.SessionStateProxy.GetVariable("ExecutionContext");
+            EngineIntrinsics engineIntrinsics = (EngineIntrinsics)runspace.SessionStateProxy.GetVariable("ExecutionContext");
 
             if (hostStartupInfo.ConsoleReplEnabled)
             {
@@ -1103,10 +1091,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             }
         }
 
-        private void OnBreakpointUpdated(object sender, BreakpointUpdatedEventArgs breakpointUpdatedEventArgs)
-        {
-            DebugContext.HandleBreakpointUpdated(breakpointUpdatedEventArgs);
-        }
+        private void OnBreakpointUpdated(object sender, BreakpointUpdatedEventArgs breakpointUpdatedEventArgs) => DebugContext.HandleBreakpointUpdated(breakpointUpdatedEventArgs);
 
         private void OnRunspaceStateChanged(object sender, RunspaceStateEventArgs runspaceStateEventArgs)
         {
@@ -1166,7 +1151,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             psrlReadLine = null;
             try
             {
-                var psrlProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, s_bundledModulePath, pwsh);
+                PSReadLineProxy psrlProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, s_bundledModulePath, pwsh);
                 psrlReadLine = new PsrlReadLine(psrlProxy, this, engineIntrinsics, ReadKey, OnPowerShellIdle);
                 return true;
             }

@@ -84,7 +84,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// A variable container with all the filtered, auto variables for this stack frame.
         /// </param>
         /// <returns>A new instance of the StackFrameDetails class.</returns>
-        static internal StackFrameDetails Create(
+        internal static StackFrameDetails Create(
             PSObject callStackFrameObject,
             VariableContainerDetails autoVariables,
             VariableContainerDetails commandVariables)

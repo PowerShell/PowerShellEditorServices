@@ -43,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<List<PSCommandMessage>> Handle(GetCommandParams request, CancellationToken cancellationToken)
         {
-            PSCommand psCommand = new PSCommand();
+            PSCommand psCommand = new();
 
             // Executes the following:
             // Get-Command -CommandType Function,Cmdlet,ExternalScript | Sort-Object -Property Name
@@ -55,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             IEnumerable<CommandInfo> result = await _executionService.ExecutePSCommandAsync<CommandInfo>(psCommand, cancellationToken).ConfigureAwait(false);
 
-            var commandList = new List<PSCommandMessage>();
+            List<PSCommandMessage> commandList = new();
             if (result != null)
             {
                 foreach (CommandInfo command in result)

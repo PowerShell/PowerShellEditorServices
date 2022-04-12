@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                  scriptFile.FilePath.EndsWith(".psd1", StringComparison.OrdinalIgnoreCase)) ||
                  IsPowerShellDataFileAst(scriptFile.ScriptAst))
             {
-                var findHashtableSymbolsVisitor = new FindHashtableSymbolsVisitor();
+                FindHashtableSymbolsVisitor findHashtableSymbolsVisitor = new();
                 scriptFile.ScriptAst.Visit(findHashtableSymbolsVisitor);
                 return findHashtableSymbolsVisitor.SymbolReferences;
             }
@@ -37,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// </summary>
         /// <param name="ast">The abstract syntax tree of the given script</param>
         /// <returns>true if the AST represts a *.psd1 file, otherwise false</returns>
-        static public bool IsPowerShellDataFileAst(Ast ast)
+        public static bool IsPowerShellDataFileAst(Ast ast)
         {
             // sometimes we don't have reliable access to the filename
             // so we employ heuristics to check if the contents are
@@ -53,9 +53,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                         0);
         }
 
-        static private bool IsPowerShellDataFileAstNode(dynamic node, Type[] levelAstMap, int level)
+        private static bool IsPowerShellDataFileAstNode(dynamic node, Type[] levelAstMap, int level)
         {
-            var levelAstTypeMatch = node.Item.GetType().Equals(levelAstMap[level]);
+            dynamic levelAstTypeMatch = node.Item.GetType().Equals(levelAstMap[level]);
             if (!levelAstTypeMatch)
             {
                 return false;
@@ -66,10 +66,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 return levelAstTypeMatch;
             }
 
-            var astsFound = (node.Item as Ast).FindAll(a => a is Ast, false);
+            IEnumerable<Ast> astsFound = (node.Item as Ast).FindAll(a => a is Ast, false);
             if (astsFound != null)
             {
-                foreach (var astFound in astsFound)
+                foreach (Ast astFound in astsFound)
                 {
                     if (!astFound.Equals(node.Item)
                         && node.Item.Equals(astFound.Parent)

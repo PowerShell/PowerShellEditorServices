@@ -86,11 +86,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             string sourceLine = "")
         {
             // TODO: Verify params
-            this.SymbolType = symbolType;
-            this.SymbolName = symbolName;
-            this.ScriptRegion = ScriptRegion.Create(scriptExtent);
-            this.FilePath = filePath;
-            this.SourceLine = sourceLine;
+            SymbolType = symbolType;
+            SymbolName = symbolName;
+            ScriptRegion = ScriptRegion.Create(scriptExtent);
+            FilePath = filePath;
+            SourceLine = sourceLine;
 
             // TODO: Make sure end column number usage is correct
 

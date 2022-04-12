@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             int historyIndex = -1;
             IReadOnlyList<PSObject> currentHistory = null;
 
-            StringBuilder inputLine = new StringBuilder();
+            StringBuilder inputLine = new();
 
             int initialCursorCol = ConsoleProxy.GetCursorLeft(cancellationToken);
             int initialCursorRow = ConsoleProxy.GetCursorTop(cancellationToken);
@@ -420,11 +420,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             }
         }
 
-        private ConsoleKeyInfo InvokeReadKeyFunc()
-        {
+        private ConsoleKeyInfo InvokeReadKeyFunc() =>
             // intercept = false means we display the key in the console
-            return _readKeyFunc(/* intercept */ false);
-        }
+            _readKeyFunc(/* intercept */ false);
 
         private static int InsertInput(
             StringBuilder inputLine,
@@ -533,7 +531,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
         {
             cursorCol = promptStartCol + inputIndex;
             cursorRow = promptStartRow + cursorCol / consoleWidth;
-            cursorCol = cursorCol % consoleWidth;
+            cursorCol %= consoleWidth;
         }
     }
 }

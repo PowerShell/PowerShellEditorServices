@@ -39,10 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 new ParameterExpression[] { runspaceParam, basePromptParam }).Compile();
         }
 
-        public static void SetApartmentStateToSta(this Runspace runspace)
-        {
-            s_runspaceApartmentStateSetter?.Invoke(runspace, ApartmentState.STA);
-        }
+        public static void SetApartmentStateToSta(this Runspace runspace) => s_runspaceApartmentStateSetter?.Invoke(runspace, ApartmentState.STA);
 
         /// <summary>
         /// Augment a given prompt string with a remote decoration.
@@ -51,10 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         /// <param name="runspace">The runspace the prompt is for.</param>
         /// <param name="basePrompt">The base prompt to decorate.</param>
         /// <returns>A prompt string decorated with remote connection details.</returns>
-        public static string GetRemotePrompt(this Runspace runspace, string basePrompt)
-        {
-            return s_getRemotePromptFunc(runspace, basePrompt);
-        }
+        public static string GetRemotePrompt(this Runspace runspace, string basePrompt) => s_getRemotePromptFunc(runspace, basePrompt);
 
         public static void ThrowCancelledIfUnusable(this Runspace runspace)
             => runspace.RunspaceStateInfo.ThrowCancelledIfUnusable();
@@ -69,18 +63,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
         public static bool IsUsable(this RunspaceStateInfo runspaceStateInfo)
         {
-            switch (runspaceStateInfo.State)
+            return runspaceStateInfo.State switch
             {
-                case RunspaceState.Broken:
-                case RunspaceState.Closed:
-                case RunspaceState.Closing:
-                case RunspaceState.Disconnecting:
-                case RunspaceState.Disconnected:
-                    return false;
-
-                default:
-                    return true;
-            }
+                RunspaceState.Broken or RunspaceState.Closed or RunspaceState.Closing or RunspaceState.Disconnecting or RunspaceState.Disconnected => false,
+                _ => true,
+            };
         }
     }
 }
