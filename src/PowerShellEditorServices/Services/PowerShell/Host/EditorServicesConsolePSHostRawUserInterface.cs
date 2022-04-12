@@ -2,10 +2,8 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Management.Automation;
 using System.Management.Automation.Host;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 {
@@ -15,7 +13,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private readonly PSHostRawUserInterface _internalRawUI;
         private readonly ILogger _logger;
-        private KeyInfo? _lastKeyDown;
 
         #endregion
 
@@ -129,60 +126,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// </summary>
         /// <param name="options">Options for reading the current keypress.</param>
         /// <returns>A KeyInfo struct with details about the current keypress.</returns>
-        public override KeyInfo ReadKey(ReadKeyOptions options)
-        {
-            bool includeUp = (options & ReadKeyOptions.IncludeKeyUp) != 0;
-
-            // Key Up was requested and we have a cached key down we can return.
-            if (includeUp && _lastKeyDown != null)
-            {
-                KeyInfo info = _lastKeyDown.Value;
-                _lastKeyDown = null;
-                return new KeyInfo(
-                    info.VirtualKeyCode,
-                    info.Character,
-                    info.ControlKeyState,
-                    keyDown: false);
-            }
-
-            bool intercept = (options & ReadKeyOptions.NoEcho) != 0;
-            bool includeDown = (options & ReadKeyOptions.IncludeKeyDown) != 0;
-            if (!(includeDown || includeUp))
-            {
-                throw new PSArgumentException(
-                    "Cannot read key options. To read options, set one or both of the following: IncludeKeyDown, IncludeKeyUp.",
-                    nameof(options));
-            }
-
-            // Allow ControlC as input so we can emulate pipeline stop requests. We can't actually
-            // determine if a stop is requested without using non-public API's.
-            bool oldValue = System.Console.TreatControlCAsInput;
-            try
-            {
-                System.Console.TreatControlCAsInput = true;
-                ConsoleKeyInfo key = ConsoleProxy.SafeReadKey(intercept, default);
-
-                if (IsCtrlC(key))
-                {
-                    // Caller wants CtrlC as input so return it.
-                    if ((options & ReadKeyOptions.AllowCtrlC) != 0)
-                    {
-                        return ProcessKey(key, includeDown);
-                    }
-
-                    // Caller doesn't want CtrlC so throw a PipelineStoppedException to emulate
-                    // a real stop.  This will not show an exception to a script based caller and it
-                    // will avoid having to return something like default(KeyInfo).
-                    throw new PipelineStoppedException();
-                }
-
-                return ProcessKey(key, includeDown);
-            }
-            finally
-            {
-                System.Console.TreatControlCAsInput = oldValue;
-            }
-        }
+        public override KeyInfo ReadKey(ReadKeyOptions options) => _internalRawUI.ReadKey(options);
 
         /// <summary>
         /// Flushes the current input buffer.
@@ -251,6 +195,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// implementation for the process.
         /// </returns>
         public override int LengthInBufferCells(char source) => _internalRawUI.LengthInBufferCells(source);
+
         /// <summary>
         /// Determines the number of BufferCells a string occupies.
         /// </summary>
@@ -279,62 +224,5 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public override int LengthInBufferCells(string source, int offset) => _internalRawUI.LengthInBufferCells(source, offset);
 
         #endregion
-
-        /// <summary>
-        /// Determines if a key press represents the input Ctrl + C.
-        /// </summary>
-        /// <param name="keyInfo">The key to test.</param>
-        /// <returns>
-        /// <see langword="true" /> if the key represents the input Ctrl + C,
-        /// otherwise <see langword="false" />.
-        /// </returns>
-        private static bool IsCtrlC(ConsoleKeyInfo keyInfo)
-        {
-            // In the VSCode terminal Ctrl C is processed as virtual key code "3", which
-            // is not a named value in the ConsoleKey enum.
-            if ((int)keyInfo.Key == 3)
-            {
-                return true;
-            }
-
-            return keyInfo.Key == ConsoleKey.C && (keyInfo.Modifiers & ConsoleModifiers.Control) != 0;
-        }
-
-        /// <summary>
-        /// Converts <see cref="ConsoleKeyInfo" /> objects to <see cref="KeyInfo" /> objects and caches
-        /// key down events for the next key up request.
-        /// </summary>
-        /// <param name="key">The key to convert.</param>
-        /// <param name="isDown">
-        /// A value indicating whether the result should be a key down event.
-        /// </param>
-        /// <returns>The converted value.</returns>
-        private KeyInfo ProcessKey(ConsoleKeyInfo key, bool isDown)
-        {
-            // Translate ConsoleModifiers to ControlKeyStates
-            ControlKeyStates states = default;
-            if ((key.Modifiers & ConsoleModifiers.Alt) != 0)
-            {
-                states |= ControlKeyStates.LeftAltPressed;
-            }
-
-            if ((key.Modifiers & ConsoleModifiers.Control) != 0)
-            {
-                states |= ControlKeyStates.LeftCtrlPressed;
-            }
-
-            if ((key.Modifiers & ConsoleModifiers.Shift) != 0)
-            {
-                states |= ControlKeyStates.ShiftPressed;
-            }
-
-            KeyInfo result = new((int)key.Key, key.KeyChar, states, isDown);
-            if (isDown)
-            {
-                _lastKeyDown = result;
-            }
-
-            return result;
-        }
     }
 }

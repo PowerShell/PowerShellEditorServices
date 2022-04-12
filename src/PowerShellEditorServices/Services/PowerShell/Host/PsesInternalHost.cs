@@ -875,6 +875,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             }
         }
 
+        private static readonly ConsoleKeyInfo s_nullKeyInfo = new(
+            keyChar: ' ',
+            ConsoleKey.DownArrow,
+            shift: false,
+            alt: false,
+            control: false);
+
         private ConsoleKeyInfo ReadKey(bool intercept)
         {
             // PSRL doesn't tell us when CtrlC was sent.
@@ -887,19 +894,33 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             // PSReadLine's thread waiting on Console.ReadKey to return. Normally we'd just cancel
             // this call, but the .NET API ReadKey is not cancellable, and is stuck until we send
             // input. This leads to a myriad of problems, but we circumvent them by pretending to
-            // press a key.
+            // press a key, thus allowing ReadKey to return, and us to ignore it.
             using CancellationTokenRegistration registration = _readKeyCancellationToken.Register(
-                () => _languageServer?.SendNotification("powerShell/sendKeyPress")
-            );
-            _lastKey = ConsoleProxy.SafeReadKey(intercept, _readKeyCancellationToken);
-            return _lastKey.Value;
+                () => _languageServer?.SendNotification("powerShell/sendKeyPress"));
+
+            // TODO: We may want to allow users of PSES to override this method call.
+            _lastKey = System.Console.ReadKey(intercept);
+
+            // TODO: After fixing PSReadLine so that when canceled it doesn't read a key, we can
+            // stop using s_nullKeyInfo (which is a down arrow so we don't change the buffer
+            // content). Without this, the sent key press is translated to an @ symbol.
+            return _readKeyCancellationToken.IsCancellationRequested ? s_nullKeyInfo : _lastKey.Value;
         }
 
-        private bool LastKeyWasCtrlC()
+        internal ConsoleKeyInfo ReadKey(bool intercept, CancellationToken cancellationToken)
         {
-            return _lastKey.HasValue
-                && _lastKey.Value.IsCtrlC();
+            try
+            {
+                _readKeyCancellationToken = cancellationToken;
+                return ReadKey(intercept);
+            }
+            finally
+            {
+                _readKeyCancellationToken = CancellationToken.None;
+            }
         }
+
+        private bool LastKeyWasCtrlC() => _lastKey.HasValue && _lastKey.Value.IsCtrlC();
 
         private void StopDebugContext()
         {
