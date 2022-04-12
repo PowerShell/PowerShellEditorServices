@@ -1103,9 +1103,8 @@ CanSendDefinitionRequest
                         })
                     .Returning<GetProjectTemplatesResponse>(CancellationToken.None).ConfigureAwait(true);
 
-            Assert.Collection(getProjectTemplatesResponse.Templates.OrderBy(t => t.Title),
-                template1 => Assert.Equal("AddPSScriptAnalyzerSettings", template1.Title),
-                template2 => Assert.Equal("New PowerShell Manifest Module", template2.Title));
+            Assert.Contains(getProjectTemplatesResponse.Templates, t => t.Title is "AddPSScriptAnalyzerSettings");
+            Assert.Contains(getProjectTemplatesResponse.Templates, t => t.Title is "New PowerShell Manifest Module");
         }
 
         [SkippableFact]
