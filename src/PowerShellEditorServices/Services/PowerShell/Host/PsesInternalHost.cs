@@ -73,6 +73,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private bool _skipNextPrompt;
 
+        private CancellationToken _readKeyCancellationToken;
+
         private bool _resettingRunspace;
 
         public PsesInternalHost(
@@ -114,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             DebugContext = new PowerShellDebugContext(loggerFactory, this);
             UI = hostInfo.ConsoleReplEnabled
-                ? new EditorServicesConsolePSHostUserInterface(loggerFactory, _readLineProvider, hostInfo.PSHost.UI)
+                ? new EditorServicesConsolePSHostUserInterface(loggerFactory, hostInfo.PSHost.UI)
                 : new NullPSHostUI();
         }
 
@@ -690,7 +692,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             UI.WriteLine(command.GetInvocationText());
         }
 
-        private string InvokeReadLine(CancellationToken cancellationToken) => _readLineProvider.ReadLine.ReadLine(cancellationToken);
+        private string InvokeReadLine(CancellationToken cancellationToken)
+        {
+            try
+            {
+                _readKeyCancellationToken = cancellationToken;
+                return _readLineProvider.ReadLine.ReadLine(cancellationToken);
+            }
+            finally
+            {
+                _readKeyCancellationToken = CancellationToken.None;
+            }
+        }
 
         private void InvokeInput(string input, CancellationToken cancellationToken)
         {
@@ -862,6 +875,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             }
         }
 
+        private static readonly ConsoleKeyInfo s_nullKeyInfo = new(
+            keyChar: ' ',
+            ConsoleKey.DownArrow,
+            shift: false,
+            alt: false,
+            control: false);
+
         private ConsoleKeyInfo ReadKey(bool intercept)
         {
             // PSRL doesn't tell us when CtrlC was sent.
@@ -869,15 +889,38 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             // This isn't functionally required,
             // but helps us determine when the prompt needs a newline added
 
-            _lastKey = ConsoleProxy.SafeReadKey(intercept, CancellationToken.None);
-            return _lastKey.Value;
+            // NOTE: This requests that the client (the Code extension) send a non-printing key back
+            // to the terminal on stdin, emulating a user pressing a button. This allows
+            // PSReadLine's thread waiting on Console.ReadKey to return. Normally we'd just cancel
+            // this call, but the .NET API ReadKey is not cancellable, and is stuck until we send
+            // input. This leads to a myriad of problems, but we circumvent them by pretending to
+            // press a key, thus allowing ReadKey to return, and us to ignore it.
+            using CancellationTokenRegistration registration = _readKeyCancellationToken.Register(
+                () => _languageServer?.SendNotification("powerShell/sendKeyPress"));
+
+            // TODO: We may want to allow users of PSES to override this method call.
+            _lastKey = System.Console.ReadKey(intercept);
+
+            // TODO: After fixing PSReadLine so that when canceled it doesn't read a key, we can
+            // stop using s_nullKeyInfo (which is a down arrow so we don't change the buffer
+            // content). Without this, the sent key press is translated to an @ symbol.
+            return _readKeyCancellationToken.IsCancellationRequested ? s_nullKeyInfo : _lastKey.Value;
         }
 
-        private bool LastKeyWasCtrlC()
+        internal ConsoleKeyInfo ReadKey(bool intercept, CancellationToken cancellationToken)
         {
-            return _lastKey.HasValue
-                && _lastKey.Value.IsCtrlC();
+            try
+            {
+                _readKeyCancellationToken = cancellationToken;
+                return ReadKey(intercept);
+            }
+            finally
+            {
+                _readKeyCancellationToken = CancellationToken.None;
+            }
         }
+
+        private bool LastKeyWasCtrlC() => _lastKey.HasValue && _lastKey.Value.IsCtrlC();
 
         private void StopDebugContext()
         {

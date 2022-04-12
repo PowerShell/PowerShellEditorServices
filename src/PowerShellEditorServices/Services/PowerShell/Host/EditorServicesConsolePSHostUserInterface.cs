@@ -8,16 +8,12 @@ using System.Collections.ObjectModel;
 using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Security;
-using System.Threading;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 {
     internal class EditorServicesConsolePSHostUserInterface : PSHostUserInterface
     {
-        private readonly IReadLineProvider _readLineProvider;
-
         private readonly PSHostUserInterface _underlyingHostUI;
 
         /// <summary>
@@ -28,10 +24,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public EditorServicesConsolePSHostUserInterface(
             ILoggerFactory loggerFactory,
-            IReadLineProvider readLineProvider,
             PSHostUserInterface underlyingHostUI)
         {
-            _readLineProvider = readLineProvider;
             _underlyingHostUI = underlyingHostUI;
             RawUI = new EditorServicesConsolePSHostRawUserInterface(loggerFactory, underlyingHostUI.RawUI);
         }
@@ -48,9 +42,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public override PSCredential PromptForCredential(string caption, string message, string userName, string targetName) => _underlyingHostUI.PromptForCredential(caption, message, userName, targetName);
 
-        public override string ReadLine() => _readLineProvider.ReadLine.ReadLine(CancellationToken.None);
+        public override string ReadLine() => _underlyingHostUI.ReadLine();
 
-        public override SecureString ReadLineAsSecureString() => _readLineProvider.ReadLine.ReadSecureLine(CancellationToken.None);
+        public override SecureString ReadLineAsSecureString() => _underlyingHostUI.ReadLineAsSecureString();
 
         public override void Write(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value) => _underlyingHostUI.Write(foregroundColor, backgroundColor, value);
 
