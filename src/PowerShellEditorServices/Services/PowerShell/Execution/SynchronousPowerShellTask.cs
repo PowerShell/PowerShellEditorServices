@@ -333,7 +333,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private void CancelNormalExecution()
         {
-            if (!_pwsh.Runspace.RunspaceStateInfo.IsUsable())
+            if (_pwsh?.Runspace?.RunspaceStateInfo?.IsUsable() is false)
             {
                 return;
             }
@@ -341,23 +341,32 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             // If we're signaled to exit a runspace then that'll trigger a stop,
             // if we block on that stop we'll never exit the runspace (
             // and essentially deadlock).
-            if (_frame.SessionExiting)
+            if (_frame?.SessionExiting is true)
             {
-                _pwsh.BeginStop(null, null);
+                _pwsh?.BeginStop(null, null);
                 return;
             }
 
-            _pwsh.Stop();
+            try
+            {
+                _pwsh?.Stop();
+            }
+            catch (NullReferenceException nre)
+            {
+                _logger.LogError(
+                    nre,
+                    "Null reference exception from PowerShell.Stop received.");
+            }
         }
 
         private void CancelDebugExecution()
         {
-            if (!_pwsh.Runspace.RunspaceStateInfo.IsUsable())
+            if (_pwsh?.Runspace?.RunspaceStateInfo?.IsUsable() is false)
             {
                 return;
             }
 
-            _pwsh.Runspace.Debugger.StopProcessCommand();
+            _pwsh?.Runspace?.Debugger?.StopProcessCommand();
         }
     }
 }

@@ -619,7 +619,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                     frame.Dispose();
                 }
             }
-            while (CurrentFrame.IsAwaitingPop);
+            while (_psFrameStack.Count > 0 && CurrentFrame.IsAwaitingPop);
         }
 
         private void RunTopLevelExecutionLoop()
