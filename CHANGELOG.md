@@ -1,5 +1,11 @@
 # PowerShell Editor Services Release History
 
+## v3.2.0
+### Tuesday, April 12, 2022
+
+- 🐛 🙏 [PowerShellEditorServices #1751](https://github.com/PowerShell/PowerShellEditorServices/pull/1751) - Re-workaround uncancellable `Console.ReadKey`.
+- 🐛 ‍🕵️ [PowerShellEditorServices #1749](https://github.com/PowerShell/PowerShellEditorServices/pull/1749) - Correctly map `SuggestedCorrection` to `MarkerCorrection`. (Thanks @bergmeister!)
+
 ## v3.1.6
 ### Thursday, March 24, 2022
 
