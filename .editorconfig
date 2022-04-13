@@ -56,26 +56,26 @@ dotnet_diagnostic.CA2016.severity = error
 # CS0618: A class member was marked with the Obsolete attribute
 dotnet_diagnostic.CS0618.severity = suggestion
 # CS0649: Uninitialized private or internal field declaration that is never assigned a value
-dotnet_diagnostic.CS0649.severity = warning
+dotnet_diagnostic.CS0649.severity = error
 # CS1998: This async method lacks 'await' operators and will run synchronously
 dotnet_diagnostic.CS1998.severity = suggestion
 # CS4014: Consider applying the await operator to the result of the call
 dotnet_diagnostic.CS4014.severity = suggestion
 
 # RCS1102: Make class static
-dotnet_diagnostic.RCS1102.severity = warning
+dotnet_diagnostic.RCS1102.severity = error
 # RCS1139: Add summary element to documentation comment
 dotnet_diagnostic.RCS1139.severity = silent
 # RCS1194: Implement exception constructors
 dotnet_diagnostic.RCS1194.severity = suggestion
 # RCS1210: Return completed task instead of returning null
-dotnet_diagnostic.RCS1210.severity = suggestion
+dotnet_diagnostic.RCS1210.severity = error
 # RCS1036: Remove unnecessary blank line
-dotnet_diagnostic.RCS1036.severity = warning
+dotnet_diagnostic.RCS1036.severity = error
 # RCS1075: Avoid empty catch clause that catches System.Exception
 dotnet_diagnostic.RCS1075.severity = suggestion
 # RCS1170: Use read-only auto-implemented property
-dotnet_diagnostic.RCS1170.severity = warning
+dotnet_diagnostic.RCS1170.severity = error
 
 # VSTHRD002: Avoid problematic synchronous waits
 dotnet_diagnostic.VSTHRD002.severity = suggestion
@@ -90,123 +90,123 @@ dotnet_diagnostic.VSTHRD103.severity = suggestion
 # VSTHRD110: Observe result of async calls
 dotnet_diagnostic.VSTHRD110.severity = suggestion
 # VSTHRD114: Avoid returning a null Task
-dotnet_diagnostic.VSTHRD114.severity = suggestion
+dotnet_diagnostic.VSTHRD114.severity = error
 # VSTHRD200: Use "Async" suffix for awaitable methods
 dotnet_diagnostic.VSTHRD200.severity = silent
 
 # xUnit2013: Do not use equality check to check for collection size
-dotnet_diagnostic.xUnit2013.severity = warning
+dotnet_diagnostic.xUnit2013.severity = error
 # xUnit1004: Test methods should not be skipped
 dotnet_diagnostic.xUnit1004.severity = suggestion
 
 # IDE0001: Simplify name
-dotnet_diagnostic.IDE0001.severity = warning
+dotnet_diagnostic.IDE0001.severity = error
 # IDE0002: Simplify member access
-dotnet_diagnostic.IDE0001.severity = warning
+dotnet_diagnostic.IDE0001.severity = error
 # IDE0003: Remove this or Me qualification
-dotnet_diagnostic.IDE0003.severity = warning
+dotnet_diagnostic.IDE0003.severity = error
 # IDE0004: Remove unnecessary cast
-dotnet_diagnostic.IDE0004.severity = warning
+dotnet_diagnostic.IDE0004.severity = error
 # IDE0005: Remove unnecessary import
-dotnet_diagnostic.IDE0005.severity = suggestion
+dotnet_diagnostic.IDE0005.severity = error
 # IDE0008: Use explicit type instead of var
-dotnet_diagnostic.IDE0008.severity = warning
+dotnet_diagnostic.IDE0008.severity = error
 # IDE0011: Add braces
-dotnet_diagnostic.IDE0011.severity = warning
+dotnet_diagnostic.IDE0011.severity = error
 # IDE0016: Use throw expression
-dotnet_diagnostic.IDE0016.severity = warning
+dotnet_diagnostic.IDE0016.severity = error
 # IDE0017: Use object initializers
-dotnet_diagnostic.IDE0017.severity = warning
+dotnet_diagnostic.IDE0017.severity = error
 # IDE0018: Inline variable declaration
-dotnet_diagnostic.IDE0018.severity = warning
+dotnet_diagnostic.IDE0018.severity = error
 # IDE0019: Use pattern matching to avoid 'as' followed by a 'null' check
-dotnet_diagnostic.IDE0019.severity = warning
+dotnet_diagnostic.IDE0019.severity = error
 # IDE0020: Use pattern matching to avoid 'is' check followed by a cast (with variable)
-dotnet_diagnostic.IDE0020.severity = warning
+dotnet_diagnostic.IDE0020.severity = error
 # IDE0021: Use expression body for constructors
-dotnet_diagnostic.IDE0021.severity = warning
+dotnet_diagnostic.IDE0021.severity = error
 # IDE0022: Use expression body for methods
-dotnet_diagnostic.IDE0022.severity = warning
+dotnet_diagnostic.IDE0022.severity = error
 # IDE0023: Use expression body for conversion operators
-dotnet_diagnostic.IDE0023.severity = warning
+dotnet_diagnostic.IDE0023.severity = error
 # IDE0024: Use expression body for operators
-dotnet_diagnostic.IDE0024.severity = warning
+dotnet_diagnostic.IDE0024.severity = error
 # IDE0025: Use expression body for properties
-dotnet_diagnostic.IDE0025.severity = warning
+dotnet_diagnostic.IDE0025.severity = error
 # IDE0026: Use expression body for indexers
-dotnet_diagnostic.IDE0026.severity = warning
+dotnet_diagnostic.IDE0026.severity = error
 # IDE0027: Use expression body for accessors
-dotnet_diagnostic.IDE0027.severity = warning
+dotnet_diagnostic.IDE0027.severity = error
 # IDE0028: Use collection initializers
-dotnet_diagnostic.IDE0028.severity = warning
+dotnet_diagnostic.IDE0028.severity = error
 # IDE0029: Use coalesce expression (non-nullable types)
-dotnet_diagnostic.IDE0029.severity = warning
+dotnet_diagnostic.IDE0029.severity = error
 # IDE0030: Use coalesce expression (nullable types)
-dotnet_diagnostic.IDE0030.severity = warning
+dotnet_diagnostic.IDE0030.severity = error
 # IDE0031: Use null propagation
-dotnet_diagnostic.IDE0031.severity = warning
+dotnet_diagnostic.IDE0031.severity = error
 # IDE0032: Use auto property
-dotnet_diagnostic.IDE0032.severity = warning
+dotnet_diagnostic.IDE0032.severity = error
 # IDE0033: Use explicitly provided tuple name
-dotnet_diagnostic.IDE0033.severity = warning
+dotnet_diagnostic.IDE0033.severity = error
 # IDE0034: Simplify 'default' expression
-dotnet_diagnostic.IDE0034.severity = warning
+dotnet_diagnostic.IDE0034.severity = error
 # IDE0035: Remove unreachable code
-dotnet_diagnostic.IDE0035.severity = warning
+dotnet_diagnostic.IDE0035.severity = error
 # IDE0036: Order modifiers
-dotnet_diagnostic.IDE0036.severity = warning
+dotnet_diagnostic.IDE0036.severity = error
 # IDE0037: Use inferred member name
-dotnet_diagnostic.IDE0037.severity = warning
+dotnet_diagnostic.IDE0037.severity = error
 # IDE0038: Use pattern matching to avoid is check followed by a cast (without variable)
-dotnet_diagnostic.IDE0038.severity = suggestion
+dotnet_diagnostic.IDE0038.severity = error
 # IDE0040: Add accessibility modifiers
-dotnet_diagnostic.IDE0040.severity = warning
+dotnet_diagnostic.IDE0040.severity = error
 # IDE0041: Use is null check
-dotnet_diagnostic.IDE0041.severity = warning
+dotnet_diagnostic.IDE0041.severity = error
 # IDE0042: Deconstruct variable declaration
-dotnet_diagnostic.IDE0042.severity = warning
+dotnet_diagnostic.IDE0042.severity = error
 # IDE0044: Add readonly modifier
-dotnet_diagnostic.IDE0044.severity = warning
+dotnet_diagnostic.IDE0044.severity = error
 # IDE0045: Use conditional expression for assignment
-dotnet_diagnostic.IDE0045.severity = warning
+dotnet_diagnostic.IDE0045.severity = error
 # IDE0046: Use conditional expression for return
 dotnet_diagnostic.IDE0046.severity = silent
 # IDE0047: Remove unnecessary parentheses
-dotnet_diagnostic.IDE0047.severity = warning
+dotnet_diagnostic.IDE0047.severity = error
 # IDE0049: Use language keywords instead of framework type names for type references
-dotnet_diagnostic.IDE0049.severity = warning
+dotnet_diagnostic.IDE0049.severity = error
 # IDE0051: Remove unused private member
-dotnet_diagnostic.IDE0051.severity = warning
+dotnet_diagnostic.IDE0051.severity = error
 # IDE0052: Remove unread private member
-dotnet_diagnostic.IDE0052.severity = suggestion
+dotnet_diagnostic.IDE0052.severity = error
 # IDE0053: Use expression body for lambdas
-dotnet_diagnostic.IDE0053.severity = warning
+dotnet_diagnostic.IDE0053.severity = error
 # IDE0054: Use compound assignment
-dotnet_diagnostic.IDE0054.severity = warning
+dotnet_diagnostic.IDE0054.severity = error
 # IDE0063: Use simple 'using' statement
-dotnet_diagnostic.IDE0063.severity = warning
+dotnet_diagnostic.IDE0063.severity = error
 # IDE0066: Use switch expression
-dotnet_diagnostic.IDE0066.severity = warning
+dotnet_diagnostic.IDE0066.severity = error
 # IDE0071: Simplify interpolation
-dotnet_diagnostic.IDE0071.severity = warning
+dotnet_diagnostic.IDE0071.severity = error
 # IDE0073: Require file header
-dotnet_diagnostic.IDE0073.severity = warning
+dotnet_diagnostic.IDE0073.severity = error
 # IDE0075: Simplify conditional expression
-dotnet_diagnostic.IDE0075.severity = warning
+dotnet_diagnostic.IDE0075.severity = error
 # IDE0078: Use pattern matching
-dotnet_diagnostic.IDE0078.severity = warning
+dotnet_diagnostic.IDE0078.severity = error
 # IDE0082: Convert typeof to nameof
-dotnet_diagnostic.IDE0082.severity = warning
+dotnet_diagnostic.IDE0082.severity = error
 # IDE0083: Use pattern matching (not operator)
-dotnet_diagnostic.IDE0083.severity = warning
+dotnet_diagnostic.IDE0083.severity = error
 # IDE0090: Simplify new expression
-dotnet_diagnostic.IDE0090.severity = warning
+dotnet_diagnostic.IDE0090.severity = error
 # IDE0100: Remove unnecessary equality operator
-dotnet_diagnostic.IDE0100.severity = warning
+dotnet_diagnostic.IDE0100.severity = error
 # IDE0110: Remove unnecessary discard
-dotnet_diagnostic.IDE0110.severity = warning
+dotnet_diagnostic.IDE0110.severity = error
 # IDE1005: Use conditional delegate call
-dotnet_diagnostic.IDE1005.severity = warning
+dotnet_diagnostic.IDE1005.severity = error
 
 [*.{json}]
 indent_size = 2

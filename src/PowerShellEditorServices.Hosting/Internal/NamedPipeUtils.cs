@@ -4,11 +4,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
-using System.Runtime.InteropServices;
 
 #if !CoreCLR
 using System.Security.Principal;
 using System.Security.AccessControl;
+#else
+using System.Runtime.InteropServices;
 #endif
 
 namespace Microsoft.PowerShell.EditorServices.Hosting

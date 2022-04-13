@@ -30,7 +30,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly PsesInternalHost _psesHost;
         private readonly ILanguageServerFacade _languageServer;
         private bool _profilesLoaded;
-        private readonly bool _extensionServiceInitialized;
         private bool _cwdSet;
 
         public PsesConfigurationHandler(
@@ -127,10 +126,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 _cwdSet = true;
             }
 
-            if (!_extensionServiceInitialized)
-            {
-                await _extensionService.InitializeAsync().ConfigureAwait(false);
-            }
+            await _extensionService.InitializeAsync().ConfigureAwait(false);
 
             // Run any events subscribed to configuration updates
             _logger.LogTrace("Running configuration update event handlers");

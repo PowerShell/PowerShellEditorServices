@@ -191,6 +191,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         [Parameter]
         public string StartupBanner { get; set; }
 
+#pragma warning disable IDE0022
         protected override void BeginProcessing()
         {
 #if DEBUG
@@ -203,10 +204,10 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 }
             }
 #endif
-
             // Set up logging now for use throughout startup
             StartLogging();
         }
+#pragma warning restore IDE0022
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Uses ThrowTerminatingError() instead")]
         protected override void EndProcessing()
