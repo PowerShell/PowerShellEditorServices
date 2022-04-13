@@ -32,7 +32,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
                     await _templateService.GetAvailableTemplatesAsync(
                         request.IncludeInstalledModules).ConfigureAwait(false);
 
-
                 return new GetProjectTemplatesResponse
                 {
                     Templates = availableTemplates

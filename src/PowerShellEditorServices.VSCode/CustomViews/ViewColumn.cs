@@ -1,9 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
-using System.Threading.Tasks;
-
 namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
 {
     /// <summary>

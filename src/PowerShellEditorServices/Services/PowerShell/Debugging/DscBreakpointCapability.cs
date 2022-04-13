@@ -10,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Management.Automation;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using System.Threading;
 using SMA = System.Management.Automation;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
@@ -95,10 +94,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
             if ((currentRunspace.PowerShellVersionDetails.Version.Major >= 6) &&
                 (currentRunspace.RunspaceOrigin != RunspaceOrigin.DebuggedRunspace))
             {
-                return null;
+                return Task.FromResult<DscBreakpointCapability>(null);
             }
 
-            Func<SMA.PowerShell, CancellationToken, DscBreakpointCapability> getDscBreakpointCapabilityFunc = (pwsh, cancellationToken) =>
+            Func<SMA.PowerShell, CancellationToken, DscBreakpointCapability> getDscBreakpointCapabilityFunc = (pwsh, _) =>
             {
                 PSInvocationSettings invocationSettings = new()
                 {
@@ -122,7 +121,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
                 if (dscModule == null)
                 {
-                    logger.LogTrace($"Side-by-side DSC module was not found.");
+                    logger.LogTrace("Side-by-side DSC module was not found.");
                     return null;
                 }
 
@@ -151,7 +150,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
                 if (resourcePaths == null)
                 {
-                    logger.LogTrace($"No DSC resources found.");
+                    logger.LogTrace("No DSC resources found.");
                     return null;
                 }
 

@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Utility;
@@ -16,16 +15,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class StackTraceHandler : IStackTraceHandler
     {
-        private readonly ILogger _logger;
         private readonly DebugService _debugService;
 
-        public StackTraceHandler(
-            ILoggerFactory loggerFactory,
-            DebugService debugService)
-        {
-            _logger = loggerFactory.CreateLogger<StackTraceHandler>();
-            _debugService = debugService;
-        }
+        public StackTraceHandler(DebugService debugService) => _debugService = debugService;
 
         public Task<StackTraceResponse> Handle(StackTraceArguments request, CancellationToken cancellationToken)
         {

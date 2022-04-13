@@ -40,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                _logger.LogDebug("Hover request canceled for file: {0}", request.TextDocument.Uri);
+                _logger.LogDebug("Hover request canceled for file: {Uri}", request.TextDocument.Uri);
                 return null;
             }
 
@@ -57,8 +57,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return null;
             }
 
-            List<MarkedString> symbolInfo = new();
-            symbolInfo.Add(new MarkedString("PowerShell", symbolDetails.DisplayString));
+            List<MarkedString> symbolInfo = new()
+            {
+                new MarkedString("PowerShell", symbolDetails.DisplayString)
+            };
 
             if (!string.IsNullOrEmpty(symbolDetails.Documentation))
             {

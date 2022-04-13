@@ -128,8 +128,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             CommandBreakpointDetails[] breakpointDetails = request.Breakpoints
                 .Select((funcBreakpoint) => CommandBreakpointDetails.Create(
                     funcBreakpoint.Name,
-                    funcBreakpoint.Condition,
-                    funcBreakpoint.HitCondition))
+                    funcBreakpoint.Condition))
                 .ToArray();
 
             // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
@@ -147,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 catch (Exception e)
                 {
                     // Log whatever the error is
-                    _logger.LogException($"Caught error while setting command breakpoints", e);
+                    _logger.LogException("Caught error while setting command breakpoints", e);
                 }
                 finally
                 {

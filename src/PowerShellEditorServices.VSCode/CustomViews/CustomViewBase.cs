@@ -13,9 +13,9 @@ namespace Microsoft.PowerShell.EditorServices.VSCode.CustomViews
 
         public Guid Id { get; private set; }
 
-        public string Title { get; private set; }
+        public string Title { get; }
 
-        protected CustomViewType ViewType { get; private set; }
+        protected CustomViewType ViewType { get; }
 
         public CustomViewBase(
             string viewTitle,

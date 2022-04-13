@@ -5,7 +5,6 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Utility;
@@ -15,16 +14,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class VariablesHandler : IVariablesHandler
     {
-        private readonly ILogger _logger;
         private readonly DebugService _debugService;
 
-        public VariablesHandler(
-            ILoggerFactory loggerFactory,
-            DebugService debugService)
-        {
-            _logger = loggerFactory.CreateLogger<VariablesHandler>();
-            _debugService = debugService;
-        }
+        public VariablesHandler(DebugService debugService) => _debugService = debugService;
 
         public Task<VariablesResponse> Handle(VariablesArguments request, CancellationToken cancellationToken)
         {

@@ -9,7 +9,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {
     /// <summary>
-    /// The vistor used to find the dot-sourced files in an AST
+    /// The visitor used to find the dot-sourced files in an AST
     /// </summary>
     internal class FindDotSourcedVisitor : AstVisitor
     {
@@ -18,7 +18,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <summary>
         /// A hash set of the dot sourced files (because we don't want duplicates)
         /// </summary>
-        public HashSet<string> DotSourcedFiles { get; private set; }
+        public HashSet<string> DotSourcedFiles { get; }
 
         /// <summary>
         /// Creates a new instance of the FindDotSourcedVisitor class.

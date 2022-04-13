@@ -14,7 +14,6 @@ namespace PSLanguageService.Test
 {
     public class ScriptFileChangeTests
     {
-
 #if CoreCLR
         private static readonly Version PowerShellVersion = new(7, 2);
 #else
@@ -579,10 +578,10 @@ First line
         [Fact]
         public void PropertiesInitializedCorrectlyForUntitled()
         {
-            string path = "untitled:untitled-1";
+            const string path = "untitled:untitled-1";
 
             // 3 lines and 10 tokens in this script.
-            string script = @"function foo() {
+            const string script = @"function foo() {
     'foo'
 }";
 
@@ -602,7 +601,7 @@ First line
 
         [Trait("Category", "ScriptFile")]
         [Fact]
-        public void DocumentUriRetunsCorrectStringForAbsolutePath()
+        public void DocumentUriReturnsCorrectStringForAbsolutePath()
         {
             string path;
             ScriptFile scriptFile;

@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
@@ -79,8 +78,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <returns>A named pipe name or name suffix that is safe to you.</returns>
         public static string GenerateValidNamedPipeName(IReadOnlyCollection<string> prefixes = null)
         {
-            int tries = 0;
-            do
+            for (int i = 0; i < 10; i++)
             {
                 string pipeName = $"PSES_{Path.GetRandomFileName()}";
 
@@ -111,8 +109,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 {
                     return pipeName;
                 }
-
-            } while (tries < 10);
+            }
 
             throw new IOException("Unable to create named pipe; no available names");
         }
@@ -146,7 +143,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 return Path.Combine(Path.GetTempPath(), $"CoreFxPipe_{pipeName}");
             }
 #endif
-
             return $@"\\.\pipe\{pipeName}";
         }
     }

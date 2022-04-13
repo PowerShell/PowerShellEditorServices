@@ -28,7 +28,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// </summary>
     public sealed class EditorServicesLoader : IDisposable
     {
-
 #if !CoreCLR
         private const int Net461Version = 394254;
 
@@ -92,7 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 };
             }
 
-            AssemblyLoadContext.Default.Resolving += (AssemblyLoadContext defaultLoadContext, AssemblyName asmName) =>
+            AssemblyLoadContext.Default.Resolving += (AssemblyLoadContext _, AssemblyName asmName) =>
             {
 #if DEBUG
                 logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {asmName}. Stacktrace:\n{new StackTrace()}");

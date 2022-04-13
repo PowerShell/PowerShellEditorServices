@@ -12,7 +12,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
     [AttributeUsage(AttributeTargets.Class)]
     public sealed class EditorCommandAttribute : Attribute
     {
-
         #region Properties
 
         /// <summary>

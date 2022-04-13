@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.PowerShell.EditorServices.Extensions;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -21,17 +20,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 
         private readonly ILanguageServerFacade _languageServer;
 
-        private readonly IInternalPowerShellExecutionService _executionService;
-
         public EditorOperationsService(
             PsesInternalHost psesHost,
             WorkspaceService workspaceService,
-            IInternalPowerShellExecutionService executionService,
             ILanguageServerFacade languageServer)
         {
             _psesHost = psesHost;
             _workspaceService = workspaceService;
-            _executionService = executionService;
             _languageServer = languageServer;
         }
 
@@ -40,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer())
             {
                 return null;
-            };
+            }
 
             ClientEditorContext clientContext =
                 await _languageServer.SendRequest(
@@ -57,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest("editor/insertText", new InsertTextRequest
             {
@@ -85,7 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest("editor/setSelection", new SetSelectionRequest
             {
@@ -133,7 +128,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest<string>("editor/newFile", null)
                 .ReturningVoid(CancellationToken.None)
@@ -145,7 +140,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest("editor/openFile", new OpenFileDetails
             {
@@ -159,7 +154,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest("editor/openFile", new OpenFileDetails
             {
@@ -173,7 +168,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest("editor/closeFile", filePath)
                 .ReturningVoid(CancellationToken.None)
@@ -187,7 +182,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest("editor/saveFile", new SaveFileDetails
             {
@@ -205,7 +200,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest("editor/showInformationMessage", message)
                 .ReturningVoid(CancellationToken.None)
@@ -217,7 +212,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest("editor/showErrorMessage", message)
                 .ReturningVoid(CancellationToken.None)
@@ -229,7 +224,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest("editor/showWarningMessage", message)
                 .ReturningVoid(CancellationToken.None)

@@ -11,7 +11,6 @@ using Microsoft.PowerShell.EditorServices.Logging;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Workspace
 {
-
     /// <summary>
     /// A FileSystem wrapper class which only returns files and directories that the consumer is interested in,
     /// with a maximum recursion depth and silently ignores most file system errors. Typically this is used by the

@@ -238,13 +238,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     openBraceSettings["NewLineAfter"] = true;
                     closeBraceSettings["NewLineAfter"] = true;
                     break;
-
-                case CodeFormattingPreset.Custom:
-                default:
-                    break;
             }
 
-            logger.LogDebug("Created formatting hashtable: {0}", JsonConvert.SerializeObject(settings));
+            logger.LogDebug("Created formatting hashtable: {Settings}", JsonConvert.SerializeObject(settings));
             return settings;
         }
 

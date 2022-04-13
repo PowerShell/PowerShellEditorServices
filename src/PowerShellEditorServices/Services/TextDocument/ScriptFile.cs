@@ -42,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// Gets the path at which this file resides.
         /// </summary>
-        public string FilePath { get; private set; }
+        public string FilePath { get; }
 
         /// <summary>
         /// Gets the file path in LSP DocumentUri form.  The ClientPath property must not be null.
@@ -60,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// Gets a boolean that determines whether this file is
         /// in-memory or not (either unsaved or non-file content).
         /// </summary>
-        public bool IsInMemory { get; private set; }
+        public bool IsInMemory { get; }
 
         /// <summary>
         /// Gets a string containing the full contents of the file.
@@ -217,7 +217,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         public string GetLine(int lineNumber)
         {
             Validate.IsWithinRange(
-                "lineNumber", lineNumber,
+                nameof(lineNumber), lineNumber,
                 1, FileLines.Count + 1);
 
             return FileLines[lineNumber - 1];
@@ -310,10 +310,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             if (fileChange.IsReload)
             {
                 FileLines.Clear();
-                foreach (string changeLine in changeLines)
-                {
-                    FileLines.Add(changeLine);
-                }
+                FileLines.AddRange(changeLines);
             }
             else
             {
@@ -398,8 +395,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <returns>The zero-based offset for the given file position.</returns>
         public int GetOffsetAtPosition(int lineNumber, int columnNumber)
         {
-            Validate.IsWithinRange("lineNumber", lineNumber, 1, FileLines.Count + 1);
-            Validate.IsGreaterThan("columnNumber", columnNumber, 0);
+            Validate.IsWithinRange(nameof(lineNumber), lineNumber, 1, FileLines.Count + 1);
+            Validate.IsGreaterThan(nameof(columnNumber), columnNumber, 0);
 
             int offset = 0;
 

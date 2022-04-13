@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System.Management.Automation;
-using System.Security.Cryptography;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Utility;
 
@@ -20,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// If 'IsRemoteSession' returns true, this path will be a local filesystem
         /// path containing the contents of the script that is executing remotely.
         /// </summary>
-        public string ScriptPath { get; private set; }
+        public string ScriptPath { get; }
 
         /// <summary>
         /// Returns true if the breakpoint was raised from a remote debugging session.
@@ -30,12 +29,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <summary>
         /// Gets the original script path if 'IsRemoteSession' returns true.
         /// </summary>
-        public string RemoteScriptPath { get; private set; }
+        public string RemoteScriptPath { get; }
 
         /// <summary>
         /// Gets the RunspaceDetails for the current runspace.
         /// </summary>
-        public IRunspaceInfo RunspaceInfo { get; private set; }
+        public IRunspaceInfo RunspaceInfo { get; }
 
         /// <summary>
         /// Gets the line number at which the debugger stopped execution.
@@ -50,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <summary>
         /// Gets the original DebuggerStopEventArgs from the PowerShell engine.
         /// </summary>
-        public DebuggerStopEventArgs OriginalEvent { get; private set; }
+        public DebuggerStopEventArgs OriginalEvent { get; }
 
         #endregion
 

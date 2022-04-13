@@ -8,7 +8,6 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 {
-
     /// <summary>
     /// Provides common operations for the tokens of a parsed script.
     /// </summary>
@@ -90,7 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             //
             // Find blocks of line comments # comment1\n# comment2\n...
             // Finding blocks of comment tokens is more complicated as the newline characters are not
-            // classed as comments.  To workaround this we search for valid block comments (See IsBlockCmment)
+            // classed as comments.  To workaround this we search for valid block comments (See IsBlockComment)
             // and then determine contiguous line numbers from there
             //
             // Find comments regions <# -> #>
@@ -197,7 +196,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// Returns true if a Token is a block comment;
         /// - Must be a TokenKind.comment
-        /// - Must be preceeded by TokenKind.NewLine
+        /// - Must be preceded by TokenKind.NewLine
         /// - Token text must start with a '#'.false  This is because comment regions
         ///   start with '&lt;#' but have the same TokenKind
         /// </summary>

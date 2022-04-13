@@ -38,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Gets the language of the file.
         /// </summary>
-        public string Language { get; private set; }
+        public string Language { get; }
 
         /// <summary>
         /// Gets the filesystem path of the file.

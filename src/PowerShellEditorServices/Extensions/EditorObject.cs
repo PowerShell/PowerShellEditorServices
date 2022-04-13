@@ -61,12 +61,12 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Gets the workspace interface for the editor API.
         /// </summary>
-        public EditorWorkspace Workspace { get; private set; }
+        public EditorWorkspace Workspace { get; }
 
         /// <summary>
         /// Gets the window interface for the editor API.
         /// </summary>
-        public EditorWindow Window { get; private set; }
+        public EditorWindow Window { get; }
 
         #endregion
 

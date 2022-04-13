@@ -4,27 +4,28 @@
 using System.IO;
 using System.Management.Automation;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Microsoft.PowerShell.EditorServices.Utility
 {
-    internal class PathUtils
+    internal static class PathUtils
     {
         /// <summary>
-        /// The default path separator used by the base implementation of the providers.
-        ///
+        /// <para>The default path separator used by the base implementation of the providers.</para>
+        /// <para>
         /// Porting note: IO.Path.DirectorySeparatorChar is correct for all platforms. On Windows,
         /// it is '\', and on Linux, it is '/', as expected.
+        /// </para>
         /// </summary>
         internal static readonly char DefaultPathSeparator = Path.DirectorySeparatorChar;
 
         /// <summary>
-        /// The alternate path separator used by the base implementation of the providers.
-        ///
+        /// <para>The alternate path separator used by the base implementation of the providers.</para>
+        /// <para>
         /// Porting note: we do not use .NET's AlternatePathSeparatorChar here because it correctly
         /// states that both the default and alternate are '/' on Linux. However, for PowerShell to
         /// be "slash agnostic", we need to use the assumption that a '\' is the alternate path
         /// separator on Linux.
+        /// </para>
         /// </summary>
         internal static readonly char AlternatePathSeparator = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? '/' : '\\';
 

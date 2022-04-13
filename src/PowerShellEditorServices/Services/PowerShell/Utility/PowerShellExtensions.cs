@@ -192,8 +192,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         public static string GetErrorString(this PowerShell pwsh)
         {
             StringBuilder sb = new StringBuilder(capacity: 1024)
-                .Append("Execution of the following command(s) completed with errors:")
-                .AppendLine()
+                .AppendLine("Execution of the following command(s) completed with errors:")
                 .AppendLine()
                 .Append(pwsh.Commands.GetInvocationText());
 
@@ -211,15 +210,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         {
             sb.Append("Error #").Append(errorIndex).Append(':').AppendLine()
                 .Append(error).AppendLine()
-                .Append("ScriptStackTrace:").AppendLine()
-                .Append(error.ScriptStackTrace ?? "<null>").AppendLine()
-                .Append("Exception:").AppendLine()
+                .AppendLine("ScriptStackTrace:")
+                .AppendLine(error.ScriptStackTrace ?? "<null>")
+                .AppendLine("Exception:")
                 .Append("    ").Append(error.Exception.ToString() ?? "<null>");
 
             Exception innerException = error.Exception?.InnerException;
             while (innerException != null)
             {
-                sb.Append("InnerException:").AppendLine()
+                sb.AppendLine("InnerException:")
                     .Append("    ").Append(innerException);
                 innerException = innerException.InnerException;
             }

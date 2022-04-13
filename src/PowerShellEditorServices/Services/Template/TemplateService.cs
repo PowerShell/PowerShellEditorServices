@@ -82,7 +82,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
                 _logger.LogTrace($"Plaster is {installedQualifier}installed!");
 
                 // Attempt to load plaster
-                if (isPlasterInstalled.Value && isPlasterLoaded == false)
+                if (isPlasterInstalled.Value && !isPlasterLoaded)
                 {
                     _logger.LogTrace("Loading Plaster...");
 
@@ -94,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
 
                     IReadOnlyList<PSModuleInfo> importResult = await _executionService.ExecutePSCommandAsync<PSModuleInfo>(psCommand, CancellationToken.None).ConfigureAwait(false);
 
-                    isPlasterLoaded = importResult.Any();
+                    isPlasterLoaded = importResult.Count > 0;
                     string loadedQualifier =
                         isPlasterInstalled.Value
                             ? "was" : "could not be";

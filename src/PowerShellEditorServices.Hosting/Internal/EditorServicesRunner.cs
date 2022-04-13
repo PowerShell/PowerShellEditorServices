@@ -68,13 +68,13 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             return runAndAwaitShutdown;
         }
 
-        /// <remarks>
+        /// <summary>
         /// TODO: This class probably should not be <see cref="IDisposable"/> as the primary
         /// intention of that interface is to provide cleanup of unmanaged resources, which the
         /// logger certainly is not. Nor is this class used with a <see langword="using"/>. It is
         /// only because of the use of <see cref="_serverFactory"/> that this class is also
         /// disposable, and instead that class should be fixed.
-        /// </remarks>
+        /// </summary>
         public void Dispose() => _serverFactory.Dispose();
 
         /// <summary>
@@ -165,7 +165,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 Task<PsesDebugServer> debugServerCreation = null;
                 if (creatingDebugServer)
                 {
-                    debugServerCreation = CreateDebugServerWithLanguageServerAsync(languageServer, usePSReadLine: _config.ConsoleRepl == ConsoleReplKind.PSReadLine);
+                    debugServerCreation = CreateDebugServerWithLanguageServerAsync(languageServer);
                 }
 
                 Task languageServerStart = languageServer.StartAsync();
@@ -219,10 +219,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             await debugServer.StartAsync().ConfigureAwait(false);
         }
 
-        private Task RestartDebugServerAsync(PsesDebugServer debugServer, bool usePSReadLine)
+        private Task RestartDebugServerAsync(PsesDebugServer debugServer)
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Restarting debug server");
-            Task<PsesDebugServer> debugServerCreation = RecreateDebugServerAsync(debugServer, usePSReadLine);
+            Task<PsesDebugServer> debugServerCreation = RecreateDebugServerAsync(debugServer);
             return StartDebugServer(debugServerCreation);
         }
 
@@ -235,22 +235,22 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             return _serverFactory.CreateLanguageServer(inStream, outStream, hostDetails);
         }
 
-        private async Task<PsesDebugServer> CreateDebugServerWithLanguageServerAsync(PsesLanguageServer languageServer, bool usePSReadLine)
+        private async Task<PsesDebugServer> CreateDebugServerWithLanguageServerAsync(PsesLanguageServer languageServer)
         {
             _logger.Log(PsesLogLevel.Verbose, $"Creating debug adapter transport with endpoint {_config.DebugServiceTransport.EndpointDetails}");
             (Stream inStream, Stream outStream) = await _config.DebugServiceTransport.ConnectStreamsAsync().ConfigureAwait(false);
 
             _logger.Log(PsesLogLevel.Diagnostic, "Creating debug adapter");
-            return _serverFactory.CreateDebugServerWithLanguageServer(inStream, outStream, languageServer, usePSReadLine);
+            return _serverFactory.CreateDebugServerWithLanguageServer(inStream, outStream, languageServer);
         }
 
-        private async Task<PsesDebugServer> RecreateDebugServerAsync(PsesDebugServer debugServer, bool usePSReadLine)
+        private async Task<PsesDebugServer> RecreateDebugServerAsync(PsesDebugServer debugServer)
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Recreating debug adapter transport");
             (Stream inStream, Stream outStream) = await _config.DebugServiceTransport.ConnectStreamsAsync().ConfigureAwait(false);
 
             _logger.Log(PsesLogLevel.Diagnostic, "Recreating debug adapter");
-            return _serverFactory.RecreateDebugServer(inStream, outStream, debugServer, usePSReadLine);
+            return _serverFactory.RecreateDebugServer(inStream, outStream, debugServer);
         }
 
         private async Task<PsesDebugServer> CreateDebugServerForTempSessionAsync(HostStartupInfo hostDetails)
@@ -309,10 +309,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             PsesDebugServer oldServer = (PsesDebugServer)sender;
             oldServer.Dispose();
             _alreadySubscribedDebug = false;
-            Task.Run(() =>
-            {
-                RestartDebugServerAsync(oldServer, usePSReadLine: _config.ConsoleRepl == ConsoleReplKind.PSReadLine);
-            });
+            Task.Run(() => RestartDebugServerAsync(oldServer));
         }
     }
 }

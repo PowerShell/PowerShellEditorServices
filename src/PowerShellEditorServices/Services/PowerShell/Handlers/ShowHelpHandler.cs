@@ -4,7 +4,6 @@
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using MediatR;
 using OmniSharp.Extensions.JsonRpc;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
@@ -22,14 +21,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
     internal class ShowHelpHandler : IShowHelpHandler
     {
-        private readonly ILogger _logger;
         private readonly IInternalPowerShellExecutionService _executionService;
 
-        public ShowHelpHandler(ILoggerFactory factory, IInternalPowerShellExecutionService executionService)
-        {
-            _logger = factory.CreateLogger<ShowHelpHandler>();
-            _executionService = executionService;
-        }
+        public ShowHelpHandler(IInternalPowerShellExecutionService executionService) => _executionService = executionService;
 
         public async Task<Unit> Handle(ShowHelpParams request, CancellationToken cancellationToken)
         {

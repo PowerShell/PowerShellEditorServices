@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Management.Automation.Language;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
@@ -29,14 +28,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             Range = true
         };
 
-        private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
 
-        public PsesSemanticTokensHandler(ILogger<PsesSemanticTokensHandler> logger, WorkspaceService workspaceService)
-        {
-            _logger = logger;
-            _workspaceService = workspaceService;
-        }
+        public PsesSemanticTokensHandler(WorkspaceService workspaceService) => _workspaceService = workspaceService;
 
         protected override Task Tokenize(SemanticTokensBuilder builder, ITextDocumentIdentifierParams identifier,
             CancellationToken cancellationToken)
@@ -81,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             SemanticTokenType mappedType = MapSemanticTokenType(token);
-            if (mappedType == null)
+            if (mappedType == default)
             {
                 yield break;
             }

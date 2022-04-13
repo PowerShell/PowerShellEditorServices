@@ -56,8 +56,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         // in Microsoft.PowerShell.EditorServices.Workspace class
         private static readonly string[] s_defaultExcludeGlobs = Array.Empty<string>();
         private static readonly string[] s_defaultIncludeGlobs = new[] { "**/*" };
-        private static readonly int s_defaultMaxDepth = 64;
-        private static readonly bool s_defaultIgnoreReparsePoints = false;
+        private const int s_defaultMaxDepth = 64;
+        private const bool s_defaultIgnoreReparsePoints = false;
 
         internal static List<string> ExecuteEnumeratePSFiles(
             WorkspaceService workspace,
@@ -74,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
                 ignoreReparsePoints: ignoreReparsePoints
             );
             List<string> fileList = new();
-            foreach (string file in result) { fileList.Add(file); }
+            fileList.AddRange(result);
             // Assume order is not important from EnumeratePSFiles and sort the array so we can use deterministic asserts
             fileList.Sort();
 
@@ -158,8 +158,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
             string tempDir = Path.GetTempPath();
             string shortDirPath = Path.Combine(tempDir, "GitHub", "PowerShellEditorServices");
             string shortFilePath = Path.Combine(shortDirPath, "foo.ps1");
-            string shortUriForm = "git:/c%3A/Users/Keith/GitHub/dahlbyk/posh-git/src/PoshGitTypes.ps1?%7B%22path%22%3A%22c%3A%5C%5CUsers%5C%5CKeith%5C%5CGitHub%5C%5Cdahlbyk%5C%5Cposh-git%5C%5Csrc%5C%5CPoshGitTypes.ps1%22%2C%22ref%22%3A%22~%22%7D";
-            string longUriForm = "gitlens-git:c%3A%5CUsers%5CKeith%5CGitHub%5Cdahlbyk%5Cposh-git%5Csrc%5CPoshGitTypes%3Ae0022701.ps1?%7B%22fileName%22%3A%22src%2FPoshGitTypes.ps1%22%2C%22repoPath%22%3A%22c%3A%2FUsers%2FKeith%2FGitHub%2Fdahlbyk%2Fposh-git%22%2C%22sha%22%3A%22e0022701fa12e0bc22d0458673d6443c942b974a%22%7D";
+            const string shortUriForm = "git:/c%3A/Users/Keith/GitHub/dahlbyk/posh-git/src/PoshGitTypes.ps1?%7B%22path%22%3A%22c%3A%5C%5CUsers%5C%5CKeith%5C%5CGitHub%5C%5Cdahlbyk%5C%5Cposh-git%5C%5Csrc%5C%5CPoshGitTypes.ps1%22%2C%22ref%22%3A%22~%22%7D";
+            const string longUriForm = "gitlens-git:c%3A%5CUsers%5CKeith%5CGitHub%5Cdahlbyk%5Cposh-git%5Csrc%5CPoshGitTypes%3Ae0022701.ps1?%7B%22fileName%22%3A%22src%2FPoshGitTypes.ps1%22%2C%22repoPath%22%3A%22c%3A%2FUsers%2FKeith%2FGitHub%2Fdahlbyk%2Fposh-git%22%2C%22sha%22%3A%22e0022701fa12e0bc22d0458673d6443c942b974a%22%7D";
 
             var testCases = new[] {
                 // Test short file absolute paths
