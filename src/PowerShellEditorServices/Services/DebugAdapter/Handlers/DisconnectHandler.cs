@@ -67,8 +67,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                                 new PSCommand().AddCommand("Exit-PSHostProcess"),
                                 CancellationToken.None).ConfigureAwait(false);
 
-                            if (_debugStateService.IsRemoteAttach &&
-                                _runspaceContext.CurrentRunspace.RunspaceOrigin == RunspaceOrigin.EnteredProcess)
+                            if (_debugStateService.IsRemoteAttach)
                             {
                                 await _executionService.ExecutePSCommandAsync(
                                     new PSCommand().AddCommand("Exit-PSSession"),

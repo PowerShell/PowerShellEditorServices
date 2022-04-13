@@ -22,6 +22,8 @@ csharp_style_expression_bodied_indexers = true
 csharp_style_expression_bodied_accessors = true
 csharp_style_expression_bodied_lambdas = when_on_single_line
 
+# TODO: Fix silenced and suggested rules!
+
 # CS0168: The variable 'var' is declared but never used
 dotnet_diagnostic.CS0168.severity = error
 # CS0169: The private field 'class member' is never used
@@ -30,10 +32,31 @@ dotnet_diagnostic.CS0169.severity = error
 dotnet_diagnostic.CS0219.severity = error
 # CS0414: The private field 'field' is assigned but its value is never used
 dotnet_diagnostic.CS0414.severity = error
+# CS0618: A class member was marked with the Obsolete attribute
+dotnet_diagnostic.CS0618.severity = suggestion
+# CS0649: Uninitialized private or internal field declaration that is never assigned a value
+dotnet_diagnostic.CS0649.severity = error
+# CS1998: This async method lacks 'await' operators and will run synchronously
+dotnet_diagnostic.CS1998.severity = suggestion
+# CS4014: Consider applying the await operator to the result of the call
+dotnet_diagnostic.CS4014.severity = suggestion
+
 # CA1067: Should override Equals because it implements IEquatable<T>
 dotnet_diagnostic.CA1067.severity = silent
 # CA1068: CancellationToken parameters must come last
 dotnet_diagnostic.CA1068.severity = error
+# CA1501: Avoid excessive inheritance
+dotnet_diagnostic.CA1501.severity = error
+# CA1502: Avoid excessive complexity
+dotnet_diagnostic.CA1502.severity = warning
+# CA1505: Avoid unmaintainable code
+dotnet_diagnostic.CA1505.severity = error
+# CA1506: Avoid excessive class coupling
+dotnet_diagnostic.CA1506.severity = warning
+# CA1507: Use nameof in place of string
+dotnet_diagnostic.CA1507.severity = error
+# CA1508: Avoid dead conditional code
+dotnet_diagnostic.CA1508.severity = error
 # CA1822: Mark members as static
 dotnet_diagnostic.CA1822.severity = error
 # CA1823: Avoid unused private fields
@@ -44,23 +67,6 @@ dotnet_diagnostic.CA2007.severity = error
 dotnet_diagnostic.CA2016.severity = error
 # CA2254: The logging message template should not vary between calls to 'LoggerExtensions.*'
 dotnet_diagnostic.CA2254.severity = silent
-
-# TODO: Enable all maintainability issues (dead code etc.) and enforce
-# See: https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/maintainability-warnings
-dotnet_analyzer_diagnostic.category-Maintainability.severity = error
-
-# TODO: Fix all of these issues and explicitly ignore the intentional ones!
-
-# CA2016: Forward the CancellationToken parameter to methods that take one
-dotnet_diagnostic.CA2016.severity = error
-# CS0618: A class member was marked with the Obsolete attribute
-dotnet_diagnostic.CS0618.severity = suggestion
-# CS0649: Uninitialized private or internal field declaration that is never assigned a value
-dotnet_diagnostic.CS0649.severity = error
-# CS1998: This async method lacks 'await' operators and will run synchronously
-dotnet_diagnostic.CS1998.severity = suggestion
-# CS4014: Consider applying the await operator to the result of the call
-dotnet_diagnostic.CS4014.severity = suggestion
 
 # RCS1102: Make class static
 dotnet_diagnostic.RCS1102.severity = error

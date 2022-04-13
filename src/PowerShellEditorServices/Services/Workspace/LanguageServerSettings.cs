@@ -54,7 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
     internal class ScriptAnalysisSettings
     {
         private readonly object updateLock = new();
-        public bool? Enable { get; set; }
+        public bool Enable { get; set; }
         public string SettingsPath { get; set; }
         public ScriptAnalysisSettings() => Enable = true;
 

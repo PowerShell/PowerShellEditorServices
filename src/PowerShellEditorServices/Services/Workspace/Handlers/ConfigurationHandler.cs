@@ -64,10 +64,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             SendFeatureChangesTelemetry(incomingSettings);
 
             bool profileLoadingPreviouslyEnabled = _configurationService.CurrentSettings.EnableProfileLoading;
-            bool oldScriptAnalysisEnabled =
-                _configurationService.CurrentSettings.ScriptAnalysis.Enable ?? false;
-            string oldScriptAnalysisSettingsPath =
-                _configurationService.CurrentSettings.ScriptAnalysis?.SettingsPath;
+            bool oldScriptAnalysisEnabled = _configurationService.CurrentSettings.ScriptAnalysis.Enable;
+            string oldScriptAnalysisSettingsPath = _configurationService.CurrentSettings.ScriptAnalysis?.SettingsPath;
 
             _configurationService.CurrentSettings.Update(
                 incomingSettings.Powershell,
@@ -186,10 +184,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             Dictionary<string, bool> configChanges = new();
             // Send telemetry if the user opted-out of ScriptAnalysis
-            if (incomingSettings.Powershell.ScriptAnalysis.Enable == false &&
+            if (!incomingSettings.Powershell.ScriptAnalysis.Enable &&
                 _configurationService.CurrentSettings.ScriptAnalysis.Enable != incomingSettings.Powershell.ScriptAnalysis.Enable)
             {
-                configChanges["ScriptAnalysis"] = incomingSettings.Powershell.ScriptAnalysis.Enable ?? false;
+                configChanges["ScriptAnalysis"] = incomingSettings.Powershell.ScriptAnalysis.Enable;
             }
 
             // Send telemetry if the user opted-out of CodeFolding

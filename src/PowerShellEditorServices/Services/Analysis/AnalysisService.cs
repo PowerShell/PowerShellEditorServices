@@ -249,7 +249,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="settings">The new language server settings.</param>
         public void OnConfigurationUpdated(object _, LanguageServerSettings settings)
         {
-            if (settings.ScriptAnalysis.Enable ?? true)
+            if (settings.ScriptAnalysis.Enable)
             {
                 InitializeAnalysisEngineToCurrentSettings();
             }
