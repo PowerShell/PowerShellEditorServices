@@ -6,7 +6,6 @@ using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services.Extension;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using Microsoft.PowerShell.EditorServices.Utility;
@@ -335,7 +334,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                             if (fileContent != null)
                             {
-                                RemoteFileManagerService.StoreRemoteFile(localFilePath, fileContent, pathMappings);
+                                StoreRemoteFile(localFilePath, fileContent, pathMappings);
                             }
                             else
                             {
@@ -375,7 +374,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             logger.LogTrace(
                 $"Saving remote file {remoteFilePath} (local path: {localFilePath})");
 
-            byte[] localFileContents = null;
+            byte[] localFileContents;
             try
             {
                 localFileContents = File.ReadAllBytes(localFilePath);
@@ -760,9 +759,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             public string GetMappedPath(string filePath)
             {
-                string mappedPath = filePath;
-
-                if (!pathMappings.TryGetValue(filePath.ToLower(), out mappedPath))
+                if (!pathMappings.TryGetValue(filePath.ToLower(), out string mappedPath))
                 {
                     // If the path isn't mapped yet, generate it
                     if (!filePath.StartsWith(remoteFileManager.remoteFilesPath))

@@ -87,7 +87,6 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <returns>0 if extentX and extentY are equal in width. 1 if width of extent X is greater than that of extent Y. Otherwise, -1.</returns>
         public static int ExtentWidthComparer(this IScriptExtent extentX, IScriptExtent extentY)
         {
-
             if (extentX == null && extentY == null)
             {
                 return 0;

@@ -4,7 +4,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -18,13 +17,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class PsesReferencesHandler : ReferencesHandlerBase
     {
-        private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
 
-        public PsesReferencesHandler(ILoggerFactory factory, SymbolsService symbolsService, WorkspaceService workspaceService)
+        public PsesReferencesHandler(SymbolsService symbolsService, WorkspaceService workspaceService)
         {
-            _logger = factory.CreateLogger<PsesReferencesHandler>();
             _symbolsService = symbolsService;
             _workspaceService = workspaceService;
         }

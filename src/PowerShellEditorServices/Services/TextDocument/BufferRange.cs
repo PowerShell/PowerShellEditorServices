@@ -23,12 +23,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// Gets the start position of the range in the buffer.
         /// </summary>
-        public BufferPosition Start { get; private set; }
+        public BufferPosition Start { get; }
 
         /// <summary>
         /// Gets the end position of the range in the buffer.
         /// </summary>
-        public BufferPosition End { get; private set; }
+        public BufferPosition End { get; }
 
         /// <summary>
         /// Returns true if the current range is non-zero, i.e.
@@ -109,4 +109,3 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         #endregion
     }
 }
-

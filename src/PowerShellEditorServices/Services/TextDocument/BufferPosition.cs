@@ -23,12 +23,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// Gets the line number of the position in the buffer.
         /// </summary>
-        public int Line { get; private set; }
+        public int Line { get; }
 
         /// <summary>
         /// Gets the column number of the position in the buffer.
         /// </summary>
-        public int Column { get; private set; }
+        public int Column { get; }
 
         #endregion
 
@@ -100,4 +100,3 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         #endregion
     }
 }
-

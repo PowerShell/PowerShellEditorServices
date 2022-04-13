@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly WorkspaceService _workspaceService;
         private readonly IDocumentSymbolProvider[] _providers;
 
-        public PsesDocumentSymbolHandler(ILoggerFactory factory, ConfigurationService configurationService, WorkspaceService workspaceService)
+        public PsesDocumentSymbolHandler(ILoggerFactory factory, WorkspaceService workspaceService)
         {
             _logger = factory.CreateLogger<PsesDocumentSymbolHandler>();
             _workspaceService = workspaceService;
@@ -73,7 +73,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         })
                         .ToArray()
                 : Array.Empty<SymbolInformationOrDocumentSymbol>();
-
 
             return Task.FromResult(new SymbolInformationOrDocumentSymbolContainer(symbols));
         }

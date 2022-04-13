@@ -119,7 +119,7 @@ namespace PowerShellEditorServices.Test.E2E
         {
             Process serverProcess = Interlocked.Exchange(ref _serverProcess, null);
             ServerExitCompletion.TrySetResult(null);
-            if (serverProcess != null && !serverProcess.HasExited)
+            if (serverProcess?.HasExited == false)
             {
                 serverProcess.Kill();
             }

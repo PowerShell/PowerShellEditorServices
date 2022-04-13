@@ -46,17 +46,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <summary>
         /// Gets the symbol's type
         /// </summary>
-        public SymbolType SymbolType { get; private set; }
+        public SymbolType SymbolType { get; }
 
         /// <summary>
         /// Gets the name of the symbol
         /// </summary>
-        public string SymbolName { get; private set; }
+        public string SymbolName { get; }
 
         /// <summary>
         /// Gets the script extent of the symbol
         /// </summary>
-        public ScriptRegion ScriptRegion { get; private set; }
+        public ScriptRegion ScriptRegion { get; }
 
         /// <summary>
         /// Gets the contents of the line the given symbol is on

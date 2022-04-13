@@ -8,7 +8,6 @@ using System.Management.Automation.Host;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
@@ -66,7 +65,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             private readonly ConcurrentDictionary<IObserver<(PsesLogLevel, string)>, bool> _subscribedObservers;
 
             private readonly IObserver<(PsesLogLevel, string)> _thisSubscriber;
-
 
             public Unsubscriber(ConcurrentDictionary<IObserver<(PsesLogLevel, string)>, bool> subscribedObservers, IObserver<(PsesLogLevel, string)> thisSubscriber)
             {
@@ -161,7 +159,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// Convenience method for logging exceptions.
         /// </summary>
         /// <param name="message">The human-directed message to accompany the exception.</param>
-        /// <param name="exception">The actual execption to log.</param>
+        /// <param name="exception">The actual exception to log.</param>
         /// <param name="callerName">The name of the calling method.</param>
         /// <param name="callerSourceFile">The name of the file where this is logged.</param>
         /// <param name="callerLineNumber">The line in the file where this is logged.</param>
@@ -171,7 +169,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             [CallerMemberName] string callerName = null,
             [CallerFilePath] string callerSourceFile = null,
             [CallerLineNumber] int callerLineNumber = -1) => Log(PsesLogLevel.Error, $"{message}. Exception logged in {callerSourceFile} on line {callerLineNumber} in {callerName}:\n{exception}");
-
     }
 
     /// <summary>
@@ -323,7 +320,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 case PsesLogLevel.Error:
                     message = $"[ERR]: {value.message}";
                     break;
-            };
+            }
 
             _messageQueue.Add(message);
         }

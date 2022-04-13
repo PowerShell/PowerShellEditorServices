@@ -42,23 +42,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
         /// <summary>
         /// Gets the version of the PowerShell runtime.
         /// </summary>
-        public Version Version { get; private set; }
+        public Version Version { get; }
 
         /// <summary>
         /// Gets the full version string, either the ToString of the Version
         /// property or the GitCommitId for open-source PowerShell releases.
         /// </summary>
-        public string VersionString { get; private set; }
+        public string VersionString { get; }
 
         /// <summary>
         /// Gets the PowerShell edition (generally Desktop or Core).
         /// </summary>
-        public string Edition { get; private set; }
+        public string Edition { get; }
 
         /// <summary>
         /// Gets the architecture of the PowerShell process.
         /// </summary>
-        public PowerShellProcessArchitecture Architecture { get; private set; }
+        public PowerShellProcessArchitecture Architecture { get; }
 
         #endregion
 
@@ -117,9 +117,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
                     // In the former case, take the value directly.  In the latter case,
                     // generate a Version from its string representation.
                     object version = psVersionTable["PSVersion"];
-                    if (version is Version)
+                    if (version is Version version2)
                     {
-                        powerShellVersion = (Version)version;
+                        powerShellVersion = version2;
                     }
                     else if (version != null)
                     {

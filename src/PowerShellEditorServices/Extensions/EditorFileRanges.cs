@@ -31,7 +31,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         public static FileScriptPosition FromOffset(FileContext file, int offset)
         {
-
             int line = 1;
             string fileText = file.Ast.Extent.Text;
 
@@ -407,7 +406,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
     /// </summary>
     public static class FileObjectExtensionMethods
     {
-
         /// <summary>
         /// Convert a 1-based file position to a 0-based file position.
         /// </summary>

@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Gets the terminal interface for the editor API.
         /// </summary>
-        public EditorTerminal Terminal { get; private set; }
+        public EditorTerminal Terminal { get; }
 
         #endregion
 

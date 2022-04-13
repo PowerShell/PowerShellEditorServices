@@ -67,7 +67,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// Create a duplex named pipe transport config with an automatically generated pipe name.
         /// </summary>
         /// <returns>A new duplex named pipe transport configuration.</returns>
-
         public static DuplexNamedPipeTransportConfig Create(HostLogger logger) => new(logger, NamedPipeUtils.GenerateValidNamedPipeName());
 
         /// <summary>

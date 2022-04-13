@@ -5,7 +5,6 @@ using Microsoft.PowerShell.Commands;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Management.Automation;
 using System.Reflection;
 using SMA = System.Management.Automation;
@@ -304,7 +303,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             bool hasPSReadLine = pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Get-Module", typeof(GetModuleCommand)))
                 .AddParameter("Name", "PSReadLine")
                 .Invoke()
-                .Any();
+                .Count > 0;
 
             if (hasPSReadLine)
             {

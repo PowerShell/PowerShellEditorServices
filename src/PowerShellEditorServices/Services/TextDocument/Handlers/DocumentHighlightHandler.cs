@@ -20,16 +20,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private static readonly DocumentHighlightContainer s_emptyHighlightContainer = new();
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
-        private readonly SymbolsService _symbolsService;
 
         public PsesDocumentHighlightHandler(
             ILoggerFactory loggerFactory,
-            WorkspaceService workspaceService,
-            SymbolsService symbolService)
+            WorkspaceService workspaceService)
         {
             _logger = loggerFactory.CreateLogger<PsesDocumentHighlightHandler>();
             _workspaceService = workspaceService;
-            _symbolsService = symbolService;
             _logger.LogInformation("highlight handler loaded");
         }
 

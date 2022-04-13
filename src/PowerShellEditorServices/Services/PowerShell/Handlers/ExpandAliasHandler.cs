@@ -1,11 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Linq;
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using MediatR;
 using OmniSharp.Extensions.JsonRpc;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
@@ -27,14 +25,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
     internal class ExpandAliasHandler : IExpandAliasHandler
     {
-        private readonly ILogger _logger;
         private readonly IInternalPowerShellExecutionService _executionService;
 
-        public ExpandAliasHandler(ILoggerFactory factory, IInternalPowerShellExecutionService executionService)
-        {
-            _logger = factory.CreateLogger<ExpandAliasHandler>();
-            _executionService = executionService;
-        }
+        public ExpandAliasHandler(IInternalPowerShellExecutionService executionService) => _executionService = executionService;
 
         public async Task<ExpandAliasResult> Handle(ExpandAliasParams request, CancellationToken cancellationToken)
         {

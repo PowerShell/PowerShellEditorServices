@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -56,14 +55,14 @@ namespace PowerShellEditorServices.Test.E2E
                     .WithOutput(_psesProcess.InputStream)
                     // The OnStarted delegate gets run when we receive the _Initialized_ event from the server:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Events_Initialized
-                    .OnStarted((client, token) =>
+                    .OnStarted((_, _) =>
                     {
                         Started.SetResult(true);
                         return Task.CompletedTask;
                     })
                     // The OnInitialized delegate gets run when we first receive the _Initialize_ response:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
-                    .OnInitialized((client, request, response, token) =>
+                    .OnInitialized((_, _, _, _) =>
                     {
                         initialized.SetResult(true);
                         return Task.CompletedTask;
@@ -125,7 +124,7 @@ namespace PowerShellEditorServices.Test.E2E
         {
             if (logStatements.Length == 0)
             {
-                throw new ArgumentNullException("Expected at least one argument.");
+                throw new ArgumentNullException(nameof(logStatements), "Expected at least one argument.");
             }
 
             // Have script create/overwrite file first with `>`.

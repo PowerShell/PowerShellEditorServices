@@ -83,4 +83,3 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         }
     }
 }
-

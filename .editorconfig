@@ -65,7 +65,7 @@ dotnet_diagnostic.CS4014.severity = suggestion
 # RCS1102: Make class static
 dotnet_diagnostic.RCS1102.severity = warning
 # RCS1139: Add summary element to documentation comment
-dotnet_diagnostic.RCS1139.severity = suggestion
+dotnet_diagnostic.RCS1139.severity = silent
 # RCS1194: Implement exception constructors
 dotnet_diagnostic.RCS1194.severity = suggestion
 # RCS1210: Return completed task instead of returning null
@@ -92,7 +92,7 @@ dotnet_diagnostic.VSTHRD110.severity = suggestion
 # VSTHRD114: Avoid returning a null Task
 dotnet_diagnostic.VSTHRD114.severity = suggestion
 # VSTHRD200: Use "Async" suffix for awaitable methods
-dotnet_diagnostic.VSTHRD200.severity = suggestion
+dotnet_diagnostic.VSTHRD200.severity = silent
 
 # xUnit2013: Do not use equality check to check for collection size
 dotnet_diagnostic.xUnit2013.severity = warning

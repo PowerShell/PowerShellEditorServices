@@ -22,7 +22,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public string Name { get; set; }
     }
 
-
     internal class GetEditorContextRequest
     { }
 
@@ -72,4 +71,3 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public int? Timeout { get; set; }
     }
 }
-

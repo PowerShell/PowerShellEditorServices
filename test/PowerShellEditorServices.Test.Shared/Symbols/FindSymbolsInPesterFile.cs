@@ -5,7 +5,7 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Shared.Symbols
 {
-    public class FindSymbolsInPesterFile
+    public static class FindSymbolsInPesterFile
     {
         public static readonly ScriptRegion SourceDetails =
             new(

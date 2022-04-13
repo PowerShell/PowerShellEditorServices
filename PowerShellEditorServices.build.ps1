@@ -128,6 +128,9 @@ task CreateBuildInfo {
     [string]$buildTime = [datetime]::Today.ToString("s", [System.Globalization.CultureInfo]::InvariantCulture)
 
     $buildInfoContents = @"
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 using System.Globalization;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting

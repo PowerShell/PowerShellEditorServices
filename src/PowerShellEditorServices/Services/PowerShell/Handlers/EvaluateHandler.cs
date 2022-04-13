@@ -4,10 +4,8 @@
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
-using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -17,16 +15,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     /// </summary>
     internal class EvaluateHandler : IEvaluateHandler
     {
-        private readonly ILogger _logger;
         private readonly IInternalPowerShellExecutionService _executionService;
 
-        public EvaluateHandler(
-            ILoggerFactory factory,
-            IInternalPowerShellExecutionService executionService)
-        {
-            _logger = factory.CreateLogger<EvaluateHandler>();
-            _executionService = executionService;
-        }
+        public EvaluateHandler(IInternalPowerShellExecutionService executionService) => _executionService = executionService;
 
         public async Task<EvaluateResponseBody> Handle(EvaluateRequestArguments request, CancellationToken cancellationToken)
         {

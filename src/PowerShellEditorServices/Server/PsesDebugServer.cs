@@ -9,7 +9,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using OmniSharp.Extensions.DebugAdapter.Server;
 using OmniSharp.Extensions.LanguageServer.Server;
@@ -23,7 +22,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
     {
         private readonly Stream _inputStream;
         private readonly Stream _outputStream;
-        private readonly bool _usePSReadLine;
         private readonly TaskCompletionSource<bool> _serverStopped;
 
         private DebugAdapterServer _debugAdapterServer;
@@ -38,15 +36,13 @@ namespace Microsoft.PowerShell.EditorServices.Server
             ILoggerFactory factory,
             Stream inputStream,
             Stream outputStream,
-            IServiceProvider serviceProvider,
-            bool usePSReadLine)
+            IServiceProvider serviceProvider)
         {
             _loggerFactory = factory;
             _inputStream = inputStream;
             _outputStream = outputStream;
             ServiceProvider = serviceProvider;
             _serverStopped = new TaskCompletionSource<bool>();
-            _usePSReadLine = usePSReadLine;
         }
 
         internal IServiceProvider ServiceProvider { get; }
@@ -91,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<DebugEvaluateHandler>()
                     // The OnInitialize delegate gets run when we first receive the _Initialize_ request:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
-                    .OnInitialize(async (server, request, cancellationToken) =>
+                    .OnInitialize(async (server, _, _) =>
                     {
                         // We need to make sure the host has been started
                         _startedPses = !await _psesHost.TryStartAsync(new HostStartOptions(), CancellationToken.None).ConfigureAwait(false);
@@ -105,7 +101,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     })
                     // The OnInitialized delegate gets run right before the server responds to the _Initialize_ request:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
-                    .OnInitialized((server, request, response, cancellationToken) =>
+                    .OnInitialized((_, _, response, _) =>
                     {
                         response.SupportsConditionalBreakpoints = true;
                         response.SupportsConfigurationDoneRequest = true;

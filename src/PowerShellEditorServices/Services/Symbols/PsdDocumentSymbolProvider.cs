@@ -20,8 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         IEnumerable<ISymbolReference> IDocumentSymbolProvider.ProvideDocumentSymbols(
             ScriptFile scriptFile)
         {
-            if ((scriptFile.FilePath != null &&
-                 scriptFile.FilePath.EndsWith(".psd1", StringComparison.OrdinalIgnoreCase)) ||
+            if ((scriptFile.FilePath?.EndsWith(".psd1", StringComparison.OrdinalIgnoreCase) == true) ||
                  IsPowerShellDataFileAst(scriptFile.ScriptAst))
             {
                 FindHashtableSymbolsVisitor findHashtableSymbolsVisitor = new();
@@ -66,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 return levelAstTypeMatch;
             }
 
-            IEnumerable<Ast> astsFound = (node.Item as Ast).FindAll(a => a is Ast, false);
+            IEnumerable<Ast> astsFound = (node.Item as Ast)?.FindAll(a => a is not null, false);
             if (astsFound != null)
             {
                 foreach (Ast astFound in astsFound)

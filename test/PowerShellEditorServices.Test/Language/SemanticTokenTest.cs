@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Management.Automation.Language;
-using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using OmniSharp.Extensions.LanguageServer.Protocol;
@@ -19,7 +18,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         [Fact]
         public void TokenizesFunctionElements()
         {
-            string text = @"
+            const string text = @"
 function Get-Sum {
     param( [int]$a, [int]$b )
     return $a + $b
@@ -61,7 +60,7 @@ function Get-Sum {
         [Fact]
         public void TokenizesStringExpansion()
         {
-            string text = "Write-Host \"$(Test-Property Get-Whatever) $(Get-Whatever)\"";
+            const string text = "Write-Host \"$(Test-Property Get-Whatever) $(Get-Whatever)\"";
             ScriptFile scriptFile = new(
                 // Use any absolute path. Even if it doesn't exist.
                 DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
@@ -84,7 +83,7 @@ function Get-Sum {
         [Fact]
         public void RecognizesTokensWithAsterisk()
         {
-            string text = @"
+            const string text = @"
 function Get-A*A {
 }
 Get-A*A
@@ -113,7 +112,7 @@ Get-A*A
         [Fact]
         public void RecognizesArrayPropertyInExpandableString()
         {
-            string text = "\"$(@($Array).Count) OtherText\"";
+            const string text = "\"$(@($Array).Count) OtherText\"";
             ScriptFile scriptFile = new(
                 // Use any absolute path. Even if it doesn't exist.
                 DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
@@ -138,7 +137,7 @@ Get-A*A
         [Fact]
         public void RecognizesCurlyQuotedString()
         {
-            string text = "“^[-'a-z]*”";
+            const string text = "“^[-'a-z]*”";
             ScriptFile scriptFile = new(
                 // Use any absolute path. Even if it doesn't exist.
                 DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
@@ -152,7 +151,7 @@ Get-A*A
         [Fact]
         public void RecognizeEnum()
         {
-            string text = @"
+            const string text = @"
 enum MyEnum{
     one
     two
