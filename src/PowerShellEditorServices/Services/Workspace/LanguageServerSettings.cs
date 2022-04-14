@@ -383,7 +383,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         /// <summary>
         /// Whether integration features specific to Pester v5 are enabled
         /// </summary>
-        public bool UseLegacyCodeLens { get; set; } = false;
+        public bool UseLegacyCodeLens { get; set; }
 
         /// <summary>
         /// Update these settings from another settings object

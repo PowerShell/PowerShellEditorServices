@@ -13,8 +13,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     /// </summary>
     internal static class TokenOperations
     {
-        private static readonly FoldingRangeKind? RegionKindNone = null;
-
         // These regular expressions are used to match lines which mark the start and end of region comment in a PowerShell
         // script. They are based on the defaults in the VS Code Language Configuration at;
         // https://github.com/Microsoft/vscode/blob/64186b0a26/extensions/powershell/language-configuration.json#L26-L31
@@ -48,7 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                     case TokenKind.RCurly:
                         if (tokenCurlyStack.Count > 0)
                         {
-                            refList.SafeAdd(CreateFoldingReference(tokenCurlyStack.Pop(), token, RegionKindNone));
+                            refList.SafeAdd(CreateFoldingReference(tokenCurlyStack.Pop(), token, default));
                         }
                         break;
 
@@ -64,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                     case TokenKind.RParen:
                         if (tokenParenStack.Count > 0)
                         {
-                            refList.SafeAdd(CreateFoldingReference(tokenParenStack.Pop(), token, RegionKindNone));
+                            refList.SafeAdd(CreateFoldingReference(tokenParenStack.Pop(), token, default));
                         }
                         break;
 
@@ -76,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                     case TokenKind.HereStringExpandable:
                         if (token.Extent.StartLineNumber != token.Extent.EndLineNumber)
                         {
-                            refList.SafeAdd(CreateFoldingReference(token, token, RegionKindNone));
+                            refList.SafeAdd(CreateFoldingReference(token, token, default));
                         }
                         break;
                 }

@@ -136,7 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public void StartScriptDiagnostics(
             ScriptFile[] filesToAnalyze)
         {
-            if (_configurationService.CurrentSettings.ScriptAnalysis.Enable == false)
+            if (!_configurationService.CurrentSettings.ScriptAnalysis.Enable)
             {
                 return;
             }
@@ -468,7 +468,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
 
         #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
+        private bool disposedValue; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
         {

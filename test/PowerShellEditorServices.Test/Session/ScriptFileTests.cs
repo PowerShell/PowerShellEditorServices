@@ -377,11 +377,11 @@ namespace PSLanguageService.Test
 
         [Trait("Category", "ScriptFile")]
         [Fact]
-        public void CanSplitLines_NoTrailingNewline() => Assert.Equal(s_testStringLines_noTrailingNewline, _scriptFile_noTrailingNewline.FileLines);
+        public void CanSplitLinesNoTrailingNewline() => Assert.Equal(s_testStringLines_noTrailingNewline, _scriptFile_noTrailingNewline.FileLines);
 
         [Trait("Category", "ScriptFile")]
         [Fact]
-        public void CanSplitLines_TrailingNewline() => Assert.Equal(s_testStringLines_trailingNewline, _scriptFile_trailingNewline.FileLines);
+        public void CanSplitLinesTrailingNewline() => Assert.Equal(s_testStringLines_trailingNewline, _scriptFile_trailingNewline.FileLines);
 
         [Trait("Category", "ScriptFile")]
         [Fact]

@@ -49,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public string SessionFileTransportName => "Stdio";
 
-        public IReadOnlyDictionary<string, object> SessionFileEntries { get; } = null;
+        public IReadOnlyDictionary<string, object> SessionFileEntries { get; }
 
         public Task<(Stream inStream, Stream outStream)> ConnectStreamsAsync()
         {

@@ -14,6 +14,7 @@
     <!-- See: https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/overview -->
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- TODO: Enable <AnalysisMode>All</AnalysisMode> -->
     <!-- See: https://docs.microsoft.com/en-us/dotnet/core/compatibility/sdk/6.0/implicit-namespaces -->
     <DisableImplicitNamespaceImports>true</DisableImplicitNamespaceImports>
   </PropertyGroup>

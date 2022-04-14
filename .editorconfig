@@ -57,6 +57,12 @@ dotnet_diagnostic.CA1506.severity = warning
 dotnet_diagnostic.CA1507.severity = error
 # CA1508: Avoid dead conditional code
 dotnet_diagnostic.CA1508.severity = error
+# CA1802: Use Literals Where Appropriate
+dotnet_diagnostic.CA1802.severity = error
+# CA1805: Do not initialize unnecessarily.
+dotnet_diagnostic.CA1805.severity = error
+# CA1820: Test for empty strings using string length
+dotnet_diagnostic.CA1820.severity = error
 # CA1822: Mark members as static
 dotnet_diagnostic.CA1822.severity = error
 # CA1823: Avoid unused private fields
@@ -65,9 +71,13 @@ dotnet_diagnostic.CA1823.severity = error
 dotnet_diagnostic.CA2007.severity = error
 # CA2016: Forward the CancellationToken parameter to methods that take one
 dotnet_diagnostic.CA2016.severity = error
+# CA2213: Disposable fields should be disposed
+dotnet_diagnostic.CA2213.severity = error
 # CA2254: The logging message template should not vary between calls to 'LoggerExtensions.*'
 dotnet_diagnostic.CA2254.severity = silent
 
+# RCS1049: Simplify boolean comparison
+dotnet_diagnostic.RCS1049.severity = error
 # RCS1102: Make class static
 dotnet_diagnostic.RCS1102.severity = error
 # RCS1139: Add summary element to documentation comment

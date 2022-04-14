@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         [InlineData("/CJK.chars/脚本/[hello].ps1", "/CJK.chars/脚本/`[hello`].ps1")]
         [InlineData("C:\\Animals\\утка\\quack.ps1", "C:\\Animals\\утка\\quack.ps1")]
         [InlineData("C:\\&nimals\\утка\\qu*ck?.ps1", "C:\\&nimals\\утка\\qu`*ck`?.ps1")]
-        public void CorrectlyWildcardEscapesPaths_NoSpaces(string unescapedPath, string escapedPath)
+        public void CorrectlyWildcardEscapesPathsNoSpaces(string unescapedPath, string escapedPath)
         {
             string extensionEscapedPath = PathUtils.WildcardEscapePath(unescapedPath);
             Assert.Equal(escapedPath, extensionEscapedPath);
@@ -44,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Session
         [InlineData("/CJK chars/脚本/[hello].ps1", "/CJK` chars/脚本/`[hello`].ps1")]
         [InlineData("C:\\Animal s\\утка\\quack.ps1", "C:\\Animal` s\\утка\\quack.ps1")]
         [InlineData("C:\\&nimals\\утка\\qu*ck?.ps1", "C:\\&nimals\\утка\\qu`*ck`?.ps1")]
-        public void CorrectlyWildcardEscapesPaths_Spaces(string unescapedPath, string escapedPath)
+        public void CorrectlyWildcardEscapesPathsSpaces(string unescapedPath, string escapedPath)
         {
             string extensionEscapedPath = PathUtils.WildcardEscapePath(unescapedPath, escapeSpaces: true);
             Assert.Equal(escapedPath, extensionEscapedPath);

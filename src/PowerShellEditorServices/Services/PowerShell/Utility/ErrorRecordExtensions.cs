@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 {
     internal static class ErrorRecordExtensions
     {
-        private static readonly Action<PSObject> s_setWriteStreamProperty = null;
+        private static readonly Action<PSObject> s_setWriteStreamProperty;
 
         [SuppressMessage("Performance", "CA1810:Initialize reference type static fields inline", Justification = "cctor needed for version specific initialization")]
         static ErrorRecordExtensions()

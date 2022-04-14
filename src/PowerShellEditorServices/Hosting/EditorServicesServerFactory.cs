@@ -58,7 +58,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             SelfLog.Enable(msg => Debug.WriteLine(msg));
 #endif
 
-            ILoggerFactory loggerFactory = new LoggerFactory().AddSerilog();
+            LoggerFactory loggerFactory = new();
+            loggerFactory.AddSerilog();
 
             // Hook up logging from the host so that its recorded in the log file
             hostLogger.Subscribe(new HostLoggerAdapter(loggerFactory));
