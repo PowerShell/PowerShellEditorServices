@@ -30,7 +30,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly PsesInternalHost _psesHost;
         private readonly ILanguageServerFacade _languageServer;
         private bool _profilesLoaded;
-        private readonly bool _extensionServiceInitialized;
         private bool _cwdSet;
 
         public PsesConfigurationHandler(
@@ -65,10 +64,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             SendFeatureChangesTelemetry(incomingSettings);
 
             bool profileLoadingPreviouslyEnabled = _configurationService.CurrentSettings.EnableProfileLoading;
-            bool oldScriptAnalysisEnabled =
-                _configurationService.CurrentSettings.ScriptAnalysis.Enable ?? false;
-            string oldScriptAnalysisSettingsPath =
-                _configurationService.CurrentSettings.ScriptAnalysis?.SettingsPath;
+            bool oldScriptAnalysisEnabled = _configurationService.CurrentSettings.ScriptAnalysis.Enable;
+            string oldScriptAnalysisSettingsPath = _configurationService.CurrentSettings.ScriptAnalysis?.SettingsPath;
 
             _configurationService.CurrentSettings.Update(
                 incomingSettings.Powershell,
@@ -127,10 +124,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 _cwdSet = true;
             }
 
-            if (!_extensionServiceInitialized)
-            {
-                await _extensionService.InitializeAsync().ConfigureAwait(false);
-            }
+            await _extensionService.InitializeAsync().ConfigureAwait(false);
 
             // Run any events subscribed to configuration updates
             _logger.LogTrace("Running configuration update event handlers");
@@ -190,10 +184,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             Dictionary<string, bool> configChanges = new();
             // Send telemetry if the user opted-out of ScriptAnalysis
-            if (incomingSettings.Powershell.ScriptAnalysis.Enable == false &&
+            if (!incomingSettings.Powershell.ScriptAnalysis.Enable &&
                 _configurationService.CurrentSettings.ScriptAnalysis.Enable != incomingSettings.Powershell.ScriptAnalysis.Enable)
             {
-                configChanges["ScriptAnalysis"] = incomingSettings.Powershell.ScriptAnalysis.Enable ?? false;
+                configChanges["ScriptAnalysis"] = incomingSettings.Powershell.ScriptAnalysis.Enable;
             }
 
             // Send telemetry if the user opted-out of CodeFolding

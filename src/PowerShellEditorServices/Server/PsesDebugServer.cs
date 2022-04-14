@@ -124,6 +124,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
             _debugAdapterServer.Dispose();
             _inputStream.Dispose();
             _outputStream.Dispose();
+            _loggerFactory.Dispose();
             _serverStopped.SetResult(true);
             // TODO: If the debugger has stopped, should we clear the breakpoints?
         }
