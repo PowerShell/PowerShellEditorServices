@@ -753,17 +753,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
                 // If the user input was empty it's because:
                 //  - the user provided no input
-                //  - the readline task was canceled
-                //  - CtrlC was sent to readline (which does not propagate a cancellation)
+                //  - the ReadLine task was canceled
+                //  - CtrlC was sent to ReadLine (which does not propagate a cancellation)
                 //
-                // In any event there's nothing to run in PowerShell, so we just loop back to the prompt again.
-                // However, we must distinguish the last two scenarios, since PSRL will not print a new line in those cases.
-                if (string.IsNullOrEmpty(userInput))
+                // In any event there's nothing to run in PowerShell, so we just loop back to the
+                // prompt again. However, PSReadLine will not print a newline for CtrlC, so we print
+                // one, but we do not want to print one if the ReadLine task was canceled.
+                if (string.IsNullOrEmpty(userInput) && LastKeyWasCtrlC())
                 {
-                    if (cancellationToken.IsCancellationRequested || LastKeyWasCtrlC())
-                    {
-                        UI.WriteLine();
-                    }
+                    UI.WriteLine();
+                    return;
+                }
+
+                if (cancellationToken.IsCancellationRequested)
+                {
                     return;
                 }
 
@@ -823,19 +826,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             }
 
             return prompt;
-        }
-
-        /// <summary>
-        /// This is used to write the invocation text of a command with the user's prompt so that,
-        /// for example, F8 (evaluate selection) appears as if the user typed it. Used when
-        /// 'WriteInputToHost' is true.
-        /// </summary>
-        /// <param name="command">The PSCommand we'll print after the prompt.</param>
-        /// <param name="cancellationToken"></param>
-        public void WriteWithPrompt(PSCommand command, CancellationToken cancellationToken)
-        {
-            UI.Write(GetPrompt(cancellationToken));
-            UI.WriteLine(command.GetInvocationText());
         }
 
         private string InvokeReadLine(CancellationToken cancellationToken)

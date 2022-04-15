@@ -62,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
                 if (PowerShellExecutionOptions.WriteInputToHost)
                 {
-                    _psesHost.WriteWithPrompt(_psCommand, cancellationToken);
+                    _psesHost.UI.WriteLine(_psCommand.GetInvocationText());
                 }
 
                 return _pwsh.Runspace.Debugger.InBreakpoint
