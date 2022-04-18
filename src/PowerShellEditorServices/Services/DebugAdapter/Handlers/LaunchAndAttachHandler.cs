@@ -251,7 +251,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 try
                 {
-                    await _executionService.ExecutePSCommandAsync(enterPSSessionCommand, cancellationToken).ConfigureAwait(false);
+                    await _executionService.ExecutePSCommandAsync(
+                        enterPSSessionCommand,
+                        cancellationToken,
+                        PowerShellExecutionOptions.ImmediateInteractive)
+                        .ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -292,13 +296,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     await _executionService.ExecutePSCommandAsync(
                         enterPSHostProcessCommand,
                         cancellationToken,
-                        new PowerShellExecutionOptions()
-                        {
-                            MustRunInForeground = true,
-                            InterruptCurrentForeground = true,
-                            AddToHistory = false,
-                            Priority = ExecutionPriority.Next,
-                        }).ConfigureAwait(false);
+                        PowerShellExecutionOptions.ImmediateInteractive)
+                        .ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -320,7 +319,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 try
                 {
-                    await _executionService.ExecutePSCommandAsync(enterPSHostProcessCommand, cancellationToken).ConfigureAwait(false);
+                    await _executionService.ExecutePSCommandAsync(
+                        enterPSHostProcessCommand,
+                        cancellationToken,
+                        PowerShellExecutionOptions.ImmediateInteractive)
+                        .ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -406,8 +409,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _debugService.IsDebuggingRemoteRunspace = true;
             _debugStateService.WaitingForAttach = true;
             Task nonAwaitedTask = _executionService
-                .ExecutePSCommandAsync(debugRunspaceCmd, CancellationToken.None)
-                .ContinueWith(OnExecutionCompletedAsync);
+                .ExecutePSCommandAsync(debugRunspaceCmd, CancellationToken.None, PowerShellExecutionOptions.ImmediateInteractive)
+                .ContinueWith( OnExecutionCompletedAsync, TaskScheduler.Default);
 
             if (runspaceVersion.Version.Major >= 7)
             {
@@ -469,12 +472,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         await _executionService.ExecutePSCommandAsync(
                             new PSCommand().AddCommand("Exit-PSHostProcess"),
                             CancellationToken.None,
-                            new PowerShellExecutionOptions()
-                            {
-                                MustRunInForeground = true,
-                                InterruptCurrentForeground = true,
-                                Priority = ExecutionPriority.Next,
-                            }).ConfigureAwait(false);
+                            PowerShellExecutionOptions.ImmediateInteractive)
+                            .ConfigureAwait(false);
 
                         if (_debugStateService.IsRemoteAttach &&
                             _runspaceContext.CurrentRunspace.RunspaceOrigin != RunspaceOrigin.Local)

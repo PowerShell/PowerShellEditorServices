@@ -22,6 +22,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
     public record PowerShellExecutionOptions : ExecutionOptions
     {
+        internal static PowerShellExecutionOptions ImmediateInteractive = new()
+        {
+            Priority = ExecutionPriority.Next,
+            MustRunInForeground = true,
+            InterruptCurrentForeground = true,
+        };
+
         public bool WriteOutputToHost { get; init; }
         public bool WriteInputToHost { get; init; }
         public bool ThrowOnError { get; init; } = true;
