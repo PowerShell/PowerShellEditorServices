@@ -16,6 +16,7 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 
@@ -74,6 +75,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public DebuggerStoppedEventArgs CurrentDebuggerStoppedEventArgs { get; private set; }
 
+        /// <summary>
+        /// Tracks whether we are running <c>Debug-Runspace</c> in an out-of-process runspace.
+        /// </summary>
+        public bool IsDebuggingRemoteRunspace
+        {
+            get => _debugContext.IsDebuggingRemoteRunspace;
+            set => _debugContext.IsDebuggingRemoteRunspace = value;
+        }
+
         #endregion
 
         #region Constructors
@@ -128,6 +138,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             DscBreakpointCapability dscBreakpoints = await _debugContext.GetDscBreakpointCapabilityAsync(CancellationToken.None).ConfigureAwait(false);
 
             string scriptPath = scriptFile.FilePath;
+
+            _psesHost.Runspace.ThrowCancelledIfUnusable();
             // Make sure we're using the remote script path
             if (_psesHost.CurrentRunspace.IsOnRemoteMachine && _remoteFileManager is not null)
             {
@@ -771,22 +783,23 @@ namespace Microsoft.PowerShell.EditorServices.Services
             const string callStackVarName = $"$global:{PsesGlobalVariableNamePrefix}CallStack";
             const string getPSCallStack = $"Get-PSCallStack | ForEach-Object {{ [void]{callStackVarName}.Add(@($PSItem, $PSItem.GetFrameVariables())) }}";
 
+            _psesHost.Runspace.ThrowCancelledIfUnusable();
             // If we're attached to a remote runspace, we need to serialize the list prior to
             // transport because the default depth is too shallow. From testing, we determined the
-            // correct depth is 3. The script always calls `Get-PSCallStack`. On a local machine, we
-            // just return its results. On a remote machine we serialize it first and then later
+            // correct depth is 3. The script always calls `Get-PSCallStack`. In a local runspace, we
+            // just return its results. In a remote runspace we serialize it first and then later
             // deserialize it.
-            bool isOnRemoteMachine = _psesHost.CurrentRunspace.IsOnRemoteMachine;
-            string returnSerializedIfOnRemoteMachine = isOnRemoteMachine
+            bool isRemoteRunspace = _psesHost.CurrentRunspace.Runspace.RunspaceIsRemote;
+            string returnSerializedIfInRemoteRunspace = isRemoteRunspace
                 ? $"[Management.Automation.PSSerializer]::Serialize({callStackVarName}, 3)"
                 : callStackVarName;
 
             // PSObject is used here instead of the specific type because we get deserialized
             // objects from remote sessions and want a common interface.
-            PSCommand psCommand = new PSCommand().AddScript($"[Collections.ArrayList]{callStackVarName} = @(); {getPSCallStack}; {returnSerializedIfOnRemoteMachine}");
+            PSCommand psCommand = new PSCommand().AddScript($"[Collections.ArrayList]{callStackVarName} = @(); {getPSCallStack}; {returnSerializedIfInRemoteRunspace}");
             IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, CancellationToken.None).ConfigureAwait(false);
 
-            IEnumerable callStack = isOnRemoteMachine
+            IEnumerable callStack = isRemoteRunspace
                 ? (PSSerializer.Deserialize(results[0].BaseObject as string) as PSObject)?.BaseObject as IList
                 : results;
 
@@ -797,7 +810,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // We have to use reflection to get the variable dictionary.
                 IList callStackFrameComponents = (callStackFrameItem as PSObject)?.BaseObject as IList;
                 PSObject callStackFrame = callStackFrameComponents[0] as PSObject;
-                IDictionary callStackVariables = isOnRemoteMachine
+                IDictionary callStackVariables = isRemoteRunspace
                     ? (callStackFrameComponents[1] as PSObject)?.BaseObject as IDictionary
                     : callStackFrameComponents[1] as IDictionary;
 
@@ -861,7 +874,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     stackFrameDetailsEntry.ScriptPath = scriptNameOverride;
                 }
-                else if (isOnRemoteMachine
+                else if (_psesHost.CurrentRunspace.IsOnRemoteMachine
                     && _remoteFileManager is not null
                     && !string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
                 {
@@ -905,83 +918,98 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal async void OnDebuggerStopAsync(object sender, DebuggerStopEventArgs e)
         {
-            bool noScriptName = false;
-            string localScriptPath = e.InvocationInfo.ScriptName;
-
-            // If there's no ScriptName, get the "list" of the current source
-            if (_remoteFileManager is not null && string.IsNullOrEmpty(localScriptPath))
+            try
             {
-                // Get the current script listing and create the buffer
-                PSCommand command = new PSCommand().AddScript($"list 1 {int.MaxValue}");
+                bool noScriptName = false;
+                string localScriptPath = e.InvocationInfo.ScriptName;
 
-                IReadOnlyList<PSObject> scriptListingLines =
-                    await _executionService.ExecutePSCommandAsync<PSObject>(
-                        command, CancellationToken.None).ConfigureAwait(false);
-
-                if (scriptListingLines is not null)
+                // If there's no ScriptName, get the "list" of the current source
+                if (_remoteFileManager is not null && string.IsNullOrEmpty(localScriptPath))
                 {
-                    int linePrefixLength = 0;
+                    // Get the current script listing and create the buffer
+                    PSCommand command = new PSCommand().AddScript($"list 1 {int.MaxValue}");
 
-                    string scriptListing =
-                        string.Join(
-                            Environment.NewLine,
-                            scriptListingLines
-                                .Select(o => TrimScriptListingLine(o, ref linePrefixLength))
-                                .Where(s => s is not null));
+                    IReadOnlyList<PSObject> scriptListingLines =
+                        await _executionService.ExecutePSCommandAsync<PSObject>(
+                            command, CancellationToken.None).ConfigureAwait(false);
 
-                    temporaryScriptListingPath =
-                        _remoteFileManager.CreateTemporaryFile(
-                            $"[{_psesHost.CurrentRunspace.SessionDetails.ComputerName}] {TemporaryScriptFileName}",
-                            scriptListing,
-                            _psesHost.CurrentRunspace);
+                    if (scriptListingLines is not null)
+                    {
+                        int linePrefixLength = 0;
 
+                        string scriptListing =
+                            string.Join(
+                                Environment.NewLine,
+                                scriptListingLines
+                                    .Select(o => TrimScriptListingLine(o, ref linePrefixLength))
+                                    .Where(s => s is not null));
+
+                        temporaryScriptListingPath =
+                            _remoteFileManager.CreateTemporaryFile(
+                                $"[{_psesHost.CurrentRunspace.SessionDetails.ComputerName}] {TemporaryScriptFileName}",
+                                scriptListing,
+                                _psesHost.CurrentRunspace);
+
+                        localScriptPath =
+                            temporaryScriptListingPath
+                            ?? StackFrameDetails.NoFileScriptPath;
+
+                        noScriptName = localScriptPath is not null;
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Could not load script context");
+                    }
+                }
+
+                // Get call stack and variables.
+                await FetchStackFramesAndVariablesAsync(noScriptName ? localScriptPath : null).ConfigureAwait(false);
+
+                // If this is a remote connection and the debugger stopped at a line
+                // in a script file, get the file contents
+                if (_psesHost.CurrentRunspace.IsOnRemoteMachine
+                    && _remoteFileManager is not null
+                    && !noScriptName)
+                {
                     localScriptPath =
-                        temporaryScriptListingPath
-                        ?? StackFrameDetails.NoFileScriptPath;
-
-                    noScriptName = localScriptPath is not null;
+                        await _remoteFileManager.FetchRemoteFileAsync(
+                            e.InvocationInfo.ScriptName,
+                            _psesHost.CurrentRunspace).ConfigureAwait(false);
                 }
-                else
+
+                if (stackFrameDetails.Length > 0)
                 {
-                    _logger.LogWarning("Could not load script context");
+                    // Augment the top stack frame with details from the stop event
+                    if (invocationTypeScriptPositionProperty.GetValue(e.InvocationInfo) is IScriptExtent scriptExtent)
+                    {
+                        stackFrameDetails[0].StartLineNumber = scriptExtent.StartLineNumber;
+                        stackFrameDetails[0].EndLineNumber = scriptExtent.EndLineNumber;
+                        stackFrameDetails[0].StartColumnNumber = scriptExtent.StartColumnNumber;
+                        stackFrameDetails[0].EndColumnNumber = scriptExtent.EndColumnNumber;
+                    }
                 }
+
+                CurrentDebuggerStoppedEventArgs =
+                    new DebuggerStoppedEventArgs(
+                        e,
+                        _psesHost.CurrentRunspace,
+                        localScriptPath);
+
+                // Notify the host that the debugger is stopped.
+                DebuggerStopped?.Invoke(sender, CurrentDebuggerStoppedEventArgs);
             }
-
-            // Get call stack and variables.
-            await FetchStackFramesAndVariablesAsync(noScriptName ? localScriptPath : null).ConfigureAwait(false);
-
-            // If this is a remote connection and the debugger stopped at a line
-            // in a script file, get the file contents
-            if (_psesHost.CurrentRunspace.IsOnRemoteMachine
-                && _remoteFileManager is not null
-                && !noScriptName)
+            catch (OperationCanceledException)
             {
-                localScriptPath =
-                    await _remoteFileManager.FetchRemoteFileAsync(
-                        e.InvocationInfo.ScriptName,
-                        _psesHost.CurrentRunspace).ConfigureAwait(false);
+                // Ignore, likely means that a remote runspace has closed.
             }
-
-            if (stackFrameDetails.Length > 0)
+            catch (Exception exception)
             {
-                // Augment the top stack frame with details from the stop event
-                if (invocationTypeScriptPositionProperty.GetValue(e.InvocationInfo) is IScriptExtent scriptExtent)
-                {
-                    stackFrameDetails[0].StartLineNumber = scriptExtent.StartLineNumber;
-                    stackFrameDetails[0].EndLineNumber = scriptExtent.EndLineNumber;
-                    stackFrameDetails[0].StartColumnNumber = scriptExtent.StartColumnNumber;
-                    stackFrameDetails[0].EndColumnNumber = scriptExtent.EndColumnNumber;
-                }
+                // Log in a catch all so we don't crash the process.
+                _logger.LogError(
+                    exception,
+                    "Error occurred while obtaining debug info. Message: {message}",
+                    exception.Message);
             }
-
-            CurrentDebuggerStoppedEventArgs =
-                new DebuggerStoppedEventArgs(
-                    e,
-                    _psesHost.CurrentRunspace,
-                    localScriptPath);
-
-            // Notify the host that the debugger is stopped.
-            DebuggerStopped?.Invoke(sender, CurrentDebuggerStoppedEventArgs);
         }
 
         private void OnDebuggerResuming(object sender, DebuggerResumingEventArgs debuggerResumingEventArgs) => CurrentDebuggerStoppedEventArgs = null;

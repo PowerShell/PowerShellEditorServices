@@ -50,6 +50,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         /// <returns>A prompt string decorated with remote connection details.</returns>
         public static string GetRemotePrompt(this Runspace runspace, string basePrompt) => s_getRemotePromptFunc(runspace, basePrompt);
 
+        public static void ThrowCancelledIfUnusable(this Runspace runspace)
+            => runspace.RunspaceStateInfo.ThrowCancelledIfUnusable();
+
+        public static void ThrowCancelledIfUnusable(this RunspaceStateInfo runspaceStateInfo)
+        {
+            if (!IsUsable(runspaceStateInfo))
+            {
+                throw new OperationCanceledException();
+            }
+        }
+
         public static bool IsUsable(this RunspaceStateInfo runspaceStateInfo)
         {
             return runspaceStateInfo.State switch

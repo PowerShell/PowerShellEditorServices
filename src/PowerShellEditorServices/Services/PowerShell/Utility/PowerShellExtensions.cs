@@ -37,6 +37,38 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 typeof(PowerShell).GetMethod("ResumeIncomingData", BindingFlags.Instance | BindingFlags.NonPublic));
         }
 
+        public static PowerShell CloneForNewFrame(this PowerShell pwsh)
+        {
+            if (pwsh.IsNested)
+            {
+                return PowerShell.Create(RunspaceMode.CurrentRunspace);
+            }
+
+            PowerShell newPwsh = PowerShell.Create();
+            newPwsh.Runspace = pwsh.Runspace;
+            return newPwsh;
+        }
+
+        public static void DisposeWhenCompleted(this PowerShell pwsh)
+        {
+            static void handler(object self, PSInvocationStateChangedEventArgs e)
+            {
+                if (e.InvocationStateInfo.State is
+                    not PSInvocationState.Completed
+                    and not PSInvocationState.Failed
+                    and not PSInvocationState.Stopped)
+                {
+                    return;
+                }
+
+                PowerShell pwsh = (PowerShell)self;
+                pwsh.InvocationStateChanged -= handler;
+                pwsh.Dispose();
+            }
+
+            pwsh.InvocationStateChanged += handler;
+        }
+
         public static Collection<TResult> InvokeAndClear<TResult>(this PowerShell pwsh, PSInvocationSettings invocationSettings = null)
         {
             try
