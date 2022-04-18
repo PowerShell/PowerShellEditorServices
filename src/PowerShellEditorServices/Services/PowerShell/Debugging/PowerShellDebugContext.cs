@@ -130,6 +130,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
             if (debuggerResumeAction is DebuggerResumeAction.Stop)
             {
+                // If we're disconnecting we want to unwind all the way back to the default, local
+                // state. So we use UnwindCallStack here to ensure every context frame is cancelled.
                 if (isDisconnect)
                 {
                     _psesHost.UnwindCallStack();
