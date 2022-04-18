@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -14,6 +13,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using Microsoft.PowerShell.EditorServices.Services.Extension;
 
 #if DEBUG
+using System.Diagnostics;
 using Serilog.Debugging;
 #endif
 

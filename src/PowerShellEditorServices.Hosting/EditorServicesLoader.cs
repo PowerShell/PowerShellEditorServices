@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -12,6 +11,10 @@ using System.Runtime.InteropServices;
 using SMA = System.Management.Automation;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+
+#if DEBUG
+using System.Diagnostics;
+#endif
 
 #if CoreCLR
 using System.Runtime.Loader;

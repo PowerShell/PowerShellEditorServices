@@ -3,11 +3,14 @@
 
 using System;
 using System.Diagnostics;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using SMA = System.Management.Automation;
+
+#if DEBUG
+using System.Text;
+#endif
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
 {
