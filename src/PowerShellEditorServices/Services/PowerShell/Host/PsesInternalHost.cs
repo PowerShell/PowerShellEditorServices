@@ -193,7 +193,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         // TODO: Handle exit code if needed
         public override void SetShouldExit(int exitCode)
         {
-            if ((CurrentFrame.FrameType & PowerShellFrameType.Remote) is not 0)
+            if (CurrentFrame.IsRemote)
             {
                 // PopRunspace also calls SetExit.
                 PopRunspace();
@@ -262,7 +262,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             // Can't exit from the top level of PSES
             // since if you do, you lose all LSP services
             PowerShellContextFrame frame = CurrentFrame;
-            if ((frame.FrameType & PowerShellFrameType.Repl) is 0 || _psFrameStack.Count <= 1)
+            if (!frame.IsRepl || _psFrameStack.Count <= 1)
             {
                 return;
             }
@@ -525,7 +525,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 {
                     RunTopLevelExecutionLoop();
                 }
-                else if ((frame.FrameType & PowerShellFrameType.Debug) != 0)
+                else if (frame.IsDebug)
                 {
                     RunDebugExecutionLoop();
                 }
@@ -701,9 +701,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 }
 
                 if (_shouldExit
-                    && (CurrentFrame.FrameType & PowerShellFrameType.Remote) is not 0
-                    && (CurrentFrame.FrameType & PowerShellFrameType.Repl) is not 0
-                    && (CurrentFrame.FrameType & PowerShellFrameType.Nested) is 0)
+                    && CurrentFrame is { IsRemote: true, IsRepl: true, IsNested: false })
                 {
                     _shouldExit = false;
                     PopPowerShell();

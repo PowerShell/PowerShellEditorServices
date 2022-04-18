@@ -39,6 +39,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
 
         public PowerShellFrameType FrameType { get; }
 
+        public bool IsRepl => (FrameType & PowerShellFrameType.Repl) is not 0;
+
+        public bool IsRemote => (FrameType & PowerShellFrameType.Remote) is not 0;
+
+        public bool IsNested => (FrameType & PowerShellFrameType.Nested) is not 0;
+
+        public bool IsDebug => (FrameType & PowerShellFrameType.Debug) is not 0;
+
         public bool IsAwaitingPop { get; set; }
 
         public bool SessionExiting { get; set; }
