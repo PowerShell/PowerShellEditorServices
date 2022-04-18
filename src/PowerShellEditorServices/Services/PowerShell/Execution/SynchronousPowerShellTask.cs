@@ -333,7 +333,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private void CancelNormalExecution()
         {
-            if (_pwsh?.Runspace?.RunspaceStateInfo?.IsUsable() is false)
+            if (_pwsh.Runspace.RunspaceStateInfo.IsUsable())
             {
                 return;
             }
@@ -343,13 +343,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             // and essentially deadlock).
             if (_frame?.SessionExiting is true)
             {
-                _pwsh?.BeginStop(null, null);
+                _pwsh.BeginStop(null, null);
                 return;
             }
 
             try
             {
-                _pwsh?.Stop();
+                _pwsh.Stop();
             }
             catch (NullReferenceException nre)
             {
@@ -361,12 +361,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private void CancelDebugExecution()
         {
-            if (_pwsh?.Runspace?.RunspaceStateInfo?.IsUsable() is false)
+            if (_pwsh.Runspace.RunspaceStateInfo.IsUsable())
             {
                 return;
             }
 
-            _pwsh?.Runspace?.Debugger?.StopProcessCommand();
+            _pwsh.Runspace.Debugger.StopProcessCommand();
         }
     }
 }
