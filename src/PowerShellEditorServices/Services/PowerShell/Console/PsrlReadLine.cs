@@ -18,8 +18,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private readonly EngineIntrinsics _engineIntrinsics;
 
-        #region Constructors
-
         public PsrlReadLine(
             PSReadLineProxy psrlProxy,
             PsesInternalHost psesHost,
@@ -34,24 +32,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             _psrlProxy.OverrideIdleHandler(onIdleAction);
         }
 
-        #endregion
-
-        #region Public Methods
-
         public override string ReadLine(CancellationToken cancellationToken) => _psesHost.InvokeDelegate(representation: "ReadLine", new ExecutionOptions { MustRunInForeground = true }, InvokePSReadLine, cancellationToken);
 
-        protected override ConsoleKeyInfo ReadKey(CancellationToken cancellationToken) => ConsoleProxy.ReadKey(intercept: true, cancellationToken);
-
-        #endregion
-
-        #region Private Methods
+        protected override ConsoleKeyInfo ReadKey(CancellationToken cancellationToken) => _psesHost.ReadKey(intercept: true, cancellationToken);
 
         private string InvokePSReadLine(CancellationToken cancellationToken)
         {
             EngineIntrinsics engineIntrinsics = _psesHost.IsRunspacePushed ? null : _engineIntrinsics;
             return _psrlProxy.ReadLine(_psesHost.Runspace, engineIntrinsics, cancellationToken, /* lastExecutionStatus */ null);
         }
-
-        #endregion
     }
 }

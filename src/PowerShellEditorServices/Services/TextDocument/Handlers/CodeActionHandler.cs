@@ -39,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // TODO: How on earth do we handle a CodeAction? This is new...
             if (cancellationToken.IsCancellationRequested)
             {
-                _logger.LogDebug("CodeAction request canceled for: {0}", request.Title);
+                _logger.LogDebug("CodeAction request canceled for: {Title}", request.Title);
             }
             return request;
         }

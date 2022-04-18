@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
     /// </summary>
     internal class PsesLanguageServer
     {
-        internal ILoggerFactory LoggerFactory { get; private set; }
+        internal ILoggerFactory LoggerFactory { get; }
 
         internal ILanguageServer LanguageServer { get; private set; }
 
@@ -117,7 +117,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     // _Initialize_ request:
                     // https://microsoft.github.io/language-server-protocol/specifications/specification-current/#initialize
                     .OnInitialize(
-                        (languageServer, request, cancellationToken) =>
+                        (languageServer, request, _) =>
                         {
                             Log.Logger.Debug("Initializing OmniSharp Language Server");
 

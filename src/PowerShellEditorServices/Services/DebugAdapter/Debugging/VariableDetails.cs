@@ -101,8 +101,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <returns></returns>
         public override VariableDetailsBase[] GetChildren(ILogger logger)
         {
-            VariableDetails[] childVariables = null;
-
             if (IsExpandable)
             {
                 if (cachedChildren == null)
@@ -112,12 +110,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
                 return cachedChildren;
             }
-            else
-            {
-                childVariables = Array.Empty<VariableDetails>();
-            }
 
-            return childVariables;
+            return Array.Empty<VariableDetails>();
         }
 
         #endregion
@@ -153,7 +147,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
         private static string GetValueStringAndType(object value, bool isExpandable, out string typeName)
         {
-            string valueString = null;
             typeName = null;
 
             if (value == null)
@@ -167,13 +160,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             // This is the type format PowerShell users expect and will appear when you hover a variable name
             typeName = '[' + objType.FullName + ']';
 
-            if (value is bool)
+            string valueString;
+            if (value is bool x)
             {
                 // Set to identifier recognized by PowerShell to make setVariable from the debug UI more natural.
-                valueString = (bool)value ? "$true" : "$false";
+                valueString = x ? "$true" : "$false";
 
                 // We need to use this "magic value" to highlight in vscode properly
-                // These "magic values" are analagous to TypeScript and are visible in VSCode here:
+                // These "magic values" are analogous to TypeScript and are visible in VSCode here:
                 // https://github.com/microsoft/vscode/blob/57ca9b99d5b6a59f2d2e0f082ae186559f45f1d8/src/vs/workbench/contrib/debug/browser/baseDebugView.ts#L68-L78
                 // NOTE: we don't do numbers and strings since they (so far) seem to get detected properly by
                 // serialization, and the original .NET type can be preserved so it shows up in the variable name
@@ -191,7 +185,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 else
                 {
                     string valueToString = value.SafeToString();
-                    if (valueToString == null || valueToString.Equals(objType.ToString()))
+                    if (valueToString?.Equals(objType.ToString()) != false)
                     {
                         // If the ToString() matches the type name or is null, then display the type
                         // name in PowerShell format.
@@ -230,24 +224,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
         private static string InsertDimensionSize(string value, int dimensionSize)
         {
-            string result = value;
-
             int indexLastRBracket = value.LastIndexOf("]");
             if (indexLastRBracket > 0)
             {
-                result =
-                    value.Substring(0, indexLastRBracket) +
+                return value.Substring(0, indexLastRBracket) +
                     dimensionSize +
                     value.Substring(indexLastRBracket);
             }
-            else
-            {
-                // Types like ArrayList don't use [] in type name so
-                // display value like so -  [ArrayList: 5]
-                result = value + ": " + dimensionSize;
-            }
-
-            return result;
+            // Types like ArrayList don't use [] in type name so
+            // display value like so -  [ArrayList: 5]
+            return value + ": " + dimensionSize;
         }
 
         private VariableDetails[] GetChildren(object obj, ILogger logger)
@@ -277,7 +263,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                     // If a PSObject other than a PSCustomObject, unwrap it.
                     if (psObject != null)
                     {
-                        // First add the PSObject's ETS propeties
+                        // First add the PSObject's ETS properties
                         childVariables.AddRange(
                             psObject
                                 .Properties
@@ -303,7 +289,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                         // It turns out that iteration via C#'s foreach loop, operates on the variable's
                         // type which in this case is IDictionary.  IDictionary was designed to always
                         // return DictionaryEntry objects upon iteration and the Dictionary<,> implementation
-                        // honors that when the object is reintepreted as an IDictionary object.
+                        // honors that when the object is reinterpreted as an IDictionary object.
                         // FYI, a test case for this is to open $PSBoundParameters when debugging a
                         // function that defines parameters and has been passed parameters.
                         // If you open the $PSBoundParameters variable node in this scenario and see nothing,

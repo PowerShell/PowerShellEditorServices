@@ -217,7 +217,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         /// <returns>An array of markers indicating script analysis diagnostics.</returns>
         public Task<ScriptFileMarker[]> AnalyzeScriptAsync(string scriptContent) => AnalyzeScriptAsync(scriptContent, settings: null);
 
-
         /// <summary>
         /// Analyze a given script using PSScriptAnalyzer.
         /// </summary>
@@ -259,7 +258,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         public PssaCmdletAnalysisEngine RecreateWithRules(string[] rules) => new(_logger, _analysisRunspacePool, _pssaModuleInfo, rules);
 
         #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
+        private bool disposedValue; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
         {

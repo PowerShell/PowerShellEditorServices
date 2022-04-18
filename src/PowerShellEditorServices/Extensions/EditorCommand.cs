@@ -16,23 +16,23 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Gets the name which uniquely identifies the command.
         /// </summary>
-        public string Name { get; private set; }
+        public string Name { get; }
 
         /// <summary>
         /// Gets the display name for the command.
         /// </summary>
-        public string DisplayName { get; private set; }
+        public string DisplayName { get; }
 
         /// <summary>
         /// Gets the boolean which determines whether this command's
         /// output should be suppressed.
         /// </summary>
-        public bool SuppressOutput { get; private set; }
+        public bool SuppressOutput { get; }
 
         /// <summary>
         /// Gets the ScriptBlock which can be used to execute the command.
         /// </summary>
-        public ScriptBlock ScriptBlock { get; private set; }
+        public ScriptBlock ScriptBlock { get; }
 
         #endregion
 
@@ -84,4 +84,3 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         #endregion
     }
 }
-

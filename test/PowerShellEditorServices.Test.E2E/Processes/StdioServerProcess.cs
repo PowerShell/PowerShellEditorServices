@@ -23,7 +23,9 @@ namespace PowerShellEditorServices.Test.E2E
         /// <summary>
         ///     The current server process (if any).
         /// </summary>
+#pragma warning disable CA2213
         private Process _serverProcess;
+#pragma warning restore CA2213
 
         /// <summary>
         ///     Create a new <see cref="StdioServerProcess"/>.
@@ -55,7 +57,7 @@ namespace PowerShellEditorServices.Test.E2E
             if (disposing)
             {
                 Process serverProcess = Interlocked.Exchange(ref _serverProcess, null);
-                if (serverProcess != null)
+                if (serverProcess is not null)
                 {
                     if (!serverProcess.HasExited)
                     {
@@ -65,6 +67,7 @@ namespace PowerShellEditorServices.Test.E2E
                     serverProcess.Dispose();
                 }
             }
+            base.Dispose(disposing);
         }
 
         /// <summary>
@@ -119,14 +122,14 @@ namespace PowerShellEditorServices.Test.E2E
         {
             Process serverProcess = Interlocked.Exchange(ref _serverProcess, null);
             ServerExitCompletion.TrySetResult(null);
-            if (serverProcess != null && !serverProcess.HasExited)
+            if (serverProcess?.HasExited == false)
             {
                 serverProcess.Kill();
             }
             return ServerExitCompletion.Task;
         }
 
-        public event EventHandler<ProcessExitedArgs> ProcessExited;
+        public event EventHandler<ProcessExitedEventArgs> ProcessExited;
 
         /// <summary>
         ///     Called when the server process has exited.
@@ -147,7 +150,7 @@ namespace PowerShellEditorServices.Test.E2E
             string errorMsg = serverProcess.StandardError.ReadToEnd();
 
             OnExited();
-            ProcessExited?.Invoke(this, new ProcessExitedArgs(exitCode, errorMsg));
+            ProcessExited?.Invoke(this, new ProcessExitedEventArgs(exitCode, errorMsg));
             if (exitCode != 0)
             {
                 ServerExitCompletion.TrySetException(new ProcessExitedException("Stdio server process exited unexpectedly", exitCode, errorMsg));
@@ -174,9 +177,9 @@ namespace PowerShellEditorServices.Test.E2E
         public string ErrorMessage { get; init; }
     }
 
-    public class ProcessExitedArgs : EventArgs
+    public class ProcessExitedEventArgs : EventArgs
     {
-        public ProcessExitedArgs(int exitCode, string errorMessage)
+        public ProcessExitedEventArgs(int exitCode, string errorMessage)
         {
             ExitCode = exitCode;
             ErrorMessage = errorMessage;

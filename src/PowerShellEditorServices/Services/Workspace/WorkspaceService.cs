@@ -298,7 +298,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="scriptFile">The file path at which the script resides.</param>
         public void CloseFile(ScriptFile scriptFile)
         {
-            Validate.IsNotNull("scriptFile", scriptFile);
+            Validate.IsNotNull(nameof(scriptFile), scriptFile);
 
             workspaceFiles.TryRemove(scriptFile.Id, out ScriptFile _);
         }
@@ -538,7 +538,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (resolveException != null)
             {
                 logger.LogError(
-                    $"Could not resolve relative script path\r\n" +
+                    "Could not resolve relative script path\r\n" +
                     $"    baseFilePath = {baseFilePath}\r\n    " +
                     $"    relativePath = {relativePath}\r\n\r\n" +
                     $"{resolveException}");

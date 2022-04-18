@@ -96,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         internal static ScriptFileMarker FromParseError(
             ParseError parseError)
         {
-            Validate.IsNotNull("parseError", parseError);
+            Validate.IsNotNull(nameof(parseError), parseError);
 
             return new ScriptFileMarker
             {
@@ -166,4 +166,3 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         #endregion
     }
 }
-

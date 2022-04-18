@@ -54,7 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
     internal class ScriptAnalysisSettings
     {
         private readonly object updateLock = new();
-        public bool? Enable { get; set; }
+        public bool Enable { get; set; }
         public string SettingsPath { get; set; }
         public ScriptAnalysisSettings() => Enable = true;
 
@@ -238,13 +238,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     openBraceSettings["NewLineAfter"] = true;
                     closeBraceSettings["NewLineAfter"] = true;
                     break;
-
-                case CodeFormattingPreset.Custom:
-                default:
-                    break;
             }
 
-            logger.LogDebug("Created formatting hashtable: {0}", JsonConvert.SerializeObject(settings));
+            logger.LogDebug("Created formatting hashtable: {Settings}", JsonConvert.SerializeObject(settings));
             return settings;
         }
 
@@ -387,7 +383,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         /// <summary>
         /// Whether integration features specific to Pester v5 are enabled
         /// </summary>
-        public bool UseLegacyCodeLens { get; set; } = false;
+        public bool UseLegacyCodeLens { get; set; }
 
         /// <summary>
         /// Update these settings from another settings object

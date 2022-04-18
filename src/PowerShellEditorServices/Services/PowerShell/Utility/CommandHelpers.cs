@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
@@ -117,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         /// Gets the command's "Synopsis" documentation section.
         /// </summary>
         /// <param name="commandInfo">The CommandInfo instance for the command.</param>
-        /// <param name="executionService">The exeuction service to use for getting command documentation.</param>
+        /// <param name="executionService">The execution service to use for getting command documentation.</param>
         /// <returns>The synopsis.</returns>
         public static async Task<string> GetCommandSynopsisAsync(
             CommandInfo commandInfo,

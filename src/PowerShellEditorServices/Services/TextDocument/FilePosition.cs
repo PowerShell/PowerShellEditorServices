@@ -98,4 +98,3 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         #endregion
     }
 }
-

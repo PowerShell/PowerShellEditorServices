@@ -8,14 +8,11 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 {
-
     /// <summary>
     /// Provides common operations for the tokens of a parsed script.
     /// </summary>
     internal static class TokenOperations
     {
-        private static readonly FoldingRangeKind? RegionKindNone = null;
-
         // These regular expressions are used to match lines which mark the start and end of region comment in a PowerShell
         // script. They are based on the defaults in the VS Code Language Configuration at;
         // https://github.com/Microsoft/vscode/blob/64186b0a26/extensions/powershell/language-configuration.json#L26-L31
@@ -49,7 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                     case TokenKind.RCurly:
                         if (tokenCurlyStack.Count > 0)
                         {
-                            refList.SafeAdd(CreateFoldingReference(tokenCurlyStack.Pop(), token, RegionKindNone));
+                            refList.SafeAdd(CreateFoldingReference(tokenCurlyStack.Pop(), token, default));
                         }
                         break;
 
@@ -65,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                     case TokenKind.RParen:
                         if (tokenParenStack.Count > 0)
                         {
-                            refList.SafeAdd(CreateFoldingReference(tokenParenStack.Pop(), token, RegionKindNone));
+                            refList.SafeAdd(CreateFoldingReference(tokenParenStack.Pop(), token, default));
                         }
                         break;
 
@@ -77,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                     case TokenKind.HereStringExpandable:
                         if (token.Extent.StartLineNumber != token.Extent.EndLineNumber)
                         {
-                            refList.SafeAdd(CreateFoldingReference(token, token, RegionKindNone));
+                            refList.SafeAdd(CreateFoldingReference(token, token, default));
                         }
                         break;
                 }
@@ -90,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             //
             // Find blocks of line comments # comment1\n# comment2\n...
             // Finding blocks of comment tokens is more complicated as the newline characters are not
-            // classed as comments.  To workaround this we search for valid block comments (See IsBlockCmment)
+            // classed as comments.  To workaround this we search for valid block comments (See IsBlockComment)
             // and then determine contiguous line numbers from there
             //
             // Find comments regions <# -> #>
@@ -197,7 +194,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// Returns true if a Token is a block comment;
         /// - Must be a TokenKind.comment
-        /// - Must be preceeded by TokenKind.NewLine
+        /// - Must be preceded by TokenKind.NewLine
         /// - Token text must start with a '#'.false  This is because comment regions
         ///   start with '&lt;#' but have the same TokenKind
         /// </summary>

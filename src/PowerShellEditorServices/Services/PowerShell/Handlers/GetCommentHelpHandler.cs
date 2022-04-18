@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Management.Automation.Language;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
@@ -14,21 +13,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class GetCommentHelpHandler : IGetCommentHelpHandler
     {
-        private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
         private readonly AnalysisService _analysisService;
-        private readonly SymbolsService _symbolsService;
 
         public GetCommentHelpHandler(
-            ILoggerFactory factory,
             WorkspaceService workspaceService,
-            AnalysisService analysisService,
-            SymbolsService symbolsService)
+            AnalysisService analysisService)
         {
-            _logger = factory.CreateLogger<GetCommentHelpHandler>();
             _workspaceService = workspaceService;
             _analysisService = analysisService;
-            _symbolsService = symbolsService;
         }
 
         public async Task<CommentHelpRequestResult> Handle(CommentHelpRequestParams request, CancellationToken cancellationToken)
@@ -77,8 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             List<string> helpLines = ScriptFile.GetLinesInternal(helpText);
 
-            if (helpLocation != null &&
-                !helpLocation.Equals("before", StringComparison.OrdinalIgnoreCase))
+            if (helpLocation?.Equals("before", StringComparison.OrdinalIgnoreCase) == false)
             {
                 // we need to trim the leading `{` and newline when helpLocation=="begin"
                 helpLines.RemoveAt(helpLines.Count - 1);

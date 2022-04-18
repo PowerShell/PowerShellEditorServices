@@ -136,7 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public void StartScriptDiagnostics(
             ScriptFile[] filesToAnalyze)
         {
-            if (_configurationService.CurrentSettings.ScriptAnalysis.Enable == false)
+            if (!_configurationService.CurrentSettings.ScriptAnalysis.Enable)
             {
                 return;
             }
@@ -247,9 +247,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="sender">The sender of the configuration update event.</param>
         /// <param name="settings">The new language server settings.</param>
-        public void OnConfigurationUpdated(object sender, LanguageServerSettings settings)
+        public void OnConfigurationUpdated(object _, LanguageServerSettings settings)
         {
-            if (settings.ScriptAnalysis.Enable ?? true)
+            if (settings.ScriptAnalysis.Enable)
             {
                 InitializeAnalysisEngineToCurrentSettings();
             }
@@ -451,7 +451,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 ScriptFileMarkerLevel.Information => DiagnosticSeverity.Information,
                 _ => DiagnosticSeverity.Error,
             };
-            ;
         }
 
         private static Hashtable GetCommentHelpRuleSettings(string helpLocation, bool forBlockComment)
@@ -469,7 +468,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
 
         #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
+        private bool disposedValue; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
         {
@@ -477,8 +476,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 if (disposing)
                 {
-                    if (_analysisEngineLazy != null
-                        && _analysisEngineLazy.IsValueCreated)
+                    if (_analysisEngineLazy?.IsValueCreated == true)
                     {
                         _analysisEngineLazy.Value.Dispose();
                     }
@@ -505,7 +503,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         private class CorrectionTableEntry
         {
-            public static CorrectionTableEntry CreateForFile(ScriptFile file) => new();
+            public static CorrectionTableEntry CreateForFile(ScriptFile _) => new();
 
             public CorrectionTableEntry()
             {

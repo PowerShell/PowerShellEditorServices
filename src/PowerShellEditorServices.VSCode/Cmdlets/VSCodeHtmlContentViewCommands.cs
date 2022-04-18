@@ -3,11 +3,8 @@
 
 using System;
 using System.Management.Automation;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.VSCode.CustomViews;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.VSCode
 {
@@ -109,10 +106,12 @@ namespace Microsoft.PowerShell.EditorServices.VSCode
         ///
         protected override void BeginProcessing()
         {
-            HtmlContent htmlContent = new();
-            htmlContent.BodyContent = HtmlBodyContent;
-            htmlContent.JavaScriptPaths = JavaScriptPaths;
-            htmlContent.StyleSheetPaths = StyleSheetPaths;
+            HtmlContent htmlContent = new()
+            {
+                BodyContent = HtmlBodyContent,
+                JavaScriptPaths = JavaScriptPaths,
+                StyleSheetPaths = StyleSheetPaths
+            };
             try
             {
                 HtmlContentView.SetContentAsync(htmlContent).GetAwaiter().GetResult();

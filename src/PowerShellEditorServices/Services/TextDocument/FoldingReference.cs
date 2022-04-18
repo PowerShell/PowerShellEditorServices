@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// The zero-based character offset from where the folded range starts. If not defined, defaults to the length of the start line.
         /// </summary>
-        public int StartCharacter { get; set; } = 0;
+        public int StartCharacter { get; set; }
 
         /// <summary>
         /// The zero-based line number where the folded range ends.
@@ -30,7 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// The zero-based character offset before the folded range ends. If not defined, defaults to the length of the end line.
         /// </summary>
-        public int EndCharacter { get; set; } = 0;
+        public int EndCharacter { get; set; }
 
         /// <summary>
         /// Describes the kind of the folding range such as `comment' or 'region'.

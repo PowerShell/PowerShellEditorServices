@@ -5,19 +5,12 @@ using Microsoft.PowerShell.Commands;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Management.Automation;
 using System.Reflection;
 using SMA = System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using System.Globalization;
-using System.Collections;
-
-// TODO: Remove this when we drop support for PS6.
-#if CoreCLR
-using System.Runtime.InteropServices;
-#endif
 
 #if DEBUG
 using System.Diagnostics;
@@ -35,14 +28,6 @@ namespace Microsoft.PowerShell.EditorServices.Commands
     [Cmdlet(VerbsLifecycle.Start, "EditorServices", DefaultParameterSetName = "NamedPipe")]
     public sealed class StartEditorServicesCommand : PSCmdlet
     {
-        // TODO: Remove this when we drop support for PS6.
-        private static readonly bool s_isWindows =
-#if CoreCLR
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-#else
-        true;
-#endif
-
         private readonly List<IDisposable> _disposableResources;
 
         private readonly List<IDisposable> _loggerUnsubscribers;
@@ -206,6 +191,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         [Parameter]
         public string StartupBanner { get; set; }
 
+#pragma warning disable IDE0022
         protected override void BeginProcessing()
         {
 #if DEBUG
@@ -218,10 +204,10 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 }
             }
 #endif
-
             // Set up logging now for use throughout startup
             StartLogging();
         }
+#pragma warning restore IDE0022
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Uses ThrowTerminatingError() instead")]
         protected override void EndProcessing()
@@ -318,7 +304,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             bool hasPSReadLine = pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Get-Module", typeof(GetModuleCommand)))
                 .AddParameter("Name", "PSReadLine")
                 .Invoke()
-                .Any();
+                .Count > 0;
 
             if (hasPSReadLine)
             {
@@ -420,12 +406,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 return ConsoleReplKind.None;
             }
 
-            // TODO: Remove this when we drop support for PS6.
-            Hashtable psVersionTable = (Hashtable)SessionState.PSVariable.GetValue("PSVersionTable");
-            dynamic version = psVersionTable["PSVersion"];
-            int majorVersion = (int)version.Major;
-
-            if (UseLegacyReadLine || (!s_isWindows && majorVersion == 6))
+            if (UseLegacyReadLine)
             {
                 _logger.Log(PsesLogLevel.Diagnostic, "REPL configured as Legacy");
                 return ConsoleReplKind.LegacyReadLine;

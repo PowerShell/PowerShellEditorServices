@@ -169,7 +169,7 @@ $foo = 'bar'
 
         [Trait("Category", "Folding")]
         [Fact]
-        public void LaguageServiceFindsFoldablRegionsWithLF()
+        public void LanguageServiceFindsFoldablRegionsWithLF()
         {
             // Remove and CR characters
             string testString = allInOneScript.Replace("\r", "");
@@ -181,7 +181,7 @@ $foo = 'bar'
 
         [Trait("Category", "Folding")]
         [Fact]
-        public void LaguageServiceFindsFoldablRegionsWithCRLF()
+        public void LanguageServiceFindsFoldablRegionsWithCRLF()
         {
             // The Foldable regions should be the same regardless of line ending type
             // Enforce CRLF line endings, if none exist
@@ -198,9 +198,9 @@ $foo = 'bar'
 
         [Trait("Category", "Folding")]
         [Fact]
-        public void LaguageServiceFindsFoldablRegionsWithMismatchedRegions()
+        public void LanguageServiceFindsFoldablRegionsWithMismatchedRegions()
         {
-            string testString =
+            const string testString =
 @"#endregion should not fold - mismatched
 
 #region This should fold
@@ -219,9 +219,9 @@ $something = 'foldable'
 
         [Trait("Category", "Folding")]
         [Fact]
-        public void LaguageServiceFindsFoldablRegionsWithDuplicateRegions()
+        public void LanguageServiceFindsFoldablRegionsWithDuplicateRegions()
         {
-            string testString =
+            const string testString =
 @"# This script causes duplicate/overlapping ranges due to the `(` and `{` characters
 $AnArray = @(Get-ChildItem -Path C:\ -Include *.ps1 -File).Where({
     $_.FullName -ne 'foo'}).ForEach({
@@ -241,9 +241,9 @@ $AnArray = @(Get-ChildItem -Path C:\ -Include *.ps1 -File).Where({
         // ( -> ), @( -> ) and $( -> ) does not confuse the folder
         [Trait("Category", "Folding")]
         [Fact]
-        public void LaguageServiceFindsFoldablRegionsWithSameEndToken()
+        public void LanguageServiceFindsFoldablRegionsWithSameEndToken()
         {
-            string testString =
+            const string testString =
 @"foreach ($1 in $2) {
 
     $x = @{
@@ -269,9 +269,9 @@ $y = $(
         // A simple PowerShell Classes test
         [Trait("Category", "Folding")]
         [Fact]
-        public void LaguageServiceFindsFoldablRegionsWithClasses()
+        public void LanguageServiceFindsFoldablRegionsWithClasses()
         {
-            string testString =
+            const string testString =
 @"class TestClass {
     [string[]] $TestProperty = @(
         'first',
@@ -297,9 +297,9 @@ $y = $(
         // This tests DSC style keywords and param blocks
         [Trait("Category", "Folding")]
         [Fact]
-        public void LaguageServiceFindsFoldablRegionsWithDSC()
+        public void LanguageServiceFindsFoldablRegionsWithDSC()
         {
-            string testString =
+            const string testString =
 @"Configuration Example
 {
     param
@@ -309,7 +309,7 @@ $y = $(
         $NodeName = 'localhost',
 
         [Parameter(Mandatory = $true)]
-        [ValidateNotNullorEmpty()]
+        [ValidateNotNullOrEmpty()]
         [System.Management.Automation.PSCredential]
         $Credential
     )

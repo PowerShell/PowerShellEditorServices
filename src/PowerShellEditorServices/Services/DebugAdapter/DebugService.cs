@@ -380,20 +380,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 throw new InvalidPowerShellExpressionException(errorRecord.ToString());
             }
 
-            // OK, now we have a PS object from the supplied value string (expression) to assign to a variable.
-            // Get the variable referenced by variableContainerReferenceId and variable name.
-            VariableContainerDetails variableContainer = null;
             await debugInfoHandle.WaitAsync().ConfigureAwait(false);
             try
             {
-                variableContainer = (VariableContainerDetails)variables[variableContainerReferenceId];
+                // OK, now we have a PS object from the supplied value string (expression) to assign to a variable.
+                // Get the variable referenced by variableContainerReferenceId and variable name.
+                VariableContainerDetails variableContainer = (VariableContainerDetails)variables[variableContainerReferenceId];
             }
             finally
             {
                 debugInfoHandle.Release();
             }
-
-            VariableDetailsBase variable = variableContainer.Children[name];
 
             // Determine scope in which the variable lives so we can pass it to `Get-Variable
             // -Scope`. The default is scope 0 which is safe because if a user is able to see a
@@ -834,7 +831,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     VariableInfo psVarInfo = TryVariableInfo(new PSObject(entry.Value));
                     if (psVarInfo is null)
                     {
-                        _logger.LogError($"A object was received that is not a PSVariable object");
+                        _logger.LogError("A object was received that is not a PSVariable object");
                         continue;
                     }
 
@@ -853,7 +850,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // the "Auto" container (not to be confused with Automatic PowerShell variables).
                 //
                 // TODO: We can potentially use `Get-Variable -Scope x` to add relevant local
-                // variables to other frames but frames and scopes are not perfectly analagous and
+                // variables to other frames but frames and scopes are not perfectly analogous and
                 // we'd need a way to detect things such as module borders and dot-sourced files.
                 if (isTopStackFrame)
                 {

@@ -81,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared
         /// <summary>
         /// Not for use in production -- convenience code for debugging tests.
         /// </summary>
-        public static void AWAIT_DEBUGGER_HERE(
+        public static void AwaitDebuggerHere(
             [CallerMemberName] string callerName = null,
             [CallerFilePath] string callerPath = null,
             [CallerLineNumber] int callerLine = -1)

@@ -62,6 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         public void Dispose()
         {
             debugService.Abort();
+            debuggerStoppedQueue.Dispose();
             psesHost.StopAsync().Wait();
             GC.SuppressFinalize(this);
         }
@@ -113,7 +114,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             Assert.True(psesHost.DebugContext.IsStopped);
 
-            if (scriptPath != "")
+            if (!string.IsNullOrEmpty(scriptPath))
             {
                 // TODO: The drive letter becomes lower cased on Windows for some reason.
                 Assert.Equal(scriptPath, eventArgs.ScriptPath, ignoreCase: true);

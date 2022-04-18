@@ -43,4 +43,3 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         public string ResponseText { get; set; }
     }
 }
-

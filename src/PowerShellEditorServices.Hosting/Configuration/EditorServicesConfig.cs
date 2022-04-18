@@ -76,12 +76,12 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <summary>
         /// Names of or paths to any additional modules to load on startup.
         /// </summary>
-        public IReadOnlyList<string> AdditionalModules { get; set; } = null;
+        public IReadOnlyList<string> AdditionalModules { get; set; }
 
         /// <summary>
         /// Flags of features to enable on startup.
         /// </summary>
-        public IReadOnlyList<string> FeatureFlags { get; set; } = null;
+        public IReadOnlyList<string> FeatureFlags { get; set; }
 
         /// <summary>
         /// The console REPL experience to use in the integrated console
@@ -97,12 +97,12 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <summary>
         /// Configuration for the language server protocol transport to use.
         /// </summary>
-        public ITransportConfig LanguageServiceTransport { get; set; } = null;
+        public ITransportConfig LanguageServiceTransport { get; set; }
 
         /// <summary>
         /// Configuration for the debug adapter protocol transport to use.
         /// </summary>
-        public ITransportConfig DebugServiceTransport { get; set; } = null;
+        public ITransportConfig DebugServiceTransport { get; set; }
 
         /// <summary>
         /// PowerShell profile locations for Editor Services to use for its profiles.

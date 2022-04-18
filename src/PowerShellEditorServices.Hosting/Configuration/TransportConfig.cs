@@ -49,7 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public string SessionFileTransportName => "Stdio";
 
-        public IReadOnlyDictionary<string, object> SessionFileEntries { get; } = null;
+        public IReadOnlyDictionary<string, object> SessionFileEntries { get; }
 
         public Task<(Stream inStream, Stream outStream)> ConnectStreamsAsync()
         {
@@ -67,7 +67,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// Create a duplex named pipe transport config with an automatically generated pipe name.
         /// </summary>
         /// <returns>A new duplex named pipe transport configuration.</returns>
-
         public static DuplexNamedPipeTransportConfig Create(HostLogger logger) => new(logger, NamedPipeUtils.GenerateValidNamedPipeName());
 
         /// <summary>

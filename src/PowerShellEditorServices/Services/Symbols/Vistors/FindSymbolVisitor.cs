@@ -6,7 +6,7 @@ using System.Management.Automation.Language;
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {
     /// <summary>
-    /// The visitor used to find the the symbol at a specfic location in the AST
+    /// The visitor used to find the symbol at a specific location in the AST
     /// </summary>
     internal class FindSymbolVisitor : AstVisitor
     {

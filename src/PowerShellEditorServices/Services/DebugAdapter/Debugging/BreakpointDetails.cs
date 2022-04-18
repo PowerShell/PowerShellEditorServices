@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
     /// Provides details about a breakpoint that is set in the
     /// PowerShell debugger.
     /// </summary>
-    internal class BreakpointDetails : BreakpointDetailsBase
+    internal sealed class BreakpointDetails : BreakpointDetailsBase
     {
         /// <summary>
         /// Gets the unique ID of the breakpoint.

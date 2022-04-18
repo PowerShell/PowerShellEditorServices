@@ -21,17 +21,17 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Gets the FileContext for the active file.
         /// </summary>
-        public FileContext CurrentFile { get; private set; }
+        public FileContext CurrentFile { get; }
 
         /// <summary>
         /// Gets the BufferRange representing the current selection in the file.
         /// </summary>
-        public IFileRange SelectedRange { get; private set; }
+        public IFileRange SelectedRange { get; }
 
         /// <summary>
         /// Gets the FilePosition representing the current cursor position.
         /// </summary>
-        public IFilePosition CursorPosition { get; private set; }
+        public IFilePosition CursorPosition { get; }
 
         #endregion
 

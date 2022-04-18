@@ -100,7 +100,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 CommandElementAst currentCommandElement = pesterCommandAst.CommandElements[i];
 
                 // Check for an explicit "-Name" parameter
-                if (currentCommandElement is CommandParameterAst parameterAst)
+                if (currentCommandElement is CommandParameterAst)
                 {
                     // Found -Name parameter, move to next element which is the argument for -TestName
                     i++;
@@ -184,12 +184,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <summary>
         /// Gets the name of the test
         /// </summary>
-        public string TestName { get; private set; }
+        public string TestName { get; }
 
         /// <summary>
         /// Gets the test's command type.
         /// </summary>
-        public PesterCommandType Command { get; private set; }
+        public PesterCommandType Command { get; }
 
         internal PesterSymbolReference(
             ScriptFile scriptFile,

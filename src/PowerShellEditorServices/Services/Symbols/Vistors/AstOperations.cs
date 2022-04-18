@@ -89,7 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             await executionService.ExecuteDelegateAsync(
                 representation: "CompleteInput",
                 new ExecutionOptions { Priority = ExecutionPriority.Next },
-                (pwsh, cancellationToken) =>
+                (pwsh, _) =>
                 {
                     stopwatch.Start();
                     commandCompletion = CommandCompletion.CompleteInput(
@@ -113,7 +113,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// </summary>
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <param name="lineNumber">The line number of the cursor for the given script</param>
-        /// <param name="columnNumber">The coulumn number of the cursor for the given script</param>
+        /// <param name="columnNumber">The column number of the cursor for the given script</param>
         /// <param name="includeFunctionDefinitions">Includes full function definition ranges in the search.</param>
         /// <returns>SymbolReference of found symbol</returns>
         public static SymbolReference FindSymbolAtPosition(
@@ -152,7 +152,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// Finds all references (including aliases) in a script for the given symbol
         /// </summary>
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
-        /// <param name="symbolReference">The symbol that we are looking for referneces of</param>
+        /// <param name="symbolReference">The symbol that we are looking for references of</param>
         /// <param name="cmdletToAliasDictionary">Dictionary maping cmdlets to aliases for finding alias references</param>
         /// <param name="aliasToCmdletDictionary">Dictionary maping aliases to cmdlets for finding alias references</param>
         /// <returns></returns>
@@ -197,15 +197,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <param name="powerShellVersion">The PowerShell version the Ast was generated from</param>
         /// <returns>A collection of SymbolReference objects</returns>
-        public static IEnumerable<SymbolReference> FindSymbolsInDocument(Ast scriptAst, Version powerShellVersion)
+        public static IEnumerable<SymbolReference> FindSymbolsInDocument(Ast scriptAst)
         {
-            IEnumerable<SymbolReference> symbolReferences = null;
-
             // TODO: Restore this when we figure out how to support multiple
             //       PS versions in the new PSES-as-a-module world (issue #276)
             //            if (powerShellVersion >= new Version(5,0))
             //            {
-            //#if PowerShellv5
+            //#if PowerShell v5
             //                FindSymbolsVisitor2 findSymbolsVisitor = new FindSymbolsVisitor2();
             //                scriptAst.Visit(findSymbolsVisitor);
             //                symbolReferences = findSymbolsVisitor.SymbolReferences;
@@ -215,8 +213,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 
             FindSymbolsVisitor findSymbolsVisitor = new();
             scriptAst.Visit(findSymbolsVisitor);
-            symbolReferences = findSymbolsVisitor.SymbolReferences;
-            return symbolReferences;
+            return findSymbolsVisitor.SymbolReferences;
         }
 
         /// <summary>
@@ -253,7 +250,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 return levelAstTypeMatch;
             }
 
-            IEnumerable<Ast> astsFound = (node.Item as Ast).FindAll(a => a is Ast, false);
+            IEnumerable<Ast> astsFound = (node.Item as Ast)?.FindAll(a => a is not null, false);
             if (astsFound != null)
             {
                 foreach (Ast astFound in astsFound)

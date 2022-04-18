@@ -475,8 +475,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                             PowerShellExecutionOptions.ImmediateInteractive)
                             .ConfigureAwait(false);
 
-                        if (_debugStateService.IsRemoteAttach &&
-                            _runspaceContext.CurrentRunspace.RunspaceOrigin != RunspaceOrigin.Local)
+                        if (_debugStateService.IsRemoteAttach)
                         {
                             await _executionService.ExecutePSCommandAsync(new PSCommand().AddCommand("Exit-PSSession"), CancellationToken.None).ConfigureAwait(false);
                         }

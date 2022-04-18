@@ -65,7 +65,6 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
     internal static class PowerShellReflectionUtils
     {
-
         private static readonly Type s_psVersionInfoType = typeof(System.Management.Automation.Runspaces.Runspace).Assembly.GetType("System.Management.Automation.PSVersionInfo");
 
         // This property is a Version type in PowerShell. It's existed since 5.1, but it was only made public in 6.2.

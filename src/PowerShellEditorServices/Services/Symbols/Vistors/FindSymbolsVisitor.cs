@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// </remarks>
     internal class FindSymbolsVisitor : AstVisitor
     {
-        public List<SymbolReference> SymbolReferences { get; private set; }
+        public List<SymbolReference> SymbolReferences { get; }
 
         public FindSymbolsVisitor() => SymbolReferences = new List<SymbolReference>();
 
@@ -78,12 +78,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             }
 
             parent = parent.Parent;
-            if (parent == null || parent.Parent == null || parent.Parent.Parent == null)
-            {
-                return true;
-            }
-
-            return false;
+            return parent is null || parent.Parent is null || parent.Parent.Parent is null;
         }
     }
 
@@ -95,7 +90,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <summary>
         /// List of symbols (keys) found in the hashtable
         /// </summary>
-        public List<SymbolReference> SymbolReferences { get; private set; }
+        public List<SymbolReference> SymbolReferences { get; }
 
         /// <summary>
         /// Initializes a new instance of FindHashtableSymbolsVisitor class
@@ -126,13 +121,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                         File = hashtableAst.Extent.File
                     };
 
-                    SymbolType symbolType = SymbolType.HashtableKey;
+                    const SymbolType symbolType = SymbolType.HashtableKey;
 
                     SymbolReferences.Add(
                         new SymbolReference(
                             symbolType,
                             nameExtent));
-
                 }
             }
 

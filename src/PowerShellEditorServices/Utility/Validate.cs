@@ -104,8 +104,8 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// </summary>
         /// <typeparam name="TValue">The type of value to be validated.</typeparam>
         /// <param name="parameterName">The name of the parameter being validated.</param>
-        /// <param name="undesiredValue">The value that valueToCheck should not equal.</param>
         /// <param name="valueToCheck">The value of the parameter being validated.</param>
+        /// <param name="undesiredValue">The value that valueToCheck should not equal.</param>
         public static void IsNotEqual<TValue>(
             string parameterName,
             TValue valueToCheck,

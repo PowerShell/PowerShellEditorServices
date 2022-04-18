@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
@@ -9,7 +8,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
 {
     internal static class CompleteCommandFromModule
     {
-        public static readonly string GetRandomDetail =
+        public const string GetRandomDetail =
             "Get-Random [[-Maximum] <Object>] [-SetSeed <int>] [-Minimum <Object>]";
 
         public static readonly ScriptRegion SourceDetails = new(
