@@ -1,5 +1,12 @@
 # PowerShell Editor Services Release History
 
+## v3.3.0
+### Monday, April 18, 2022
+
+- #️⃣ 🙏 [PowerShellEditorServices #1757](https://github.com/PowerShell/PowerShellEditorServices/pull/1757) - Enable code analysis and formatting as errors on build.
+- ✨ 🚂 [PowerShellEditorServices #1755](https://github.com/PowerShell/PowerShellEditorServices/pull/1755) - Apply automatic fixes (manually).
+- 🐛 🔍 [PowerShellEditorServices #1736](https://github.com/PowerShell/PowerShellEditorServices/pull/1752) - Fix attach to process debugging.
+
 ## v3.2.0
 ### Tuesday, April 12, 2022
 
