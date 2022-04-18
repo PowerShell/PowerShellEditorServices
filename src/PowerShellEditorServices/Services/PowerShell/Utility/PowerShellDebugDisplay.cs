@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 #if DEBUG
 using System.Diagnostics;
 using SMA = System.Management.Automation;

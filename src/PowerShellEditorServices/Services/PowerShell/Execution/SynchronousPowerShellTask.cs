@@ -261,7 +261,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                     throw;
                 }
 
-                using PSDataCollection<PSObject> errorOutputCollection = new PSDataCollection<PSObject>();
+                using PSDataCollection<PSObject> errorOutputCollection = new();
                 errorOutputCollection.DataAdding += (object sender, DataAddingEventArgs args)
                     => _psesHost.UI.WriteLine(args.ItemAdded?.ToString());
 

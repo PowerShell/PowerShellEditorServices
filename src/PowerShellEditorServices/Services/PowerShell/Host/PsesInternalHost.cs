@@ -312,15 +312,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public void CancelCurrentTask() => _cancellationContext.CancelCurrentTask();
 
-        public void CancelIdleParentTask()
-        {
-            _cancellationContext.CancelIdleParentTask();
-        }
+        public void CancelIdleParentTask() => _cancellationContext.CancelIdleParentTask();
 
-        public void UnwindCallStack()
-        {
-            _cancellationContext.CancelCurrentTaskStack();
-        }
+        public void UnwindCallStack() => _cancellationContext.CancelCurrentTaskStack();
 
         public Task<TResult> ExecuteDelegateAsync<TResult>(
             string representation,
@@ -465,9 +459,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         }
 
         private void PushPowerShellAndRunLoop(PowerShell pwsh, PowerShellFrameType frameType, RunspaceInfo newRunspaceInfo = null)
-        {
-            PushPowerShellAndMaybeRunLoop(pwsh, frameType, newRunspaceInfo, skipRunLoop: false);
-        }
+            => PushPowerShellAndMaybeRunLoop(pwsh, frameType, newRunspaceInfo, skipRunLoop: false);
 
         private void PushPowerShellAndMaybeRunLoop(
             PowerShell pwsh,
