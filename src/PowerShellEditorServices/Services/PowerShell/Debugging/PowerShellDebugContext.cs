@@ -142,7 +142,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                 return;
             }
 
-            if ((_psesHost.CurrentFrame.FrameType & PowerShellFrameType.Repl) is not 0)
+            if (_psesHost.CurrentFrame.IsRepl)
             {
                 _psesHost.CancelCurrentTask();
             }
@@ -171,7 +171,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
                 // If a debugging command like `c` is specified in a nested remote
                 // debugging prompt we need to unwind the nested execution loop.
-                if ((_psesHost.CurrentFrame.FrameType & PowerShellFrameType.Remote) is not 0)
+                if (_psesHost.CurrentFrame.IsRemote)
                 {
                     _psesHost.ForceSetExit();
                 }
