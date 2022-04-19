@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         // These are PowerShell's intrinsic debugger commands that must be run via
         // `ProcessDebugCommand`.
-        private static readonly string[] DebuggerCommands = { "continue", "c", "k", "h", "?", "list", "l", "stepInto", "s", "stepOut", "o", "stepOver", "v", "quit", "q", "detach", "d" };
+        // TODO: private static readonly string[] DebuggerCommands = { "continue", "c", "k", "h", "?", "list", "l", "stepInto", "s", "stepOut", "o", "stepOver", "v", "quit", "q", "detach", "d" };
 
         public override IReadOnlyList<TResult> Run(CancellationToken cancellationToken)
         {
@@ -66,7 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 }
 
                 return _pwsh.Runspace.Debugger.InBreakpoint
-                    && (IsDebuggerCommand(_psCommand) || _pwsh.Runspace.RunspaceIsRemote)
+                    // TODO: && (IsDebuggerCommand(_psCommand) || _pwsh.Runspace.RunspaceIsRemote)
                     ? ExecuteInDebugger(cancellationToken)
                     : ExecuteNormally(cancellationToken);
             }
@@ -78,6 +78,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public override string ToString() => _psCommand.GetInvocationText();
 
+        /* TODO: Make this fix actually work.
         private static bool IsDebuggerCommand(PSCommand command)
         {
             if (command.Commands.Count is not 1
@@ -97,6 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
             return false;
         }
+        */
 
         private IReadOnlyList<TResult> ExecuteNormally(CancellationToken cancellationToken)
         {
