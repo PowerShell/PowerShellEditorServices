@@ -680,18 +680,30 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 }
 
                 using CancellationScope cancellationScope = _cancellationContext.EnterScope(false);
-                DoOneRepl(cancellationScope.CancellationToken);
+
+                try
+                {
+                    DoOneRepl(cancellationScope.CancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    if (isForDebug)
+                    {
+                        while (Runspace is { RunspaceIsRemote: true } remoteRunspace
+                            && !remoteRunspace.RunspaceStateInfo.IsUsable())
+                        {
+                            PopPowerShell(RunspaceChangeAction.Exit);
+                        }
+
+                        return;
+                    }
+                }
 
                 while (!ShouldExitExecutionLoop
                     && !cancellationScope.CancellationToken.IsCancellationRequested
                     && _taskQueue.TryTake(out ISynchronousTask task))
                 {
                     task.ExecuteSynchronously(cancellationScope.CancellationToken);
-                    while (Runspace is { RunspaceIsRemote: true } remoteRunspace
-                        && !remoteRunspace.RunspaceStateInfo.IsUsable())
-                    {
-                        PopPowerShell(RunspaceChangeAction.Exit);
-                    }
                 }
 
                 if (_shouldExit
@@ -759,7 +771,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             }
             catch (OperationCanceledException)
             {
-                // Do nothing, since we were just cancelled
+                throw;
             }
             // Propagate exceptions thrown from the debugger when quitting.
             catch (TerminateException)
@@ -828,6 +840,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private string InvokeReadLine(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
                 _readKeyCancellationToken = cancellationToken;
