@@ -333,7 +333,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private void CancelNormalExecution()
         {
-            if (_pwsh.Runspace.RunspaceStateInfo.IsUsable())
+            if (!_pwsh.Runspace.RunspaceStateInfo.IsUsable())
             {
                 return;
             }
