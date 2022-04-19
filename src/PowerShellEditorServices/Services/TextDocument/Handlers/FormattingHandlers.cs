@@ -72,8 +72,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (formattedScript is null)
             {
-                _logger.LogWarning($"Formatting returned null. Returning original contents for file: {scriptFile.DocumentUri}");
-                formattedScript = scriptFile.Contents;
+                _logger.LogWarning($"Formatting returned null. Not formatting: {scriptFile.DocumentUri}");
+                return null;
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning($"Formatting request canceled for: {scriptFile.DocumentUri}");
+                return null;
             }
 
             return new TextEditContainer(new TextEdit
@@ -152,8 +158,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (formattedScript is null)
             {
-                _logger.LogWarning($"Formatting returned null. Returning original contents for file: {scriptFile.DocumentUri}");
-                formattedScript = scriptFile.Contents;
+                _logger.LogWarning($"Formatting returned null. Not formatting: {scriptFile.DocumentUri}");
+                return null;
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning($"Formatting request canceled for: {scriptFile.DocumentUri}");
+                return null;
             }
 
             return new TextEditContainer(new TextEdit
