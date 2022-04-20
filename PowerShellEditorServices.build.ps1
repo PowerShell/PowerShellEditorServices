@@ -39,7 +39,7 @@ $script:PsesCommonProps = [xml](Get-Content -Raw "$PSScriptRoot/PowerShellEditor
 $script:NetRuntime = @{
     PS7 = 'netcoreapp3.1'
     PS72 = 'net6.0'
-    Desktop = 'net461'
+    Desktop = 'net462'
     Standard = 'netstandard2.0'
 }
 
