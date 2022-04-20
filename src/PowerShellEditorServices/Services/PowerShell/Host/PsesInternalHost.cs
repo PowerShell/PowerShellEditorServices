@@ -1022,13 +1022,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             }
         }
 
-        private static readonly ConsoleKeyInfo s_nullKeyInfo = new(
-            keyChar: ' ',
-            ConsoleKey.DownArrow,
-            shift: false,
-            alt: false,
-            control: false);
-
         private ConsoleKeyInfo ReadKey(bool intercept)
         {
             // PSRL doesn't tell us when CtrlC was sent.
@@ -1047,11 +1040,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             // TODO: We may want to allow users of PSES to override this method call.
             _lastKey = System.Console.ReadKey(intercept);
-
-            // TODO: After fixing PSReadLine so that when canceled it doesn't read a key, we can
-            // stop using s_nullKeyInfo (which is a down arrow so we don't change the buffer
-            // content). Without this, the sent key press is translated to an @ symbol.
-            return _readKeyCancellationToken.IsCancellationRequested ? s_nullKeyInfo : _lastKey.Value;
+            return _lastKey.Value;
         }
 
         internal ConsoleKeyInfo ReadKey(bool intercept, CancellationToken cancellationToken)
