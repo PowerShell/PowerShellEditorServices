@@ -131,10 +131,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// Sets up a script analysis run, eventually returning the result.
         /// </summary>
         /// <param name="filesToAnalyze">The files to run script analysis on.</param>
-        /// <param name="cancellationToken">A cancellation token to cancel this call with.</param>
         /// <returns>A task that finishes when script diagnostics have been published.</returns>
-        public void StartScriptDiagnostics(
-            ScriptFile[] filesToAnalyze)
+        public void StartScriptDiagnostics(ScriptFile[] filesToAnalyze)
         {
             if (!_configurationService.CurrentSettings.ScriptAnalysis.Enable)
             {
@@ -219,7 +217,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         /// Get the most recent corrections computed for a given script file.
         /// </summary>
-        /// <param name="documentUri">The URI string of the file to get code actions for.</param>
+        /// <param name="uri">The URI string of the file to get code actions for.</param>
         /// <returns>A threadsafe readonly dictionary of the code actions of the particular file.</returns>
         public async Task<IReadOnlyDictionary<string, IEnumerable<MarkerCorrection>>> GetMostRecentCodeActionsForFileAsync(DocumentUri uri)
         {
@@ -245,7 +243,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         /// Event subscription method to be run when PSES configuration has been updated.
         /// </summary>
-        /// <param name="sender">The sender of the configuration update event.</param>
+        /// <param name="_">The sender of the configuration update event.</param>
         /// <param name="settings">The new language server settings.</param>
         public void OnConfigurationUpdated(object _, LanguageServerSettings settings)
         {

@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
         /// <summary>
         /// Creates a new instance of the TemplateService class.
         /// </summary>
-        /// <param name="powerShellContext">The PowerShellContext to use for this service.</param>
+        /// <param name="executionService">The PowerShellContext to use for this service.</param>
         /// <param name="factory">An ILoggerFactory implementation used for writing log messages.</param>
         public TemplateService(IInternalPowerShellExecutionService executionService, ILoggerFactory factory)
         {

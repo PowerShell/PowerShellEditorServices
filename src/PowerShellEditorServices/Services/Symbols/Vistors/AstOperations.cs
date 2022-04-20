@@ -55,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <param name="fileOffset">
         /// The 1-based file offset at which a symbol will be located.
         /// </param>
-        /// <param name="powerShellContext">
+        /// <param name="executionService">
         /// The PowerShellContext to use for gathering completions.
         /// </param>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
@@ -195,7 +195,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// Finds all symbols in a script
         /// </summary>
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
-        /// <param name="powerShellVersion">The PowerShell version the Ast was generated from</param>
         /// <returns>A collection of SymbolReference objects</returns>
         public static IEnumerable<SymbolReference> FindSymbolsInDocument(Ast scriptAst)
         {

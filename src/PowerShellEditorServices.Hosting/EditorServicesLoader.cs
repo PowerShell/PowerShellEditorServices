@@ -61,6 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <param name="logger">The host logger to use.</param>
         /// <param name="hostConfig">The host configuration to start editor services with.</param>
         /// <param name="sessionFileWriter">The session file writer to write the session file with.</param>
+        /// <param name="loggersToUnsubscribe">The loggers to unsubscribe form writing to the terminal.</param>
         /// <returns></returns>
         public static EditorServicesLoader Create(
             HostLogger logger,

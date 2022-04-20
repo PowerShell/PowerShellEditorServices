@@ -43,7 +43,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
         /// contained in the PSObject which was obtained using the
         /// PSCommand returned by GetDetailsCommand.
         /// </summary>
-        /// <param name="detailsObject"></param>
         public SessionDetails(
             int processId,
             string computerName,

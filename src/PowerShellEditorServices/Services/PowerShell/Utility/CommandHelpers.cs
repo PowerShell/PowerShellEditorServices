@@ -59,6 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         /// <param name="commandName">The name of the command.</param>
         /// <param name="currentRunspace">The current runspace.</param>
         /// <param name="executionService">The execution service.</param>
+        /// <param name="cancellationToken">The token used to cancel this.</param>
         /// <returns>A CommandInfo object with details about the specified command.</returns>
         public static async Task<CommandInfo> GetCommandInfoAsync(
             string commandName,
@@ -117,6 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         /// </summary>
         /// <param name="commandInfo">The CommandInfo instance for the command.</param>
         /// <param name="executionService">The execution service to use for getting command documentation.</param>
+        /// <param name="cancellationToken">The token used to cancel this.</param>
         /// <returns>The synopsis.</returns>
         public static async Task<string> GetCommandSynopsisAsync(
             CommandInfo commandInfo,

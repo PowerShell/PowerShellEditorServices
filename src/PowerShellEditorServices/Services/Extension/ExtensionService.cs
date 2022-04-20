@@ -117,6 +117,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         /// </summary>
         /// <param name="commandName">The unique name of the command to be invoked.</param>
         /// <param name="editorContext">The context in which the command is being invoked.</param>
+        /// <param name="cancellationToken">The token used to cancel this.</param>
         /// <returns>A Task that can be awaited for completion.</returns>
         /// <exception cref="KeyNotFoundException">The command being invoked was not registered.</exception>
         public Task InvokeCommandAsync(string commandName, EditorContext editorContext, CancellationToken cancellationToken)

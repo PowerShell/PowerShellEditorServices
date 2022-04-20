@@ -49,6 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <param name="column"></param>
         /// <param name="condition"></param>
         /// <param name="hitCondition"></param>
+        /// <param name="logMessage"></param>
         /// <returns></returns>
         internal static BreakpointDetails Create(
             string source,

@@ -59,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// Creates a new instance of the DebuggerStoppedEventArgs class.
         /// </summary>
         /// <param name="originalEvent">The original DebuggerStopEventArgs instance from which this instance is based.</param>
-        /// <param name="runspaceDetails">The RunspaceDetails of the runspace which raised this event.</param>
+        /// <param name="runspaceInfo">The RunspaceDetails of the runspace which raised this event.</param>
         public DebuggerStoppedEventArgs(
             DebuggerStopEventArgs originalEvent,
             IRunspaceInfo runspaceInfo)
@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// Creates a new instance of the DebuggerStoppedEventArgs class.
         /// </summary>
         /// <param name="originalEvent">The original DebuggerStopEventArgs instance from which this instance is based.</param>
-        /// <param name="runspaceDetails">The RunspaceDetails of the runspace which raised this event.</param>
+        /// <param name="runspaceInfo">The RunspaceDetails of the runspace which raised this event.</param>
         /// <param name="localScriptPath">The local path of the remote script being debugged.</param>
         public DebuggerStoppedEventArgs(
             DebuggerStopEventArgs originalEvent,

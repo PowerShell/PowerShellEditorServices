@@ -91,6 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
         /// Gets the PowerShell version details for the given runspace.
         /// </summary>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
+        /// <param name="pwsh">The PowerShell instance for which to to get the version.</param>
         /// <returns>A new PowerShellVersionDetails instance.</returns>
         public static PowerShellVersionDetails GetVersionDetails(ILogger logger, PowerShell pwsh)
         {
