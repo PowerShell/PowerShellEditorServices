@@ -44,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared
         /// <returns>The normalized and resolved path to it.</returns>
         public static string GetSharedPath(string path)
         {
-            // TODO: When testing net461 with x64 host, another .. is needed!
+            // TODO: When testing net462 with x64 host, another .. is needed!
             return NormalizePath(Path.Combine(
                 Path.GetDirectoryName(typeof(TestUtilities).Assembly.Location),
                 "../../../../PowerShellEditorServices.Test.Shared",
