@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -14,6 +13,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using Microsoft.PowerShell.EditorServices.Services.Extension;
 
 #if DEBUG
+using System.Diagnostics;
 using Serilog.Debugging;
 #endif
 
@@ -36,7 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <remarks>
         /// <para>
         /// This can only be called once because it sets global state (the logger) and that call is
-        /// in <see cref="EditorServicesRunner"/>.
+        /// in <see cref="Hosting.EditorServicesRunner" />.
         /// </para>
         /// <para>
         /// TODO: Why is this a static function wrapping a constructor instead of just a
@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// </remarks>
         /// <param name="logPath">The path of the log file to use.</param>
         /// <param name="minimumLogLevel">The minimum log level to use.</param>
-        /// <returns></returns>
+        /// <param name="hostLogger">The host logger?</param>
         public static EditorServicesServerFactory Create(string logPath, int minimumLogLevel, IObservable<(int logLevel, string message)> hostLogger)
         {
             Log.Logger = new LoggerConfiguration()
@@ -78,7 +78,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// Create the LSP server.
         /// </summary>
         /// <remarks>
-        /// This is only called once and that's in <see cref="EditorServicesRunner"/>.
+        /// This is only called once and that's in <see cref="Hosting.EditorServicesRunner"/>.
         /// </remarks>
         /// <param name="inputStream">The protocol transport input stream.</param>
         /// <param name="outputStream">The protocol transport output stream.</param>
@@ -94,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// Create the debug server given a language server instance.
         /// </summary>
         /// <remarks>
-        /// This is only called once and that's in <see cref="EditorServicesRunner"/>.
+        /// This is only called once and that's in <see cref="Hosting.EditorServicesRunner"/>.
         /// </remarks>
         /// <param name="inputStream">The protocol transport input stream.</param>
         /// <param name="outputStream">The protocol transport output stream.</param>
@@ -116,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// Create a new debug server based on an old one in an ended session.
         /// </summary>
         /// <remarks>
-        /// This is only called once and that's in <see cref="EditorServicesRunner"/>.
+        /// This is only called once and that's in <see cref="Hosting.EditorServicesRunner"/>.
         /// </remarks>
         /// <param name="inputStream">The protocol transport input stream.</param>
         /// <param name="outputStream">The protocol transport output stream.</param>

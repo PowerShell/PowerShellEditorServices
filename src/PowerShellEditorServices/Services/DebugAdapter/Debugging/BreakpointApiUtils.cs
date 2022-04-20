@@ -167,6 +167,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <param name="condition">The expression that needs to be true for the breakpoint to be triggered.</param>
         /// <param name="hitCondition">The amount of times this line should be hit til the breakpoint is triggered.</param>
         /// <param name="logMessage">The log message to write instead of calling 'break'. In VS Code, this is called a 'logPoint'.</param>
+        /// <param name="errorMessage">The error message we might return.</param>
         /// <returns>ScriptBlock</returns>
         public static ScriptBlock GetBreakpointActionScriptBlock(string condition, string hitCondition, string logMessage, out string errorMessage)
         {

@@ -122,7 +122,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Gets the file content in the specified range as an array of strings.
         /// </summary>
-        /// <param name="bufferRange">The buffer range for which content will be extracted.</param>
+        /// <param name="fileRange">The buffer range for which content will be extracted.</param>
         /// <returns>An array of strings, each representing a line in the file within the specified range.</returns>
         public string[] GetTextLines(FileRange fileRange) => scriptFile.GetLinesInRange(fileRange.ToBufferRange());
 

@@ -109,6 +109,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         /// <param name="columnNumber">
         /// The 1-based column number at which completions will be gathered.
         /// </param>
+        /// <param name="cancellationToken">The token used to cancel this.</param>
         /// <returns>
         /// A CommandCompletion instance completions for the identified statement.
         /// </returns>

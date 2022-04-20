@@ -80,8 +80,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         /// Creates a new instance of the Workspace class.
         /// </summary>
-        /// <param name="powerShellVersion">The version of PowerShell for which scripts will be parsed.</param>
-        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public WorkspaceService(ILoggerFactory factory)
         {
             powerShellVersion = VersionUtils.PSVersion;
@@ -108,18 +106,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </exception>
         public ScriptFile GetFile(string filePath) => GetFile(new Uri(filePath));
 
-        /// <summary>
-        /// Gets an open file in the workspace. If the file isn't open but exists on the filesystem, load and return it.
-        /// <para>IMPORTANT: Not all documents have a backing file e.g. untitled: scheme documents.  Consider using
-        /// <see cref="TryGetFile(string, out ScriptFile)"/> instead.</para>
-        /// </summary>
-        /// <param name="fileUri">The file URI at which the script resides.</param>
-        /// <exception cref="FileNotFoundException">
-        /// <paramref name="filePath"/> is not found.
-        /// </exception>
-        /// <exception cref="ArgumentException">
-        /// <paramref name="filePath"/> contains a null or empty string.
-        /// </exception>
         public ScriptFile GetFile(Uri fileUri) => GetFile(DocumentUri.From(fileUri));
 
         /// <summary>
@@ -128,12 +114,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <see cref="TryGetFile(string, out ScriptFile)"/> instead.</para>
         /// </summary>
         /// <param name="documentUri">The document URI at which the script resides.</param>
-        /// <exception cref="FileNotFoundException">
-        /// <paramref name="filePath"/> is not found.
-        /// </exception>
-        /// <exception cref="ArgumentException">
-        /// <paramref name="filePath"/> contains a null or empty string.
-        /// </exception>
+        /// <exception cref="FileNotFoundException"></exception>
+        /// <exception cref="ArgumentException"></exception>
         public ScriptFile GetFile(DocumentUri documentUri)
         {
             Validate.IsNotNull(nameof(documentUri), documentUri);
@@ -349,7 +331,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 resolvedPath = workspaceUri.MakeRelativeUri(fileUri).ToString();
 
                 // Convert the directory separators if necessary
-                if (System.IO.Path.DirectorySeparatorChar == '\\')
+                if (Path.DirectorySeparatorChar == '\\')
                 {
                     resolvedPath = resolvedPath.Replace('/', '\\');
                 }

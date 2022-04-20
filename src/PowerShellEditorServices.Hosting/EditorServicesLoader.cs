@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -12,6 +11,10 @@ using System.Runtime.InteropServices;
 using SMA = System.Management.Automation;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+
+#if DEBUG
+using System.Diagnostics;
+#endif
 
 #if CoreCLR
 using System.Runtime.Loader;
@@ -58,6 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <param name="logger">The host logger to use.</param>
         /// <param name="hostConfig">The host configuration to start editor services with.</param>
         /// <param name="sessionFileWriter">The session file writer to write the session file with.</param>
+        /// <param name="loggersToUnsubscribe">The loggers to unsubscribe form writing to the terminal.</param>
         /// <returns></returns>
         public static EditorServicesLoader Create(
             HostLogger logger,

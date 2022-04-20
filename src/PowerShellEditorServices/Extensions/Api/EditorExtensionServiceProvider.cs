@@ -55,11 +55,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         public ILanguageServerService LanguageServer { get; }
 
         /// <summary>
-        /// Service providing document symbol provider registration.
-        /// </summary>
-        // public IDocumentSymbolService DocumentSymbols { get; }
-
-        /// <summary>
         /// Service providing extension command registration and functionality.
         /// </summary>
         public IExtensionCommandService ExtensionCommands { get; }
@@ -93,7 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <summary>
         /// Get an underlying service object from PSES by type name.
         /// </summary>
-        /// <param name="psesServiceFullTypeName">The full type name of the service to get.</param>
+        /// <param name="fullTypeName">The full type name of the service to get.</param>
         /// <param name="assemblyName">The assembly name from which the service comes.</param>
         /// <returns>The service object requested, or null if no service of that type name exists.</returns>
         /// <remarks>

@@ -245,7 +245,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// Creates a new instance of the RemoteFileManagerService class.
         /// </summary>
         /// <param name="factory">An ILoggerFactory implementation used for writing log messages.</param>
-        /// <param name="powerShellContext">
+        /// <param name="runspaceContext">The runspace we're using.</param>
+        /// <param name="executionService">
         /// The PowerShellContext to use for file loading operations.
         /// </param>
         /// <param name="editorOperations">

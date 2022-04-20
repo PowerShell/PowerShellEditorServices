@@ -209,6 +209,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         /// </summary>
         /// <param name="tabSize">The tab size in the number spaces.</param>
         /// <param name="insertSpaces">If true, insert spaces otherwise insert tabs for indentation.</param>
+        /// <param name="logger">The logger instance.</param>
         public Hashtable GetPSSASettingsHashtable(
             int tabSize,
             bool insertSpaces,

@@ -73,6 +73,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Creates a new instance of the EditorObject class.
         /// </summary>
+        /// <param name="serviceProvider">The service provider?</param>
         /// <param name="extensionService">An ExtensionService which handles command registration.</param>
         /// <param name="editorOperations">An IEditorOperations implementation which handles operations in the host editor.</param>
         internal EditorObject(

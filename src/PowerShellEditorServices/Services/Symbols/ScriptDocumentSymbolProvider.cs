@@ -30,7 +30,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// Finds all symbols in a script
         /// </summary>
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
-        /// <param name="powerShellVersion">The PowerShell version the Ast was generated from</param>
         /// <returns>A collection of SymbolReference objects</returns>
         public static IEnumerable<SymbolReference> FindSymbolsInDocument(Ast scriptAst)
         {
