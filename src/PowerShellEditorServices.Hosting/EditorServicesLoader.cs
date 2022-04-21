@@ -32,7 +32,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     public sealed class EditorServicesLoader : IDisposable
     {
 #if !CoreCLR
-        private const int Net461Version = 394254;
+        // See https://docs.microsoft.com/en-us/dotnet/framework/migration-guide/how-to-determine-which-versions-are-installed
+        private const int Net462Version = 394802;
 
         private static readonly string s_psesBaseDirPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 #endif
@@ -242,7 +243,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 #if !CoreCLR
         private void CheckNetFxVersion()
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Checking that .NET Framework version is at least 4.6.1");
+            _logger.Log(PsesLogLevel.Diagnostic, "Checking that .NET Framework version is at least 4.6.2");
             using RegistryKey key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Net Framework Setup\NDP\v4\Full");
             object netFxValue = key?.GetValue("Release");
             if (netFxValue == null || netFxValue is not int netFxVersion)
@@ -252,9 +253,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             _logger.Log(PsesLogLevel.Verbose, $".NET registry version: {netFxVersion}");
 
-            if (netFxVersion < Net461Version)
+            if (netFxVersion < Net462Version)
             {
-                _logger.Log(PsesLogLevel.Warning, $".NET Framework version {netFxVersion} lower than .NET 4.6.1. This runtime is not supported and you may experience errors. Please update your .NET runtime version.");
+                _logger.Log(PsesLogLevel.Warning, $".NET Framework version {netFxVersion} lower than .NET 4.6.2. This runtime is not supported and you may experience errors. Please update your .NET runtime version.");
             }
         }
 #endif

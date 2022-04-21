@@ -49,7 +49,7 @@ PowerShellVersion = '5.1'
 
 # Minimum version of Microsoft .NET Framework required by this module
 # NOTE: We check this later, so that the error message is communicated properly to the user
-# DotNetFrameworkVersion = '4.6.1'
+# DotNetFrameworkVersion = '4.6.2'
 
 # Minimum version of the common language runtime (CLR) required by this module
 # CLRVersion = ''
@@ -129,4 +129,3 @@ PrivateData = @{
 # DefaultCommandPrefix = ''
 
 }
-
