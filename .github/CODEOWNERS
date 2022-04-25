@@ -4,11 +4,11 @@
 * @PowerShell/extension
 
 # Developer files
-# We exclude *.psd1 and *.props as they change on release
-*.cs @PowerShell/extension-dev
-*.csproj @PowerShell/extension-dev
-*.json @PowerShell/extension-dev
-*.ps1 @PowerShell/extension-dev
+src/ @PowerShell/extension-dev
+test/ @PowerShell/extension-dev
+tools/ @PowerShell/extension-dev
 .editorconfig @PowerShell/extension-dev
+.gitattributes @PowerShell/extension-dev
 .gitignore @PowerShell/extension-dev
+PowerShellEditorServices.build.ps1 @PowerShell/extension-dev
 PowerShellEditorServices.sln @PowerShell/extension-dev
