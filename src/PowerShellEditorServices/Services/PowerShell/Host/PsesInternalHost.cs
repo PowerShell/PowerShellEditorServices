@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -737,6 +737,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 && !CurrentRunspace.Runspace.Debugger.InBreakpoint)
             {
                 StopDebugContext();
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
             }
 
             // When a task must run in the foreground, we cancel out of the idle loop and return to the top level.
