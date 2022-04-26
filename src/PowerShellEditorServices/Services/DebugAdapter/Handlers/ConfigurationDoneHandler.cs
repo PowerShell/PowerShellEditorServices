@@ -27,6 +27,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         // instead hide from the user with pretty strings (or perhaps not write out at all).
         private static readonly PowerShellExecutionOptions s_debuggerExecutionOptions = new()
         {
+            // NOTE: We want to interrupt the current foreground task because otherwise we won't run
+            // this until the idle handler processes it, but we also don't want it to run under the
+            // idle handler, so both of these are true.
+            InterruptCurrentForeground = true,
             MustRunInForeground = true,
             WriteInputToHost = true,
             WriteOutputToHost = true,

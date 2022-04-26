@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -949,6 +949,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return runspace;
         }
 
+        // NOTE: This token is received from PSReadLine, and it _is_ the ReadKey cancellation token!
         private void OnPowerShellIdle(CancellationToken idleCancellationToken)
         {
             IReadOnlyList<PSEventSubscriber> eventSubscribers = _mainRunspaceEngineIntrinsics.Events.Subscribers;
@@ -1102,27 +1103,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             void OnDebuggerStoppedImpl(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
             {
-                    // If the debug server is NOT active, we need to synchronize state and start it.
-                    if (!DebugContext.IsDebugServerActive)
-                    {
-                        _languageServer?.SendNotification("powerShell/startDebugger");
-                    }
+                // If the debug server is NOT active, we need to synchronize state and start it.
+                if (!DebugContext.IsDebugServerActive)
+                {
+                    _languageServer?.SendNotification("powerShell/startDebugger");
+                }
 
-                    DebugContext.SetDebuggerStopped(debuggerStopEventArgs);
+                DebugContext.SetDebuggerStopped(debuggerStopEventArgs);
 
-                    try
-                    {
-                        CurrentPowerShell.WaitForRemoteOutputIfNeeded();
-                        PowerShellFrameType frameBase = CurrentFrame.FrameType & PowerShellFrameType.Remote;
-                        PushPowerShellAndRunLoop(
-                            CreateNestedPowerShell(CurrentRunspace),
-                            frameBase | PowerShellFrameType.Debug | PowerShellFrameType.Nested | PowerShellFrameType.Repl);
-                        CurrentPowerShell.ResumeRemoteOutputIfNeeded();
-                    }
-                    finally
-                    {
-                        DebugContext.SetDebuggerResumed();
-                    }
+                try
+                {
+                    CurrentPowerShell.WaitForRemoteOutputIfNeeded();
+                    PowerShellFrameType frameBase = CurrentFrame.FrameType & PowerShellFrameType.Remote;
+                    PushPowerShellAndRunLoop(
+                        CreateNestedPowerShell(CurrentRunspace),
+                        frameBase | PowerShellFrameType.Debug | PowerShellFrameType.Nested | PowerShellFrameType.Repl);
+                    CurrentPowerShell.ResumeRemoteOutputIfNeeded();
+                }
+                finally
+                {
+                    DebugContext.SetDebuggerResumed();
+                }
             }
         }
 
