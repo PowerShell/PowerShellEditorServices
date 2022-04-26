@@ -683,6 +683,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
                 try
                 {
+                    // TODO: This works around a race condition around executing our interactive
+                    // tasks, and is a HIGH PRIORITY to fix.
+                    Thread.Sleep(200);
                     DoOneRepl(cancellationScope.CancellationToken);
                 }
                 catch (OperationCanceledException)
