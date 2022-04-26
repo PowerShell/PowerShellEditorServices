@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -109,8 +109,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
         public void Dispose()
         {
+            // TODO: This is whack. It used to call `Cancel` on the cancellation source, but we
+            // shouldn't do that!
+            _cancellationSource.Dispose();
             _cancellationStack.TryPop(out CancellationScope _);
-            _cancellationSource.Cancel();
         }
     }
 }
