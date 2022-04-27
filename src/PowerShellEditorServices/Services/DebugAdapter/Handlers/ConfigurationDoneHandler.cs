@@ -25,9 +25,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         // TODO: We currently set `WriteInputToHost` as true, which writes our debugged commands'
         // `GetInvocationText` and that reveals some obscure implementation details we should
         // instead hide from the user with pretty strings (or perhaps not write out at all).
+        //
+        // This API is mostly used for F5 execution so it requires the foreground.
         private static readonly PowerShellExecutionOptions s_debuggerExecutionOptions = new()
         {
-            MustRunInForeground = true,
+            RequiresForeground = true,
             WriteInputToHost = true,
             WriteOutputToHost = true,
             ThrowOnError = false,

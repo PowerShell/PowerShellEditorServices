@@ -21,18 +21,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<EvaluateResponseBody> Handle(EvaluateRequestArguments request, CancellationToken cancellationToken)
         {
-            // This API is mostly used for F8 execution, so it needs to interrupt the command prompt
-            // (or other foreground task).
+            // This API is mostly used for F8 execution so it requires the foreground.
             await _executionService.ExecutePSCommandAsync(
                 new PSCommand().AddScript(request.Expression),
                 CancellationToken.None,
                 new PowerShellExecutionOptions
                 {
+                    RequiresForeground = true,
                     WriteInputToHost = true,
                     WriteOutputToHost = true,
                     AddToHistory = true,
                     ThrowOnError = false,
-                    InterruptCurrentForeground = true
                 }).ConfigureAwait(false);
 
             // TODO: Should we return a more informative result?
