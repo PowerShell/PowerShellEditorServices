@@ -724,6 +724,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 return;
             }
 
+            // TODO: We must remove this awful logic, it causes so much pain. The StopDebugContext()
+            // requires that we're not in a prompt that we're skipping, otherwise the debugger is
+            // "active" but we haven't yet hit a breakpoint.
+            //
+            // When a task must run in the foreground, we cancel out of the idle loop and return to
+            // the top level. At that point, we would normally run a REPL, but we need to
+            // immediately execute the task. So we set _skipNextPrompt to do that.
+            if (_skipNextPrompt)
+            {
+                _skipNextPrompt = false;
+                return;
+            }
+
             // We use the REPL as a poll to check if the debug context is active but PowerShell
             // indicates we're no longer debugging. This happens when PowerShell was used to start
             // the debugger (instead of using a Code launch configuration) via Wait-Debugger or
@@ -734,15 +747,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 && !CurrentRunspace.Runspace.Debugger.InBreakpoint)
             {
                 StopDebugContext();
-            }
-
-            // When a task must run in the foreground, we cancel out of the idle loop and return to the top level.
-            // At that point, we would normally run a REPL, but we need to immediately execute the task.
-            // So we set _skipNextPrompt to do that.
-            if (_skipNextPrompt)
-            {
-                _skipNextPrompt = false;
-                return;
             }
 
             try

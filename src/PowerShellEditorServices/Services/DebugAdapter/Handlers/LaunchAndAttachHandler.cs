@@ -11,15 +11,16 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
-using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
-using OmniSharp.Extensions.JsonRpc;
-using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
-using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
+using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
+using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
+using OmniSharp.Extensions.JsonRpc;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -122,6 +123,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<LaunchResponse> Handle(PsesLaunchRequestArguments request, CancellationToken cancellationToken)
         {
+            // The debugger has officially started. We use this to later check if we should stop it.
+            ((PsesInternalHost)_executionService).DebugContext.IsActive = true;
+
             _debugEventHandlerService.RegisterEventHandlers();
 
             // Determine whether or not the working directory should be set in the PowerShellContext.
@@ -213,6 +217,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<AttachResponse> Handle(PsesAttachRequestArguments request, CancellationToken cancellationToken)
         {
+            // The debugger has officially started. We use this to later check if we should stop it.
+            ((PsesInternalHost)_executionService).DebugContext.IsActive = true;
+
             _debugStateService.IsAttachSession = true;
 
             _debugEventHandlerService.RegisterEventHandlers();
