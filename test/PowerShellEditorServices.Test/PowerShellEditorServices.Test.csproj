@@ -19,12 +19,12 @@
 
   <!-- This is for testing PowerShell 7.2 LTS -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.2" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.3" />
   </ItemGroup>
 
-  <!-- This is for testing PowerShell 7.0 LTS -->
+  <!-- This is for testing PowerShell 7.0 LTS and so needs to be 7.0.x -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.0.9" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.0.10" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net462' ">
