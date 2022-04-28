@@ -104,10 +104,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             // This is constant so Remove-Variable cannot remove it.
             PSVariable psEditor = new(PSEditorVariableName, EditorObject, ScopedItemOptions.Constant);
 
-            // Register the editor object in the runspace
+            // NOTE: This is a special task run on startup! Register the editor object in the
+            // runspace. It has priority next so it goes before LoadProfiles.
             return ExecutionService.ExecuteDelegateAsync(
                 $"Create ${PSEditorVariableName} object",
-                executionOptions: null,
+                new ExecutionOptions { Priority = ExecutionPriority.Next },
                 (pwsh, _) => pwsh.Runspace.SessionStateProxy.PSVariable.Set(psEditor),
                 CancellationToken.None);
         }

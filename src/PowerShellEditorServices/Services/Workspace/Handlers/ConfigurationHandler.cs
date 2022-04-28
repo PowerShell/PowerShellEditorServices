@@ -97,7 +97,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
             }
 
-            // TODO: Load profiles when the host is already running
+            // TODO: Load profiles when the host is already running? Note that this might mess up
+            // the ordering and require the foreground.
             if (!_cwdSet)
             {
                 if (!string.IsNullOrEmpty(_configurationService.CurrentSettings.Cwd)
@@ -124,6 +125,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 _cwdSet = true;
             }
 
+            // This is another place we call this to setup $psEditor, which really needs to be done
+            // _before_ profiles. In current testing, this has already been done by the call to
+            // InitializeAsync when the ExtensionService class is injected.
+            //
+            // TODO: Remove this.
             await _extensionService.InitializeAsync().ConfigureAwait(false);
 
             // Run any events subscribed to configuration updates
