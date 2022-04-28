@@ -1,5 +1,15 @@
 # PowerShell Editor Services Release History
 
+## v3.3.2
+### Thursday, April 28, 2022
+
+- 🐛 🛫 [PowerShellEditorServices #1782](https://github.com/PowerShell/PowerShellEditorServices/pull/1782) - Fix ordering of startup tasks so `psEditor` is defined before profiles are loaded.
+- 🐛 📟 [PowerShellEditorServices #1781](https://github.com/PowerShell/PowerShellEditorServices/pull/1781) - Bring back `WriteWithPrompt()`.
+- 🐛 📟 [vscode-powershell #3937](https://github.com/PowerShell/PowerShellEditorServices/pull/1779) - Update to latest PSReadLine beta (with fix for race condition).
+- 🐛 🔍 [PowerShellEditorServices #1778](https://github.com/PowerShell/PowerShellEditorServices/pull/1778) - Fix extra prompting and manual debugger commands.
+- ✨ 🚂 [PowerShellEditorServices #1777](https://github.com/PowerShell/PowerShellEditorServices/pull/1777) - Consolidate `InterruptCurrentForeground` and `MustRunInForeground`.
+- ✨ 🚂 [PowerShellEditorServices #1776](https://github.com/PowerShell/PowerShellEditorServices/pull/1776) - Don't cancel on disposal of `CancellationScope`.
+
 ## v3.3.1
 ### Wednesday, April 20, 2022
 
