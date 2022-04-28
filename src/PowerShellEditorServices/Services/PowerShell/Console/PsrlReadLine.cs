@@ -32,11 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             _psrlProxy.OverrideIdleHandler(onIdleAction);
         }
 
-        public override string ReadLine(CancellationToken cancellationToken) => _psesHost.InvokeDelegate(
-            representation: "ReadLine",
-            new ExecutionOptions { RequiresForeground = true },
-            InvokePSReadLine,
-            cancellationToken);
+        public override string ReadLine(CancellationToken cancellationToken) => _psesHost.InvokeDelegate(representation: "ReadLine", new ExecutionOptions { MustRunInForeground = true }, InvokePSReadLine, cancellationToken);
 
         protected override ConsoleKeyInfo ReadKey(CancellationToken cancellationToken) => _psesHost.ReadKey(intercept: true, cancellationToken);
 

@@ -129,16 +129,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
                     .AddParameter("ScriptBlock", editorCommand.ScriptBlock)
                     .AddParameter("ArgumentList", new object[] { editorContext });
 
-                // This API is used for editor command execution so it requires the foreground.
+                // This API is used for editor command execution, so it needs to interrupt the
+                // current prompt (or other foreground task).
                 return ExecutionService.ExecutePSCommandAsync(
                     executeCommand,
                     cancellationToken,
                     new PowerShellExecutionOptions
                     {
-                        RequiresForeground = true,
                         WriteOutputToHost = !editorCommand.SuppressOutput,
                         AddToHistory = !editorCommand.SuppressOutput,
                         ThrowOnError = false,
+                        InterruptCurrentForeground = true
                     });
             }
 

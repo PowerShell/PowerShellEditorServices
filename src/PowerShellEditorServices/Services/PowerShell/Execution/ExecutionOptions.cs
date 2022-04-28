@@ -16,7 +16,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
     public record ExecutionOptions
     {
         public ExecutionPriority Priority { get; init; } = ExecutionPriority.Normal;
-        public bool RequiresForeground { get; init; }
+        public bool MustRunInForeground { get; init; }
+        public bool InterruptCurrentForeground { get; init; }
     }
 
     public record PowerShellExecutionOptions : ExecutionOptions
@@ -24,7 +25,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         internal static PowerShellExecutionOptions ImmediateInteractive = new()
         {
             Priority = ExecutionPriority.Next,
-            RequiresForeground = true,
+            MustRunInForeground = true,
+            InterruptCurrentForeground = true,
         };
 
         public bool WriteOutputToHost { get; init; }

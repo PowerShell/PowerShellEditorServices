@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -277,7 +277,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public Task<T> InvokeTaskOnPipelineThreadAsync<T>(
             SynchronousTask<T> task)
         {
-            if (task.ExecutionOptions.RequiresForeground)
+            if (task.ExecutionOptions.InterruptCurrentForeground)
             {
                 // When a task must displace the current foreground command,
                 // we must:
@@ -404,14 +404,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         internal Task LoadHostProfilesAsync(CancellationToken cancellationToken)
         {
-            // TODO: Why exactly does loading profiles require the foreground?
             return ExecuteDelegateAsync(
                 "LoadProfiles",
-                new PowerShellExecutionOptions
-                {
-                    RequiresForeground = true,
-                    ThrowOnError = false
-                },
+                new PowerShellExecutionOptions { MustRunInForeground = true, ThrowOnError = false },
                 (pwsh, _) => pwsh.LoadProfiles(_hostInfo.ProfilePaths),
                 cancellationToken);
         }
@@ -855,15 +850,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private void InvokeInput(string input, CancellationToken cancellationToken)
         {
             PSCommand command = new PSCommand().AddScript(input, useLocalScope: false);
-            InvokePSCommand(
-                command,
-                new PowerShellExecutionOptions
-                {
-                    AddToHistory = true,
-                    ThrowOnError = false,
-                    WriteOutputToHost = true
-                },
-                cancellationToken);
+            InvokePSCommand(command, new PowerShellExecutionOptions { AddToHistory = true, ThrowOnError = false, WriteOutputToHost = true }, cancellationToken);
         }
 
         private void AddRunspaceEventHandlers(Runspace runspace)
@@ -957,7 +944,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return runspace;
         }
 
-        // NOTE: This token is received from PSReadLine, and it _is_ the ReadKey cancellation token!
         private void OnPowerShellIdle(CancellationToken idleCancellationToken)
         {
             IReadOnlyList<PSEventSubscriber> eventSubscribers = _mainRunspaceEngineIntrinsics.Events.Subscribers;
@@ -990,7 +976,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 while (!cancellationScope.CancellationToken.IsCancellationRequested
                     && _taskQueue.TryTake(out ISynchronousTask task))
                 {
-                    if (task.ExecutionOptions.RequiresForeground)
+                    if (task.ExecutionOptions.MustRunInForeground)
                     {
                         // If we have a task that is queued, but cannot be run under readline
                         // we place it back at the front of the queue, and cancel the readline task
@@ -1111,27 +1097,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             void OnDebuggerStoppedImpl(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
             {
-                // If the debug server is NOT active, we need to synchronize state and start it.
-                if (!DebugContext.IsDebugServerActive)
-                {
-                    _languageServer?.SendNotification("powerShell/startDebugger");
-                }
+                    // If the debug server is NOT active, we need to synchronize state and start it.
+                    if (!DebugContext.IsDebugServerActive)
+                    {
+                        _languageServer?.SendNotification("powerShell/startDebugger");
+                    }
 
-                DebugContext.SetDebuggerStopped(debuggerStopEventArgs);
+                    DebugContext.SetDebuggerStopped(debuggerStopEventArgs);
 
-                try
-                {
-                    CurrentPowerShell.WaitForRemoteOutputIfNeeded();
-                    PowerShellFrameType frameBase = CurrentFrame.FrameType & PowerShellFrameType.Remote;
-                    PushPowerShellAndRunLoop(
-                        CreateNestedPowerShell(CurrentRunspace),
-                        frameBase | PowerShellFrameType.Debug | PowerShellFrameType.Nested | PowerShellFrameType.Repl);
-                    CurrentPowerShell.ResumeRemoteOutputIfNeeded();
-                }
-                finally
-                {
-                    DebugContext.SetDebuggerResumed();
-                }
+                    try
+                    {
+                        CurrentPowerShell.WaitForRemoteOutputIfNeeded();
+                        PowerShellFrameType frameBase = CurrentFrame.FrameType & PowerShellFrameType.Remote;
+                        PushPowerShellAndRunLoop(
+                            CreateNestedPowerShell(CurrentRunspace),
+                            frameBase | PowerShellFrameType.Debug | PowerShellFrameType.Nested | PowerShellFrameType.Repl);
+                        CurrentPowerShell.ResumeRemoteOutputIfNeeded();
+                    }
+                    finally
+                    {
+                        DebugContext.SetDebuggerResumed();
+                    }
             }
         }
 
@@ -1155,7 +1141,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             // we simply run this on its thread, guaranteeing that no other action can occur
             return ExecuteDelegateAsync(
                 nameof(PopOrReinitializeRunspaceAsync),
-                new ExecutionOptions { RequiresForeground = true },
+                new ExecutionOptions { InterruptCurrentForeground = true },
                 (_) =>
                 {
                     while (_psFrameStack.Count > 0
