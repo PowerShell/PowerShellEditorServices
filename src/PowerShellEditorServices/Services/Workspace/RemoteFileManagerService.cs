@@ -645,9 +645,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
+        // NOTE: This is a special task run on startup!
         private Task RegisterPSEditFunctionAsync()
             => _executionService.ExecuteDelegateAsync(
-                "Register psedit function",
+                "Register PSEdit function",
                 executionOptions: null,
                 (pwsh, _) => RegisterPSEditFunction(pwsh.Runspace),
                 CancellationToken.None);
@@ -673,7 +674,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
             catch (Exception e)
             {
-                logger.LogException("Could not create psedit function.", e);
+                logger.LogException("Could not create PSEdit function.", e);
             }
             finally
             {

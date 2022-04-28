@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -277,6 +277,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public Task<T> InvokeTaskOnPipelineThreadAsync<T>(
             SynchronousTask<T> task)
         {
+            // NOTE: This causes foreground tasks to act like they have `ExecutionPriority.Next`.
+            // TODO: Deduplicate this.
             if (task.ExecutionOptions.RequiresForeground)
             {
                 // When a task must displace the current foreground command,
@@ -296,6 +298,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 return task.Task;
             }
 
+            // TODO: Apply stashed `QueueTask` function.
             switch (task.ExecutionOptions.Priority)
             {
                 case ExecutionPriority.Next:
@@ -404,14 +407,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         internal Task LoadHostProfilesAsync(CancellationToken cancellationToken)
         {
-            // TODO: Why exactly does loading profiles require the foreground?
+            // NOTE: This is a special task run on startup!
             return ExecuteDelegateAsync(
                 "LoadProfiles",
-                new PowerShellExecutionOptions
-                {
-                    RequiresForeground = true,
-                    ThrowOnError = false
-                },
+                new PowerShellExecutionOptions { ThrowOnError = false },
                 (pwsh, _) => pwsh.LoadProfiles(_hostInfo.ProfilePaths),
                 cancellationToken);
         }
@@ -625,7 +624,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         {
             try
             {
-                // Make sure we execute any startup tasks first
+                // Make sure we execute any startup tasks first. These should be, in order:
+                // 1. Delegate to register psEditor variable
+                // 2. LoadProfiles delegate
+                // 3. Delegate to import PSEditModule
                 while (_taskQueue.TryTake(out ISynchronousTask task))
                 {
                     task.ExecuteSynchronously(CancellationToken.None);
@@ -990,6 +992,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 while (!cancellationScope.CancellationToken.IsCancellationRequested
                     && _taskQueue.TryTake(out ISynchronousTask task))
                 {
+                    // NOTE: This causes foreground tasks to act like they have `ExecutionPriority.Next`.
+                    // TODO: Deduplicate this.
                     if (task.ExecutionOptions.RequiresForeground)
                     {
                         // If we have a task that is queued, but cannot be run under readline
