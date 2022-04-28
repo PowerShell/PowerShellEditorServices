@@ -65,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public IDisposable BlockConsumers() => PriorityQueueBlockLifetime.StartBlocking(_blockConsumersEvent);
 
-        public void Dispose() => ((IDisposable)_blockConsumersEvent).Dispose();
+        public void Dispose() => _blockConsumersEvent.Dispose();
 
         private class PriorityQueueBlockLifetime : IDisposable
         {

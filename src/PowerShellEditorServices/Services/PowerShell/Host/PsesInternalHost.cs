@@ -944,6 +944,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return runspace;
         }
 
+        // NOTE: This token is received from PSReadLine, and it _is_ the ReadKey cancellation token!
         private void OnPowerShellIdle(CancellationToken idleCancellationToken)
         {
             IReadOnlyList<PSEventSubscriber> eventSubscribers = _mainRunspaceEngineIntrinsics.Events.Subscribers;

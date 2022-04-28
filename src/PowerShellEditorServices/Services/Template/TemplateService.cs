@@ -158,11 +158,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
             _logger.LogTrace(
                 $"Invoking Plaster...\n\n    TemplatePath: {templatePath}\n    DestinationPath: {destinationPath}");
 
-            PSCommand command = new();
-            command.AddCommand("Invoke-Plaster");
-            command.AddParameter("TemplatePath", templatePath);
-            command.AddParameter("DestinationPath", destinationPath);
+            PSCommand command = new PSCommand()
+                .AddCommand("Invoke-Plaster")
+                .AddParameter("TemplatePath", templatePath)
+                .AddParameter("DestinationPath", destinationPath);
 
+            // This command is interactive so it requires the foreground.
             await _executionService.ExecutePSCommandAsync(
                 command,
                 CancellationToken.None,
