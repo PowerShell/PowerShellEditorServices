@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -76,6 +76,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private CancellationToken _readKeyCancellationToken;
 
         private bool _resettingRunspace;
+
+        private (int x, int y)? _lastPromptPosition;
 
         public PsesInternalHost(
             ILoggerFactory loggerFactory,
@@ -757,7 +759,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             try
             {
                 string prompt = GetPrompt(cancellationToken);
+
+                // Check cursor position to see if we're in the exact same spot as the last time we
+                // wrote the prompt. If we are, write a new line.
+                if (_lastPromptPosition is not null)
+                {
+                    (int x, int y) current = (System.Console.CursorLeft, System.Console.CursorTop);
+                    if (current == _lastPromptPosition.Value)
+                    {
+                        UI.WriteLine();
+                    }
+                }
+
                 UI.Write(prompt);
+                _lastPromptPosition = (System.Console.CursorLeft, System.Console.CursorTop);
                 string userInput = InvokeReadLine(cancellationToken);
 
                 // If the user input was empty it's because:
