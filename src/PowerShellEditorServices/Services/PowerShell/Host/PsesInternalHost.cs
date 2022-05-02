@@ -702,7 +702,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                             PopPowerShell(RunspaceChangeAction.Exit);
                         }
 
-                        return;
+                        if (ShouldExitExecutionLoop)
+                        {
+                            return;
+                        }
                     }
                 }
 
