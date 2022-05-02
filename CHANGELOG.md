@@ -1,5 +1,11 @@
 # PowerShell Editor Services Release History
 
+## v3.3.3
+### Monday, May 02, 2022
+
+- ✨ 📟 [PowerShellEditorServices #1785](https://github.com/PowerShell/PowerShellEditorServices/pull/1785) - Add `IHostUISupportsMultipleChoiceSelection` implementation.
+- 🐛 🔍 [PowerShellEditorServices #1784](https://github.com/PowerShell/PowerShellEditorServices/pull/1784) - Do not exit from `DebuggerStop` unless resuming.
+
 ## v3.3.2
 ### Thursday, April 28, 2022
 
