@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 {
-    internal class EditorServicesConsolePSHostUserInterface : PSHostUserInterface
+    internal class EditorServicesConsolePSHostUserInterface : PSHostUserInterface, IHostUISupportsMultipleChoiceSelection
     {
         private readonly PSHostUserInterface _underlyingHostUI;
 
@@ -90,5 +90,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public override void WriteVerboseLine(string message) => _underlyingHostUI.WriteVerboseLine(message);
 
         public override void WriteWarningLine(string message) => _underlyingHostUI.WriteWarningLine(message);
+
+        public Collection<int> PromptForChoice(
+            string caption,
+            string message,
+            Collection<ChoiceDescription> choices,
+            IEnumerable<int> defaultChoices)
+            => ((IHostUISupportsMultipleChoiceSelection)_underlyingHostUI).PromptForChoice(caption, message, choices, defaultChoices);
     }
 }
