@@ -24,6 +24,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 {
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;
+    // NOTE: These last three are for a workaround for temporary integrated consoles.
+    using Microsoft.PowerShell.EditorServices.Handlers;
+    using Microsoft.PowerShell.EditorServices.Server;
+    using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
 
     internal class PsesInternalHost : PSHost, IHostSupportsInteractiveSession, IRunspaceContext, IInternalPowerShellExecutionService
     {
@@ -40,6 +44,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private readonly ILogger _logger;
 
         private readonly ILanguageServerFacade _languageServer;
+
+        /// <summary>
+        /// TODO: Improve this coupling. It's assigned by <see cref="PsesDebugServer.StartAsync()" />
+        /// so that the PowerShell process started when <see cref="PsesLaunchRequestArguments.CreateTemporaryIntegratedConsole" />
+        /// is true can also receive the required 'sendKeyPress' notification to return from a
+        /// canceled <see cref="System.Console.ReadKey()" />.
+        /// </summary>
+        internal IDebugAdapterServerFacade _debugServer;
 
         private readonly HostStartupInfo _hostInfo;
 
@@ -1053,11 +1065,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private ConsoleKeyInfo ReadKey(bool intercept)
         {
-            // PSRL doesn't tell us when CtrlC was sent.
-            // So instead we keep track of the last key here.
-            // This isn't functionally required,
-            // but helps us determine when the prompt needs a newline added
-
             // NOTE: This requests that the client (the Code extension) send a non-printing key back
             // to the terminal on stdin, emulating a user pressing a button. This allows
             // PSReadLine's thread waiting on Console.ReadKey to return. Normally we'd just cancel
@@ -1065,8 +1072,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             // input. This leads to a myriad of problems, but we circumvent them by pretending to
             // press a key, thus allowing ReadKey to return, and us to ignore it.
             using CancellationTokenRegistration registration = _readKeyCancellationToken.Register(
-                () => _languageServer?.SendNotification("powerShell/sendKeyPress"));
+                () =>
+                {
+                    // For the regular integrated console, we have an associated language server on
+                    // which we can send a notification, and have the client subscribe an action to
+                    // send a key press.
+                    _languageServer?.SendNotification("powerShell/sendKeyPress");
+                    // When temporary integrated consoles are spawned, there will be no associated
+                    // language server, but instead a debug adaptor server. In this case, the
+                    // notification sent here will come across as a DebugSessionCustomEvent to which
+                    // we can subscribe in the same way.
+                    _debugServer?.SendNotification("powerShell/sendKeyPress");
+                });
 
+            // PSReadLine doesn't tell us when CtrlC was sent. So instead we keep track of the last
+            // key here. This isn't functionally required, but helps us determine when the prompt
+            // needs a newline added
+            //
             // TODO: We may want to allow users of PSES to override this method call.
             _lastKey = System.Console.ReadKey(intercept);
             return _lastKey.Value;

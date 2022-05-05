@@ -30,18 +30,22 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
         private bool _startedPses;
 
+        private readonly bool _isTemp;
+
         protected readonly ILoggerFactory _loggerFactory;
 
         public PsesDebugServer(
             ILoggerFactory factory,
             Stream inputStream,
             Stream outputStream,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            bool isTemp = false)
         {
             _loggerFactory = factory;
             _inputStream = inputStream;
             _outputStream = outputStream;
             ServiceProvider = serviceProvider;
+            _isTemp = isTemp;
             _serverStopped = new TaskCompletionSource<bool>();
         }
 
@@ -91,6 +95,13 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     {
                         // We need to make sure the host has been started
                         _startedPses = !await _psesHost.TryStartAsync(new HostStartOptions(), CancellationToken.None).ConfigureAwait(false);
+
+                        // We need to give the host a handle to the DAP so it can register
+                        // notifications (specifically for sendKeyPress).
+                        if (_isTemp)
+                        {
+                            _psesHost._debugServer = server;
+                        }
 
                         // Ensure the debugger mode is set correctly - this is required for remote debugging to work
                         _psesHost.DebugContext.EnableDebugMode();
