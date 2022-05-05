@@ -100,7 +100,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         // notifications (specifically for sendKeyPress).
                         if (_isTemp)
                         {
-                            _psesHost._debugServer = server;
+                            _psesHost.DebugServer = server;
                         }
 
                         // Ensure the debugger mode is set correctly - this is required for remote debugging to work

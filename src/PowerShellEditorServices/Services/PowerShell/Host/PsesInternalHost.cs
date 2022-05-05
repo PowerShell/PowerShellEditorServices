@@ -51,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// is true can also receive the required 'sendKeyPress' notification to return from a
         /// canceled <see cref="System.Console.ReadKey()" />.
         /// </summary>
-        internal IDebugAdapterServerFacade _debugServer;
+        internal IDebugAdapterServerFacade DebugServer;
 
         private readonly HostStartupInfo _hostInfo;
 
@@ -1078,11 +1078,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                     // which we can send a notification, and have the client subscribe an action to
                     // send a key press.
                     _languageServer?.SendNotification("powerShell/sendKeyPress");
+
                     // When temporary integrated consoles are spawned, there will be no associated
                     // language server, but instead a debug adaptor server. In this case, the
                     // notification sent here will come across as a DebugSessionCustomEvent to which
                     // we can subscribe in the same way.
-                    _debugServer?.SendNotification("powerShell/sendKeyPress");
+                    DebugServer?.SendNotification("powerShell/sendKeyPress");
                 });
 
             // PSReadLine doesn't tell us when CtrlC was sent. So instead we keep track of the last
