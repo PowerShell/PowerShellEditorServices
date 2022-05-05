@@ -169,7 +169,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 _loggerFactory,
                 inputStream,
                 outputStream,
-                serviceProvider);
+                serviceProvider,
+                isTemp: true);
         }
 
         /// <summary>
