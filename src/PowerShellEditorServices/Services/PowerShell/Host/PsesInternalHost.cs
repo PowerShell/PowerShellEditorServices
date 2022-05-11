@@ -112,7 +112,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _runspaceStack = new Stack<RunspaceFrame>();
             _cancellationContext = new CancellationContext();
 
-            _pipelineThread = new Thread(Run)
+            // Default stack size on .NET Framework is 524288 (512KB) (as reported by GetProcessDefaultStackSize)
+            // this leaves very little room in the stack. Windows PowerShell internally sets the value based on 
+            // PipelineMaxStackSizeMB as seen here: https://github.com/PowerShell/PowerShell/issues/1187, 
+            // which has default of 10 and multiplies that by 1_000_000, so the default stack size is
+            // 10_000_000 (~10MB) when starting in normal console host. 
+            //
+            // For PS7 the value is ignored by .NET because settings the stack size is not supported, but we can 
+            // still provide 0, which means fallback to the default in both .NET and .NET Framework.
+            int maxStackSize = VersionUtils.IsPS5 ? 10_000_000 : 0;
+            _pipelineThread = new Thread(Run, maxStackSize)
             {
                 Name = "PSES Pipeline Execution Thread",
             };
