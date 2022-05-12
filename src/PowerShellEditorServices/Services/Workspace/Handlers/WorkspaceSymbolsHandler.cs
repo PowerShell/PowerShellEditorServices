@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         protected override WorkspaceSymbolRegistrationOptions CreateRegistrationOptions(WorkspaceSymbolCapability capability, ClientCapabilities clientCapabilities) => new() { };
 
-        public override Task<Container<SymbolInformation>> Handle(WorkspaceSymbolParams request, CancellationToken cancellationToken)
+        public override async Task<Container<SymbolInformation>> Handle(WorkspaceSymbolParams request, CancellationToken cancellationToken)
         {
             List<SymbolInformation> symbols = new();
 
@@ -47,6 +47,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 foreach (SymbolReference foundOccurrence in foundSymbols)
                 {
+                    // This async method is pretty dense with synchronous code
+                    // so it's helpful to add some yields.
+                    await Task.Yield();
+                    cancellationToken.ThrowIfCancellationRequested();
                     if (!IsQueryMatch(request.Query, foundOccurrence.SymbolName))
                     {
                         continue;
@@ -68,8 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
             }
             _logger.LogWarning("Logging in a handler works now.");
-
-            return Task.FromResult(new Container<SymbolInformation>(symbols));
+            return new Container<SymbolInformation>(symbols);
         }
 
         #region private Methods

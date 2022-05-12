@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
@@ -99,8 +100,9 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// Get all Pester CodeLenses for a given script file.
         /// </summary>
         /// <param name="scriptFile">The script file to get Pester CodeLenses for.</param>
+        /// <param name="cancellationToken"></param>
         /// <returns>All Pester CodeLenses for the given script file.</returns>
-        public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile)
+        public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile, CancellationToken cancellationToken)
         {
             // Don't return anything if codelens setting is disabled
             if (!_configurationService.CurrentSettings.Pester.CodeLens)
@@ -116,6 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     continue;
                 }
 
+                cancellationToken.ThrowIfCancellationRequested();
                 if (_configurationService.CurrentSettings.Pester.UseLegacyCodeLens
                         && pesterSymbol.Command != PesterCommandType.Describe)
                 {
@@ -133,8 +136,9 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// </summary>
         /// <param name="codeLens">The code lens to resolve.</param>
         /// <param name="scriptFile">The script file.</param>
+        /// <param name="cancellationToken"></param>
         /// <returns>The given CodeLens, wrapped in a task.</returns>
-        public Task<CodeLens> ResolveCodeLens(CodeLens codeLens, ScriptFile scriptFile) =>
+        public Task<CodeLens> ResolveCodeLens(CodeLens codeLens, ScriptFile scriptFile, CancellationToken cancellationToken) =>
             // This provider has no specific behavior for
             // resolving CodeLenses.
             Task.FromResult(codeLens);

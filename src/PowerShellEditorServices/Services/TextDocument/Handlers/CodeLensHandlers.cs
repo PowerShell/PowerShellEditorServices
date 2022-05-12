@@ -41,11 +41,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public override Task<CodeLensContainer> Handle(CodeLensParams request, CancellationToken cancellationToken)
         {
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
-            CodeLens[] codeLensResults = ProvideCodeLenses(scriptFile);
+            CodeLens[] codeLensResults = ProvideCodeLenses(scriptFile, cancellationToken);
             return Task.FromResult(new CodeLensContainer(codeLensResults));
         }
 
-        public override Task<CodeLens> Handle(CodeLens request, CancellationToken cancellationToken)
+        public override async Task<CodeLens> Handle(CodeLens request, CancellationToken cancellationToken)
         {
             // TODO: Catch deserializtion exception on bad object
             CodeLensData codeLensData = request.Data.ToObject<CodeLensData>();
@@ -55,18 +55,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 .FirstOrDefault(provider => provider.ProviderId.Equals(codeLensData.ProviderId, StringComparison.Ordinal));
 
             ScriptFile scriptFile = _workspaceService.GetFile(codeLensData.Uri);
-
-            return originalProvider.ResolveCodeLens(request, scriptFile);
+            return await originalProvider.ResolveCodeLens(request, scriptFile, cancellationToken)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
         /// Get all the CodeLenses for a given script file.
         /// </summary>
         /// <param name="scriptFile">The PowerShell script file to get CodeLenses for.</param>
+        /// <param name="cancellationToken"></param>
         /// <returns>All generated CodeLenses for the given script file.</returns>
-        private CodeLens[] ProvideCodeLenses(ScriptFile scriptFile)
+        private CodeLens[] ProvideCodeLenses(ScriptFile scriptFile, CancellationToken cancellationToken)
         {
-            return InvokeProviders(provider => provider.ProvideCodeLenses(scriptFile))
+            return InvokeProviders(provider => provider.ProvideCodeLenses(scriptFile, cancellationToken))
                 .SelectMany(codeLens => codeLens)
                 .ToArray();
         }

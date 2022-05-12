@@ -11,6 +11,7 @@ using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.CodeLenses;
@@ -160,18 +161,25 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="foundSymbol">The symbol to find all references for</param>
         /// <param name="referencedFiles">An array of scriptFiles too search for references in</param>
         /// <param name="workspace">The workspace that will be searched for symbols</param>
+        /// <param name="cancellationToken"></param>
         /// <returns>FindReferencesResult</returns>
         public async Task<List<SymbolReference>> FindReferencesOfSymbol(
             SymbolReference foundSymbol,
             ScriptFile[] referencedFiles,
-            WorkspaceService workspace)
+            WorkspaceService workspace,
+            CancellationToken cancellationToken = default)
         {
             if (foundSymbol == null)
             {
                 return null;
             }
 
-            (Dictionary<string, List<string>> cmdletToAliases, Dictionary<string, string> aliasToCmdlets) = await CommandHelpers.GetAliasesAsync(_executionService).ConfigureAwait(false);
+            CommandHelpers.AliasMap aliases = await CommandHelpers.GetAliasesAsync(
+                _executionService,
+                cancellationToken).ConfigureAwait(false);
+
+            Dictionary<string, List<string>> cmdletToAliases = aliases.CmdletToAliases;
+            Dictionary<string, string> aliasToCmdlets = aliases.AliasToCmdlets;
 
             // We want to look for references first in referenced files, hence we use ordered dictionary
             // TODO: File system case-sensitivity is based on filesystem not OS, but OS is a much cheaper heuristic
@@ -188,6 +196,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 if (!fileMap.Contains(filePath))
                 {
+                    // This async method is pretty dense with synchronous code
+                    // so it's helpful to add some yields.
+                    await Task.Yield();
+                    cancellationToken.ThrowIfCancellationRequested();
                     if (!workspace.TryGetFile(filePath, out ScriptFile scriptFile))
                     {
                         // If we can't access the file for some reason, just ignore it
@@ -223,6 +235,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     reference.FilePath = file.FilePath;
                     symbolReferences.Add(reference);
                 }
+
+                await Task.Yield();
+                cancellationToken.ThrowIfCancellationRequested();
             }
 
             return symbolReferences;
