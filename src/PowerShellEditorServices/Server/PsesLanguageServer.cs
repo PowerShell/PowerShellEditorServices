@@ -12,6 +12,7 @@ using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Extension;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.Template;
+using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Server;
 using Serilog;
@@ -102,7 +103,14 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<PsesCodeLensHandlers>()
                     .WithHandler<PsesCodeActionHandler>()
                     .WithHandler<InvokeExtensionCommandHandler>()
-                    .WithHandler<PsesCompletionHandler>()
+                    // If PsesCompletionHandler is not marked as serial, then DidChangeTextDocument
+                    // notifications will end up cancelling completion. So quickly typing `Get-`
+                    // would result in no completions.
+                    //
+                    // This also lets completion requests interrupt time consuming background tasks
+                    // like the references code lens.
+                    .WithHandler<PsesCompletionHandler>(
+                        new JsonRpcHandlerOptions() { RequestProcessType = RequestProcessType.Serial })
                     .WithHandler<PsesHoverHandler>()
                     .WithHandler<PsesSignatureHelpHandler>()
                     .WithHandler<PsesDefinitionHandler>()
