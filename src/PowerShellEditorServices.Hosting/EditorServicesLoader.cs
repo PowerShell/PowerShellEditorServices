@@ -208,6 +208,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 #endif
 
             // Add the bundled modules to the PSModulePath
+            // TODO: Why do we do this in addition to passing the bundled module path to the host?
             UpdatePSModulePath();
 
             // Check to see if the configuration we have is valid

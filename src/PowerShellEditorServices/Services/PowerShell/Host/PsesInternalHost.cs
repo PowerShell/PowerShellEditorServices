@@ -102,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             // Respect a user provided bundled module path.
             if (Directory.Exists(hostInfo.BundledModulePath))
             {
-                _logger.LogTrace("Using new bundled module path: {}", hostInfo.BundledModulePath);
+                _logger.LogTrace($"Using new bundled module path: {hostInfo.BundledModulePath}");
                 s_bundledModulePath = hostInfo.BundledModulePath;
             }
 
@@ -236,7 +236,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// <returns>A task that resolves when the host has finished startup, with the value true if the caller started the host, and false otherwise.</returns>
         public async Task<bool> TryStartAsync(HostStartOptions startOptions, CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Host starting");
+            _logger.LogDebug("Starting host...");
             if (!_isRunningLatch.TryEnter())
             {
                 _logger.LogDebug("Host start requested after already started.");
@@ -248,13 +248,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             if (startOptions.LoadProfiles)
             {
+                _logger.LogDebug("Loading profiles...");
                 await LoadHostProfilesAsync(cancellationToken).ConfigureAwait(false);
-                _logger.LogInformation("Profiles loaded");
+                _logger.LogDebug("Profiles loaded!");
             }
 
             if (startOptions.InitialWorkingDirectory is not null)
             {
-                await SetInitialWorkingDirectoryAsync(startOptions.InitialWorkingDirectory, CancellationToken.None).ConfigureAwait(false);
+                _logger.LogDebug($"Setting InitialWorkingDirectory to {startOptions.InitialWorkingDirectory}...");
+                await SetInitialWorkingDirectoryAsync(startOptions.InitialWorkingDirectory, cancellationToken).ConfigureAwait(false);
+                _logger.LogDebug("InitialWorkingDirectory set!");
             }
 
             await _started.Task.ConfigureAwait(false);
@@ -269,6 +272,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public void TriggerShutdown()
         {
+            _logger.LogDebug("Shutting down host...");
             if (Interlocked.Exchange(ref _shuttingDown, 1) == 0)
             {
                 _cancellationContext.CancelCurrentTaskStack();
@@ -680,7 +684,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 return;
             }
 
-            _logger.LogInformation("PSES pipeline thread loop shutting down");
+            _logger.LogDebug("PSES pipeline thread loop shutting down");
             _stopped.SetResult(true);
         }
 

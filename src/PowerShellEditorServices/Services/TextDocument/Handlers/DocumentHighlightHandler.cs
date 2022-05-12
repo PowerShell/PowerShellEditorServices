@@ -1,6 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
@@ -9,9 +12,6 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -27,7 +27,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             _logger = loggerFactory.CreateLogger<PsesDocumentHighlightHandler>();
             _workspaceService = workspaceService;
-            _logger.LogInformation("highlight handler loaded");
         }
 
         protected override DocumentHighlightRegistrationOptions CreateRegistrationOptions(DocumentHighlightCapability capability, ClientCapabilities clientCapabilities) => new()
@@ -46,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 request.Position.Line + 1,
                 request.Position.Character + 1);
 
-            if (symbolOccurrences == null)
+            if (symbolOccurrences is null)
             {
                 return Task.FromResult(s_emptyHighlightContainer);
             }
@@ -60,6 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     Range = symbolOccurrences[i].ScriptRegion.ToRange()
                 };
             }
+            _logger.LogDebug("Highlights: " + highlights);
 
             return Task.FromResult(new DocumentHighlightContainer(highlights));
         }

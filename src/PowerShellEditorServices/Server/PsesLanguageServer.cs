@@ -24,15 +24,12 @@ namespace Microsoft.PowerShell.EditorServices.Server
     internal class PsesLanguageServer
     {
         internal ILoggerFactory LoggerFactory { get; }
-
         internal ILanguageServer LanguageServer { get; private set; }
-
         private readonly LogLevel _minimumLogLevel;
         private readonly Stream _inputStream;
         private readonly Stream _outputStream;
         private readonly HostStartupInfo _hostDetails;
         private readonly TaskCompletionSource<bool> _serverStart;
-
         private PsesInternalHost _psesHost;
 
         /// <summary>
@@ -156,7 +153,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
         /// <returns>A task that completes when the server is shut down.</returns>
         public async Task WaitForShutdown()
         {
-            Log.Logger.Debug("Shutting down OmniSharp Language Server");
             await _serverStart.Task.ConfigureAwait(false);
             await LanguageServer.WaitForExit.ConfigureAwait(false);
 

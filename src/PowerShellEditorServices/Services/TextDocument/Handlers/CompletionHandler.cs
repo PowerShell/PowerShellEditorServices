@@ -144,6 +144,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             for (int i = 0; i < result.CompletionMatches.Count; i++)
             {
                 completionItems[i] = CreateCompletionItem(result.CompletionMatches[i], replacedRange, i + 1);
+                _logger.LogTrace("Created completion item: " + completionItems[i] + " with " + completionItems[i].TextEdit);
             }
             return completionItems;
         }
