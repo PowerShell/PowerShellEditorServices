@@ -35,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             CancellationToken cancellationToken)
         {
             Logger = logger;
-            _taskCompletionSource = new TaskCompletionSource<TResult>();
+            _taskCompletionSource = new TaskCompletionSource<TResult>(TaskCreationOptions.RunContinuationsAsynchronously);
             _taskRequesterCancellationToken = cancellationToken;
             _executionCanceled = false;
         }
@@ -76,6 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         {
             if (IsCanceled)
             {
+                SetCanceled();
                 return;
             }
 
