@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {
@@ -92,6 +93,34 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 (pwsh, _) =>
                 {
                     stopwatch.Start();
+
+                    // If the current runspace is not out of process, then we call TabExpansion2 so
+                    // that we have the ability to issue pipeline stop requests on cancellation.
+                    if (executionService is PsesInternalHost psesInternalHost
+                        && !psesInternalHost.Runspace.RunspaceIsRemote)
+                    {
+                        IReadOnlyList<CommandCompletion> completionResults = new SynchronousPowerShellTask<CommandCompletion>(
+                            logger,
+                            psesInternalHost,
+                            new PSCommand()
+                                .AddCommand("TabExpansion2")
+                                    .AddParameter("ast", scriptAst)
+                                    .AddParameter("tokens", currentTokens)
+                                    .AddParameter("positionOfCursor", cursorPosition),
+                            executionOptions: null,
+                            cancellationToken)
+                            .ExecuteAndGetResult(cancellationToken);
+
+                        if (completionResults is { Count: > 0 })
+                        {
+                            commandCompletion = completionResults[0];
+                        }
+
+                        return;
+                    }
+
+                    // If the current runspace is out of process, we can't call TabExpansion2
+                    // because the output will be serialized.
                     commandCompletion = CommandCompletion.CompleteInput(
                         scriptAst,
                         currentTokens,
