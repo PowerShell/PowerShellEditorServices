@@ -23,6 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
             Kind = CompletionItemKind.Module,
             Detail = "Namespace System.Collections",
             FilterText = "System.Collections",
+            InsertText = "System.Collections",
             Label = "Collections",
             SortText = "0001Collections",
             TextEdit = new TextEdit

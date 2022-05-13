@@ -23,6 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
             Kind = CompletionItemKind.TypeParameter,
             Detail = "System.Collections.ArrayList",
             FilterText = "System.Collections.ArrayList",
+            InsertText = "System.Collections.ArrayList",
             Label = "ArrayList",
             SortText = "0001ArrayList",
             TextEdit = new TextEdit

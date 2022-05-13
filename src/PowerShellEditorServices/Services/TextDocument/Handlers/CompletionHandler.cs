@@ -185,7 +185,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 // Retain PowerShell's sort order with the given index.
                 SortText = $"{sortIndex:D4}{result.ListItemText}",
                 FilterText = result.CompletionText,
-                TextEdit = textEdit // Used instead of InsertText.
+                // Used instead of Label when TextEdit is unsupported
+                InsertText = result.CompletionText,
+                // Used instead of InsertText when possible
+                TextEdit = textEdit
             };
 
             return result.ResultType switch

@@ -23,6 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
             Kind = CompletionItemKind.Property,
             Detail = "System.Boolean ValueFromPipeline",
             FilterText = "ValueFromPipeline",
+            InsertText = "ValueFromPipeline",
             Label = "ValueFromPipeline",
             SortText = "0001ValueFromPipeline",
             TextEdit = new TextEdit
@@ -41,6 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
             Kind = CompletionItemKind.Property,
             Detail = "System.Boolean ValueFromPipelineByPropertyName",
             FilterText = "ValueFromPipelineByPropertyName",
+            InsertText = "ValueFromPipelineByPropertyName",
             Label = "ValueFromPipelineByPropertyName",
             SortText = "0002ValueFromPipelineByPropertyName",
             TextEdit = new TextEdit
@@ -59,6 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
             Kind = CompletionItemKind.Property,
             Detail = "System.Boolean ValueFromRemainingArguments",
             FilterText = "ValueFromRemainingArguments",
+            InsertText = "ValueFromRemainingArguments",
             Label = "ValueFromRemainingArguments",
             SortText = "0003ValueFromRemainingArguments",
             TextEdit = new TextEdit
