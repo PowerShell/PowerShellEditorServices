@@ -22,6 +22,8 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
+    internal record CompletionResults(bool IsIncomplete, IReadOnlyList<CompletionItem> Matches);
+
     internal class PsesCompletionHandler : CompletionHandlerBase
     {
         private readonly ILogger _logger;
@@ -116,7 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         /// <returns>
         /// A CommandCompletion instance completions for the identified statement.
         /// </returns>
-        internal async Task<(bool isIncomplete, IReadOnlyList<CompletionItem> matches)> GetCompletionsInFileAsync(
+        internal async Task<CompletionResults> GetCompletionsInFileAsync(
             ScriptFile scriptFile,
             int lineNumber,
             int columnNumber,
@@ -134,7 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (result.CompletionMatches.Count == 0)
             {
-                return (true, Array.Empty<CompletionItem>());
+                return new CompletionResults(IsIncomplete: true, Array.Empty<CompletionItem>());
             }
 
             BufferRange replacedRange = scriptFile.GetRangeBetweenOffsets(
@@ -159,7 +161,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 completionItems[i] = CreateCompletionItem(result.CompletionMatches[i], replacedRange, i + 1);
             }
-            return (isIncomplete, completionItems);
+            return new CompletionResults(isIncomplete, completionItems);
         }
 
         internal static CompletionItem CreateCompletionItem(

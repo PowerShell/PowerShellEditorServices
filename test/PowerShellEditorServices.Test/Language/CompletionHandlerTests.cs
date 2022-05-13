@@ -41,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
         private ScriptFile GetScriptFile(ScriptRegion scriptRegion) => workspace.GetFile(TestUtilities.GetSharedPath(scriptRegion.File));
 
-        private Task<IEnumerable<CompletionItem>> GetCompletionResultsAsync(ScriptRegion scriptRegion)
+        private Task<CompletionResults> GetCompletionResultsAsync(ScriptRegion scriptRegion)
         {
             return completionHandler.GetCompletionsInFileAsync(
                 GetScriptFile(scriptRegion),
@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         [Fact]
         public async Task CompletesCommandInFile()
         {
-            IEnumerable<CompletionItem> results = await GetCompletionResultsAsync(CompleteCommandInFile.SourceDetails).ConfigureAwait(true);
+            (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteCommandInFile.SourceDetails).ConfigureAwait(true);
             CompletionItem actual = Assert.Single(results);
             Assert.Equal(CompleteCommandInFile.ExpectedCompletion, actual);
         }
@@ -61,7 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         [Fact]
         public async Task CompletesCommandFromModule()
         {
-            IEnumerable<CompletionItem> results = await GetCompletionResultsAsync(CompleteCommandFromModule.SourceDetails).ConfigureAwait(true);
+            (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteCommandFromModule.SourceDetails).ConfigureAwait(true);
             CompletionItem actual = Assert.Single(results);
             // NOTE: The tooltip varies across PowerShell and OS versions, so we ignore it.
             Assert.Equal(CompleteCommandFromModule.ExpectedCompletion, actual with { Detail = "" });
@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         [Fact]
         public async Task CompletesTypeName()
         {
-            IEnumerable<CompletionItem> results = await GetCompletionResultsAsync(CompleteTypeName.SourceDetails).ConfigureAwait(true);
+            (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteTypeName.SourceDetails).ConfigureAwait(true);
             CompletionItem actual = Assert.Single(results);
             if (VersionUtils.IsNetCore)
             {
@@ -92,7 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         [Fact]
         public async Task CompletesNamespace()
         {
-            IEnumerable<CompletionItem> results = await GetCompletionResultsAsync(CompleteNamespace.SourceDetails).ConfigureAwait(true);
+            (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteNamespace.SourceDetails).ConfigureAwait(true);
             CompletionItem actual = Assert.Single(results);
             Assert.Equal(CompleteNamespace.ExpectedCompletion, actual);
         }
@@ -100,7 +100,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         [Fact]
         public async Task CompletesVariableInFile()
         {
-            IEnumerable<CompletionItem> results = await GetCompletionResultsAsync(CompleteVariableInFile.SourceDetails).ConfigureAwait(true);
+            (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteVariableInFile.SourceDetails).ConfigureAwait(true);
             CompletionItem actual = Assert.Single(results);
             Assert.Equal(CompleteVariableInFile.ExpectedCompletion, actual);
         }
@@ -108,7 +108,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         [Fact]
         public async Task CompletesAttributeValue()
         {
-            IEnumerable<CompletionItem> results = await GetCompletionResultsAsync(CompleteAttributeValue.SourceDetails).ConfigureAwait(true);
+            (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteAttributeValue.SourceDetails).ConfigureAwait(true);
             Assert.Collection(results.OrderBy(c => c.SortText),
                 actual => Assert.Equal(actual, CompleteAttributeValue.ExpectedCompletion1),
                 actual => Assert.Equal(actual, CompleteAttributeValue.ExpectedCompletion2),
@@ -118,7 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         [Fact]
         public async Task CompletesFilePath()
         {
-            IEnumerable<CompletionItem> results = await GetCompletionResultsAsync(CompleteFilePath.SourceDetails).ConfigureAwait(true);
+            (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteFilePath.SourceDetails).ConfigureAwait(true);
             Assert.NotEmpty(results);
             CompletionItem actual = results.First();
             // Paths are system dependent so we ignore the text and just check the type and range.
