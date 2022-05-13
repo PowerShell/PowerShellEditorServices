@@ -169,8 +169,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public bool IsRunning => _isRunningLatch.IsSignaled;
 
-        public string InitialWorkingDirectory { get; private set; }
-
         public Task Shutdown => _stopped.Task;
 
         IRunspaceInfo IRunspaceContext.CurrentRunspace => CurrentRunspace;
@@ -442,8 +440,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public Task SetInitialWorkingDirectoryAsync(string path, CancellationToken cancellationToken)
         {
-            InitialWorkingDirectory = path;
-
             return ExecutePSCommandAsync(
                 new PSCommand().AddCommand("Set-Location").AddParameter("LiteralPath", path),
                 cancellationToken);
