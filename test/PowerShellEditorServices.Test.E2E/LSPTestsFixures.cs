@@ -56,7 +56,8 @@ namespace PowerShellEditorServices.Test.E2E
                 options
                     .WithInput(_psesProcess.OutputStream)
                     .WithOutput(_psesProcess.InputStream)
-                    .WithRootUri(DocumentUri.FromFileSystemPath(testdir.FullName))
+                    .WithWorkspaceFolder(DocumentUri.FromFileSystemPath(testdir.FullName), "testdir")
+                    .WithInitializationOptions(new { EnableProfileLoading = false })
                     .OnPublishDiagnostics(diagnosticParams => Diagnostics.AddRange(diagnosticParams.Diagnostics.Where(d => d != null)))
                     .OnLogMessage(logMessageParams => Output?.WriteLine($"{logMessageParams.Type}: {logMessageParams.Message}"))
                     .OnTelemetryEvent(telemetryEventParams => TelemetryEvents.Add(
