@@ -135,9 +135,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 else
                 {
                     // Without the new APIs we can only execute the untitled script's contents.
-                    // Command breakpoints and `Wait-Debugger` will work.
+                    // Command breakpoints and `Wait-Debugger` will work. We must wrap the script
+                    // with newlines so that any included comments don't break the command.
                     command = PSCommandHelpers.BuildDotSourceCommandWithArguments(
-                        string.Concat("{ ", untitledScript.Contents, " }"), _debugStateService.Arguments);
+                        string.Concat("{\n", untitledScript.Contents, "\n}"), _debugStateService.Arguments);
                 }
             }
             else
