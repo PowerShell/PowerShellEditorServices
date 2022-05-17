@@ -16,6 +16,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
     /// </summary>
     internal static class CommandHelpers
     {
+        public record struct AliasMap(
+            Dictionary<string, List<string>> CmdletToAliases,
+            Dictionary<string, string> AliasToCmdlets);
+
         private static readonly HashSet<string> s_nounExclusionList = new()
         {
             // PowerShellGet v2 nouns
@@ -180,19 +184,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         /// Gets all aliases found in the runspace
         /// </summary>
         /// <param name="executionService"></param>
-        public static async Task<(Dictionary<string, List<string>>, Dictionary<string, string>)> GetAliasesAsync(IInternalPowerShellExecutionService executionService)
+        /// <param name="cancellationToken"></param>
+        public static async Task<AliasMap> GetAliasesAsync(
+            IInternalPowerShellExecutionService executionService,
+            CancellationToken cancellationToken = default)
         {
             Validate.IsNotNull(nameof(executionService), executionService);
 
-            IEnumerable<CommandInfo> aliases = await executionService.ExecuteDelegateAsync(
-                nameof(GetAliasesAsync),
-                executionOptions: null,
-                (pwsh, _) =>
-                {
-                    CommandInvocationIntrinsics invokeCommand = pwsh.Runspace.SessionStateProxy.InvokeCommand;
-                    return invokeCommand.GetCommands("*", CommandTypes.Alias, nameIsPattern: true);
-                },
-                CancellationToken.None).ConfigureAwait(false);
+            // Need to execute a PSCommand here as Runspace.SessionStateProxy cannot be used from
+            // our PSRL on idle handler.
+            IReadOnlyList<CommandInfo> aliases = await executionService.ExecutePSCommandAsync<CommandInfo>(
+                new PSCommand()
+                    .AddCommand("Microsoft.PowerShell.Core\\Get-Command")
+                    .AddParameter("ListImported", true)
+                    .AddParameter("CommandType", CommandTypes.Alias),
+                cancellationToken).ConfigureAwait(false);
 
             foreach (AliasInfo aliasInfo in aliases)
             {
@@ -206,7 +212,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 s_aliasToCmdletCache.TryAdd(aliasInfo.Name, aliasInfo.Definition);
             }
 
-            return (new Dictionary<string, List<string>>(s_cmdletToAliasCache),
+            return new AliasMap(
+                new Dictionary<string, List<string>>(s_cmdletToAliasCache),
                 new Dictionary<string, string>(s_aliasToCmdletCache));
         }
     }

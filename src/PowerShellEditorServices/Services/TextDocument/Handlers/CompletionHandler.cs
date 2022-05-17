@@ -22,6 +22,8 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
+    internal record CompletionResults(bool IsIncomplete, IReadOnlyList<CompletionItem> Matches);
+
     internal class PsesCompletionHandler : CompletionHandlerBase
     {
         private readonly ILogger _logger;
@@ -46,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // TODO: What do we do with the arguments?
             DocumentSelector = LspUtils.PowerShellDocumentSelector,
             ResolveProvider = true,
-            TriggerCharacters = new[] { ".", "-", ":", "\\", "$" }
+            TriggerCharacters = new[] { ".", "-", ":", "\\", "$", " " }
         };
 
         public override async Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
@@ -55,13 +57,16 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             int cursorColumn = request.Position.Character + 1;
 
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
-            IEnumerable<CompletionItem> completionResults = await GetCompletionsInFileAsync(
+            (bool isIncomplete, IReadOnlyList<CompletionItem> completionResults) = await GetCompletionsInFileAsync(
                 scriptFile,
                 cursorLine,
                 cursorColumn,
                 cancellationToken).ConfigureAwait(false);
 
-            return new CompletionList(completionResults);
+            // Treat completions trigged by space as incomplete so that `gci `
+            // and then typing `-` doesn't just filter the list of parameter values
+            // (typically files) returned by the space completion
+            return new CompletionList(completionResults, isIncomplete || request?.Context?.TriggerCharacter is " ");
         }
 
         // Handler for "completionItem/resolve". In VSCode this is fired when a completion item is highlighted in the completion list.
@@ -113,7 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         /// <returns>
         /// A CommandCompletion instance completions for the identified statement.
         /// </returns>
-        internal async Task<IEnumerable<CompletionItem>> GetCompletionsInFileAsync(
+        internal async Task<CompletionResults> GetCompletionsInFileAsync(
             ScriptFile scriptFile,
             int lineNumber,
             int columnNumber,
@@ -131,22 +136,33 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (result.CompletionMatches.Count == 0)
             {
-                return Array.Empty<CompletionItem>();
+                return new CompletionResults(IsIncomplete: true, Array.Empty<CompletionItem>());
             }
 
             BufferRange replacedRange = scriptFile.GetRangeBetweenOffsets(
                 result.ReplacementIndex,
                 result.ReplacementIndex + result.ReplacementLength);
 
+            bool isIncomplete = false;
             // Create OmniSharp CompletionItems from PowerShell CompletionResults. We use a for loop
             // because the index is used for sorting.
             CompletionItem[] completionItems = new CompletionItem[result.CompletionMatches.Count];
             for (int i = 0; i < result.CompletionMatches.Count; i++)
             {
+                CompletionResult completionMatch = result.CompletionMatches[i];
+
+                // If a completion result is a variable scope like `$script:` we want to
+                // mark as incomplete so on typing `:` completion changes.
+                if (completionMatch.ResultType is CompletionResultType.Variable
+                    && completionMatch.CompletionText.EndsWith(":"))
+                {
+                    isIncomplete = true;
+                }
+
                 completionItems[i] = CreateCompletionItem(result.CompletionMatches[i], replacedRange, i + 1);
                 _logger.LogTrace("Created completion item: " + completionItems[i] + " with " + completionItems[i].TextEdit);
             }
-            return completionItems;
+            return new CompletionResults(isIncomplete, completionItems);
         }
 
         internal static CompletionItem CreateCompletionItem(
