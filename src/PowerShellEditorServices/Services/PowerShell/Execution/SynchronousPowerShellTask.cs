@@ -68,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 // the latter we must not send through it else they pollute the history as this
                 // PowerShell API does not let us exclude them from it.
                 return _pwsh.Runspace.Debugger.InBreakpoint
-                    && (PowerShellExecutionOptions.AddToHistory || IsPromptCommand(_psCommand))
+                    && (PowerShellExecutionOptions.AddToHistory || IsPromptCommand(_psCommand) || _pwsh.Runspace.RunspaceIsRemote)
                     ? ExecuteInDebugger(cancellationToken)
                     : ExecuteNormally(cancellationToken);
             }
