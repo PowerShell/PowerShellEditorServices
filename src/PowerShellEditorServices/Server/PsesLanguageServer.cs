@@ -141,10 +141,17 @@ namespace Microsoft.PowerShell.EditorServices.Server
                             JObject initializationOptions = initializeParams.InitializationOptions as JObject;
                             HostStartOptions hostStartOptions = new()
                             {
-                                LoadProfiles = initializationOptions?.GetValue("EnableProfileLoading")?.Value<bool>() ?? false,
+                                // TODO: We need to synchronize our "default" settings as specified
+                                // in the VS Code extension's package.json with the actual default
+                                // values in this project. For now, this is going to be the most
+                                // annoying setting, so we're defaulting this to true.
+                                //
+                                // NOTE: The keys start with a lowercase because OmniSharp's client
+                                // (used for testing) forces it to be that way.
+                                LoadProfiles = initializationOptions?.GetValue("enableProfileLoading")?.Value<bool>() ?? true,
                                 // TODO: Consider deprecating the setting which sets this and
                                 // instead use WorkspacePath exclusively.
-                                InitialWorkingDirectory = initializationOptions?.GetValue("InitialWorkingDirectory")?.Value<string>() ?? workspaceService.WorkspacePath
+                                InitialWorkingDirectory = initializationOptions?.GetValue("initialWorkingDirectory")?.Value<string>() ?? workspaceService.WorkspacePath
                             };
 
                             _psesHost = languageServer.Services.GetService<PsesInternalHost>();
