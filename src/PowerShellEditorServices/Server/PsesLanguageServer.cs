@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +11,8 @@ using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Extension;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.Template;
+using Newtonsoft.Json.Linq;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Server;
 using Serilog;
@@ -24,15 +25,12 @@ namespace Microsoft.PowerShell.EditorServices.Server
     internal class PsesLanguageServer
     {
         internal ILoggerFactory LoggerFactory { get; }
-
         internal ILanguageServer LanguageServer { get; private set; }
-
         private readonly LogLevel _minimumLogLevel;
         private readonly Stream _inputStream;
         private readonly Stream _outputStream;
         private readonly HostStartupInfo _hostDetails;
         private readonly TaskCompletionSource<bool> _serverStart;
-
         private PsesInternalHost _psesHost;
 
         /// <summary>
@@ -117,33 +115,32 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     // _Initialize_ request:
                     // https://microsoft.github.io/language-server-protocol/specifications/specification-current/#initialize
                     .OnInitialize(
-                        (languageServer, request, _) =>
+                        (languageServer, initializeParams, cancellationToken) =>
                         {
-                            Log.Logger.Debug("Initializing OmniSharp Language Server");
-
-                            IServiceProvider serviceProvider = languageServer.Services;
-
-                            _psesHost = serviceProvider.GetService<PsesInternalHost>();
-
-                            WorkspaceService workspaceService = serviceProvider.GetService<WorkspaceService>();
-
-                            // Grab the workspace path from the parameters
-                            if (request.RootUri != null)
+                            // Set the workspace path from the parameters.
+                            WorkspaceService workspaceService = languageServer.Services.GetService<WorkspaceService>();
+                            if (initializeParams.WorkspaceFolders is not null)
                             {
-                                workspaceService.WorkspacePath = request.RootUri.GetFileSystemPath();
-                            }
-                            else if (request.WorkspaceFolders != null)
-                            {
-                                // If RootUri isn't set, try to use the first WorkspaceFolder.
                                 // TODO: Support multi-workspace.
-                                foreach (OmniSharp.Extensions.LanguageServer.Protocol.Models.WorkspaceFolder workspaceFolder in request.WorkspaceFolders)
+                                foreach (WorkspaceFolder workspaceFolder in initializeParams.WorkspaceFolders)
                                 {
                                     workspaceService.WorkspacePath = workspaceFolder.Uri.GetFileSystemPath();
                                     break;
                                 }
                             }
 
-                            return Task.CompletedTask;
+                            // Parse initialization options.
+                            JObject initializationOptions = initializeParams.InitializationOptions as JObject;
+                            HostStartOptions hostStartOptions = new()
+                            {
+                                LoadProfiles = initializationOptions?.GetValue("EnableProfileLoading")?.Value<bool>() ?? false,
+                                // TODO: Consider deprecating the setting which sets this and
+                                // instead use WorkspacePath exclusively.
+                                InitialWorkingDirectory = initializationOptions?.GetValue("InitialWorkingDirectory")?.Value<string>() ?? workspaceService.WorkspacePath
+                            };
+
+                            _psesHost = languageServer.Services.GetService<PsesInternalHost>();
+                            return _psesHost.TryStartAsync(hostStartOptions, cancellationToken);
                         });
             }).ConfigureAwait(false);
 
@@ -156,7 +153,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
         /// <returns>A task that completes when the server is shut down.</returns>
         public async Task WaitForShutdown()
         {
-            Log.Logger.Debug("Shutting down OmniSharp Language Server");
             await _serverStart.Task.ConfigureAwait(false);
             await LanguageServer.WaitForExit.ConfigureAwait(false);
 

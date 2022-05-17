@@ -14,6 +14,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
     {
         public NullPSHostUI() => RawUI = new NullPSHostRawUI();
 
+        public override bool SupportsVirtualTerminal => false;
+
         public override PSHostRawUserInterface RawUI { get; }
 
         public override Dictionary<string, PSObject> Prompt(string caption, string message, Collection<FieldDescription> descriptions) => new();
@@ -29,44 +31,26 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public override SecureString ReadLineAsSecureString() => new();
 
-        public override void Write(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value)
-        {
-            // Do nothing
-        }
+        public override void Write(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value) { }
 
-        public override void Write(string value)
-        {
-            // Do nothing
-        }
+        public override void Write(string value) { }
 
-        public override void WriteDebugLine(string message)
-        {
-            // Do nothing
-        }
+        public override void WriteDebugLine(string message) { }
 
-        public override void WriteErrorLine(string value)
-        {
-            // Do nothing
-        }
+        public override void WriteErrorLine(string value) { }
 
-        public override void WriteLine(string value)
-        {
-            // Do nothing
-        }
+        public override void WriteInformation(InformationRecord record) { }
 
-        public override void WriteProgress(long sourceId, ProgressRecord record)
-        {
-            // Do nothing
-        }
+        public override void WriteLine() { }
 
-        public override void WriteVerboseLine(string message)
-        {
-            // Do nothing
-        }
+        public override void WriteLine(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value) { }
 
-        public override void WriteWarningLine(string message)
-        {
-            // Do nothing
-        }
+        public override void WriteLine(string value) { }
+
+        public override void WriteProgress(long sourceId, ProgressRecord record) { }
+
+        public override void WriteVerboseLine(string message) { }
+
+        public override void WriteWarningLine(string message) { }
     }
 }

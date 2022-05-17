@@ -26,6 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
             Kind = CompletionItemKind.Function,
             Detail = "", // OS-dependent, checked separately.
             FilterText = "Get-Random",
+            InsertText = "Get-Random",
             Label = "Get-Random",
             SortText = "0001Get-Random",
             TextEdit = new TextEdit

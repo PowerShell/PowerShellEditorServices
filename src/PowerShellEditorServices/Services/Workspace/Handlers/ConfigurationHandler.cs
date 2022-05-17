@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -11,8 +10,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
-using Microsoft.PowerShell.EditorServices.Services.Extension;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -26,27 +23,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
         private readonly ConfigurationService _configurationService;
-        private readonly ExtensionService _extensionService;
-        private readonly PsesInternalHost _psesHost;
         private readonly ILanguageServerFacade _languageServer;
-        private bool _profilesLoaded;
-        private bool _cwdSet;
 
         public PsesConfigurationHandler(
             ILoggerFactory factory,
             WorkspaceService workspaceService,
             AnalysisService analysisService,
             ConfigurationService configurationService,
-            ILanguageServerFacade languageServer,
-            ExtensionService extensionService,
-            PsesInternalHost psesHost)
+            ILanguageServerFacade languageServer)
         {
             _logger = factory.CreateLogger<PsesConfigurationHandler>();
             _workspaceService = workspaceService;
             _configurationService = configurationService;
             _languageServer = languageServer;
-            _extensionService = extensionService;
-            _psesHost = psesHost;
 
             ConfigurationUpdated += analysisService.OnConfigurationUpdated;
         }
@@ -63,7 +52,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             SendFeatureChangesTelemetry(incomingSettings);
 
-            bool profileLoadingPreviouslyEnabled = _configurationService.CurrentSettings.EnableProfileLoading;
             bool oldScriptAnalysisEnabled = _configurationService.CurrentSettings.ScriptAnalysis.Enable;
             string oldScriptAnalysisSettingsPath = _configurationService.CurrentSettings.ScriptAnalysis?.SettingsPath;
 
@@ -71,66 +59,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 incomingSettings.Powershell,
                 _workspaceService.WorkspacePath,
                 _logger);
-
-            // We need to load the profiles if:
-            // - Profile loading is configured, AND
-            //   - Profiles haven't been loaded before, OR
-            //   - The profile loading configuration just changed
-            bool loadProfiles = _configurationService.CurrentSettings.EnableProfileLoading
-                && (!_profilesLoaded || !profileLoadingPreviouslyEnabled);
-
-            if (!_psesHost.IsRunning)
-            {
-                _logger.LogTrace("Starting command loop");
-
-                if (loadProfiles)
-                {
-                    _logger.LogTrace("Loading profiles...");
-                }
-
-                await _psesHost.TryStartAsync(new HostStartOptions { LoadProfiles = loadProfiles }, CancellationToken.None).ConfigureAwait(false);
-
-                if (loadProfiles)
-                {
-                    _profilesLoaded = true;
-                    _logger.LogTrace("Loaded!");
-                }
-            }
-
-            // TODO: Load profiles when the host is already running? Note that this might mess up
-            // the ordering and require the foreground.
-            if (!_cwdSet)
-            {
-                if (!string.IsNullOrEmpty(_configurationService.CurrentSettings.Cwd)
-                    && Directory.Exists(_configurationService.CurrentSettings.Cwd))
-                {
-                    _logger.LogTrace($"Setting CWD (from config) to {_configurationService.CurrentSettings.Cwd}");
-                    await _psesHost.SetInitialWorkingDirectoryAsync(
-                        _configurationService.CurrentSettings.Cwd,
-                        CancellationToken.None).ConfigureAwait(false);
-                }
-                else if (_workspaceService.WorkspacePath is not null
-                    && Directory.Exists(_workspaceService.WorkspacePath))
-                {
-                    _logger.LogTrace($"Setting CWD (from workspace) to {_workspaceService.WorkspacePath}");
-                    await _psesHost.SetInitialWorkingDirectoryAsync(
-                        _workspaceService.WorkspacePath,
-                        CancellationToken.None).ConfigureAwait(false);
-                }
-                else
-                {
-                    _logger.LogTrace("Tried to set CWD but in bad state");
-                }
-
-                _cwdSet = true;
-            }
-
-            // This is another place we call this to setup $psEditor, which really needs to be done
-            // _before_ profiles. In current testing, this has already been done by the call to
-            // InitializeAsync when the ExtensionService class is injected.
-            //
-            // TODO: Remove this.
-            await _extensionService.InitializeAsync().ConfigureAwait(false);
 
             // Run any events subscribed to configuration updates
             _logger.LogTrace("Running configuration update event handlers");

@@ -76,12 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         {
             IScriptPosition cursorPosition = s_clonePositionWithNewOffset(scriptAst.Extent.StartScriptPosition, fileOffset);
 
-            logger.LogTrace(
-                string.Format(
-                    "Getting completions at offset {0} (line: {1}, column: {2})",
-                    fileOffset,
-                    cursorPosition.LineNumber,
-                    cursorPosition.ColumnNumber));
+            logger.LogTrace($"Getting completions at offset {fileOffset} (line: {cursorPosition.LineNumber}, column: {cursorPosition.ColumnNumber})");
 
             Stopwatch stopwatch = new();
 
@@ -103,7 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 .ConfigureAwait(false);
 
             stopwatch.Stop();
-            logger.LogTrace($"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms.");
+            logger.LogTrace($"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms: {commandCompletion}");
 
             return commandCompletion;
         }

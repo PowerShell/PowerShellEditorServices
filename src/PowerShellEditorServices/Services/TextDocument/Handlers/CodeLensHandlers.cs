@@ -47,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public override Task<CodeLens> Handle(CodeLens request, CancellationToken cancellationToken)
         {
-            // TODO: Catch deserializtion exception on bad object
+            // TODO: Catch deserialization exception on bad object
             CodeLensData codeLensData = request.Data.ToObject<CodeLensData>();
 
             ICodeLensProvider originalProvider = _symbolsService
