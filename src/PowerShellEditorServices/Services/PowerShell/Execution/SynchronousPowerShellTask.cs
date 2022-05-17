@@ -48,10 +48,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public override ExecutionOptions ExecutionOptions => PowerShellExecutionOptions;
 
-        // These are PowerShell's intrinsic debugger commands that must be run via
-        // `ProcessDebugCommand`.
-        private static readonly string[] DebuggerCommands = { "continue", "c", "k", "h", "?", "list", "l", "stepInto", "s", "stepOut", "o", "stepOver", "v", "quit", "q", "detach", "d" };
-
         public override IReadOnlyList<TResult> Run(CancellationToken cancellationToken)
         {
             _psesHost.Runspace.ThrowCancelledIfUnusable();
@@ -65,8 +61,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                     _psesHost.WriteWithPrompt(_psCommand, cancellationToken);
                 }
 
+                // If we're in a breakpoint it means we're executing either interactive commands in
+                // a debug prompt, or our own special commands to query the PowerShell debugger for
+                // state that we sync with the LSP debugger. The former commands we want to send
+                // through PowerShell's `Debugger.ProcessCommand` so that they work as expected, but
+                // the latter we must not send through it else they pollute the history as this
+                // PowerShell API does not let us exclude them from it.
                 return _pwsh.Runspace.Debugger.InBreakpoint
-                    && (IsDebuggerCommand(_psCommand) || _pwsh.Runspace.RunspaceIsRemote)
+                    && (PowerShellExecutionOptions.AddToHistory || IsPromptCommand(_psCommand))
                     ? ExecuteInDebugger(cancellationToken)
                     : ExecuteNormally(cancellationToken);
             }
@@ -78,7 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public override string ToString() => _psCommand.GetInvocationText();
 
-        private static bool IsDebuggerCommand(PSCommand command)
+        private static bool IsPromptCommand(PSCommand command)
         {
             if (command.Commands.Count is not 1
                 || command.Commands[0] is { IsScript: false } or { Parameters.Count: > 0 })
@@ -87,15 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             }
 
             string commandText = command.Commands[0].CommandText;
-            foreach (string knownCommand in DebuggerCommands)
-            {
-                if (commandText.Equals(knownCommand, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return commandText.Equals("prompt", StringComparison.OrdinalIgnoreCase);
         }
 
         private IReadOnlyList<TResult> ExecuteNormally(CancellationToken cancellationToken)
@@ -124,7 +118,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 result = _pwsh.InvokeCommand<TResult>(_psCommand, invocationSettings);
                 cancellationToken.ThrowIfCancellationRequested();
             }
-            // Allow terminate exceptions to propogate for flow control.
+            // Allow terminate exceptions to propagate for flow control.
             catch (TerminateException)
             {
                 throw;
@@ -222,12 +216,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 //
                 // Unfortunately, this API does not allow us to pass in the InvocationSettings,
                 // which means (for instance) that we cannot instruct it to avoid adding our
-                // debugger implmentation's commands to the history. So instead we now only call
+                // debugger implementation's commands to the history. So instead we now only call
                 // `ExecuteInDebugger` for PowerShell's own intrinsic debugger commands.
                 debuggerResult = _pwsh.Runspace.Debugger.ProcessCommand(_psCommand, outputCollection);
                 cancellationToken.ThrowIfCancellationRequested();
             }
-            // Allow terminate exceptions to propogate for flow control.
+            // Allow terminate exceptions to propagate for flow control.
             catch (TerminateException)
             {
                 throw;
@@ -281,7 +275,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
             _psesHost.DebugContext.ProcessDebuggerResult(debuggerResult);
 
-            // Optimisation to save wasted computation if we're going to throw the output away anyway
+            // Optimization to save wasted computation if we're going to throw the output away anyway
             if (PowerShellExecutionOptions.WriteOutputToHost)
             {
                 return Array.Empty<TResult>();
