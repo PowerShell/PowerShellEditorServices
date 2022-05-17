@@ -23,6 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
             Kind = CompletionItemKind.Variable,
             Detail = "", // Same as label, so not shown.
             FilterText = "$testVar1",
+            InsertText = "$testVar1",
             Label = "testVar1",
             SortText = "0001testVar1",
             TextEdit = new TextEdit

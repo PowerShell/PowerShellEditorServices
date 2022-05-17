@@ -23,6 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
             Kind = CompletionItemKind.Function,
             Detail = "",
             FilterText = "Get-Something",
+            InsertText = "Get-Something",
             Label = "Get-Something",
             SortText = "0001Get-Something",
             TextEdit = new TextEdit

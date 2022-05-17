@@ -24,6 +24,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 {
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;
+    // NOTE: These last three are for a workaround for temporary integrated consoles.
+    using Microsoft.PowerShell.EditorServices.Handlers;
+    using Microsoft.PowerShell.EditorServices.Server;
+    using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
 
     internal class PsesInternalHost : PSHost, IHostSupportsInteractiveSession, IRunspaceContext, IInternalPowerShellExecutionService
     {
@@ -40,6 +44,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private readonly ILogger _logger;
 
         private readonly ILanguageServerFacade _languageServer;
+
+        /// <summary>
+        /// TODO: Improve this coupling. It's assigned by <see cref="PsesDebugServer.StartAsync()" />
+        /// so that the PowerShell process started when <see cref="PsesLaunchRequestArguments.CreateTemporaryIntegratedConsole" />
+        /// is true can also receive the required 'sendKeyPress' notification to return from a
+        /// canceled <see cref="System.Console.ReadKey()" />.
+        /// </summary>
+        internal IDebugAdapterServerFacade DebugServer;
 
         private readonly HostStartupInfo _hostInfo;
 
@@ -90,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             // Respect a user provided bundled module path.
             if (Directory.Exists(hostInfo.BundledModulePath))
             {
-                _logger.LogTrace("Using new bundled module path: {}", hostInfo.BundledModulePath);
+                _logger.LogTrace($"Using new bundled module path: {hostInfo.BundledModulePath}");
                 s_bundledModulePath = hostInfo.BundledModulePath;
             }
 
@@ -100,7 +112,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _runspaceStack = new Stack<RunspaceFrame>();
             _cancellationContext = new CancellationContext();
 
-            _pipelineThread = new Thread(Run)
+            // Default stack size on .NET Framework is 524288 (512KB) (as reported by GetProcessDefaultStackSize)
+            // this leaves very little room in the stack. Windows PowerShell internally sets the value based on 
+            // PipelineMaxStackSizeMB as seen here: https://github.com/PowerShell/PowerShell/issues/1187, 
+            // which has default of 10 and multiplies that by 1_000_000, so the default stack size is
+            // 10_000_000 (~10MB) when starting in normal console host. 
+            //
+            // For PS7 the value is ignored by .NET because settings the stack size is not supported, but we can 
+            // still provide 0, which means fallback to the default in both .NET and .NET Framework.
+            int maxStackSize = VersionUtils.IsPS5 ? 10_000_000 : 0;
+            _pipelineThread = new Thread(Run, maxStackSize)
             {
                 Name = "PSES Pipeline Execution Thread",
             };
@@ -147,8 +168,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public PowerShellDebugContext DebugContext { get; }
 
         public bool IsRunning => _isRunningLatch.IsSignaled;
-
-        public string InitialWorkingDirectory { get; private set; }
 
         public Task Shutdown => _stopped.Task;
 
@@ -215,7 +234,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// <returns>A task that resolves when the host has finished startup, with the value true if the caller started the host, and false otherwise.</returns>
         public async Task<bool> TryStartAsync(HostStartOptions startOptions, CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Host starting");
+            _logger.LogDebug("Starting host...");
             if (!_isRunningLatch.TryEnter())
             {
                 _logger.LogDebug("Host start requested after already started.");
@@ -227,13 +246,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             if (startOptions.LoadProfiles)
             {
+                _logger.LogDebug("Loading profiles...");
                 await LoadHostProfilesAsync(cancellationToken).ConfigureAwait(false);
-                _logger.LogInformation("Profiles loaded");
+                _logger.LogDebug("Profiles loaded!");
             }
 
             if (startOptions.InitialWorkingDirectory is not null)
             {
-                await SetInitialWorkingDirectoryAsync(startOptions.InitialWorkingDirectory, CancellationToken.None).ConfigureAwait(false);
+                _logger.LogDebug($"Setting InitialWorkingDirectory to {startOptions.InitialWorkingDirectory}...");
+                await SetInitialWorkingDirectoryAsync(startOptions.InitialWorkingDirectory, cancellationToken).ConfigureAwait(false);
+                _logger.LogDebug("InitialWorkingDirectory set!");
             }
 
             await _started.Task.ConfigureAwait(false);
@@ -248,6 +270,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public void TriggerShutdown()
         {
+            _logger.LogDebug("Shutting down host...");
             if (Interlocked.Exchange(ref _shuttingDown, 1) == 0)
             {
                 _cancellationContext.CancelCurrentTaskStack();
@@ -417,8 +440,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public Task SetInitialWorkingDirectoryAsync(string path, CancellationToken cancellationToken)
         {
-            InitialWorkingDirectory = path;
-
             return ExecutePSCommandAsync(
                 new PSCommand().AddCommand("Set-Location").AddParameter("LiteralPath", path),
                 cancellationToken);
@@ -659,7 +680,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 return;
             }
 
-            _logger.LogInformation("PSES pipeline thread loop shutting down");
+            _logger.LogDebug("PSES pipeline thread loop shutting down");
             _stopped.SetResult(true);
         }
 
@@ -1053,11 +1074,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private ConsoleKeyInfo ReadKey(bool intercept)
         {
-            // PSRL doesn't tell us when CtrlC was sent.
-            // So instead we keep track of the last key here.
-            // This isn't functionally required,
-            // but helps us determine when the prompt needs a newline added
-
             // NOTE: This requests that the client (the Code extension) send a non-printing key back
             // to the terminal on stdin, emulating a user pressing a button. This allows
             // PSReadLine's thread waiting on Console.ReadKey to return. Normally we'd just cancel
@@ -1065,8 +1081,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             // input. This leads to a myriad of problems, but we circumvent them by pretending to
             // press a key, thus allowing ReadKey to return, and us to ignore it.
             using CancellationTokenRegistration registration = _readKeyCancellationToken.Register(
-                () => _languageServer?.SendNotification("powerShell/sendKeyPress"));
+                () =>
+                {
+                    // For the regular integrated console, we have an associated language server on
+                    // which we can send a notification, and have the client subscribe an action to
+                    // send a key press.
+                    _languageServer?.SendNotification("powerShell/sendKeyPress");
 
+                    // When temporary integrated consoles are spawned, there will be no associated
+                    // language server, but instead a debug adaptor server. In this case, the
+                    // notification sent here will come across as a DebugSessionCustomEvent to which
+                    // we can subscribe in the same way.
+                    DebugServer?.SendNotification("powerShell/sendKeyPress");
+                });
+
+            // PSReadLine doesn't tell us when CtrlC was sent. So instead we keep track of the last
+            // key here. This isn't functionally required, but helps us determine when the prompt
+            // needs a newline added
+            //
             // TODO: We may want to allow users of PSES to override this method call.
             _lastKey = System.Console.ReadKey(intercept);
             return _lastKey.Value;

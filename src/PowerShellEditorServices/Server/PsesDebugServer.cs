@@ -3,7 +3,6 @@
 
 using System;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -23,25 +22,24 @@ namespace Microsoft.PowerShell.EditorServices.Server
         private readonly Stream _inputStream;
         private readonly Stream _outputStream;
         private readonly TaskCompletionSource<bool> _serverStopped;
-
         private DebugAdapterServer _debugAdapterServer;
-
         private PsesInternalHost _psesHost;
-
         private bool _startedPses;
-
+        private readonly bool _isTemp;
         protected readonly ILoggerFactory _loggerFactory;
 
         public PsesDebugServer(
             ILoggerFactory factory,
             Stream inputStream,
             Stream outputStream,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            bool isTemp = false)
         {
             _loggerFactory = factory;
             _inputStream = inputStream;
             _outputStream = outputStream;
             ServiceProvider = serviceProvider;
+            _isTemp = isTemp;
             _serverStopped = new TaskCompletionSource<bool>();
         }
 
@@ -87,16 +85,22 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<DebugEvaluateHandler>()
                     // The OnInitialize delegate gets run when we first receive the _Initialize_ request:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
-                    .OnInitialize(async (server, _, _) =>
+                    .OnInitialize(async (server, _, cancellationToken) =>
                     {
-                        // We need to make sure the host has been started
-                        _startedPses = !await _psesHost.TryStartAsync(new HostStartOptions(), CancellationToken.None).ConfigureAwait(false);
-
-                        // Ensure the debugger mode is set correctly - this is required for remote debugging to work
+                        // Start the host if not already started, and enable debug mode (required
+                        // for remote debugging).
+                        _startedPses = !await _psesHost.TryStartAsync(new HostStartOptions(), cancellationToken).ConfigureAwait(false);
                         _psesHost.DebugContext.EnableDebugMode();
 
+                        // We need to give the host a handle to the DAP so it can register
+                        // notifications (specifically for sendKeyPress).
+                        if (_isTemp)
+                        {
+                            _psesHost.DebugServer = server;
+                        }
+
+                        // Clear any existing breakpoints before proceeding.
                         BreakpointService breakpointService = server.GetService<BreakpointService>();
-                        // Clear any existing breakpoints before proceeding
                         await breakpointService.RemoveAllBreakpointsAsync().ConfigureAwait(false);
                     })
                     // The OnInitialized delegate gets run right before the server responds to the _Initialize_ request:

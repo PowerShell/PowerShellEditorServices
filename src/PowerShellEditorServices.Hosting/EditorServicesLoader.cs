@@ -12,7 +12,7 @@ using SMA = System.Management.Automation;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 
-#if DEBUG
+#if ASSEMBLY_LOAD_STACKTRACE
 using System.Diagnostics;
 #endif
 
@@ -98,7 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             AssemblyLoadContext.Default.Resolving += (AssemblyLoadContext _, AssemblyName asmName) =>
             {
-#if DEBUG
+#if ASSEMBLY_LOAD_STACKTRACE
                 logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {asmName}. Stacktrace:\n{new StackTrace()}");
 #else
                 logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {asmName}");
@@ -138,7 +138,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             // Unlike in .NET Core, we need to be look for all dependencies in .NET Framework, not just PSES.dll
             AppDomain.CurrentDomain.AssemblyResolve += (object sender, ResolveEventArgs args) =>
             {
-#if DEBUG
+#if ASSEMBLY_LOAD_STACKTRACE
                 logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {args.Name}. Stacktrace:\n{new StackTrace()}");
 #else
                 logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {args.Name}");
@@ -208,6 +208,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 #endif
 
             // Add the bundled modules to the PSModulePath
+            // TODO: Why do we do this in addition to passing the bundled module path to the host?
             UpdatePSModulePath();
 
             // Check to see if the configuration we have is valid

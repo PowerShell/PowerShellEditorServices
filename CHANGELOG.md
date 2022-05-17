@@ -1,5 +1,10 @@
 # PowerShell Editor Services Release History
 
+## v3.3.5
+### Thursday, May 05, 2022
+
+- 🐛 🔍 [vscode-powershell #3950](https://github.com/PowerShell/PowerShellEditorServices/pull/1791) - Send `sendKeyPress` event across DAP for temporary integrated consoles.
+
 ## v3.3.4
 ### Tuesday, May 03, 2022
 

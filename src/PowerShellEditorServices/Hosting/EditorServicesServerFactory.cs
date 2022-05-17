@@ -152,6 +152,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                     .AddSerilog()
                     .SetMinimumLevel(LogLevel.Trace)) // TODO: Why randomly set to trace?
                 .AddSingleton<ILanguageServerFacade>(_ => null)
+                // TODO: Why add these for a debug server?!
                 .AddPsesLanguageServices(hostStartupInfo)
                 // For a Temp session, there is no LanguageServer so just set it to null
                 .AddSingleton(
@@ -169,7 +170,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 _loggerFactory,
                 inputStream,
                 outputStream,
-                serviceProvider);
+                serviceProvider,
+                isTemp: true);
         }
 
         /// <summary>
