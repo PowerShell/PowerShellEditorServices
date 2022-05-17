@@ -66,7 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // Treat completions trigged by space as incomplete so that `gci `
             // and then typing `-` doesn't just filter the list of parameter values
             // (typically files) returned by the space completion
-            return new CompletionList(completionResults, isIncomplete || request.Context.TriggerCharacter is " ");
+            return new CompletionList(completionResults, isIncomplete || request?.Context?.TriggerCharacter is " ");
         }
 
         // Handler for "completionItem/resolve". In VSCode this is fired when a completion item is highlighted in the completion list.
