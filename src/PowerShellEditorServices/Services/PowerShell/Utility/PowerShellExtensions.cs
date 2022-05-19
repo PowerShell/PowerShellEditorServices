@@ -2,13 +2,13 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Utility;
-using System.Collections.Generic;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 {
@@ -211,7 +211,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             // NOTE: This must be set before the profiles are loaded.
             pwsh.Runspace.SessionStateProxy.SetVariable("PROFILE", profileVariable);
 
-            pwsh.InvokeCommand(psCommand);
+            // NOTE: Because it's possible there are no profiles defined, we might have an empty
+            // command. Since this is being executed directly, we can't rely on `ThrowOnError =
+            // false` to avoid an exception here. Instead, we must just not execute it.
+            if (psCommand.Commands.Count > 0)
+            {
+                pwsh.InvokeCommand(psCommand);
+            }
         }
 
         public static void ImportModule(this PowerShell pwsh, string moduleNameOrPath)

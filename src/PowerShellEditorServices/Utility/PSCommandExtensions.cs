@@ -77,10 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
             if (File.Exists(profilePath))
             {
-                psCommand
-                    .AddCommand(profilePath, useLocalScope: false)
-                    .AddOutputCommand()
-                    .AddStatement();
+                psCommand.AddCommand(profilePath, useLocalScope: false).AddOutputCommand().AddStatement();
             }
 
             return psCommand;
