@@ -1,5 +1,10 @@
 # PowerShell Editor Services Release History
 
+## v3.4.1
+### Thursday, May 19, 2022
+
+- 🐛 🛫 [PowerShellEditorServices #1807](https://github.com/PowerShell/PowerShellEditorServices/pull/1807) - Fix startup bug when zero profiles are present.
+
 ## v3.4.0
 ### Tuesday, May 17, 2022
 
