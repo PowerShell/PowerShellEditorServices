@@ -83,7 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 Assert.Equal(CompleteTypeName.ExpectedCompletion with
                 {
                     Kind = CompletionItemKind.Class,
-                    Detail = "Class System.Collections.ArrayList"
+                    Detail = "System.Collections.ArrayList"
                 }, actual);
             }
         }
