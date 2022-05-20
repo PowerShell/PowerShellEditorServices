@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Management.Automation;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -48,17 +49,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             _completionCapability = capability;
             return new CompletionRegistrationOptions()
-        {
-            // TODO: What do we do with the arguments?
-            DocumentSelector = LspUtils.PowerShellDocumentSelector,
-            ResolveProvider = true,
+            {
+                // TODO: What do we do with the arguments?
+                DocumentSelector = LspUtils.PowerShellDocumentSelector,
+                ResolveProvider = true,
                 TriggerCharacters = new[] { ".", "-", ":", "\\", "$", " " },
-        };
+            };
         }
 
         public bool SupportsSnippets => _completionCapability?.CompletionItem?.SnippetSupport is true;
 
         public bool SupportsCommitCharacters => _completionCapability?.CompletionItem?.CommitCharactersSupport is true;
+
+        public bool SupportsMarkdown => _completionCapability?.CompletionItem?.DocumentationFormat?.Contains(MarkupKind.Markdown) is true;
 
         public override async Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
         {
@@ -81,6 +84,61 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         // Handler for "completionItem/resolve". In VSCode this is fired when a completion item is highlighted in the completion list.
         public override async Task<CompletionItem> Handle(CompletionItem request, CancellationToken cancellationToken)
         {
+            if (SupportsMarkdown)
+            {
+                if (request.Kind is CompletionItemKind.Method)
+                {
+                    string documentation = FormatUtils.GetMethodDocumentation(
+                        _logger,
+                        request.Data.ToString(),
+                        out MarkupKind kind);
+
+                    return request with
+                    {
+                        Documentation = new MarkupContent()
+                        {
+                            Kind = kind,
+                            Value = documentation,
+                        },
+                    };
+                }
+
+                if (request.Kind is CompletionItemKind.Class or CompletionItemKind.TypeParameter or CompletionItemKind.Enum)
+                {
+                    string documentation = FormatUtils.GetTypeDocumentation(
+                        _logger,
+                        request.Detail,
+                        out MarkupKind kind);
+
+                    return request with
+                    {
+                        Detail = null,
+                        Documentation = new MarkupContent()
+                        {
+                            Kind = kind,
+                            Value = documentation,
+                        },
+                    };
+                }
+
+                if (request.Kind is CompletionItemKind.EnumMember or CompletionItemKind.Property or CompletionItemKind.Field)
+                {
+                    string documentation = FormatUtils.GetPropertyDocumentation(
+                        _logger,
+                        request.Data.ToString(),
+                        out MarkupKind kind);
+
+                    return request with
+                    {
+                        Documentation = new MarkupContent()
+                        {
+                            Kind = kind,
+                            Value = documentation,
+                        },
+                    };
+                }
+            }
+
             // We currently only support this request for anything that returns a CommandInfo:
             // functions, cmdlets, aliases. No detail means the module hasn't been imported yet and
             // IntelliSense shouldn't import the module to get this info.
@@ -242,15 +300,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 CompletionResultType.Command => item with { Kind = CompletionItemKind.Function },
                 CompletionResultType.ProviderItem or CompletionResultType.ProviderContainer
                     => CreateProviderItemCompletion(item, result, scriptFile, textToBeReplaced),
-                    ? item with
-                    {
-                        Kind = CompletionItemKind.Folder,
-                        InsertTextFormat = InsertTextFormat.Snippet,
-                        TextEdit = textEdit with { NewText = snippet }
-                    }
-                    : item with { Kind = CompletionItemKind.Folder },
-                CompletionResultType.Property => item with { Kind = CompletionItemKind.Property },
-                CompletionResultType.Method => item with { Kind = CompletionItemKind.Method },
+                CompletionResultType.Property => item with
+                {
+                    Kind = CompletionItemKind.Property,
+                    Detail = SupportsMarkdown ? null : detail,
+                    Data = SupportsMarkdown ? detail : null,
+                    CommitCharacters = MaybeAddCommitCharacters("."),
+                },
+                CompletionResultType.Method => item with
+                {
+                    Kind = CompletionItemKind.Method,
+                    Data = item.Detail,
+                    Detail = SupportsMarkdown ? null : item.Detail,
+                },
                 CompletionResultType.ParameterName => TryExtractType(detail, out string type)
                     ? item with { Kind = CompletionItemKind.Variable, Detail = type }
                     // The comparison operators (-eq, -not, -gt, etc) unfortunately come across as
@@ -265,8 +327,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 CompletionResultType.Type => detail.StartsWith("Class ", StringComparison.CurrentCulture)
                     // Custom classes come through as types but the PowerShell completion tooltip
                     // will start with "Class ", so we can more accurately display its icon.
-                    ? item with { Kind = CompletionItemKind.Class }
-                    : item with { Kind = CompletionItemKind.TypeParameter },
+                    ? item with { Kind = CompletionItemKind.Class, Detail = detail.Substring("Class ".Length) }
+                    : detail.StartsWith("Enum ", StringComparison.CurrentCulture)
+                        ? item with { Kind = CompletionItemKind.Enum, Detail = detail.Substring("Enum ".Length) }
+                        : item with { Kind = CompletionItemKind.TypeParameter },
                 CompletionResultType.Keyword or CompletionResultType.DynamicKeyword =>
                     item with { Kind = CompletionItemKind.Keyword },
                 _ => throw new ArgumentOutOfRangeException(nameof(result))
