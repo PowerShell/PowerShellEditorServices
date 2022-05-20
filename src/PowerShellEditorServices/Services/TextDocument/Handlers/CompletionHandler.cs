@@ -30,6 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly IRunspaceContext _runspaceContext;
         private readonly IInternalPowerShellExecutionService _executionService;
         private readonly WorkspaceService _workspaceService;
+        private CompletionCapability _completionCapability;
 
         public PsesCompletionHandler(
             ILoggerFactory factory,
@@ -43,13 +44,21 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspaceService;
         }
 
-        protected override CompletionRegistrationOptions CreateRegistrationOptions(CompletionCapability capability, ClientCapabilities clientCapabilities) => new()
+        protected override CompletionRegistrationOptions CreateRegistrationOptions(CompletionCapability capability, ClientCapabilities clientCapabilities)
+        {
+            _completionCapability = capability;
+            return new CompletionRegistrationOptions()
         {
             // TODO: What do we do with the arguments?
             DocumentSelector = LspUtils.PowerShellDocumentSelector,
             ResolveProvider = true,
-            TriggerCharacters = new[] { ".", "-", ":", "\\", "$", " " }
+                TriggerCharacters = new[] { ".", "-", ":", "\\", "$", " " },
         };
+        }
+
+        public bool SupportsSnippets => _completionCapability?.CompletionItem?.SnippetSupport is true;
+
+        public bool SupportsCommitCharacters => _completionCapability?.CompletionItem?.CommitCharactersSupport is true;
 
         public override async Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
         {
@@ -143,6 +152,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 result.ReplacementIndex,
                 result.ReplacementIndex + result.ReplacementLength);
 
+            string textToBeReplaced = string.Empty;
+            if (result.ReplacementLength is not 0)
+            {
+                textToBeReplaced = scriptFile.Contents.Substring(
+                    result.ReplacementIndex,
+                    result.ReplacementLength);
+            }
+
             bool isIncomplete = false;
             // Create OmniSharp CompletionItems from PowerShell CompletionResults. We use a for loop
             // because the index is used for sorting.
@@ -159,16 +176,25 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     isIncomplete = true;
                 }
 
-                completionItems[i] = CreateCompletionItem(result.CompletionMatches[i], replacedRange, i + 1);
+                completionItems[i] = CreateCompletionItem(
+                    result.CompletionMatches[i],
+                    replacedRange,
+                    i + 1,
+                    textToBeReplaced,
+                    scriptFile);
+
                 _logger.LogTrace("Created completion item: " + completionItems[i] + " with " + completionItems[i].TextEdit);
             }
+
             return new CompletionResults(isIncomplete, completionItems);
         }
 
-        internal static CompletionItem CreateCompletionItem(
+        internal CompletionItem CreateCompletionItem(
             CompletionResult result,
             BufferRange completionRange,
-            int sortIndex)
+            int sortIndex,
+            string textToBeReplaced,
+            ScriptFile scriptFile)
         {
             Validate.IsNotNull(nameof(result), result);
 
@@ -200,7 +226,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     ? string.Empty : detail, // Don't repeat label.
                 // Retain PowerShell's sort order with the given index.
                 SortText = $"{sortIndex:D4}{result.ListItemText}",
-                FilterText = result.CompletionText,
+                FilterText = result.ResultType is CompletionResultType.Type
+                    ? GetTypeFilterText(textToBeReplaced, result.CompletionText)
+                    : result.CompletionText,
                 // Used instead of Label when TextEdit is unsupported
                 InsertText = result.CompletionText,
                 // Used instead of InsertText when possible
@@ -212,8 +240,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 CompletionResultType.Text => item with { Kind = CompletionItemKind.Text },
                 CompletionResultType.History => item with { Kind = CompletionItemKind.Reference },
                 CompletionResultType.Command => item with { Kind = CompletionItemKind.Function },
-                CompletionResultType.ProviderItem => item with { Kind = CompletionItemKind.File },
-                CompletionResultType.ProviderContainer => TryBuildSnippet(result.CompletionText, out string snippet)
+                CompletionResultType.ProviderItem or CompletionResultType.ProviderContainer
+                    => CreateProviderItemCompletion(item, result, scriptFile, textToBeReplaced),
                     ? item with
                     {
                         Kind = CompletionItemKind.Folder,
@@ -243,6 +271,99 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     item with { Kind = CompletionItemKind.Keyword },
                 _ => throw new ArgumentOutOfRangeException(nameof(result))
             };
+        }
+
+        private CompletionItem CreateProviderItemCompletion(
+            CompletionItem item,
+            CompletionResult result,
+            ScriptFile scriptFile,
+            string textToBeReplaced)
+        {
+            // TODO: Work out a way to do this generally instead of special casing PSScriptRoot.
+            //
+            // This code relies on PowerShell/PowerShell#17376. Until that makes it into a release
+            // no matches will be returned anyway.
+            const string PSScriptRootVariable = "$PSScriptRoot";
+            string completionText = result.CompletionText;
+            if (textToBeReplaced.IndexOf(PSScriptRootVariable, StringComparison.OrdinalIgnoreCase) is int variableIndex and not -1
+                && System.IO.Path.GetDirectoryName(scriptFile.FilePath) is string scriptFolder and not ""
+                && completionText.IndexOf(scriptFolder, StringComparison.OrdinalIgnoreCase) is int pathIndex and not -1
+                && !scriptFile.IsInMemory)
+            {
+                completionText = completionText
+                    .Remove(pathIndex, scriptFolder.Length)
+                    .Insert(variableIndex, textToBeReplaced.Substring(variableIndex, PSScriptRootVariable.Length));
+            }
+
+            InsertTextFormat insertFormat;
+            TextEdit edit;
+            CompletionItemKind itemKind;
+            if (result.ResultType is CompletionResultType.ProviderContainer
+                && SupportsSnippets
+                && TryBuildSnippet(completionText, out string snippet))
+            {
+                edit = item.TextEdit.TextEdit with { NewText = snippet };
+                insertFormat = InsertTextFormat.Snippet;
+                itemKind = CompletionItemKind.Folder;
+            }
+            else
+            {
+                edit = item.TextEdit.TextEdit with { NewText = completionText };
+                insertFormat = default;
+                itemKind = CompletionItemKind.File;
+            }
+
+            return item with
+            {
+                Kind = itemKind,
+                TextEdit = edit,
+                InsertText = completionText,
+                FilterText = completionText,
+                InsertTextFormat = insertFormat,
+                CommitCharacters = MaybeAddCommitCharacters("\\", "/", "'", "\""),
+            };
+        }
+
+        private Container<string> MaybeAddCommitCharacters(params string[] characters)
+            => SupportsCommitCharacters ? new Container<string>(characters) : null;
+
+        private static string GetTypeFilterText(string textToBeReplaced, string completionText)
+        {
+            // FilterText for a type name with using statements gets a little complicated. Consider
+            // this script:
+            //
+            // using namespace System.Management.Automation
+            // [System.Management.Automation.Tracing.]
+            //
+            // Since we're emitting an edit that replaces `System.Management.Automation.Tracing.` with
+            // `Tracing.NullWriter` (for example), we can't use CompletionText as the filter. If we
+            // do, we won't find any matches because it's trying to filter `Tracing.NullWriter` with
+            // `System.Management.Automation.Tracing.` which is too different. So we prepend each
+            // namespace that exists in our original text but does not in our completion text.
+            if (!textToBeReplaced.Contains('.'))
+            {
+                return completionText;
+            }
+
+            string[] oldTypeParts = textToBeReplaced.Split('.');
+            string[] newTypeParts = completionText.Split('.');
+
+            StringBuilder newFilterText = new(completionText);
+
+            int newPartsIndex = newTypeParts.Length - 2;
+            for (int i = oldTypeParts.Length - 2; i >= 0; i--)
+            {
+                if (newPartsIndex is >= 0
+                    && newTypeParts[newPartsIndex].Equals(oldTypeParts[i], StringComparison.OrdinalIgnoreCase))
+                {
+                    newPartsIndex--;
+                    continue;
+                }
+
+                newFilterText.Insert(0, '.').Insert(0, oldTypeParts[i]);
+            }
+
+            return newFilterText.ToString();
         }
 
         private static readonly Regex s_typeRegex = new(@"^(\[.+\])", RegexOptions.Compiled);
