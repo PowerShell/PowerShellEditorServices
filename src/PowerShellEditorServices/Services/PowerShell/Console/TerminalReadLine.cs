@@ -9,8 +9,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
     internal abstract class TerminalReadLine : IReadLine
     {
-        private IConsoleOperations _consoleOperations;
-
         public abstract string ReadLine(CancellationToken cancellationToken);
 
         protected abstract ConsoleKeyInfo ReadKey(CancellationToken cancellationToken);

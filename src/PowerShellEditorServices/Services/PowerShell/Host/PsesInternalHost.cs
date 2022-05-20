@@ -137,14 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             Version = hostInfo.Version;
 
             DebugContext = new PowerShellDebugContext(loggerFactory, this);
-            if (!_hostInfo.UseHostReadKey)
-            {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    _consoleOperations = new WindowsConsoleOperations();
-                }
-                _consoleOperations = new UnixConsoleOperations();
-            }
+            
             UI = hostInfo.ConsoleReplEnabled
                 ? new EditorServicesConsolePSHostUserInterface(loggerFactory, hostInfo.PSHost.UI)
                 : new NullPSHostUI();
@@ -964,7 +957,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 // If we've been configured to use it, or if we can't load PSReadLine, use the legacy readline
                 if (hostStartupInfo.UsesLegacyReadLine || !TryLoadPSReadLine(pwsh, engineIntrinsics, out IReadLine readLine))
                 {
-                    readLine = new LegacyReadLine(this, ReadKey, OnPowerShellIdle, _consoleOperations);
+                    readLine = new LegacyReadLine(this, ReadKey, OnPowerShellIdle);
                 }
 
                 readLineProvider.OverrideReadLine(readLine);
@@ -1098,37 +1091,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// in a bitwise combination of ConsoleModifiers values, whether one or more Shift, Alt,
         /// or Ctrl modifier keys was pressed simultaneously with the console key.
         /// </returns>
-        internal ConsoleKeyInfo SafeReadKey(bool intercept, CancellationToken cancellationToken)
-        {
-            try
-            {
-                if (_consoleOperations is not null)
-                {
-                    return _consoleOperations.ReadKey(intercept, cancellationToken);
-                }
-                else
-                {
-                    var keyInfo = UI.RawUI.ReadKey(ReadKeyOptions.AllowCtrlC);
 
-                    return new ConsoleKeyInfo(
-                        keyChar: keyInfo.Character,
-                        key: ConsoleKey.DownArrow,
-                        shift: (keyInfo.ControlKeyState & ControlKeyStates.ShiftPressed) > 0,
-                        alt: (keyInfo.ControlKeyState & (ControlKeyStates.RightAltPressed | ControlKeyStates.LeftAltPressed)) > 0,
-                        control: (keyInfo.ControlKeyState > 0)
-                        );
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                return new ConsoleKeyInfo(
-                    keyChar: ' ',
-                    key: ConsoleKey.DownArrow,
-                    shift: false,
-                    alt: false,
-                    control: false);
-            }
-        }
         private ConsoleKeyInfo ReadKey(bool intercept)
         {
             // NOTE: This requests that the client (the Code extension) send a non-printing key back
@@ -1151,13 +1114,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                     // we can subscribe in the same way.
                     DebugServer?.SendNotification("powerShell/sendKeyPress");
                 });
-
+        
             // PSReadLine doesn't tell us when CtrlC was sent. So instead we keep track of the last
             // key here. This isn't functionally required, but helps us determine when the prompt
             // needs a newline added
             //
             // TODO: We may want to allow users of PSES to override this method call.
-            _lastKey = System.Console.ReadKey(intercept);
+            if (!_hostInfo.UseHostReadKey)
+            {
+                _lastKey = System.Console.ReadKey(intercept);
+            }
+            else
+            {
+                KeyInfo keyInfo = _hostInfo.PSHost.UI.RawUI.ReadKey();
+                _lastKey = new(keyInfo.Character, (ConsoleKey)keyInfo.Character, (keyInfo.ControlKeyState & ControlKeyStates.ShiftPressed) > 0, 
+                    (keyInfo.ControlKeyState & (ControlKeyStates.RightAltPressed | ControlKeyStates.LeftAltPressed)) > 0,
+                    (keyInfo.ControlKeyState & (ControlKeyStates.RightCtrlPressed | ControlKeyStates.LeftCtrlPressed)) > 0);
+            }
+
             return _lastKey.Value;
         }
 
@@ -1305,7 +1279,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             try
             {
                 PSReadLineProxy psrlProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, s_bundledModulePath, pwsh);
-                psrlReadLine = new PsrlReadLine(psrlProxy, this, engineIntrinsics, ReadKey, OnPowerShellIdle, _consoleOperations);
+                psrlReadLine = new PsrlReadLine(psrlProxy, this, engineIntrinsics, ReadKey, OnPowerShellIdle);
                 return true;
             }
             catch (Exception e)

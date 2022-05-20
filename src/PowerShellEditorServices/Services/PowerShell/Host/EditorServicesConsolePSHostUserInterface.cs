@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             PSHostUserInterface underlyingHostUI)
         {
             _underlyingHostUI = underlyingHostUI;
-            RawUI = new EditorServicesConsolePSHostRawUserInterface(loggerFactory, underlyingHostUI.RawUI, consoleOperations);
+            RawUI = new EditorServicesConsolePSHostRawUserInterface(loggerFactory, underlyingHostUI.RawUI);
         }
 
         public override bool SupportsVirtualTerminal => _underlyingHostUI.SupportsVirtualTerminal;

@@ -24,12 +24,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// </summary>
         public EditorServicesConsolePSHostRawUserInterface(
             ILoggerFactory loggerFactory,
-            PSHostRawUserInterface internalRawUI,
-            IConsoleOperations consoleOperations)
+            PSHostRawUserInterface internalRawUI)
         {
             _logger = loggerFactory.CreateLogger<EditorServicesConsolePSHostRawUserInterface>();
             _internalRawUI = internalRawUI;
-            _consoleOperations = consoleOperations;
         }
 
         #endregion
@@ -41,28 +39,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// </summary>
         public override ConsoleColor BackgroundColor
         {
-            get
-            {
-                if (_consoleOperations is not null)
-                {
-                    return System.Console.BackgroundColor;
-                }
-                else
-                {
-                    return _internalRawUI.BackgroundColor;
-                }
-            }
-            set
-            {
-                if (_consoleOperations is not null)
-                {
-                    System.Console.BackgroundColor = value;
-                }
-                else
-                {
-                    _internalRawUI.BackgroundColor = value;
-                }
-            }
+            get => System.Console.BackgroundColor;
+            set => System.Console.BackgroundColor = value;
         }
 
         /// <summary>
@@ -70,28 +48,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// </summary>
         public override ConsoleColor ForegroundColor
         {
-            get
-            {
-                if (_consoleOperations is not null)
-                {
-                    return System.Console.ForegroundColor;
-                }
-                else
-                {
-                    return _internalRawUI.ForegroundColor;
-                }
-            }
-            set
-            {
-                if (_consoleOperations is not null)
-                {
-                    System.Console.ForegroundColor = value;
-                }
-                else
-                {
-                    _internalRawUI.ForegroundColor = value;
-                }
-            }
+            get => System.Console.ForegroundColor;
+            set => System.Console.ForegroundColor = value;
         }
 
         /// <summary>

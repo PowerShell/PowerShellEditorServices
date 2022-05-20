@@ -24,19 +24,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private readonly Action<CancellationToken> _onIdleAction;
 
-        private IConsoleOperations _consoleOperations;
-
         public LegacyReadLine(
             PsesInternalHost psesHost,
             Func<bool, ConsoleKeyInfo> readKeyFunc,
-            Action<CancellationToken> onIdleAction,
-            IConsoleOperations consoleOperations)
+            Action<CancellationToken> onIdleAction)
         {
             _psesHost = psesHost;
             _readKeyTasks = new Task[2];
             _readKeyFunc = readKeyFunc;
             _onIdleAction = onIdleAction;
-            _consoleOperations = consoleOperations;
         }
 
         public override string ReadLine(CancellationToken cancellationToken)
@@ -50,12 +46,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
             StringBuilder inputLine = new();
 
-            int initialCursorCol = _consoleOperations?.GetCursorLeft(cancellationToken) ?? _psesHost.UI.RawUI.CursorPosition.X;
-            int initialCursorRow = _consoleOperations?.GetCursorTop(cancellationToken) ?? _psesHost.UI.RawUI.CursorPosition.Y; ;
+            int initialCursorCol = Console.CursorLeft;
+            int initialCursorRow = Console.CursorTop;
 
             int currentCursorIndex = 0;
-            if(_consoleOperations != null)
-                Console.TreatControlCAsInput = true;
+
+            Console.TreatControlCAsInput = true;
 
             try
             {
@@ -68,7 +64,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                     int promptStartCol = initialCursorCol;
                     int promptStartRow = initialCursorRow;
 
-                    int consoleWidth = _consoleOperations is not null ? Console.WindowWidth : _psesHost.UI.RawUI.WindowSize.Width;
+                    int consoleWidth = Console.WindowWidth;
 
                     switch (keyInfo.Key)
                     {
