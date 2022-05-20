@@ -1,5 +1,10 @@
 # PowerShell Editor Services Release History
 
+## v3.4.2
+### Friday, May 20, 2022
+
+- ✨ 🧠 [PowerShellEditorServices #1809](https://github.com/PowerShell/PowerShellEditorServices/pull/1809) - Additional IntelliSense fixes and ToolTip overhaul.
+
 ## v3.4.1
 ### Thursday, May 19, 2022
 
