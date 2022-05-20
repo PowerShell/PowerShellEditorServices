@@ -127,7 +127,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 .ConfigureAwait(false);
 
             stopwatch.Stop();
-            logger.LogTrace($"IntelliSense completed in {stopwatch.ElapsedMilliseconds}ms: {commandCompletion}");
+            logger.LogTrace(
+                "IntelliSense completed in {elapsed}ms - WordToComplete: \"{word}\" MatchCount: {count}",
+                stopwatch.ElapsedMilliseconds,
+                commandCompletion.ReplacementLength > 0
+                    ? scriptAst.Extent.StartScriptPosition.GetFullScript()?.Substring(
+                        commandCompletion.ReplacementIndex,
+                        commandCompletion.ReplacementLength)
+                    : null,
+                commandCompletion.CompletionMatches.Count);
 
             return commandCompletion;
         }
