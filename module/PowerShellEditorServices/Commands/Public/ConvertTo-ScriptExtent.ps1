@@ -111,6 +111,7 @@ function ConvertTo-ScriptExtent {
         if (-not $EndColumnNumber)   { $EndColumnNumber   = 1 }
 
         return [Microsoft.PowerShell.EditorServices.Extensions.FileScriptExtent, Microsoft.PowerShell.EditorServices]::FromPositions(
+            $fileContext,
             $StartLineNumber,
             $StartColumnNumber,
             $EndLineNumber,
