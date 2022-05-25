@@ -15,12 +15,23 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         public static FileScriptPosition FromPosition(FileContext file, int lineNumber, int columnNumber)
         {
+            if (file is null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
+
             int offset = 0;
             int currLine = 1;
             string fileText = file.Ast.Extent.Text;
             while (offset < fileText.Length && currLine < lineNumber)
             {
-                offset = fileText.IndexOf('\n', offset);
+                offset = fileText.IndexOf('\n', offset) + 1;
+                if (offset is 0)
+                {
+                    // Line and column passed were not valid and the offset can not be determined.
+                    return new FileScriptPosition(file, lineNumber, columnNumber, offset);
+                }
+
                 currLine++;
             }
 
@@ -31,6 +42,11 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         public static FileScriptPosition FromOffset(FileContext file, int offset)
         {
+            if (file is null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
+
             int line = 1;
             string fileText = file.Ast.Extent.Text;
 
@@ -59,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         internal FileScriptPosition(FileContext file, int lineNumber, int columnNumber, int offset)
         {
             _file = file;
-            Line = file.GetTextLines()[lineNumber - 1];
+            Line = file?.GetTextLines()?[lineNumber - 1] ?? string.Empty;
             ColumnNumber = columnNumber;
             LineNumber = lineNumber;
             Offset = offset;
@@ -79,7 +95,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         int IFilePosition.Line => LineNumber;
 
-        public string GetFullScript() => _file.GetText();
+        public string GetFullScript() => _file?.GetText() ?? string.Empty;
     }
 
     public class FileScriptExtent : IScriptExtent, IFileRange
@@ -94,6 +110,11 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         public static FileScriptExtent FromOffsets(FileContext file, int startOffset, int endOffset)
         {
+            if (file is null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
+
             return new FileScriptExtent(
                 file,
                 FileScriptPosition.FromOffset(file, startOffset),
@@ -102,6 +123,11 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         public static FileScriptExtent FromPositions(FileContext file, int startLine, int startColumn, int endLine, int endColumn)
         {
+            if (file is null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
+
             return new FileScriptExtent(
                 file,
                 FileScriptPosition.FromPosition(file, startLine, startColumn),
@@ -127,7 +153,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         public IScriptPosition EndScriptPosition => _end;
 
-        public string File => _file.Path;
+        public string File => _file?.Path ?? string.Empty;
 
         public int StartColumnNumber => _start.ColumnNumber;
 
@@ -137,7 +163,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         public IScriptPosition StartScriptPosition => _start;
 
-        public string Text => _file.GetText().Substring(_start.Offset, _end.Offset - _start.Offset);
+        public string Text => _file?.GetText()?.Substring(_start.Offset, _end.Offset - _start.Offset) ?? string.Empty;
 
         IFilePosition IFileRange.Start => _start;
 
