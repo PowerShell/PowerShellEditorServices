@@ -217,6 +217,26 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<AttachResponse> Handle(PsesAttachRequestArguments request, CancellationToken cancellationToken)
         {
+            // We want to set this as early as possible to avoid an early `StopDebugging` call in
+            // DoOneRepl. There's too many places to reset this if it fails so we're wrapping the
+            // entire method in a try here to reset it if failed.
+            //
+            // TODO: Ideally DoOneRepl would be paused until the attach is fully initialized, though
+            //       the current architecture makes that challenging.
+            _debugService.IsDebuggingRemoteRunspace = true;
+            try
+            {
+                return await HandleImpl(request, cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                _debugService.IsDebuggingRemoteRunspace = false;
+                throw;
+            }
+        }
+
+        private async Task<AttachResponse> HandleImpl(PsesAttachRequestArguments request, CancellationToken cancellationToken)
+        {
             // The debugger has officially started. We use this to later check if we should stop it.
             ((PsesInternalHost)_executionService).DebugContext.IsActive = true;
 
@@ -413,7 +433,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // Clear any existing breakpoints before proceeding
             await _breakpointService.RemoveAllBreakpointsAsync().ConfigureAwait(continueOnCapturedContext: false);
 
-            _debugService.IsDebuggingRemoteRunspace = true;
             _debugStateService.WaitingForAttach = true;
             Task nonAwaitedTask = _executionService
                 .ExecutePSCommandAsync(debugRunspaceCmd, CancellationToken.None, PowerShellExecutionOptions.ImmediateInteractive)
