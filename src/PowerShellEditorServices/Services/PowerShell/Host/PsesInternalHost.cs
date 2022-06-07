@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Management.Automation.Host;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,6 +39,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private static string CommandsModulePath => Path.GetFullPath(Path.Combine(
             s_bundledModulePath, "PowerShellEditorServices", "Commands", "PowerShellEditorServices.Commands.psd1"));
+
+        private static readonly PropertyInfo s_scriptDebuggerTriggerObjectProperty;
 
         private readonly ILoggerFactory _loggerFactory;
 
@@ -88,6 +91,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private CancellationToken _readKeyCancellationToken;
 
         private bool _resettingRunspace;
+
+        static PsesInternalHost()
+        {
+            Type scriptDebuggerType = typeof(PSObject).Assembly
+                .GetType("System.Management.Automation.ScriptDebugger");
+
+            if (scriptDebuggerType is null)
+            {
+                return;
+            }
+
+            s_scriptDebuggerTriggerObjectProperty = scriptDebuggerType.GetProperty(
+                "TriggerObject",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+        }
 
         public PsesInternalHost(
             ILoggerFactory loggerFactory,
@@ -1142,6 +1160,34 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private void OnDebuggerStopped(object sender, DebuggerStopEventArgs debuggerStopEventArgs)
         {
+            // If ErrorActionPreference is set to Break, any engine exception is going to trigger a
+            // pipeline stop. Technically this is the same behavior as a standalone PowerShell
+            // process, but we use pipeline stops with greater frequency due to features like run
+            // selection and terminating the debugger. Without this, if the "Stop" button is pressed
+            // then we hit this repeatedly.
+            //
+            // This info is publically accessible via `PSDebugContext` but we'd need to access it
+            // via a script. At this point in the call I'd prefer this to be as light as possible so
+            // we can escape ASAP but we may want to consider switching to that at some point.
+            if (!Runspace.RunspaceIsRemote && s_scriptDebuggerTriggerObjectProperty is not null)
+            {
+                object triggerObject = null;
+                try
+                {
+                    triggerObject = s_scriptDebuggerTriggerObjectProperty.GetValue(Runspace.Debugger);
+                }
+                catch
+                {
+                    // Ignore all exceptions. There shouldn't be any, but as this is implementation
+                    // detail that is subject to change it's best to be overly cautious.
+                }
+
+                if (triggerObject is PipelineStoppedException pse)
+                {
+                    throw pse;
+                }
+            }
+
             // The debugger has officially started. We use this to later check if we should stop it.
             DebugContext.IsActive = true;
 
