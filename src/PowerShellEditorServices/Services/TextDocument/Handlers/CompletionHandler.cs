@@ -384,7 +384,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 InsertText = completionText,
                 FilterText = completionText,
                 InsertTextFormat = insertFormat,
-                CommitCharacters = MaybeAddCommitCharacters("\\", "/", "'", "\""),
             };
         }
 
