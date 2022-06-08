@@ -33,6 +33,7 @@ $script:IsNix = $IsLinux -or $IsMacOS
 # For Apple M1, pwsh might be getting emulated, in which case we need to check
 # for the proc_translated flag, otherwise we can check the architecture.
 $script:IsAppleM1 = $IsMacOS -and ((sysctl -n sysctl.proc_translated) -eq 1 -or (uname -m) -eq "arm64")
+$script:IsArm64 = $IsWindows -and $env:PROCESSOR_ARCHITECTURE -eq "AMD64"
 $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Hosting", "BuildInfo.cs")
 $script:PsesCommonProps = [xml](Get-Content -Raw "$PSScriptRoot/PowerShellEditorServices.Common.props")
 
@@ -62,7 +63,7 @@ task FindDotNet {
 
     # Anywhere other than on a Mac with an M1 processor, we additionally
     # need the .NET 3.1 runtime for our netcoreapp3.1 framework.
-    if (!$script:IsAppleM1) {
+    if (-not $script:IsAppleM1 -and -not $script:IsArm64) {
         $runtimes = dotnet --list-runtimes
         assert ($runtimes -match "Microsoft.NETCore.App 3.1") ".NET Runtime 3.1 required but not found!"
     }
@@ -183,7 +184,7 @@ Task TestServerWinPS -If (-not $script:IsNix) Build, SetupHelpForTests, {
     exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.Desktop }
 }
 
-task TestServerPS7 -If (-not $script:IsAppleM1) Build, SetupHelpForTests, {
+task TestServerPS7 -If (-not $script:IsAppleM1 -and -not $script:IsArm64) Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test\
     exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS7 }
 }
@@ -197,7 +198,7 @@ task TestE2E Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test.E2E\
 
     $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
-    $NetRuntime = if ($IsAppleM1) { $script:NetRuntime.PS72 } else { $script:NetRuntime.PS7 }
+    $NetRuntime = if ($IsAppleM1 -or $script:IsArm64) { $script:NetRuntime.PS72 } else { $script:NetRuntime.PS7 }
     exec { & dotnet $script:dotnetTestArgs $NetRuntime }
 
     # Run E2E tests in ConstrainedLanguage mode.
