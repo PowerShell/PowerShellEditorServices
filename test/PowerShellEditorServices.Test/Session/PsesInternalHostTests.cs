@@ -6,9 +6,11 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using Xunit;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Console
@@ -139,6 +141,23 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                         expectedProfilePaths));
 
             Assert.Equal(expectedString, result[0], ignoreCase: true);
+        }
+
+        [Fact]
+        public async Task CanHandleNoProfiles()
+        {
+            // Call LoadProfiles with profile paths that won't exist, and assert that it does not
+            // throw PSInvalidOperationException (which it previously did when it tried to invoke an
+            // empty command).
+            ProfilePathInfo emptyProfilePaths = new("", "", "", "");
+            await psesHost.ExecuteDelegateAsync(
+                "LoadProfiles",
+                executionOptions: null,
+                (pwsh, _) => {
+                    pwsh.LoadProfiles(emptyProfilePaths);
+                    Assert.Empty(pwsh.Commands.Commands);
+                },
+                CancellationToken.None).ConfigureAwait(true);
         }
 
         [Fact]
