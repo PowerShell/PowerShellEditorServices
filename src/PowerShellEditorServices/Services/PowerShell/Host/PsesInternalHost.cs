@@ -446,6 +446,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             task.ExecuteAndGetResult(cancellationToken);
         }
 
+        internal void AddToHistory(string historyEntry) => _readLineProvider.ReadLine.AddToHistory(historyEntry);
+
         internal Task LoadHostProfilesAsync(CancellationToken cancellationToken)
         {
             // NOTE: This is a special task run on startup!
@@ -918,7 +920,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 {
                     AddToHistory = true,
                     ThrowOnError = false,
-                    WriteOutputToHost = true
+                    WriteOutputToHost = true,
+                    FromRepl = true,
                 },
                 cancellationToken);
         }

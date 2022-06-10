@@ -9,5 +9,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
     internal interface IReadLine
     {
         string ReadLine(CancellationToken cancellationToken);
+
+        void AddToHistory(string historyEntry);
     }
 }
