@@ -34,5 +34,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         public bool WriteInputToHost { get; init; }
         public bool ThrowOnError { get; init; } = true;
         public bool AddToHistory { get; init; }
+        internal bool FromRepl { get; init; }
     }
 }

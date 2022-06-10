@@ -38,6 +38,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             InvokePSReadLine,
             cancellationToken);
 
+        public override void AddToHistory(string historyEntry) => _psrlProxy.AddToHistory(historyEntry);
+
         protected override ConsoleKeyInfo ReadKey(CancellationToken cancellationToken) => _psesHost.ReadKey(intercept: true, cancellationToken);
 
         private string InvokePSReadLine(CancellationToken cancellationToken)
