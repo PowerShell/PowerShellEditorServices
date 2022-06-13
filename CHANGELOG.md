@@ -1,5 +1,17 @@
 # PowerShell Editor Services Release History
 
+## v3.4.3
+### Monday, June 13, 2022
+
+- ✨ 📟 [PowerShellEditorServices #1823](https://github.com/PowerShell/PowerShellEditorServices/pull/1823) - Utilize the `AddToHistory` delegate from PSRL proxy.
+- ✨ 🛫 [PowerShellEditorServices #1821](https://github.com/PowerShell/PowerShellEditorServices/pull/1821) - Add regression test for no defined profiles.
+- ✨ 👷 [PowerShellEditorServices #1820](https://github.com/PowerShell/PowerShellEditorServices/pull/1820) - Add Emacs regression tests for PSES.
+- 🐛 🧠 [PowerShellEditorServices #1819](https://github.com/PowerShell/PowerShellEditorServices/pull/1819) - Remove bad UX of commit characters for paths.
+- 🐛 🔍 [PowerShellEditorServices #1818](https://github.com/PowerShell/PowerShellEditorServices/pull/1818) - Exit debugger stop early if cause is PSE.
+- ✨ 👷 [PowerShellEditorServices #1817](https://github.com/PowerShell/PowerShellEditorServices/pull/1817) - Fix build script to support Windows on Arm64.
+- 🐛 🔍 [PowerShellEditorServices #1815](https://github.com/PowerShell/PowerShellEditorServices/pull/1815) - Set `IsDebuggingRemoteRunspace` sooner for attach.
+- 🐛 🙏 [PowerShellEditorServices #1814](https://github.com/PowerShell/PowerShellEditorServices/pull/1814) - Fix error when piping `IFilePosition` to `ConvertTo-ScriptExtent`.
+
 ## v3.4.2
 ### Friday, May 20, 2022
 
