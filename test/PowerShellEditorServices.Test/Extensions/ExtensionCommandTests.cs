@@ -179,5 +179,19 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
             await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => extensionCommandService.InvokeCommandAsync("test.scriptblock", editorContext)).ConfigureAwait(true);
         }
+
+        [Fact]
+        public async Task CannotRemovePSEditorVariable()
+        {
+            ActionPreferenceStopException exception = await Assert.ThrowsAsync<ActionPreferenceStopException>(
+                () => psesHost.ExecutePSCommandAsync<string>(
+                    new PSCommand().AddScript("Remove-Variable psEditor -ErrorAction Stop"),
+                    CancellationToken.None)
+            ).ConfigureAwait(true);
+
+            Assert.Equal(
+                "The running command stopped because the preference variable \"ErrorActionPreference\" or common parameter is set to Stop: Cannot remove variable psEditor because it is constant or read-only. If the variable is read-only, try the operation again specifying the Force option.",
+                exception.Message);
+        }
     }
 }
