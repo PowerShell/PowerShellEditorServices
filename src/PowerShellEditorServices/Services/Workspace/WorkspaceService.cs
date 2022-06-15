@@ -2,17 +2,17 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
+using System.Linq;
 using System.Security;
 using System.Text;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Utility;
-using Microsoft.PowerShell.EditorServices.Services.Workspace;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using System.Collections.Concurrent;
+using Microsoft.PowerShell.EditorServices.Services.Workspace;
+using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 
 namespace Microsoft.PowerShell.EditorServices.Services
@@ -152,8 +152,19 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="filePath">The file path at which the script resides.</param>
         /// <param name="scriptFile">The out parameter that will contain the ScriptFile object.</param>
-        public bool TryGetFile(string filePath, out ScriptFile scriptFile) =>
-            TryGetFile(new Uri(filePath), out scriptFile);
+        public bool TryGetFile(string filePath, out ScriptFile scriptFile)
+        {
+            // This might not have been given a file path, in which case the Uri constructor barfs.
+            try
+            {
+                return TryGetFile(new Uri(filePath), out scriptFile);
+            }
+            catch (UriFormatException)
+            {
+                scriptFile = null;
+                return false;
+            }
+        }
 
         /// <summary>
         /// Tries to get an open file in the workspace. Returns true if it succeeds, false otherwise.
@@ -301,7 +312,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             referencedScriptFiles.Add(scriptFile.Id, scriptFile);
             RecursivelyFindReferences(scriptFile, referencedScriptFiles);
 
-            // remove original file from referened file and add it as the first element of the
+            // remove original file from referenced file and add it as the first element of the
             // expanded referenced list to maintain order so the original file is always first in the list
             referencedScriptFiles.Remove(scriptFile.Id);
             expandedReferences.Add(scriptFile);

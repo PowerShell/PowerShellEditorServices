@@ -43,9 +43,10 @@ namespace PowerShellEditorServices.Test.E2E
 
         #region public static properties
 
+        // NOTE: Just hard-code this to "powershell" when testing with the code lens.
         public static string PwshExe { get; } = Environment.GetEnvironmentVariable("PWSH_EXE_NAME") ?? "pwsh";
         public static bool IsWindowsPowerShell { get; } = PwshExe.Contains("powershell");
-        public static bool RunningInConstainedLanguageMode { get; } =
+        public static bool RunningInConstrainedLanguageMode { get; } =
             Environment.GetEnvironmentVariable("__PSLockdownPolicy", EnvironmentVariableTarget.Machine) != null;
 
         #endregion

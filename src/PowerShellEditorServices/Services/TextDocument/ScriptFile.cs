@@ -195,7 +195,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         }
 
         /// <summary>
-        /// Deterines whether the supplied path indicates the file is an "untitled:Unitled-X"
+        /// Determines whether the supplied path indicates the file is an "untitled:Untitled-X"
         /// which has not been saved to file.
         /// </summary>
         /// <param name="path">The path to check.</param>
@@ -203,10 +203,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         internal static bool IsUntitledPath(string path)
         {
             Validate.IsNotNull(nameof(path), path);
-            return !string.Equals(
-                DocumentUri.From(path).Scheme,
-                Uri.UriSchemeFile,
-                StringComparison.OrdinalIgnoreCase);
+            // This may not have been given a URI, so return false instead of throwing.
+            return Uri.IsWellFormedUriString(path, UriKind.RelativeOrAbsolute) &&
+                !string.Equals(DocumentUri.From(path).Scheme, Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
