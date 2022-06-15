@@ -155,7 +155,7 @@ function CanSendWorkspaceSymbolRequest {
         public async Task CanReceiveDiagnosticsFromFileOpenAsync()
         {
             Skip.If(
-                PsesStdioProcess.RunningInConstainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             NewTestFile("$a = 4");
@@ -178,7 +178,7 @@ function CanSendWorkspaceSymbolRequest {
         public async Task CanReceiveDiagnosticsFromFileChangedAsync()
         {
             Skip.If(
-                PsesStdioProcess.RunningInConstainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string filePath = NewTestFile("$a = 4");
@@ -230,7 +230,7 @@ function CanSendWorkspaceSymbolRequest {
         public async Task CanReceiveDiagnosticsFromConfigurationChangeAsync()
         {
             Skip.If(
-                PsesStdioProcess.RunningInConstainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             NewTestFile("gci | % { $_ }");
@@ -331,7 +331,7 @@ $_
         public async Task CanSendFormattingRequestAsync()
         {
             Skip.If(
-                PsesStdioProcess.RunningInConstainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string scriptPath = NewTestFile(@"
@@ -368,7 +368,7 @@ Get-Process
         public async Task CanSendRangeFormattingRequestAsync()
         {
             Skip.If(
-                PsesStdioProcess.RunningInConstainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string scriptPath = NewTestFile(@"
@@ -892,7 +892,7 @@ CanSendReferencesCodeLensRequest
         public async Task CanSendCodeActionRequestAsync()
         {
             Skip.If(
-                PsesStdioProcess.RunningInConstainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string filePath = NewTestFile("gci");
@@ -1090,7 +1090,7 @@ CanSendDefinitionRequest
         [SkippableFact]
         public async Task CanSendGetProjectTemplatesRequestAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstainedLanguageMode, "Plaster doesn't work in ConstrainedLanguage mode.");
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode, "Plaster doesn't work in ConstrainedLanguage mode.");
 
             GetProjectTemplatesResponse getProjectTemplatesResponse =
                 await PsesLanguageClient
@@ -1110,7 +1110,7 @@ CanSendDefinitionRequest
         public async Task CanSendGetCommentHelpRequestAsync()
         {
             Skip.If(
-                PsesStdioProcess.RunningInConstainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string scriptPath = NewTestFile(@"
@@ -1183,7 +1183,7 @@ function CanSendGetCommentHelpRequest {
         public async Task CanSendExpandAliasRequestAsync()
         {
             Skip.If(
-                PsesStdioProcess.RunningInConstainedLanguageMode,
+                PsesStdioProcess.RunningInConstrainedLanguageMode,
                 "This feature currently doesn't support ConstrainedLanguage Mode.");
 
             ExpandAliasResult expandAliasResult =

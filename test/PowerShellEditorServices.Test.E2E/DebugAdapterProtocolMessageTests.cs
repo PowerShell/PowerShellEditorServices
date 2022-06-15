@@ -183,7 +183,7 @@ namespace PowerShellEditorServices.Test.E2E
         public async Task CanSetBreakpointsAsync()
         {
             Skip.If(
-                PsesStdioProcess.RunningInConstainedLanguageMode,
+                PsesStdioProcess.RunningInConstrainedLanguageMode,
                 "You can't set breakpoints in ConstrainedLanguage mode.");
 
             string filePath = NewTestFile(GenerateScriptFromLoggingStatements(
@@ -260,7 +260,7 @@ namespace PowerShellEditorServices.Test.E2E
         public async Task CanStepPastSystemWindowsForms()
         {
             Skip.IfNot(PsesStdioProcess.IsWindowsPowerShell);
-            Skip.If(PsesStdioProcess.RunningInConstainedLanguageMode);
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode);
 
             string filePath = NewTestFile(string.Join(Environment.NewLine, new[]
                 {
