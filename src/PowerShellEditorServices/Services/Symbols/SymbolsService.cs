@@ -427,13 +427,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             SymbolReference foundDefinition = null;
             foreach (ScriptFile scriptFile in referencedFiles)
             {
-                foundDefinition =
-                    AstOperations.FindDefinitionOfSymbol(
-                        scriptFile.ScriptAst,
-                        foundSymbol);
+                foundDefinition = AstOperations.FindDefinitionOfSymbol(scriptFile.ScriptAst, foundSymbol);
 
                 filesSearched.Add(scriptFile.FilePath);
-                if (foundDefinition != null)
+                if (foundDefinition is not null)
                 {
                     foundDefinition.FilePath = scriptFile.FilePath;
                     break;
@@ -453,7 +450,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // if the definition the not found in referenced files
             // look for it in all the files in the workspace
-            if (foundDefinition == null)
+            if (foundDefinition is null)
             {
                 // Get a list of all powershell files in the workspace path
                 foreach (string file in _workspaceService.EnumeratePSFiles())
@@ -469,7 +466,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                             foundSymbol);
 
                     filesSearched.Add(file);
-                    if (foundDefinition != null)
+                    if (foundDefinition is not null)
                     {
                         foundDefinition.FilePath = file;
                         break;
@@ -480,7 +477,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // if the definition is not found in a file in the workspace
             // look for it in the builtin commands but only if the symbol
             // we are looking at is possibly a Function.
-            if (foundDefinition == null
+            if (foundDefinition is null
                 && (foundSymbol.SymbolType == SymbolType.Function
                     || foundSymbol.SymbolType == SymbolType.Unknown))
             {

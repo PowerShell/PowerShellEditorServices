@@ -215,11 +215,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             Ast scriptAst,
             SymbolReference symbolReference)
         {
-            FindDeclarationVisitor declarationVisitor =
-                new(
-                    symbolReference);
+            FindDeclarationVisitor declarationVisitor = new(symbolReference);
             scriptAst.Visit(declarationVisitor);
-
             return declarationVisitor.FoundDeclaration;
         }
 

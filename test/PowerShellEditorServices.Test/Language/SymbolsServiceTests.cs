@@ -133,7 +133,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         [Fact]
         public async Task FindsFunctionDefinitionForAlias()
         {
-            // TODO: Eventually we should get the alises through the AST instead of relying on them
+            // TODO: Eventually we should get the aliases through the AST instead of relying on them
             // being defined in the runspace.
             await psesHost.ExecutePSCommandAsync(
                 new PSCommand().AddScript("Set-Alias -Name My-Alias -Value My-Function"),
@@ -184,6 +184,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         public async Task FindsDotSourcedFile()
         {
             SymbolReference definitionResult = await GetDefinition(FindsDotSourcedFileData.SourceDetails).ConfigureAwait(true);
+            Assert.NotNull(definitionResult);
             Assert.True(
                 definitionResult.FilePath.EndsWith(Path.Combine("References", "ReferenceFileE.ps1")),
                 "Unexpected reference file: " + definitionResult.FilePath);
