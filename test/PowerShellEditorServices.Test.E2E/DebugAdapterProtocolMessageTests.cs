@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -296,6 +296,33 @@ namespace PowerShellEditorServices.Test.E2E
             Variable form = variablesResponse.Variables.FirstOrDefault(v => v.Name == "$form");
             Assert.NotNull(form);
             Assert.Equal("System.Windows.Forms.Form, Text: ", form.Value);
+        }
+
+        // This tests the edge-case where a raw script (or an untitled script) has the last line
+        // commented. Since in some cases (such as Windows PowerShell, or the script not having a
+        // backing ScriptFile) we just wrap the script with braces, we had a bug where the last
+        // brace would be after the comment. We had to ensure we wrapped with newlines instead.
+        [Trait("Category", "DAP")]
+        [Fact]
+        public async Task CanLaunchScriptWithCommentedLastLineAsync()
+        {
+            string script = GenerateScriptFromLoggingStatements("a log statement") + "# a comment at the end";
+            Assert.Contains(Environment.NewLine + "# a comment", script);
+            Assert.EndsWith("at the end", script);
+
+            // NOTE: This is horribly complicated, but the "script" parameter here is assigned to
+            // PsesLaunchRequestArguments.Script, which is then assigned to
+            // DebugStateService.ScriptToLaunch in that handler, and finally used by the
+            // ConfigurationDoneHandler in LaunchScriptAsync.
+            await PsesDebugAdapterClient.LaunchScript(script, Started).ConfigureAwait(false);
+
+            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(false);
+            Assert.NotNull(configDoneResponse);
+
+            // At this point the script should be running so lets give it time
+            await Task.Delay(2000).ConfigureAwait(false);
+
+            Assert.Collection(GetLog(), (i) => Assert.Equal("a log statement", i));
         }
     }
 }
