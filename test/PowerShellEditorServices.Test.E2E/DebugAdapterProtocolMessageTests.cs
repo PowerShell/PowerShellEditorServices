@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -127,7 +127,13 @@ namespace PowerShellEditorServices.Test.E2E
                 throw new ArgumentNullException(nameof(logStatements), "Expected at least one argument.");
             }
 
-            // Have script create/overwrite file first with `>`.
+            // Clean up side effects from other test runs.
+            if (File.Exists(s_testOutputPath))
+            {
+                File.Delete(s_testOutputPath);
+            }
+
+            // Have script create file first with `>` (but don't rely on overwriting).
             StringBuilder builder = new StringBuilder().Append('\'').Append(logStatements[0]).Append("' > '").Append(s_testOutputPath).AppendLine("'");
             for (int i = 1; i < logStatements.Length; i++)
             {
