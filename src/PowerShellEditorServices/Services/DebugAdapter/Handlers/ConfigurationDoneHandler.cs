@@ -105,10 +105,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private async Task LaunchScriptAsync(string scriptToLaunch)
         {
             PSCommand command;
-            if (ScriptFile.IsUntitledPath(scriptToLaunch))
+            // Script could an actual script, or a URI to a script file (or untitled document).
+            if (!System.Uri.IsWellFormedUriString(scriptToLaunch, System.UriKind.RelativeOrAbsolute)
+                || ScriptFile.IsUntitledPath(scriptToLaunch))
             {
-                ScriptFile untitledScript = _workspaceService.GetFile(scriptToLaunch);
-                if (BreakpointApiUtils.SupportsBreakpointApis(_runspaceContext.CurrentRunspace))
+                bool isScriptFile = _workspaceService.TryGetFile(scriptToLaunch, out ScriptFile untitledScript);
+                if (isScriptFile && BreakpointApiUtils.SupportsBreakpointApis(_runspaceContext.CurrentRunspace))
                 {
                     // Parse untitled files with their `Untitled:` URI as the filename which will
                     // cache the URI and contents within the PowerShell parser. By doing this, we
@@ -138,7 +140,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     // Command breakpoints and `Wait-Debugger` will work. We must wrap the script
                     // with newlines so that any included comments don't break the command.
                     command = PSCommandHelpers.BuildDotSourceCommandWithArguments(
-                        string.Concat("{\n", untitledScript.Contents, "\n}"), _debugStateService.Arguments);
+                        string.Concat(
+                            "{" + System.Environment.NewLine,
+                            isScriptFile ? untitledScript.Contents : scriptToLaunch,
+                            System.Environment.NewLine + "}"),
+                            _debugStateService.Arguments);
                 }
             }
             else

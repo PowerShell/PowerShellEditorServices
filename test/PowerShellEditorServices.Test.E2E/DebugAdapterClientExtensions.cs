@@ -12,13 +12,13 @@ namespace PowerShellEditorServices.Test.E2E
 {
     public static class DebugAdapterClientExtensions
     {
-        public static async Task LaunchScript(this DebugAdapterClient debugAdapterClient, string filePath, TaskCompletionSource<object> started)
+        public static async Task LaunchScript(this DebugAdapterClient debugAdapterClient, string script, TaskCompletionSource<object> started)
         {
             LaunchResponse launchResponse = await debugAdapterClient.Launch(
                 new PsesLaunchRequestArguments
                 {
                     NoDebug = false,
-                    Script = filePath,
+                    Script = script,
                     Cwd = "",
                     CreateTemporaryIntegratedConsole = false
                 }).ConfigureAwait(true);

@@ -152,8 +152,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="filePath">The file path at which the script resides.</param>
         /// <param name="scriptFile">The out parameter that will contain the ScriptFile object.</param>
-        public bool TryGetFile(string filePath, out ScriptFile scriptFile) =>
-            TryGetFile(new Uri(filePath), out scriptFile);
+        public bool TryGetFile(string filePath, out ScriptFile scriptFile)
+        {
+            scriptFile = null;
+            return Uri.IsWellFormedUriString(filePath, UriKind.RelativeOrAbsolute)
+                && TryGetFile(new Uri(filePath), out scriptFile);
+        }
 
         /// <summary>
         /// Tries to get an open file in the workspace. Returns true if it succeeds, false otherwise.
