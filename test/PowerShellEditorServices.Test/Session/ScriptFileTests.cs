@@ -651,6 +651,7 @@ First line
         [InlineData("vscode-notebook-cell:/Users/me/Documents/test.ps1#0001", true)]
         [InlineData("https://microsoft.com", true)]
         [InlineData("Untitled:Untitled-1", true)]
+        [InlineData("'a log statement' > 'c:\\Users\\me\\Documents\\test.txt'\r\n", false)]
         public void IsUntitledFileIsCorrect(string path, bool expected) => Assert.Equal(expected, ScriptFile.IsUntitledPath(path));
     }
 }
