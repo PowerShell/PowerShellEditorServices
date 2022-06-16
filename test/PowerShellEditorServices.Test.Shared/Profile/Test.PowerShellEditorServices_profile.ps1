@@ -1,3 +1,7 @@
-﻿function Assert-ProfileLoaded {
+﻿if (-not $PROFILE) {
+    throw
+}
+
+function Assert-ProfileLoaded {
 	return $true
 }
