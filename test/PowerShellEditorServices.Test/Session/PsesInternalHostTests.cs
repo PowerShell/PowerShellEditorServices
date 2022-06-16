@@ -110,37 +110,34 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public async Task CanResolveAndLoadProfilesForHostId()
         {
-            string[] expectedProfilePaths =
-                new string[]
-                {
-                    PsesHostFactory.TestProfilePaths.AllUsersAllHosts,
-                    PsesHostFactory.TestProfilePaths.AllUsersCurrentHost,
-                    PsesHostFactory.TestProfilePaths.CurrentUserAllHosts,
-                    PsesHostFactory.TestProfilePaths.CurrentUserCurrentHost
-                };
-
             // Load the profiles for the test host name
             await psesHost.LoadHostProfilesAsync(CancellationToken.None).ConfigureAwait(true);
 
-            // Ensure that all the paths are set in the correct variables
-            // and that the current user's host profile got loaded
-            PSCommand psCommand = new PSCommand().AddScript(
-                "\"$($profile.AllUsersAllHosts) " +
-                "$($profile.AllUsersCurrentHost) " +
-                "$($profile.CurrentUserAllHosts) " +
-                "$($profile.CurrentUserCurrentHost) " +
-                "$(Assert-ProfileLoaded)\"");
+            // Ensure that the $PROFILE variable is a string with the value of CurrentUserCurrentHost.
+            IReadOnlyList<string> profileVariable = await psesHost.ExecutePSCommandAsync<string>(
+                new PSCommand().AddScript("$PROFILE"),
+                CancellationToken.None).ConfigureAwait(true);
 
-            IReadOnlyList<string> result = await psesHost.ExecutePSCommandAsync<string>(psCommand, CancellationToken.None).ConfigureAwait(true);
+            Assert.Collection(profileVariable,
+                (p) => Assert.Equal(PsesHostFactory.TestProfilePaths.CurrentUserCurrentHost, p));
 
-            string expectedString =
-                string.Format(
-                    "{0} True",
-                    string.Join(
-                        " ",
-                        expectedProfilePaths));
+            // Ensure that all the profile paths are set in the correct note properties.
+            IReadOnlyList<string> profileProperties = await psesHost.ExecutePSCommandAsync<string>(
+                new PSCommand().AddScript("$PROFILE | Get-Member -Type NoteProperty"),
+                CancellationToken.None).ConfigureAwait(true);
 
-            Assert.Equal(expectedString, result[0], ignoreCase: true);
+            Assert.Collection(profileProperties,
+                (p) => Assert.Equal($"string AllUsersAllHosts={PsesHostFactory.TestProfilePaths.AllUsersAllHosts}", p, ignoreCase: true),
+                (p) => Assert.Equal($"string AllUsersCurrentHost={PsesHostFactory.TestProfilePaths.AllUsersCurrentHost}", p, ignoreCase: true),
+                (p) => Assert.Equal($"string CurrentUserAllHosts={PsesHostFactory.TestProfilePaths.CurrentUserAllHosts}", p, ignoreCase: true),
+                (p) => Assert.Equal($"string CurrentUserCurrentHost={PsesHostFactory.TestProfilePaths.CurrentUserCurrentHost}", p, ignoreCase: true));
+
+            // Ensure that the profile was loaded. The profile also checks that $PROFILE was defined.
+            IReadOnlyList<bool> profileLoaded = await psesHost.ExecutePSCommandAsync<bool>(
+                new PSCommand().AddScript("Assert-ProfileLoaded"),
+                CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Collection(profileLoaded, (p) => Assert.True(p));
         }
 
         [Fact]
