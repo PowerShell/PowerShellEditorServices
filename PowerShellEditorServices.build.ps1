@@ -33,7 +33,7 @@ $script:IsNix = $IsLinux -or $IsMacOS
 # For Apple M1, pwsh might be getting emulated, in which case we need to check
 # for the proc_translated flag, otherwise we can check the architecture.
 $script:IsAppleM1 = $IsMacOS -and ((sysctl -n sysctl.proc_translated) -eq 1 -or (uname -m) -eq "arm64")
-$script:IsArm64 = $IsWindows -and @("ARM64", "AMD64") -contains $env:PROCESSOR_ARCHITECTURE
+$script:IsArm64 = -not $script:IsNix -and @("ARM64", "AMD64") -contains $env:PROCESSOR_ARCHITECTURE
 $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Hosting", "BuildInfo.cs")
 $script:PsesCommonProps = [xml](Get-Content -Raw "$PSScriptRoot/PowerShellEditorServices.Common.props")
 

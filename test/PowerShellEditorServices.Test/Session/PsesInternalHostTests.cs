@@ -172,5 +172,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                     out IReadLine readLine),
                 CancellationToken.None).ConfigureAwait(true));
         }
+
+        // This test asserts that we do not mess up the console encoding, which leads to native
+        // commands receiving piped input failing.
+        [Fact]
+        public async Task ExecutesNativeCommandsCorrectly()
+        {
+            await psesHost.ExecutePSCommandAsync(
+                new PSCommand().AddScript("\"protocol=https`nhost=myhost.com`nusername=john`npassword=doe`n`n\" | git.exe credential approve; if ($LastExitCode) { throw }"),
+                CancellationToken.None).ConfigureAwait(true);
+        }
     }
 }

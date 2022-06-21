@@ -7,7 +7,6 @@ using System.Globalization;
 using System.IO;
 using System.Management.Automation.Host;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -981,8 +980,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
                 readLineProvider.OverrideReadLine(readLine);
                 System.Console.CancelKeyPress += OnCancelKeyPress;
-                System.Console.InputEncoding = Encoding.UTF8;
-                System.Console.OutputEncoding = Encoding.UTF8;
             }
 
             if (VersionUtils.IsWindows)
