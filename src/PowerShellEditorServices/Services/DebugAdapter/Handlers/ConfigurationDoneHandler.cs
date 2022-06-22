@@ -105,9 +105,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private async Task LaunchScriptAsync(string scriptToLaunch)
         {
             PSCommand command;
-            // Script could an actual script, or a URI to a script file (or untitled document).
-            if (!System.Uri.IsWellFormedUriString(scriptToLaunch, System.UriKind.RelativeOrAbsolute)
-                || ScriptFile.IsUntitledPath(scriptToLaunch))
+            if (System.IO.File.Exists(scriptToLaunch))
+            {
+                // For a saved file we just execute its path (after escaping it).
+                command = PSCommandHelpers.BuildDotSourceCommandWithArguments(
+                    string.Concat('"', scriptToLaunch, '"'), _debugStateService.Arguments);
+            }
+            else // It's a URI to an untitled script, or a raw script.
             {
                 bool isScriptFile = _workspaceService.TryGetFile(scriptToLaunch, out ScriptFile untitledScript);
                 if (isScriptFile && BreakpointApiUtils.SupportsBreakpointApis(_runspaceContext.CurrentRunspace))
@@ -146,12 +150,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                             System.Environment.NewLine + "}"),
                             _debugStateService.Arguments);
                 }
-            }
-            else
-            {
-                // For a saved file we just execute its path (after escaping it).
-                command = PSCommandHelpers.BuildDotSourceCommandWithArguments(
-                    string.Concat('"', scriptToLaunch, '"'), _debugStateService.Arguments);
             }
 
             await _executionService.ExecutePSCommandAsync(
