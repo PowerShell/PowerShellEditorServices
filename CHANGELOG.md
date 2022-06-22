@@ -1,5 +1,16 @@
 # PowerShell Editor Services Release History
 
+## v3.4.4
+### Wednesday, June 22, 2022
+
+- 🐛 🔍 [PowerShellEditorServices #1839](https://github.com/PowerShell/PowerShellEditorServices/pull/1839) - Fix logic checking for untitled or raw scripts.
+- 🐛 🔍 [PowerShellEditorServices #1838](https://github.com/PowerShell/PowerShellEditorServices/pull/1838) - Don't use `RunContinuationsAsynchronously` for our `TaskCompletionSource`.
+- 🐛 📟 [vscode-powershell #4021](https://github.com/PowerShell/PowerShellEditorServices/pull/1836) - Fix piping to native commands for Windows PowerShell.
+- ✨ 📖 [PowerShellEditorServices #1831](https://github.com/PowerShell/PowerShellEditorServices/pull/1833) - Add readme about `ReadKey` workarounds.
+- ✨ 🚨 [PowerShellEditorServices #1832](https://github.com/PowerShell/PowerShellEditorServices/pull/1832) - Improve `$PROFILE` variable and profile loading test.
+- ✨ 🚨 [PowerShellEditorServices #1830](https://github.com/PowerShell/PowerShellEditorServices/pull/1830) - Add regression test for untitled scripts in Windows PowerShell.
+- ✨ 🚨 [PowerShellEditorServices #1828](https://github.com/PowerShell/PowerShellEditorServices/pull/1828) - Add regression test for accidentally allowing removal of `$psEditor`.
+
 ## v3.4.3
 ### Monday, June 13, 2022
 
