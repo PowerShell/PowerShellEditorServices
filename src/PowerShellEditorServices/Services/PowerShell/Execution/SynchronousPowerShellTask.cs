@@ -95,7 +95,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         private IReadOnlyList<TResult> ExecuteNormally(CancellationToken cancellationToken)
         {
             _frame = _psesHost.CurrentFrame;
-            MaybeAddToHistory(_psCommand);
             if (PowerShellExecutionOptions.WriteOutputToHost)
             {
                 _psCommand.AddOutputCommand();
@@ -188,7 +187,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             cancellationToken.Register(CancelDebugExecution);
 
             PSDataCollection<PSObject> outputCollection = new();
-            MaybeAddToHistory(_psCommand);
 
             // Out-Default doesn't work as needed in the debugger
             // Instead we add Out-String to the command and collect results in a PSDataCollection
@@ -355,7 +353,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             }
         }
 
-        private void MaybeAddToHistory(PSCommand command)
+        internal void MaybeAddToHistory()
         {
             // Do not add PSES internal commands to history. Also exclude input that came from the
             // REPL (e.g. PSReadLine) as it handles history itself in that scenario.
@@ -365,19 +363,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             }
 
             // Only add pure script commands with no arguments to interactive history.
-            if (command.Commands is { Count: not 1 }
-                || command.Commands[0] is { Parameters.Count: not 0 } or { IsScript: false })
+            if (_psCommand.Commands is { Count: not 1 }
+                || _psCommand.Commands[0] is { Parameters.Count: not 0 } or { IsScript: false })
             {
                 return;
             }
 
             try
             {
-                _psesHost.AddToHistory(command.Commands[0].CommandText);
+                _psesHost.AddToHistory(_psCommand.Commands[0].CommandText);
             }
             catch
             {
-                // Ignore exceptions as the user can register a scriptblock predicate that
+                // Ignore exceptions as the user can register a script-block predicate that
                 // determines if the command should be added to history.
             }
         }

@@ -314,31 +314,52 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         internal void ForceSetExit() => _shouldExit = true;
 
-        public Task<T> InvokeTaskOnPipelineThreadAsync<T>(
-            SynchronousTask<T> task)
+        private bool CancelForegroundAndPrepend(ISynchronousTask task, bool isIdle = false)
         {
             // NOTE: This causes foreground tasks to act like they have `ExecutionPriority.Next`.
-            // TODO: Deduplicate this.
-            if (task.ExecutionOptions.RequiresForeground)
+            //
+            // When a task must displace the current foreground command,
+            // we must:
+            //  - block the consumer thread from mutating the queue
+            //  - cancel any running task on the consumer thread
+            //  - place our task on the front of the queue
+            //  - skip the next prompt so the task runs instead
+            //  - unblock the consumer thread
+            if (!task.ExecutionOptions.RequiresForeground)
             {
-                // When a task must displace the current foreground command,
-                // we must:
-                //  - block the consumer thread from mutating the queue
-                //  - cancel any running task on the consumer thread
-                //  - place our task on the front of the queue
-                //  - skip the next prompt so the task runs instead
-                //  - unblock the consumer thread
-                using (_taskQueue.BlockConsumers())
+                return false;
+            }
+
+            _skipNextPrompt = true;
+
+            if (task is SynchronousPowerShellTask<PSObject> psTask)
+            {
+                psTask.MaybeAddToHistory();
+            }
+
+            using (_taskQueue.BlockConsumers())
+            {
+                _taskQueue.Prepend(task);
+                if (isIdle)
+                {
+                    CancelIdleParentTask();
+                }
+                else
                 {
                     CancelCurrentTask();
-                    _taskQueue.Prepend(task);
-                    _skipNextPrompt = true;
                 }
+            }
 
+            return true;
+        }
+
+        public Task<T> InvokeTaskOnPipelineThreadAsync<T>(SynchronousTask<T> task)
+        {
+            if (CancelForegroundAndPrepend(task))
+            {
                 return task.Task;
             }
 
-            // TODO: Apply stashed `QueueTask` function.
             switch (task.ExecutionOptions.Priority)
             {
                 case ExecutionPriority.Next:
@@ -819,7 +840,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                     {
                         UI.WriteLine();
                     }
-                    // Propogate cancellation if that's what happened, since ReadLine won't.
+                    // Propagate cancellation if that's what happened, since ReadLine won't.
                     // TODO: We may not need to do this at all.
                     cancellationToken.ThrowIfCancellationRequested();
                     return; // Task wasn't canceled but there was no input.
@@ -1047,15 +1068,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 while (!cancellationScope.CancellationToken.IsCancellationRequested
                     && _taskQueue.TryTake(out ISynchronousTask task))
                 {
-                    // NOTE: This causes foreground tasks to act like they have `ExecutionPriority.Next`.
-                    // TODO: Deduplicate this.
-                    if (task.ExecutionOptions.RequiresForeground)
+                    if (CancelForegroundAndPrepend(task, isIdle: true))
                     {
-                        // If we have a task that is queued, but cannot be run under readline
-                        // we place it back at the front of the queue, and cancel the readline task
-                        _taskQueue.Prepend(task);
-                        _skipNextPrompt = true;
-                        _cancellationContext.CancelIdleParentTask();
                         return;
                     }
 
@@ -1082,7 +1096,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _cancellationContext.CancelCurrentTask();
 
             // If the current task was running under the debugger, we need to synchronize the
-            // cancelation with our debug context (and likely the debug server). Note that if we're
+            // cancellation with our debug context (and likely the debug server). Note that if we're
             // currently stopped in a breakpoint, that means the task is _not_ under the debugger.
             if (!CurrentRunspace.Runspace.Debugger.InBreakpoint)
             {
@@ -1166,7 +1180,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             // selection and terminating the debugger. Without this, if the "Stop" button is pressed
             // then we hit this repeatedly.
             //
-            // This info is publically accessible via `PSDebugContext` but we'd need to access it
+            // This info is publicly accessible via `PSDebugContext` but we'd need to access it
             // via a script. At this point in the call I'd prefer this to be as light as possible so
             // we can escape ASAP but we may want to consider switching to that at some point.
             if (!Runspace.RunspaceIsRemote && s_scriptDebuggerTriggerObjectProperty is not null)
