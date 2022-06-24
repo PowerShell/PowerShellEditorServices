@@ -1415,14 +1415,14 @@ Thanks to our new co-maintainer [Patrick Meinecke](https://github.com/SeeminglyS
 we've gained a new set of useful commands for interacting with the $psEditor APIs
 within the Integrated Console:
 
-- [Find-Ast](https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/docs/Find-Ast.md)
-- [Get-Token](https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/docs/Get-Token.md)
-- [ConvertFrom-ScriptExtent](https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/docs/ConvertFrom-ScriptExtent.md)
-- [ConvertTo-ScriptExtent](https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/docs/ConvertTo-ScriptExtent.md)
-- [Set-ScriptExtent](https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/docs/Set-ScriptExtent.md)
-- [Join-ScriptExtent](https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/docs/Join-ScriptExtent.md)
-- [Test-ScriptExtent](https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/docs/Test-ScriptExtent.md)
-- [Import-EditorCommand](https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/docs/Import-EditorCommand.md)
+- [Find-Ast](https://github.com/PowerShell/PowerShellEditorServices/blob/main/module/docs/Find-Ast.md)
+- [Get-Token](https://github.com/PowerShell/PowerShellEditorServices/blob/main/module/docs/Get-Token.md)
+- [ConvertFrom-ScriptExtent](https://github.com/PowerShell/PowerShellEditorServices/blob/main/module/docs/ConvertFrom-ScriptExtent.md)
+- [ConvertTo-ScriptExtent](https://github.com/PowerShell/PowerShellEditorServices/blob/main/module/docs/ConvertTo-ScriptExtent.md)
+- [Set-ScriptExtent](https://github.com/PowerShell/PowerShellEditorServices/blob/main/module/docs/Set-ScriptExtent.md)
+- [Join-ScriptExtent](https://github.com/PowerShell/PowerShellEditorServices/blob/main/module/docs/Join-ScriptExtent.md)
+- [Test-ScriptExtent](https://github.com/PowerShell/PowerShellEditorServices/blob/main/module/docs/Test-ScriptExtent.md)
+- [Import-EditorCommand](https://github.com/PowerShell/PowerShellEditorServices/blob/main/module/docs/Import-EditorCommand.md)
 
 #### Microsoft.PowerShell.EditorServices API removals ([#492](https://github.com/PowerShell/PowerShellEditorServices/pull/492))
 
@@ -1626,7 +1626,7 @@ on the PowerShell Team Blog.
 ## 0.10.0
 ### Tuesday, March 14, 2017
 
-These improvements are described in detail in the [vscode-powershell changelog](https://github.com/PowerShell/vscode-powershell/blob/master/CHANGELOG.md#0100)
+These improvements are described in detail in the [vscode-powershell changelog](https://github.com/PowerShell/vscode-powershell/blob/main/CHANGELOG.md#0100)
 for its 0.10.0 release.
 
 #### Language feature improvements
@@ -1644,7 +1644,7 @@ for its 0.10.0 release.
 ## 0.9.0
 ### Thursday, January 19, 2017
 
-These improvements are described in detail in the [vscode-powershell changelog](https://github.com/PowerShell/vscode-powershell/blob/master/CHANGELOG.md#090)
+These improvements are described in detail in the [vscode-powershell changelog](https://github.com/PowerShell/vscode-powershell/blob/main/CHANGELOG.md#090)
 for its 0.9.0 release.
 
 #### Language feature improvements

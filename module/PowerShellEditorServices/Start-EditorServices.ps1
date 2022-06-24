@@ -23,7 +23,7 @@
     If editor integration authors make modifications to this script, please
     consider contributing changes back to the canonical version of this script
     at the PowerShell Editor Services GitHub repository:
-    https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/PowerShellEditorServices/Start-EditorServices.ps1'
+    https://github.com/PowerShell/PowerShellEditorServices/blob/main/module/PowerShellEditorServices/Start-EditorServices.ps1'
 #>
 [CmdletBinding(DefaultParameterSetName="NamedPipe")]
 param(

@@ -6,7 +6,7 @@
     <Copyright>© Microsoft Corporation.</Copyright>
     <LangVersion>latest</LangVersion>
     <PackageTags>PowerShell;editor;development;language;debugging</PackageTags>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/PowerShell/PowerShellEditorServices/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/PowerShell/PowerShellEditorServices/main/LICENSE</PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/PowerShell/PowerShellEditorServices</RepositoryUrl>
