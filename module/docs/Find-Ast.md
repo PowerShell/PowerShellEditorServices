@@ -1,6 +1,6 @@
 ---
 external help file: PowerShellEditorServices.Commands-help.xml
-online version: https://github.com/PowerShell/PowerShellEditorServices/tree/master/module/docs/Find-Ast.md
+online version: https://github.com/PowerShell/PowerShellEditorServices/tree/main/module/docs/Find-Ast.md
 schema: 2.0.0
 ---
 

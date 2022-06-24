@@ -1,6 +1,6 @@
 ---
 external help file: PowerShellEditorServices.Commands-help.xml
-online version: https://github.com/PowerShell/PowerShellEditorServices/tree/master/module/docs/Import-EditorCommand.md
+online version: https://github.com/PowerShell/PowerShellEditorServices/tree/main/module/docs/Import-EditorCommand.md
 schema: 2.0.0
 ---
 

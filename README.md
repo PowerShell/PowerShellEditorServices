@@ -1,6 +1,6 @@
 # PowerShell Editor Services
 
-[![Build Status](https://dev.azure.com/powershell/PowerShellEditorServices/_apis/build/status/PowerShellEditorServices-ci?branchName=master)](https://dev.azure.com/powershell/PowerShellEditorServices/_build/latest?definitionId=57&branchName=master)
+[![Build Status](https://dev.azure.com/powershell/PowerShellEditorServices/_apis/build/status/PowerShellEditorServices-ci?branchName=main)](https://dev.azure.com/powershell/PowerShellEditorServices/_build/latest?definitionId=57&branchName=main)
 [![Discord](https://img.shields.io/discord/180528040881815552.svg?label=%23vscode&logo=discord&logoColor=white)](https://aka.ms/psdiscord)
 [![Join the chat at https://gitter.im/PowerShell/PowerShellEditorServices](https://badges.gitter.im/PowerShell/PowerShellEditorServices.svg)](https://gitter.im/PowerShell/PowerShellEditorServices?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -119,7 +119,7 @@ The types of PowerShell Editor Services can change at any moment and should not 
 
 ## Development
 
-> NOTE: The easiest way to manually test changes you've made in PowerShellEditorServices is to follow the [vscode-powershell development doc](https://github.com/PowerShell/vscode-powershell/blob/master/docs/development.md) to get a local build of the VS Code extension to use your local build of PowerShellEditorServices.
+> NOTE: The easiest way to manually test changes you've made in PowerShellEditorServices is to follow the [vscode-powershell development doc](https://github.com/PowerShell/vscode-powershell/blob/main/docs/development.md) to get a local build of the VS Code extension to use your local build of PowerShellEditorServices.
 
 ### 1. Install PowerShell 7+
 
@@ -179,4 +179,4 @@ For more information, see the [Code of Conduct FAQ][conduct-FAQ] or contact [ope
 [conduct-code]: http://opensource.microsoft.com/codeofconduct/
 [conduct-FAQ]: http://opensource.microsoft.com/codeofconduct/faq/
 [conduct-email]: mailto:opencode@microsoft.com
-[conduct-md]: https://github.com/PowerShell/PowerShellEditorServices/blob/master/CODE_OF_CONDUCT.md
+[conduct-md]: https://github.com/PowerShell/PowerShellEditorServices/blob/main/CODE_OF_CONDUCT.md
