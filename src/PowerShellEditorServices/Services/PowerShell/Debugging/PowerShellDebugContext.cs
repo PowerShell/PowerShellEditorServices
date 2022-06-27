@@ -187,7 +187,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                 RaiseDebuggerResumingEvent(new DebuggerResumingEventArgs(debuggerResult.ResumeAction.Value));
 
                 // The Terminate exception is used by the engine for flow control
-                // when it needs to unwind the callstack out of the debugger.
+                // when it needs to unwind the call stack out of the debugger.
                 if (debuggerResult.ResumeAction is DebuggerResumeAction.Stop)
                 {
                     throw new TerminateException();

@@ -109,6 +109,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         public async Task CompletesAttributeValue()
         {
             (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteAttributeValue.SourceDetails).ConfigureAwait(true);
+            Assert.Equal(3, results.Count());
             Assert.Collection(results.OrderBy(c => c.SortText),
                 actual => Assert.Equal(actual with { Data = null }, CompleteAttributeValue.ExpectedCompletion1),
                 actual => Assert.Equal(actual with { Data = null }, CompleteAttributeValue.ExpectedCompletion2),

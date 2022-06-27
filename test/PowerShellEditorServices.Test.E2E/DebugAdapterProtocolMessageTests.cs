@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -18,6 +18,7 @@ using Xunit.Abstractions;
 
 namespace PowerShellEditorServices.Test.E2E
 {
+    [Trait("Category", "DAP")]
     public class DebugAdapterProtocolMessageTests : IAsyncLifetime
     {
         private const string TestOutputFileName = "__dapTestOutputFile.txt";
@@ -148,7 +149,6 @@ namespace PowerShellEditorServices.Test.E2E
 
         private static string[] GetLog() => File.ReadLines(s_testOutputPath).ToArray();
 
-        [Trait("Category", "DAP")]
         [Fact]
         public void CanInitializeWithCorrectServerSettings()
         {
@@ -160,7 +160,6 @@ namespace PowerShellEditorServices.Test.E2E
             Assert.True(PsesDebugAdapterClient.ServerSettings.SupportsSetVariable);
         }
 
-        [Trait("Category", "DAP")]
         [Fact]
         public async Task CanLaunchScriptWithNoBreakpointsAsync()
         {
@@ -170,15 +169,12 @@ namespace PowerShellEditorServices.Test.E2E
 
             ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(false);
             Assert.NotNull(configDoneResponse);
-
-            // At this point the script should be running so lets give it time
             await Task.Delay(2000).ConfigureAwait(false);
 
             string[] log = GetLog();
             Assert.Equal("works", log[0]);
         }
 
-        [Trait("Category", "DAP")]
         [SkippableFact]
         public async Task CanSetBreakpointsAsync()
         {
@@ -197,19 +193,8 @@ namespace PowerShellEditorServices.Test.E2E
             // {"command":"setBreakpoints","arguments":{"source":{"name":"dfsdfg.ps1","path":"/Users/tyleonha/Code/PowerShell/Misc/foo/dfsdfg.ps1"},"lines":[2],"breakpoints":[{"line":2}],"sourceModified":false},"type":"request","seq":3}
             SetBreakpointsResponse setBreakpointsResponse = await PsesDebugAdapterClient.SetBreakpoints(new SetBreakpointsArguments
             {
-                Source = new Source
-                {
-                    Name = Path.GetFileName(filePath),
-                    Path = filePath
-                },
-                Lines = new long[] { 2 },
-                Breakpoints = new SourceBreakpoint[]
-                {
-                    new SourceBreakpoint
-                    {
-                        Line = 2,
-                    }
-                },
+                Source = new Source { Name = Path.GetFileName(filePath), Path = filePath },
+                Breakpoints = new SourceBreakpoint[] { new SourceBreakpoint { Line = 2 } },
                 SourceModified = false,
             }).ConfigureAwait(false);
 
@@ -220,21 +205,15 @@ namespace PowerShellEditorServices.Test.E2E
 
             ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(false);
             Assert.NotNull(configDoneResponse);
-
-            // At this point the script should be running so lets give it time
             await Task.Delay(2000).ConfigureAwait(false);
 
             string[] log = GetLog();
             Assert.Single(log, (i) => i == "before breakpoint");
 
-            ContinueResponse continueResponse = await PsesDebugAdapterClient.RequestContinue(new ContinueArguments
-            {
-                ThreadId = 1,
-            }).ConfigureAwait(true);
+            ContinueResponse continueResponse = await PsesDebugAdapterClient.RequestContinue(
+                new ContinueArguments { ThreadId = 1 }).ConfigureAwait(true);
 
             Assert.NotNull(continueResponse);
-
-            // At this point the script should be running so lets give it time
             await Task.Delay(2000).ConfigureAwait(false);
 
             log = GetLog();
@@ -255,7 +234,6 @@ namespace PowerShellEditorServices.Test.E2E
         // PowerShell, we avoid all issues with our test project (and the xUnit executable) not
         // having System.Windows.Forms deployed, and can instead rely on the Windows Global Assembly
         // Cache (GAC) to find it.
-        [Trait("Category", "DAP")]
         [SkippableFact]
         public async Task CanStepPastSystemWindowsForms()
         {
@@ -283,15 +261,10 @@ namespace PowerShellEditorServices.Test.E2E
 
             ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(false);
             Assert.NotNull(configDoneResponse);
-
-            // At this point the script should be running so lets give it time
             await Task.Delay(2000).ConfigureAwait(false);
 
             VariablesResponse variablesResponse = await PsesDebugAdapterClient.RequestVariables(
-                new VariablesArguments
-                {
-                    VariablesReference = 1
-                }).ConfigureAwait(false);
+                new VariablesArguments { VariablesReference = 1 }).ConfigureAwait(false);
 
             Variable form = variablesResponse.Variables.FirstOrDefault(v => v.Name == "$form");
             Assert.NotNull(form);
@@ -302,7 +275,6 @@ namespace PowerShellEditorServices.Test.E2E
         // commented. Since in some cases (such as Windows PowerShell, or the script not having a
         // backing ScriptFile) we just wrap the script with braces, we had a bug where the last
         // brace would be after the comment. We had to ensure we wrapped with newlines instead.
-        [Trait("Category", "DAP")]
         [Fact]
         public async Task CanLaunchScriptWithCommentedLastLineAsync()
         {
@@ -318,8 +290,6 @@ namespace PowerShellEditorServices.Test.E2E
 
             ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(false);
             Assert.NotNull(configDoneResponse);
-
-            // At this point the script should be running so lets give it time
             await Task.Delay(2000).ConfigureAwait(false);
 
             Assert.Collection(GetLog(), (i) => Assert.Equal("a log statement", i));

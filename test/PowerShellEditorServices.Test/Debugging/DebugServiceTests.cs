@@ -183,7 +183,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         public async Task DebuggerAcceptsScriptArgs(string[] args)
         {
             // The path is intentionally odd (some escaped chars but not all) because we are testing
-            // the internal path escaping mechanism - it should escape certains chars ([, ] and space) but
+            // the internal path escaping mechanism - it should escape certain chars ([, ] and space) but
             // it should not escape already escaped chars.
             ScriptFile debugWithParamsFile = GetDebugScript("Debug W&ith Params [Test].ps1");
 
@@ -453,7 +453,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         }
 
         [Fact]
-        public async Task DebuggerFindsParseableButInvalidSimpleBreakpointConditions()
+        public async Task DebuggerFindsParsableButInvalidSimpleBreakpointConditions()
         {
             BreakpointDetails[] breakpoints =
                 await debugService.SetLineBreakpointsAsync(
