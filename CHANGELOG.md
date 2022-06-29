@@ -1,5 +1,12 @@
 # PowerShell Editor Services Release History
 
+## v3.4.5
+### Wednesday, June 29, 2022
+
+- ✨ 🙏 [PowerShellEditorServices #1844](https://github.com/PowerShell/PowerShellEditorServices/pull/1845) - Update PSReadLine to v2.2.6.
+- ✨ 📖 [PowerShellEditorServices #1843](https://github.com/PowerShell/PowerShellEditorServices/pull/1843) - Find/replace of `master` to `main` for branch rename.
+- 🐛 📟 [vscode-powershell #3683](https://github.com/PowerShell/PowerShellEditorServices/pull/1841) - Add command to PSReadLine history before cancellation.
+
 ## v3.4.4
 ### Wednesday, June 22, 2022
 
