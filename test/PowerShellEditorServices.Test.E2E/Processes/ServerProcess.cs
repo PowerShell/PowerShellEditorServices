@@ -43,7 +43,7 @@ namespace PowerShellEditorServices.Test.E2E
         }
 
         /// <summary>
-        ///     Finaliser for <see cref="ServerProcess"/>.
+        ///     Finalizer for <see cref="ServerProcess"/>.
         /// </summary>
         ~ServerProcess()
         {
@@ -53,7 +53,11 @@ namespace PowerShellEditorServices.Test.E2E
         /// <summary>
         ///     Dispose of resources being used by the launcher.
         /// </summary>
-        public void Dispose() => Dispose(true);
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
 
         /// <summary>
         ///     Dispose of resources being used by the launcher.

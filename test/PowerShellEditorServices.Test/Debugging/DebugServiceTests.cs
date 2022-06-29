@@ -63,7 +63,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
         {
             debugService.Abort();
             debuggerStoppedQueue.Dispose();
+#pragma warning disable VSTHRD002
             psesHost.StopAsync().Wait();
+#pragma warning restore VSTHRD002
             GC.SuppressFinalize(this);
         }
 

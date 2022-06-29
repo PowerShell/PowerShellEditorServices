@@ -1,11 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using System;
 using System.Collections;
 using System.Linq;
+using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
 {
@@ -91,7 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
         /// Gets the PowerShell version details for the given runspace.
         /// </summary>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
-        /// <param name="pwsh">The PowerShell instance for which to to get the version.</param>
+        /// <param name="pwsh">The PowerShell instance for which to get the version.</param>
         /// <returns>A new PowerShellVersionDetails instance.</returns>
         public static PowerShellVersionDetails GetVersionDetails(ILogger logger, PowerShell pwsh)
         {
