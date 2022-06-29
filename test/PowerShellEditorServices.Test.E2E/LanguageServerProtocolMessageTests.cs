@@ -576,7 +576,7 @@ Write-Host 'Goodbye'
                     await PsesLanguageClient
                         .SendRequest(
                             "powerShell/getPSHostProcesses",
-                            new GetPSHostProcesssesParams())
+                            new GetPSHostProcessesParams())
                         .Returning<PSHostProcessResponse[]>(CancellationToken.None).ConfigureAwait(true);
             }
             finally
