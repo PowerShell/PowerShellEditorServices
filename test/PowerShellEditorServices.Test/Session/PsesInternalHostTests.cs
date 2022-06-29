@@ -86,11 +86,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public async Task CanCancelExecutionWithToken()
         {
+            using CancellationTokenSource cancellationSource = new(millisecondsDelay: 1000);
             await Assert.ThrowsAsync<TaskCanceledException>(() =>
             {
                 return psesHost.ExecutePSCommandAsync(
                     new PSCommand().AddScript("Start-Sleep 10"),
-                    new CancellationTokenSource(1000).Token);
+                    cancellationSource.Token);
             }).ConfigureAwait(true);
         }
 

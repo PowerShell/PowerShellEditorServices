@@ -12,6 +12,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Handlers;
+using Microsoft.PowerShell.EditorServices.Logging;
+using Microsoft.PowerShell.EditorServices.Services.Configuration;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.Template;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client;
@@ -21,10 +25,6 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 using Xunit;
 using Xunit.Abstractions;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
-using Microsoft.PowerShell.EditorServices.Logging;
-using Microsoft.PowerShell.EditorServices.Services.Configuration;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell;
-using Microsoft.PowerShell.EditorServices.Services.Template;
 
 namespace PowerShellEditorServices.Test.E2E
 {
@@ -1149,8 +1149,6 @@ function CanSendGetCommentHelpRequest {
         [Fact]
         public async Task CanSendEvaluateRequestAsync()
         {
-            using CancellationTokenSource cancellationSource = new(millisecondsDelay: 5000);
-
             EvaluateResponseBody evaluateResponseBody =
                 await PsesLanguageClient
                     .SendRequest(
@@ -1159,7 +1157,7 @@ function CanSendGetCommentHelpRequest {
                         {
                             Expression = "Get-ChildItem"
                         })
-                    .Returning<EvaluateResponseBody>(cancellationSource.Token).ConfigureAwait(true);
+                    .Returning<EvaluateResponseBody>(CancellationToken.None).ConfigureAwait(true);
 
             // These always gets returned so this test really just makes sure we get _any_ response.
             Assert.Equal("", evaluateResponseBody.Result);

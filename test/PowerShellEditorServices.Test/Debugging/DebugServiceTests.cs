@@ -103,7 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
         private void AssertDebuggerPaused()
         {
-            DebuggerStoppedEventArgs eventArgs = debuggerStoppedQueue.Take(new CancellationTokenSource(5000).Token);
+            DebuggerStoppedEventArgs eventArgs = debuggerStoppedQueue.Take(CancellationToken.None);
             Assert.Empty(eventArgs.OriginalEvent.Breakpoints);
         }
 
@@ -112,7 +112,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             int lineNumber = -1,
             CommandBreakpointDetails commandBreakpointDetails = default)
         {
-            DebuggerStoppedEventArgs eventArgs = debuggerStoppedQueue.Take(new CancellationTokenSource(5000).Token);
+            DebuggerStoppedEventArgs eventArgs = debuggerStoppedQueue.Take(CancellationToken.None);
 
             Assert.True(psesHost.DebugContext.IsStopped);
 
