@@ -210,7 +210,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             // Sends the InitializedEvent so that the debugger will continue
             // sending configuration requests
-            _debugStateService.ServerStarted.SetResult(true);
+            _debugStateService.ServerStarted.TrySetResult(true);
 
             return new LaunchResponse();
         }
@@ -440,7 +440,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (runspaceVersion.Version.Major >= 7)
             {
-                _debugStateService.ServerStarted.SetResult(true);
+                _debugStateService.ServerStarted.TrySetResult(true);
             }
             return new AttachResponse();
         }
