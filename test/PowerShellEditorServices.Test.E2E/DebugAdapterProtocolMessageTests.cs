@@ -291,5 +291,45 @@ namespace PowerShellEditorServices.Test.E2E
             Assert.Collection(await GetLog().ConfigureAwait(true),
                 (i) => Assert.Equal("a log statement", i));
         }
+
+        [SkippableFact]
+        public async Task CanRunPesterTestFile()
+        {
+            Skip.If(s_isWindows, "Windows CI Pester is broken.");
+            /* TODO: Get this to work on Windows.
+            string pesterLog = Path.Combine(s_binDir, Path.GetRandomFileName() + ".log");
+
+            string testCommand = @"
+                Start-Transcript -Path '" + pesterLog + @"'
+                Install-Module -Name Pester -RequiredVersion 5.3.3 -Force -PassThru | Write-Host
+                Import-Module -Name Pester -RequiredVersion 5.3.3 -PassThru | Write-Host
+                Get-Content '" + pesterTest + @"'
+                Stop-Transcript";
+
+            using CancellationTokenSource cts = new(5000);
+            while (!File.Exists(pesterLog) && !cts.Token.IsCancellationRequested)
+            {
+                await Task.Delay(1000).ConfigureAwait(true);
+            }
+            await Task.Delay(15000).ConfigureAwait(true);
+            _output.WriteLine(File.ReadAllText(pesterLog));
+            */
+
+            string pesterTest = NewTestFile(@"
+                Describe 'A' {
+                    Context 'B' {
+                        It 'C' {
+                            { throw 'error' } | Should -Throw
+                        }
+                        It 'D' {
+                            " + GenerateScriptFromLoggingStatements("pester") + @"
+                        }
+                    }
+                }", isPester: true);
+
+            await PsesDebugAdapterClient.LaunchScript($"Invoke-Pester -Script '{pesterTest}'", Started).ConfigureAwait(true);
+            await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(true);
+            Assert.Collection(await GetLog().ConfigureAwait(true), (i) => Assert.Equal("pester", i));
+        }
     }
 }
