@@ -769,7 +769,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                     && !cancellationScope.CancellationToken.IsCancellationRequested
                     && _taskQueue.TryTake(out ISynchronousTask task))
                 {
-                    task.ExecuteSynchronously(cancellationScope.CancellationToken);
+                    try
+                    {
+                        task.ExecuteSynchronously(cancellationScope.CancellationToken);
+                    }
+                    catch (OperationCanceledException e)
+                    {
+                        _logger.LogDebug(e, "Task {Task} was canceled!", task);
+                    }
                 }
 
                 if (_shouldExit

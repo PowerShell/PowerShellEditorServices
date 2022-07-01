@@ -33,7 +33,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
                 serviceProvider: null,
                 editorOperations: null,
                 executionService: psesHost);
+#pragma warning disable VSTHRD002
             extensionService.InitializeAsync().Wait();
+#pragma warning restore VSTHRD002
             extensionCommandService = new(extensionService);
         }
 
@@ -110,7 +112,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
             Assert.Equal(commandName, commandAdded.Name);
             Assert.Equal(commandDisplayName, commandAdded.DisplayName);
 
-            // Invoke the command
+            // Invoke the command.
+            // TODO: What task was this cancelling?
             await extensionCommandService.InvokeCommandAsync("test.scriptblock", editorContext).ConfigureAwait(true);
 
             // Assert the expected value
