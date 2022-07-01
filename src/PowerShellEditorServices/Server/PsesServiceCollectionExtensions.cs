@@ -48,8 +48,9 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         // is ready, it will be available. NOTE: We cannot await this because it
                         // uses a lazy initialization to avoid a race with the dependency injection
                         // framework, see the EditorObject class for that!
+#pragma warning disable VSTHRD110
                         extensionService.InitializeAsync();
-
+#pragma warning restore VSTHRD110
                         return extensionService;
                     })
                 .AddSingleton<AnalysisService>();

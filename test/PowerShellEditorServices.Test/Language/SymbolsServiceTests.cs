@@ -46,7 +46,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
         public void Dispose()
         {
+#pragma warning disable VSTHRD002
             psesHost.StopAsync().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
             CommandHelpers.s_cmdletToAliasCache.Clear();
             CommandHelpers.s_aliasToCmdletCache.Clear();
             GC.SuppressFinalize(this);

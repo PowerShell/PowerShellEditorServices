@@ -11,12 +11,13 @@ param(
 
     [string]$DefaultModuleRepository = "PSGallery",
 
+    [string[]]$VerbosityArgs = @("--verbosity", "quiet", "--nologo"),
+
     # See: https://docs.microsoft.com/en-us/dotnet/core/testing/selective-unit-tests
     [string]$TestFilter = '',
 
     # See: https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-test
-    # E.g. use @("--logger", "console;verbosity=detailed") for detailed console output instead
-    [string[]]$TestArgs = @("--logger", "trx")
+    [string[]]$TestArgs = $VerbosityArgs + @("--logger", "console;verbosity=normal", "--logger", "trx")
 )
 
 #Requires -Modules @{ModuleName="InvokeBuild"; ModuleVersion="5.0.0"}
@@ -38,9 +39,9 @@ $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerSh
 $script:PsesCommonProps = [xml](Get-Content -Raw "$PSScriptRoot/PowerShellEditorServices.Common.props")
 
 $script:NetRuntime = @{
-    PS7 = 'netcoreapp3.1'
-    PS72 = 'net6.0'
-    Desktop = 'net462'
+    PS7      = 'netcoreapp3.1'
+    PS72     = 'net6.0'
+    Desktop  = 'net462'
     Standard = 'netstandard2.0'
 }
 
@@ -54,31 +55,31 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
     git update-index --assume-unchanged "$PSScriptRoot/src/PowerShellEditorServices.Hosting/BuildInfo.cs"
 }
 
-task FindDotNet {
-    assert (Get-Command dotnet -ErrorAction SilentlyContinue) "dotnet not found, please install it: https://aka.ms/dotnet-cli"
+Task FindDotNet {
+    Assert (Get-Command dotnet -ErrorAction SilentlyContinue) "dotnet not found, please install it: https://aka.ms/dotnet-cli"
 
     # Strip out semantic version metadata so it can be cast to `Version`
     $existingVersion, $null = (dotnet --version) -split '-'
-    assert ([Version]$existingVersion -ge [Version]("6.0")) ".NET SDK 6.0 or higher is required, please update it: https://aka.ms/dotnet-cli"
+    Assert ([Version]$existingVersion -ge [Version]("6.0")) ".NET SDK 6.0 or higher is required, please update it: https://aka.ms/dotnet-cli"
 
     # Anywhere other than on a Mac with an M1 processor, we additionally
     # need the .NET 3.1 runtime for our netcoreapp3.1 framework.
     if (-not $script:IsAppleM1 -and -not $script:IsArm64) {
         $runtimes = dotnet --list-runtimes
-        assert ($runtimes -match "Microsoft.NETCore.App 3.1") ".NET Runtime 3.1 required but not found!"
+        Assert ($runtimes -match "Microsoft.NETCore.App 3.1") ".NET Runtime 3.1 required but not found!"
     }
 
     Write-Host "Using dotnet v$(dotnet --version) at path $((Get-Command dotnet).Source)" -ForegroundColor Green
 }
 
-task BinClean {
+Task BinClean {
     Remove-Item $PSScriptRoot\.tmp -Recurse -Force -ErrorAction Ignore
     Remove-Item $PSScriptRoot\module\PowerShellEditorServices\bin -Recurse -Force -ErrorAction Ignore
     Remove-Item $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin -Recurse -Force -ErrorAction Ignore
 }
 
-task Clean FindDotNet, BinClean, {
-    exec { & dotnet clean }
+Task Clean FindDotNet, BinClean, {
+    Exec { & dotnet clean $VerbosityArgs }
     Get-ChildItem -Recurse $PSScriptRoot\src\*.nupkg | Remove-Item -Force -ErrorAction Ignore
     Get-ChildItem $PSScriptRoot\PowerShellEditorServices*.zip | Remove-Item -Force -ErrorAction Ignore
     Get-ChildItem $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US\*-help.xml | Remove-Item -Force -ErrorAction Ignore
@@ -93,7 +94,7 @@ task Clean FindDotNet, BinClean, {
     }
 }
 
-task CreateBuildInfo {
+Task CreateBuildInfo {
     $buildVersion = "<development-build>"
     $buildOrigin = "Development"
     $buildCommit = git rev-parse HEAD
@@ -147,33 +148,33 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 "@
 
     if (Compare-Object $buildInfoContents.Split([Environment]::NewLine) (Get-Content $script:BuildInfoPath)) {
-        Write-Host "Updating Build Info"
+        Write-Host "Updating build info."
         Set-Content -LiteralPath $script:BuildInfoPath -Value $buildInfoContents -Force
     }
 }
 
-task SetupHelpForTests {
+Task SetupHelpForTests {
     if (-not (Get-Help Write-Host).Examples) {
-        Write-Host "Updating help for tests"
+        Write-Host "Updating help for tests."
         Update-Help -Module Microsoft.PowerShell.Utility -Force -Scope CurrentUser
     }
 }
 
 Task Build FindDotNet, CreateBuildInfo, {
-    exec { & dotnet restore }
-    exec { & dotnet publish -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetRuntime.Standard }
-    exec { & dotnet publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.PS7 }
+    Exec { & dotnet restore $VerbosityArgs }
+    Exec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetRuntime.Standard }
+    Exec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.PS7 }
     if (-not $script:IsNix) {
-        exec { & dotnet publish -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Desktop }
+        Exec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Desktop }
     }
 
     # Build PowerShellEditorServices.VSCode module
-    exec { & dotnet publish -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj -f $script:NetRuntime.Standard }
+    Exec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj -f $script:NetRuntime.Standard }
 }
 
-task Test TestServer, TestE2E
+Task Test TestServer, TestE2E
 
-task TestServer TestServerWinPS, TestServerPS7, TestServerPS72
+Task TestServer TestServerWinPS, TestServerPS7, TestServerPS72
 
 Task TestServerWinPS -If (-not $script:IsNix) Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test\
@@ -181,43 +182,43 @@ Task TestServerWinPS -If (-not $script:IsNix) Build, SetupHelpForTests, {
     # that is debuggable! If architecture is added, the assembly path gets an
     # additional folder, necesstiating fixes to find the commands definition
     # file and test files.
-    exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.Desktop }
+    Exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.Desktop }
 }
 
-task TestServerPS7 -If (-not $script:IsAppleM1 -and -not $script:IsArm64) Build, SetupHelpForTests, {
+Task TestServerPS7 -If (-not $script:IsAppleM1 -and -not $script:IsArm64) Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test\
-    exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS7 }
+    Exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS7 }
 }
 
-task TestServerPS72 Build, SetupHelpForTests, {
+Task TestServerPS72 Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test\
-    exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS72 }
+    Exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS72 }
 }
 
-task TestE2E Build, SetupHelpForTests, {
+Task TestE2E Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test.E2E\
 
     $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
     $NetRuntime = if ($IsAppleM1 -or $script:IsArm64) { $script:NetRuntime.PS72 } else { $script:NetRuntime.PS7 }
-    exec { & dotnet $script:dotnetTestArgs $NetRuntime }
+    Exec { & dotnet $script:dotnetTestArgs $NetRuntime }
 
-    # Run E2E tests in ConstrainedLanguage mode.
     if (!$script:IsNix) {
         if (-not [Security.Principal.WindowsIdentity]::GetCurrent().Owner.IsWellKnown("BuiltInAdministratorsSid")) {
-            Write-Warning 'Skipping E2E CLM tests as they must be ran in an elevated process.'
+            Write-Warning "Skipping Constrained Language Mode tests as they must be ran in an elevated process."
             return
         }
 
         try {
+            Write-Host "Running end-to-end tests in Constrained Language Mode."
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", "0x80000007", [System.EnvironmentVariableTarget]::Machine);
-            exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS7 }
+            Exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS7 }
         } finally {
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", $null, [System.EnvironmentVariableTarget]::Machine);
         }
     }
 }
 
-task LayoutModule -After Build {
+Task LayoutModule -After Build {
     $modulesDir = "$PSScriptRoot/module"
     $psesVSCodeBinOutputPath = "$modulesDir/PowerShellEditorServices.VSCode/bin"
     $psesOutputPath = "$modulesDir/PowerShellEditorServices"
@@ -226,8 +227,8 @@ task LayoutModule -After Build {
     $psesCoreHostPath = "$psesBinOutputPath/Core"
     $psesDeskHostPath = "$psesBinOutputPath/Desktop"
 
-    foreach ($dir in $psesDepsPath,$psesCoreHostPath,$psesDeskHostPath,$psesVSCodeBinOutputPath) {
-        New-Item -Force -Path $dir -ItemType Directory
+    foreach ($dir in $psesDepsPath, $psesCoreHostPath, $psesDeskHostPath, $psesVSCodeBinOutputPath) {
+        New-Item -Force -Path $dir -ItemType Directory | Out-Null
     }
 
     # Copy Third Party Notices.txt to module folder
@@ -310,7 +311,7 @@ task RestorePsesModules -After Build {
     # Save each module in the modules.json file
     foreach ($moduleName in $moduleInfos.Keys) {
         if (Test-Path -Path (Join-Path -Path $submodulePath -ChildPath $moduleName)) {
-            Write-Host "`tModule '${moduleName}' already detected. Skipping"
+            Write-Host "`tModule '${moduleName}' already detected, skipping!"
             continue
         }
 
@@ -331,9 +332,9 @@ task RestorePsesModules -After Build {
 }
 
 Task BuildCmdletHelp -After LayoutModule {
-    New-ExternalHelp -Path $PSScriptRoot\module\docs -OutputPath $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US -Force
-    New-ExternalHelp -Path $PSScriptRoot\module\PowerShellEditorServices.VSCode\docs -OutputPath $PSScriptRoot\module\PowerShellEditorServices.VSCode\en-US -Force
+    New-ExternalHelp -Path $PSScriptRoot\module\docs -OutputPath $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US -Force | Out-Null
+    New-ExternalHelp -Path $PSScriptRoot\module\PowerShellEditorServices.VSCode\docs -OutputPath $PSScriptRoot\module\PowerShellEditorServices.VSCode\en-US -Force | Out-Null
 }
 
 # The default task is to run the entire CI build
-task . Clean, Build, Test
+Task . Clean, Build, Test

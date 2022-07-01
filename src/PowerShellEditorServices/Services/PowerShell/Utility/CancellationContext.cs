@@ -103,7 +103,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
         public CancellationToken CancellationToken => _cancellationSource.Token;
 
-        public void Cancel() => _cancellationSource.Cancel();
+        public void Cancel()
+        {
+            try
+            {
+                _cancellationSource.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+                // We don't want this race condition to cause flaky tests.
+                // TODO: Find out the cause of the race!
+            }
+        }
 
         public bool IsIdleScope { get; }
 

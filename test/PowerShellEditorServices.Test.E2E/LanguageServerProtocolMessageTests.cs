@@ -12,6 +12,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Handlers;
+using Microsoft.PowerShell.EditorServices.Logging;
+using Microsoft.PowerShell.EditorServices.Services.Configuration;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.Template;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client;
@@ -21,10 +25,6 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 using Xunit;
 using Xunit.Abstractions;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
-using Microsoft.PowerShell.EditorServices.Logging;
-using Microsoft.PowerShell.EditorServices.Services.Configuration;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell;
-using Microsoft.PowerShell.EditorServices.Services.Template;
 
 namespace PowerShellEditorServices.Test.E2E
 {
@@ -154,8 +154,7 @@ function CanSendWorkspaceSymbolRequest {
         [SkippableFact]
         public async Task CanReceiveDiagnosticsFromFileOpenAsync()
         {
-            Skip.If(
-                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             NewTestFile("$a = 4");
@@ -177,8 +176,7 @@ function CanSendWorkspaceSymbolRequest {
         [SkippableFact]
         public async Task CanReceiveDiagnosticsFromFileChangedAsync()
         {
-            Skip.If(
-                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string filePath = NewTestFile("$a = 4");
@@ -229,8 +227,7 @@ function CanSendWorkspaceSymbolRequest {
         [SkippableFact]
         public async Task CanReceiveDiagnosticsFromConfigurationChangeAsync()
         {
-            Skip.If(
-                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             NewTestFile("gci | % { $_ }");
@@ -330,8 +327,7 @@ $_
         [SkippableFact]
         public async Task CanSendFormattingRequestAsync()
         {
-            Skip.If(
-                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string scriptPath = NewTestFile(@"
@@ -367,8 +363,7 @@ Get-Process
         [SkippableFact]
         public async Task CanSendRangeFormattingRequestAsync()
         {
-            Skip.If(
-                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string scriptPath = NewTestFile(@"
@@ -576,7 +571,7 @@ Write-Host 'Goodbye'
                     await PsesLanguageClient
                         .SendRequest(
                             "powerShell/getPSHostProcesses",
-                            new GetPSHostProcesssesParams())
+                            new GetPSHostProcessesParams())
                         .Returning<PSHostProcessResponse[]>(CancellationToken.None).ConfigureAwait(true);
             }
             finally
@@ -891,8 +886,7 @@ CanSendReferencesCodeLensRequest
         [SkippableFact]
         public async Task CanSendCodeActionRequestAsync()
         {
-            Skip.If(
-                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string filePath = NewTestFile("gci");
@@ -971,7 +965,7 @@ CanSendReferencesCodeLensRequest
             Assert.Contains("Writes customized output to a host", updatedCompletionItem.Documentation.String);
         }
 
-        [SkippableFact(Skip = "This test is too flaky right now.")]
+        [SkippableFact(Skip = "Completion for Expand-SlowArchive is flaky.")]
         public async Task CanSendCompletionResolveWithModulePrefixRequestAsync()
         {
             await PsesLanguageClient
@@ -1090,7 +1084,8 @@ CanSendDefinitionRequest
         [SkippableFact]
         public async Task CanSendGetProjectTemplatesRequestAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode, "Plaster doesn't work in ConstrainedLanguage mode.");
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode,
+                "Plaster doesn't work in Constrained Language Mode.");
 
             GetProjectTemplatesResponse getProjectTemplatesResponse =
                 await PsesLanguageClient
@@ -1109,8 +1104,7 @@ CanSendDefinitionRequest
         [SkippableFact]
         public async Task CanSendGetCommentHelpRequestAsync()
         {
-            Skip.If(
-                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string scriptPath = NewTestFile(@"
@@ -1149,8 +1143,6 @@ function CanSendGetCommentHelpRequest {
         [Fact]
         public async Task CanSendEvaluateRequestAsync()
         {
-            using CancellationTokenSource cancellationSource = new(millisecondsDelay: 5000);
-
             EvaluateResponseBody evaluateResponseBody =
                 await PsesLanguageClient
                     .SendRequest(
@@ -1159,7 +1151,7 @@ function CanSendGetCommentHelpRequest {
                         {
                             Expression = "Get-ChildItem"
                         })
-                    .Returning<EvaluateResponseBody>(cancellationSource.Token).ConfigureAwait(true);
+                    .Returning<EvaluateResponseBody>(CancellationToken.None).ConfigureAwait(true);
 
             // These always gets returned so this test really just makes sure we get _any_ response.
             Assert.Equal("", evaluateResponseBody.Result);
@@ -1182,9 +1174,8 @@ function CanSendGetCommentHelpRequest {
         [SkippableFact]
         public async Task CanSendExpandAliasRequestAsync()
         {
-            Skip.If(
-                PsesStdioProcess.RunningInConstrainedLanguageMode,
-                "This feature currently doesn't support ConstrainedLanguage Mode.");
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode,
+                "The expand alias request doesn't work in Constrained Language Mode.");
 
             ExpandAliasResult expandAliasResult =
                 await PsesLanguageClient

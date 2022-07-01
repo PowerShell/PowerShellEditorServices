@@ -101,7 +101,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         // Sends the InitializedEvent so that the debugger will continue
                         // sending configuration requests
                         _debugStateService.WaitingForAttach = false;
-                        _debugStateService.ServerStarted.SetResult(true);
+                        _debugStateService.ServerStarted.TrySetResult(true);
                     }
                     return;
 

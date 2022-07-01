@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using OmniSharp.Extensions.DebugAdapter.Client;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
-using System.Threading;
 
 namespace PowerShellEditorServices.Test.E2E
 {
@@ -29,9 +28,7 @@ namespace PowerShellEditorServices.Test.E2E
             }
 
             // This will check to see if we received the Initialized event from the server.
-            await Task.Run(
-                async () => await started.Task.ConfigureAwait(true),
-                new CancellationTokenSource(2000).Token).ConfigureAwait(true);
+            await started.Task.ConfigureAwait(true);
         }
     }
 }

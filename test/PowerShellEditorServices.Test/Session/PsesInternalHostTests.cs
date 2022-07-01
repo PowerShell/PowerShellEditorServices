@@ -27,7 +27,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
         public void Dispose()
         {
+#pragma warning disable VSTHRD002
             psesHost.StopAsync().Wait();
+#pragma warning restore VSTHRD002
             GC.SuppressFinalize(this);
         }
 
@@ -84,11 +86,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public async Task CanCancelExecutionWithToken()
         {
+            using CancellationTokenSource cancellationSource = new(millisecondsDelay: 1000);
             await Assert.ThrowsAsync<TaskCanceledException>(() =>
             {
                 return psesHost.ExecutePSCommandAsync(
                     new PSCommand().AddScript("Start-Sleep 10"),
-                    new CancellationTokenSource(1000).Token);
+                    cancellationSource.Token);
             }).ConfigureAwait(true);
         }
 
@@ -137,7 +140,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 new PSCommand().AddScript("Assert-ProfileLoaded"),
                 CancellationToken.None).ConfigureAwait(true);
 
-            Assert.Collection(profileLoaded, (p) => Assert.True(p));
+            Assert.Collection(profileLoaded, Assert.True);
         }
 
         [Fact]
@@ -150,7 +153,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
             await psesHost.ExecuteDelegateAsync(
                 "LoadProfiles",
                 executionOptions: null,
-                (pwsh, _) => {
+                (pwsh, _) =>
+                {
                     pwsh.LoadProfiles(emptyProfilePaths);
                     Assert.Empty(pwsh.Commands.Commands);
                 },
@@ -162,7 +166,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         {
             // NOTE: This is slightly more complicated than one would expect because we explicitly
             // need it to run on the pipeline thread otherwise Windows complains about the the
-            // thread's appartment state not matching.
+            // thread's apartment state not matching.
             Assert.True(await psesHost.ExecuteDelegateAsync(
                 nameof(psesHost.TryLoadPSReadLine),
                 executionOptions: null,

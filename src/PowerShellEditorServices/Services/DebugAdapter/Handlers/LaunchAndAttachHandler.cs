@@ -210,7 +210,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             // Sends the InitializedEvent so that the debugger will continue
             // sending configuration requests
-            _debugStateService.ServerStarted.SetResult(true);
+            _debugStateService.ServerStarted.TrySetResult(true);
 
             return new LaunchResponse();
         }
@@ -440,7 +440,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (runspaceVersion.Version.Major >= 7)
             {
-                _debugStateService.ServerStarted.SetResult(true);
+                _debugStateService.ServerStarted.TrySetResult(true);
             }
             return new AttachResponse();
         }
@@ -453,7 +453,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         // PSES sends the initialized event at the end of the Launch/Attach handler
 
         // The way that the Omnisharp server works is that this OnStarted handler runs after OnInitialized
-        // (after the Initialize DAP response is sent to the client) but before the _Initalized_ DAP event
+        // (after the Initialize DAP response is sent to the client) but before the _Initialized_ DAP event
         // gets sent to the client. Because of the way PSES handles breakpoints,
         // we can't send the Initialized event until _after_ we finish the Launch/Attach handler.
         // The flow above depicts this. To achieve this, we wait until _debugStateService.ServerStarted

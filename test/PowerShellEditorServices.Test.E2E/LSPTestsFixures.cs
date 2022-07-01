@@ -95,16 +95,9 @@ namespace PowerShellEditorServices.Test.E2E
 
         public async Task DisposeAsync()
         {
-            try
-            {
-                await PsesLanguageClient.Shutdown().ConfigureAwait(false);
-                await _psesProcess.Stop().ConfigureAwait(false);
-                PsesLanguageClient?.Dispose();
-            }
-            catch (ObjectDisposedException)
-            {
-                // Language client has a disposal bug in it
-            }
+            await PsesLanguageClient.Shutdown().ConfigureAwait(false);
+            await _psesProcess.Stop().ConfigureAwait(false);
+            PsesLanguageClient?.Dispose();
         }
     }
 }
