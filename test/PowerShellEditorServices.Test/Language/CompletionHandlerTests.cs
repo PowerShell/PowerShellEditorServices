@@ -111,11 +111,13 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         public async Task CompletesAttributeValue()
         {
             (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteAttributeValue.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(3, results.Count());
-            Assert.Collection(results.OrderBy(c => c.SortText),
-                actual => Assert.Equal(actual with { Data = null }, CompleteAttributeValue.ExpectedCompletion1),
-                actual => Assert.Equal(actual with { Data = null }, CompleteAttributeValue.ExpectedCompletion2),
-                actual => Assert.Equal(actual with { Data = null }, CompleteAttributeValue.ExpectedCompletion3));
+            // NOTE: Since the completions come through un-ordered from PowerShell, their SortText
+            // (which has an index prepended from the original order) will mis-match our assumed
+            // order; hence we ignore it.
+            Assert.Collection(results.OrderBy(c => c.Label),
+                actual => Assert.Equal(actual with { Data = null, SortText = null }, CompleteAttributeValue.ExpectedCompletion1),
+                actual => Assert.Equal(actual with { Data = null, SortText = null }, CompleteAttributeValue.ExpectedCompletion2),
+                actual => Assert.Equal(actual with { Data = null, SortText = null }, CompleteAttributeValue.ExpectedCompletion3));
         }
 
         [Fact]
