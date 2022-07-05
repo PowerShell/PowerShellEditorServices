@@ -186,5 +186,20 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 new PSCommand().AddScript("\"protocol=https`nhost=myhost.com`nusername=john`npassword=doe`n`n\" | git.exe credential approve; if ($LastExitCode) { throw }"),
                 CancellationToken.None).ConfigureAwait(true);
         }
+
+        [Theory]
+        [InlineData("")] // Regression test for "unset" path.
+        [InlineData("C:\\Some\\Bad\\Directory")] // Non-existent directory.
+        [InlineData("testhost.dll")] // Existent file.
+        public async Task CanHandleBadInitialWorkingDirectory(string path)
+        {
+            string cwd = Environment.CurrentDirectory;
+            await psesHost.SetInitialWorkingDirectoryAsync(path, CancellationToken.None).ConfigureAwait(true);
+
+            IReadOnlyList<string> getLocation = await psesHost.ExecutePSCommandAsync<string>(
+                new PSCommand().AddCommand("Get-Location"),
+                CancellationToken.None).ConfigureAwait(true);
+            Assert.Collection(getLocation, (d) => Assert.Equal(cwd, d, ignoreCase: true));
+        }
     }
 }
