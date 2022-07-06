@@ -475,9 +475,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public Task SetInitialWorkingDirectoryAsync(string path, CancellationToken cancellationToken)
         {
-            return ExecutePSCommandAsync(
-                new PSCommand().AddCommand("Set-Location").AddParameter("LiteralPath", path),
-                cancellationToken);
+            return Directory.Exists(path)
+                ? ExecutePSCommandAsync(
+                    new PSCommand().AddCommand("Set-Location").AddParameter("LiteralPath", path),
+                    cancellationToken)
+                : Task.CompletedTask;
         }
 
         private void Run()
