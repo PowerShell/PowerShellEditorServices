@@ -228,8 +228,10 @@ namespace Microsoft.PowerShell.EditorServices.Commands
 
                 using EditorServicesLoader psesLoader = EditorServicesLoader.Create(_logger, editorServicesConfig, sessionFileWriter, _loggerUnsubscribers);
                 _logger.Log(PsesLogLevel.Verbose, "Loading EditorServices");
-                // Start editor services and wait here until it shuts down
+                // Synchronously start editor services and wait here until it shuts down.
+#pragma warning disable VSTHRD002
                 psesLoader.LoadAndRunEditorServicesAsync().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
             }
             catch (Exception e)
             {
