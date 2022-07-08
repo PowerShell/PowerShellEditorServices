@@ -87,6 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         .AddLanguageProtocolLogging()
                         .SetMinimumLevel(_minimumLogLevel))
                     // TODO: Consider replacing all WithHandler with AddSingleton
+                    .WithHandler<ClientBreakpointHandler>()
                     .WithHandler<PsesWorkspaceSymbolsHandler>()
                     .WithHandler<PsesTextDocumentHandler>()
                     .WithHandler<GetVersionHandler>()
@@ -151,9 +152,12 @@ namespace Microsoft.PowerShell.EditorServices.Server
                                 LoadProfiles = initializationOptions?.GetValue("enableProfileLoading")?.Value<bool>() ?? true,
                                 // TODO: Consider deprecating the setting which sets this and
                                 // instead use WorkspacePath exclusively.
-                                InitialWorkingDirectory = initializationOptions?.GetValue("initialWorkingDirectory")?.Value<string>() ?? workspaceService.WorkspacePath
+                                InitialWorkingDirectory = initializationOptions?.GetValue("initialWorkingDirectory")?.Value<string>() ?? workspaceService.WorkspacePath,
+
+                                SupportsBreakpointSync = initializationOptions?.GetValue("supportsBreakpointSync")?.Value<bool>() ?? false,
                             };
 
+                            languageServer.Services.GetService<BreakpointSyncService>().IsSupported = hostStartOptions.SupportsBreakpointSync;
                             _psesHost = languageServer.Services.GetService<PsesInternalHost>();
                             return _psesHost.TryStartAsync(hostStartOptions, cancellationToken);
                         });

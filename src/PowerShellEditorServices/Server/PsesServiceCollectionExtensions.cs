@@ -36,6 +36,9 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<RemoteFileManagerService>()
+                .AddSingleton<BreakpointService>()
+                .AddSingleton<DebugStateService>()
+                .AddSingleton<BreakpointSyncService>()
                 .AddSingleton((provider) =>
                     {
                         ExtensionService extensionService = new(
@@ -61,18 +64,22 @@ namespace Microsoft.PowerShell.EditorServices.Server
             PsesDebugServer psesDebugServer)
         {
             PsesInternalHost internalHost = languageServiceProvider.GetService<PsesInternalHost>();
+            DebugStateService debugStateService = languageServiceProvider.GetService<DebugStateService>();
+            BreakpointService breakpointService = languageServiceProvider.GetService<BreakpointService>();
+            BreakpointSyncService breakpointSyncService = languageServiceProvider.GetService<BreakpointSyncService>();
 
             return collection
                 .AddSingleton(internalHost)
                 .AddSingleton<IRunspaceContext>(internalHost)
                 .AddSingleton<IPowerShellDebugContext>(internalHost.DebugContext)
+                .AddSingleton(breakpointSyncService)
                 .AddSingleton(languageServiceProvider.GetService<IInternalPowerShellExecutionService>())
                 .AddSingleton(languageServiceProvider.GetService<WorkspaceService>())
                 .AddSingleton(languageServiceProvider.GetService<RemoteFileManagerService>())
                 .AddSingleton(psesDebugServer)
                 .AddSingleton<DebugService>()
-                .AddSingleton<BreakpointService>()
-                .AddSingleton<DebugStateService>()
+                .AddSingleton(breakpointService)
+                .AddSingleton(debugStateService)
                 .AddSingleton<DebugEventHandlerService>();
         }
     }

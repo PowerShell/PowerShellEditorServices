@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System;
 using System.IO;
 using System.Management.Automation;
 using System.Runtime.InteropServices;
@@ -52,6 +53,37 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 wildcardEscapedPath = wildcardEscapedPath.Replace(" ", "` ");
             }
             return wildcardEscapedPath;
+        }
+
+        internal static bool HasPowerShellScriptExtension(string fileNameOrPath)
+        {
+            if (fileNameOrPath is null or "")
+            {
+                return false;
+            }
+
+            ReadOnlySpan<char> pathSeparators = stackalloc char[] { DefaultPathSeparator, AlternatePathSeparator };
+            ReadOnlySpan<char> asSpan = fileNameOrPath.AsSpan().TrimEnd(pathSeparators);
+            int separatorIndex = asSpan.LastIndexOfAny(pathSeparators);
+            if (separatorIndex is not -1)
+            {
+                asSpan = asSpan[(separatorIndex + 1)..];
+            }
+
+            int dotIndex = asSpan.LastIndexOf('.');
+            if (dotIndex is -1)
+            {
+                return false;
+            }
+
+            ReadOnlySpan<char> extension = asSpan[(dotIndex + 1)..];
+            if (extension.IsEmpty)
+            {
+                return false;
+            }
+
+            return extension.Equals("psm1".AsSpan(), StringComparison.OrdinalIgnoreCase)
+                || extension.Equals("ps1".AsSpan(), StringComparison.OrdinalIgnoreCase);
         }
     }
 }

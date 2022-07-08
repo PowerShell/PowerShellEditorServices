@@ -51,8 +51,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
         void CancelCurrentTask();
     }
 
-    internal interface IInternalPowerShellExecutionService : IPowerShellExecutionService
+    internal interface IInternalPowerShellExecutionService : IPowerShellExecutionService, IRunspaceContext
     {
         event Action<object, RunspaceChangedEventArgs> RunspaceChanged;
+
+        /// <summary>
+        /// Create and execute a <see cref="SynchronousPowerShellTask{TResult}" /> without queuing
+        /// the work for the pipeline thread. This method must only be invoked when the caller
+        /// has ensured that they are already running on the pipeline thread.
+        /// </summary>
+        void UnsafeInvokePSCommand(PSCommand psCommand, PowerShellExecutionOptions executionOptions, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Create and execute a <see cref="SynchronousPowerShellTask{TResult}" /> without queuing
+        /// the work for the pipeline thread. This method must only be invoked when the caller
+        /// has ensured that they are already running on the pipeline thread.
+        /// </summary>
+        IReadOnlyList<TResult> UnsafeInvokePSCommand<TResult>(PSCommand psCommand, PowerShellExecutionOptions executionOptions, CancellationToken cancellationToken);
     }
 }

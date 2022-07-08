@@ -8,5 +8,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public bool LoadProfiles { get; set; }
 
         public string InitialWorkingDirectory { get; set; }
+
+        public bool SupportsBreakpointSync { get; set; }
     }
 }
