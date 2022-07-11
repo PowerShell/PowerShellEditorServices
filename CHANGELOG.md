@@ -1,5 +1,13 @@
 # PowerShell Editor Services Release History
 
+## v3.4.6
+### Monday, July 11, 2022
+
+- 🐛 🛫 [PowerShellEditorServices #1849](https://github.com/PowerShell/PowerShellEditorServices/pull/1851) - Add `Directory.Exists()` check to `SetInitialWorkingDirectoryAsync()`.
+- ✨ 🚨 [PowerShellEditorServices #1850](https://github.com/PowerShell/PowerShellEditorServices/pull/1850) - Catch `OperationCanceledException` in both command loops.
+- ✨ 🚨 [PowerShellEditorServices #1793](https://github.com/PowerShell/PowerShellEditorServices/pull/1848) - Improve CI stability.
+- ✨ 🚨 [PowerShellEditorServices #1846](https://github.com/PowerShell/PowerShellEditorServices/pull/1846) - Add end-to-end Pester unit test.
+
 ## v3.4.5
 ### Wednesday, June 29, 2022
 
