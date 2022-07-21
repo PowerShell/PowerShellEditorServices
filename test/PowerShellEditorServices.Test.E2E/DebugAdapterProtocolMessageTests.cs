@@ -183,6 +183,17 @@ namespace PowerShellEditorServices.Test.E2E
         }
 
         [Fact]
+        public async Task UsesDotSourceOperatorAndQuotesAsync()
+        {
+            string filePath = NewTestFile(GenerateScriptFromLoggingStatements("$($MyInvocation.Line)"));
+            await PsesDebugAdapterClient.LaunchScript(filePath, Started).ConfigureAwait(true);
+            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(true);
+            Assert.NotNull(configDoneResponse);
+            Assert.Collection(await GetLog().ConfigureAwait(true),
+                (i) => Assert.StartsWith(". \"", i));
+        }
+
+        [Fact]
         public async Task CanLaunchScriptWithNoBreakpointsAsync()
         {
             string filePath = NewTestFile(GenerateScriptFromLoggingStatements("works"));
