@@ -103,7 +103,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
         private void AssertDebuggerPaused()
         {
-            DebuggerStoppedEventArgs eventArgs = debuggerStoppedQueue.Take(CancellationToken.None);
+            using CancellationTokenSource cts = new(10000);
+            DebuggerStoppedEventArgs eventArgs = debuggerStoppedQueue.Take(cts.Token);
             Assert.Empty(eventArgs.OriginalEvent.Breakpoints);
         }
 
@@ -112,7 +113,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             int lineNumber = -1,
             CommandBreakpointDetails commandBreakpointDetails = default)
         {
-            DebuggerStoppedEventArgs eventArgs = debuggerStoppedQueue.Take(CancellationToken.None);
+            using CancellationTokenSource cts = new(10000);
+            DebuggerStoppedEventArgs eventArgs = debuggerStoppedQueue.Take(cts.Token);
 
             Assert.True(psesHost.DebugContext.IsStopped);
 
@@ -587,10 +589,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
             Assert.Equal("$false", falseVar.ValueString);
         }
 
-        [SkippableFact]
+        [Fact]
         public async Task DebuggerSetsVariablesNoConversion()
         {
-            Skip.If(VersionUtils.IsLinux, "Test hangs on Linux for some reason");
             await debugService.SetLineBreakpointsAsync(
                 variableScriptFile,
                 new[] { BreakpointDetails.Create(variableScriptFile.FilePath, 14) }).ConfigureAwait(true);
