@@ -162,7 +162,7 @@ namespace PowerShellEditorServices.Test.E2E
 
         private static async Task<string[]> GetLog()
         {
-            while (!File.Exists(s_testOutputPath))
+            for (int i = 0; !File.Exists(s_testOutputPath) && i < 10; i++)
             {
                 await Task.Delay(1000).ConfigureAwait(true);
             }
