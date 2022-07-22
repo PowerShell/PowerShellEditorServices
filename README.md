@@ -25,7 +25,7 @@ The functionality in PowerShell Editor Services is already available in the foll
   - Real-time semantic analysis of scripts using PowerShell Script Analyzer
 - The Debugging Service simplifies interaction with the PowerShell debugger (breakpoints, variables, call stack, etc.)
 - The [$psEditor API](http://powershell.github.io/PowerShellEditorServices/guide/extensions.html) enables scripting of the host editor
-- A full, terminal-based Integrated Console experience for interactive development and debugging
+- A full, Extension Terminal experience for interactive development and debugging
 
 ## Usage
 
@@ -37,7 +37,7 @@ If you're looking for a more feature-rich experience,
 Named Pipes are the way to go.
 They give you all the benefits of the Language Server Protocol with extra capabilities that you can take advantage of:
 
-- The PowerShell Integrated Console
+- The PowerShell Extension Terminal
 - Debugging using the [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/)
 
 The typical command to start PowerShell Editor Services using named pipes is as follows:
@@ -59,20 +59,20 @@ and once you connect to when you launch the debugger for Debug Adapter Protocol 
 
 The Visual Studio Code, Vim, and IntelliJ extensions currently use Named Pipes.
 
-#### PowerShell Integrated Console
+#### PowerShell Extension Terminal
 
 ![image](https://user-images.githubusercontent.com/2644648/66245084-6985da80-e6c0-11e9-9c7b-4c8476190df5.png)
 
-The PowerShell Integrated Console uses the host process' Stdio streams for console input and output. Please note that this is mutually exclusive from using Stdio for the language server protocol messages.
+The PowerShell Extension Terminal uses the host process' Stdio streams for console input and output. Please note that this is mutually exclusive from using Stdio for the language server protocol messages.
 
-If you want to take advantage of the PowerShell Integrated Console which automatically shares state with the editor-side,
+If you want to take advantage of the PowerShell Extension Terminal which automatically shares state with the editor-side,
 you must include the `-EnableConsoleRepl` switch when called `Start-EditorServices.ps1`.
 
 This is typically used if your client can create arbitrary terminals in the editor like below:
 
-![integrated console in vscode](https://user-images.githubusercontent.com/2644648/66245018-04ca8000-e6c0-11e9-808c-b86144149444.png)
+![Extension Terminal in vscode](https://user-images.githubusercontent.com/2644648/66245018-04ca8000-e6c0-11e9-808c-b86144149444.png)
 
-The Visual Studio Code, Vim, and IntelliJ extensions currently use the PowerShell Integrated Console.
+The Visual Studio Code, Vim, and IntelliJ extensions currently use the PowerShell Extension Terminal.
 
 #### Debugging
 
@@ -87,9 +87,9 @@ Currently, only the Visual Studio Code extension supports debugging.
 
 ### Stdio
 
-Stdio is a simpler and more universal mechanism for the Language Server Protocol. We recommend using it if your editor/client doesn't need to support the PowerShell Integrated Console or debugging.
+Stdio is a simpler and more universal mechanism for the Language Server Protocol. We recommend using it if your editor/client doesn't need to support the PowerShell Extension Terminal or debugging.
 
-> NOTE: Debugging and the Integrated Console are not features of the Stdio channel because each feature requires its own IO streams and since the Stdio model only provides a single set of streams (Stdio),
+> NOTE: Debugging and the Extension Terminal are not features of the Stdio channel because each feature requires its own IO streams and since the Stdio model only provides a single set of streams (Stdio),
 > these features cannot be leveraged.
 
 The typical command to start PowerShell Editor Services using stdio is as follows:

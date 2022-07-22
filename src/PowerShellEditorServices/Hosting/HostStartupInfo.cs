@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public IReadOnlyList<string> AdditionalModules { get; }
 
         /// <summary>
-        /// True if the integrated console is to be enabled.
+        /// True if the Extension Terminal is to be enabled.
         /// </summary>
         public bool ConsoleReplEnabled { get; }
 

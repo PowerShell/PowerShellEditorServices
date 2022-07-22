@@ -60,7 +60,7 @@
         (should (string= (oref lsp project-nickname) "PowerShellEditorServices"))
         (should (eq (oref lsp major-mode) 'powershell-mode))
         (should (string= (oref lsp language-id) "powershell")))
-      (sleep-for 3) ; TODO: Wait for "textDocument/publishDiagnostics" instead
+      (sleep-for 5) ; TODO: Wait for "textDocument/publishDiagnostics" instead
       (flymake-start)
       (goto-char (point-min))
       (flymake-goto-next-error)

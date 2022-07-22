@@ -149,7 +149,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         public string[] FeatureFlags { get; set; }
 
         /// <summary>
-        /// When set, enables the integrated console.
+        /// When set, enables the Extension Terminal.
         /// </summary>
         [Parameter]
         public SwitchParameter EnableConsoleRepl { get; set; }
@@ -186,7 +186,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         public SwitchParameter SplitInOutPipes { get; set; }
 
         /// <summary>
-        /// The banner/logo to display when the Integrated Console is first started.
+        /// The banner/logo to display when the extension terminal is first started.
         /// </summary>
         [Parameter]
         public string StartupBanner { get; set; }
