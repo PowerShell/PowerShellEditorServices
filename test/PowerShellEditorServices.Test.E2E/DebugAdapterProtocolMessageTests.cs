@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -19,7 +19,7 @@ using Xunit.Abstractions;
 namespace PowerShellEditorServices.Test.E2E
 {
     [Trait("Category", "DAP")]
-    public class DebugAdapterProtocolMessageTests : IAsyncLifetime
+    public class DebugAdapterProtocolMessageTests : IAsyncLifetime, IDisposable
     {
         private const string TestOutputFileName = "__dapTestOutputFile.txt";
         private static readonly bool s_isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
@@ -104,7 +104,13 @@ namespace PowerShellEditorServices.Test.E2E
                 TerminateDebuggee = true
             }).ConfigureAwait(true);
             await _psesProcess.Stop().ConfigureAwait(true);
+        }
+
+        public void Dispose()
+        {
+            GC.SuppressFinalize(this);
             PsesDebugAdapterClient?.Dispose();
+            _psesProcess?.Dispose();
         }
 
         private static string NewTestFile(string script, bool isPester = false)
