@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -136,11 +136,23 @@ namespace PowerShellEditorServices.Test.E2E
             }
 
             // Have script create file first with `>` (but don't rely on overwriting).
-            StringBuilder builder = new StringBuilder().Append('\'').Append(logStatements[0]).Append("' > '").Append(s_testOutputPath).AppendLine("'");
+            // NOTE: We uses double quotes so that we can use PowerShell variables.
+            StringBuilder builder = new StringBuilder()
+                .Append("Write-Output \"")
+                .Append(logStatements[0])
+                .Append("\" > '")
+                .Append(s_testOutputPath)
+                .AppendLine("'");
+
             for (int i = 1; i < logStatements.Length; i++)
             {
                 // Then append to that script with `>>`.
-                builder.Append('\'').Append(logStatements[i]).Append("' >> '").Append(s_testOutputPath).AppendLine("'");
+                builder
+                    .Append("Write-Output \"")
+                    .Append(logStatements[i])
+                    .Append("\" >> '")
+                    .Append(s_testOutputPath)
+                    .AppendLine("'");
             }
 
             _output.WriteLine("Script is:");
