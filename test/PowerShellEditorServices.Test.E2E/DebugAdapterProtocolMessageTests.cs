@@ -19,7 +19,7 @@ using Xunit.Abstractions;
 namespace PowerShellEditorServices.Test.E2E
 {
     [Trait("Category", "DAP")]
-    public class DebugAdapterProtocolMessageTests : IAsyncLifetime
+    public class DebugAdapterProtocolMessageTests : IAsyncLifetime, IDisposable
     {
         private const string TestOutputFileName = "__dapTestOutputFile.txt";
         private static readonly bool s_isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
@@ -104,7 +104,13 @@ namespace PowerShellEditorServices.Test.E2E
                 TerminateDebuggee = true
             }).ConfigureAwait(true);
             await _psesProcess.Stop().ConfigureAwait(true);
+        }
+
+        public void Dispose()
+        {
+            GC.SuppressFinalize(this);
             PsesDebugAdapterClient?.Dispose();
+            _psesProcess?.Dispose();
         }
 
         private static string NewTestFile(string script, bool isPester = false)
@@ -130,11 +136,23 @@ namespace PowerShellEditorServices.Test.E2E
             }
 
             // Have script create file first with `>` (but don't rely on overwriting).
-            StringBuilder builder = new StringBuilder().Append('\'').Append(logStatements[0]).Append("' > '").Append(s_testOutputPath).AppendLine("'");
+            // NOTE: We uses double quotes so that we can use PowerShell variables.
+            StringBuilder builder = new StringBuilder()
+                .Append("Write-Output \"")
+                .Append(logStatements[0])
+                .Append("\" > '")
+                .Append(s_testOutputPath)
+                .AppendLine("'");
+
             for (int i = 1; i < logStatements.Length; i++)
             {
                 // Then append to that script with `>>`.
-                builder.Append('\'').Append(logStatements[i]).Append("' >> '").Append(s_testOutputPath).AppendLine("'");
+                builder
+                    .Append("Write-Output \"")
+                    .Append(logStatements[i])
+                    .Append("\" >> '")
+                    .Append(s_testOutputPath)
+                    .AppendLine("'");
             }
 
             _output.WriteLine("Script is:");
@@ -144,7 +162,7 @@ namespace PowerShellEditorServices.Test.E2E
 
         private static async Task<string[]> GetLog()
         {
-            while (!File.Exists(s_testOutputPath))
+            for (int i = 0; !File.Exists(s_testOutputPath) && i < 10; i++)
             {
                 await Task.Delay(1000).ConfigureAwait(true);
             }
@@ -162,6 +180,17 @@ namespace PowerShellEditorServices.Test.E2E
             Assert.True(PsesDebugAdapterClient.ServerSettings.SupportsHitConditionalBreakpoints);
             Assert.True(PsesDebugAdapterClient.ServerSettings.SupportsLogPoints);
             Assert.True(PsesDebugAdapterClient.ServerSettings.SupportsSetVariable);
+        }
+
+        [Fact]
+        public async Task UsesDotSourceOperatorAndQuotesAsync()
+        {
+            string filePath = NewTestFile(GenerateScriptFromLoggingStatements("$($MyInvocation.Line)"));
+            await PsesDebugAdapterClient.LaunchScript(filePath, Started).ConfigureAwait(true);
+            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(true);
+            Assert.NotNull(configDoneResponse);
+            Assert.Collection(await GetLog().ConfigureAwait(true),
+                (i) => Assert.StartsWith(". \"", i));
         }
 
         [Fact]
