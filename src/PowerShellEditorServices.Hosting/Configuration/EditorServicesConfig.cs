@@ -8,7 +8,7 @@ using System.Management.Automation.Runspaces;
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
     /// <summary>
-    /// Describes the desired console REPL for the integrated console.
+    /// Describes the desired console REPL for the Extension Terminal.
     /// </summary>
     public enum ConsoleReplKind
     {
@@ -84,8 +84,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public IReadOnlyList<string> FeatureFlags { get; set; }
 
         /// <summary>
-        /// The console REPL experience to use in the integrated console
-        /// (including none to disable the integrated console).
+        /// The console REPL experience to use in the Extension Terminal
+        /// (including none to disable the Extension Terminal).
         /// </summary>
         public ConsoleReplKind ConsoleRepl { get; set; } = ConsoleReplKind.None;
 
@@ -117,7 +117,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public string StartupBanner { get; set; } = @"
 
-                  =====> PowerShell Integrated Console <=====
+                  =====> PowerShell Editor Services <=====
 
 ";
     }

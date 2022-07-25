@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         /// <summary>
         /// Gets or sets a boolean value that determines whether to create a temporary
-        /// integrated console for the debug session. Default is false.
+        /// Extension Terminal for the debug session. Default is false.
         /// </summary>
         public bool CreateTemporaryIntegratedConsole { get; set; }
 
@@ -190,7 +190,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 && !string.IsNullOrEmpty(request.Script)
                 && ScriptFile.IsUntitledPath(request.Script))
             {
-                throw new RpcErrorException(0, "Running an Untitled file in a temporary integrated console is currently not supported.");
+                throw new RpcErrorException(0, "Running an Untitled file in a temporary Extension Terminal is currently not supported.");
             }
 
             // If the current session is remote, map the script path to the remote

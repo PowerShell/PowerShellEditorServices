@@ -148,7 +148,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 //  - Possibly start the debug server
                 //  - Wait for the LSP server to finish
 
-                // Unsubscribe the host logger here so that the integrated console is not polluted with input after the first prompt
+                // Unsubscribe the host logger here so that the Extension Terminal is not polluted with input after the first prompt
                 _logger.Log(PsesLogLevel.Verbose, "Starting server, deregistering host logger and registering shutdown listener");
                 if (_loggersToUnsubscribe != null)
                 {

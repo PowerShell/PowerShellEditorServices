@@ -163,7 +163,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             // This gets the ExtensionService which triggers the creation of the `$psEditor` variable.
             // (because services are created only when they are first retrieved)
             // Keep in mind, for Temp sessions, the `$psEditor` API is a no-op and the user is warned
-            // to run the command in the main PS Integrated Console.
+            // to run the command in the main extension terminal.
             serviceProvider.GetService<ExtensionService>();
 
             return new PsesDebugServer(

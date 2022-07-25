@@ -24,14 +24,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 {
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;
-    // NOTE: These last three are for a workaround for temporary integrated consoles.
+    // NOTE: These last three are for a workaround for temporary Extension Terminals.
     using Microsoft.PowerShell.EditorServices.Handlers;
     using Microsoft.PowerShell.EditorServices.Server;
     using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
 
     internal class PsesInternalHost : PSHost, IHostSupportsInteractiveSession, IRunspaceContext, IInternalPowerShellExecutionService
     {
-        private const string DefaultPrompt = "PSIC> ";
+        private const string DefaultPrompt = "> ";
         // This is a default that can be overriden at runtime by the user or tests.
         private static string s_bundledModulePath = Path.GetFullPath(Path.Combine(
             Path.GetDirectoryName(typeof(PsesInternalHost).Assembly.Location), "..", "..", ".."));
@@ -1119,12 +1119,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             using CancellationTokenRegistration registration = _readKeyCancellationToken.Register(
                 () =>
                 {
-                    // For the regular integrated console, we have an associated language server on
+                    // For the regular Extension Terminal, we have an associated language server on
                     // which we can send a notification, and have the client subscribe an action to
                     // send a key press.
                     _languageServer?.SendNotification("powerShell/sendKeyPress");
 
-                    // When temporary integrated consoles are spawned, there will be no associated
+                    // When temporary Extension Terminals are spawned, there will be no associated
                     // language server, but instead a debug adaptor server. In this case, the
                     // notification sent here will come across as a DebugSessionCustomEvent to which
                     // we can subscribe in the same way.
