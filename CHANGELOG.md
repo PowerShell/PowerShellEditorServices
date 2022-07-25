@@ -1,5 +1,14 @@
 # PowerShell Editor Services Release History
 
+## v3.4.7
+### Monday, July 25, 2022
+
+- ✨ 🚨 [PowerShellEditorServices #1861](https://github.com/PowerShell/PowerShellEditorServices/pull/1861) - Add `DebuggerBreaksInUntitledScript` unit test.
+- ✨ 📟 [PowerShellEditorServices #1860](https://github.com/PowerShell/PowerShellEditorServices/pull/1860) - Rename "Integrated Console" to "Extension Terminal".
+- ✨ 🚨 [PowerShellEditorServices #1859](https://github.com/PowerShell/PowerShellEditorServices/pull/1859) - Update and extend CI matrix.
+- ✨ 🚨 [PowerShellEditorServices #1858](https://github.com/PowerShell/PowerShellEditorServices/pull/1858) - Add regression test for debugging script with dot-source operator.
+- ✨ 🚨 [PowerShellEditorServices #1857](https://github.com/PowerShell/PowerShellEditorServices/pull/1857) - Add regression test for `$PSDebugContext` in `prompt` function.
+
 ## v3.4.6
 ### Monday, July 11, 2022
 
