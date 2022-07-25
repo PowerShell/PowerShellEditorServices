@@ -10,6 +10,7 @@ using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
@@ -519,6 +520,40 @@ namespace Microsoft.PowerShell.EditorServices.Test.Debugging
 
             VariableDetails prompt = await debugService.EvaluateExpressionAsync("prompt", false).ConfigureAwait(true);
             Assert.Equal("\"True > \"", prompt.ValueString);
+        }
+
+        [SkippableFact]
+        public async Task DebuggerBreaksInUntitledScript()
+        {
+            Skip.IfNot(VersionUtils.PSEdition == "Core", "Untitled script breakpoints only supported in PowerShell Core");
+            const string contents = "Write-Output $($MyInvocation.Line)";
+            const string scriptPath = "untitled:Untitled-1";
+            Assert.True(ScriptFile.IsUntitledPath(scriptPath));
+            ScriptFile scriptFile = workspace.GetFileBuffer(scriptPath, contents);
+            Assert.Equal(scriptFile.DocumentUri, scriptPath);
+            Assert.Equal(scriptFile.Contents, contents);
+            Assert.True(workspace.TryGetFile(scriptPath, out ScriptFile _));
+
+            await debugService.SetCommandBreakpointsAsync(
+                new[] { CommandBreakpointDetails.Create("Write-Output") }).ConfigureAwait(true);
+
+            ConfigurationDoneHandler configurationDoneHandler = new(
+                NullLoggerFactory.Instance, null, debugService, null, null, psesHost, workspace, null, psesHost);
+
+            Task _ = configurationDoneHandler.LaunchScriptAsync(scriptPath);
+            AssertDebuggerStopped(scriptPath, 1);
+
+            VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.CommandVariablesName);
+            VariableDetailsBase myInvocation = Array.Find(variables, v => v.Name == "$MyInvocation");
+            Assert.NotNull(myInvocation);
+            Assert.True(myInvocation.IsExpandable);
+
+            // Here we're asserting that our hacky workaround to support breakpoints in untitled
+            // scripts is working, namely that we're actually dot-sourcing our first argument, which
+            // should be a cached script block. See the `LaunchScriptAsync` for more info.
+            VariableDetailsBase[] myInvocationChildren = debugService.GetVariables(myInvocation.Id);
+            VariableDetailsBase myInvocationLine = Array.Find(myInvocationChildren, v => v.Name == "Line");
+            Assert.Equal("\". $args[0]\"", myInvocationLine.ValueString);
         }
 
         [Fact]
