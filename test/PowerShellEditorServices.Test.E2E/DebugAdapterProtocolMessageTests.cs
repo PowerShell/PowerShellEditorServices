@@ -305,9 +305,8 @@ namespace PowerShellEditorServices.Test.E2E
         [Fact]
         public async Task CanLaunchScriptWithCommentedLastLineAsync()
         {
-            string script = GenerateScriptFromLoggingStatements("a log statement") + "# a comment at the end";
-            Assert.Contains(Environment.NewLine + "# a comment", script);
-            Assert.EndsWith("at the end", script);
+            string script = GenerateScriptFromLoggingStatements("$($MyInvocation.Line)") + "# a comment at the end";
+            Assert.EndsWith(Environment.NewLine + "# a comment at the end", script);
 
             // NOTE: This is horribly complicated, but the "script" parameter here is assigned to
             // PsesLaunchRequestArguments.Script, which is then assigned to
@@ -317,8 +316,13 @@ namespace PowerShellEditorServices.Test.E2E
 
             ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(true);
             Assert.NotNull(configDoneResponse);
+            // We can check that the script was invoked as expected, which is to dot-source a script
+            // block with the contents surrounded by newlines. While we can't check that the last
+            // line was a curly brace by itself, we did check that the contents ended with a
+            // comment, so if this output exists then the bug did not recur.
             Assert.Collection(await GetLog().ConfigureAwait(true),
-                (i) => Assert.Equal("a log statement", i));
+                (i) => Assert.Equal(". {", i),
+                (i) => Assert.Equal("", i));
         }
 
         [SkippableFact]
