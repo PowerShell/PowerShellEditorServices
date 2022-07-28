@@ -199,7 +199,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return null;
             }
 
-            Hashtable commentHelpSettings = AnalysisService.GetCommentHelpRuleSettings(helpLocation, forBlockComment);
+            Hashtable commentHelpSettings = GetCommentHelpRuleSettings(helpLocation, forBlockComment);
 
             ScriptFileMarker[] analysisResults = await AnalysisEngine.AnalyzeScriptAsync(functionText, commentHelpSettings).ConfigureAwait(false);
 
@@ -282,7 +282,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _analysisEngineLazy = new Lazy<PssaCmdletAnalysisEngine>(() => RecreateAnalysisEngine(currentAnalysisEngine));
         }
 
-        private PssaCmdletAnalysisEngine InstantiateAnalysisEngine()
+        internal PssaCmdletAnalysisEngine InstantiateAnalysisEngine()
         {
             PssaCmdletAnalysisEngine.Builder pssaCmdletEngineBuilder = new(_loggerFactory);
 
@@ -317,7 +317,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private bool TryFindSettingsFile(out string settingsFilePath)
         {
-            string configuredPath = _configurationService.CurrentSettings.ScriptAnalysis.SettingsPath;
+            string configuredPath = _configurationService?.CurrentSettings.ScriptAnalysis.SettingsPath;
 
             if (string.IsNullOrEmpty(configuredPath))
             {
@@ -325,7 +325,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return false;
             }
 
-            settingsFilePath = _workspaceService.ResolveWorkspacePath(configuredPath);
+            settingsFilePath = _workspaceService?.ResolveWorkspacePath(configuredPath);
 
             if (settingsFilePath == null
                 || !File.Exists(settingsFilePath))
