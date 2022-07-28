@@ -32,12 +32,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
     internal class PsesInternalHost : PSHost, IHostSupportsInteractiveSession, IRunspaceContext, IInternalPowerShellExecutionService
     {
         private const string DefaultPrompt = "> ";
-        // This is a default that can be overriden at runtime by the user or tests.
-        private static string s_bundledModulePath = Path.GetFullPath(Path.Combine(
-            Path.GetDirectoryName(typeof(PsesInternalHost).Assembly.Location), "..", "..", ".."));
-
-        private static string CommandsModulePath => Path.GetFullPath(Path.Combine(
-            s_bundledModulePath, "PowerShellEditorServices", "Commands", "PowerShellEditorServices.Commands.psd1"));
 
         private static readonly PropertyInfo s_scriptDebuggerTriggerObjectProperty;
 
@@ -115,14 +109,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _logger = loggerFactory.CreateLogger<PsesInternalHost>();
             _languageServer = languageServer;
             _hostInfo = hostInfo;
-
-            // Respect a user provided bundled module path.
-            if (Directory.Exists(hostInfo.BundledModulePath))
-            {
-                _logger.LogTrace($"Using new bundled module path: {hostInfo.BundledModulePath}");
-                s_bundledModulePath = hostInfo.BundledModulePath;
-            }
-
             _readLineProvider = new ReadLineProvider(loggerFactory);
             _taskQueue = new BlockingConcurrentDeque<ISynchronousTask>();
             _psFrameStack = new Stack<PowerShellContextFrame>();
@@ -1012,7 +998,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 pwsh.SetCorrectExecutionPolicy(_logger);
             }
 
-            pwsh.ImportModule(CommandsModulePath);
+            string commandsModulePath = Path.Combine(
+                _hostInfo.BundledModulePath,
+                "PowerShellEditorServices",
+                "Commands",
+                "PowerShellEditorServices.Commands.psd1");
+
+            pwsh.ImportModule(commandsModulePath);
 
             if (hostStartupInfo.AdditionalModules?.Count > 0)
             {
@@ -1311,7 +1303,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             psrlReadLine = null;
             try
             {
-                PSReadLineProxy psrlProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, s_bundledModulePath, pwsh);
+                PSReadLineProxy psrlProxy = PSReadLineProxy.LoadAndCreate(_loggerFactory, _hostInfo.BundledModulePath, pwsh);
                 psrlReadLine = new PsrlReadLine(psrlProxy, this, engineIntrinsics, ReadKey, OnPowerShellIdle);
                 return true;
             }
