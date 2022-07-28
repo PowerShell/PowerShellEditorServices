@@ -10,7 +10,7 @@ using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Xunit;
 
-namespace Microsoft.PowerShell.EditorServices.Test.Session
+namespace PowerShellEditorServices.Test.Session
 {
     [Trait("Category", "Workspace")]
     public class WorkspaceTests

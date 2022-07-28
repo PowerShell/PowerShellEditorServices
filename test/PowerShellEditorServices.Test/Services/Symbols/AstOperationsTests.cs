@@ -8,7 +8,7 @@ using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
 
-namespace Microsoft.PowerShell.EditorServices.Test.Services.Symbols
+namespace PowerShellEditorServices.Test.Services.Symbols
 {
     [Trait("Category", "AstOperations")]
     public class AstOperationsTests

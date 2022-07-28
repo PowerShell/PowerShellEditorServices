@@ -10,7 +10,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using Xunit;
 
-namespace PSLanguageService.Test
+namespace PowerShellEditorServices.Test.Session
 {
     public class ScriptFileChangeTests
     {
@@ -194,7 +194,7 @@ namespace PSLanguageService.Test
                     PowerShellVersion);
 
             Assert.Equal(3, scriptFile.ReferencedFiles.Length);
-            System.Console.Write("a" + scriptFile.ReferencedFiles[0]);
+            Console.Write("a" + scriptFile.ReferencedFiles[0]);
             Assert.Equal(TestUtilities.NormalizePath("./athing.ps1"), scriptFile.ReferencedFiles[0]);
         }
 

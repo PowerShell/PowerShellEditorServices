@@ -13,10 +13,11 @@ using Microsoft.PowerShell.EditorServices.Extensions.Services;
 using Microsoft.PowerShell.EditorServices.Services.Extension;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Test;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Xunit;
 
-namespace Microsoft.PowerShell.EditorServices.Test.Extensions
+namespace PowerShellEditorServices.Test.Extensions
 {
     [Trait("Category", "Extensions")]
     public class ExtensionCommandTests : IDisposable
@@ -59,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
                 BufferRange.None);
 
             EditorCommand commandAdded = null;
-            extensionCommandService.CommandAdded += (object _, EditorCommand command) => commandAdded = command;
+            extensionCommandService.CommandAdded += (_, command) => commandAdded = command;
 
             const string commandName = "test.function";
             const string commandDisplayName = "Function extension";
@@ -95,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
                 BufferRange.None);
 
             EditorCommand commandAdded = null;
-            extensionCommandService.CommandAdded += (object _, EditorCommand command) => commandAdded = command;
+            extensionCommandService.CommandAdded += (_, command) => commandAdded = command;
 
             const string commandName = "test.scriptblock";
             const string commandDisplayName = "ScriptBlock extension";
@@ -126,7 +127,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
         public async Task CanUpdateRegisteredCommand()
         {
             EditorCommand updatedCommand = null;
-            extensionCommandService.CommandUpdated += (object _, EditorCommand command) => updatedCommand = command;
+            extensionCommandService.CommandUpdated += (_, command) => updatedCommand = command;
 
             const string commandName = "test.function";
             const string commandDisplayName = "Updated function extension";
@@ -160,7 +161,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Extensions
             const string commandDisplayName = "ScriptBlock extension";
 
             EditorCommand removedCommand = null;
-            extensionCommandService.CommandRemoved += (object _, EditorCommand command) => removedCommand = command;
+            extensionCommandService.CommandRemoved += (_, command) => removedCommand = command;
 
             // Add the command and wait for the add event
             await psesHost.ExecutePSCommandAsync(

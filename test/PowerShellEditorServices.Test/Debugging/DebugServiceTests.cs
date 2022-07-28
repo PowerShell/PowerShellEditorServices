@@ -15,10 +15,12 @@ using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Test;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Utility;
 using Xunit;
-namespace Microsoft.PowerShell.EditorServices.Test.Debugging
+
+namespace PowerShellEditorServices.Test.Debugging
 {
     [Trait("Category", "DebugService")]
     public class DebugServiceTests : IDisposable
