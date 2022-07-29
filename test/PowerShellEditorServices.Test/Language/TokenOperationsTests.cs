@@ -8,7 +8,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
 
-namespace Microsoft.PowerShell.EditorServices.Test.Language
+namespace PowerShellEditorServices.Test.Language
 {
     public class TokenOperationsTests
     {

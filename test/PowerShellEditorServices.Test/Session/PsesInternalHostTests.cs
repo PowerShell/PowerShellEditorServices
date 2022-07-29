@@ -11,9 +11,10 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
+using Microsoft.PowerShell.EditorServices.Test;
 using Xunit;
 
-namespace Microsoft.PowerShell.EditorServices.Test.Console
+namespace PowerShellEditorServices.Test.Session
 {
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;

@@ -4,7 +4,7 @@
 using Xunit;
 using Microsoft.PowerShell.EditorServices.Utility;
 
-namespace Microsoft.PowerShell.EditorServices.Test.Session
+namespace PowerShellEditorServices.Test.Session
 {
     public class PathEscapingTests
     {

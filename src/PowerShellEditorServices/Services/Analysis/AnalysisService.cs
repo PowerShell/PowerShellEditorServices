@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services.Analysis;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -52,8 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             .Append(':')
             .Append(end.Character);
 
-            string id = sb.ToString();
-            return id;
+            return sb.ToString();
         }
 
         /// <summary>
@@ -96,20 +96,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private CancellationTokenSource _diagnosticsCancellationTokenSource;
 
+        private readonly string _pssaModulePath;
+
         private string _pssaSettingsFilePath;
 
-        /// <summary>
-        /// Construct a new AnalysisService.
-        /// </summary>
-        /// <param name="loggerFactory">Logger factory to create logger instances with.</param>
-        /// <param name="languageServer">The LSP language server for notifications.</param>
-        /// <param name="configurationService">The configuration service to query for configurations.</param>
-        /// <param name="workspaceService">The workspace service for file handling within a workspace.</param>
         public AnalysisService(
             ILoggerFactory loggerFactory,
             ILanguageServerFacade languageServer,
             ConfigurationService configurationService,
-            WorkspaceService workspaceService)
+            WorkspaceService workspaceService,
+            HostStartupInfo hostInfo)
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<AnalysisService>();
@@ -119,6 +115,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _analysisDelayMillis = 750;
             _mostRecentCorrectionsByFile = new ConcurrentDictionary<ScriptFile, CorrectionTableEntry>();
             _analysisEngineLazy = new Lazy<PssaCmdletAnalysisEngine>(InstantiateAnalysisEngine);
+            _pssaModulePath = Path.Combine(hostInfo.BundledModulePath, "PSScriptAnalyzer");
             _pssaSettingsFilePath = null;
         }
 
@@ -202,7 +199,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return null;
             }
 
-            Hashtable commentHelpSettings = AnalysisService.GetCommentHelpRuleSettings(helpLocation, forBlockComment);
+            Hashtable commentHelpSettings = GetCommentHelpRuleSettings(helpLocation, forBlockComment);
 
             ScriptFileMarker[] analysisResults = await AnalysisEngine.AnalyzeScriptAsync(functionText, commentHelpSettings).ConfigureAwait(false);
 
@@ -285,7 +282,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _analysisEngineLazy = new Lazy<PssaCmdletAnalysisEngine>(() => RecreateAnalysisEngine(currentAnalysisEngine));
         }
 
-        private PssaCmdletAnalysisEngine InstantiateAnalysisEngine()
+        internal PssaCmdletAnalysisEngine InstantiateAnalysisEngine()
         {
             PssaCmdletAnalysisEngine.Builder pssaCmdletEngineBuilder = new(_loggerFactory);
 
@@ -302,7 +299,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 pssaCmdletEngineBuilder.WithIncludedRules(s_defaultRules);
             }
 
-            return pssaCmdletEngineBuilder.Build();
+            return pssaCmdletEngineBuilder.Build(_pssaModulePath);
         }
 
         private PssaCmdletAnalysisEngine RecreateAnalysisEngine(PssaCmdletAnalysisEngine oldAnalysisEngine)
@@ -320,7 +317,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private bool TryFindSettingsFile(out string settingsFilePath)
         {
-            string configuredPath = _configurationService.CurrentSettings.ScriptAnalysis.SettingsPath;
+            string configuredPath = _configurationService?.CurrentSettings.ScriptAnalysis.SettingsPath;
 
             if (string.IsNullOrEmpty(configuredPath))
             {
@@ -328,7 +325,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return false;
             }
 
-            settingsFilePath = _workspaceService.ResolveWorkspacePath(configuredPath);
+            settingsFilePath = _workspaceService?.ResolveWorkspacePath(configuredPath);
 
             if (settingsFilePath == null
                 || !File.Exists(settingsFilePath))
