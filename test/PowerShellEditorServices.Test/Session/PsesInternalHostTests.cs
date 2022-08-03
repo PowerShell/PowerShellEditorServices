@@ -88,7 +88,7 @@ namespace PowerShellEditorServices.Test.Session
         public async Task CanCancelExecutionWithToken()
         {
             using CancellationTokenSource cancellationSource = new(millisecondsDelay: 1000);
-            await Assert.ThrowsAsync<TaskCanceledException>(() =>
+            _ = await Assert.ThrowsAsync<TaskCanceledException>(() =>
             {
                 return psesHost.ExecutePSCommandAsync(
                     new PSCommand().AddScript("Start-Sleep 10"),
@@ -170,9 +170,28 @@ namespace PowerShellEditorServices.Test.Session
         [Fact]
         public async Task CanHandleBrokenPrompt()
         {
-            await psesHost.ExecutePSCommandAsync(
-                new PSCommand().AddScript("function prompt { throw }"),
+            _ = await Assert.ThrowsAsync<RuntimeException>(() =>
+            {
+                return psesHost.ExecutePSCommandAsync(
+                    new PSCommand().AddScript("function prompt { throw }; prompt"),
+                    CancellationToken.None);
+            }).ConfigureAwait(true);
+
+            string prompt = await psesHost.ExecuteDelegateAsync(
+                nameof(psesHost.GetPrompt),
+                executionOptions: null,
+                (_, _) => psesHost.GetPrompt(CancellationToken.None),
                 CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Equal(PsesInternalHost.DefaultPrompt, prompt);
+        }
+
+        [Fact]
+        public async Task CanHandleUndefinedPrompt()
+        {
+            Assert.Empty(await psesHost.ExecutePSCommandAsync<PSObject>(
+                new PSCommand().AddScript("Remove-Item function:prompt; Get-Item function:prompt -ErrorAction Ignore"),
+                CancellationToken.None).ConfigureAwait(true));
 
             string prompt = await psesHost.ExecuteDelegateAsync(
                 nameof(psesHost.GetPrompt),
