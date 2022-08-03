@@ -162,12 +162,30 @@ namespace PowerShellEditorServices.Test.Session
                 CancellationToken.None).ConfigureAwait(true);
         }
 
+        // NOTE: Tests where we call functions that use PowerShell runspaces are slightly more
+        // complicated than one would expect because we explicitly need the methods to run on the
+        // pipeline thread, otherwise Windows complains about the the thread's apartment state not
+        // matching. Hence we use a delegate where it looks like we could just call the method.
+
+        [Fact]
+        public async Task CanHandleBrokenPrompt()
+        {
+            await psesHost.ExecutePSCommandAsync(
+                new PSCommand().AddScript("function prompt { throw }"),
+                CancellationToken.None).ConfigureAwait(true);
+
+            string prompt = await psesHost.ExecuteDelegateAsync(
+                nameof(psesHost.GetPrompt),
+                executionOptions: null,
+                (_, _) => psesHost.GetPrompt(CancellationToken.None),
+                CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Equal(PsesInternalHost.DefaultPrompt, prompt);
+        }
+
         [Fact]
         public async Task CanLoadPSReadLine()
         {
-            // NOTE: This is slightly more complicated than one would expect because we explicitly
-            // need it to run on the pipeline thread otherwise Windows complains about the the
-            // thread's apartment state not matching.
             Assert.True(await psesHost.ExecuteDelegateAsync(
                 nameof(psesHost.TryLoadPSReadLine),
                 executionOptions: null,

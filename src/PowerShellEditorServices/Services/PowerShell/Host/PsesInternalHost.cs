@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
     internal class PsesInternalHost : PSHost, IHostSupportsInteractiveSession, IRunspaceContext, IInternalPowerShellExecutionService
     {
-        private const string DefaultPrompt = "> ";
+        internal const string DefaultPrompt = "> ";
 
         private static readonly PropertyInfo s_scriptDebuggerTriggerObjectProperty;
 
@@ -865,7 +865,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             }
         }
 
-        private string GetPrompt(CancellationToken cancellationToken)
+        internal string GetPrompt(CancellationToken cancellationToken)
         {
             Runspace.ThrowCancelledIfUnusable();
             string prompt = DefaultPrompt;
@@ -873,13 +873,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             {
                 // TODO: Should we cache PSCommands like this as static members?
                 PSCommand command = new PSCommand().AddCommand("prompt");
-                IReadOnlyList<string> results = InvokePSCommand<string>(command, executionOptions: null, cancellationToken);
+                IReadOnlyList<string> results = InvokePSCommand<string>(
+                    command,
+                    executionOptions: new PowerShellExecutionOptions { ThrowOnError = false },
+                    cancellationToken);
+
                 if (results?.Count > 0)
                 {
                     prompt = results[0];
                 }
             }
-            catch (CommandNotFoundException) { } // Use default prompt
+            catch (RuntimeException) { } // Use default prompt
 
             if (CurrentRunspace.RunspaceOrigin != RunspaceOrigin.Local)
             {
