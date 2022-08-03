@@ -1,5 +1,12 @@
 # PowerShell Editor Services Release History
 
+## v3.4.8
+### Wednesday, August 03, 2022
+
+- ✨ 🚨 [PowerShellEditorServices #1867](https://github.com/PowerShell/PowerShellEditorServices/pull/1867) - Add regression test for when `prompt` is undefined.
+- 🐛 🛫 [vscode-powershell #4073](https://github.com/PowerShell/PowerShellEditorServices/pull/1866) - Fix bug where error in `prompt` function crashed REPL.
+- #️⃣ 🙏 [vscode-powershell #2697](https://github.com/PowerShell/PowerShellEditorServices/pull/1864) - Use `HostInfo.BundledModulePath` to find PSScriptAnalyzer.
+
 ## v3.4.7
 ### Monday, July 25, 2022
 
