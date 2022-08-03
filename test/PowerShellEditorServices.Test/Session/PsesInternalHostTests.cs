@@ -190,7 +190,7 @@ namespace PowerShellEditorServices.Test.Session
         public async Task CanHandleUndefinedPrompt()
         {
             Assert.Empty(await psesHost.ExecutePSCommandAsync<PSObject>(
-                new PSCommand().AddScript("Remove-Item function:prompt; Get-Item function:prompt"),
+                new PSCommand().AddScript("Remove-Item function:prompt; Get-Item function:prompt -ErrorAction Ignore"),
                 CancellationToken.None).ConfigureAwait(true));
 
             string prompt = await psesHost.ExecuteDelegateAsync(
