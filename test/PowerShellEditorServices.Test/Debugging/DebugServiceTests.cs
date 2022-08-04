@@ -532,8 +532,8 @@ namespace PowerShellEditorServices.Test.Debugging
             const string scriptPath = "untitled:Untitled-1";
             Assert.True(ScriptFile.IsUntitledPath(scriptPath));
             ScriptFile scriptFile = workspace.GetFileBuffer(scriptPath, contents);
-            Assert.Equal(scriptFile.DocumentUri, scriptPath);
-            Assert.Equal(scriptFile.Contents, contents);
+            Assert.Equal(scriptPath, scriptFile.DocumentUri);
+            Assert.Equal(contents, scriptFile.Contents);
             Assert.True(workspace.TryGetFile(scriptPath, out ScriptFile _));
 
             await debugService.SetCommandBreakpointsAsync(
