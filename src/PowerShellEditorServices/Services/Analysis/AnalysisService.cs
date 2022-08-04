@@ -373,6 +373,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 ScriptFileMarker[] semanticMarkers = await AnalysisEngine.AnalyzeScriptAsync(scriptFile.Contents).ConfigureAwait(false);
 
+                // Clear existing PSScriptAnalyzer markers (but keep parser errors where the source is "PowerShell")
+                // so that they are not duplicated when re-opening files.
+                scriptFile.DiagnosticMarkers.RemoveAll(m => m.Source == "PSScriptAnalyzer");
                 scriptFile.DiagnosticMarkers.AddRange(semanticMarkers);
 
                 PublishScriptDiagnostics(scriptFile);
