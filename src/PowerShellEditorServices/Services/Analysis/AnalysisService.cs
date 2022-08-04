@@ -373,6 +373,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 ScriptFileMarker[] semanticMarkers = await AnalysisEngine.AnalyzeScriptAsync(scriptFile.Contents).ConfigureAwait(false);
 
+                scriptFile.DiagnosticMarkers.Clear();
                 scriptFile.DiagnosticMarkers.AddRange(semanticMarkers);
 
                 PublishScriptDiagnostics(scriptFile);
