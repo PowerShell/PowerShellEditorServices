@@ -122,7 +122,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         /// The analysis engine to use for running script analysis.
         /// </summary>
-        private PssaCmdletAnalysisEngine AnalysisEngine => _analysisEngineLazy?.Value;
+        internal PssaCmdletAnalysisEngine AnalysisEngine => _analysisEngineLazy?.Value;
 
         /// <summary>
         /// Sets up a script analysis run, eventually returning the result.
@@ -346,7 +346,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        private async Task DelayThenInvokeDiagnosticsAsync(ScriptFile[] filesToAnalyze, CancellationToken cancellationToken)
+        internal async Task DelayThenInvokeDiagnosticsAsync(ScriptFile[] filesToAnalyze, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -409,7 +409,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 diagnostics[i] = diagnostic;
             }
 
-            _languageServer.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams
+            _languageServer?.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams
             {
                 Uri = scriptFile.DocumentUri,
                 Diagnostics = new Container<Diagnostic>(diagnostics)

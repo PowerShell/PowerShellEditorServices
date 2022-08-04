@@ -2,11 +2,11 @@
 // Licensed under the MIT License.
 
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.Analysis;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Test;
 using Xunit;
@@ -16,13 +16,15 @@ namespace PowerShellEditorServices.Test.Services.Symbols
     [Trait("Category", "PSScriptAnalyzer")]
     public class PSScriptAnalyzerTests
     {
+        private readonly WorkspaceService workspaceService = new(NullLoggerFactory.Instance);
         private readonly AnalysisService analysisService;
+        private const string script = "function Get-Widgets {}";
 
         public PSScriptAnalyzerTests() => analysisService = new(
             NullLoggerFactory.Instance,
             languageServer: null,
             configurationService: null,
-            workspaceService: null,
+            workspaceService: workspaceService,
             new HostStartupInfo(
                 name: "",
                 profileId: "",
@@ -39,11 +41,13 @@ namespace PowerShellEditorServices.Test.Services.Symbols
                 bundledModulePath: PsesHostFactory.BundledModulePath));
 
         [Fact]
-        public async Task CanLoadPSScriptAnalyzer()
+        public async Task CanLoadPSScriptAnalyzerAsync()
         {
-            PssaCmdletAnalysisEngine engine = analysisService.InstantiateAnalysisEngine();
-            Assert.NotNull(engine);
-            ScriptFileMarker[] violations = await engine.AnalyzeScriptAsync("function Get-Widgets {}").ConfigureAwait(true);
+            ScriptFileMarker[] violations = await analysisService
+                .AnalysisEngine
+                .AnalyzeScriptAsync(script)
+                .ConfigureAwait(true);
+
             Assert.Collection(violations,
             (actual) =>
             {
@@ -53,6 +57,24 @@ namespace PowerShellEditorServices.Test.Services.Symbols
                 Assert.Equal("PSUseSingularNouns", actual.RuleName);
                 Assert.Equal("PSScriptAnalyzer", actual.Source);
             });
+        }
+
+        [Fact]
+        public async Task DoesNotDuplicateScriptMarkersAsync()
+        {
+            ScriptFile scriptFile = workspaceService.GetFileBuffer("untitled:Untitled-1", script);
+            ScriptFile[] scriptFiles = { scriptFile };
+
+            await analysisService
+                .DelayThenInvokeDiagnosticsAsync(scriptFiles, CancellationToken.None)
+                .ConfigureAwait(true);
+            Assert.Single(scriptFile.DiagnosticMarkers);
+
+            // This is repeated to test that the markers are not duplicated.
+            await analysisService
+                .DelayThenInvokeDiagnosticsAsync(scriptFiles, CancellationToken.None)
+                .ConfigureAwait(true);
+            Assert.Single(scriptFile.DiagnosticMarkers);
         }
     }
 }

@@ -72,8 +72,8 @@ namespace PowerShellEditorServices.Test.Extensions
                 CancellationToken.None).ConfigureAwait(true);
 
             Assert.NotNull(commandAdded);
-            Assert.Equal(commandAdded.Name, commandName);
-            Assert.Equal(commandAdded.DisplayName, commandDisplayName);
+            Assert.Equal(commandName, commandAdded.Name);
+            Assert.Equal(commandDisplayName, commandAdded.DisplayName);
 
             // Invoke the command
             await extensionCommandService.InvokeCommandAsync(commandName, editorContext).ConfigureAwait(true);
