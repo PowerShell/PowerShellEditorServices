@@ -373,7 +373,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 ScriptFileMarker[] semanticMarkers = await AnalysisEngine.AnalyzeScriptAsync(scriptFile.Contents).ConfigureAwait(false);
 
-                scriptFile.DiagnosticMarkers.Clear();
+                // Clear old PSSA-results, but keeping parser-errors ("PowerShell"-source).
+                scriptFile.DiagnosticMarkers.RemoveAll(m => m.Source == "PSScriptAnalyzer");
                 scriptFile.DiagnosticMarkers.AddRange(semanticMarkers);
 
                 PublishScriptDiagnostics(scriptFile);
