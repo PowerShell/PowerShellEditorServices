@@ -76,5 +76,29 @@ namespace PowerShellEditorServices.Test.Services.Symbols
                 .ConfigureAwait(true);
             Assert.Single(scriptFile.DiagnosticMarkers);
         }
+
+        [Fact]
+        public async Task DoesNotClearParseErrorsAsync()
+        {
+            // Causing a missing closing } parser error
+            ScriptFile scriptFile = workspaceService.GetFileBuffer("untitled:Untitled-2", script.TrimEnd('}'));
+            ScriptFile[] scriptFiles = { scriptFile };
+
+            await analysisService
+                .DelayThenInvokeDiagnosticsAsync(scriptFiles, CancellationToken.None)
+                .ConfigureAwait(true);
+
+            Assert.Collection(scriptFile.DiagnosticMarkers,
+                (actual) =>
+                {
+                    Assert.Equal("Missing closing '}' in statement block or type definition.", actual.Message);
+                    Assert.Equal("PowerShell", actual.Source);
+                },
+                (actual) =>
+                {
+                    Assert.Equal("PSUseSingularNouns", actual.RuleName);
+                    Assert.Equal("PSScriptAnalyzer", actual.Source);
+                });
+        }
     }
 }

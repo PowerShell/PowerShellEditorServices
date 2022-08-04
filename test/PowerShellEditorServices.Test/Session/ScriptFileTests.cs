@@ -237,6 +237,48 @@ namespace PowerShellEditorServices.Test.Session
             );
         }
 
+        [Trait("Category", "ScriptFile")]
+        [Fact]
+        public void UpdatesParseErrorDiagnosticMarkers()
+        {
+            ScriptFile myScript = CreateScriptFile(TestUtilities.NormalizeNewlines("{\n{"));
+
+            // Verify parse errors were detected on file open
+            Assert.Collection(myScript.DiagnosticMarkers.OrderBy(dm => dm.ScriptRegion.StartLineNumber),
+                (actual) =>
+                {
+                    Assert.Equal(1, actual.ScriptRegion.StartLineNumber);
+                    Assert.Equal("Missing closing '}' in statement block or type definition.", actual.Message);
+                    Assert.Equal("PowerShell", actual.Source);
+                },
+                (actual) =>
+                {
+                    Assert.Equal(2, actual.ScriptRegion.StartLineNumber);
+                    Assert.Equal("Missing closing '}' in statement block or type definition.", actual.Message);
+                    Assert.Equal("PowerShell", actual.Source);
+                });
+
+            // Remove second {
+            myScript.ApplyChange(
+                new FileChange
+                {
+                    Line = 2,
+                    EndLine = 2,
+                    Offset = 1,
+                    EndOffset = 2,
+                    InsertString = ""
+                });
+
+            // Verify parse errors were updated on file change
+            Assert.Collection(myScript.DiagnosticMarkers,
+                (actual) =>
+                {
+                    Assert.Equal(1, actual.ScriptRegion.StartLineNumber);
+                    Assert.Equal("Missing closing '}' in statement block or type definition.", actual.Message);
+                    Assert.Equal("PowerShell", actual.Source);
+                });
+        }
+
         internal static ScriptFile CreateScriptFile(string initialString)
         {
             using StringReader stringReader = new(initialString);
