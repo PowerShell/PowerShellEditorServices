@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -18,7 +17,7 @@ namespace PowerShellEditorServices.Test.Services.Symbols
     {
         private readonly WorkspaceService workspaceService = new(NullLoggerFactory.Instance);
         private readonly AnalysisService analysisService;
-        private const string script = "function Get-Widgets {}";
+        private const string script = "function Do-Work {}";
 
         public PSScriptAnalyzerTests() => analysisService = new(
             NullLoggerFactory.Instance,
@@ -41,6 +40,13 @@ namespace PowerShellEditorServices.Test.Services.Symbols
                 bundledModulePath: PsesHostFactory.BundledModulePath));
 
         [Fact]
+        public void IncludesDefaultRules()
+        {
+            Assert.Null(analysisService.AnalysisEngine._settingsParameter);
+            Assert.Equal(AnalysisService.s_defaultRules, analysisService.AnalysisEngine._rulesToInclude);
+        }
+
+        [Fact]
         public async Task CanLoadPSScriptAnalyzerAsync()
         {
             ScriptFileMarker[] violations = await analysisService
@@ -51,10 +57,10 @@ namespace PowerShellEditorServices.Test.Services.Symbols
             Assert.Collection(violations,
             (actual) =>
             {
-                Assert.Single(actual.Corrections);
-                Assert.Equal("Singularized correction of 'Get-Widgets'", actual.Corrections.First().Name);
+                Assert.Empty(actual.Corrections);
                 Assert.Equal(ScriptFileMarkerLevel.Warning, actual.Level);
-                Assert.Equal("PSUseSingularNouns", actual.RuleName);
+                Assert.Equal("The cmdlet 'Do-Work' uses an unapproved verb.", actual.Message);
+                Assert.Equal("PSUseApprovedVerbs", actual.RuleName);
                 Assert.Equal("PSScriptAnalyzer", actual.Source);
             });
         }
@@ -96,7 +102,7 @@ namespace PowerShellEditorServices.Test.Services.Symbols
                 },
                 (actual) =>
                 {
-                    Assert.Equal("PSUseSingularNouns", actual.RuleName);
+                    Assert.Equal("PSUseApprovedVerbs", actual.RuleName);
                     Assert.Equal("PSScriptAnalyzer", actual.Source);
                 });
         }

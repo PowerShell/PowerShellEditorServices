@@ -39,19 +39,19 @@ namespace Microsoft.PowerShell.EditorServices.Services
             Position end = diagnostic.Range.End;
 
             StringBuilder sb = new StringBuilder(256)
-            .Append(diagnostic.Source ?? "?")
-            .Append('_')
-            .Append(diagnostic.Code?.IsString ?? true ? diagnostic.Code?.String : diagnostic.Code?.Long.ToString())
-            .Append('_')
-            .Append(diagnostic.Severity?.ToString() ?? "?")
-            .Append('_')
-            .Append(start.Line)
-            .Append(':')
-            .Append(start.Character)
-            .Append('-')
-            .Append(end.Line)
-            .Append(':')
-            .Append(end.Character);
+                .Append(diagnostic.Source ?? "?")
+                .Append('_')
+                .Append(diagnostic.Code?.IsString ?? true ? diagnostic.Code?.String : diagnostic.Code?.Long.ToString())
+                .Append('_')
+                .Append(diagnostic.Severity?.ToString() ?? "?")
+                .Append('_')
+                .Append(start.Line)
+                .Append(':')
+                .Append(start.Character)
+                .Append('-')
+                .Append(end.Line)
+                .Append(':')
+                .Append(end.Character);
 
             return sb.ToString();
         }
@@ -60,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// Defines the list of Script Analyzer rules to include by default if
         /// no settings file is specified.
         /// </summary>
-        private static readonly string[] s_defaultRules = {
+        internal static readonly string[] s_defaultRules = {
             "PSAvoidAssignmentToAutomaticVariable",
             "PSUseToExportFieldsInManifest",
             "PSMisleadingBacktick",
@@ -141,7 +141,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // If there's an existing task, we want to cancel it here;
             CancellationTokenSource cancellationSource = new();
             CancellationTokenSource oldTaskCancellation = Interlocked.Exchange(ref _diagnosticsCancellationTokenSource, cancellationSource);
-            if (oldTaskCancellation != null)
+            if (oldTaskCancellation is not null)
             {
                 try
                 {
@@ -194,7 +194,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns></returns>
         public async Task<string> GetCommentHelpText(string functionText, string helpLocation, bool forBlockComment)
         {
-            if (AnalysisEngine == null)
+            if (AnalysisEngine is null)
             {
                 return null;
             }
@@ -215,7 +215,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// Get the most recent corrections computed for a given script file.
         /// </summary>
         /// <param name="uri">The URI string of the file to get code actions for.</param>
-        /// <returns>A threadsafe readonly dictionary of the code actions of the particular file.</returns>
+        /// <returns>A thread-safe readonly dictionary of the code actions of the particular file.</returns>
         public async Task<IReadOnlyDictionary<string, IEnumerable<MarkerCorrection>>> GetMostRecentCodeActionsForFileAsync(DocumentUri uri)
         {
             if (!_workspaceService.TryGetFile(uri, out ScriptFile file)
@@ -252,8 +252,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void EnsureEngineSettingsCurrent()
         {
-            if (_analysisEngineLazy == null
-                    || (_pssaSettingsFilePath != null
+            if (_analysisEngineLazy is null
+                    || (_pssaSettingsFilePath is not null
                         && !File.Exists(_pssaSettingsFilePath)))
             {
                 InitializeAnalysisEngineToCurrentSettings();
@@ -264,7 +264,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             // We may be triggered after the lazy factory is set,
             // but before it's been able to instantiate
-            if (_analysisEngineLazy == null)
+            if (_analysisEngineLazy is null)
             {
                 _analysisEngineLazy = new Lazy<PssaCmdletAnalysisEngine>(InstantiateAnalysisEngine);
                 return;
@@ -327,7 +327,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             settingsFilePath = _workspaceService?.ResolveWorkspacePath(configuredPath);
 
-            if (settingsFilePath == null
+            if (settingsFilePath is null
                 || !File.Exists(settingsFilePath))
             {
                 _logger.LogInformation($"Unable to find PSSA settings file at '{configuredPath}'. Loading default rules.");

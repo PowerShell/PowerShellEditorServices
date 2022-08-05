@@ -75,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                 {
                     logger.LogDebug("Creating PSScriptAnalyzer runspace with module at: '{Path}'", pssaModulePath);
                     RunspacePool pssaRunspacePool = CreatePssaRunspacePool(pssaModulePath);
-                    PssaCmdletAnalysisEngine cmdletAnalysisEngine = new(logger, pssaRunspacePool, _settingsParameter ?? _rules);
+                    PssaCmdletAnalysisEngine cmdletAnalysisEngine = new(logger, pssaRunspacePool, _rules, _settingsParameter);
                     cmdletAnalysisEngine.LogAvailablePssaFeatures();
                     return cmdletAnalysisEngine;
                 }
@@ -105,28 +105,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 
         private readonly RunspacePool _analysisRunspacePool;
 
-        private readonly object _settingsParameter;
+        internal readonly object _settingsParameter;
 
-        private readonly string[] _rulesToInclude;
-
-        private PssaCmdletAnalysisEngine(
-            ILogger logger,
-            RunspacePool analysisRunspacePool,
-            string[] rulesToInclude)
-            : this(logger, analysisRunspacePool) => _rulesToInclude = rulesToInclude;
+        internal readonly string[] _rulesToInclude;
 
         private PssaCmdletAnalysisEngine(
             ILogger logger,
             RunspacePool analysisRunspacePool,
-            object analysisSettingsParameter)
-            : this(logger, analysisRunspacePool) => _settingsParameter = analysisSettingsParameter;
-
-        private PssaCmdletAnalysisEngine(
-            ILogger logger,
-            RunspacePool analysisRunspacePool)
+            string[] rulesToInclude = default,
+            object analysisSettingsParameter = default)
         {
             _logger = logger;
             _analysisRunspacePool = analysisRunspacePool;
+            _rulesToInclude = rulesToInclude;
+            _settingsParameter = analysisSettingsParameter;
         }
 
         /// <summary>
@@ -228,9 +220,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             return GetSemanticMarkersFromCommandAsync(command);
         }
 
-        public PssaCmdletAnalysisEngine RecreateWithNewSettings(string settingsPath) => new(_logger, _analysisRunspacePool, settingsPath);
+        public PssaCmdletAnalysisEngine RecreateWithNewSettings(string settingsPath) => new(
+            _logger,
+            _analysisRunspacePool,
+            rulesToInclude: null,
+            analysisSettingsParameter: settingsPath);
 
-        public PssaCmdletAnalysisEngine RecreateWithRules(string[] rules) => new(_logger, _analysisRunspacePool, rules);
+        public PssaCmdletAnalysisEngine RecreateWithRules(string[] rules) => new(
+            _logger,
+            _analysisRunspacePool,
+            rulesToInclude: rules,
+            analysisSettingsParameter: null);
 
         #region IDisposable Support
         private bool disposedValue; // To detect redundant calls
