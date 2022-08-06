@@ -1,0 +1,53 @@
+name: "Vim"
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ v* ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ main ]
+    paths-ignore: [ '**/*.md' ]
+
+jobs:
+  test:
+    name: Test via LanguageClient-neovim
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Build PSES
+        shell: pwsh
+        run: tools/azurePipelinesBuild.ps1
+
+      - name: Install Vim
+        uses: rhysd/action-setup-vim@v1
+        id: vim
+
+      - name: Checkout vim-ps1
+        uses: actions/checkout@v3
+        with:
+          repository: PProvost/vim-ps1
+          path: vim-ps1
+
+      - name: Checkout LanguageClient-neovim
+        uses: actions/checkout@v3
+        with:
+          repository: autozimu/LanguageClient-neovim
+          path: LanguageClient-neovim
+
+      - name: Install LanguageClient-neovim
+        run: ./install.sh
+        working-directory: LanguageClient-neovim
+
+      - name: Checkout Themis
+        uses: actions/checkout@v3
+        with:
+          repository: thinca/vim-themis
+          path: vim-themis
+
+      - name: Run Themis
+        env:
+          THEMIS_VIM: ${{ steps.vim.outputs.executable }}
+        run: ./vim-themis/bin/themis ./test/vim-test.vim
