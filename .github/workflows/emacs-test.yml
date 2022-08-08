@@ -11,7 +11,7 @@ on:
 
 jobs:
   test:
-    name: Test PSES with Emacs via Eglot
+    name: Test via Eglot
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
