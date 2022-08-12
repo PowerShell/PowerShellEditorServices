@@ -34,7 +34,7 @@ $script:IsNix = $IsLinux -or $IsMacOS
 # For Apple M1, pwsh might be getting emulated, in which case we need to check
 # for the proc_translated flag, otherwise we can check the architecture.
 $script:IsAppleM1 = $IsMacOS -and ((sysctl -n sysctl.proc_translated) -eq 1 -or (uname -m) -eq "arm64")
-$script:IsArm64 = -not $script:IsNix -and @("ARM64", "AMD64") -contains $env:PROCESSOR_ARCHITECTURE
+$script:IsArm64 = -not $script:IsNix -and @("ARM64") -contains $env:PROCESSOR_ARCHITECTURE
 $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Hosting", "BuildInfo.cs")
 $script:PsesCommonProps = [xml](Get-Content -Raw "$PSScriptRoot/PowerShellEditorServices.Common.props")
 
@@ -176,7 +176,9 @@ Task Test TestServer, TestE2E
 
 Task TestServer TestServerWinPS, TestServerPS7, TestServerPS72
 
-Task TestServerWinPS -If (-not $script:IsNix) Build, SetupHelpForTests, {
+# NOTE: While these can run under `pwsh.exe` we only want them to run under
+# `powershell.exe` so that the CI time isn't doubled.
+Task TestServerWinPS -If ($PSVersionTable.PSEdition -eq "Desktop") Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test\
     # TODO: See https://github.com/dotnet/sdk/issues/18353 for x64 test host
     # that is debuggable! If architecture is added, the assembly path gets an
@@ -185,12 +187,12 @@ Task TestServerWinPS -If (-not $script:IsNix) Build, SetupHelpForTests, {
     Exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.Desktop }
 }
 
-Task TestServerPS7 -If (-not $script:IsAppleM1 -and -not $script:IsArm64) Build, SetupHelpForTests, {
+Task TestServerPS7 -If ($PSVersionTable.PSEdition -eq "Core" -and -not $script:IsAppleM1 -and -not $script:IsArm64) Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test\
     Exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS7 }
 }
 
-Task TestServerPS72 Build, SetupHelpForTests, {
+Task TestServerPS72 -If ($PSVersionTable.PSEdition -eq "Core") Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test\
     Exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS72 }
 }
