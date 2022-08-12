@@ -1,5 +1,10 @@
 # PowerShell Editor Services Release History
 
+## v3.4.10
+### Friday, August 12, 2022
+
+- Just dependency updates.
+
 ## v3.4.9
 ### Thursday, August 11, 2022
 
