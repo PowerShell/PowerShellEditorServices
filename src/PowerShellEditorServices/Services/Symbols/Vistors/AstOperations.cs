@@ -228,18 +228,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <returns>A collection of SymbolReference objects</returns>
         public static IEnumerable<SymbolReference> FindSymbolsInDocument(Ast scriptAst)
         {
-            // TODO: Restore this when we figure out how to support multiple
-            //       PS versions in the new PSES-as-a-module world (issue #276)
-            //            if (powerShellVersion >= new Version(5,0))
-            //            {
-            //#if PowerShell v5
-            //                FindSymbolsVisitor2 findSymbolsVisitor = new FindSymbolsVisitor2();
-            //                scriptAst.Visit(findSymbolsVisitor);
-            //                symbolReferences = findSymbolsVisitor.SymbolReferences;
-            //#endif
-            //            }
-            //            else
-
             FindSymbolsVisitor findSymbolsVisitor = new();
             scriptAst.Visit(findSymbolsVisitor);
             return findSymbolsVisitor.SymbolReferences;
