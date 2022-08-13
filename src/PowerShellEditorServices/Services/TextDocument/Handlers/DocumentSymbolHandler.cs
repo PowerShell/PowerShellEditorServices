@@ -128,7 +128,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             return symbolType switch
             {
-                SymbolType.Configuration or SymbolType.Function or SymbolType.Workflow => SymbolKind.Function,
+                SymbolType.Function or SymbolType.Configuration or SymbolType.Workflow => SymbolKind.Function,
+                SymbolType.Enum => SymbolKind.Enum,
+                SymbolType.Class => SymbolKind.Class,
+                SymbolType.Constructor => SymbolKind.Constructor,
+                SymbolType.Method => SymbolKind.Method,
+                SymbolType.Property => SymbolKind.Property,
                 _ => SymbolKind.Variable,
             };
         }
@@ -137,8 +142,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             string name = symbolReference.SymbolName;
 
-            if (symbolReference.SymbolType is SymbolType.Configuration or
+            // Append { } for symbols with scriptblock
+            // Constructors and Methods have overloaded names already
+            if (symbolReference.SymbolType is
                 SymbolType.Function or
+                SymbolType.Enum or
+                SymbolType.Class or
+                SymbolType.Constructor or
+                SymbolType.Method or
+                SymbolType.Configuration or
                 SymbolType.Workflow)
             {
                 name += " { }";

@@ -72,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     symbols.Add(new SymbolInformation
                     {
                         ContainerName = containerName,
-                        Kind = foundOccurrence.SymbolType == SymbolType.Variable ? SymbolKind.Variable : SymbolKind.Function,
+                        Kind = GetSymbolKind(foundOccurrence.SymbolType),
                         Location = location,
                         Name = GetDecoratedSymbolName(foundOccurrence)
                     });
@@ -107,14 +107,35 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             string name = symbolReference.SymbolName;
 
-            if (symbolReference.SymbolType is SymbolType.Configuration or
+            // Append { } for symbols with scriptblock
+            // Constructors and Methods have overloaded names already
+            if (symbolReference.SymbolType is
                 SymbolType.Function or
+                SymbolType.Enum or
+                SymbolType.Class or
+                SymbolType.Constructor or
+                SymbolType.Method or
+                SymbolType.Configuration or
                 SymbolType.Workflow)
             {
                 name += " { }";
             }
 
             return name;
+        }
+
+        private static SymbolKind GetSymbolKind(SymbolType symbolType)
+        {
+            return symbolType switch
+            {
+                SymbolType.Function or SymbolType.Configuration or SymbolType.Workflow => SymbolKind.Function,
+                SymbolType.Enum => SymbolKind.Enum,
+                SymbolType.Class => SymbolKind.Class,
+                SymbolType.Constructor => SymbolKind.Constructor,
+                SymbolType.Method => SymbolKind.Method,
+                SymbolType.Property => SymbolKind.Property,
+                _ => SymbolKind.Variable,
+            };
         }
 
         #endregion
