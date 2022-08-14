@@ -82,6 +82,32 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                     symbolDetails.DisplayString = symbolReference.SymbolName;
                     return symbolDetails;
 
+                case SymbolType.Class:
+                    symbolDetails.DisplayString = "class " + symbolReference.SymbolName;
+                    return symbolDetails;
+
+                case SymbolType.Enum:
+                    symbolDetails.DisplayString = "enum " + symbolReference.SymbolName;
+                    return symbolDetails;
+
+                case SymbolType.Constructor:
+                    // TODO: constructor Class(parameters)
+                    symbolDetails.DisplayString = "constructor " + symbolReference.SymbolName;
+                    return symbolDetails;
+
+                case SymbolType.Method:
+                    // TODO: method ReturnType Class.MethodName(parameters)
+                    symbolDetails.DisplayString = "method " + symbolReference.SymbolName;
+                    return symbolDetails;
+
+                case SymbolType.Property:
+                    symbolDetails.DisplayString = "(property) " + symbolReference.SymbolName;
+                    return symbolDetails;
+
+                case SymbolType.Configuration:
+                    symbolDetails.DisplayString = "configuration " + symbolReference.SymbolName;
+                    return symbolDetails;
+
                 default:
                     return symbolDetails;
             }
