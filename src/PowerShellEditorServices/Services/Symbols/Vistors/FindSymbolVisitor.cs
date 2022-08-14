@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System.Management.Automation.Language;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {
@@ -57,22 +58,28 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
         {
-            int startColumnNumber = 1;
+            int startLineNumber = functionDefinitionAst.Extent.StartLineNumber;
+            int startColumnNumber = functionDefinitionAst.Extent.StartColumnNumber;
+            int endLineNumber = functionDefinitionAst.Extent.EndLineNumber;
+            int endColumnNumber = functionDefinitionAst.Extent.EndColumnNumber;
 
             if (!includeFunctionDefinitions)
             {
-                startColumnNumber =
-                    functionDefinitionAst.Extent.Text.IndexOf(
-                        functionDefinitionAst.Name) + 1;
+                // We only want the function name
+                (int startColumn, int startLine) = VisitorUtils.GetNameStartColumnAndLineNumbersFromAst(functionDefinitionAst);
+                startLineNumber = startLine;
+                startColumnNumber = startColumn;
+                endLineNumber = startLine;
+                endColumnNumber = startColumn + functionDefinitionAst.Name.Length;
             }
 
             IScriptExtent nameExtent = new ScriptExtent()
             {
                 Text = functionDefinitionAst.Name,
-                StartLineNumber = functionDefinitionAst.Extent.StartLineNumber,
-                EndLineNumber = functionDefinitionAst.Extent.EndLineNumber,
+                StartLineNumber = startLineNumber,
+                EndLineNumber = endLineNumber,
                 StartColumnNumber = startColumnNumber,
-                EndColumnNumber = startColumnNumber + functionDefinitionAst.Name.Length,
+                EndColumnNumber = endColumnNumber,
                 File = functionDefinitionAst.Extent.File
             };
 
