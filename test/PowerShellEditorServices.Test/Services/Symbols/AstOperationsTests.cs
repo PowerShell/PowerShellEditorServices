@@ -58,7 +58,7 @@ function
 
         [Theory]
         [MemberData(nameof(FindReferencesOfSymbolAtPostionData))]
-        public void CanFindReferencesOfSymbolAtPostion(int lineNumber, int columnNumber, Position[] positions)
+        public void CanFindReferencesOfSymbolAtPostion(int lineNumber, int columnNumber, Range[] symbolRange)
         {
             SymbolReference symbol = AstOperations.FindSymbolAtPosition(s_ast, lineNumber, columnNumber);
 
@@ -67,8 +67,10 @@ function
             int positionsIndex = 0;
             foreach (SymbolReference reference in references)
             {
-                Assert.Equal(positions[positionsIndex].Line, reference.ScriptRegion.StartLineNumber);
-                Assert.Equal(positions[positionsIndex].Character, reference.ScriptRegion.StartColumnNumber);
+                Assert.Equal(symbolRange[positionsIndex].Start.Line, reference.ScriptRegion.StartLineNumber);
+                Assert.Equal(symbolRange[positionsIndex].Start.Character, reference.ScriptRegion.StartColumnNumber);
+                Assert.Equal(symbolRange[positionsIndex].End.Line, reference.ScriptRegion.EndLineNumber);
+                Assert.Equal(symbolRange[positionsIndex].End.Character, reference.ScriptRegion.EndColumnNumber);
 
                 positionsIndex++;
             }
@@ -76,14 +78,14 @@ function
 
         public static object[][] FindReferencesOfSymbolAtPostionData { get; } = new object[][]
         {
-            new object[] { 1, 15, new[] { new Position(1, 10), new Position(2, 1) } },
-            new object[] { 2, 3, new[] { new Position(1, 10), new Position(2, 1) } },
-            new object[] { 4, 31, new[] { new Position(4, 19), new Position(7, 3) } },
-            new object[] { 7, 18, new[] { new Position(4, 19), new Position(7, 3) } },
-            new object[] { 22, 13, new[] { new Position(12, 8), new Position(22, 5) } },
-            new object[] { 12, 22, new[] { new Position(12, 8), new Position(22, 5) } },
-            new object[] { 24, 30, new[] { new Position(24, 22), new Position(24, 44) } },
-            new object[] { 24, 52, new[] { new Position(24, 22), new Position(24, 44) } },
+            new object[] { 1, 15, new[] { new Range(1, 10, 1, 23), new Range(2, 1, 2, 14) } },
+            new object[] { 2, 3, new[] { new Range(1, 10, 1, 23), new Range(2, 1, 2, 14) } },
+            new object[] { 4, 31, new[] { new Range(4, 19, 4, 41), new Range(7, 3, 7, 25) } },
+            new object[] { 7, 18, new[] { new Range(4, 19, 4, 41), new Range(7, 3, 7, 25) } },
+            new object[] { 22, 13, new[] { new Range(12, 8, 12, 35), new Range(22, 5, 22, 32) } },
+            new object[] { 12, 22, new[] { new Range(12, 8, 12, 35), new Range(22, 5, 22, 32) } },
+            new object[] { 24, 30, new[] { new Range(24, 22, 24, 38), new Range(24, 44, 24, 60) } },
+            new object[] { 24, 52, new[] { new Range(24, 22, 24, 38), new Range(24, 44, 24, 60) } },
         };
     }
 }
