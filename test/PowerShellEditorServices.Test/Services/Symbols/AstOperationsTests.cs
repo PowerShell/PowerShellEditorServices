@@ -35,13 +35,20 @@ function
 
 
     FunctionNameOnDifferentLine
+
+            function IndentedFunction  { } IndentedFunction
 ";
         private static readonly ScriptBlockAst s_ast = (ScriptBlockAst)ScriptBlock.Create(s_scriptString).Ast;
 
         [Theory]
+        [InlineData(1, 15, "BasicFunction")]
         [InlineData(2, 3, "BasicFunction")]
+        [InlineData(4, 31, "FunctionWithExtraSpace")]
         [InlineData(7, 18, "FunctionWithExtraSpace")]
+        [InlineData(12, 22, "FunctionNameOnDifferentLine")]
         [InlineData(22, 13, "FunctionNameOnDifferentLine")]
+        [InlineData(24, 30, "IndentedFunction")]
+        [InlineData(24, 52, "IndentedFunction")]
         public void CanFindSymbolAtPostion(int lineNumber, int columnNumber, string expectedName)
         {
             SymbolReference reference = AstOperations.FindSymbolAtPosition(s_ast, lineNumber, columnNumber);
@@ -69,9 +76,14 @@ function
 
         public static object[][] FindReferencesOfSymbolAtPostionData { get; } = new object[][]
         {
+            new object[] { 1, 15, new[] { new Position(1, 10), new Position(2, 1) } },
             new object[] { 2, 3, new[] { new Position(1, 10), new Position(2, 1) } },
+            new object[] { 4, 31, new[] { new Position(4, 19), new Position(7, 3) } },
             new object[] { 7, 18, new[] { new Position(4, 19), new Position(7, 3) } },
             new object[] { 22, 13, new[] { new Position(12, 8), new Position(22, 5) } },
+            new object[] { 12, 22, new[] { new Position(12, 8), new Position(22, 5) } },
+            new object[] { 24, 30, new[] { new Position(24, 22), new Position(24, 44) } },
+            new object[] { 24, 52, new[] { new Position(24, 22), new Position(24, 44) } },
         };
     }
 }
