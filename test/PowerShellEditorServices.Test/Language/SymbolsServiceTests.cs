@@ -314,8 +314,26 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public void FindsSymbolsInPesterFile()
         {
-            List<SymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInPesterFile.SourceDetails);
-            Assert.Equal(5, symbolsResult.Count);
+            List<PesterSymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInPesterFile.SourceDetails).OfType<PesterSymbolReference>().ToList();
+            Assert.Equal(5, symbolsResult.Count(r => r.SymbolType == SymbolType.Function));
+
+            Assert.Equal(1, symbolsResult.Count(r => r.Command == PesterCommandType.Describe));
+            SymbolReference firstDescribeSymbol = symbolsResult.First(r => r.Command == PesterCommandType.Describe);
+            Assert.Equal("Describe \"A dummy test\"", firstDescribeSymbol.SymbolName);
+            Assert.Equal(1, firstDescribeSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(1, firstDescribeSymbol.ScriptRegion.StartColumnNumber);
+
+            Assert.Equal(1, symbolsResult.Count(r => r.Command == PesterCommandType.Context));
+            SymbolReference firstContextSymbol = symbolsResult.First(r => r.Command == PesterCommandType.Context);
+            Assert.Equal("Context \"When a pester file is given\"", firstContextSymbol.SymbolName);
+            Assert.Equal(2, firstContextSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(5, firstContextSymbol.ScriptRegion.StartColumnNumber);
+
+            Assert.Equal(3, symbolsResult.Count(r => r.Command == PesterCommandType.It));
+            SymbolReference lastItSymbol = symbolsResult.Last(r => r.Command == PesterCommandType.It);
+            Assert.Equal("It \"Should return describe symbols\"", lastItSymbol.SymbolName);
+            Assert.Equal(11, lastItSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(9, lastItSymbol.ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
