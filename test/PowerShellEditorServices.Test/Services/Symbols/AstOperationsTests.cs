@@ -49,7 +49,7 @@ function
         [InlineData(22, 13, "FunctionNameOnDifferentLine")]
         [InlineData(24, 30, "IndentedFunction")]
         [InlineData(24, 52, "IndentedFunction")]
-        public void CanFindSymbolAtPostion(int lineNumber, int columnNumber, string expectedName)
+        public void CanFindSymbolAtPosition(int lineNumber, int columnNumber, string expectedName)
         {
             SymbolReference reference = AstOperations.FindSymbolAtPosition(s_ast, lineNumber, columnNumber);
             Assert.NotNull(reference);
@@ -57,8 +57,8 @@ function
         }
 
         [Theory]
-        [MemberData(nameof(FindReferencesOfSymbolAtPostionData))]
-        public void CanFindReferencesOfSymbolAtPostion(int lineNumber, int columnNumber, Range[] symbolRange)
+        [MemberData(nameof(FindReferencesOfSymbolAtPositionData))]
+        public void CanFindReferencesOfSymbolAtPosition(int lineNumber, int columnNumber, Range[] symbolRange)
         {
             SymbolReference symbol = AstOperations.FindSymbolAtPosition(s_ast, lineNumber, columnNumber);
 
@@ -76,7 +76,7 @@ function
             }
         }
 
-        public static object[][] FindReferencesOfSymbolAtPostionData { get; } = new object[][]
+        public static object[][] FindReferencesOfSymbolAtPositionData { get; } = new object[][]
         {
             new object[] { 1, 15, new[] { new Range(1, 10, 1, 23), new Range(2, 1, 2, 14) } },
             new object[] { 2, 3, new[] { new Range(1, 10, 1, 23), new Range(2, 1, 2, 14) } },
