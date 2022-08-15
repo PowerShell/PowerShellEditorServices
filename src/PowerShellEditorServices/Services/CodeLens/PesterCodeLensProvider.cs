@@ -113,12 +113,19 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             List<CodeLens> lenses = new();
             foreach (SymbolReference symbol in _symbolProvider.ProvideDocumentSymbols(scriptFile))
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 if (symbol is not PesterSymbolReference pesterSymbol)
                 {
                     continue;
                 }
 
-                cancellationToken.ThrowIfCancellationRequested();
+                // Skip codelense for setup/teardown block
+                if (!PesterSymbolReference.IsPesterTestCommand(pesterSymbol.Command))
+                {
+                    continue;
+                }
+
                 if (_configurationService.CurrentSettings.Pester.UseLegacyCodeLens
                         && pesterSymbol.Command != PesterCommandType.Describe)
                 {
