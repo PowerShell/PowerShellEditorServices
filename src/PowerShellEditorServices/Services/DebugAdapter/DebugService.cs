@@ -497,10 +497,22 @@ namespace Microsoft.PowerShell.EditorServices.Services
             bool writeResultAsOutput)
         {
             PSCommand command = new PSCommand().AddScript(expressionString);
-            IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(
-                command,
-                CancellationToken.None,
-                new PowerShellExecutionOptions { WriteOutputToHost = writeResultAsOutput, ThrowOnError = !writeResultAsOutput }).ConfigureAwait(false);
+            IReadOnlyList<PSObject> results;
+            try
+            {
+                results = await _executionService.ExecutePSCommandAsync<PSObject>(
+                    command,
+                    CancellationToken.None,
+                    new PowerShellExecutionOptions { WriteOutputToHost = writeResultAsOutput, ThrowOnError = !writeResultAsOutput }).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                // If a watch expression throws we want to show the exception.
+                // TODO: Show the exception as an expandable object.
+                return new VariableDetails(
+                    expressionString,
+                    $"{e.GetType().Name}: {e.Message}");
+            }
 
             // Since this method should only be getting invoked in the debugger,
             // we can assume that Out-String will be getting used to format results
