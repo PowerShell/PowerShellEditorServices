@@ -199,7 +199,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             IScriptExtent scriptExtent)
                 : base(
                     SymbolType.Function,
-                    testLine.TrimEnd(DefinitionTrimChars),
+                    testLine.TrimStart().TrimEnd(DefinitionTrimChars),
                     scriptExtent,
                     scriptFile.FilePath,
                     testLine)
