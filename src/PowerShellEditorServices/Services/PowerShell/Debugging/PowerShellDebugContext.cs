@@ -6,6 +6,7 @@ using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 
@@ -145,14 +146,26 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                 // TODO: We need to assign cancellation tokens to each frame, because the current
                 // logic results in a deadlock here when we try to cancel the scopes...which
                 // includes ourself (hence running it in a separate thread).
-                Task.Run(() => _psesHost.UnwindCallStack());
+                _ = Task.Run(() => _psesHost.UnwindCallStack());
                 return;
             }
 
             // Otherwise we're continuing or stepping (i.e. resuming) so we need to cancel the
             // debugger REPL.
-            if (_psesHost.CurrentFrame.IsRepl)
+            PowerShellFrameType frameType = _psesHost.CurrentFrame.FrameType;
+            if (frameType.HasFlag(PowerShellFrameType.Repl))
             {
+                _psesHost.CancelIdleParentTask();
+                return;
+            }
+
+            // If the user is running something via the REPL like `while ($true) { sleep 1 }`
+            // and then tries to step, we want to stop that so that execution can resume.
+            //
+            // This also applies to anything we're running on debugger stop like watch variables.
+            if (frameType.HasFlag(PowerShellFrameType.Debug | PowerShellFrameType.Nested))
+            {
+                _psesHost.ForceSetExit();
                 _psesHost.CancelIdleParentTask();
             }
         }
