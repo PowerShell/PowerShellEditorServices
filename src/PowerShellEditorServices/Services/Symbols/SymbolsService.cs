@@ -288,7 +288,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
 
         /// <summary>
-        /// Finds a function definition in the script given a file location
+        /// Finds a function, class or enum definition in the script given a file location
         /// </summary>
         /// <param name="scriptFile">The details and contents of a open script file</param>
         /// <param name="lineNumber">The line number of the cursor for the given script</param>
@@ -296,7 +296,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>A SymbolReference of the symbol found at the given location
         /// or null if there is no symbol at that location
         /// </returns>
-        public static SymbolReference FindFunctionDefinitionAtLocation(
+        public static SymbolReference FindSymbolDefinitionAtLocation(
             ScriptFile scriptFile,
             int lineNumber,
             int columnNumber)
@@ -306,7 +306,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     scriptFile.ScriptAst,
                     lineNumber,
                     columnNumber,
-                    includeFunctionDefinitions: true);
+                    includeDefinitions: true);
 
             if (symbolReference != null)
             {

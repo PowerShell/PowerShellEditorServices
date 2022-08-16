@@ -57,14 +57,17 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// </summary>
         /// <param name="scriptFile">The PowerShell script file to get code lenses for.</param>
         /// <param name="cancellationToken"></param>
-        /// <returns>An array of CodeLenses describing all functions in the given script file.</returns>
+        /// <returns>An array of CodeLenses describing all functions, classes and enums in the given script file.</returns>
         public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile, CancellationToken cancellationToken)
         {
             List<CodeLens> acc = new();
             foreach (SymbolReference sym in _symbolProvider.ProvideDocumentSymbols(scriptFile))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (sym.SymbolType == SymbolType.Function)
+                if (sym.SymbolType is
+                    SymbolType.Function or
+                    SymbolType.Class or
+                    SymbolType.Enum)
                 {
                     acc.Add(new CodeLens
                     {
@@ -96,7 +99,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             ScriptFile[] references = _workspaceService.ExpandScriptReferences(
                 scriptFile);
 
-            SymbolReference foundSymbol = SymbolsService.FindFunctionDefinitionAtLocation(
+            SymbolReference foundSymbol = SymbolsService.FindSymbolDefinitionAtLocation(
                 scriptFile,
                 codeLens.Range.Start.Line + 1,
                 codeLens.Range.Start.Character + 1);
