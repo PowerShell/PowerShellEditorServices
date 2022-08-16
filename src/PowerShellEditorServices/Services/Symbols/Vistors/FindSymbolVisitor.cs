@@ -13,18 +13,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     {
         private readonly int lineNumber;
         private readonly int columnNumber;
-        private readonly bool includeFunctionDefinitions;
+        private readonly bool includeDefinitions;
 
         public SymbolReference FoundSymbolReference { get; private set; }
 
         public FindSymbolVisitor(
             int lineNumber,
             int columnNumber,
-            bool includeFunctionDefinitions)
+            bool includeDefinitions)
         {
             this.lineNumber = lineNumber;
             this.columnNumber = columnNumber;
-            this.includeFunctionDefinitions = includeFunctionDefinitions;
+            this.includeDefinitions = includeDefinitions;
         }
 
         /// <summary>
@@ -63,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             int endLineNumber = functionDefinitionAst.Extent.EndLineNumber;
             int endColumnNumber = functionDefinitionAst.Extent.EndColumnNumber;
 
-            if (!includeFunctionDefinitions)
+            if (!includeDefinitions)
             {
                 // We only want the function name
                 (int startColumn, int startLine) = VisitorUtils.GetNameStartColumnAndLineNumbersFromAst(functionDefinitionAst);
@@ -196,18 +196,29 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitTypeDefinition(TypeDefinitionAst typeDefinitionAst)
         {
-            // Show only type name. Offset by StartColumn to include indentation etc.
-            int startColumnNumber =
-                typeDefinitionAst.Extent.StartColumnNumber +
-                typeDefinitionAst.Extent.Text.IndexOf(typeDefinitionAst.Name);
+            int startLineNumber = typeDefinitionAst.Extent.StartLineNumber;
+            int startColumnNumber = typeDefinitionAst.Extent.StartColumnNumber;
+            int endLineNumber = typeDefinitionAst.Extent.EndLineNumber;
+            int endColumnNumber = typeDefinitionAst.Extent.EndColumnNumber;
+
+            if (!includeDefinitions)
+            {
+                // We only want the function name
+                startColumnNumber =
+                    typeDefinitionAst.Extent.StartColumnNumber +
+                    typeDefinitionAst.Extent.Text.IndexOf(typeDefinitionAst.Name);
+                startLineNumber = typeDefinitionAst.Extent.StartLineNumber;
+                endColumnNumber = startColumnNumber + typeDefinitionAst.Name.Length;
+                endLineNumber = typeDefinitionAst.Extent.StartLineNumber;
+            }
 
             IScriptExtent nameExtent = new ScriptExtent()
             {
                 Text = typeDefinitionAst.Name,
-                StartLineNumber = typeDefinitionAst.Extent.StartLineNumber,
-                EndLineNumber = typeDefinitionAst.Extent.StartLineNumber,
+                StartLineNumber = startLineNumber,
+                EndLineNumber = endLineNumber,
                 StartColumnNumber = startColumnNumber,
-                EndColumnNumber = startColumnNumber + typeDefinitionAst.Name.Length,
+                EndColumnNumber = endColumnNumber,
                 File = typeDefinitionAst.Extent.File
             };
 
