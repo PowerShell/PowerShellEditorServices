@@ -117,6 +117,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
         {
+            // Extent for constructors and method trigger both this and VisitFunctionMember(). Covered in the latter.
+            // This will not exclude nested functions as they have ScriptBlockAst as parent
+            if (functionDefinitionAst.Parent is FunctionMemberAst)
+            {
+                return AstVisitAction.Continue;
+            }
+
             (int startColumnNumber, int startLineNumber) = VisitorUtils.GetNameStartColumnAndLineNumbersFromAst(functionDefinitionAst);
 
             IScriptExtent nameExtent = new ScriptExtent()
