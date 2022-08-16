@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// <summary>
     /// The visitor used to find the references of a symbol in a script's AST
     /// </summary>
-    internal class FindReferencesVisitor : AstVisitor
+    internal class FindReferencesVisitor : AstVisitor2
     {
         private readonly SymbolReference _symbolRef;
         private readonly IDictionary<string, List<string>> _cmdletToAliasDictionary;
@@ -168,5 +168,164 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             }
             return AstVisitAction.Continue;
         }
+
+        /// <summary>
+        /// Decides if the current type definition is a reference of the symbol being searched for.
+        /// A reference of the symbol will be a of type SymbolType.Class or SymbolType.Enum and have the same name as the symbol
+        /// </summary>
+        /// <param name="typeDefinitionAst">A TypeDefinitionAst in the script's AST</param>
+        /// <returns>A visit action that continues the search for references</returns>
+        public override AstVisitAction VisitTypeDefinition(TypeDefinitionAst typeDefinitionAst)
+        {
+            SymbolType symbolType =
+                typeDefinitionAst.IsEnum ?
+                    SymbolType.Enum : SymbolType.Class;
+
+            if ((_symbolRef.SymbolType is SymbolType.Type || _symbolRef.SymbolType.Equals(symbolType)) &&
+                typeDefinitionAst.Name.Equals(_symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+            {
+                // Show only type name. Offset by StartColumn to include indentation etc.
+                int startColumnNumber =
+                    typeDefinitionAst.Extent.StartColumnNumber +
+                    typeDefinitionAst.Extent.Text.IndexOf(typeDefinitionAst.Name);
+
+                IScriptExtent nameExtent = new ScriptExtent()
+                {
+                    Text = typeDefinitionAst.Name,
+                    StartLineNumber = typeDefinitionAst.Extent.StartLineNumber,
+                    EndLineNumber = typeDefinitionAst.Extent.StartLineNumber,
+                    StartColumnNumber = startColumnNumber,
+                    EndColumnNumber = startColumnNumber + typeDefinitionAst.Name.Length,
+                    File = typeDefinitionAst.Extent.File
+                };
+
+                FoundReferences.Add(new SymbolReference(symbolType, nameExtent));
+            }
+            return AstVisitAction.Continue;
+        }
+
+        /// <summary>
+        /// Decides if the current type expression is a reference of the symbol being searched for.
+        /// A reference of the symbol will be a of type SymbolType.Type and have the same name as the symbol
+        /// </summary>
+        /// <param name="typeExpressionAst">A TypeExpressionAst in the script's AST</param>
+        /// <returns>A visit action that continues the search for references</returns>
+        public override AstVisitAction VisitTypeExpression(TypeExpressionAst typeExpressionAst)
+        {
+            // We don't know if we're looking at a class or enum, but name is likely unique
+            if (IsTypeSymbol(_symbolRef.SymbolType) &&
+                typeExpressionAst.TypeName.Name.Equals(_symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+            {
+                FoundReferences.Add(new SymbolReference(SymbolType.Type, typeExpressionAst.Extent));
+            }
+            return AstVisitAction.Continue;
+        }
+
+        /// <summary>
+        /// Decides if the current type constraint is a reference of the symbol being searched for.
+        /// A reference of the symbol will be a of type SymbolType.Type and have the same name as the symbol
+        /// </summary>
+        /// <param name="typeConstraintAst">A TypeConstraintAst in the script's AST</param>
+        /// <returns>A visit action that continues the search for references</returns>
+        public override AstVisitAction VisitTypeConstraint(TypeConstraintAst typeConstraintAst)
+        {
+            // We don't know if we're looking at a class or enum, but name is likely unique
+            if (IsTypeSymbol(_symbolRef.SymbolType) &&
+                typeConstraintAst.TypeName.Name.Equals(_symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+            {
+                FoundReferences.Add(new SymbolReference(SymbolType.Type, typeConstraintAst.Extent));
+            }
+            return AstVisitAction.Continue;
+        }
+
+        /// <summary>
+        /// Decides if the current function member is a reference of the symbol being searched for.
+        /// A reference of the symbol will be a of type SymbolType.Constructor or SymbolType.Method and have the same name as the symbol
+        /// </summary>
+        /// <param name="functionMemberAst">A FunctionMemberAst in the script's AST</param>
+        /// <returns>A visit action that continues the search for references</returns>
+        public override AstVisitAction VisitFunctionMember(FunctionMemberAst functionMemberAst)
+        {
+            SymbolType symbolType =
+                functionMemberAst.IsConstructor ?
+                    SymbolType.Constructor : SymbolType.Method;
+
+            if (_symbolRef.SymbolType.Equals(symbolType) &&
+                functionMemberAst.Name.Equals(_symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+            {
+                // Show only method/ctor name. Offset by StartColumn to include indentation etc.
+                int startColumnNumber =
+                    functionMemberAst.Extent.StartColumnNumber +
+                    functionMemberAst.Extent.Text.IndexOf(functionMemberAst.Name);
+
+                IScriptExtent nameExtent = new ScriptExtent()
+                {
+                    Text = functionMemberAst.Name,
+                    StartLineNumber = functionMemberAst.Extent.StartLineNumber,
+                    EndLineNumber = functionMemberAst.Extent.StartLineNumber,
+                    StartColumnNumber = startColumnNumber,
+                    EndColumnNumber = startColumnNumber + functionMemberAst.Name.Length,
+                    File = functionMemberAst.Extent.File
+                };
+
+                FoundReferences.Add(new SymbolReference(symbolType, nameExtent));
+            }
+            return AstVisitAction.Continue;
+        }
+
+        /// <summary>
+        /// Decides if the current property member is a reference of the symbol being searched for.
+        /// A reference of the symbol will be a of type SymbolType.Property and have the same name as the symbol
+        /// </summary>
+        /// <param name="propertyMemberAst">A PropertyMemberAst in the script's AST</param>
+        /// <returns>A visit action that continues the search for references</returns>
+        public override AstVisitAction VisitPropertyMember(PropertyMemberAst propertyMemberAst)
+        {
+            if (_symbolRef.SymbolType.Equals(SymbolType.Property) &&
+                propertyMemberAst.Name.Equals(_symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+            {
+                FoundReferences.Add(new SymbolReference(SymbolType.Property, propertyMemberAst.Extent));
+            }
+            return AstVisitAction.Continue;
+        }
+
+        /// <summary>
+        /// Decides if the current configuration definition is a reference of the symbol being searched for.
+        /// A reference of the symbol will be a of type SymbolType.Configuration and have the same name as the symbol
+        /// </summary>
+        /// <param name="configurationDefinitionAst">A ConfigurationDefinitionAst in the script's AST</param>
+        /// <returns>A visit action that continues the search for references</returns>
+        public override AstVisitAction VisitConfigurationDefinition(ConfigurationDefinitionAst configurationDefinitionAst)
+        {
+            string configurationName = configurationDefinitionAst.InstanceName.Extent.Text;
+
+            if (_symbolRef.SymbolType.Equals(SymbolType.Configuration) &&
+                configurationName.Equals(_symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+            {
+                // Show only configuration name. Offset by StartColumn to include indentation etc.
+                int startColumnNumber =
+                    configurationDefinitionAst.Extent.StartColumnNumber +
+                    configurationDefinitionAst.Extent.Text.IndexOf(configurationName);
+
+                IScriptExtent nameExtent = new ScriptExtent()
+                {
+                    Text = configurationName,
+                    StartLineNumber = configurationDefinitionAst.Extent.StartLineNumber,
+                    EndLineNumber = configurationDefinitionAst.Extent.StartLineNumber,
+                    StartColumnNumber = startColumnNumber,
+                    EndColumnNumber = startColumnNumber + configurationName.Length,
+                    File = configurationDefinitionAst.Extent.File
+                };
+
+                FoundReferences.Add(new SymbolReference(SymbolType.Configuration, nameExtent));
+            }
+            return AstVisitAction.Continue;
+        }
+
+        /// <summary>
+        /// Tests if symbol type is a type (class/enum) definition or type reference.
+        /// </summary>
+        private static bool IsTypeSymbol(SymbolType symbolType)
+            => symbolType is SymbolType.Class or SymbolType.Enum or SymbolType.Type;
     }
 }
