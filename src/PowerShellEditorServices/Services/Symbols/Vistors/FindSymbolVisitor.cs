@@ -58,6 +58,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
         {
+            // Extent for constructors and method trigger both this and VisitFunctionMember(). Covered in the latter.
+            // This will not exclude nested functions as they have ScriptBlockAst as parent
+            if (functionDefinitionAst.Parent is FunctionMemberAst)
+            {
+                return AstVisitAction.Continue;
+            }
+
             int startLineNumber = functionDefinitionAst.Extent.StartLineNumber;
             int startColumnNumber = functionDefinitionAst.Extent.StartColumnNumber;
             int endLineNumber = functionDefinitionAst.Extent.EndLineNumber;

@@ -25,7 +25,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         {
             // Extent for constructors and method trigger both this and VisitFunctionMember(). Covered in the latter.
             // This will not exclude nested functions as they have ScriptBlockAst as parent
-            if (functionDefinitionAst.Parent is FunctionMemberAst) {
+            if (functionDefinitionAst.Parent is FunctionMemberAst)
+            {
                 return AstVisitAction.Continue;
             }
 
