@@ -229,6 +229,74 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         }
 
         /// <summary>
+        /// Checks to see if this type expression is the symbol we are looking for.
+        /// </summary>
+        /// <param name="typeExpressionAst">A TypeExpressionAst object in the script's AST</param>
+        /// <returns>A decision to stop searching if the right symbol was found,
+        /// or a decision to continue if it wasn't found</returns>
+        public override AstVisitAction VisitTypeExpression(TypeExpressionAst typeExpressionAst)
+        {
+            // Show only type name. Offset by StartColumn to include indentation etc.
+            int startColumnNumber =
+                typeExpressionAst.Extent.StartColumnNumber +
+                typeExpressionAst.Extent.Text.IndexOf(typeExpressionAst.TypeName.Name);
+
+            IScriptExtent nameExtent = new ScriptExtent()
+            {
+                Text = typeExpressionAst.TypeName.Name,
+                StartLineNumber = typeExpressionAst.Extent.StartLineNumber,
+                EndLineNumber = typeExpressionAst.Extent.StartLineNumber,
+                StartColumnNumber = startColumnNumber,
+                EndColumnNumber = startColumnNumber + typeExpressionAst.TypeName.Name.Length,
+                File = typeExpressionAst.Extent.File
+            };
+
+            if (IsPositionInExtent(nameExtent))
+            {
+                FoundSymbolReference =
+                    new SymbolReference(
+                        SymbolType.Type,
+                        nameExtent);
+                return AstVisitAction.StopVisit;
+            }
+            return AstVisitAction.Continue;
+        }
+
+        /// <summary>
+        /// Checks to see if this type constraint is the symbol we are looking for.
+        /// </summary>
+        /// <param name="typeConstraintAst">A TypeConstraintAst object in the script's AST</param>
+        /// <returns>A decision to stop searching if the right symbol was found,
+        /// or a decision to continue if it wasn't found</returns>
+        public override AstVisitAction VisitTypeConstraint(TypeConstraintAst typeConstraintAst)
+        {
+            // Show only type name. Offset by StartColumn to include indentation etc.
+            int startColumnNumber =
+                typeConstraintAst.Extent.StartColumnNumber +
+                typeConstraintAst.Extent.Text.IndexOf(typeConstraintAst.TypeName.Name);
+
+            IScriptExtent nameExtent = new ScriptExtent()
+            {
+                Text = typeConstraintAst.TypeName.Name,
+                StartLineNumber = typeConstraintAst.Extent.StartLineNumber,
+                EndLineNumber = typeConstraintAst.Extent.StartLineNumber,
+                StartColumnNumber = startColumnNumber,
+                EndColumnNumber = startColumnNumber + typeConstraintAst.TypeName.Name.Length,
+                File = typeConstraintAst.Extent.File
+            };
+
+            if (IsPositionInExtent(nameExtent))
+            {
+                FoundSymbolReference =
+                    new SymbolReference(
+                        SymbolType.Type,
+                        nameExtent);
+                return AstVisitAction.StopVisit;
+            }
+            return AstVisitAction.Continue;
+        }
+
+        /// <summary>
         /// Checks to see if this configuration definition is the symbol we are looking for.
         /// </summary>
         /// <param name="configurationDefinitionAst">A ConfigurationDefinitionAst object in the script's AST</param>

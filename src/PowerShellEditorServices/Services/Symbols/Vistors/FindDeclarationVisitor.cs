@@ -9,7 +9,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// <summary>
     /// The visitor used to find the definition of a symbol
     /// </summary>
-    internal class FindDeclarationVisitor : AstVisitor
+    internal class FindDeclarationVisitor : AstVisitor2
     {
         private readonly SymbolReference symbolRef;
         private readonly string variableName;
@@ -66,6 +66,157 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             }
 
             return base.VisitFunctionDefinition(functionDefinitionAst);
+        }
+
+        /// <summary>
+        /// Decides if the current type definition is the right definition
+        /// for the symbol being searched for. The definition of the symbol will be a of type
+        /// SymbolType.Enum or SymbolType.Class and have the same name as the symbol
+        /// </summary>
+        /// <param name="typeDefinitionAst">A TypeDefinitionAst in the script's AST</param>
+        /// <returns>A decision to stop searching if the right TypeDefinitionAst was found,
+        /// or a decision to continue if it wasn't found</returns>
+        public override AstVisitAction VisitTypeDefinition(TypeDefinitionAst typeDefinitionAst)
+        {
+            SymbolType symbolType =
+                typeDefinitionAst.IsEnum ?
+                    SymbolType.Enum : SymbolType.Class;
+
+            if ((symbolRef.SymbolType is SymbolType.Type || symbolRef.SymbolType.Equals(symbolType)) &&
+                typeDefinitionAst.Name.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+            {
+                // Show only type name. Offset by StartColumn to include indentation etc.
+                int startColumnNumber =
+                    typeDefinitionAst.Extent.StartColumnNumber +
+                    typeDefinitionAst.Extent.Text.IndexOf(typeDefinitionAst.Name);
+
+                IScriptExtent nameExtent = new ScriptExtent()
+                {
+                    Text = typeDefinitionAst.Name,
+                    StartLineNumber = typeDefinitionAst.Extent.StartLineNumber,
+                    EndLineNumber = typeDefinitionAst.Extent.StartLineNumber,
+                    StartColumnNumber = startColumnNumber,
+                    EndColumnNumber = startColumnNumber + typeDefinitionAst.Name.Length,
+                    File = typeDefinitionAst.Extent.File
+                };
+
+                FoundDeclaration =
+                    new SymbolReference(
+                        symbolType,
+                        nameExtent);
+
+                return AstVisitAction.StopVisit;
+            }
+
+            return AstVisitAction.Continue;
+        }
+
+        /// <summary>
+        /// Decides if the current function member is the right definition
+        /// for the symbol being searched for. The definition of the symbol will be a of type
+        /// SymbolType.Constructor or SymbolType.Method and have the same name as the symbol
+        /// </summary>
+        /// <param name="functionMemberAst">A FunctionMemberAst in the script's AST</param>
+        /// <returns>A decision to stop searching if the right FunctionMemberAst was found,
+        /// or a decision to continue if it wasn't found</returns>
+        public override AstVisitAction VisitFunctionMember(FunctionMemberAst functionMemberAst)
+        {
+            SymbolType symbolType =
+                functionMemberAst.IsConstructor ?
+                    SymbolType.Constructor : SymbolType.Method;
+
+            if (symbolRef.SymbolType.Equals(symbolType) &&
+                functionMemberAst.Name.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+            {
+                // Show only method/ctor name. Offset by StartColumn to include indentation etc.
+                int startColumnNumber =
+                    functionMemberAst.Extent.StartColumnNumber +
+                    functionMemberAst.Extent.Text.IndexOf(functionMemberAst.Name);
+
+                IScriptExtent nameExtent = new ScriptExtent()
+                {
+                    Text = functionMemberAst.Name,
+                    StartLineNumber = functionMemberAst.Extent.StartLineNumber,
+                    EndLineNumber = functionMemberAst.Extent.StartLineNumber,
+                    StartColumnNumber = startColumnNumber,
+                    EndColumnNumber = startColumnNumber + functionMemberAst.Name.Length,
+                    File = functionMemberAst.Extent.File
+                };
+
+                FoundDeclaration =
+                    new SymbolReference(
+                        symbolType,
+                        nameExtent);
+
+                return AstVisitAction.StopVisit;
+            }
+
+            return AstVisitAction.Continue;
+        }
+
+        /// <summary>
+        /// Decides if the current property member is the right definition
+        /// for the symbol being searched for. The definition of the symbol will be a of type
+        /// SymbolType.Property and have the same name as the symbol
+        /// </summary>
+        /// <param name="propertyMemberAst">A PropertyMemberAst in the script's AST</param>
+        /// <returns>A decision to stop searching if the right PropertyMemberAst was found,
+        /// or a decision to continue if it wasn't found</returns>
+        public override AstVisitAction VisitPropertyMember(PropertyMemberAst propertyMemberAst)
+        {
+            if (symbolRef.SymbolType.Equals(SymbolType.Property) &&
+                propertyMemberAst.Name.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+            {
+                FoundDeclaration =
+                    new SymbolReference(
+                        SymbolType.Property,
+                        propertyMemberAst.Extent);
+
+                return AstVisitAction.StopVisit;
+            }
+
+            return AstVisitAction.Continue;
+        }
+
+        /// <summary>
+        /// Decides if the current configuration definition is the right definition
+        /// for the symbol being searched for. The definition of the symbol will be a of type
+        /// SymbolType.Configuration and have the same name as the symbol
+        /// </summary>
+        /// <param name="configurationDefinitionAst">A ConfigurationDefinitionAst in the script's AST</param>
+        /// <returns>A decision to stop searching if the right ConfigurationDefinitionAst was found,
+        /// or a decision to continue if it wasn't found</returns>
+        public override AstVisitAction VisitConfigurationDefinition(ConfigurationDefinitionAst configurationDefinitionAst)
+        {
+            string configurationName = configurationDefinitionAst.InstanceName.Extent.Text;
+
+            if (symbolRef.SymbolType.Equals(SymbolType.Configuration) &&
+                configurationName.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+            {
+                // Show only configuration name. Offset by StartColumn to include indentation etc.
+                int startColumnNumber =
+                    configurationDefinitionAst.Extent.StartColumnNumber +
+                    configurationDefinitionAst.Extent.Text.IndexOf(configurationName);
+
+                IScriptExtent nameExtent = new ScriptExtent()
+                {
+                    Text = configurationName,
+                    StartLineNumber = configurationDefinitionAst.Extent.StartLineNumber,
+                    EndLineNumber = configurationDefinitionAst.Extent.StartLineNumber,
+                    StartColumnNumber = startColumnNumber,
+                    EndColumnNumber = startColumnNumber + configurationName.Length,
+                    File = configurationDefinitionAst.Extent.File
+                };
+
+                FoundDeclaration =
+                    new SymbolReference(
+                        SymbolType.Configuration,
+                        nameExtent);
+
+                return AstVisitAction.StopVisit;
+            }
+
+            return AstVisitAction.Continue;
         }
 
         /// <summary>
