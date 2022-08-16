@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System;
 using System.IO;
 using System.Management.Automation;
 using System.Runtime.InteropServices;
@@ -29,12 +30,33 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// </summary>
         internal static readonly char AlternatePathSeparator = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? '/' : '\\';
 
+        internal static readonly StringComparison PathComparison = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+            ? StringComparison.Ordinal
+            : StringComparison.OrdinalIgnoreCase;
+
         /// <summary>
         /// Converts all alternate path separators to the current platform's main path separators.
         /// </summary>
         /// <param name="path">The path to normalize.</param>
         /// <returns>The normalized path.</returns>
         public static string NormalizePathSeparators(string path) => string.IsNullOrWhiteSpace(path) ? path : path.Replace(AlternatePathSeparator, DefaultPathSeparator);
+
+        internal static bool IsPathEqual(string left, string right)
+        {
+            if (string.IsNullOrEmpty(left))
+            {
+                return string.IsNullOrEmpty(right);
+            }
+
+            if (string.IsNullOrEmpty(right))
+            {
+                return false;
+            }
+
+            left = Path.GetFullPath(left).TrimEnd(DefaultPathSeparator);
+            right = Path.GetFullPath(right).TrimEnd(DefaultPathSeparator);
+            return left.Equals(right, PathComparison);
+        }
 
         /// <summary>
         /// Return the given path with all PowerShell globbing characters escaped,
