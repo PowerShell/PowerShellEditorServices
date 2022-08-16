@@ -66,6 +66,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <summary>
         /// The symbol is a class constructor
         /// </summary>
-        Constructor
+        Constructor,
+
+        /// <summary>
+        /// The symbol is a type reference
+        /// </summary>
+        Type,
     }
 }

@@ -90,6 +90,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                     symbolDetails.DisplayString = "enum " + symbolReference.SymbolName;
                     return symbolDetails;
 
+                case SymbolType.Type:
+                    symbolDetails.DisplayString = "type " + symbolReference.SymbolName;
+                    return symbolDetails;
+
                 case SymbolType.Constructor:
                     // TODO: constructor Class(parameters)
                     symbolDetails.DisplayString = "constructor " + symbolReference.SymbolName;
