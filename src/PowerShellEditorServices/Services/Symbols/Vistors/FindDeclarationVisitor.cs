@@ -3,6 +3,7 @@
 
 using System;
 using System.Management.Automation.Language;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {
@@ -43,27 +44,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 return AstVisitAction.Continue;
             }
 
-            // Get the start column number of the function name,
-            // instead of the the start column of 'function' and create new extent for the functionName
-            int startColumnNumber =
-                functionDefinitionAst.Extent.Text.IndexOf(
-                    functionDefinitionAst.Name, StringComparison.OrdinalIgnoreCase) + 1;
-
-            IScriptExtent nameExtent = new ScriptExtent()
-            {
-                Text = functionDefinitionAst.Name,
-                StartLineNumber = functionDefinitionAst.Extent.StartLineNumber,
-                StartColumnNumber = startColumnNumber,
-                EndLineNumber = functionDefinitionAst.Extent.StartLineNumber,
-                EndColumnNumber = startColumnNumber + functionDefinitionAst.Name.Length,
-                File = functionDefinitionAst.Extent.File
-            };
-
             // We compare to the SymbolName instead of its text because it may have been resolved
             // from an alias.
             if (symbolRef.SymbolType.Equals(SymbolType.Function) &&
-                nameExtent.Text.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+                functionDefinitionAst.Name.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
+                // Get the start column number of the function name,
+                // instead of the the start column of 'function' and create new extent for the functionName
+                IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionDefinitionAst);
+
                 FoundDeclaration =
                     new SymbolReference(
                         SymbolType.Function,
@@ -92,20 +81,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             if ((symbolRef.SymbolType is SymbolType.Type || symbolRef.SymbolType.Equals(symbolType)) &&
                 typeDefinitionAst.Name.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
-                // Show only type name. Offset by StartColumn to include indentation etc.
-                int startColumnNumber =
-                    typeDefinitionAst.Extent.StartColumnNumber +
-                    typeDefinitionAst.Extent.Text.IndexOf(typeDefinitionAst.Name);
-
-                IScriptExtent nameExtent = new ScriptExtent()
-                {
-                    Text = typeDefinitionAst.Name,
-                    StartLineNumber = typeDefinitionAst.Extent.StartLineNumber,
-                    EndLineNumber = typeDefinitionAst.Extent.StartLineNumber,
-                    StartColumnNumber = startColumnNumber,
-                    EndColumnNumber = startColumnNumber + typeDefinitionAst.Name.Length,
-                    File = typeDefinitionAst.Extent.File
-                };
+                // We only want the type name. Get start-location for name
+                IScriptExtent nameExtent = VisitorUtils.GetNameExtent(typeDefinitionAst);
 
                 FoundDeclaration =
                     new SymbolReference(
@@ -135,20 +112,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             if (symbolRef.SymbolType.Equals(symbolType) &&
                 functionMemberAst.Name.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
-                // Show only method/ctor name. Offset by StartColumn to include indentation etc.
-                int startColumnNumber =
-                    functionMemberAst.Extent.StartColumnNumber +
-                    functionMemberAst.Extent.Text.IndexOf(functionMemberAst.Name);
-
-                IScriptExtent nameExtent = new ScriptExtent()
-                {
-                    Text = functionMemberAst.Name,
-                    StartLineNumber = functionMemberAst.Extent.StartLineNumber,
-                    EndLineNumber = functionMemberAst.Extent.StartLineNumber,
-                    StartColumnNumber = startColumnNumber,
-                    EndColumnNumber = startColumnNumber + functionMemberAst.Name.Length,
-                    File = functionMemberAst.Extent.File
-                };
+                // We only want the method/ctor name. Get start-location for name
+                IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionMemberAst);
 
                 FoundDeclaration =
                     new SymbolReference(
@@ -174,10 +139,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             if (symbolRef.SymbolType.Equals(SymbolType.Property) &&
                 propertyMemberAst.Name.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
+                // We only want the property name. Get start-location for name
+                IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst);
+
                 FoundDeclaration =
                     new SymbolReference(
                         SymbolType.Property,
-                        propertyMemberAst.Extent);
+                        nameExtent);
 
                 return AstVisitAction.StopVisit;
             }

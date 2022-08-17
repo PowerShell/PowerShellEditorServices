@@ -65,30 +65,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 return AstVisitAction.Continue;
             }
 
-            int startLineNumber = functionDefinitionAst.Extent.StartLineNumber;
-            int startColumnNumber = functionDefinitionAst.Extent.StartColumnNumber;
-            int endLineNumber = functionDefinitionAst.Extent.EndLineNumber;
-            int endColumnNumber = functionDefinitionAst.Extent.EndColumnNumber;
+            IScriptExtent nameExtent;
 
-            if (!includeDefinitions)
+            if (includeDefinitions)
+            {
+                nameExtent = new ScriptExtent()
+                {
+                    Text = functionDefinitionAst.Name,
+                    StartLineNumber = functionDefinitionAst.Extent.StartLineNumber,
+                    EndLineNumber = functionDefinitionAst.Extent.EndLineNumber,
+                    StartColumnNumber = functionDefinitionAst.Extent.StartColumnNumber,
+                    EndColumnNumber = functionDefinitionAst.Extent.EndColumnNumber,
+                    File = functionDefinitionAst.Extent.File
+                };
+            }
+            else
             {
                 // We only want the function name
-                (int startColumn, int startLine) = VisitorUtils.GetNameStartColumnAndLineNumbersFromAst(functionDefinitionAst);
-                startLineNumber = startLine;
-                startColumnNumber = startColumn;
-                endLineNumber = startLine;
-                endColumnNumber = startColumn + functionDefinitionAst.Name.Length;
+                nameExtent = VisitorUtils.GetNameExtent(functionDefinitionAst);
             }
-
-            IScriptExtent nameExtent = new ScriptExtent()
-            {
-                Text = functionDefinitionAst.Name,
-                StartLineNumber = startLineNumber,
-                EndLineNumber = endLineNumber,
-                StartColumnNumber = startColumnNumber,
-                EndColumnNumber = endColumnNumber,
-                File = functionDefinitionAst.Extent.File
-            };
 
             if (IsPositionInExtent(nameExtent))
             {
@@ -163,20 +158,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitFunctionMember(FunctionMemberAst functionMemberAst)
         {
-            // Show only method/ctor name. Offset by StartColumn to include indentation etc.
-            int startColumnNumber =
-                functionMemberAst.Extent.StartColumnNumber +
-                functionMemberAst.Extent.Text.IndexOf(functionMemberAst.Name);
-
-            IScriptExtent nameExtent = new ScriptExtent()
-            {
-                Text = functionMemberAst.Name,
-                StartLineNumber = functionMemberAst.Extent.StartLineNumber,
-                EndLineNumber = functionMemberAst.Extent.StartLineNumber,
-                StartColumnNumber = startColumnNumber,
-                EndColumnNumber = startColumnNumber + functionMemberAst.Name.Length,
-                File = functionMemberAst.Extent.File
-            };
+            // We only want the method/ctor name. Get start-location for name
+            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionMemberAst);
 
             if (IsPositionInExtent(nameExtent))
             {
@@ -203,31 +186,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitTypeDefinition(TypeDefinitionAst typeDefinitionAst)
         {
-            int startLineNumber = typeDefinitionAst.Extent.StartLineNumber;
-            int startColumnNumber = typeDefinitionAst.Extent.StartColumnNumber;
-            int endLineNumber = typeDefinitionAst.Extent.EndLineNumber;
-            int endColumnNumber = typeDefinitionAst.Extent.EndColumnNumber;
+            IScriptExtent nameExtent;
 
-            if (!includeDefinitions)
+            if (includeDefinitions)
             {
-                // We only want the function name
-                startColumnNumber =
-                    typeDefinitionAst.Extent.StartColumnNumber +
-                    typeDefinitionAst.Extent.Text.IndexOf(typeDefinitionAst.Name);
-                startLineNumber = typeDefinitionAst.Extent.StartLineNumber;
-                endColumnNumber = startColumnNumber + typeDefinitionAst.Name.Length;
-                endLineNumber = typeDefinitionAst.Extent.StartLineNumber;
+                nameExtent = new ScriptExtent()
+                {
+                    Text = typeDefinitionAst.Name,
+                    StartLineNumber = typeDefinitionAst.Extent.StartLineNumber,
+                    EndLineNumber = typeDefinitionAst.Extent.EndLineNumber,
+                    StartColumnNumber = typeDefinitionAst.Extent.StartColumnNumber,
+                    EndColumnNumber = typeDefinitionAst.Extent.EndColumnNumber,
+                    File = typeDefinitionAst.Extent.File
+                };
             }
-
-            IScriptExtent nameExtent = new ScriptExtent()
+            else
             {
-                Text = typeDefinitionAst.Name,
-                StartLineNumber = startLineNumber,
-                EndLineNumber = endLineNumber,
-                StartColumnNumber = startColumnNumber,
-                EndColumnNumber = endColumnNumber,
-                File = typeDefinitionAst.Extent.File
-            };
+                // We only want the type name
+                nameExtent = VisitorUtils.GetNameExtent(typeDefinitionAst);
+            }
 
             if (IsPositionInExtent(nameExtent))
             {
@@ -254,10 +231,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitTypeExpression(TypeExpressionAst typeExpressionAst)
         {
-            // Show only type name. Offset by StartColumn to include indentation etc.
-            int startColumnNumber =
-                typeExpressionAst.Extent.StartColumnNumber +
-                typeExpressionAst.Extent.Text.IndexOf(typeExpressionAst.TypeName.Name);
+            // Show only type name (skip leading '['). Offset by StartColumn to include indentation etc.
+            int startColumnNumber = typeExpressionAst.Extent.StartColumnNumber + 1;
 
             IScriptExtent nameExtent = new ScriptExtent()
             {
@@ -288,10 +263,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitTypeConstraint(TypeConstraintAst typeConstraintAst)
         {
-            // Show only type name. Offset by StartColumn to include indentation etc.
-            int startColumnNumber =
-                typeConstraintAst.Extent.StartColumnNumber +
-                typeConstraintAst.Extent.Text.IndexOf(typeConstraintAst.TypeName.Name);
+            // Show only type name (skip leading '['). Offset by StartColumn to include indentation etc.
+            int startColumnNumber = typeConstraintAst.Extent.StartColumnNumber + 1;
 
             IScriptExtent nameExtent = new ScriptExtent()
             {
@@ -322,22 +295,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitConfigurationDefinition(ConfigurationDefinitionAst configurationDefinitionAst)
         {
-            string configurationName = configurationDefinitionAst.InstanceName.Extent.Text;
-
-            // Show only configuration name. Offset by StartColumn to include indentation etc.
-            int startColumnNumber =
-                configurationDefinitionAst.Extent.StartColumnNumber +
-                configurationDefinitionAst.Extent.Text.IndexOf(configurationName);
-
-            IScriptExtent nameExtent = new ScriptExtent()
-            {
-                Text = configurationName,
-                StartLineNumber = configurationDefinitionAst.Extent.StartLineNumber,
-                EndLineNumber = configurationDefinitionAst.Extent.StartLineNumber,
-                StartColumnNumber = startColumnNumber,
-                EndColumnNumber = startColumnNumber + configurationName.Length,
-                File = configurationDefinitionAst.Extent.File
-            };
+            // We only want the configuration name. Get start-location for name
+            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(configurationDefinitionAst);
 
             if (IsPositionInExtent(nameExtent))
             {
@@ -353,19 +312,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         }
 
         /// <summary>
-        /// Checks to see if this variable expression is the symbol we are looking for.
+        /// Checks to see if this property member is the symbol we are looking for.
         /// </summary>
-        /// <param name="propertyMemberAst">A VariableExpressionAst object in the script's AST</param>
+        /// <param name="propertyMemberAst">A PropertyMemberAst object in the script's AST</param>
         /// <returns>A decision to stop searching if the right symbol was found,
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitPropertyMember(PropertyMemberAst propertyMemberAst)
         {
-            if (IsPositionInExtent(propertyMemberAst.Extent))
+            // We only want the property name. Get start-location for name
+            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst);
+
+            if (IsPositionInExtent(nameExtent))
             {
                 FoundSymbolReference =
                     new SymbolReference(
                         SymbolType.Property,
-                        propertyMemberAst.Extent);
+                        nameExtent);
 
                 return AstVisitAction.StopVisit;
             }

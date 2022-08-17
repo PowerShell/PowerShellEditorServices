@@ -16,11 +16,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         public FindSymbolsVisitor() => SymbolReferences = new List<SymbolReference>();
 
         /// <summary>
-        /// Adds each function definition as a
+        /// Adds each function definition to symbol reference list
         /// </summary>
-        /// <param name="functionDefinitionAst">A functionDefinitionAst object in the script's AST</param>
-        /// <returns>A decision to stop searching if the right symbol was found,
-        /// or a decision to continue if it wasn't found</returns>
+        /// <param name="functionDefinitionAst">A FunctionDefinitionAst in the script's AST</param>
+        /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
         {
             // Extent for constructors and method trigger both this and VisitFunctionMember(). Covered in the latter.
@@ -30,15 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 return AstVisitAction.Continue;
             }
 
-            IScriptExtent nameExtent = new ScriptExtent()
-            {
-                Text = functionDefinitionAst.Name,
-                StartLineNumber = functionDefinitionAst.Extent.StartLineNumber,
-                EndLineNumber = functionDefinitionAst.Extent.EndLineNumber,
-                StartColumnNumber = functionDefinitionAst.Extent.StartColumnNumber,
-                EndColumnNumber = functionDefinitionAst.Extent.EndColumnNumber,
-                File = functionDefinitionAst.Extent.File
-            };
+            IScriptExtent nameExtent = GetNewExtent(functionDefinitionAst, functionDefinitionAst.Name);
 
             SymbolType symbolType =
                 functionDefinitionAst.IsWorkflow ?
@@ -53,11 +44,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         }
 
         /// <summary>
-        /// Checks to see if this variable expression is the symbol we are looking for.
+        /// Adds each script scoped variable assignment to symbol reference list
         /// </summary>
-        /// <param name="variableExpressionAst">A VariableExpressionAst object in the script's AST</param>
-        /// <returns>A decision to stop searching if the right symbol was found,
-        /// or a decision to continue if it wasn't found</returns>
+        /// <param name="variableExpressionAst">A VariableExpressionAst in the script's AST</param>
+        /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
         {
             if (!IsAssignedAtScriptScope(variableExpressionAst))
@@ -86,19 +76,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         }
 
         /// <summary>
-        /// Adds class and AST to symbol reference list
+        /// Adds class and enum AST to symbol reference list
         /// </summary>
+        /// <param name="typeDefinitionAst">A TypeDefinitionAst in the script's AST</param>
+        /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitTypeDefinition(TypeDefinitionAst typeDefinitionAst)
         {
-            IScriptExtent nameExtent = new ScriptExtent()
-            {
-                Text = typeDefinitionAst.Name,
-                StartLineNumber = typeDefinitionAst.Extent.StartLineNumber,
-                EndLineNumber = typeDefinitionAst.Extent.EndLineNumber,
-                StartColumnNumber = typeDefinitionAst.Extent.StartColumnNumber,
-                EndColumnNumber = typeDefinitionAst.Extent.EndColumnNumber,
-                File = typeDefinitionAst.Extent.File
-            };
+            IScriptExtent nameExtent = GetNewExtent(typeDefinitionAst, typeDefinitionAst.Name);
 
             SymbolType symbolType =
                 typeDefinitionAst.IsEnum ?
@@ -115,17 +99,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <summary>
         /// Adds class method and constructor AST to symbol reference list
         /// </summary>
+        /// <param name="functionMemberAst">A FunctionMemberAst in the script's AST</param>
+        /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitFunctionMember(FunctionMemberAst functionMemberAst)
         {
-            IScriptExtent nameExtent = new ScriptExtent()
-            {
-                Text = GetMethodOverloadName(functionMemberAst),
-                StartLineNumber = functionMemberAst.Extent.StartLineNumber,
-                EndLineNumber = functionMemberAst.Extent.EndLineNumber,
-                StartColumnNumber = functionMemberAst.Extent.StartColumnNumber,
-                EndColumnNumber = functionMemberAst.Extent.EndColumnNumber,
-                File = functionMemberAst.Extent.File
-            };
+            IScriptExtent nameExtent = GetNewExtent(functionMemberAst, GetMethodOverloadName(functionMemberAst));
 
             SymbolType symbolType =
                 functionMemberAst.IsConstructor ?
@@ -144,7 +122,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// </summary>
         /// <param name="functionMemberAst">A FunctionMemberAst object in the script's AST</param>
         /// <returns>Function member name with parameter types and names</returns>
-        private static string GetMethodOverloadName(FunctionMemberAst functionMemberAst) {
+        private static string GetMethodOverloadName(FunctionMemberAst functionMemberAst)
+        {
             if (functionMemberAst.Parameters.Count > 0)
             {
                 List<string> parameters = new(functionMemberAst.Parameters.Count);
@@ -165,17 +144,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <summary>
         /// Adds class property AST to symbol reference list
         /// </summary>
+        /// <param name="propertyMemberAst">A PropertyMemberAst in the script's AST</param>
+        /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitPropertyMember(PropertyMemberAst propertyMemberAst)
         {
-            IScriptExtent nameExtent = new ScriptExtent()
-            {
-                Text = propertyMemberAst.Name,
-                StartLineNumber = propertyMemberAst.Extent.StartLineNumber,
-                EndLineNumber = propertyMemberAst.Extent.EndLineNumber,
-                StartColumnNumber = propertyMemberAst.Extent.StartColumnNumber,
-                EndColumnNumber = propertyMemberAst.Extent.EndColumnNumber,
-                File = propertyMemberAst.Extent.File
-            };
+            IScriptExtent nameExtent = GetNewExtent(propertyMemberAst, propertyMemberAst.Name);
 
             SymbolReferences.Add(
                 new SymbolReference(
@@ -188,17 +161,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <summary>
         /// Adds DSC configuration AST to symbol reference list
         /// </summary>
+        /// <param name="configurationDefinitionAst">A ConfigurationDefinitionAst in the script's AST</param>
+        /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitConfigurationDefinition(ConfigurationDefinitionAst configurationDefinitionAst)
         {
-            IScriptExtent nameExtent = new ScriptExtent()
-            {
-                Text = configurationDefinitionAst.InstanceName.Extent.Text,
-                StartLineNumber = configurationDefinitionAst.Extent.StartLineNumber,
-                EndLineNumber = configurationDefinitionAst.Extent.EndLineNumber,
-                StartColumnNumber = configurationDefinitionAst.Extent.StartColumnNumber,
-                EndColumnNumber = configurationDefinitionAst.Extent.EndColumnNumber,
-                File = configurationDefinitionAst.Extent.File
-            };
+            IScriptExtent nameExtent = GetNewExtent(configurationDefinitionAst, configurationDefinitionAst.InstanceName.Extent.Text);
 
             SymbolReferences.Add(
                 new SymbolReference(
@@ -206,6 +173,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                     nameExtent));
 
             return AstVisitAction.Continue;
+        }
+
+        /// <summary>
+        /// Gets a new ScriptExtent for a given Ast with same range but modified Text
+        /// </summary>
+        private static ScriptExtent GetNewExtent(Ast ast, string text)
+        {
+            return new ScriptExtent()
+            {
+                Text = text,
+                StartLineNumber = ast.Extent.StartLineNumber,
+                EndLineNumber = ast.Extent.EndLineNumber,
+                StartColumnNumber = ast.Extent.StartColumnNumber,
+                EndColumnNumber = ast.Extent.EndColumnNumber,
+                File = ast.Extent.File
+            };
         }
     }
 
@@ -227,6 +210,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <summary>
         /// Adds keys in the input hashtable to the symbol reference
         /// </summary>
+        /// <param name="hashtableAst">A HashtableAst in the script's AST</param>
+        /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitHashtable(HashtableAst hashtableAst)
         {
             if (hashtableAst.KeyValuePairs == null)
