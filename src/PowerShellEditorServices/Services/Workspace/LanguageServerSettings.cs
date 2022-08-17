@@ -22,6 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         public CodeFoldingSettings CodeFolding { get; set; }
         public PesterSettings Pester { get; set; }
         public string Cwd { get; set; }
+        public bool EnableReferencesCodeLens { get; set; }
 
         public LanguageServerSettings()
         {
@@ -46,6 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     CodeFolding.Update(settings.CodeFolding, logger);
                     Pester.Update(settings.Pester, logger);
                     Cwd = settings.Cwd;
+                    EnableReferencesCodeLens = settings.EnableReferencesCodeLens;
                 }
             }
         }

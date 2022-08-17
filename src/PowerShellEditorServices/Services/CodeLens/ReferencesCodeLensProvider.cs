@@ -31,11 +31,13 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
 
+        public static string Id => nameof(ReferencesCodeLensProvider);
+
         /// <summary>
         /// Specifies a unique identifier for the feature provider, typically a
         /// fully-qualified name like "Microsoft.PowerShell.EditorServices.MyProvider"
         /// </summary>
-        public string ProviderId => nameof(ReferencesCodeLensProvider);
+        public string ProviderId => Id;
 
         /// <summary>
         /// Construct a new ReferencesCodeLensProvider for a given EditorSession.

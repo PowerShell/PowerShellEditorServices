@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.CodeLenses;
 using Microsoft.PowerShell.EditorServices.Logging;
+using Microsoft.PowerShell.EditorServices.Services.Configuration;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
@@ -66,16 +67,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _workspaceService = workspaceService;
 
             _codeLensProviders = new ConcurrentDictionary<string, ICodeLensProvider>();
-            ICodeLensProvider[] codeLensProviders = new ICodeLensProvider[]
+            if (configurationService.CurrentSettings.EnableReferencesCodeLens)
             {
-                new ReferencesCodeLensProvider(_workspaceService, this),
-                new PesterCodeLensProvider(configurationService)
-            };
-
-            foreach (ICodeLensProvider codeLensProvider in codeLensProviders)
-            {
-                _codeLensProviders.TryAdd(codeLensProvider.ProviderId, codeLensProvider);
+                ReferencesCodeLensProvider referencesProvider = new(_workspaceService, this);
+                _codeLensProviders.TryAdd(referencesProvider.ProviderId, referencesProvider);
             }
+
+            PesterCodeLensProvider pesterProvider = new(configurationService);
+            _codeLensProviders.TryAdd(pesterProvider.ProviderId, pesterProvider);
 
             _documentSymbolProviders = new ConcurrentDictionary<string, IDocumentSymbolProvider>();
             IDocumentSymbolProvider[] documentSymbolProviders = new IDocumentSymbolProvider[]
@@ -670,6 +669,22 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 true);
 
             return functionDefinitionAst as FunctionDefinitionAst;
+        }
+
+        internal void OnConfigurationUpdated(object _, LanguageServerSettings e)
+        {
+            if (e.EnableReferencesCodeLens)
+            {
+                if (_codeLensProviders.ContainsKey(ReferencesCodeLensProvider.Id))
+                {
+                    return;
+                }
+
+                TryRegisterCodeLensProvider(new ReferencesCodeLensProvider(_workspaceService, this));
+                return;
+            }
+
+            DeregisterCodeLensProvider(ReferencesCodeLensProvider.Id);
         }
     }
 }

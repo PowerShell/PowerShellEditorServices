@@ -24,13 +24,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly WorkspaceService _workspaceService;
         private readonly ConfigurationService _configurationService;
         private readonly ILanguageServerFacade _languageServer;
-
         public PsesConfigurationHandler(
             ILoggerFactory factory,
             WorkspaceService workspaceService,
             AnalysisService analysisService,
             ConfigurationService configurationService,
-            ILanguageServerFacade languageServer)
+            ILanguageServerFacade languageServer,
+            SymbolsService symbolsService)
         {
             _logger = factory.CreateLogger<PsesConfigurationHandler>();
             _workspaceService = workspaceService;
@@ -38,6 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _languageServer = languageServer;
 
             ConfigurationUpdated += analysisService.OnConfigurationUpdated;
+            ConfigurationUpdated += symbolsService.OnConfigurationUpdated;
         }
 
         public override async Task<Unit> Handle(DidChangeConfigurationParams request, CancellationToken cancellationToken)
