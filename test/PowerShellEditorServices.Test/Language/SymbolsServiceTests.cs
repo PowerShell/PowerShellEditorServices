@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -32,6 +33,7 @@ namespace PowerShellEditorServices.Test.Language
         private readonly PsesInternalHost psesHost;
         private readonly WorkspaceService workspace;
         private readonly SymbolsService symbolsService;
+        private static readonly bool s_isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
         public SymbolsServiceTests()
         {
@@ -287,6 +289,11 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Equal(4, symbolsResult.Count(symbolReference => symbolReference.SymbolType == SymbolType.Function));
             Assert.Equal(3, symbolsResult.Count(symbolReference => symbolReference.SymbolType == SymbolType.Variable));
             Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Workflow));
+            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Class));
+            Assert.Equal(2, symbolsResult.Count(symbolReference => symbolReference.SymbolType == SymbolType.Property));
+            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Constructor));
+            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Method));
+            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Enum));
 
             SymbolReference firstFunctionSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Function);
             Assert.Equal("AFunction", firstFunctionSymbol.SymbolName);
@@ -303,12 +310,44 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Equal(23, firstWorkflowSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(1, firstWorkflowSymbol.ScriptRegion.StartColumnNumber);
 
-            // TODO: Bring this back when we can use AstVisitor2 again (#276)
-            //Assert.Equal(1, symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Configuration).Count());
-            //SymbolReference firstConfigurationSymbol = symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Configuration).First();
-            //Assert.Equal("AConfiguration", firstConfigurationSymbol.SymbolName);
-            //Assert.Equal(25, firstConfigurationSymbol.ScriptRegion.StartLineNumber);
-            //Assert.Equal(1, firstConfigurationSymbol.ScriptRegion.StartColumnNumber);
+            SymbolReference firstClassSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Class);
+            Assert.Equal("AClass", firstClassSymbol.SymbolName);
+            Assert.Equal(25, firstClassSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(1, firstClassSymbol.ScriptRegion.StartColumnNumber);
+
+            SymbolReference firstPropertySymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Property);
+            Assert.Equal("AProperty", firstPropertySymbol.SymbolName);
+            Assert.Equal(26, firstPropertySymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(5, firstPropertySymbol.ScriptRegion.StartColumnNumber);
+
+            SymbolReference firstConstructorSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Constructor);
+            Assert.Equal("AClass([string]$AParameter)", firstConstructorSymbol.SymbolName);
+            Assert.Equal(28, firstConstructorSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(5, firstConstructorSymbol.ScriptRegion.StartColumnNumber);
+
+            SymbolReference firstMethodSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Method);
+            Assert.Equal("AMethod([string]$param1, [int]$param2, $param3)", firstMethodSymbol.SymbolName);
+            Assert.Equal(32, firstMethodSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(5, firstMethodSymbol.ScriptRegion.StartColumnNumber);
+
+            SymbolReference firstEnumSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Enum);
+            Assert.Equal("AEnum", firstEnumSymbol.SymbolName);
+            Assert.Equal(37, firstEnumSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(1, firstEnumSymbol.ScriptRegion.StartColumnNumber);
+        }
+
+        [SkippableFact]
+        public void FindsSymbolsInDSCFile()
+        {
+            Skip.If(!s_isWindows, "DSC only works properly on Windows.");
+
+            List<SymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInDSCFile.SourceDetails);
+
+            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Configuration));
+            SymbolReference firstConfigurationSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Configuration);
+            Assert.Equal("AConfiguration", firstConfigurationSymbol.SymbolName);
+            Assert.Equal(2, firstConfigurationSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(1, firstConfigurationSymbol.ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
