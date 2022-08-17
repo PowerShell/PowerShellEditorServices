@@ -186,47 +186,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         }
 
         /// <summary>
-        /// Decides if the current configuration definition is the right definition
-        /// for the symbol being searched for. The definition of the symbol will be a of type
-        /// SymbolType.Configuration and have the same name as the symbol
-        /// </summary>
-        /// <param name="configurationDefinitionAst">A ConfigurationDefinitionAst in the script's AST</param>
-        /// <returns>A decision to stop searching if the right ConfigurationDefinitionAst was found,
-        /// or a decision to continue if it wasn't found</returns>
-        public override AstVisitAction VisitConfigurationDefinition(ConfigurationDefinitionAst configurationDefinitionAst)
-        {
-            string configurationName = configurationDefinitionAst.InstanceName.Extent.Text;
-
-            if (symbolRef.SymbolType.Equals(SymbolType.Configuration) &&
-                configurationName.Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
-            {
-                // Show only configuration name. Offset by StartColumn to include indentation etc.
-                int startColumnNumber =
-                    configurationDefinitionAst.Extent.StartColumnNumber +
-                    configurationDefinitionAst.Extent.Text.IndexOf(configurationName);
-
-                IScriptExtent nameExtent = new ScriptExtent()
-                {
-                    Text = configurationName,
-                    StartLineNumber = configurationDefinitionAst.Extent.StartLineNumber,
-                    EndLineNumber = configurationDefinitionAst.Extent.StartLineNumber,
-                    StartColumnNumber = startColumnNumber,
-                    EndColumnNumber = startColumnNumber + configurationName.Length,
-                    File = configurationDefinitionAst.Extent.File
-                };
-
-                FoundDeclaration =
-                    new SymbolReference(
-                        SymbolType.Configuration,
-                        nameExtent);
-
-                return AstVisitAction.StopVisit;
-            }
-
-            return AstVisitAction.Continue;
-        }
-
-        /// <summary>
         /// Check if the left hand side of an assignmentStatementAst is a VariableExpressionAst
         /// with the same name as that of symbolRef.
         /// </summary>

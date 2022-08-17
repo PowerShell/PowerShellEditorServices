@@ -297,39 +297,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         }
 
         /// <summary>
-        /// Decides if the current configuration definition is a reference of the symbol being searched for.
-        /// A reference of the symbol will be a of type SymbolType.Configuration and have the same name as the symbol
-        /// </summary>
-        /// <param name="configurationDefinitionAst">A ConfigurationDefinitionAst in the script's AST</param>
-        /// <returns>A visit action that continues the search for references</returns>
-        public override AstVisitAction VisitConfigurationDefinition(ConfigurationDefinitionAst configurationDefinitionAst)
-        {
-            string configurationName = configurationDefinitionAst.InstanceName.Extent.Text;
-
-            if (_symbolRef.SymbolType.Equals(SymbolType.Configuration) &&
-                configurationName.Equals(_symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
-            {
-                // Show only configuration name. Offset by StartColumn to include indentation etc.
-                int startColumnNumber =
-                    configurationDefinitionAst.Extent.StartColumnNumber +
-                    configurationDefinitionAst.Extent.Text.IndexOf(configurationName);
-
-                IScriptExtent nameExtent = new ScriptExtent()
-                {
-                    Text = configurationName,
-                    StartLineNumber = configurationDefinitionAst.Extent.StartLineNumber,
-                    EndLineNumber = configurationDefinitionAst.Extent.StartLineNumber,
-                    StartColumnNumber = startColumnNumber,
-                    EndColumnNumber = startColumnNumber + configurationName.Length,
-                    File = configurationDefinitionAst.Extent.File
-                };
-
-                FoundReferences.Add(new SymbolReference(SymbolType.Configuration, nameExtent));
-            }
-            return AstVisitAction.Continue;
-        }
-
-        /// <summary>
         /// Tests if symbol type is a type (class/enum) definition or type reference.
         /// </summary>
         private static bool IsTypeSymbol(SymbolType symbolType)
