@@ -56,6 +56,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         continue;
                     }
 
+                    // Exclude Pester setup/teardown symbols as they're unnamed
+                    if (foundOccurrence is PesterSymbolReference pesterSymbol &&
+                        !PesterSymbolReference.IsPesterTestCommand(pesterSymbol.Command))
+                    {
+                        continue;
+                    }
+
                     Location location = new()
                     {
                         Uri = DocumentUri.From(foundOccurrence.FilePath),
