@@ -1,5 +1,15 @@
 # PowerShell Editor Services Release History
 
+## v3.5.0
+### Thursday, August 18, 2022
+
+- 🐛 📁 [PowerShellEditorServices #1901](https://github.com/PowerShell/PowerShellEditorServices/pull/1902) - Fix file close in workspace service for Linux. (Thanks @fflaten!)
+- ✨ 🐢 [PowerShellEditorServices #1892](https://github.com/PowerShell/PowerShellEditorServices/pull/1899) - Add symbols for Pester setup and teardown blocks. (Thanks @fflaten!)
+- 🐛 🔍 [PowerShellEditorServices #1897](https://github.com/PowerShell/PowerShellEditorServices/pull/1898) - Add artificial stack frame to represent contexts without one.
+- 🐛 🔍 [PowerShellEditorServices #1894](https://github.com/PowerShell/PowerShellEditorServices/pull/1894) - Fix stepping while watch expressions or interactive pipeline is running.
+- ✨ 🐢 [PowerShellEditorServices #1891](https://github.com/PowerShell/PowerShellEditorServices/pull/1893) - Fix whitespace in Pester symbol and add test. (Thanks @fflaten!)
+- 🐛 🙏 [PowerShellEditorServices #1887](https://github.com/PowerShell/PowerShellEditorServices/pull/1890) - Fix symbol highlight when hovering function name. (Thanks @fflaten!)
+
 ## v3.4.10
 ### Friday, August 12, 2022
 
