@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Xunit;
 
 namespace PowerShellEditorServices.Test.Session
@@ -174,6 +175,19 @@ namespace PowerShellEditorServices.Test.Session
             };
 
             Assert.All(notInMemoryPaths, (p) => Assert.False(WorkspaceService.IsPathInMemory(p)));
+        }
+
+        [Fact]
+        public void CanOpenAndCloseFile()
+        {
+            WorkspaceService workspace = FixturesWorkspace();
+            string filePath = Path.GetFullPath(Path.Combine(workspace.WorkspacePath, "rootfile.ps1"));
+
+            ScriptFile file = workspace.GetFile(filePath);
+            Assert.Equal(workspace.GetOpenedFiles(), new[] { file });
+
+            workspace.CloseFile(file);
+            Assert.Equal(workspace.GetOpenedFiles(), Array.Empty<ScriptFile>());
         }
     }
 }

@@ -120,9 +120,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             Validate.IsNotNull(nameof(documentUri), documentUri);
 
-            string keyName = VersionUtils.IsLinux
-                ? documentUri.ToString()
-                : documentUri.ToString().ToLower();
+            string keyName = GetFileKey(documentUri);
 
             // Make sure the file isn't already loaded into the workspace
             if (!workspaceFiles.TryGetValue(keyName, out ScriptFile scriptFile))
@@ -258,9 +256,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             Validate.IsNotNull(nameof(documentUri), documentUri);
 
-            string keyName = VersionUtils.IsLinux
-                ? documentUri.ToString()
-                : documentUri.ToString().ToLower();
+            string keyName = GetFileKey(documentUri);
 
             // Make sure the file isn't already loaded into the workspace
             if (!workspaceFiles.TryGetValue(keyName, out ScriptFile scriptFile) && initialBuffer != null)
@@ -293,7 +289,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             Validate.IsNotNull(nameof(scriptFile), scriptFile);
 
-            workspaceFiles.TryRemove(scriptFile.Id, out ScriptFile _);
+            string keyName = GetFileKey(scriptFile.DocumentUri);
+            workspaceFiles.TryRemove(keyName, out ScriptFile _);
         }
 
         /// <summary>
@@ -539,6 +536,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             return combinedPath;
         }
+
+        /// <summary>
+        /// Returns a normalized string for a given documentUri to be used as key name.
+        /// Case-sensitive uri on Linux and lowercase for other platforms.
+        /// </summary>
+        /// <param name="documentUri">A DocumentUri object to get a normalized key name from</param>
+        private static string GetFileKey(DocumentUri documentUri)
+            => VersionUtils.IsLinux ? documentUri.ToString() : documentUri.ToString().ToLower();
 
         #endregion
     }
