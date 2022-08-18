@@ -91,33 +91,35 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 return null;
             }
 
-            // Search for a name for the test
-            // If the test has more than one argument for names, we set it to null
             string testName = null;
-            bool alreadySawName = false;
-            for (int i = 1; i < pesterCommandAst.CommandElements.Count; i++)
-            {
-                CommandElementAst currentCommandElement = pesterCommandAst.CommandElements[i];
-
-                // Check for an explicit "-Name" parameter
-                if (currentCommandElement is CommandParameterAst)
+            if (PesterSymbolReference.IsPesterTestCommand(commandName.Value)) {
+                // Search for a name for the test
+                // If the test has more than one argument for names, we set it to null
+                bool alreadySawName = false;
+                for (int i = 1; i < pesterCommandAst.CommandElements.Count; i++)
                 {
-                    // Found -Name parameter, move to next element which is the argument for -TestName
-                    i++;
+                    CommandElementAst currentCommandElement = pesterCommandAst.CommandElements[i];
 
+                    // Check for an explicit "-Name" parameter
+                    if (currentCommandElement is CommandParameterAst)
+                    {
+                        // Found -Name parameter, move to next element which is the argument for -TestName
+                        i++;
+
+                        if (!alreadySawName && TryGetTestNameArgument(pesterCommandAst.CommandElements[i], out testName))
+                        {
+                            alreadySawName = true;
+                        }
+
+                        continue;
+                    }
+
+                    // Otherwise, if an argument is given with no parameter, we assume it's the name
+                    // If we've already seen a name, we set the name to null
                     if (!alreadySawName && TryGetTestNameArgument(pesterCommandAst.CommandElements[i], out testName))
                     {
                         alreadySawName = true;
                     }
-
-                    continue;
-                }
-
-                // Otherwise, if an argument is given with no parameter, we assume it's the name
-                // If we've already seen a name, we set the name to null
-                if (!alreadySawName && TryGetTestNameArgument(pesterCommandAst.CommandElements[i], out testName))
-                {
-                    alreadySawName = true;
                 }
             }
 
@@ -145,7 +147,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     }
 
     /// <summary>
-    /// Defines command types for Pester test blocks.
+    /// Defines command types for Pester blocks.
     /// </summary>
     internal enum PesterCommandType
     {
@@ -162,7 +164,32 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <summary>
         /// Identifies an It block.
         /// </summary>
-        It
+        It,
+
+        /// <summary>
+        /// Identifies an BeforeAll block.
+        /// </summary>
+        BeforeAll,
+
+        /// <summary>
+        /// Identifies an BeforeEach block.
+        /// </summary>
+        BeforeEach,
+
+        /// <summary>
+        /// Identifies an AfterAll block.
+        /// </summary>
+        AfterAll,
+
+        /// <summary>
+        /// Identifies an AfterEach block.
+        /// </summary>
+        AfterEach,
+
+        /// <summary>
+        /// Identifies an BeforeDiscovery block.
+        /// </summary>
+        BeforeDiscovery
     }
 
     /// <summary>
@@ -215,6 +242,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 return null;
             }
             return pesterCommandType;
+        }
+
+        /// <summary>
+        /// Checks if the PesterCommandType is a block with executable tests (Describe/Context/It).
+        /// </summary>
+        /// <param name="pesterCommandType">the PesterCommandType representing the Pester command</param>
+        /// <returns>True if command type is a block used to trigger test run. False if setup/teardown/support-block.</returns>
+        internal static bool IsPesterTestCommand(PesterCommandType pesterCommandType)
+        {
+            return pesterCommandType is
+                PesterCommandType.Describe or
+                PesterCommandType.Context or
+                PesterCommandType.It;
         }
     }
 }

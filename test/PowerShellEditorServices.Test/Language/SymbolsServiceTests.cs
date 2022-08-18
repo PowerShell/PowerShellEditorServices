@@ -315,25 +315,55 @@ namespace PowerShellEditorServices.Test.Language
         public void FindsSymbolsInPesterFile()
         {
             List<PesterSymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInPesterFile.SourceDetails).OfType<PesterSymbolReference>().ToList();
-            Assert.Equal(5, symbolsResult.Count(r => r.SymbolType == SymbolType.Function));
+            Assert.Equal(12, symbolsResult.Count(r => r.SymbolType == SymbolType.Function));
 
             Assert.Equal(1, symbolsResult.Count(r => r.Command == PesterCommandType.Describe));
             SymbolReference firstDescribeSymbol = symbolsResult.First(r => r.Command == PesterCommandType.Describe);
-            Assert.Equal("Describe \"A dummy test\"", firstDescribeSymbol.SymbolName);
-            Assert.Equal(1, firstDescribeSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal("Describe \"Testing Pester symbols\"", firstDescribeSymbol.SymbolName);
+            Assert.Equal(9, firstDescribeSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(1, firstDescribeSymbol.ScriptRegion.StartColumnNumber);
 
             Assert.Equal(1, symbolsResult.Count(r => r.Command == PesterCommandType.Context));
             SymbolReference firstContextSymbol = symbolsResult.First(r => r.Command == PesterCommandType.Context);
-            Assert.Equal("Context \"When a pester file is given\"", firstContextSymbol.SymbolName);
-            Assert.Equal(2, firstContextSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal("Context \"When a Pester file is given\"", firstContextSymbol.SymbolName);
+            Assert.Equal(10, firstContextSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(5, firstContextSymbol.ScriptRegion.StartColumnNumber);
 
-            Assert.Equal(3, symbolsResult.Count(r => r.Command == PesterCommandType.It));
+            Assert.Equal(4, symbolsResult.Count(r => r.Command == PesterCommandType.It));
             SymbolReference lastItSymbol = symbolsResult.Last(r => r.Command == PesterCommandType.It);
-            Assert.Equal("It \"Should return describe symbols\"", lastItSymbol.SymbolName);
-            Assert.Equal(11, lastItSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal("It \"Should return setup and teardown symbols\"", lastItSymbol.SymbolName);
+            Assert.Equal(31, lastItSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(9, lastItSymbol.ScriptRegion.StartColumnNumber);
+
+            Assert.Equal(1, symbolsResult.Count(r => r.Command == PesterCommandType.BeforeDiscovery));
+            SymbolReference firstBeforeDisocverySymbol = symbolsResult.First(r => r.Command == PesterCommandType.BeforeDiscovery);
+            Assert.Equal("BeforeDiscovery", firstBeforeDisocverySymbol.SymbolName);
+            Assert.Equal(1, firstBeforeDisocverySymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(1, firstBeforeDisocverySymbol.ScriptRegion.StartColumnNumber);
+
+            Assert.Equal(2, symbolsResult.Count(r => r.Command == PesterCommandType.BeforeAll));
+            SymbolReference lastBeforeAllSymbol = symbolsResult.Last(r => r.Command == PesterCommandType.BeforeAll);
+            Assert.Equal("BeforeAll", lastBeforeAllSymbol.SymbolName);
+            Assert.Equal(11, lastBeforeAllSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(9, lastBeforeAllSymbol.ScriptRegion.StartColumnNumber);
+
+            Assert.Equal(1, symbolsResult.Count(r => r.Command == PesterCommandType.BeforeEach));
+            SymbolReference firstBeforeEachSymbol = symbolsResult.First(r => r.Command == PesterCommandType.BeforeEach);
+            Assert.Equal("BeforeEach", firstBeforeEachSymbol.SymbolName);
+            Assert.Equal(15, firstBeforeEachSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(9, firstBeforeEachSymbol.ScriptRegion.StartColumnNumber);
+
+            Assert.Equal(1, symbolsResult.Count(r => r.Command == PesterCommandType.AfterEach));
+            SymbolReference firstAfterEachSymbol = symbolsResult.First(r => r.Command == PesterCommandType.AfterEach);
+            Assert.Equal("AfterEach", firstAfterEachSymbol.SymbolName);
+            Assert.Equal(35, firstAfterEachSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(9, firstAfterEachSymbol.ScriptRegion.StartColumnNumber);
+
+            Assert.Equal(1, symbolsResult.Count(r => r.Command == PesterCommandType.AfterAll));
+            SymbolReference firstAfterAllSymbol = symbolsResult.First(r => r.Command == PesterCommandType.AfterAll);
+            Assert.Equal("AfterAll", firstAfterAllSymbol.SymbolName);
+            Assert.Equal(40, firstAfterAllSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(5, firstAfterAllSymbol.ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
