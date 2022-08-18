@@ -994,10 +994,45 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     // Augment the top stack frame with details from the stop event
                     if (invocationTypeScriptPositionProperty.GetValue(e.InvocationInfo) is IScriptExtent scriptExtent)
                     {
-                        stackFrameDetails[0].StartLineNumber = scriptExtent.StartLineNumber;
-                        stackFrameDetails[0].EndLineNumber = scriptExtent.EndLineNumber;
-                        stackFrameDetails[0].StartColumnNumber = scriptExtent.StartColumnNumber;
-                        stackFrameDetails[0].EndColumnNumber = scriptExtent.EndColumnNumber;
+                        StackFrameDetails targetFrame = stackFrameDetails[0];
+
+                        // Certain context changes (like stepping into the default value expression
+                        // of a parameter) do not create a call stack frame. In order to represent
+                        // this context change we create a fake call stack frame.
+                        if (!string.IsNullOrEmpty(scriptExtent.File)
+                            && !PathUtils.IsPathEqual(scriptExtent.File, targetFrame.ScriptPath))
+                        {
+                            await debugInfoHandle.WaitAsync().ConfigureAwait(false);
+                            try
+                            {
+                                targetFrame = new StackFrameDetails
+                                {
+                                    ScriptPath = scriptExtent.File,
+                                    // Just use the last frame's variables since we don't have a
+                                    // good way to get real values.
+                                    AutoVariables = targetFrame.AutoVariables,
+                                    CommandVariables = targetFrame.CommandVariables,
+                                    // Ideally we'd get a real value here but since there's no real
+                                    // call stack frame for this, we'd need to replicate a lot of
+                                    // engine code.
+                                    FunctionName = "<ScriptBlock>",
+                                };
+
+                                StackFrameDetails[] newFrames = new StackFrameDetails[stackFrameDetails.Length + 1];
+                                newFrames[0] = targetFrame;
+                                stackFrameDetails.CopyTo(newFrames, 1);
+                                stackFrameDetails = newFrames;
+                            }
+                            finally
+                            {
+                                debugInfoHandle.Release();
+                            }
+                        }
+
+                        targetFrame.StartLineNumber = scriptExtent.StartLineNumber;
+                        targetFrame.EndLineNumber = scriptExtent.EndLineNumber;
+                        targetFrame.StartColumnNumber = scriptExtent.StartColumnNumber;
+                        targetFrame.EndColumnNumber = scriptExtent.EndColumnNumber;
                     }
                 }
 

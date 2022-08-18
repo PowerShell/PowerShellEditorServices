@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System;
 using System.IO;
 using System.Management.Automation;
 using System.Runtime.InteropServices;
@@ -30,11 +31,46 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         internal static readonly char AlternatePathSeparator = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? '/' : '\\';
 
         /// <summary>
+        /// The <see cref="StringComparison" /> value to be used when comparing paths. Will be
+        /// <see cref="StringComparison.Ordinal" /> for case sensitive file systems and <see cref="StringComparison.OrdinalIgnoreCase" />
+        /// in case insensitive file systems.
+        /// </summary>
+        internal static readonly StringComparison PathComparison = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+            ? StringComparison.Ordinal
+            : StringComparison.OrdinalIgnoreCase;
+
+        /// <summary>
         /// Converts all alternate path separators to the current platform's main path separators.
         /// </summary>
         /// <param name="path">The path to normalize.</param>
         /// <returns>The normalized path.</returns>
         public static string NormalizePathSeparators(string path) => string.IsNullOrWhiteSpace(path) ? path : path.Replace(AlternatePathSeparator, DefaultPathSeparator);
+
+        /// <summary>
+        /// Determines whether two specified strings represent the same path.
+        /// </summary>
+        /// <param name="left">The first path to compare, or <see langword="null" />.</param>
+        /// <param name="right">The second path to compare, or <see langword="null" />.</param>
+        /// <returns>
+        /// <see langword="true" /> if the value of <paramref name="left" /> represents the same
+        /// path as the value of <paramref name="right" />; otherwise, <see langword="false" />.
+        /// </returns>
+        internal static bool IsPathEqual(string left, string right)
+        {
+            if (string.IsNullOrEmpty(left))
+            {
+                return string.IsNullOrEmpty(right);
+            }
+
+            if (string.IsNullOrEmpty(right))
+            {
+                return false;
+            }
+
+            left = Path.GetFullPath(left).TrimEnd(DefaultPathSeparator);
+            right = Path.GetFullPath(right).TrimEnd(DefaultPathSeparator);
+            return left.Equals(right, PathComparison);
+        }
 
         /// <summary>
         /// Return the given path with all PowerShell globbing characters escaped,
