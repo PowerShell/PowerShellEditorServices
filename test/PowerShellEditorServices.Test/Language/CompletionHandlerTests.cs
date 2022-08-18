@@ -71,9 +71,10 @@ namespace PowerShellEditorServices.Test.Language
             Assert.StartsWith(CompleteCommandFromModule.GetRandomDetail, actual.Detail);
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task CompletesTypeName()
         {
+            Skip.If(VersionUtils.PSEdition == "Desktop", "Windows PowerShell has trouble with this test right now.");
             (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteTypeName.SourceDetails).ConfigureAwait(true);
             CompletionItem actual = Assert.Single(results);
             if (VersionUtils.IsNetCore)
@@ -91,10 +92,10 @@ namespace PowerShellEditorServices.Test.Language
             }
         }
 
-        [Trait("Category", "Completions")]
-        [Fact]
+        [SkippableFact]
         public async Task CompletesNamespace()
         {
+            Skip.If(VersionUtils.PSEdition == "Desktop", "Windows PowerShell has trouble with this test right now.");
             (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteNamespace.SourceDetails).ConfigureAwait(true);
             CompletionItem actual = Assert.Single(results);
             Assert.Equal(CompleteNamespace.ExpectedCompletion, actual);
