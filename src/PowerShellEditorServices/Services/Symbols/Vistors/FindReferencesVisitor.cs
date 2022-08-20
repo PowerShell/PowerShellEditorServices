@@ -235,7 +235,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                     SymbolType.Constructor : SymbolType.Method;
 
             if (_symbolRef.SymbolType.Equals(symbolType) &&
-                functionMemberAst.Name.Equals(_symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+                VisitorUtils.GetMemberOverloadName(functionMemberAst).Equals(_symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
                 // We only want the method/ctor name. Get start-location for name
                 IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionMemberAst);
@@ -246,14 +246,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 
         /// <summary>
         /// Decides if the current property member is a reference of the symbol being searched for.
-        /// A reference of the symbol will be a of type SymbolType.Property and have the same name as the symbol
+        /// A reference of the symbol will be a of type SymbolType.Property or SymbolType.EnumMember
+        /// and have the same name as the symbol.
         /// </summary>
         /// <param name="propertyMemberAst">A PropertyMemberAst in the script's AST</param>
         /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitPropertyMember(PropertyMemberAst propertyMemberAst)
         {
-            if (_symbolRef.SymbolType.Equals(SymbolType.Property) &&
-                propertyMemberAst.Name.Equals(_symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+            SymbolType symbolType =
+                propertyMemberAst.Parent is TypeDefinitionAst typeAst && typeAst.IsEnum ?
+                    SymbolType.EnumMember : SymbolType.Property;
+
+            if (_symbolRef.SymbolType.Equals(symbolType) &&
+                VisitorUtils.GetMemberOverloadName(propertyMemberAst).Equals(_symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
                 // We only want the property name. Get start-location for name
                 IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst);

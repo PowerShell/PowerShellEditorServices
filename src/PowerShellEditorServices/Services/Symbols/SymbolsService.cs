@@ -332,7 +332,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 AstOperations.FindSymbolAtPosition(
                     scriptFile.ScriptAst,
                     lineNumber,
-                    columnNumber);
+                    columnNumber,
+                    returnMemberSignature: true);
 
             if (symbolReference == null)
             {

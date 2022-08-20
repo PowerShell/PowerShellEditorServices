@@ -134,6 +134,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 SymbolType.Constructor => SymbolKind.Constructor,
                 SymbolType.Method => SymbolKind.Method,
                 SymbolType.Property => SymbolKind.Property,
+                SymbolType.EnumMember => SymbolKind.EnumMember,
                 _ => SymbolKind.Variable,
             };
         }
