@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Management.Automation.Language;
@@ -85,7 +85,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 nameExtent = VisitorUtils.GetNameExtent(functionDefinitionAst);
             }
 
-            if (IsPositionInExtent(nameExtent))
+            if (nameExtent.Contains(lineNumber, columnNumber))
             {
                 FoundSymbolReference =
                     new SymbolReference(
@@ -139,7 +139,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         }
 
         /// <summary>
-        /// Is the position of the given location is in the ast's extent
+        /// Is the position of the given location is in the ast's extent.
+        /// Only works with single-line extents like name extents.
+        /// Use <see cref="ObjectExtensions.Contains"/> extension for definition extents.
         /// </summary>
         /// <param name="extent">The script extent of the element</param>
         /// <returns>True if the given position is in the range of the element's extent </returns>
@@ -206,7 +208,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 nameExtent = VisitorUtils.GetNameExtent(typeDefinitionAst);
             }
 
-            if (IsPositionInExtent(nameExtent))
+            if (nameExtent.Contains(lineNumber, columnNumber))
             {
                 SymbolType symbolType =
                     typeDefinitionAst.IsEnum ?

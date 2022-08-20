@@ -135,7 +135,14 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
             if (scriptExtent.StartLineNumber == line)
             {
-                return scriptExtent.StartColumnNumber <= column;
+                if (scriptExtent.StartLineNumber == scriptExtent.EndLineNumber)
+                {
+                    return scriptExtent.StartColumnNumber <= column && scriptExtent.EndColumnNumber >= column;
+                }
+                else
+                {
+                    return scriptExtent.StartColumnNumber <= column;
+                }
             }
 
             if (scriptExtent.EndLineNumber == line)
