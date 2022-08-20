@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using Microsoft.PowerShell.EditorServices.Utility;
 using System.Collections.Generic;
 using System.Management.Automation.Language;
 
@@ -29,7 +30,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 return AstVisitAction.Continue;
             }
 
-            IScriptExtent nameExtent = GetNewExtent(functionDefinitionAst, functionDefinitionAst.Name);
+            (int startColumn, int startLine) = VisitorUtils.GetNameStartColumnAndLineFromAst(functionDefinitionAst);
+            IScriptExtent nameExtent = GetNewExtent(functionDefinitionAst, functionDefinitionAst.Name, startLine, startColumn);
 
             SymbolType symbolType =
                 functionDefinitionAst.IsWorkflow ?
@@ -82,7 +84,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitTypeDefinition(TypeDefinitionAst typeDefinitionAst)
         {
-            IScriptExtent nameExtent = GetNewExtent(typeDefinitionAst, typeDefinitionAst.Name);
+            (int startColumn, int startLine) = VisitorUtils.GetNameStartColumnAndLineFromAst(typeDefinitionAst);
+            IScriptExtent nameExtent = GetNewExtent(typeDefinitionAst, typeDefinitionAst.Name, startLine, startColumn);
 
             SymbolType symbolType =
                 typeDefinitionAst.IsEnum ?
@@ -103,7 +106,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitFunctionMember(FunctionMemberAst functionMemberAst)
         {
-            IScriptExtent nameExtent = GetNewExtent(functionMemberAst, GetMethodOverloadName(functionMemberAst));
+            (int startColumn, int startLine) = VisitorUtils.GetNameStartColumnAndLineFromAst(functionMemberAst);
+            IScriptExtent nameExtent = GetNewExtent(functionMemberAst, VisitorUtils.GetMemberOverloadName(functionMemberAst), startLine, startColumn);
 
             SymbolType symbolType =
                 functionMemberAst.IsConstructor ?
@@ -118,41 +122,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         }
 
         /// <summary>
-        /// Gets the method or constructor name with parameters for current overload.
-        /// </summary>
-        /// <param name="functionMemberAst">A FunctionMemberAst object in the script's AST</param>
-        /// <returns>Function member name with parameter types and names</returns>
-        private static string GetMethodOverloadName(FunctionMemberAst functionMemberAst)
-        {
-            if (functionMemberAst.Parameters.Count > 0)
-            {
-                List<string> parameters = new(functionMemberAst.Parameters.Count);
-                foreach (ParameterAst param in functionMemberAst.Parameters)
-                {
-                    parameters.Add(param.Extent.Text);
-                }
-
-                string paramString = string.Join(", ", parameters);
-                return string.Concat(functionMemberAst.Name, "(", paramString, ")");
-            }
-            else
-            {
-                return string.Concat(functionMemberAst.Name, "()");
-            }
-        }
-
-        /// <summary>
         /// Adds class property AST to symbol reference list
         /// </summary>
         /// <param name="propertyMemberAst">A PropertyMemberAst in the script's AST</param>
         /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitPropertyMember(PropertyMemberAst propertyMemberAst)
         {
-            IScriptExtent nameExtent = GetNewExtent(propertyMemberAst, propertyMemberAst.Name);
+            SymbolType symbolType =
+                propertyMemberAst.Parent is TypeDefinitionAst typeAst && typeAst.IsEnum ?
+                    SymbolType.EnumMember : SymbolType.Property;
+
+            bool isEnumMember = symbolType.Equals(SymbolType.EnumMember);
+            (int startColumn, int startLine) = VisitorUtils.GetNameStartColumnAndLineFromAst(propertyMemberAst, isEnumMember);
+            IScriptExtent nameExtent = GetNewExtent(propertyMemberAst, propertyMemberAst.Name, startLine, startColumn);
 
             SymbolReferences.Add(
                 new SymbolReference(
-                    SymbolType.Property,
+                    symbolType,
                     nameExtent));
 
             return AstVisitAction.Continue;
@@ -165,7 +151,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <returns>A visit action that continues the search for references</returns>
         public override AstVisitAction VisitConfigurationDefinition(ConfigurationDefinitionAst configurationDefinitionAst)
         {
-            IScriptExtent nameExtent = GetNewExtent(configurationDefinitionAst, configurationDefinitionAst.InstanceName.Extent.Text);
+            (int startColumn, int startLine) = VisitorUtils.GetNameStartColumnAndLineFromAst(configurationDefinitionAst);
+            IScriptExtent nameExtent = GetNewExtent(configurationDefinitionAst, configurationDefinitionAst.InstanceName.Extent.Text, startLine, startColumn);
 
             SymbolReferences.Add(
                 new SymbolReference(
@@ -178,14 +165,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <summary>
         /// Gets a new ScriptExtent for a given Ast with same range but modified Text
         /// </summary>
-        private static ScriptExtent GetNewExtent(Ast ast, string text)
+        private static ScriptExtent GetNewExtent(Ast ast, string text, int startLine, int startColumn)
         {
             return new ScriptExtent()
             {
                 Text = text,
-                StartLineNumber = ast.Extent.StartLineNumber,
+                StartLineNumber = startLine,
                 EndLineNumber = ast.Extent.EndLineNumber,
-                StartColumnNumber = ast.Extent.StartColumnNumber,
+                StartColumnNumber = startColumn,
                 EndColumnNumber = ast.Extent.EndColumnNumber,
                 File = ast.Extent.File
             };

@@ -95,17 +95,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                     return symbolDetails;
 
                 case SymbolType.Constructor:
-                    // TODO: constructor Class(parameters)
-                    symbolDetails.DisplayString = "constructor " + symbolReference.SymbolName;
-                    return symbolDetails;
-
                 case SymbolType.Method:
-                    // TODO: method ReturnType Class.MethodName(parameters)
-                    symbolDetails.DisplayString = "method " + symbolReference.SymbolName;
-                    return symbolDetails;
-
+                case SymbolType.EnumMember:
                 case SymbolType.Property:
-                    symbolDetails.DisplayString = "(property) " + symbolReference.SymbolName;
+                    symbolDetails.DisplayString = symbolReference.SymbolName;
                     return symbolDetails;
 
                 case SymbolType.Configuration:

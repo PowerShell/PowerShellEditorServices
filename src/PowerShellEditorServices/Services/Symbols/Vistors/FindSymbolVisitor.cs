@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Management.Automation.Language;
@@ -14,17 +14,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         private readonly int lineNumber;
         private readonly int columnNumber;
         private readonly bool includeDefinitions;
+        private readonly bool returnMemberSignature;
 
         public SymbolReference FoundSymbolReference { get; private set; }
 
         public FindSymbolVisitor(
             int lineNumber,
             int columnNumber,
-            bool includeDefinitions)
+            bool includeDefinitions,
+            bool returnMemberSignature)
         {
             this.lineNumber = lineNumber;
             this.columnNumber = columnNumber;
             this.includeDefinitions = includeDefinitions;
+            this.returnMemberSignature = returnMemberSignature;
         }
 
         /// <summary>
@@ -161,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         public override AstVisitAction VisitFunctionMember(FunctionMemberAst functionMemberAst)
         {
             // We only want the method/ctor name. Get start-location for name
-            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionMemberAst);
+            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionMemberAst, returnMemberSignature);
 
             if (IsPositionInExtent(nameExtent))
             {
@@ -265,8 +268,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// or a decision to continue if it wasn't found</returns>
         public override AstVisitAction VisitTypeConstraint(TypeConstraintAst typeConstraintAst)
         {
-            // Show only type name (skip leading '['). Offset by StartColumn to include indentation etc.
-            int startColumnNumber = typeConstraintAst.Extent.StartColumnNumber + 1;
+            // Show only type name (skip leading '[' if present). It's not present for inherited types
+            // Offset by StartColumn to include indentation etc.
+            int startColumnNumber =
+                typeConstraintAst.Extent.Text[0] == '[' ?
+                    typeConstraintAst.Extent.StartColumnNumber + 1 : typeConstraintAst.Extent.StartColumnNumber;
 
             IScriptExtent nameExtent = new ScriptExtent()
             {
@@ -322,13 +328,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         public override AstVisitAction VisitPropertyMember(PropertyMemberAst propertyMemberAst)
         {
             // We only want the property name. Get start-location for name
-            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst);
+            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst, returnMemberSignature);
 
             if (IsPositionInExtent(nameExtent))
             {
+                SymbolType symbolType =
+                    propertyMemberAst.Parent is TypeDefinitionAst typeAst && typeAst.IsEnum ?
+                        SymbolType.EnumMember : SymbolType.Property;
+
                 FoundSymbolReference =
                     new SymbolReference(
-                        SymbolType.Property,
+                        symbolType,
                         nameExtent);
 
                 return AstVisitAction.StopVisit;

@@ -54,6 +54,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         Enum,
 
         /// <summary>
+        /// The symbol is a enum member/value
+        /// </summary>
+        EnumMember,
+
+        /// <summary>
         /// The symbol is a class property
         /// </summary>
         Property,
