@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         private readonly int lineNumber;
         private readonly int columnNumber;
         private readonly bool includeDefinitions;
-        private readonly bool returnMemberSignature;
+        private readonly bool returnFullSignature;
 
         public SymbolReference FoundSymbolReference { get; private set; }
 
@@ -22,12 +22,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             int lineNumber,
             int columnNumber,
             bool includeDefinitions,
-            bool returnMemberSignature)
+            bool returnFullSignature)
         {
             this.lineNumber = lineNumber;
             this.columnNumber = columnNumber;
             this.includeDefinitions = includeDefinitions;
-            this.returnMemberSignature = returnMemberSignature;
+            this.returnFullSignature = returnFullSignature;
         }
 
         /// <summary>
@@ -164,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         public override AstVisitAction VisitFunctionMember(FunctionMemberAst functionMemberAst)
         {
             // We only want the method/ctor name. Get start-location for name
-            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionMemberAst, returnMemberSignature);
+            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionMemberAst, true, returnFullSignature);
 
             if (IsPositionInExtent(nameExtent))
             {
@@ -328,7 +328,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         public override AstVisitAction VisitPropertyMember(PropertyMemberAst propertyMemberAst)
         {
             // We only want the property name. Get start-location for name
-            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst, returnMemberSignature);
+            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst, returnFullSignature);
 
             if (IsPositionInExtent(nameExtent))
             {

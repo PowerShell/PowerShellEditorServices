@@ -235,10 +235,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                     SymbolType.Constructor : SymbolType.Method;
 
             if (_symbolRef.SymbolType.Equals(symbolType) &&
-                VisitorUtils.GetMemberOverloadName(functionMemberAst).Equals(_symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+                VisitorUtils.GetMemberOverloadName(functionMemberAst, true, false).Equals(_symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
                 // We only want the method/ctor name. Get start-location for name
-                IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionMemberAst);
+                IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionMemberAst, true, false);
                 FoundReferences.Add(new SymbolReference(symbolType, nameExtent));
             }
             return AstVisitAction.Continue;
@@ -258,10 +258,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                     SymbolType.EnumMember : SymbolType.Property;
 
             if (_symbolRef.SymbolType.Equals(symbolType) &&
-                VisitorUtils.GetMemberOverloadName(propertyMemberAst).Equals(_symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+                VisitorUtils.GetMemberOverloadName(propertyMemberAst, false).Equals(_symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
                 // We only want the property name. Get start-location for name
-                IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst);
+                IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst, false);
                 FoundReferences.Add(new SymbolReference(SymbolType.Property, nameExtent));
             }
             return AstVisitAction.Continue;

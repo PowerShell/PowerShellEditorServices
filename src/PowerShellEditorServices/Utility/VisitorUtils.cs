@@ -152,15 +152,16 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// Gets a new ScriptExtent for a given Ast for the symbol name only (variable)
         /// </summary>
         /// <param name="functionMemberAst">A FunctionMemberAst in the script's AST</param>
-        /// <param name="includeSignature">A bool indicating if return type and class should be included</param>
+        /// <param name="useQualifiedName">A bool indicating if class/enum name should be prepended</param>
+        /// <param name="includeReturnType">A bool indicating if return type should be included for methods</param>
         /// <returns>A ScriptExtent with for the symbol name only</returns>
-        internal static PSESSymbols.ScriptExtent GetNameExtent(FunctionMemberAst functionMemberAst, bool includeSignature = false)
+        internal static PSESSymbols.ScriptExtent GetNameExtent(FunctionMemberAst functionMemberAst, bool useQualifiedName = true, bool includeReturnType = false)
         {
             (int startColumn, int startLine) = GetNameStartColumnAndLineFromAst(functionMemberAst);
 
             return new PSESSymbols.ScriptExtent()
             {
-                Text = GetMemberOverloadName(functionMemberAst, includeSignature),
+                Text = GetMemberOverloadName(functionMemberAst, useQualifiedName, includeReturnType),
                 StartLineNumber = startLine,
                 EndLineNumber = startLine,
                 StartColumnNumber = startColumn,
@@ -173,9 +174,9 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// Gets a new ScriptExtent for a given Ast for the property name only
         /// </summary>
         /// <param name="propertyMemberAst">A PropertyMemberAst in the script's AST</param>
-        /// <param name="includeSignature">A bool indicating if property-type and name of class/enum should be included</param>
+        /// <param name="includePropertyType">A bool indicating if type should be included for class property</param>
         /// <returns>A ScriptExtent with for the symbol name only</returns>
-        internal static PSESSymbols.ScriptExtent GetNameExtent(PropertyMemberAst propertyMemberAst, bool includeSignature = false)
+        internal static PSESSymbols.ScriptExtent GetNameExtent(PropertyMemberAst propertyMemberAst, bool includePropertyType = false)
         {
             bool isEnumMember = propertyMemberAst.Parent is TypeDefinitionAst typeDef && typeDef.IsEnum;
             (int startColumn, int startLine) = GetNameStartColumnAndLineFromAst(propertyMemberAst, isEnumMember);
@@ -187,7 +188,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
             return new PSESSymbols.ScriptExtent()
             {
-                Text = GetMemberOverloadName(propertyMemberAst, includeSignature),
+                Text = GetMemberOverloadName(propertyMemberAst, includePropertyType),
                 StartLineNumber = startLine,
                 EndLineNumber = startLine,
                 StartColumnNumber = startColumn,
@@ -221,24 +222,24 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// Gets the method or constructor name with parameters for current overload.
         /// </summary>
         /// <param name="functionMemberAst">A FunctionMemberAst object in the script's AST</param>
-        /// <param name="includeSignature">A bool indicating if return type and class should be included</param>
+        /// <param name="useQualifiedName">A bool indicating if class/enum name should be prepended</param>
+        /// <param name="includeReturnType">A bool indicating if return type should be included for methods</param>
         /// <returns>Function member name with return type (optional) and parameters</returns>
-        internal static string GetMemberOverloadName(FunctionMemberAst functionMemberAst, bool includeSignature = false)
+        internal static string GetMemberOverloadName(FunctionMemberAst functionMemberAst,
+            bool useQualifiedName = true,
+            bool includeReturnType = false)
         {
             StringBuilder sb = new();
 
             // Prepend return type and class. Used for symbol details (hover)
-            if (includeSignature)
+            if (includeReturnType && !functionMemberAst.IsConstructor)
             {
-                if (!functionMemberAst.IsConstructor)
-                {
-                    sb.Append(functionMemberAst.ReturnType?.TypeName.Name ?? "void").Append(' ');
-                }
+                sb.Append(functionMemberAst.ReturnType?.TypeName.Name ?? "void").Append(' ');
+            }
 
-                if (functionMemberAst.Parent is TypeDefinitionAst typeAst && typeAst.IsClass)
-                {
-                    sb.Append(typeAst.Name).Append('.');
-                }
+            if (useQualifiedName && functionMemberAst.Parent is TypeDefinitionAst typeAst && typeAst.IsClass)
+            {
+                sb.Append(typeAst.Name).Append('.');
             }
 
             sb.Append(functionMemberAst.Name);
@@ -264,16 +265,17 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// Gets the property name with type and class/enum.
         /// </summary>
         /// <param name="propertyMemberAst">A PropertyMemberAst object in the script's AST</param>
-        /// <param name="includeSignature">A bool indicating if property-type and name of class/enum should be included</param>
+        /// <param name="includePropertyType">A bool indicating if type should be included for class property</param>
         /// <returns>Property name with type (optional) and class/enum</returns>
-        internal static string GetMemberOverloadName(PropertyMemberAst propertyMemberAst, bool includeSignature = false)
+        internal static string GetMemberOverloadName(PropertyMemberAst propertyMemberAst,
+            bool includePropertyType = false)
         {
             StringBuilder sb = new();
 
             // Prepend return type and class. Used for symbol details (hover)
-            if (includeSignature && propertyMemberAst.Parent is TypeDefinitionAst typeAst)
+            if (propertyMemberAst.Parent is TypeDefinitionAst typeAst)
             {
-                if (!typeAst.IsEnum)
+                if (includePropertyType && !typeAst.IsEnum)
                 {
                     sb.Append(propertyMemberAst.PropertyType?.TypeName.Name ?? "object").Append(' ');
                 }

@@ -110,10 +110,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                     SymbolType.Constructor : SymbolType.Method;
 
             if (symbolRef.SymbolType.Equals(symbolType) &&
-                VisitorUtils.GetMemberOverloadName(functionMemberAst).Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+                VisitorUtils.GetMemberOverloadName(functionMemberAst, true, false).Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
                 // We only want the method/ctor name. Get start-location for name
-                IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionMemberAst);
+                IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionMemberAst, true, false);
 
                 FoundDeclaration =
                     new SymbolReference(
@@ -141,10 +141,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                     SymbolType.EnumMember : SymbolType.Property;
 
             if (symbolRef.SymbolType.Equals(symbolType) &&
-                VisitorUtils.GetMemberOverloadName(propertyMemberAst).Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
+                VisitorUtils.GetMemberOverloadName(propertyMemberAst, false).Equals(symbolRef.SymbolName, StringComparison.CurrentCultureIgnoreCase))
             {
                 // We only want the property name. Get start-location for name
-                IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst);
+                IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst, false);
 
                 FoundDeclaration =
                     new SymbolReference(

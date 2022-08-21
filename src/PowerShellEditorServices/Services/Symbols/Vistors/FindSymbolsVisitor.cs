@@ -107,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         public override AstVisitAction VisitFunctionMember(FunctionMemberAst functionMemberAst)
         {
             (int startColumn, int startLine) = VisitorUtils.GetNameStartColumnAndLineFromAst(functionMemberAst);
-            IScriptExtent nameExtent = GetNewExtent(functionMemberAst, VisitorUtils.GetMemberOverloadName(functionMemberAst), startLine, startColumn);
+            IScriptExtent nameExtent = GetNewExtent(functionMemberAst, VisitorUtils.GetMemberOverloadName(functionMemberAst, false, false), startLine, startColumn);
 
             SymbolType symbolType =
                 functionMemberAst.IsConstructor ?
