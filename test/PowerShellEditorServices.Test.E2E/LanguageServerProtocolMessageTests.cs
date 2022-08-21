@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -442,7 +442,7 @@ CanSendDocumentSymbolRequest
                     Range range = symInfoOrDocSym.SymbolInformation.Location.Range;
 
                     Assert.Equal(1, range.Start.Line);
-                    Assert.Equal(0, range.Start.Character);
+                    Assert.Equal(9, range.Start.Character);
                     Assert.Equal(3, range.End.Line);
                     Assert.Equal(1, range.End.Character);
                 });
@@ -867,7 +867,7 @@ CanSendReferencesCodeLensRequest
 
             Range range = codeLens.Range;
             Assert.Equal(1, range.Start.Line);
-            Assert.Equal(0, range.Start.Character);
+            Assert.Equal(9, range.Start.Character);
             Assert.Equal(3, range.End.Line);
             Assert.Equal(1, range.End.Character);
 
