@@ -333,7 +333,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     scriptFile.ScriptAst,
                     lineNumber,
                     columnNumber,
-                    returnMemberSignature: true);
+                    returnFullSignature: true);
 
             if (symbolReference == null)
             {

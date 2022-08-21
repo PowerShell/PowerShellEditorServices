@@ -148,21 +148,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <param name="lineNumber">The line number of the cursor for the given script</param>
         /// <param name="columnNumber">The column number of the cursor for the given script</param>
         /// <param name="includeDefinitions">Includes full symbol definition ranges in the search.</param>
-        /// <param name="returnMemberSignature">Includes return type and class in symbol name.</param>
+        /// <param name="returnFullSignature">Includes return or property type in symbol name.</param>
         /// <returns>SymbolReference of found symbol</returns>
         public static SymbolReference FindSymbolAtPosition(
             Ast scriptAst,
             int lineNumber,
             int columnNumber,
             bool includeDefinitions = false,
-            bool returnMemberSignature = false)
+            bool returnFullSignature = false)
         {
             FindSymbolVisitor symbolVisitor =
                 new(
                     lineNumber,
                     columnNumber,
                     includeDefinitions,
-                    returnMemberSignature);
+                    returnFullSignature);
 
             scriptAst.Visit(symbolVisitor);
 
