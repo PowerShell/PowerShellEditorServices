@@ -290,15 +290,16 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Equal(3, symbolsResult.Count(symbolReference => symbolReference.SymbolType == SymbolType.Variable));
             Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Workflow));
             Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Class));
-            Assert.Equal(2, symbolsResult.Count(symbolReference => symbolReference.SymbolType == SymbolType.Property));
+            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Property));
             Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Constructor));
             Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Method));
             Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Enum));
+            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.EnumMember));
 
             SymbolReference firstFunctionSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Function);
             Assert.Equal("AFunction", firstFunctionSymbol.SymbolName);
             Assert.Equal(7, firstFunctionSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, firstFunctionSymbol.ScriptRegion.StartColumnNumber);
+            Assert.Equal(10, firstFunctionSymbol.ScriptRegion.StartColumnNumber);
 
             SymbolReference lastVariableSymbol = symbolsResult.Last(r => r.SymbolType == SymbolType.Variable);
             Assert.Equal("$Script:ScriptVar2", lastVariableSymbol.SymbolName);
@@ -308,17 +309,17 @@ namespace PowerShellEditorServices.Test.Language
             SymbolReference firstWorkflowSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Workflow);
             Assert.Equal("AWorkflow", firstWorkflowSymbol.SymbolName);
             Assert.Equal(23, firstWorkflowSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, firstWorkflowSymbol.ScriptRegion.StartColumnNumber);
+            Assert.Equal(10, firstWorkflowSymbol.ScriptRegion.StartColumnNumber);
 
             SymbolReference firstClassSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Class);
             Assert.Equal("AClass", firstClassSymbol.SymbolName);
             Assert.Equal(25, firstClassSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, firstClassSymbol.ScriptRegion.StartColumnNumber);
+            Assert.Equal(7, firstClassSymbol.ScriptRegion.StartColumnNumber);
 
             SymbolReference firstPropertySymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Property);
             Assert.Equal("AProperty", firstPropertySymbol.SymbolName);
             Assert.Equal(26, firstPropertySymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(5, firstPropertySymbol.ScriptRegion.StartColumnNumber);
+            Assert.Equal(13, firstPropertySymbol.ScriptRegion.StartColumnNumber);
 
             SymbolReference firstConstructorSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Constructor);
             Assert.Equal("AClass([string]$AParameter)", firstConstructorSymbol.SymbolName);
@@ -328,12 +329,17 @@ namespace PowerShellEditorServices.Test.Language
             SymbolReference firstMethodSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Method);
             Assert.Equal("AMethod([string]$param1, [int]$param2, $param3)", firstMethodSymbol.SymbolName);
             Assert.Equal(32, firstMethodSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(5, firstMethodSymbol.ScriptRegion.StartColumnNumber);
+            Assert.Equal(11, firstMethodSymbol.ScriptRegion.StartColumnNumber);
 
             SymbolReference firstEnumSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Enum);
             Assert.Equal("AEnum", firstEnumSymbol.SymbolName);
             Assert.Equal(37, firstEnumSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, firstEnumSymbol.ScriptRegion.StartColumnNumber);
+            Assert.Equal(6, firstEnumSymbol.ScriptRegion.StartColumnNumber);
+
+            SymbolReference firstEnumMemberSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.EnumMember);
+            Assert.Equal("AValue", firstEnumMemberSymbol.SymbolName);
+            Assert.Equal(38, firstEnumMemberSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(5, firstEnumMemberSymbol.ScriptRegion.StartColumnNumber);
         }
 
         [SkippableFact]
