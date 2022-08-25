@@ -673,7 +673,7 @@ namespace PowerShellEditorServices.Test.Language
             SymbolReference firstConfigurationSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Configuration);
             Assert.Equal("AConfiguration", firstConfigurationSymbol.SymbolName);
             Assert.Equal(2, firstConfigurationSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, firstConfigurationSymbol.ScriptRegion.StartColumnNumber);
+            Assert.Equal(15, firstConfigurationSymbol.ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
