@@ -235,7 +235,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="file">The file to clear markers in.</param>
         /// <returns>A task that ends when all markers in the file have been cleared.</returns>
-        public void ClearMarkers(ScriptFile file) => PublishScriptDiagnostics(file, Array.Empty<ScriptFileMarker>());
+        public void ClearMarkers(ScriptFile file) => PublishScriptDiagnostics(file, new List<ScriptFileMarker>());
 
         /// <summary>
         /// Event subscription method to be run when PSES configuration has been updated.
@@ -384,8 +384,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void PublishScriptDiagnostics(ScriptFile scriptFile) => PublishScriptDiagnostics(scriptFile, scriptFile.DiagnosticMarkers);
 
-        private void PublishScriptDiagnostics(ScriptFile scriptFile, IReadOnlyList<ScriptFileMarker> markers)
+        private void PublishScriptDiagnostics(ScriptFile scriptFile, List<ScriptFileMarker> markers)
         {
+            // NOTE: Sometimes we have null markers for reasons we don't yet know, but we need to
+            // remove them.
+            _ = markers.RemoveAll(m => m is null);
             Diagnostic[] diagnostics = new Diagnostic[markers.Count];
 
             CorrectionTableEntry fileCorrections = _mostRecentCorrectionsByFile.GetOrAdd(
