@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         public CodeFoldingSettings CodeFolding { get; set; }
         public PesterSettings Pester { get; set; }
         public string Cwd { get; set; }
-        public bool EnableReferencesCodeLens { get; set; }
+        public bool EnableReferencesCodeLens { get; set; } = true;
 
         public LanguageServerSettings()
         {
