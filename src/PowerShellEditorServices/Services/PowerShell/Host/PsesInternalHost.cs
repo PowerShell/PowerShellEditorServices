@@ -59,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private readonly CancellationContext _cancellationContext;
 
-        private readonly ReadLineProvider _readLineProvider;
+        internal readonly ReadLineProvider _readLineProvider;
 
         private readonly Thread _pipelineThread;
 
