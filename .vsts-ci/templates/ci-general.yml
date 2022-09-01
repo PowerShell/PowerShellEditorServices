@@ -26,9 +26,16 @@ steps:
     performMultiLevelLookup: true
 
 - task: PowerShell@2
-  displayName: Build and test
+  displayName: Build
   inputs:
     filePath: tools/azurePipelinesBuild.ps1
+    pwsh: ${{ parameters.pwsh }}
+
+- task: PowerShell@2
+  displayName: Test
+  inputs:
+    targetType: inline
+    script: Invoke-Build Test
     pwsh: ${{ parameters.pwsh }}
 
 - task: PublishTestResults@2
