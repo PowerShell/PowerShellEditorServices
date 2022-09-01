@@ -15,7 +15,7 @@ The functionality in PowerShell Editor Services is already available in the foll
 - [The VSCode PowerShell extension](https://github.com/PowerShell/vscode-powershell), also available in Azure Data Studio
 - [coc-powershell](https://github.com/yatli/coc-powershell), a vim/neovim PowerShell plugin
 - [The IntelliJ PowerShell plugin](https://github.com/ant-druha/intellij-powershell)
-- [lsp-powershell](https://github.com/kiennq/lsp-powershell), an Emacs PowerShell plugin
+- [lsp-pwsh](https://github.com/emacs-lsp/lsp-mode/blob/master/clients/lsp-pwsh.el), an Emacs PowerShell plugin
 
 ## Features
 
