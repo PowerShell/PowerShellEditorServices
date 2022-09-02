@@ -20,4 +20,4 @@ Update-Help -Force -ErrorAction SilentlyContinue
 Install-Module -Name InvokeBuild -RequiredVersion 5.9.7 -Scope CurrentUser -Force
 Install-Module -Name platyPS -RequiredVersion 0.14.2 -Scope CurrentUser -Force
 
-Invoke-Build -Configuration Release
+Invoke-Build -Configuration Release Build
