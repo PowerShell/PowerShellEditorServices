@@ -161,15 +161,16 @@ Task SetupHelpForTests {
 }
 
 Task Build FindDotNet, CreateBuildInfo, {
+    # NOTE: We use /p:UseSharedCompilation=false to work around a bug with CodeQL.
     Exec { & dotnet restore $VerbosityArgs }
-    Exec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetRuntime.Standard }
-    Exec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.PS7 }
+    Exec { & dotnet publish /p:UseSharedCompilation=false $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetRuntime.Standard }
+    Exec { & dotnet publish /p:UseSharedCompilation=false $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.PS7 }
     if (-not $script:IsNix) {
-        Exec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Desktop }
+        Exec { & dotnet publish /p:UseSharedCompilation=false $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Desktop }
     }
 
     # Build PowerShellEditorServices.VSCode module
-    Exec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj -f $script:NetRuntime.Standard }
+    Exec { & dotnet publish /p:UseSharedCompilation=false $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj -f $script:NetRuntime.Standard }
 }
 
 Task Test TestServer, TestE2E
