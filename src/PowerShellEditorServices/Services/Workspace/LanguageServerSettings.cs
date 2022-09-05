@@ -189,6 +189,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
 
         public bool AddWhitespaceAroundPipe { get; set; }
         public bool AutoCorrectAliases { get; set; }
+        public bool AvoidSemicolonsAsLineTerminators { get; set; }
         public bool UseConstantStrings { get; set; }
         public CodeFormattingPreset Preset { get; set; }
         public bool OpenBraceOnSameLine { get; set; }
@@ -309,6 +310,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     new Hashtable {
                     { "Enable", UseConstantStrings }
                 }
+                },
+                {
+                    "PSAvoidSemicolonsAsLineTerminators",
+                    new Hashtable {
+                    { "Enable", AvoidSemicolonsAsLineTerminators }
+                    }
                 },
             };
 
