@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -119,6 +119,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             private set;
         }
 
+        internal ReferenceTable References { get; }
+
         #endregion
 
         #region Constructors
@@ -149,6 +151,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
             // SetFileContents() calls ParseFileContents() which initializes the rest of the properties.
             SetFileContents(textReader.ReadToEnd());
+            References = new ReferenceTable(this);
         }
 
         /// <summary>
@@ -383,6 +386,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
             // Parse the script again to be up-to-date
             ParseFileContents();
+            References.TagAsChanged();
         }
 
         /// <summary>

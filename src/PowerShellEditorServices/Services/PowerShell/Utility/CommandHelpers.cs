@@ -1,6 +1,7 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Management.Automation;
@@ -56,6 +57,39 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         private static readonly ConcurrentDictionary<string, string> s_synopsisCache = new();
         internal static readonly ConcurrentDictionary<string, List<string>> s_cmdletToAliasCache = new(System.StringComparer.OrdinalIgnoreCase);
         internal static readonly ConcurrentDictionary<string, string> s_aliasToCmdletCache = new(System.StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Gets the actual command behind a fully module qualified command invocation, e.g.
+        /// <c>Microsoft.PowerShell.Management\Get-ChildItem</c> will return <c>Get-ChilddItem</c>
+        /// </summary>
+        /// <param name="invocationName">
+        /// The potentially module qualified command name at the site of invocation.
+        /// </param>
+        /// <param name="moduleName">
+        /// A reference that will contain the module name if the invocation is module qualified.
+        /// </param>
+        /// <returns>The actual command name.</returns>
+        public static string StripModuleQualification(string invocationName, out ReadOnlyMemory<char> moduleName)
+        {
+            int slashIndex = invocationName.IndexOf('\\');
+            if (slashIndex is -1)
+            {
+                moduleName = default;
+                return invocationName;
+            }
+
+            // If '\' is the last character then it's probably not a module qualified command.
+            if (slashIndex == invocationName.Length - 1)
+            {
+                moduleName = default;
+                return invocationName;
+            }
+
+            // Storing moduleName as ROMemory safes a string allocation in the common case where it
+            // is not needed.
+            moduleName = invocationName.AsMemory().Slice(0, slashIndex);
+            return invocationName.Substring(slashIndex + 1);
+        }
 
         /// <summary>
         /// Gets the CommandInfo instance for a command with a particular name.
