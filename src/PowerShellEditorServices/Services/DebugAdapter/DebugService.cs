@@ -9,6 +9,7 @@ using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Management.Automation.Runspaces;
 using System.Reflection;
+using System.Security.AccessControl;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -457,6 +458,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     null,
                     (pwsh, _) =>
                     {
+                        // TODO: We want to replace the Get-Variable PSCommands with reflection to use the APIs in PowerShell, kind of like this:
+                        // $ec = $host.GetType().GetMember("Context","NonPublic,Instance").GetMethod.Invoke($host, $null)
+                        // $iso = $ec.gettype().GetMember("TopLevelSessionState", "Instance,NonPublic")[0].GetMethod.Invoke($ec, $null)
+                        // ($iso.gettype().GetMembers("NonPublic,Instance") |?{$_.name - eq "GetVariable"})[1].Invoke($iso, @("PWD")).Value
+                        // Then we can use like this API:
+                        // https://cs.github.com/PowerShell/PowerShell/blob/397bd87cb30382c56ecdd1a715f05ed2855ca29e/src/System.Management.Automation/engine/SessionStateVariableAPIs.cs#L616
                         Runspace rs = RunspaceFactory.CreateRunspace(pwsh.Runspace.InitialSessionState);
 
                         try

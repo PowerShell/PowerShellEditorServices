@@ -536,6 +536,51 @@ namespace PowerShellEditorServices.Test.Debugging
             Assert.Equal("\"True > \"", prompt.ValueString);
         }
 
+        [Fact]
+        public async Task DebugCommandsExcludedFromHistory()
+        {
+            ScriptFile testScript = GetDebugScript("HistoryTest.ps1");
+            EvaluateHandler evaluateHandler = new(psesHost);
+
+            string transcriptFile = Path.GetTempFileName();
+            await debugService.EvaluateExpressionAsync($"Start-Transcript -UseMinimalHeader -LiteralPath {transcriptFile}", true).ConfigureAwait(true);
+
+            BreakpointDetails[] breakpoints = await debugService.SetLineBreakpointsAsync(
+                testScript,
+                new[]
+                {
+                    BreakpointDetails.Create(testScript.FilePath, 1),
+                    BreakpointDetails.Create(testScript.FilePath, 4)
+                }).ConfigureAwait(true);
+
+            Assert.Collection(
+                breakpoints,
+                (i) => { Assert.Equal(1, i.LineNumber); Assert.True(i.Verified); },
+                (i) => { Assert.Equal(4, i.LineNumber); Assert.True(i.Verified); });
+
+            Task _ = ExecutePowerShellCommand(testScript.FilePath);
+            AssertDebuggerStopped(testScript.FilePath, 1);
+            debugService.Continue();
+            AssertDebuggerStopped(testScript.FilePath, 4);
+            debugService.Continue();
+            Thread.Sleep(1000);
+
+            // await evaluateHandler.Handle(
+            //     new EvaluateRequestArguments { Expression = "c", Context = "repl" },
+            //     CancellationToken.None).ConfigureAwait(true);
+            //AssertDebuggerStopped(testScript.FilePath, 4);
+
+            // await evaluateHandler.Handle(
+            //     new EvaluateRequestArguments { Expression = "q", Context = "repl" },
+            //     CancellationToken.None).ConfigureAwait(true);
+
+            //debugService.Continue();
+
+            await debugService.EvaluateExpressionAsync("Stop-Transcript", true).ConfigureAwait(true);
+            string[] transcript = File.ReadAllLines(transcriptFile);
+            Assert.NotEmpty(transcript);
+        }
+
         [SkippableFact]
         public async Task DebuggerBreaksInUntitledScript()
         {
