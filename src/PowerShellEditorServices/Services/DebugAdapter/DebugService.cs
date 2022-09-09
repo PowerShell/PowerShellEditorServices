@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
+using System.Management.Automation.Runspaces;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -451,22 +452,28 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // PSVariable *is* strongly typed, so we have to convert it.
                 _logger.LogTrace($"Setting variable '{name}' using conversion to value: {expressionResult ?? "<null>"}");
 
-                // NOTE: We use 'Get-Variable' here instead of 'SessionStateProxy.GetVariable()'
-                // because we already have a pipeline running (the debugger) and the latter cannot
-                // run concurrently (threw 'NoSessionStateProxyWhenPipelineInProgress').
-                IReadOnlyList<EngineIntrinsics> results = await _executionService.ExecutePSCommandAsync<EngineIntrinsics>(
-                    new PSCommand()
-                        .AddCommand(@"Microsoft.PowerShell.Utility\Get-Variable")
-                        .AddParameter("Name", "ExecutionContext")
-                        .AddParameter("ValueOnly"),
-                    CancellationToken.None).ConfigureAwait(false);
-                EngineIntrinsics engineIntrinsics = results.Count > 0
-                    ? results[0]
-                    : throw new Exception("Couldn't get EngineIntrinsics!");
+                psVariable.Value = await _executionService.ExecuteDelegateAsync(
+                    "PS debugger argument converter",
+                    null,
+                    (pwsh, _) =>
+                    {
+                        Runspace rs = RunspaceFactory.CreateRunspace(pwsh.Runspace.InitialSessionState);
 
-                // TODO: This is almost (but not quite) the same as 'LanguagePrimitives.Convert()',
-                // which does not require the pipeline thread. We should investigate changing it.
-                psVariable.Value = argTypeConverterAttr.Transform(engineIntrinsics, expressionResult);
+                        try
+                        {
+                            rs.Open();
+                            EngineIntrinsics engineIntrinsics = rs.SessionStateProxy.GetVariable("ExecutionContext") as EngineIntrinsics;
+
+                            // TODO: This is almost (but not quite) the same as LanguagePrimitives.Convert(), which does not require the pipeline thread.
+                            //       We should investigate changing it.
+                            return argTypeConverterAttr.Transform(engineIntrinsics, expressionResult);
+                        }
+                        finally
+                        {
+                            rs.Dispose();
+                        }
+                    },
+                    CancellationToken.None).ConfigureAwait(false);
             }
             else
             {
