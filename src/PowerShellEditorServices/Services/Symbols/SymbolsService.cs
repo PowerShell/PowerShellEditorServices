@@ -41,6 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly ConcurrentDictionary<string, ICodeLensProvider> _codeLensProviders;
         private readonly ConcurrentDictionary<string, IDocumentSymbolProvider> _documentSymbolProviders;
+        private readonly ConfigurationService _configurationService;
         #endregion
 
         #region Constructors
@@ -65,6 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _runspaceContext = runspaceContext;
             _executionService = executionService;
             _workspaceService = workspaceService;
+            _configurationService = configurationService;
 
             _codeLensProviders = new ConcurrentDictionary<string, ICodeLensProvider>();
             if (configurationService.CurrentSettings.EnableReferencesCodeLens)
@@ -212,14 +214,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 }
 
                 if (!aliases.CmdletToAliases.TryGetValue(symbolName, out List<string> foundAliasList))
-                    {
+                {
                     return new[] { symbolName };
-                    }
+                }
 
                 return foundAliasList.Prepend(symbolName)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToArray();
-                }
+            }
 
             string[] allIdentifiers = GetIdentifiers(targetName, foundSymbol.SymbolType, aliases);
 
@@ -230,31 +232,31 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     if (!file.References.TryGetReferences(targetIdentifier, out ConcurrentBag<IScriptExtent> references))
                     {
                         continue;
-            }
+                    }
 
                     foreach (IScriptExtent extent in references)
-            {
+                    {
                         SymbolReference reference = new(
                             SymbolType.Function,
                             foundSymbol.SymbolName,
                             extent);
 
-                    try
-                    {
-                        reference.SourceLine = file.GetLine(reference.ScriptRegion.StartLineNumber);
+                        try
+                        {
+                            reference.SourceLine = file.GetLine(reference.ScriptRegion.StartLineNumber);
+                        }
+                        catch (ArgumentOutOfRangeException e)
+                        {
+                            reference.SourceLine = string.Empty;
+                            _logger.LogException("Found reference is out of range in script file", e);
+                        }
+                        reference.FilePath = file.FilePath;
+                        symbolReferences.Add(reference);
                     }
-                    catch (ArgumentOutOfRangeException e)
-                    {
-                        reference.SourceLine = string.Empty;
-                        _logger.LogException("Found reference is out of range in script file", e);
-                    }
-                    reference.FilePath = file.FilePath;
-                    symbolReferences.Add(reference);
-                }
 
-                await Task.Yield();
-                cancellationToken.ThrowIfCancellationRequested();
-            }
+                    await Task.Yield();
+                    cancellationToken.ThrowIfCancellationRequested();
+                }
             }
 
             return symbolReferences;
@@ -517,6 +519,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private async Task ScanWorkspacePSFiles(CancellationToken cancellationToken = default)
         {
+            if (_configurationService.CurrentSettings.AnalyzeOpenDocumentsOnly)
+            {
+                return;
+            }
+
             Task scanTask = _workspaceScanCompleted;
             // It's not impossible for two scans to start at once but it should be exceedingly
             // unlikely, and shouldn't break anything if it happens to. So we can save some
@@ -739,6 +746,35 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal void OnConfigurationUpdated(object _, LanguageServerSettings e)
         {
+            if (e.AnalyzeOpenDocumentsOnly)
+            {
+                Task scanInProgress = _workspaceScanCompleted;
+                if (scanInProgress is not null)
+                {
+                    // Wait until after the scan completes to close unopened files.
+                    _ = scanInProgress.ContinueWith(_ => CloseUnopenedFiles(), TaskScheduler.Default);
+                }
+                else
+                {
+                    CloseUnopenedFiles();
+                }
+
+                _workspaceScanCompleted = null;
+
+                void CloseUnopenedFiles()
+                {
+                    foreach (ScriptFile scriptFile in _workspaceService.GetOpenedFiles())
+                    {
+                        if (scriptFile.IsOpen)
+                        {
+                            continue;
+                        }
+
+                        _workspaceService.CloseFile(scriptFile);
+                    }
+                }
+            }
+
             if (e.EnableReferencesCodeLens)
             {
                 if (_codeLensProviders.ContainsKey(ReferencesCodeLensProvider.Id))

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -120,6 +120,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         }
 
         internal ReferenceTable References { get; }
+
+        internal bool IsOpen { get; set; }
 
         #endregion
 
@@ -523,7 +525,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
         #region Private Methods
 
-        private void SetFileContents(string fileContents)
+        internal void SetFileContents(string fileContents)
         {
             // Split the file contents into lines and trim
             // any carriage returns from the strings.
