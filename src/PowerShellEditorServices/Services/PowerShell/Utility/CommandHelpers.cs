@@ -85,7 +85,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 return invocationName;
             }
 
-            // Storing moduleName as ROMemory safes a string allocation in the common case where it
+            // Storing moduleName as ROMemory saves a string allocation in the common case where it
             // is not needed.
             moduleName = invocationName.AsMemory().Slice(0, slashIndex);
             return invocationName.Substring(slashIndex + 1);
