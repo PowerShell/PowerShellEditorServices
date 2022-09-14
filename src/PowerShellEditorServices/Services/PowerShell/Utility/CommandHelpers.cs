@@ -60,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
         /// <summary>
         /// Gets the actual command behind a fully module qualified command invocation, e.g.
-        /// <c>Microsoft.PowerShell.Management\Get-ChildItem</c> will return <c>Get-ChilddItem</c>
+        /// <c>Microsoft.PowerShell.Management\Get-ChildItem</c> will return <c>Get-ChildItem</c>
         /// </summary>
         /// <param name="invocationName">
         /// The potentially module qualified command name at the site of invocation.
