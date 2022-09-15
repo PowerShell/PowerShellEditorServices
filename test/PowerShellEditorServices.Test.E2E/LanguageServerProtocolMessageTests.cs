@@ -478,17 +478,9 @@ CanSendReferencesRequest
                 .Returning<LocationContainer>(CancellationToken.None).ConfigureAwait(true);
 
             Assert.Collection(locations,
-                location1 =>
+                location =>
                 {
-                    Range range = location1.Range;
-                    Assert.Equal(1, range.Start.Line);
-                    Assert.Equal(9, range.Start.Character);
-                    Assert.Equal(1, range.End.Line);
-                    Assert.Equal(33, range.End.Character);
-                },
-                location2 =>
-                {
-                    Range range = location2.Range;
+                    Range range = location.Range;
                     Assert.Equal(5, range.Start.Line);
                     Assert.Equal(0, range.Start.Character);
                     Assert.Equal(5, range.End.Line);

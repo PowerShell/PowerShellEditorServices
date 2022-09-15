@@ -41,6 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly ConcurrentDictionary<string, ICodeLensProvider> _codeLensProviders;
         private readonly ConcurrentDictionary<string, IDocumentSymbolProvider> _documentSymbolProviders;
+        private readonly ConfigurationService _configurationService;
         #endregion
 
         #region Constructors
@@ -65,6 +66,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _runspaceContext = runspaceContext;
             _executionService = executionService;
             _workspaceService = workspaceService;
+            _configurationService = configurationService;
 
             _codeLensProviders = new ConcurrentDictionary<string, ICodeLensProvider>();
             if (configurationService.CurrentSettings.EnableReferencesCodeLens)
@@ -177,8 +179,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 _executionService,
                 cancellationToken).ConfigureAwait(false);
 
-            Dictionary<string, List<string>> cmdletToAliases = aliases.CmdletToAliases;
-            Dictionary<string, string> aliasToCmdlets = aliases.AliasToCmdlets;
+            string targetName = foundSymbol.SymbolName;
+            if (foundSymbol.SymbolType is SymbolType.Function)
+            {
+                targetName = CommandHelpers.StripModuleQualification(targetName, out _);
+                if (aliases.AliasToCmdlets.TryGetValue(foundSymbol.SymbolName, out string aliasDefinition))
+                {
+                    targetName = aliasDefinition;
+                }
+            }
 
             // We want to look for references first in referenced files, hence we use ordered dictionary
             // TODO: File system case-sensitivity is based on filesystem not OS, but OS is a much cheaper heuristic
@@ -191,52 +200,63 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 fileMap[scriptFile.FilePath] = scriptFile;
             }
 
-            foreach (string filePath in workspace.EnumeratePSFiles())
+            await ScanWorkspacePSFiles(cancellationToken).ConfigureAwait(false);
+
+            List<SymbolReference> symbolReferences = new();
+
+            // Using a nested method here to get a bit more readability and to avoid roslynator
+            // asserting we should use a giant nested ternary here.
+            static string[] GetIdentifiers(string symbolName, SymbolType symbolType, CommandHelpers.AliasMap aliases)
             {
-                if (!fileMap.Contains(filePath))
+                if (symbolType is not SymbolType.Function)
                 {
-                    // This async method is pretty dense with synchronous code
-                    // so it's helpful to add some yields.
-                    await Task.Yield();
-                    cancellationToken.ThrowIfCancellationRequested();
-                    if (!workspace.TryGetFile(filePath, out ScriptFile scriptFile))
+                    return new[] { symbolName };
+                }
+
+                if (!aliases.CmdletToAliases.TryGetValue(symbolName, out List<string> foundAliasList))
+                {
+                    return new[] { symbolName };
+                }
+
+                return foundAliasList.Prepend(symbolName)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+            }
+
+            string[] allIdentifiers = GetIdentifiers(targetName, foundSymbol.SymbolType, aliases);
+
+            foreach (ScriptFile file in _workspaceService.GetOpenedFiles())
+            {
+                foreach (string targetIdentifier in allIdentifiers)
+                {
+                    if (!file.References.TryGetReferences(targetIdentifier, out ConcurrentBag<IScriptExtent> references))
                     {
-                        // If we can't access the file for some reason, just ignore it
                         continue;
                     }
 
-                    fileMap[filePath] = scriptFile;
-                }
-            }
-
-            List<SymbolReference> symbolReferences = new();
-            foreach (object fileName in fileMap.Keys)
-            {
-                ScriptFile file = (ScriptFile)fileMap[fileName];
-
-                IEnumerable<SymbolReference> references = AstOperations.FindReferencesOfSymbol(
-                    file.ScriptAst,
-                    foundSymbol,
-                    cmdletToAliases,
-                    aliasToCmdlets);
-
-                foreach (SymbolReference reference in references)
-                {
-                    try
+                    foreach (IScriptExtent extent in references.OrderBy(e => e.StartOffset))
                     {
-                        reference.SourceLine = file.GetLine(reference.ScriptRegion.StartLineNumber);
-                    }
-                    catch (ArgumentOutOfRangeException e)
-                    {
-                        reference.SourceLine = string.Empty;
-                        _logger.LogException("Found reference is out of range in script file", e);
-                    }
-                    reference.FilePath = file.FilePath;
-                    symbolReferences.Add(reference);
-                }
+                        SymbolReference reference = new(
+                            SymbolType.Function,
+                            foundSymbol.SymbolName,
+                            extent);
 
-                await Task.Yield();
-                cancellationToken.ThrowIfCancellationRequested();
+                        try
+                        {
+                            reference.SourceLine = file.GetLine(reference.ScriptRegion.StartLineNumber);
+                        }
+                        catch (ArgumentOutOfRangeException e)
+                        {
+                            reference.SourceLine = string.Empty;
+                            _logger.LogException("Found reference is out of range in script file", e);
+                        }
+                        reference.FilePath = file.FilePath;
+                        symbolReferences.Add(reference);
+                    }
+
+                    await Task.Yield();
+                    cancellationToken.ThrowIfCancellationRequested();
+                }
             }
 
             return symbolReferences;
@@ -495,6 +515,59 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return foundDefinition;
         }
 
+        private Task _workspaceScanCompleted;
+
+        private async Task ScanWorkspacePSFiles(CancellationToken cancellationToken = default)
+        {
+            if (_configurationService.CurrentSettings.AnalyzeOpenDocumentsOnly)
+            {
+                return;
+            }
+
+            Task scanTask = _workspaceScanCompleted;
+            // It's not impossible for two scans to start at once but it should be exceedingly
+            // unlikely, and shouldn't break anything if it happens to. So we can save some
+            // lock time by accepting that possibility.
+            if (scanTask is null)
+            {
+                scanTask = Task.Run(
+                    () =>
+                    {
+                        foreach (string file in _workspaceService.EnumeratePSFiles())
+                        {
+                            if (_workspaceService.TryGetFile(file, out ScriptFile scriptFile))
+                            {
+                                scriptFile.References.EnsureInitialized();
+                            }
+                        }
+                    },
+                    CancellationToken.None);
+
+                // Ignore the analyzer yelling that we're not awaiting this task, we'll get there.
+#pragma warning disable CS4014
+                Interlocked.CompareExchange(ref _workspaceScanCompleted, scanTask, null);
+#pragma warning restore CS4014
+            }
+
+            // In the simple case where the task is already completed or the token we're given cannot
+            // be cancelled, do a simple await.
+            if (scanTask.IsCompleted || !cancellationToken.CanBeCanceled)
+            {
+                await scanTask.ConfigureAwait(false);
+                return;
+            }
+
+            // If it's not yet done and we can be cancelled, create a new task to represent the
+            // cancellation. That way we can exit a request that relies on the scan without
+            // having to actually stop the work (and then request it again in a few seconds).
+            //
+            // TODO: There's a new API in net6 that lets you await a task with a cancellation token.
+            //       we should #if that in if feasible.
+            TaskCompletionSource<bool> cancelled = new();
+            cancellationToken.Register(() => cancelled.TrySetCanceled());
+            await Task.WhenAny(scanTask, cancelled.Task).ConfigureAwait(false);
+        }
+
         /// <summary>
         /// Gets a path from a dot-source symbol.
         /// </summary>
@@ -673,6 +746,35 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal void OnConfigurationUpdated(object _, LanguageServerSettings e)
         {
+            if (e.AnalyzeOpenDocumentsOnly)
+            {
+                Task scanInProgress = _workspaceScanCompleted;
+                if (scanInProgress is not null)
+                {
+                    // Wait until after the scan completes to close unopened files.
+                    _ = scanInProgress.ContinueWith(_ => CloseUnopenedFiles(), TaskScheduler.Default);
+                }
+                else
+                {
+                    CloseUnopenedFiles();
+                }
+
+                _workspaceScanCompleted = null;
+
+                void CloseUnopenedFiles()
+                {
+                    foreach (ScriptFile scriptFile in _workspaceService.GetOpenedFiles())
+                    {
+                        if (scriptFile.IsOpen)
+                        {
+                            continue;
+                        }
+
+                        _workspaceService.CloseFile(scriptFile);
+                    }
+                }
+            }
+
             if (e.EnableReferencesCodeLens)
             {
                 if (_codeLensProviders.ContainsKey(ReferencesCodeLensProvider.Id))

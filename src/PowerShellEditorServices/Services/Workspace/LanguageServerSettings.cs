@@ -23,6 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         public PesterSettings Pester { get; set; }
         public string Cwd { get; set; }
         public bool EnableReferencesCodeLens { get; set; } = true;
+        public bool AnalyzeOpenDocumentsOnly { get; set; }
 
         public LanguageServerSettings()
         {
@@ -48,6 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     Pester.Update(settings.Pester, logger);
                     Cwd = settings.Cwd;
                     EnableReferencesCodeLens = settings.EnableReferencesCodeLens;
+                    AnalyzeOpenDocumentsOnly = settings.AnalyzeOpenDocumentsOnly;
                 }
             }
         }

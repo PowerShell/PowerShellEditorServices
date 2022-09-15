@@ -127,8 +127,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 // This method allows FileNotFoundException to bubble up
                 // if the file isn't found.
-                using (FileStream fileStream = new(documentUri.GetFileSystemPath(), FileMode.Open, FileAccess.Read))
-                using (StreamReader streamReader = new(fileStream, Encoding.UTF8))
+                using (StreamReader streamReader = OpenStreamReader(documentUri))
                 {
                     scriptFile =
                         new ScriptFile(
@@ -449,6 +448,22 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     }
                 }
             }
+        }
+
+        internal static StreamReader OpenStreamReader(DocumentUri uri)
+        {
+            FileStream fileStream = new(uri.GetFileSystemPath(), FileMode.Open, FileAccess.Read);
+            // Default to UTF8 no BOM if a BOM is not present. Note that `Encoding.UTF8` is *with*
+            // BOM, so we call the ctor here to get the BOM-less version.
+            //
+            // TODO: Honor workspace encoding settings for the fallback.
+            return new StreamReader(fileStream, new UTF8Encoding(), detectEncodingFromByteOrderMarks: true);
+        }
+
+        internal static string ReadFileContents(DocumentUri uri)
+        {
+            using StreamReader reader = OpenStreamReader(uri);
+            return reader.ReadToEnd();
         }
 
         internal static bool IsPathInMemory(string filePath)

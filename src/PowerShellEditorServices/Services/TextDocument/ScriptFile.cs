@@ -119,6 +119,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             private set;
         }
 
+        internal ReferenceTable References { get; }
+
+        internal bool IsOpen { get; set; }
+
         #endregion
 
         #region Constructors
@@ -149,6 +153,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
             // SetFileContents() calls ParseFileContents() which initializes the rest of the properties.
             SetFileContents(textReader.ReadToEnd());
+            References = new ReferenceTable(this);
         }
 
         /// <summary>
@@ -383,6 +388,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
             // Parse the script again to be up-to-date
             ParseFileContents();
+            References.TagAsChanged();
         }
 
         /// <summary>
@@ -519,7 +525,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
         #region Private Methods
 
-        private void SetFileContents(string fileContents)
+        internal void SetFileContents(string fileContents)
         {
             // Split the file contents into lines and trim
             // any carriage returns from the strings.

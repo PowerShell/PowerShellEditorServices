@@ -152,9 +152,9 @@ namespace PowerShellEditorServices.Test.Language
         public async Task FindsReferencesOnFunction()
         {
             List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(3, referencesResult.Count);
-            Assert.Equal(1, referencesResult[0].ScriptRegion.StartLineNumber);
-            Assert.Equal(10, referencesResult[0].ScriptRegion.StartColumnNumber);
+            Assert.Equal(2, referencesResult.Count);
+            Assert.Equal(3, referencesResult[0].ScriptRegion.StartLineNumber);
+            Assert.Equal(2, referencesResult[0].ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
@@ -166,9 +166,9 @@ namespace PowerShellEditorServices.Test.Language
                 CancellationToken.None).ConfigureAwait(true);
 
             List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(4, referencesResult.Count);
-            Assert.Equal(1, referencesResult[0].ScriptRegion.StartLineNumber);
-            Assert.Equal(10, referencesResult[0].ScriptRegion.StartColumnNumber);
+            Assert.Equal(3, referencesResult.Count);
+            Assert.Equal(3, referencesResult[0].ScriptRegion.StartLineNumber);
+            Assert.Equal(2, referencesResult[0].ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
@@ -246,8 +246,8 @@ namespace PowerShellEditorServices.Test.Language
         {
             List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnBuiltInCommandWithAliasData.SourceDetails).ConfigureAwait(true);
             Assert.Equal(4, referencesResult.Count);
-            Assert.Equal("gci", referencesResult[1].SymbolName);
-            Assert.Equal("dir", referencesResult[2].SymbolName);
+            Assert.Equal("Get-ChildItem", referencesResult[1].SymbolName);
+            Assert.Equal("Get-ChildItem", referencesResult[2].SymbolName);
             Assert.Equal("Get-ChildItem", referencesResult[referencesResult.Count - 1].SymbolName);
         }
 
@@ -255,14 +255,14 @@ namespace PowerShellEditorServices.Test.Language
         public async Task FindsReferencesOnFileWithReferencesFileB()
         {
             List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionMultiFileDotSourceFileB.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(4, referencesResult.Count);
+            Assert.Equal(3, referencesResult.Count);
         }
 
         [Fact]
         public async Task FindsReferencesOnFileWithReferencesFileC()
         {
             List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionMultiFileDotSourceFileC.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(4, referencesResult.Count);
+            Assert.Equal(3, referencesResult.Count);
         }
 
         [Fact]
