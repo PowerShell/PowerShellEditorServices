@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
+using Microsoft.PowerShell.EditorServices.Services.Symbols;
 
 namespace Microsoft.PowerShell.EditorServices.Services;
 
@@ -74,7 +75,7 @@ internal sealed class ReferenceTable
 
         public override AstVisitAction VisitCommand(CommandAst commandAst)
         {
-            string commandName = commandAst.GetCommandName();
+            string? commandName = GetCommandName(commandAst);
             if (string.IsNullOrEmpty(commandName))
             {
                 return AstVisitAction.Continue;
@@ -83,7 +84,24 @@ internal sealed class ReferenceTable
             _references.AddReference(
                 CommandHelpers.StripModuleQualification(commandName, out _),
                 commandAst.CommandElements[0].Extent);
+
             return AstVisitAction.Continue;
+
+            static string? GetCommandName(CommandAst commandAst)
+            {
+                string commandName = commandAst.GetCommandName();
+                if (!string.IsNullOrEmpty(commandName))
+                {
+                    return commandName;
+                }
+
+                if (commandAst.CommandElements[0] is not ExpandableStringExpressionAst expandableStringExpressionAst)
+                {
+                    return null;
+                }
+
+                return AstOperations.TryGetInferredValue(expandableStringExpressionAst, out string value) ? value : null;
+            }
         }
 
         public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)

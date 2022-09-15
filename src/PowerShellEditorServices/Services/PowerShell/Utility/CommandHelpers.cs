@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         /// <returns>The actual command name.</returns>
         public static string StripModuleQualification(string invocationName, out ReadOnlyMemory<char> moduleName)
         {
-            int slashIndex = invocationName.IndexOf('\\');
+            int slashIndex = invocationName.LastIndexOfAny(new[] { '\\', '/' });
             if (slashIndex is -1)
             {
                 moduleName = default;

@@ -24,6 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     internal static class AstOperations
     {
         private static readonly Func<IScriptPosition, int, IScriptPosition> s_clonePositionWithNewOffset;
+
         static AstOperations()
         {
             Type internalScriptPositionType = typeof(PSObject).GetTypeInfo().Assembly
@@ -310,6 +311,44 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             scriptAst.Visit(dotSourcedVisitor);
 
             return dotSourcedVisitor.DotSourcedFiles.ToArray();
+        }
+
+        internal static bool TryGetInferredValue(ExpandableStringExpressionAst expandableStringExpressionAst, out string value)
+        {
+            // Currently we only support inferring the value of `$PSScriptRoot`. We could potentially
+            // expand this to parts of `$MyInvocation` and some basic constant folding.
+            if (string.IsNullOrEmpty(expandableStringExpressionAst.Extent.File))
+            {
+                value = null;
+                return false;
+            }
+
+            string psScriptRoot = System.IO.Path.GetDirectoryName(expandableStringExpressionAst.Extent.File);
+            if (string.IsNullOrEmpty(psScriptRoot))
+            {
+                value = null;
+                return false;
+            }
+
+            string path = expandableStringExpressionAst.Value;
+            foreach (ExpressionAst nestedExpression in expandableStringExpressionAst.NestedExpressions)
+            {
+                // If the string contains the variable $PSScriptRoot, we replace it with the corresponding value.
+                if (!(nestedExpression is VariableExpressionAst variableAst
+                    && variableAst.VariablePath.UserPath.Equals("PSScriptRoot", StringComparison.OrdinalIgnoreCase)))
+                {
+                    value = null;
+                    return false;
+                }
+
+                // TODO: This should use offsets from the extent rather than a blind replace. In
+                // practice it won't hurt anything because $ is not valid in paths, but if we expand
+                // this functionality, this will be problematic.
+                path = path.Replace(variableAst.ToString(), psScriptRoot);
+            }
+
+            value = path;
+            return true;
         }
     }
 }

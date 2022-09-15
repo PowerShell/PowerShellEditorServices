@@ -234,7 +234,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         continue;
                     }
 
-                    foreach (IScriptExtent extent in references)
+                    foreach (IScriptExtent extent in references.OrderBy(e => e.StartOffset))
                     {
                         SymbolReference reference = new(
                             SymbolType.Function,
