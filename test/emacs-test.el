@@ -58,7 +58,7 @@
       (should (eglot-current-server))
       (let ((lsp (eglot-current-server)))
         (should (string= (oref lsp project-nickname) "PowerShellEditorServices"))
-        (should (eq (oref lsp major-mode) 'powershell-mode))
+        (should (member 'powershell-mode (oref lsp major-modes)))
         (should (string= (oref lsp language-id) "powershell")))
       (sleep-for 5) ; TODO: Wait for "textDocument/publishDiagnostics" instead
       (flymake-start)
