@@ -159,7 +159,7 @@ contribute code, documentation, tests, or bug reports, please read our [Contribu
 
 - [Justin Grote](https://github.com/JustinGrote) - [@JustinWGrote](https://twitter.com/justinwgrote)
 - [Patrick Meinecke](https://github.com/SeeminglyScience) - [@SeeminglyScienc](http://twitter.com/SeeminglyScienc)
-- [Andy Schwartzmeyer](https://github.com/andschwa) - [andschwa.com](https://andschwa.com/)
+- [Andy Jordan](https://github.com/andschwa) - [andyleejordan.com](https://andyleejordan.com/)
 
 ### Emeriti
 
