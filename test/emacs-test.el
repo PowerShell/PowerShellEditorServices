@@ -3,7 +3,7 @@
 ;; Copyright (c) Microsoft Corporation.
 ;; Licensed under the MIT License.
 
-;; Author: Andy Schwartzmeyer <andschwa@microsoft.com>
+;; Author: Andy Jordan <andy.jordan@microsoft.com>
 ;; Keywords: PowerShell, LSP
 
 ;;; Code:
