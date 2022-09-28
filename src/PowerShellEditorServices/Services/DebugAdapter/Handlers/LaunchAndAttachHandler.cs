@@ -436,7 +436,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _debugStateService.WaitingForAttach = true;
             Task nonAwaitedTask = _executionService
                 .ExecutePSCommandAsync(debugRunspaceCmd, CancellationToken.None, PowerShellExecutionOptions.ImmediateInteractive)
-                .ContinueWith( OnExecutionCompletedAsync, TaskScheduler.Default);
+                .ContinueWith(OnExecutionCompletedAsync, TaskScheduler.Default);
 
             if (runspaceVersion.Version.Major >= 7)
             {
