@@ -14,6 +14,37 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Extension
 {
+    /// Enumerates the possible execution results that can occur after
+    /// executing a command or script.
+    /// </summary>
+    internal enum ExecutionStatus
+    {
+        /// <summary>
+        /// Indicates that execution has not yet started.
+        /// </summary>
+        Pending,
+
+        /// <summary>
+        /// Indicates that the command is executing.
+        /// </summary>
+        Running,
+
+        /// <summary>
+        /// Indicates that execution has failed.
+        /// </summary>
+        Failed,
+
+        /// <summary>
+        /// Indicates that execution was aborted by the user.
+        /// </summary>
+        Aborted,
+
+        /// <summary>
+        /// Indicates that execution completed successfully.
+        /// </summary>
+        Completed
+    }
+
     /// <summary>
     /// Provides a high-level service which enables PowerShell scripts
     /// and modules to extend the behavior of the host editor.
@@ -123,6 +154,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         /// <exception cref="KeyNotFoundException">The command being invoked was not registered.</exception>
         public Task InvokeCommandAsync(string commandName, EditorContext editorContext, CancellationToken cancellationToken)
         {
+            _languageServer?.SendNotification("powerShell/executionStatusChanged", ExecutionStatus.Pending);
             if (editorCommands.TryGetValue(commandName, out EditorCommand editorCommand))
             {
                 PSCommand executeCommand = new PSCommand()
@@ -131,6 +163,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
                     .AddParameter("ArgumentList", new object[] { editorContext });
 
                 // This API is used for editor command execution so it requires the foreground.
+                _languageServer?.SendNotification("powerShell/executionStatusChanged", ExecutionStatus.Running);
                 return ExecutionService.ExecutePSCommandAsync(
                     executeCommand,
                     cancellationToken,
@@ -140,9 +173,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
                         WriteOutputToHost = !editorCommand.SuppressOutput,
                         AddToHistory = !editorCommand.SuppressOutput,
                         ThrowOnError = false,
-                    });
+                    }).ContinueWith((Task executeTask) =>
+                    {
+                        ExecutionStatus status = ExecutionStatus.Failed;
+                        if (executeTask.IsCompleted)
+                        {
+                            status = ExecutionStatus.Completed;
+                        }
+                        else if (executeTask.IsCanceled)
+                        {
+                            status = ExecutionStatus.Aborted;
+                        }
+                        else if (executeTask.IsFaulted)
+                        {
+                            status = ExecutionStatus.Failed;
+                        }
+
+                        _languageServer?.SendNotification("powerShell/executionStatusChanged", status);
+                    }, TaskScheduler.Default);
             }
 
+            _languageServer?.SendNotification("powerShell/executionStatusChanged", ExecutionStatus.Failed);
             throw new KeyNotFoundException($"Editor command not found: '{commandName}'");
         }
 
