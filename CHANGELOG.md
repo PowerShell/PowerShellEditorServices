@@ -1,5 +1,10 @@
 # PowerShell Editor Services Release History
 
+## v3.5.3
+### Wednesday, September 28, 2022
+
+- ✨ 🙏 [PowerShellEditorServices #1924](https://github.com/PowerShell/PowerShellEditorServices/pull/1924) - Re-implement indicator when running registered editor commands.
+
 ## v3.5.2
 ### Tuesday, September 27, 2022
 
