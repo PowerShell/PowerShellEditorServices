@@ -26,6 +26,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly WorkspaceService _workspaceService;
         private readonly RemoteFileManagerService _remoteFileManagerService;
 
+        private bool _isFileWatcherSupported;
+
         public static TextDocumentSyncKind Change => TextDocumentSyncKind.Incremental;
 
         public PsesTextDocumentHandler(
@@ -59,30 +61,34 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return Unit.Task;
         }
 
-        protected override TextDocumentSyncRegistrationOptions CreateRegistrationOptions(SynchronizationCapability capability, ClientCapabilities clientCapabilities) => new()
+        protected override TextDocumentSyncRegistrationOptions CreateRegistrationOptions(SynchronizationCapability capability, ClientCapabilities clientCapabilities)
         {
-            DocumentSelector = LspUtils.PowerShellDocumentSelector,
-            Change = Change,
-            Save = new SaveOptions { IncludeText = true }
-        };
+            _isFileWatcherSupported = clientCapabilities.Workspace.DidChangeWatchedFiles.IsSupported;
+            return new TextDocumentSyncRegistrationOptions()
+            {
+                DocumentSelector = LspUtils.PowerShellDocumentSelector,
+                Change = Change,
+                Save = new SaveOptions { IncludeText = true }
+            };
+        }
 
         public override Task<Unit> Handle(DidOpenTextDocumentParams notification, CancellationToken token)
         {
+            // We use a fake Uri because we only want to test the LanguageId here and not if the
+            // file ends in ps*1.
+            TextDocumentAttributes attributes = new(s_fakeUri, notification.TextDocument.LanguageId);
+            if (!LspUtils.PowerShellDocumentSelector.IsMatch(attributes))
+            {
+                return Unit.Task;
+            }
+
             ScriptFile openedFile =
                 _workspaceService.GetFileBuffer(
                     notification.TextDocument.Uri,
                     notification.TextDocument.Text);
 
-            if (LspUtils.PowerShellDocumentSelector.IsMatch(new TextDocumentAttributes(
-                // We use a fake Uri because we only want to test the LanguageId here and not if the
-                // file ends in ps*1.
-                s_fakeUri,
-                notification.TextDocument.LanguageId)))
-            {
-                // Kick off script diagnostics if we got a PowerShell file without blocking the response
-                // TODO: Get all recently edited files in the workspace
-                _analysisService.StartScriptDiagnostics(new ScriptFile[] { openedFile });
-            }
+            openedFile.IsOpen = true;
+            _analysisService.StartScriptDiagnostics(new ScriptFile[] { openedFile });
 
             _logger.LogTrace("Finished opening document.");
             return Unit.Task;
@@ -95,7 +101,16 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (fileToClose != null)
             {
-                _workspaceService.CloseFile(fileToClose);
+                fileToClose.IsOpen = false;
+
+                // If the file watcher is supported, only close in-memory files when this
+                // notification is triggered. This lets us keep workspace files open so we can scan
+                // for references. When a file is deleted, the file watcher will close the file.
+                if (!_isFileWatcherSupported || fileToClose.IsInMemory)
+                {
+                    _workspaceService.CloseFile(fileToClose);
+                }
+
                 _analysisService.ClearMarkers(fileToClose);
             }
 

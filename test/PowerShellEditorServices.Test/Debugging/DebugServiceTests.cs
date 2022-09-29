@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Test;
@@ -22,6 +23,15 @@ using Xunit;
 
 namespace PowerShellEditorServices.Test.Debugging
 {
+    internal class TestReadLine : IReadLine
+    {
+        public List<string> history = new();
+
+        public string ReadLine(CancellationToken cancellationToken) => "";
+
+        public void AddToHistory(string historyEntry) => history.Add(historyEntry);
+    }
+
     [Trait("Category", "DebugService")]
     public class DebugServiceTests : IDisposable
     {
@@ -32,6 +42,7 @@ namespace PowerShellEditorServices.Test.Debugging
         private readonly WorkspaceService workspace;
         private readonly ScriptFile debugScriptFile;
         private readonly ScriptFile variableScriptFile;
+        private readonly TestReadLine testReadLine = new();
 
         public DebugServiceTests()
         {
@@ -39,6 +50,7 @@ namespace PowerShellEditorServices.Test.Debugging
             // This is required for remote debugging, but we call it here to end up in the same
             // state as the usual startup path.
             psesHost.DebugContext.EnableDebugMode();
+            psesHost._readLineProvider.ReadLine = testReadLine;
 
             breakpointService = new BreakpointService(
                 NullLoggerFactory.Instance,
@@ -556,6 +568,50 @@ namespace PowerShellEditorServices.Test.Debugging
             VariableDetailsBase[] myInvocationChildren = debugService.GetVariables(myInvocation.Id);
             VariableDetailsBase myInvocationLine = Array.Find(myInvocationChildren, v => v.Name == "Line");
             Assert.Equal("\". $args[0]\"", myInvocationLine.ValueString);
+        }
+
+        [Fact]
+        public async Task RecordsF5CommandInPowerShellHistory()
+        {
+            ConfigurationDoneHandler configurationDoneHandler = new(
+                NullLoggerFactory.Instance, null, debugService, null, null, psesHost, workspace, null, psesHost);
+            await configurationDoneHandler.LaunchScriptAsync(debugScriptFile.FilePath).ConfigureAwait(true);
+
+            IReadOnlyList<string> historyResult = await psesHost.ExecutePSCommandAsync<string>(
+                new PSCommand().AddScript("(Get-History).CommandLine"),
+                CancellationToken.None).ConfigureAwait(true);
+
+            // Check the PowerShell history
+            Assert.Single(historyResult);
+            Assert.Equal(". \"" + debugScriptFile.FilePath + "\"", historyResult[0]);
+
+            // Check the stubbed PSReadLine history
+            Assert.Single(testReadLine.history);
+            Assert.Equal(". \"" + debugScriptFile.FilePath + "\"", testReadLine.history[0]);
+        }
+
+        [Fact]
+        public async Task RecordsF8CommandInHistory()
+        {
+            const string script = "Write-Output Hello";
+            EvaluateHandler evaluateHandler = new(psesHost);
+            EvaluateResponseBody evaluateResponseBody = await evaluateHandler.Handle(
+                new EvaluateRequestArguments { Expression = script, Context = "repl" },
+                CancellationToken.None).ConfigureAwait(true);
+            // TODO: Right now this response is hard-coded, maybe it should change?
+            Assert.Equal("", evaluateResponseBody.Result);
+
+            IReadOnlyList<string> historyResult = await psesHost.ExecutePSCommandAsync<string>(
+                new PSCommand().AddScript("(Get-History).CommandLine"),
+                CancellationToken.None).ConfigureAwait(true);
+
+            // Check the PowerShell history
+            Assert.Single(historyResult);
+            Assert.Equal(script, historyResult[0]);
+
+            // Check the stubbed PSReadLine history
+            Assert.Single(testReadLine.history);
+            Assert.Equal(script, testReadLine.history[0]);
         }
 
         [Fact]
