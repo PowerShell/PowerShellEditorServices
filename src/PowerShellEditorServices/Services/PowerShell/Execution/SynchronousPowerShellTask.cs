@@ -16,7 +16,14 @@ using SMA = System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 {
-    internal class SynchronousPowerShellTask<TResult> : SynchronousTask<IReadOnlyList<TResult>>
+    internal interface ISynchronousPowerShellTask
+    {
+        PowerShellExecutionOptions PowerShellExecutionOptions { get; }
+
+        void MaybeAddToHistory();
+    }
+
+    internal class SynchronousPowerShellTask<TResult> : SynchronousTask<IReadOnlyList<TResult>>, ISynchronousPowerShellTask
     {
         private static readonly PowerShellExecutionOptions s_defaultPowerShellExecutionOptions = new();
 
@@ -353,7 +360,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             }
         }
 
-        internal void MaybeAddToHistory()
+        public void MaybeAddToHistory()
         {
             // Do not add PSES internal commands to history. Also exclude input that came from the
             // REPL (e.g. PSReadLine) as it handles history itself in that scenario.

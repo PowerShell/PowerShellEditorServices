@@ -295,6 +295,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         internal void ForceSetExit() => _shouldExit = true;
 
+        private void SetBusy(bool busy) => _languageServer?.SendNotification("powerShell/executionBusyStatus", busy);
+
         private bool CancelForegroundAndPrepend(ISynchronousTask task, bool isIdle = false)
         {
             // NOTE: This causes foreground tasks to act like they have `ExecutionPriority.Next`.
@@ -313,9 +315,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             _skipNextPrompt = true;
 
-            if (task is SynchronousPowerShellTask<PSObject> psTask)
+            if (task is ISynchronousPowerShellTask t)
             {
-                psTask.MaybeAddToHistory();
+                t.MaybeAddToHistory();
             }
 
             using (_taskQueue.BlockConsumers())
@@ -332,6 +334,32 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             }
 
             return true;
+        }
+
+        // This handles executing the task while also notifying the client that the pipeline is
+        // currently busy with a PowerShell task. The extension indicates this with a spinner.
+        private void ExecuteTaskSynchronously(ISynchronousTask task, CancellationToken cancellationToken)
+        {
+            // TODO: Simplify this logic.
+            bool busy = false;
+            if (task is ISynchronousPowerShellTask t
+                && (t.PowerShellExecutionOptions.AddToHistory
+                    || t.PowerShellExecutionOptions.FromRepl))
+            {
+                busy = true;
+                SetBusy(true);
+            }
+            try
+            {
+                task.ExecuteSynchronously(cancellationToken);
+            }
+            finally
+            {
+                if (busy)
+                {
+                    SetBusy(false);
+                }
+            }
         }
 
         public Task<T> InvokeTaskOnPipelineThreadAsync<T>(SynchronousTask<T> task)
@@ -769,8 +797,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 {
                     try
                     {
-                        task.ExecuteSynchronously(cancellationScope.CancellationToken);
+                        ExecuteTaskSynchronously(task, cancellationScope.CancellationToken);
                     }
+                    // Our flaky extension command test seems to be such because sometimes another
+                    // task gets queued, and since it runs in the foreground it cancels that task.
+                    // Interactively, this happens in the first loop (with DoOneRepl) which catches
+                    // the cancellation exception, but when under test that is a no-op, so  it
+                    // happens in this second loop. Hence we need to catch it here too.
                     catch (OperationCanceledException e)
                     {
                         _logger.LogDebug(e, "Task {Task} was canceled!", task);
@@ -935,19 +968,27 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             }
         }
 
+        // TODO: Should we actually be directly invoking input versus queueing it as a task like everything else?
         private void InvokeInput(string input, CancellationToken cancellationToken)
         {
-            PSCommand command = new PSCommand().AddScript(input, useLocalScope: false);
-            InvokePSCommand(
-                command,
-                new PowerShellExecutionOptions
-                {
-                    AddToHistory = true,
-                    ThrowOnError = false,
-                    WriteOutputToHost = true,
-                    FromRepl = true,
-                },
-                cancellationToken);
+            SetBusy(true);
+            try
+            {
+                InvokePSCommand(
+                    new PSCommand().AddScript(input, useLocalScope: false),
+                    new PowerShellExecutionOptions
+                    {
+                        AddToHistory = true,
+                        ThrowOnError = false,
+                        WriteOutputToHost = true,
+                        FromRepl = true,
+                    },
+                    cancellationToken);
+            }
+            finally
+            {
+                SetBusy(false);
+            }
         }
 
         private void AddRunspaceEventHandlers(Runspace runspace)
@@ -1076,16 +1117,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 while (!cancellationScope.CancellationToken.IsCancellationRequested
                     && _taskQueue.TryTake(out ISynchronousTask task))
                 {
+                    // Tasks which require the foreground cannot run under this idle handler, so the
+                    // current foreground tasks gets canceled, the new task gets prepended, and this
+                    // handler returns.
                     if (CancelForegroundAndPrepend(task, isIdle: true))
                     {
                         return;
                     }
 
-                    // If we're executing a task, we don't need to run an extra pipeline later for events
-                    // TODO: This may not be a PowerShell task, so ideally we can differentiate that here.
-                    //       For now it's mostly true and an easy assumption to make.
-                    runPipelineForEventProcessing = false;
-                    task.ExecuteSynchronously(cancellationScope.CancellationToken);
+                    // If we're executing a PowerShell task, we don't need to run an extra pipeline
+                    // later for events.
+                    runPipelineForEventProcessing = task is not ISynchronousPowerShellTask;
+                    ExecuteTaskSynchronously(task, cancellationScope.CancellationToken);
                 }
             }
 
