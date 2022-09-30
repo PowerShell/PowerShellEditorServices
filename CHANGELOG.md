@@ -1,5 +1,11 @@
 # PowerShell Editor Services Release History
 
+## v3.5.4
+### Friday, September 30, 2022
+
+- ✨ 🚂 [PowerShellEditorServices #1928](https://github.com/PowerShell/PowerShellEditorServices/pull/1928) - Generalize the execution busy status to all PowerShell tasks.
+- ✨ ‍🕵️ [PowerShellEditorServices #1916](https://github.com/PowerShell/PowerShellEditorServices/pull/1916) - Upgrade PSScriptAnalyzer to 1.21.0. (Thanks @bergmeister!)
+
 ## v3.5.3
 ### Wednesday, September 28, 2022
 
