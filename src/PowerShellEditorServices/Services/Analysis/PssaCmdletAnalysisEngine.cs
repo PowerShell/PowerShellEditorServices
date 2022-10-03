@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -127,8 +128,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         /// <param name="scriptDefinition">The full text of a script.</param>
         /// <param name="formatSettings">The formatter settings to use.</param>
         /// <param name="rangeList">A possible range over which to run the formatter.</param>
+        /// <param name="cancellationToken">The token used to cancel the task.</param>
         /// <returns>Formatted script as string</returns>
-        public async Task<string> FormatAsync(string scriptDefinition, Hashtable formatSettings, int[] rangeList)
+        public async Task<string> FormatAsync(string scriptDefinition, Hashtable formatSettings, int[] rangeList, CancellationToken cancellationToken)
         {
             // We cannot use Range type therefore this workaround of using -1 default value.
             // Invoke-Formatter throws a ParameterBinderValidationException if the ScriptDefinition is an empty string.
@@ -148,11 +150,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                 psCommand.AddParameter("Range", rangeList);
             }
 
-            PowerShellResult result = await InvokePowerShellAsync(psCommand).ConfigureAwait(false);
+            PowerShellResult result = await InvokePowerShellAsync(psCommand, cancellationToken).ConfigureAwait(false);
 
             if (result is null)
             {
                 _logger.LogError("Formatter returned null result");
+                return null;
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("Formatting request canceled");
                 return null;
             }
 
@@ -257,7 +265,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 
         private async Task<ScriptFileMarker[]> GetSemanticMarkersFromCommandAsync(PSCommand command)
         {
-            PowerShellResult result = await InvokePowerShellAsync(command).ConfigureAwait(false);
+            PowerShellResult result = await InvokePowerShellAsync(command, CancellationToken.None).ConfigureAwait(false);
 
             IReadOnlyCollection<PSObject> diagnosticResults = result?.Output ?? s_emptyDiagnosticResult;
             _logger.LogDebug(string.Format("Found {0} violations", diagnosticResults.Count));
@@ -274,11 +282,24 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         }
 
         // TODO: Deduplicate this logic and cleanup using lessons learned from pipeline rewrite.
-        private Task<PowerShellResult> InvokePowerShellAsync(PSCommand command) => Task.Run(() => InvokePowerShell(command));
+        private async Task<PowerShellResult> InvokePowerShellAsync(PSCommand command, CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await Task.Run(() => InvokePowerShell(
+                    command,
+                    cancellationToken), cancellationToken).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException)
+            {
+                return await Task.FromCanceled<PowerShellResult>(cancellationToken).ConfigureAwait(false);
+            }
+        }
 
-        private PowerShellResult InvokePowerShell(PSCommand command)
+        private PowerShellResult InvokePowerShell(PSCommand command, CancellationToken cancellationToken = default)
         {
             using PowerShell pwsh = PowerShell.Create(RunspaceMode.NewRunspace);
+            using CancellationTokenRegistration registration = cancellationToken.Register(() => pwsh.Stop());
             pwsh.RunspacePool = _analysisRunspacePool;
             pwsh.Commands = command;
             PowerShellResult result = null;

@@ -68,7 +68,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             formattedScript = await _analysisService.FormatAsync(
                 scriptFile.Contents,
                 pssaSettings,
-                null).ConfigureAwait(false);
+                null,
+                cancellationToken).ConfigureAwait(false);
 
             if (formattedScript is null)
             {
@@ -154,7 +155,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             formattedScript = await _analysisService.FormatAsync(
                 scriptFile.Contents,
                 pssaSettings,
-                rangeList).ConfigureAwait(false);
+                rangeList,
+                cancellationToken).ConfigureAwait(false);
 
             if (formattedScript is null)
             {

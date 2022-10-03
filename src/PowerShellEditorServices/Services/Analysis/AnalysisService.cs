@@ -178,11 +178,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="scriptFileContents">The script to format.</param>
         /// <param name="formatSettings">The settings to use with the formatter.</param>
         /// <param name="formatRange">Optionally, the range that should be formatted.</param>
+        /// <param name="cancellationToken">The token used to cancel the task.</param>
         /// <returns>The text of the formatted PowerShell script.</returns>
-        public Task<string> FormatAsync(string scriptFileContents, Hashtable formatSettings, int[] formatRange = null)
+        public Task<string> FormatAsync(string scriptFileContents, Hashtable formatSettings, int[] formatRange, CancellationToken cancellationToken)
         {
             EnsureEngineSettingsCurrent();
-            return AnalysisEngine.FormatAsync(scriptFileContents, formatSettings, formatRange);
+            return AnalysisEngine.FormatAsync(scriptFileContents, formatSettings, formatRange, cancellationToken);
         }
 
         /// <summary>
