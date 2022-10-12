@@ -24,7 +24,7 @@ The functionality in PowerShell Editor Services is already available in the foll
   - Statement completions (IntelliSense)
   - Real-time semantic analysis of scripts using PowerShell Script Analyzer
 - The Debugging Service simplifies interaction with the PowerShell debugger (breakpoints, variables, call stack, etc.)
-- The [$psEditor API](http://powershell.github.io/PowerShellEditorServices/guide/extensions.html) enables scripting of the host editor
+- The [$psEditor API](https://github.com/PowerShell/PowerShellEditorServices/blob/main/docs/guide/extensions.md) enables scripting of the host editor
 - A full, Extension Terminal experience for interactive development and debugging
 
 ## Usage
@@ -153,7 +153,7 @@ Open the PowerShellEditorServices folder that you cloned locally and press <kbd>
 ## Contributions Welcome
 
 We would love to incorporate community contributions into this project.  If you would like to
-contribute code, documentation, tests, or bug reports, please read our [Contribution Guide](http://powershell.github.io/PowerShellEditorServices/CONTRIBUTING.html) to learn more.
+contribute code, documentation, tests, or bug reports, please read our [Contribution Guide](https://github.com/PowerShell/PowerShellEditorServices/blob/main/CONTRIBUTING.md) to learn more.
 
 ## Maintainers
 
