@@ -51,6 +51,30 @@ pwsh -NoLogo -NoProfile -Command "$PSES_BUNDLE_PATH/PowerShellEditorServices/Sta
 > - `$PSES_BUNDLE_PATH` is the root of the PowerShellEditorServices.zip downloaded from the GitHub releases.
 > - `$SESSION_TEMP_PATH` is the folder path that you'll use for this specific editor session.
 
+If you are trying to automate the service in PowerShell, You can also run it under `Start-Process` to prevent hanging your script. It also gives you access to Process/PID automation features like `$process.Close()` or `$process.Kill()`
+
+```powershell
+$command = @(
+    "$PSES_BUNDLE_PATH/PowerShellEditorServices/Start-EditorServices.ps1",
+        "-BundledModulesPath $PSES_BUNDLE_PATH",
+        "-LogPath $SESSION_TEMP_PATH/logs.log",
+        "-SessionDetailsPath $SESSION_TEMP_PATH/session.json",
+        "-FeatureFlags @()",
+        "-AdditionalModules @()",
+        "-HostName 'My Client'",
+        "-HostProfileId 'myclient'",
+        "-HostVersion 1.0.0",
+        "-LogLevel Normal"
+)-join " "
+
+$pwsh_arguments = "-NoLogo -NoProfile -Command $command"
+$process = Start-Process pwsh -ArgumentList $arguments -PassThru
+
+...
+
+$process.Close(); #$process.Kill();
+```
+
 Once the command is run,
 PowerShell Editor Services will wait until the client connects to the Named Pipe.
 The `session.json` will contain the paths of the Named Pipes that you will connect to.
