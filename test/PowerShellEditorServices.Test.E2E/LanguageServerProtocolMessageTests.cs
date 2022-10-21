@@ -38,6 +38,7 @@ namespace PowerShellEditorServices.Test.E2E
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
         private readonly ILanguageClient PsesLanguageClient;
+        private readonly List<LogMessageParams> Messages;
         private readonly List<Diagnostic> Diagnostics;
         private readonly List<PsesTelemetryEvent> TelemetryEvents;
         private readonly string PwshExe;
@@ -46,6 +47,8 @@ namespace PowerShellEditorServices.Test.E2E
         {
             data.Output = output;
             PsesLanguageClient = data.PsesLanguageClient;
+            Messages = data.Messages;
+            Messages.Clear();
             Diagnostics = data.Diagnostics;
             Diagnostics.Clear();
             TelemetryEvents = data.TelemetryEvents;
@@ -955,6 +958,36 @@ CanSendReferencesCodeLensRequest
                 .Returning<CompletionItem>(CancellationToken.None).ConfigureAwait(true);
 
             Assert.Contains("Writes customized output to a host", updatedCompletionItem.Documentation.String);
+        }
+
+        // Regression test for https://github.com/PowerShell/PowerShellEditorServices/issues/1926
+        [SkippableFact]
+        public async Task CanRequestCompletionsAndHandleExceptions()
+        {
+            Skip.If(PsesStdioProcess.IsWindowsPowerShell, "This is a temporary bug in PowerShell 7, the fix is making its way upstream.");
+            string filePath = NewTestFile(@"
+@() | ForEach-Object {
+    if ($false) {
+      return
+    }
+
+    @{key=$}
+  }");
+
+            Messages.Clear(); //  On some systems there's a warning message about configuration items too.
+            CompletionList completionItems = await PsesLanguageClient.TextDocument.RequestCompletion(
+                new CompletionParams
+                {
+                    TextDocument = new TextDocumentIdentifier
+                    {
+                        Uri = DocumentUri.FromFileSystemPath(filePath)
+                    },
+                    Position = new Position(line: 6, character: 11)
+                });
+
+            Assert.Empty(completionItems);
+            LogMessageParams message = Assert.Single(Messages);
+            Assert.Contains("Exception occurred while running handling completion request", message.Message);
         }
 
         [SkippableFact(Skip = "Completion for Expand-SlowArchive is flaky.")]
