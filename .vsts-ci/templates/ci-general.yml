@@ -35,7 +35,7 @@ steps:
   displayName: Test
   inputs:
     targetType: inline
-    script: Invoke-Build Test
+    script: Invoke-Build Test -Configuration Release
     pwsh: ${{ parameters.pwsh }}
 
 - task: PublishTestResults@2
