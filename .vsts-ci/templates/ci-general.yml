@@ -45,6 +45,18 @@ steps:
     testResultsFiles: '**/*.trx'
   condition: succeededOrFailed()
 
+- task: PowerShell@2
+  displayName: Assert PowerShellEditorServices release configuration
+  inputs:
+    targetType: inline
+    script: |
+      $assembly = [Reflection.Assembly]::LoadFile("$(Build.SourcesDirectory)/module/PowerShellEditorServices.VSCode/bin/Microsoft.PowerShell.EditorServices.VSCode.dll")
+      if ($assembly.GetCustomAttributes([System.Diagnostics.DebuggableAttribute], $true).IsJITOptimizerDisabled) {
+        Write-Host "##vso[task.LogIssue type=error;] PowerShell Editor Services bits were not built in release configuration!"
+        exit 1
+      }
+    pwsh: ${{ parameters.pwsh }}
+
 # NOTE: We zip the artifacts because they're ~20 MB compressed, but ~300 MB raw,
 # and we have limited pipeline artifact storage space.
 - task: ArchiveFiles@2
