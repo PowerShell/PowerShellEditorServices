@@ -112,39 +112,6 @@ namespace PowerShellEditorServices.Test.Session
         }
 
         [Fact]
-        public async Task CanResolveAndLoadProfilesForHostId()
-        {
-            // Load the profiles for the test host name
-            await psesHost.LoadHostProfilesAsync(CancellationToken.None).ConfigureAwait(true);
-
-            // Ensure that the $PROFILE variable is a string with the value of CurrentUserCurrentHost.
-            IReadOnlyList<string> profileVariable = await psesHost.ExecutePSCommandAsync<string>(
-                new PSCommand().AddScript("$PROFILE"),
-                CancellationToken.None).ConfigureAwait(true);
-
-            Assert.Collection(profileVariable,
-                (p) => Assert.Equal(PsesHostFactory.TestProfilePaths.CurrentUserCurrentHost, p));
-
-            // Ensure that all the profile paths are set in the correct note properties.
-            IReadOnlyList<string> profileProperties = await psesHost.ExecutePSCommandAsync<string>(
-                new PSCommand().AddScript("$PROFILE | Get-Member -Type NoteProperty"),
-                CancellationToken.None).ConfigureAwait(true);
-
-            Assert.Collection(profileProperties,
-                (p) => Assert.Equal($"string AllUsersAllHosts={PsesHostFactory.TestProfilePaths.AllUsersAllHosts}", p, ignoreCase: true),
-                (p) => Assert.Equal($"string AllUsersCurrentHost={PsesHostFactory.TestProfilePaths.AllUsersCurrentHost}", p, ignoreCase: true),
-                (p) => Assert.Equal($"string CurrentUserAllHosts={PsesHostFactory.TestProfilePaths.CurrentUserAllHosts}", p, ignoreCase: true),
-                (p) => Assert.Equal($"string CurrentUserCurrentHost={PsesHostFactory.TestProfilePaths.CurrentUserCurrentHost}", p, ignoreCase: true));
-
-            // Ensure that the profile was loaded. The profile also checks that $PROFILE was defined.
-            IReadOnlyList<bool> profileLoaded = await psesHost.ExecutePSCommandAsync<bool>(
-                new PSCommand().AddScript("Assert-ProfileLoaded"),
-                CancellationToken.None).ConfigureAwait(true);
-
-            Assert.Collection(profileLoaded, Assert.True);
-        }
-
-        [Fact]
         public async Task CanHandleNoProfiles()
         {
             // Call LoadProfiles with profile paths that won't exist, and assert that it does not
@@ -203,6 +170,35 @@ namespace PowerShellEditorServices.Test.Session
         }
 
         [Fact]
+        public async Task CanRunOnIdleTask()
+        {
+            IReadOnlyList<PSObject> task = await psesHost.ExecutePSCommandAsync<PSObject>(
+                new PSCommand().AddScript("$handled = $false; Register-EngineEvent -SourceIdentifier PowerShell.OnIdle -MaxTriggerCount 1 -Action { $global:handled = $true }"),
+                CancellationToken.None).ConfigureAwait(true);
+
+            IReadOnlyList<bool> handled = await psesHost.ExecutePSCommandAsync<bool>(
+                new PSCommand().AddScript("$handled"),
+                CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Collection(handled, (p) => Assert.False(p));
+
+            await psesHost.ExecuteDelegateAsync(
+                nameof(psesHost.OnPowerShellIdle),
+                executionOptions: null,
+                (_, _) => psesHost.OnPowerShellIdle(CancellationToken.None),
+                CancellationToken.None).ConfigureAwait(true);
+
+            // TODO: Why is this racy?
+            Thread.Sleep(2000);
+
+            handled = await psesHost.ExecutePSCommandAsync<bool>(
+                new PSCommand().AddScript("$handled"),
+                CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Collection(handled, (p) => Assert.True(p));
+        }
+
+        [Fact]
         public async Task CanLoadPSReadLine()
         {
             Assert.True(await psesHost.ExecuteDelegateAsync(
@@ -238,6 +234,74 @@ namespace PowerShellEditorServices.Test.Session
                 new PSCommand().AddCommand("Get-Location"),
                 CancellationToken.None).ConfigureAwait(true);
             Assert.Collection(getLocation, (d) => Assert.Equal(cwd, d, ignoreCase: true));
+        }
+    }
+
+    [Trait("Category", "PsesInternalHost")]
+    public class PsesInternalHostWithProfileTests : IDisposable
+    {
+        private readonly PsesInternalHost psesHost;
+
+        public PsesInternalHostWithProfileTests() => psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance, loadProfiles: true);
+
+        public void Dispose()
+        {
+#pragma warning disable VSTHRD002
+            psesHost.StopAsync().Wait();
+#pragma warning restore VSTHRD002
+            GC.SuppressFinalize(this);
+        }
+
+        [Fact]
+        public async Task CanResolveAndLoadProfilesForHostId()
+        {
+            // Ensure that the $PROFILE variable is a string with the value of CurrentUserCurrentHost.
+            IReadOnlyList<string> profileVariable = await psesHost.ExecutePSCommandAsync<string>(
+                new PSCommand().AddScript("$PROFILE"),
+                CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Collection(profileVariable,
+                (p) => Assert.Equal(PsesHostFactory.TestProfilePaths.CurrentUserCurrentHost, p));
+
+            // Ensure that all the profile paths are set in the correct note properties.
+            IReadOnlyList<string> profileProperties = await psesHost.ExecutePSCommandAsync<string>(
+                new PSCommand().AddScript("$PROFILE | Get-Member -Type NoteProperty"),
+                CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Collection(profileProperties,
+                (p) => Assert.Equal($"string AllUsersAllHosts={PsesHostFactory.TestProfilePaths.AllUsersAllHosts}", p, ignoreCase: true),
+                (p) => Assert.Equal($"string AllUsersCurrentHost={PsesHostFactory.TestProfilePaths.AllUsersCurrentHost}", p, ignoreCase: true),
+                (p) => Assert.Equal($"string CurrentUserAllHosts={PsesHostFactory.TestProfilePaths.CurrentUserAllHosts}", p, ignoreCase: true),
+                (p) => Assert.Equal($"string CurrentUserCurrentHost={PsesHostFactory.TestProfilePaths.CurrentUserCurrentHost}", p, ignoreCase: true));
+
+            // Ensure that the profile was loaded. The profile also checks that $PROFILE was defined.
+            IReadOnlyList<bool> profileLoaded = await psesHost.ExecutePSCommandAsync<bool>(
+                new PSCommand().AddScript("Assert-ProfileLoaded"),
+                CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Collection(profileLoaded, Assert.True);
+        }
+
+        // This test specifically relies on a handler registered in the test profile, and on the
+        // test host loading the profiles during startup, that way the pipeline timing is
+        // consistent.
+        [Fact]
+        public async Task CanRunOnIdleInProfileTask()
+        {
+            await psesHost.ExecuteDelegateAsync(
+                nameof(psesHost.OnPowerShellIdle),
+                executionOptions: null,
+                (_, _) => psesHost.OnPowerShellIdle(CancellationToken.None),
+                CancellationToken.None).ConfigureAwait(true);
+
+            // TODO: Why is this racy?
+            Thread.Sleep(2000);
+
+            IReadOnlyList<bool> handled = await psesHost.ExecutePSCommandAsync<bool>(
+                new PSCommand().AddScript("$handledInProfile"),
+                CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Collection(handled, (p) => Assert.True(p));
         }
     }
 }
