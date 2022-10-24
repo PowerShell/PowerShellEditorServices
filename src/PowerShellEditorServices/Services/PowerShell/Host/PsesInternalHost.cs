@@ -503,18 +503,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 (PowerShell pwsh, RunspaceInfo localRunspaceInfo, EngineIntrinsics engineIntrinsics) = CreateInitialPowerShellSession();
                 _mainRunspaceEngineIntrinsics = engineIntrinsics;
                 _localComputerName = localRunspaceInfo.SessionDetails.ComputerName;
-
-                // NOTE: In order to support running events registered to PowerShell's OnIdle
-                // handler, we have to have our top-level PowerShell instance be nested (otherwise
-                // we get a PSInvalidOperationException because pipelines cannot be run
-                // concurrently). Specifically this bug cropped up when a profile loaded code which
-                // registered (and subsequently ran) on the OnIdle handler since it was hitting the
-                // non-nested PowerShell instance. So now we just start with a nested instance.
-                // While the PowerShell object is nested, as a frame type, this is our top-level
-                // frame and therefore NOT nested in that sense.
-                PowerShell nestedPwsh = CreateNestedPowerShell(localRunspaceInfo);
-                _runspaceStack.Push(new RunspaceFrame(nestedPwsh.Runspace, localRunspaceInfo));
-                PushPowerShellAndRunLoop(nestedPwsh, PowerShellFrameType.Normal | PowerShellFrameType.Repl, localRunspaceInfo);
+                _runspaceStack.Push(new RunspaceFrame(pwsh.Runspace, localRunspaceInfo));
+                PushPowerShellAndRunLoop(pwsh, PowerShellFrameType.Normal | PowerShellFrameType.Repl, localRunspaceInfo);
             }
             catch (Exception e)
             {
@@ -1015,7 +1005,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             // PowerShell.CreateNestedPowerShell() sets IsNested but not IsChild
             // This means it throws due to the parent pipeline not running...
             // So we must use the RunspaceMode.CurrentRunspace option on PowerShell.Create() instead
-            return PowerShell.Create(RunspaceMode.CurrentRunspace);
+            PowerShell pwsh = PowerShell.Create(RunspaceMode.CurrentRunspace);
+            pwsh.Runspace.ThreadOptions = PSThreadOptions.UseCurrentThread;
+            return pwsh;
         }
 
         private static PowerShell CreatePowerShellForRunspace(Runspace runspace)
