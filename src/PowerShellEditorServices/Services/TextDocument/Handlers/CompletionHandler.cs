@@ -69,16 +69,25 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             int cursorColumn = request.Position.Character + 1;
 
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
-            (bool isIncomplete, IReadOnlyList<CompletionItem> completionResults) = await GetCompletionsInFileAsync(
-                scriptFile,
-                cursorLine,
-                cursorColumn,
-                cancellationToken).ConfigureAwait(false);
+            try
+            {
+                (bool isIncomplete, IReadOnlyList<CompletionItem> completionResults) = await GetCompletionsInFileAsync(
+                    scriptFile,
+                    cursorLine,
+                    cursorColumn,
+                    cancellationToken).ConfigureAwait(false);
 
-            // Treat completions trigged by space as incomplete so that `gci `
-            // and then typing `-` doesn't just filter the list of parameter values
-            // (typically files) returned by the space completion
-            return new CompletionList(completionResults, isIncomplete || request?.Context?.TriggerCharacter is " ");
+                // Treat completions triggered by space as incomplete so that `gci `
+                // and then typing `-` doesn't just filter the list of parameter values
+                // (typically files) returned by the space completion
+                return new CompletionList(completionResults, isIncomplete || request?.Context?.TriggerCharacter is " ");
+            }
+            // We can't do anything about completions failing.
+            catch (Exception e)
+            {
+                _logger.LogWarning(e, "Exception occurred while running handling completion request");
+                return new CompletionList(isIncomplete: true);
+            }
         }
 
         // Handler for "completionItem/resolve". In VSCode this is fired when a completion item is highlighted in the completion list.
