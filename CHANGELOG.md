@@ -1,5 +1,14 @@
 # PowerShell Editor Services Release History
 
+## v3.6.0
+### Tuesday, October 25, 2022
+
+- 🐛 🚂 [vscode-powershell #4219](https://github.com/PowerShell/PowerShellEditorServices/pull/1936) - Fix regression around `OnIdle` handler.
+- 🐛 🧠 [PowerShellEditorServices #1926](https://github.com/PowerShell/PowerShellEditorServices/pull/1935) - Catch exceptions within completion handler.
+- 🐛 👷 [vscode-powershell #4218](https://github.com/PowerShell/PowerShellEditorServices/pull/1933) - Fix release build.
+- ✨ 📖 [PowerShellEditorServices #1932](https://github.com/PowerShell/PowerShellEditorServices/pull/1932) - Add example of starting PSES in a script to readme. (Thanks @smartguy1196!)
+- #️⃣ 🙏 [PowerShellEditorServices #1931](https://github.com/PowerShell/PowerShellEditorServices/pull/1931) - Fix broken links in readme. (Thanks @smartguy1196!)
+
 ## v3.5.4
 ### Friday, September 30, 2022
 
