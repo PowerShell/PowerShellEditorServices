@@ -112,7 +112,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 // For a saved file we just execute its path (after escaping it).
                 command = PSCommandHelpers.BuildDotSourceCommandWithArguments(
-                    string.Concat('"', scriptToLaunch, '"'), _debugStateService?.Arguments);
+                    string.Concat("'", scriptToLaunch, "'"), _debugStateService?.Arguments);
             }
             else // It's a URI to an untitled script, or a raw script.
             {

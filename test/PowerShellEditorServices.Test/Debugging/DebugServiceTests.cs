@@ -583,11 +583,11 @@ namespace PowerShellEditorServices.Test.Debugging
 
             // Check the PowerShell history
             Assert.Single(historyResult);
-            Assert.Equal(". \"" + debugScriptFile.FilePath + "\"", historyResult[0]);
+            Assert.Equal(". '" + debugScriptFile.FilePath + "'", historyResult[0]);
 
             // Check the stubbed PSReadLine history
             Assert.Single(testReadLine.history);
-            Assert.Equal(". \"" + debugScriptFile.FilePath + "\"", testReadLine.history[0]);
+            Assert.Equal(". '" + debugScriptFile.FilePath + "'", testReadLine.history[0]);
         }
 
         [Fact]

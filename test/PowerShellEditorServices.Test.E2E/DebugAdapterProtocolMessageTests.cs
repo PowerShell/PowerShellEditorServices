@@ -190,7 +190,7 @@ namespace PowerShellEditorServices.Test.E2E
             ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(true);
             Assert.NotNull(configDoneResponse);
             Assert.Collection(await GetLog().ConfigureAwait(true),
-                (i) => Assert.StartsWith(". \"", i));
+                (i) => Assert.StartsWith(". '", i));
         }
 
         [Fact]
