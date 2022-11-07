@@ -17,7 +17,5 @@
     <!-- Required to enable IDE0005 as error -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- TODO: Enable <AnalysisMode>All</AnalysisMode> -->
-    <!-- See: https://docs.microsoft.com/en-us/dotnet/core/compatibility/sdk/6.0/implicit-namespaces -->
-    <DisableImplicitNamespaceImports>true</DisableImplicitNamespaceImports>
   </PropertyGroup>
 </Project>
