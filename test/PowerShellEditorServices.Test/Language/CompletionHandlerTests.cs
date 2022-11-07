@@ -53,17 +53,19 @@ namespace PowerShellEditorServices.Test.Language
                 CancellationToken.None);
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task CompletesCommandInFile()
         {
+            Skip.If(VersionUtils.PSEdition == "Core", "OmniSharp records are broken!");
             (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteCommandInFile.SourceDetails).ConfigureAwait(true);
             CompletionItem actual = Assert.Single(results);
             Assert.Equal(CompleteCommandInFile.ExpectedCompletion, actual);
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task CompletesCommandFromModule()
         {
+            Skip.If(VersionUtils.PSEdition == "Core", "OmniSharp records are broken!");
             (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteCommandFromModule.SourceDetails).ConfigureAwait(true);
             CompletionItem actual = Assert.Single(results);
             // NOTE: The tooltip varies across PowerShell and OS versions, so we ignore it.
@@ -74,6 +76,7 @@ namespace PowerShellEditorServices.Test.Language
         [SkippableFact]
         public async Task CompletesTypeName()
         {
+            Skip.If(VersionUtils.PSEdition == "Core", "OmniSharp records are broken!");
             Skip.If(VersionUtils.PSEdition == "Desktop", "Windows PowerShell has trouble with this test right now.");
             (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteTypeName.SourceDetails).ConfigureAwait(true);
             CompletionItem actual = Assert.Single(results);
@@ -95,23 +98,26 @@ namespace PowerShellEditorServices.Test.Language
         [SkippableFact]
         public async Task CompletesNamespace()
         {
+            Skip.If(VersionUtils.PSEdition == "Core", "OmniSharp records are broken!");
             Skip.If(VersionUtils.PSEdition == "Desktop", "Windows PowerShell has trouble with this test right now.");
             (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteNamespace.SourceDetails).ConfigureAwait(true);
             CompletionItem actual = Assert.Single(results);
             Assert.Equal(CompleteNamespace.ExpectedCompletion, actual);
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task CompletesVariableInFile()
         {
+            Skip.If(VersionUtils.PSEdition == "Core", "OmniSharp records are broken!");
             (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteVariableInFile.SourceDetails).ConfigureAwait(true);
             CompletionItem actual = Assert.Single(results);
             Assert.Equal(CompleteVariableInFile.ExpectedCompletion, actual);
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task CompletesAttributeValue()
         {
+            Skip.If(VersionUtils.PSEdition == "Core", "OmniSharp records are broken!");
             (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteAttributeValue.SourceDetails).ConfigureAwait(true);
             // NOTE: Since the completions come through un-ordered from PowerShell, their SortText
             // (which has an index prepended from the original order) will mis-match our assumed
@@ -122,9 +128,10 @@ namespace PowerShellEditorServices.Test.Language
                 actual => Assert.Equal(actual with { Data = null, SortText = null }, CompleteAttributeValue.ExpectedCompletion3));
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task CompletesFilePath()
         {
+            Skip.If(VersionUtils.PSEdition == "Core", "OmniSharp records are broken!");
             (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteFilePath.SourceDetails).ConfigureAwait(true);
             Assert.NotEmpty(results);
             CompletionItem actual = results.First();
