@@ -42,6 +42,22 @@
     <PackageReference Include="System.Security.Principal.Windows" Version="5.0.0" />
   </ItemGroup>
 
+  <Choose>
+    <When Condition=" '$(LocalOmniSharp)' == 'true' ">
+      <ItemGroup>
+        <ProjectReference Include="..\..\..\csharp-language-server-protocol\src\Server\Server.csproj" />
+        <ProjectReference Include="..\..\..\csharp-language-server-protocol\src\Dap.Server\Dap.Server.csproj" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.19.6" />
+        <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Server" Version="0.19.6" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+
+  <!-- TODO: Remove these entirely. -->
   <ItemGroup>
     <Compile Remove="Extensions\Api\DocumentSymbolService.cs" />
     <Compile Remove="Services\Extension\Templating\**" />

@@ -21,7 +21,7 @@
     <ProjectReference Include="..\PowerShellEditorServices\PowerShellEditorServices.csproj" PrivateAssets="all" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)'=='net462'">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net462' ">
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
 
     <Compile Remove="Internal/PsesLoadContext.cs" />

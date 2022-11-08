@@ -10,12 +10,25 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="OmniSharp.Extensions.LanguageClient" Version="0.19.6" />
-    <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Client" Version="0.19.6" />
     <PackageReference Include="xunit" Version="2.4.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5" />
     <PackageReference Include="Xunit.SkippableFact" Version="1.4.13" />
   </ItemGroup>
+
+  <Choose>
+    <When Condition=" '$(LocalOmniSharp)' == 'true' ">
+      <ItemGroup>
+        <ProjectReference Include="..\..\..\csharp-language-server-protocol\src\Client\Client.csproj" />
+        <ProjectReference Include="..\..\..\csharp-language-server-protocol\src\Dap.Client\Dap.client.csproj" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <PackageReference Include="OmniSharp.Extensions.LanguageClient" Version="0.19.6" />
+        <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Client" Version="0.19.6" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj" />
