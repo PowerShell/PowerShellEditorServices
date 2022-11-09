@@ -73,16 +73,16 @@ Task FindDotNet {
 }
 
 Task BinClean {
-    Remove-Item $PSScriptRoot\.tmp -Recurse -Force -ErrorAction Ignore
-    Remove-Item $PSScriptRoot\module\PowerShellEditorServices\bin -Recurse -Force -ErrorAction Ignore
-    Remove-Item $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin -Recurse -Force -ErrorAction Ignore
+    Remove-BuildItem $PSScriptRoot\.tmp
+    Remove-BuildItem $PSScriptRoot\module\PowerShellEditorServices\bin
+    Remove-BuildItem $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin
 }
 
 Task Clean FindDotNet, BinClean, {
-    Exec { & dotnet clean $VerbosityArgs }
-    Get-ChildItem -Recurse $PSScriptRoot\src\*.nupkg | Remove-Item -Force -ErrorAction Ignore
-    Get-ChildItem $PSScriptRoot\PowerShellEditorServices*.zip | Remove-Item -Force -ErrorAction Ignore
-    Get-ChildItem $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US\*-help.xml | Remove-Item -Force -ErrorAction Ignore
+    Invoke-BuildExec { & dotnet clean $VerbosityArgs }
+    Get-ChildItem -Recurse $PSScriptRoot\src\*.nupkg | Remove-BuildItem
+    Get-ChildItem $PSScriptRoot\PowerShellEditorServices*.zip | Remove-BuildItem
+    Get-ChildItem $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US\*-help.xml | Remove-BuildItem
 
     # Remove bundled component modules
     $moduleJsonPath = "$PSScriptRoot\modules.json"
@@ -90,7 +90,7 @@ Task Clean FindDotNet, BinClean, {
         Get-Content -Raw $moduleJsonPath |
             ConvertFrom-Json |
             ForEach-Object { $_.PSObject.Properties.Name } |
-            ForEach-Object { Remove-Item -Path "$PSScriptRoot/module/$_" -Recurse -Force -ErrorAction Ignore }
+            ForEach-Object { Remove-BuildItem -Path "$PSScriptRoot/module/$_" }
     }
 }
 
@@ -161,15 +161,15 @@ Task SetupHelpForTests {
 }
 
 Task Build FindDotNet, CreateBuildInfo, {
-    Exec { & dotnet restore $VerbosityArgs }
-    Exec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetRuntime.Standard }
-    Exec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.PS7 }
+    Invoke-BuildExec { & dotnet restore $VerbosityArgs }
+    Invoke-BuildExec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetRuntime.Standard }
+    Invoke-BuildExec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.PS7 }
     if (-not $script:IsNix) {
-        Exec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Desktop }
+        Invoke-BuildExec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Desktop }
     }
 
     # Build PowerShellEditorServices.VSCode module
-    Exec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj -f $script:NetRuntime.Standard }
+    Invoke-BuildExec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj -f $script:NetRuntime.Standard }
 }
 
 Task Test TestServer, TestE2E
@@ -184,17 +184,17 @@ Task TestServerWinPS -If ($PSVersionTable.PSEdition -eq "Desktop") Build, SetupH
     # that is debuggable! If architecture is added, the assembly path gets an
     # additional folder, necesstiating fixes to find the commands definition
     # file and test files.
-    Exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.Desktop }
+    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.Desktop }
 }
 
 Task TestServerPS7 -If ($PSVersionTable.PSEdition -eq "Core" -and -not $script:IsAppleM1 -and -not $script:IsArm64) Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test\
-    Exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS7 }
+    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS7 }
 }
 
 Task TestServerPS72 -If ($PSVersionTable.PSEdition -eq "Core") Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test\
-    Exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS72 }
+    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS72 }
 }
 
 Task TestE2E Build, SetupHelpForTests, {
@@ -202,7 +202,7 @@ Task TestE2E Build, SetupHelpForTests, {
 
     $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
     $NetRuntime = if ($IsAppleM1 -or $script:IsArm64) { $script:NetRuntime.PS72 } else { $script:NetRuntime.PS7 }
-    Exec { & dotnet $script:dotnetTestArgs $NetRuntime }
+    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $NetRuntime }
 
     if (!$script:IsNix) {
         if (-not [Security.Principal.WindowsIdentity]::GetCurrent().Owner.IsWellKnown("BuiltInAdministratorsSid")) {
@@ -213,7 +213,7 @@ Task TestE2E Build, SetupHelpForTests, {
         try {
             Write-Host "Running end-to-end tests in Constrained Language Mode."
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", "0x80000007", [System.EnvironmentVariableTarget]::Machine);
-            Exec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS7 }
+            Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS7 }
         } finally {
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", $null, [System.EnvironmentVariableTarget]::Machine);
         }
