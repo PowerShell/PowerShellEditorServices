@@ -23,6 +23,8 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
         private const string Static = "static ";
 
+        private static HashSet<string>? usingNamespaces;
+
         /// <summary>
         /// Space, new line, carriage return and tab.
         /// </summary>
@@ -164,9 +166,9 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         {
             kind = MarkupKind.Markdown;
             StringBuilder text = new();
-            HashSet<string>? usingNamespaces = null;
             while (true)
             {
+                usingNamespaces = null;
                 toolTip = toolTip.TrimStart(s_whiteSpace.Span);
                 toolTip = ProcessMethod(toolTip, text, ref usingNamespaces);
                 if (toolTip.IsEmpty)
