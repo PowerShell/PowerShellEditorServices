@@ -17,6 +17,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Install dotnet
+        uses: actions/setup-dotnet@v3
+
       - name: Build PSES
         shell: pwsh
         run: tools/azurePipelinesBuild.ps1
