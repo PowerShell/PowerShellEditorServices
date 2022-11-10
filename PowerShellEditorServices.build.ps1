@@ -41,6 +41,7 @@ $script:PsesCommonProps = [xml](Get-Content -Raw "$PSScriptRoot/PowerShellEditor
 $script:NetRuntime = @{
     PS7      = 'netcoreapp3.1'
     PS72     = 'net6.0'
+    PS73     = 'net7.0'
     Desktop  = 'net462'
     Standard = 'netstandard2.0'
 }
@@ -174,7 +175,7 @@ Task Build FindDotNet, CreateBuildInfo, {
 
 Task Test TestServer, TestE2E
 
-Task TestServer TestServerWinPS, TestServerPS7, TestServerPS72
+Task TestServer TestServerWinPS, TestServerPS7, TestServerPS72, TestServerPS73
 
 # NOTE: While these can run under `pwsh.exe` we only want them to run under
 # `powershell.exe` so that the CI time isn't doubled.
@@ -197,12 +198,16 @@ Task TestServerPS72 -If ($PSVersionTable.PSEdition -eq "Core") Build, SetupHelpF
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS72 }
 }
 
+Task TestServerPS73 -If ($PSVersionTable.PSEdition -eq "Core") Build, SetupHelpForTests, {
+    Set-Location .\test\PowerShellEditorServices.Test\
+    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS73 }
+}
+
 Task TestE2E Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test.E2E\
 
     $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
-    $NetRuntime = if ($IsAppleM1 -or $script:IsArm64) { $script:NetRuntime.PS72 } else { $script:NetRuntime.PS7 }
-    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $NetRuntime }
+    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS72 }
 
     if (!$script:IsNix) {
         if (-not [Security.Principal.WindowsIdentity]::GetCurrent().Owner.IsWellKnown("BuiltInAdministratorsSid")) {
@@ -213,7 +218,7 @@ Task TestE2E Build, SetupHelpForTests, {
         try {
             Write-Host "Running end-to-end tests in Constrained Language Mode."
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", "0x80000007", [System.EnvironmentVariableTarget]::Machine);
-            Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS7 }
+            Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS72 }
         } finally {
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", $null, [System.EnvironmentVariableTarget]::Machine);
         }
