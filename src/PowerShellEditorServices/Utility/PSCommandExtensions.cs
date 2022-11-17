@@ -126,6 +126,8 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             return sb;
         }
 
+        public static string EscapeScriptFilePath(string f) => string.Concat("'", f.Replace("'", "''"), "'");
+
         public static PSCommand BuildDotSourceCommandWithArguments(string command, IEnumerable<string> arguments)
         {
             string args = string.Join(" ", arguments ?? Array.Empty<string>());
