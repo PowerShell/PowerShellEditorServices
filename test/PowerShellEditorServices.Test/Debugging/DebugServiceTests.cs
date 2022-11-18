@@ -41,6 +41,7 @@ namespace PowerShellEditorServices.Test.Debugging
         private readonly BlockingCollection<DebuggerStoppedEventArgs> debuggerStoppedQueue = new();
         private readonly WorkspaceService workspace;
         private readonly ScriptFile debugScriptFile;
+        private readonly ScriptFile oddPathScriptFile;
         private readonly ScriptFile variableScriptFile;
         private readonly TestReadLine testReadLine = new();
 
@@ -68,9 +69,10 @@ namespace PowerShellEditorServices.Test.Debugging
 
             debugService.DebuggerStopped += OnDebuggerStopped;
 
-            // Load the test debug files
+            // Load the test debug files.
             workspace = new WorkspaceService(NullLoggerFactory.Instance);
             debugScriptFile = GetDebugScript("DebugTest.ps1");
+            oddPathScriptFile = GetDebugScript("Debug' W&ith $Params [Test].ps1");
             variableScriptFile = GetDebugScript("VariableTest.ps1");
         }
 
@@ -105,16 +107,16 @@ namespace PowerShellEditorServices.Test.Debugging
             return debugService.GetVariables(scope.Id);
         }
 
-        private Task ExecutePowerShellCommand(string command, params string[] args)
+        private Task ExecuteScriptFileAsync(string scriptFilePath, params string[] args)
         {
             return psesHost.ExecutePSCommandAsync(
-                PSCommandHelpers.BuildDotSourceCommandWithArguments(string.Concat('"', command, '"'), args),
+                PSCommandHelpers.BuildDotSourceCommandWithArguments(PSCommandHelpers.EscapeScriptFilePath(scriptFilePath), args),
                 CancellationToken.None);
         }
 
-        private Task ExecuteDebugFile() => ExecutePowerShellCommand(debugScriptFile.FilePath);
+        private Task ExecuteDebugFileAsync() => ExecuteScriptFileAsync(debugScriptFile.FilePath);
 
-        private Task ExecuteVariableScriptFile() => ExecutePowerShellCommand(variableScriptFile.FilePath);
+        private Task ExecuteVariableScriptFileAsync() => ExecuteScriptFileAsync(variableScriptFile.FilePath);
 
         private void AssertDebuggerPaused()
         {
@@ -201,27 +203,22 @@ namespace PowerShellEditorServices.Test.Debugging
         [MemberData(nameof(DebuggerAcceptsScriptArgsTestData))]
         public async Task DebuggerAcceptsScriptArgs(string[] args)
         {
-            // The path is intentionally odd (some escaped chars but not all) because we are testing
-            // the internal path escaping mechanism - it should escape certain chars ([, ] and space) but
-            // it should not escape already escaped chars.
-            ScriptFile debugWithParamsFile = GetDebugScript("Debug W&ith Params [Test].ps1");
-
             BreakpointDetails[] breakpoints = await debugService.SetLineBreakpointsAsync(
-                debugWithParamsFile,
-                new[] { BreakpointDetails.Create(debugWithParamsFile.FilePath, 3) }).ConfigureAwait(true);
+                oddPathScriptFile,
+                new[] { BreakpointDetails.Create(oddPathScriptFile.FilePath, 3) }).ConfigureAwait(true);
 
             Assert.Single(breakpoints);
             Assert.Collection(breakpoints, (breakpoint) =>
             {
                 // TODO: The drive letter becomes lower cased on Windows for some reason.
-                Assert.Equal(debugWithParamsFile.FilePath, breakpoint.Source, ignoreCase: true);
+                Assert.Equal(oddPathScriptFile.FilePath, breakpoint.Source, ignoreCase: true);
                 Assert.Equal(3, breakpoint.LineNumber);
                 Assert.True(breakpoint.Verified);
             });
 
-            Task _ = ExecutePowerShellCommand(debugWithParamsFile.FilePath, args);
+            Task _ = ExecuteScriptFileAsync(oddPathScriptFile.FilePath, args);
 
-            AssertDebuggerStopped(debugWithParamsFile.FilePath, 3);
+            AssertDebuggerStopped(oddPathScriptFile.FilePath, 3);
 
             VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.LocalScopeName);
 
@@ -273,8 +270,7 @@ namespace PowerShellEditorServices.Test.Debugging
             breakpoints = await debugService.SetCommandBreakpointsAsync(
                 new[] { CommandBreakpointDetails.Create("Get-Host") }).ConfigureAwait(true);
 
-            Assert.Single(breakpoints);
-            Assert.Equal("Get-Host", breakpoints[0].Name);
+            Assert.Equal("Get-Host", Assert.Single(breakpoints).Name);
 
             breakpoints = await debugService.SetCommandBreakpointsAsync(
                 Array.Empty<CommandBreakpointDetails>()).ConfigureAwait(true);
@@ -288,7 +284,7 @@ namespace PowerShellEditorServices.Test.Debugging
             CommandBreakpointDetails[] breakpoints = await debugService.SetCommandBreakpointsAsync(
                 new[] { CommandBreakpointDetails.Create("Write-Host") }).ConfigureAwait(true);
 
-            Task _ = ExecuteDebugFile();
+            Task _ = ExecuteDebugFileAsync();
             AssertDebuggerStopped(debugScriptFile.FilePath, 6);
 
             VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.LocalScopeName);
@@ -355,7 +351,7 @@ namespace PowerShellEditorServices.Test.Debugging
                     BreakpointDetails.Create(debugScriptFile.FilePath, 7)
                 }).ConfigureAwait(true);
 
-            Task _ = ExecuteDebugFile();
+            Task _ = ExecuteDebugFileAsync();
             AssertDebuggerStopped(debugScriptFile.FilePath, 5);
             debugService.Continue();
             AssertDebuggerStopped(debugScriptFile.FilePath, 7);
@@ -373,7 +369,7 @@ namespace PowerShellEditorServices.Test.Debugging
                     BreakpointDetails.Create(debugScriptFile.FilePath, 7, null, $"$i -eq {breakpointValue1} -or $i -eq {breakpointValue2}"),
                 }).ConfigureAwait(true);
 
-            Task _ = ExecuteDebugFile();
+            Task _ = ExecuteDebugFileAsync();
             AssertDebuggerStopped(debugScriptFile.FilePath, 7);
 
             VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.LocalScopeName);
@@ -409,7 +405,7 @@ namespace PowerShellEditorServices.Test.Debugging
                     BreakpointDetails.Create(debugScriptFile.FilePath, 6, null, null, $"{hitCount}"),
                 }).ConfigureAwait(true);
 
-            Task _ = ExecuteDebugFile();
+            Task _ = ExecuteDebugFileAsync();
             AssertDebuggerStopped(debugScriptFile.FilePath, 6);
 
             VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.LocalScopeName);
@@ -430,7 +426,7 @@ namespace PowerShellEditorServices.Test.Debugging
                 debugScriptFile,
                 new[] { BreakpointDetails.Create(debugScriptFile.FilePath, 6, null, "$i % 2 -eq 0", $"{hitCount}") }).ConfigureAwait(true);
 
-            Task _ = ExecuteDebugFile();
+            Task _ = ExecuteDebugFileAsync();
             AssertDebuggerStopped(debugScriptFile.FilePath, 6);
 
             VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.LocalScopeName);
@@ -498,7 +494,7 @@ namespace PowerShellEditorServices.Test.Debugging
         {
             IReadOnlyList<LineBreakpoint> confirmedBreakpoints = await GetConfirmedBreakpoints(debugScriptFile).ConfigureAwait(true);
             Assert.Equal(0, confirmedBreakpoints.Count);
-            Task _ = ExecuteDebugFile();
+            Task _ = ExecuteDebugFileAsync();
             // NOTE: This must be run on a separate thread so the async event handlers can fire.
             await Task.Run(() => debugService.Break()).ConfigureAwait(true);
             AssertDebuggerPaused();
@@ -507,7 +503,7 @@ namespace PowerShellEditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerRunsCommandsWhileStopped()
         {
-            Task _ = ExecuteDebugFile();
+            Task _ = ExecuteDebugFileAsync();
             // NOTE: This must be run on a separate thread so the async event handlers can fire.
             await Task.Run(() => debugService.Break()).ConfigureAwait(true);
             AssertDebuggerPaused();
@@ -529,7 +525,7 @@ namespace PowerShellEditorServices.Test.Debugging
                 new[] { CommandBreakpointDetails.Create("Write-Host") }).ConfigureAwait(true);
 
             ScriptFile testScript = GetDebugScript("PSDebugContextTest.ps1");
-            Task _ = ExecutePowerShellCommand(testScript.FilePath);
+            Task _ = ExecuteScriptFileAsync(testScript.FilePath);
             AssertDebuggerStopped(testScript.FilePath, 11);
 
             VariableDetails prompt = await debugService.EvaluateExpressionAsync("prompt", false).ConfigureAwait(true);
@@ -582,12 +578,10 @@ namespace PowerShellEditorServices.Test.Debugging
                 CancellationToken.None).ConfigureAwait(true);
 
             // Check the PowerShell history
-            Assert.Single(historyResult);
-            Assert.Equal(". '" + debugScriptFile.FilePath + "'", historyResult[0]);
+            Assert.Equal(". '" + debugScriptFile.FilePath + "'", Assert.Single(historyResult));
 
             // Check the stubbed PSReadLine history
-            Assert.Single(testReadLine.history);
-            Assert.Equal(". '" + debugScriptFile.FilePath + "'", testReadLine.history[0]);
+            Assert.Equal(". '" + debugScriptFile.FilePath + "'", Assert.Single(testReadLine.history));
         }
 
         [Fact]
@@ -606,12 +600,25 @@ namespace PowerShellEditorServices.Test.Debugging
                 CancellationToken.None).ConfigureAwait(true);
 
             // Check the PowerShell history
-            Assert.Single(historyResult);
-            Assert.Equal(script, historyResult[0]);
+            Assert.Equal(script, Assert.Single(historyResult));
 
             // Check the stubbed PSReadLine history
-            Assert.Single(testReadLine.history);
-            Assert.Equal(script, testReadLine.history[0]);
+            Assert.Equal(script, Assert.Single(testReadLine.history));
+        }
+
+        [Fact]
+        public async Task OddFilePathsLaunchCorrectly()
+        {
+            ConfigurationDoneHandler configurationDoneHandler = new(
+                NullLoggerFactory.Instance, null, debugService, null, null, psesHost, workspace, null, psesHost);
+            await configurationDoneHandler.LaunchScriptAsync(oddPathScriptFile.FilePath).ConfigureAwait(true);
+
+            IReadOnlyList<string> historyResult = await psesHost.ExecutePSCommandAsync<string>(
+                new PSCommand().AddScript("(Get-History).CommandLine"),
+                CancellationToken.None).ConfigureAwait(true);
+
+            // Check the PowerShell history
+            Assert.Equal(". " + PSCommandHelpers.EscapeScriptFilePath(oddPathScriptFile.FilePath), Assert.Single(historyResult));
         }
 
         [Fact]
@@ -621,7 +628,7 @@ namespace PowerShellEditorServices.Test.Debugging
                 variableScriptFile,
                 new[] { BreakpointDetails.Create(variableScriptFile.FilePath, 8) }).ConfigureAwait(true);
 
-            Task _ = ExecuteVariableScriptFile();
+            Task _ = ExecuteVariableScriptFileAsync();
             AssertDebuggerStopped(variableScriptFile.FilePath);
 
             VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.LocalScopeName);
@@ -639,7 +646,7 @@ namespace PowerShellEditorServices.Test.Debugging
                 variableScriptFile,
                 new[] { BreakpointDetails.Create(variableScriptFile.FilePath, 21) }).ConfigureAwait(true);
 
-            Task _ = ExecuteVariableScriptFile();
+            Task _ = ExecuteVariableScriptFileAsync();
             AssertDebuggerStopped(variableScriptFile.FilePath);
 
             VariableDetailsBase[] variables = GetVariables(VariableContainerDetails.LocalScopeName);
@@ -689,7 +696,7 @@ namespace PowerShellEditorServices.Test.Debugging
                 variableScriptFile,
                 new[] { BreakpointDetails.Create(variableScriptFile.FilePath, 14) }).ConfigureAwait(true);
 
-            Task _ = ExecuteVariableScriptFile();
+            Task _ = ExecuteVariableScriptFileAsync();
             AssertDebuggerStopped(variableScriptFile.FilePath);
 
             VariableScope[] scopes = debugService.GetVariableScopes(0);
@@ -743,7 +750,7 @@ namespace PowerShellEditorServices.Test.Debugging
                 new[] { BreakpointDetails.Create(variableScriptFile.FilePath, 14) }).ConfigureAwait(true);
 
             // Execute the script and wait for the breakpoint to be hit
-            Task _ = ExecuteVariableScriptFile();
+            Task _ = ExecuteVariableScriptFileAsync();
             AssertDebuggerStopped(variableScriptFile.FilePath);
 
             VariableScope[] scopes = debugService.GetVariableScopes(0);
@@ -799,7 +806,7 @@ namespace PowerShellEditorServices.Test.Debugging
                 new[] { BreakpointDetails.Create(variableScriptFile.FilePath, 15) }).ConfigureAwait(true);
 
             // Execute the script and wait for the breakpoint to be hit
-            Task _ = ExecuteVariableScriptFile();
+            Task _ = ExecuteVariableScriptFileAsync();
             AssertDebuggerStopped(variableScriptFile.FilePath);
 
             StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
@@ -819,7 +826,7 @@ namespace PowerShellEditorServices.Test.Debugging
                 new[] { BreakpointDetails.Create(variableScriptFile.FilePath, 11) }).ConfigureAwait(true);
 
             // Execute the script and wait for the breakpoint to be hit
-            Task _ = ExecuteVariableScriptFile();
+            Task _ = ExecuteVariableScriptFileAsync();
             AssertDebuggerStopped(variableScriptFile.FilePath);
 
             StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
@@ -852,7 +859,7 @@ namespace PowerShellEditorServices.Test.Debugging
                 new[] { BreakpointDetails.Create(variableScriptFile.FilePath, 16) }).ConfigureAwait(true);
 
             // Execute the script and wait for the breakpoint to be hit
-            Task _ = ExecuteVariableScriptFile();
+            Task _ = ExecuteVariableScriptFileAsync();
             AssertDebuggerStopped(variableScriptFile.FilePath);
 
             StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
@@ -872,7 +879,7 @@ namespace PowerShellEditorServices.Test.Debugging
                 new[] { BreakpointDetails.Create(variableScriptFile.FilePath, 17) }).ConfigureAwait(true);
 
             // Execute the script and wait for the breakpoint to be hit
-            Task _ = ExecuteVariableScriptFile();
+            Task _ = ExecuteVariableScriptFileAsync();
             AssertDebuggerStopped(variableScriptFile.FilePath);
 
             StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
@@ -898,7 +905,7 @@ namespace PowerShellEditorServices.Test.Debugging
             await debugService.SetCommandBreakpointsAsync(new[] { breakpoint }).ConfigureAwait(true);
 
             // Execute the script and wait for the breakpoint to be hit
-            Task _ = ExecuteVariableScriptFile();
+            Task _ = ExecuteVariableScriptFileAsync();
             AssertDebuggerStopped(commandBreakpointDetails: breakpoint);
 
             VariableDetailsBase simpleArrayVar = Array.Find(
@@ -935,7 +942,7 @@ namespace PowerShellEditorServices.Test.Debugging
             await debugService.SetCommandBreakpointsAsync(new[] { breakpoint }).ConfigureAwait(true);
 
             // Execute the script and wait for the breakpoint to be hit
-            Task _ = ExecuteVariableScriptFile();
+            Task _ = ExecuteVariableScriptFileAsync();
             AssertDebuggerStopped(commandBreakpointDetails: breakpoint);
 
             VariableDetailsBase simpleDictionaryVar = Array.Find(
@@ -971,7 +978,7 @@ namespace PowerShellEditorServices.Test.Debugging
             await debugService.SetCommandBreakpointsAsync(new[] { breakpoint }).ConfigureAwait(true);
 
             // Execute the script and wait for the breakpoint to be hit
-            Task _ = ExecuteVariableScriptFile();
+            Task _ = ExecuteVariableScriptFileAsync();
             AssertDebuggerStopped(commandBreakpointDetails: breakpoint);
 
             VariableDetailsBase sortedDictionaryVar = Array.Find(
@@ -1000,7 +1007,7 @@ namespace PowerShellEditorServices.Test.Debugging
                 new[] { BreakpointDetails.Create(variableScriptFile.FilePath, 18) }).ConfigureAwait(true);
 
             // Execute the script and wait for the breakpoint to be hit
-            Task _ = ExecuteVariableScriptFile();
+            Task _ = ExecuteVariableScriptFileAsync();
             AssertDebuggerStopped(variableScriptFile.FilePath);
 
             StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
@@ -1029,7 +1036,7 @@ namespace PowerShellEditorServices.Test.Debugging
                 new[] { BreakpointDetails.Create(variableScriptFile.FilePath, 19) }).ConfigureAwait(true);
 
             // Execute the script and wait for the breakpoint to be hit
-            Task _ = ExecuteVariableScriptFile();
+            Task _ = ExecuteVariableScriptFileAsync();
             AssertDebuggerStopped(variableScriptFile.FilePath);
 
             StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
