@@ -77,6 +77,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private string _localComputerName;
 
+        private bool _shellIntegrationEnabled;
+
         private ConsoleKeyInfo? _lastKey;
 
         private bool _skipNextPrompt;
@@ -252,6 +254,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 _logger.LogDebug("Loading profiles...");
                 await LoadHostProfilesAsync(cancellationToken).ConfigureAwait(false);
                 _logger.LogDebug("Profiles loaded!");
+            }
+
+            if (startOptions.ShellIntegrationEnabled)
+            {
+                _logger.LogDebug("Enabling shell integration...");
+                _shellIntegrationEnabled = true;
+                await EnableShellIntegrationAsync(cancellationToken).ConfigureAwait(false);
+                _logger.LogDebug("Shell integration enabled!");
+            }
+            else
+            {
+                _logger.LogDebug("Shell integration not enabled!");
             }
 
             if (startOptions.InitialWorkingDirectory is not null)
@@ -485,6 +499,96 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 executionOptions: null,
                 (pwsh, _) => pwsh.LoadProfiles(_hostInfo.ProfilePaths),
                 cancellationToken);
+        }
+
+        private Task EnableShellIntegrationAsync(CancellationToken cancellationToken)
+        {
+            // Imported on 11/17/22 from
+            // https://github.com/microsoft/vscode/blob/main/src/vs/workbench/contrib/terminal/browser/media/shellIntegration.ps1
+            // with quotes escaped, `__VSCodeOriginalPSConsoleHostReadLine` removed (as it's done
+            // in our own ReadLine function), and `[Console]::Write` replaced with `Write-Host`.
+            // TODO: We can probably clean some of this up.
+            const string shellIntegrationScript = @"
+# Prevent installing more than once per session
+if (Test-Path variable:global:__VSCodeOriginalPrompt) {
+	return;
+}
+
+# Disable shell integration when the language mode is restricted
+if ($ExecutionContext.SessionState.LanguageMode -ne ""FullLanguage"") {
+	return;
+}
+
+$Global:__VSCodeOriginalPrompt = $function:Prompt
+
+$Global:__LastHistoryId = -1
+
+
+function Global:Prompt() {
+	$FakeCode = [int]!$global:?
+	$LastHistoryEntry = Get-History -Count 1
+	# Skip finishing the command if the first command has not yet started
+	if ($Global:__LastHistoryId -ne -1) {
+		if ($LastHistoryEntry.Id -eq $Global:__LastHistoryId) {
+			# Don't provide a command line or exit code if there was no history entry (eg. ctrl+c, enter on no command)
+			$Result  = ""`e]633;E`a""
+			$Result += ""`e]633;D`a""
+		} else {
+			# Command finished command line
+			# OSC 633 ; A ; <CommandLine?> ST
+			$Result  = ""`e]633;E;""
+			# Sanitize the command line to ensure it can get transferred to the terminal and can be parsed
+			# correctly. This isn't entirely safe but good for most cases, it's important for the Pt parameter
+			# to only be composed of _printable_ characters as per the spec.
+			if ($LastHistoryEntry.CommandLine) {
+				$CommandLine = $LastHistoryEntry.CommandLine
+			} else {
+				$CommandLine = """"
+			}
+			$Result += $CommandLine.Replace(""\"", ""\\"").Replace(""`n"", ""\x0a"").Replace("";"", ""\x3b"")
+			$Result += ""`a""
+			# Command finished exit code
+			# OSC 633 ; D [; <ExitCode>] ST
+			$Result += ""`e]633;D;$FakeCode`a""
+		}
+	}
+	# Prompt started
+	# OSC 633 ; A ST
+	$Result += ""`e]633;A`a""
+	# Current working directory
+	# OSC 633 ; <Property>=<Value> ST
+	$Result += if($pwd.Provider.Name -eq 'FileSystem'){""`e]633;P;Cwd=$($pwd.ProviderPath)`a""}
+	# Before running the original prompt, put $? back to what it was:
+	if ($FakeCode -ne 0) { Write-Error ""failure"" -ea ignore }
+	# Run the original prompt
+	$Result += $Global:__VSCodeOriginalPrompt.Invoke()
+	# Write command started
+	$Result += ""`e]633;B`a""
+	$Global:__LastHistoryId = $LastHistoryEntry.Id
+	return $Result
+}
+
+# Set IsWindows property
+Write-Host -NoNewLine ""`e]633;P;IsWindows=$($IsWindows)`a""
+
+# Set always on key handlers which map to default VS Code keybindings
+function Set-MappedKeyHandler {
+	param ([string[]] $Chord, [string[]]$Sequence)
+	$Handler = $(Get-PSReadLineKeyHandler -Chord $Chord | Select-Object -First 1)
+	if ($Handler) {
+		Set-PSReadLineKeyHandler -Chord $Sequence -Function $Handler.Function
+	}
+}
+function Set-MappedKeyHandlers {
+	Set-MappedKeyHandler -Chord Ctrl+Spacebar -Sequence 'F12,a'
+	Set-MappedKeyHandler -Chord Alt+Spacebar -Sequence 'F12,b'
+	Set-MappedKeyHandler -Chord Shift+Enter -Sequence 'F12,c'
+	Set-MappedKeyHandler -Chord Shift+End -Sequence 'F12,d'
+}
+Set-MappedKeyHandlers
+            ";
+
+            return ExecutePSCommandAsync(new PSCommand().AddScript(shellIntegrationScript), cancellationToken);
         }
 
         public Task SetInitialWorkingDirectoryAsync(string path, CancellationToken cancellationToken)
@@ -962,8 +1066,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private void InvokeInput(string input, CancellationToken cancellationToken)
         {
             SetBusy(true);
+
             try
             {
+                // For VS Code's shell integration feature, this replaces their
+                // PSConsoleHostReadLine function wrapper, as that global function is not available
+                // to users of PSES, since we already wrap ReadLine ourselves.
+                if (_shellIntegrationEnabled)
+                {
+                    System.Console.Write("\x1b]633;C\a");
+                }
+
                 InvokePSCommand(
                     new PSCommand().AddScript(input, useLocalScope: false),
                     new PowerShellExecutionOptions
