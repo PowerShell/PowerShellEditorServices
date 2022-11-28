@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -12,6 +13,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Serialization;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -131,7 +133,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         {
                             Title = title,
                             Name = "PowerShell.ShowCodeActionDocumentation",
-                            Arguments = Newtonsoft.Json.Linq.JArray.FromObject(new[] { diagnostic.Code?.String })
+                            Arguments = JArray.FromObject(new object[]
+                            {
+                                diagnostic.Code?.String
+                            },
+                            LspSerializer.Instance.JsonSerializer)
                         }
                     });
                 }
