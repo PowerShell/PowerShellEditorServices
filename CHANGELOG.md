@@ -1,5 +1,11 @@
 # PowerShell Editor Services Release History
 
+## v3.6.3
+### Tuesday, November 29, 2022
+
+- 🐛 🙏 [PowerShellEditorServices #1962](https://github.com/PowerShell/PowerShellEditorServices/pull/1962) - Revert manual pin of Newtonsoft.Json.
+- 🐛 📟 [vscode-powershell #4279](https://github.com/PowerShell/PowerShellEditorServices/pull/1961) - Replace backtick-e with `$([char]0x1b)`.
+
 ## v3.6.2
 ### Monday, November 21, 2022
 
