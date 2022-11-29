@@ -506,6 +506,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal string ResolveRelativeScriptPath(string baseFilePath, string relativePath)
         {
+            // TODO: Sometimes the `baseFilePath` (even when its `WorkspacePath`) is null.
             string combinedPath = null;
             Exception resolveException = null;
 

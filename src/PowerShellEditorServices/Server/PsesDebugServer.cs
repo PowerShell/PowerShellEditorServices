@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -89,6 +89,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     {
                         // Start the host if not already started, and enable debug mode (required
                         // for remote debugging).
+                        //
+                        // TODO: We might need to fill in HostStartOptions here.
                         _startedPses = !await _psesHost.TryStartAsync(new HostStartOptions(), cancellationToken).ConfigureAwait(false);
                         _psesHost.DebugContext.EnableDebugMode();
 

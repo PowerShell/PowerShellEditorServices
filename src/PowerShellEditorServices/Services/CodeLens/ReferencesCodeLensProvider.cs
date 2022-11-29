@@ -154,9 +154,9 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     Title = GetReferenceCountHeader(referenceLocations.Length),
                     Arguments = JArray.FromObject(new object[]
                     {
-                    scriptFile.DocumentUri,
-                    codeLens.Range.Start,
-                    referenceLocations
+                        scriptFile.DocumentUri,
+                        codeLens.Range.Start,
+                        referenceLocations
                     },
                     LspSerializer.Instance.JsonSerializer)
                 }

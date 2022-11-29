@@ -28,8 +28,8 @@
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
-    <!-- Manually pull in the updated version of Newtonsoft.Json. -->
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <!-- TODO: Manually pull in the updated version of Newtonsoft.Json after OmniSharp updates. -->
+    <!-- PackageReference Include="Newtonsoft.Json" Version="13.0.1" -->
     <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.19.6" />
     <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Server" Version="0.19.6" />
     <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" />
