@@ -12,33 +12,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
     using System.Management.Automation;
 
     /// <summary>
-    /// Defines the possible enumeration values for the PowerShell process architecture.
-    /// </summary>
-    internal enum PowerShellProcessArchitecture
-    {
-        /// <summary>
-        /// The processor architecture is unknown or wasn't accessible.
-        /// </summary>
-        Unknown,
-
-        /// <summary>
-        /// The processor architecture is 32-bit.
-        /// </summary>
-        X86,
-
-        /// <summary>
-        /// The processor architecture is 64-bit.
-        /// </summary>
-        X64
-    }
-
-    /// <summary>
     /// Provides details about the version of the PowerShell runtime.
     /// </summary>
     internal class PowerShellVersionDetails
     {
-        #region Properties
-
         /// <summary>
         /// Gets the version of the PowerShell runtime.
         /// </summary>
@@ -56,39 +33,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
         public string Edition { get; }
 
         /// <summary>
-        /// Gets the architecture of the PowerShell process.
-        /// </summary>
-        public PowerShellProcessArchitecture Architecture { get; }
-
-        #endregion
-
-        #region Constructors
-
-        /// <summary>
         /// Creates an instance of the PowerShellVersionDetails class.
         /// </summary>
         /// <param name="version">The version of the PowerShell runtime.</param>
         /// <param name="versionString">A string representation of the PowerShell version.</param>
         /// <param name="editionString">The string representation of the PowerShell edition.</param>
-        /// <param name="architecture">The processor architecture.</param>
         public PowerShellVersionDetails(
             Version version,
             string versionString,
-            string editionString,
-            PowerShellProcessArchitecture architecture)
+            string editionString)
         {
             Version = version;
             VersionString = versionString;
             Edition = editionString;
-            Architecture = architecture;
         }
 
-        #endregion
-
-        #region Public Methods
-
         /// <summary>
-        /// Gets the PowerShell version details for the given runspace.
+        /// Gets the PowerShell version details for the given runspace. This doesn't use
+        /// VersionUtils because we may be remoting, and therefore want the remote runspace's
+        /// version, not the local process.
         /// </summary>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         /// <param name="pwsh">The PowerShell instance for which to get the version.</param>
@@ -98,7 +61,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
             Version powerShellVersion = new(5, 0);
             string versionString = null;
             string powerShellEdition = "Desktop";
-            PowerShellProcessArchitecture architecture = PowerShellProcessArchitecture.Unknown;
 
             try
             {
@@ -129,25 +91,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
                     }
 
                     versionString = psVersionTable["GitCommitId"] is string gitCommitId ? gitCommitId : powerShellVersion.ToString();
-
-                    PSCommand procArchCommand = new PSCommand().AddScript("$env:PROCESSOR_ARCHITECTURE", useLocalScope: true);
-
-                    string arch = pwsh
-                        .AddScript("$env:PROCESSOR_ARCHITECTURE", useLocalScope: true)
-                        .InvokeAndClear<string>()
-                        .FirstOrDefault();
-
-                    if (arch != null)
-                    {
-                        if (string.Equals(arch, "AMD64", StringComparison.CurrentCultureIgnoreCase))
-                        {
-                            architecture = PowerShellProcessArchitecture.X64;
-                        }
-                        else if (string.Equals(arch, "x86", StringComparison.CurrentCultureIgnoreCase))
-                        {
-                            architecture = PowerShellProcessArchitecture.X86;
-                        }
-                    }
                 }
             }
             catch (Exception ex)
@@ -156,13 +99,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
                     "Failed to look up PowerShell version, defaulting to version 5.\r\n\r\n" + ex.ToString());
             }
 
-            return new PowerShellVersionDetails(
-                powerShellVersion,
-                versionString,
-                powerShellEdition,
-                architecture);
+            return new PowerShellVersionDetails(powerShellVersion, versionString, powerShellEdition);
         }
-
-        #endregion
     }
 }

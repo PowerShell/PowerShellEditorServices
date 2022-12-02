@@ -354,6 +354,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 ");
         }
 
+        // TODO: Deduplicate this with VersionUtils.
         private static string GetOSArchitecture()
         {
 #if CoreCLR
