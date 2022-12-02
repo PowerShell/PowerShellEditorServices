@@ -61,6 +61,11 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// True if we are running on Linux, false otherwise.
         /// </summary>
         public static bool IsLinux { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+
+        /// <summary>
+        /// The .NET Architecture as a string.
+        /// </summary>
+        public static string Architecture { get; } = PowerShellReflectionUtils.GetOSArchitecture();
     }
 
     internal static class PowerShellReflectionUtils
@@ -96,5 +101,24 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         public static string PSVersionString { get; } = s_psCurrentVersionProperty != null
             ? s_psCurrentVersionProperty.GetValue(null).ToString()
             : s_psVersionProperty.GetValue(null).ToString();
+
+        public static string GetOSArchitecture()
+        {
+#if CoreCLR
+            if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+            {
+                return RuntimeInformation.OSArchitecture.ToString();
+            }
+#endif
+            // If on win7 (version 6.1.x), avoid System.Runtime.InteropServices.RuntimeInformation
+            if (Environment.OSVersion.Version < new Version(6, 2))
+            {
+                return Environment.Is64BitProcess
+                    ? "X64"
+                    : "X86";
+            }
+
+            return RuntimeInformation.OSArchitecture.ToString();
+        }
     }
 }
