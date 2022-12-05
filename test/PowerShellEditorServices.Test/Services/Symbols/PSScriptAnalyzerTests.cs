@@ -8,7 +8,6 @@ using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Test;
-using Microsoft.PowerShell.EditorServices.Utility;
 using Xunit;
 
 namespace PowerShellEditorServices.Test.Services.Symbols
@@ -66,10 +65,9 @@ namespace PowerShellEditorServices.Test.Services.Symbols
             });
         }
 
-        [SkippableFact]
+        [Fact]
         public async Task DoesNotDuplicateScriptMarkersAsync()
         {
-            Skip.If(VersionUtils.PSEdition == "Core", "OmniSharp records are broken!");
             ScriptFile scriptFile = workspaceService.GetFileBuffer("untitled:Untitled-1", script);
             ScriptFile[] scriptFiles = { scriptFile };
 
@@ -85,10 +83,9 @@ namespace PowerShellEditorServices.Test.Services.Symbols
             Assert.Single(scriptFile.DiagnosticMarkers);
         }
 
-        [SkippableFact]
+        [Fact]
         public async Task DoesNotClearParseErrorsAsync()
         {
-            Skip.If(VersionUtils.PSEdition == "Core", "OmniSharp records are broken!");
             // Causing a missing closing } parser error
             ScriptFile scriptFile = workspaceService.GetFileBuffer("untitled:Untitled-2", script.TrimEnd('}'));
             ScriptFile[] scriptFiles = { scriptFile };

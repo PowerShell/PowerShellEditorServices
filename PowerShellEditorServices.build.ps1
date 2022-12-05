@@ -5,27 +5,36 @@ param(
     [ValidateSet("Debug", "Release")]
     [string]$Configuration = "Debug",
 
+    [switch]$LocalOmniSharp,
+
     [string]$PsesSubmodulePath = "$PSScriptRoot/module",
 
     [string]$ModulesJsonPath = "$PSScriptRoot/modules.json",
 
     [string]$DefaultModuleRepository = "PSGallery",
 
-    [string[]]$VerbosityArgs = @("--verbosity", "quiet", "--nologo"),
+    [string]$Verbosity = "quiet",
 
     # See: https://docs.microsoft.com/en-us/dotnet/core/testing/selective-unit-tests
     [string]$TestFilter = '',
 
     # See: https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-test
-    [string[]]$TestArgs = $VerbosityArgs + @("--logger", "console;verbosity=normal", "--logger", "trx")
+    [string[]]$TestArgs = @("--logger", "console;verbosity=normal", "--logger", "trx")
 )
 
 #Requires -Modules @{ModuleName="InvokeBuild"; ModuleVersion="5.0.0"}
 #Requires -Modules @{ModuleName="platyPS"; ModuleVersion="0.14.0"}
 
-$script:dotnetTestArgs = @(
-    "test"
-    $TestArgs
+$script:dotnetBuildArgs = @(
+    "--verbosity"
+    $Verbosity
+    "--nologo"
+    "-c"
+    $Configuration
+    if ($LocalOmniSharp) { "-property:LocalOmniSharp=true" }
+)
+
+$script:dotnetTestArgs = @("test") + $script:dotnetBuildArgs + $TestArgs + @(
     if ($TestFilter) { "--filter", $TestFilter }
     "--framework"
 )
@@ -80,7 +89,7 @@ Task BinClean {
 }
 
 Task Clean FindDotNet, BinClean, {
-    Invoke-BuildExec { & dotnet clean $VerbosityArgs }
+    Invoke-BuildExec { & dotnet clean --verbosity $Verbosity }
     Get-ChildItem -Recurse $PSScriptRoot\src\*.nupkg | Remove-BuildItem
     Get-ChildItem $PSScriptRoot\PowerShellEditorServices*.zip | Remove-BuildItem
     Get-ChildItem $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US\*-help.xml | Remove-BuildItem
@@ -162,15 +171,14 @@ Task SetupHelpForTests {
 }
 
 Task Build FindDotNet, CreateBuildInfo, {
-    Invoke-BuildExec { & dotnet restore $VerbosityArgs }
-    Invoke-BuildExec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetRuntime.Standard }
-    Invoke-BuildExec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.PS7 }
+    Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetRuntime.Standard }
+    Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.PS7 }
     if (-not $script:IsNix) {
-        Invoke-BuildExec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Desktop }
+        Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Desktop }
     }
 
     # Build PowerShellEditorServices.VSCode module
-    Invoke-BuildExec { & dotnet publish $VerbosityArgs -c $Configuration .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj -f $script:NetRuntime.Standard }
+    Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj -f $script:NetRuntime.Standard }
 }
 
 Task Test TestServer, TestE2E
