@@ -25,13 +25,6 @@ steps:
     version: 6.0.x
     performMultiLevelLookup: true
 
-- task: UseDotNet@2
-  displayName: Install .NET 3.1.x runtime
-  inputs:
-    packageType: runtime
-    version: 3.1.x
-    performMultiLevelLookup: true
-
 - task: PowerShell@2
   displayName: Build
   inputs:
