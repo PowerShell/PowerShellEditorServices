@@ -14,8 +14,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell
     internal record PowerShellVersion
     {
         public string Version { get; init; }
-        public string DisplayVersion { get; init; }
         public string Edition { get; init; }
+        public string Commit { get; init; }
         public string Architecture { get; init; }
     }
 }

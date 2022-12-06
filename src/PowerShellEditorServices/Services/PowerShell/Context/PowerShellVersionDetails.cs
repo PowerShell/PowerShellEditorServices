@@ -22,12 +22,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
         public Version Version { get; }
 
         /// <summary>
-        /// Gets the full version string, either the ToString of the Version
-        /// property or the GitCommitId for open-source PowerShell releases.
-        /// </summary>
-        public string VersionString { get; }
-
-        /// <summary>
         /// Gets the PowerShell edition (generally Desktop or Core).
         /// </summary>
         public string Edition { get; }
@@ -36,15 +30,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
         /// Creates an instance of the PowerShellVersionDetails class.
         /// </summary>
         /// <param name="version">The version of the PowerShell runtime.</param>
-        /// <param name="versionString">A string representation of the PowerShell version.</param>
         /// <param name="editionString">The string representation of the PowerShell edition.</param>
         public PowerShellVersionDetails(
             Version version,
-            string versionString,
             string editionString)
         {
             Version = version;
-            VersionString = versionString;
             Edition = editionString;
         }
 
@@ -59,7 +50,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
         public static PowerShellVersionDetails GetVersionDetails(ILogger logger, PowerShell pwsh)
         {
             Version powerShellVersion = new(5, 0);
-            string versionString = null;
             string powerShellEdition = "Desktop";
 
             try
@@ -89,8 +79,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
                         // Expected version string format is 6.0.0-alpha so build a simpler version from that
                         powerShellVersion = new Version(version.ToString().Split('-')[0]);
                     }
-
-                    versionString = psVersionTable["GitCommitId"] is string gitCommitId ? gitCommitId : powerShellVersion.ToString();
                 }
             }
             catch (Exception ex)
@@ -99,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
                     "Failed to look up PowerShell version, defaulting to version 5.\r\n\r\n" + ex.ToString());
             }
 
-            return new PowerShellVersionDetails(powerShellVersion, versionString, powerShellEdition);
+            return new PowerShellVersionDetails(powerShellVersion, powerShellEdition);
         }
     }
 }
