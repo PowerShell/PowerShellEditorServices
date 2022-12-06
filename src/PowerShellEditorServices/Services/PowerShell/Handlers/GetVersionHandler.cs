@@ -16,7 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 Version = VersionUtils.PSVersionString,
                 Edition = VersionUtils.PSEdition,
-                DisplayVersion = VersionUtils.PSVersion.ToString(2),
+                Commit = VersionUtils.GitCommitId,
                 Architecture = VersionUtils.Architecture
             };
         }
