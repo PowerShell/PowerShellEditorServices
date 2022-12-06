@@ -48,14 +48,13 @@ $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerSh
 $script:PsesCommonProps = [xml](Get-Content -Raw "$PSScriptRoot/PowerShellEditorServices.Common.props")
 
 $script:NetRuntime = @{
-    PS7      = 'netcoreapp3.1'
     PS72     = 'net6.0'
     PS73     = 'net7.0'
     Desktop  = 'net462'
     Standard = 'netstandard2.0'
 }
 
-$script:HostCoreOutput = "$PSScriptRoot/src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetRuntime.PS7)/publish"
+$script:HostCoreOutput = "$PSScriptRoot/src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetRuntime.PS72)/publish"
 $script:HostDeskOutput = "$PSScriptRoot/src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetRuntime.Desktop)/publish"
 $script:PsesOutput = "$PSScriptRoot/src/PowerShellEditorServices/bin/$Configuration/$($script:NetRuntime.Standard)/publish"
 $script:VSCodeOutput = "$PSScriptRoot/src/PowerShellEditorServices.VSCode/bin/$Configuration/$($script:NetRuntime.Standard)/publish"
@@ -71,13 +70,6 @@ Task FindDotNet {
     # Strip out semantic version metadata so it can be cast to `Version`
     $existingVersion, $null = (dotnet --version) -split '-'
     Assert ([Version]$existingVersion -ge [Version]("6.0")) ".NET SDK 6.0 or higher is required, please update it: https://aka.ms/dotnet-cli"
-
-    # Anywhere other than on a Mac with an M1 processor, we additionally
-    # need the .NET 3.1 runtime for our netcoreapp3.1 framework.
-    if (-not $script:IsAppleM1 -and -not $script:IsArm64) {
-        $runtimes = dotnet --list-runtimes
-        Assert ($runtimes -match "Microsoft.NETCore.App 3.1") ".NET Runtime 3.1 required but not found!"
-    }
 
     Write-Host "Using dotnet v$(dotnet --version) at path $((Get-Command dotnet).Source)" -ForegroundColor Green
 }
@@ -172,7 +164,8 @@ Task SetupHelpForTests {
 
 Task Build FindDotNet, CreateBuildInfo, {
     Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetRuntime.Standard }
-    Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.PS7 }
+    Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.PS72 }
+
     if (-not $script:IsNix) {
         Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Desktop }
     }
@@ -183,7 +176,7 @@ Task Build FindDotNet, CreateBuildInfo, {
 
 Task Test TestServer, TestE2E
 
-Task TestServer TestServerWinPS, TestServerPS7, TestServerPS72, TestServerPS73
+Task TestServer TestServerWinPS, TestServerPS72, TestServerPS73
 
 # NOTE: While these can run under `pwsh.exe` we only want them to run under
 # `powershell.exe` so that the CI time isn't doubled.
@@ -194,11 +187,6 @@ Task TestServerWinPS -If ($PSVersionTable.PSEdition -eq "Desktop") Build, SetupH
     # additional folder, necesstiating fixes to find the commands definition
     # file and test files.
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.Desktop }
-}
-
-Task TestServerPS7 -If ($PSVersionTable.PSEdition -eq "Core" -and -not $script:IsAppleM1 -and -not $script:IsArm64) Build, SetupHelpForTests, {
-    Set-Location .\test\PowerShellEditorServices.Test\
-    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS7 }
 }
 
 Task TestServerPS72 -If ($PSVersionTable.PSEdition -eq "Core") Build, SetupHelpForTests, {

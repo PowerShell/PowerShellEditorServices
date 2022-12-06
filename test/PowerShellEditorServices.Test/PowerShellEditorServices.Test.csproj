@@ -2,7 +2,7 @@
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0;net6.0;netcoreapp3.1;net462</TargetFrameworks>
+    <TargetFrameworks>net7.0;net6.0;net462</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices.Test</AssemblyName>
     <TargetPlatform>x64</TargetPlatform>
   </PropertyGroup>
@@ -17,14 +17,9 @@
       <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.3.0" />
   </ItemGroup>
 
-  <!-- PowerShell LTS-Current -->
+  <!-- PowerShell LTS -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
     <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.7" />
-  </ItemGroup>
-
-  <!-- PowerShell LTS -->
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.0.13" />
   </ItemGroup>
 
   <!-- Windows PowerShell 5.1 -->
