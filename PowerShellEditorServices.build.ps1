@@ -90,9 +90,9 @@ Task BinClean {
 
 Task Clean FindDotNet, BinClean, {
     Invoke-BuildExec { & dotnet clean --verbosity $Verbosity }
-    Get-ChildItem -Recurse $PSScriptRoot\src\*.nupkg | Remove-BuildItem
-    Get-ChildItem $PSScriptRoot\PowerShellEditorServices*.zip | Remove-BuildItem
-    Get-ChildItem $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US\*-help.xml | Remove-BuildItem
+    Remove-BuildItem $PSScriptRoot\src\*.nupkg
+    Remove-BuildItem $PSScriptRoot\PowerShellEditorServices*.zip
+    Remove-BuildItem $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US\*-help.xml
 
     # Remove bundled component modules
     $moduleJsonPath = "$PSScriptRoot\modules.json"
