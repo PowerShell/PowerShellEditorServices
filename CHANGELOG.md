@@ -1,5 +1,10 @@
 # PowerShell Editor Services Release History
 
+## v3.7.1
+### Monday, December 12, 2022
+
+- 🐛 🚂 [vscode-powershell #4212](https://github.com/PowerShell/PowerShellEditorServices/pull/1970) - Fix `ShowHelpHandler` by running with `RequiresForeground`.
+
 ## v3.7.0
 ### Tuesday, December 06, 2022
 
