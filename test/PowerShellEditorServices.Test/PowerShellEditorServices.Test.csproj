@@ -14,12 +14,12 @@
 
   <!-- Latest PowerShell -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net7.0' ">
-      <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.3.0" />
+      <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.3.1" />
   </ItemGroup>
 
   <!-- PowerShell LTS -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.7" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.3.1" />
   </ItemGroup>
 
   <!-- Windows PowerShell 5.1 -->
