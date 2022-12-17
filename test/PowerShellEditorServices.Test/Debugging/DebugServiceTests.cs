@@ -496,7 +496,7 @@ namespace PowerShellEditorServices.Test.Debugging
             Assert.Equal(0, confirmedBreakpoints.Count);
             Task _ = ExecuteDebugFileAsync();
             // NOTE: This must be run on a separate thread so the async event handlers can fire.
-            await Task.Run(() => debugService.Break()).ConfigureAwait(true);
+            await Task.Run(debugService.Break).ConfigureAwait(true);
             AssertDebuggerPaused();
         }
 
@@ -505,7 +505,7 @@ namespace PowerShellEditorServices.Test.Debugging
         {
             Task _ = ExecuteDebugFileAsync();
             // NOTE: This must be run on a separate thread so the async event handlers can fire.
-            await Task.Run(() => debugService.Break()).ConfigureAwait(true);
+            await Task.Run(debugService.Break).ConfigureAwait(true);
             AssertDebuggerPaused();
 
             // Try running a command from outside the pipeline thread
@@ -723,7 +723,7 @@ namespace PowerShellEditorServices.Test.Debugging
 
             // The above just tests that the debug service returns the correct new value string.
             // Let's step the debugger and make sure the values got set to the new values.
-            await Task.Run(() => debugService.StepOver()).ConfigureAwait(true);
+            await Task.Run(debugService.StepOver).ConfigureAwait(true);
             AssertDebuggerStopped(variableScriptFile.FilePath);
 
             // Test set of a local string variable (not strongly typed)
@@ -779,7 +779,7 @@ namespace PowerShellEditorServices.Test.Debugging
 
             // The above just tests that the debug service returns the correct new value string.
             // Let's step the debugger and make sure the values got set to the new values.
-            await Task.Run(() => debugService.StepOver()).ConfigureAwait(true);
+            await Task.Run(debugService.StepOver).ConfigureAwait(true);
             AssertDebuggerStopped(variableScriptFile.FilePath);
 
             // Test set of a local string variable (not strongly typed but force conversion)

@@ -51,7 +51,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// If this variable instance is expandable, this method returns the
         /// details of its children.  Otherwise it returns an empty array.
         /// </summary>
-        /// <returns></returns>
         public abstract VariableDetailsBase[] GetChildren(ILogger logger);
     }
 }

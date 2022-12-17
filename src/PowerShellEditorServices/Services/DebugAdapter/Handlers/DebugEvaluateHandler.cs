@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -64,21 +64,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     result = _debugService.GetVariableFromExpression(request.Expression);
 
                     // If the expression is not a naked variable reference, then evaluate the expression.
-                    if (result == null)
-                    {
-                        result =
-                            await _debugService.EvaluateExpressionAsync(
-                                request.Expression,
-                                isFromRepl).ConfigureAwait(false);
-                    }
+                    result ??= await _debugService.EvaluateExpressionAsync(
+                        request.Expression,
+                        isFromRepl).ConfigureAwait(false);
                 }
 
                 if (result != null)
                 {
                     valueString = result.ValueString;
-                    variableId =
-                        result.IsExpandable ?
-                            result.Id : 0;
+                    variableId = result.IsExpandable ? result.Id : 0;
                 }
             }
 

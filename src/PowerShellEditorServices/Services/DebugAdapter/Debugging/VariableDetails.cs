@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -98,16 +98,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// If this variable instance is expandable, this method returns the
         /// details of its children.  Otherwise it returns an empty array.
         /// </summary>
-        /// <returns></returns>
         public override VariableDetailsBase[] GetChildren(ILogger logger)
         {
             if (IsExpandable)
             {
-                if (cachedChildren == null)
-                {
-                    cachedChildren = GetChildren(ValueObject, logger);
-                }
-
+                cachedChildren ??= GetChildren(ValueObject, logger);
                 return cachedChildren;
             }
 
@@ -131,9 +126,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 valueObject = psobject.BaseObject;
             }
 
-            Type valueType =
-                valueObject?.GetType();
-
+            Type valueType = valueObject?.GetType();
             TypeInfo valueTypeInfo = valueType.GetTypeInfo();
 
             return
@@ -379,7 +372,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
         #endregion
 
-        private struct UnableToRetrievePropertyMessage
+        private readonly struct UnableToRetrievePropertyMessage
         {
             public UnableToRetrievePropertyMessage(string message) => Message = message;
 

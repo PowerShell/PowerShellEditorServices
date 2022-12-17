@@ -146,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                 // TODO: We need to assign cancellation tokens to each frame, because the current
                 // logic results in a deadlock here when we try to cancel the scopes...which
                 // includes ourself (hence running it in a separate thread).
-                _ = Task.Run(() => _psesHost.UnwindCallStack());
+                _ = Task.Run(_psesHost.UnwindCallStack);
                 return;
             }
 
