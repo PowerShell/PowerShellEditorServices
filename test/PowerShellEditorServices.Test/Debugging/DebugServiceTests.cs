@@ -920,20 +920,40 @@ namespace PowerShellEditorServices.Test.Debugging
             Assert.Empty(rawDetailsView.Type);
             Assert.Empty(rawDetailsView.ValueString);
             VariableDetailsBase[] rawViewChildren = rawDetailsView.GetChildren(NullLogger.Instance);
-            Assert.Equal(7, rawViewChildren.Length);
-            Assert.Equal("Length", rawViewChildren[0].Name);
-            Assert.Equal("4", rawViewChildren[0].ValueString);
-            Assert.Equal("LongLength", rawViewChildren[1].Name);
-            Assert.Equal("4", rawViewChildren[1].ValueString);
-            Assert.Equal("Rank", rawViewChildren[2].Name);
-            Assert.Equal("1", rawViewChildren[2].ValueString);
-            Assert.Equal("SyncRoot", rawViewChildren[3].Name);
-            Assert.Equal("IsReadOnly", rawViewChildren[4].Name);
-            Assert.Equal("$false", rawViewChildren[4].ValueString);
-            Assert.Equal("IsFixedSize", rawViewChildren[5].Name);
-            Assert.Equal("$true", rawViewChildren[5].ValueString);
-            Assert.Equal("IsSynchronized", rawViewChildren[6].Name);
-            Assert.Equal("$false", rawViewChildren[6].ValueString);
+            Assert.Collection(rawViewChildren,
+                (i) =>
+                {
+                    Assert.Equal("Length", i.Name);
+                    Assert.Equal("4", i.ValueString);
+                },
+                (i) =>
+                {
+                    Assert.Equal("LongLength", i.Name);
+                    Assert.Equal("4", i.ValueString);
+                },
+                (i) =>
+                {
+                    Assert.Equal("Rank", i.Name);
+                    Assert.Equal("1", i.ValueString);
+                },
+                (i) =>
+                {
+                    Assert.Equal("SyncRoot", i.Name);
+                    Assert.True(i.IsExpandable);
+                },
+                (i) =>
+                {
+                    Assert.Equal("IsReadOnly", i.Name);
+                    Assert.Equal("$false", i.ValueString);
+                }, (i) =>
+                {
+                    Assert.Equal("IsFixedSize", i.Name);
+                    Assert.Equal("$true", i.ValueString);
+                }, (i) =>
+                {
+                    Assert.Equal("IsSynchronized", i.Name);
+                    Assert.Equal("$false", i.ValueString);
+                });
         }
 
         [Fact]
@@ -956,20 +976,47 @@ namespace PowerShellEditorServices.Test.Debugging
             Assert.NotNull(rawDetailsView);
             Assert.Empty(rawDetailsView.Type);
             Assert.Empty(rawDetailsView.ValueString);
-            VariableDetailsBase[] rawViewChildren = rawDetailsView.GetChildren(NullLogger.Instance);
-            Assert.Equal(7, rawViewChildren.Length);
-            Assert.Equal("IsReadOnly", rawViewChildren[0].Name);
-            Assert.Equal("$false", rawViewChildren[0].ValueString);
-            Assert.Equal("IsFixedSize", rawViewChildren[1].Name);
-            Assert.Equal("$false", rawViewChildren[1].ValueString);
-            Assert.Equal("IsSynchronized", rawViewChildren[2].Name);
-            Assert.Equal("$false", rawViewChildren[2].ValueString);
-            Assert.Equal("Keys", rawViewChildren[3].Name);
-            Assert.Equal("Values", rawViewChildren[4].Name);
-            Assert.Equal("[ValueCollection: 4]", rawViewChildren[4].ValueString);
-            Assert.Equal("SyncRoot", rawViewChildren[5].Name);
-            Assert.Equal("Count", rawViewChildren[6].Name);
-            Assert.Equal("4", rawViewChildren[6].ValueString);
+            VariableDetailsBase[] rawDetailsChildren = rawDetailsView.GetChildren(NullLogger.Instance);
+            Assert.Collection(rawDetailsChildren,
+                (i) =>
+                {
+                    Assert.Equal("IsReadOnly", i.Name);
+                    Assert.Equal("$false", i.ValueString);
+                },
+                (i) =>
+                {
+                    Assert.Equal("IsFixedSize", i.Name);
+                    Assert.Equal("$false", i.ValueString);
+                },
+                (i) =>
+                {
+                    Assert.Equal("IsSynchronized", i.Name);
+                    Assert.Equal("$false", i.ValueString);
+                },
+                (i) =>
+                {
+                    Assert.Equal("Keys", i.Name);
+                    Assert.Equal("[KeyCollection: 4]", i.ValueString);
+                },
+                (i) =>
+                {
+                    Assert.Equal("Values", i.Name);
+                    Assert.Equal("[ValueCollection: 4]", i.ValueString);
+                },
+                (i) =>
+                {
+                    Assert.Equal("SyncRoot", i.Name);
+#if CoreCLR
+                    Assert.Equal("[Hashtable: 4]", i.ValueString);
+#else
+                    Assert.Equal("[Object]", i.ValueString);
+#endif
+                },
+                (i) =>
+                {
+                    Assert.Equal("Count", i.Name);
+                    Assert.Equal("4", i.ValueString);
+                });
         }
 
         [Fact]
@@ -996,8 +1043,28 @@ namespace PowerShellEditorServices.Test.Debugging
             Assert.Empty(rawDetailsView.Type);
             Assert.Empty(rawDetailsView.ValueString);
             VariableDetailsBase[] rawViewChildren = rawDetailsView.GetChildren(NullLogger.Instance);
-            Assert.Equal(4, rawViewChildren.Length);
-            Assert.NotNull(Array.Find(rawViewChildren, v => v.Name == "Comparer"));
+            Assert.Collection(rawViewChildren,
+                (i) =>
+                {
+                    Assert.Equal("Count", i.Name);
+                    Assert.Equal("4", i.ValueString);
+                },
+                (i) =>
+                {
+                    Assert.Equal("Comparer", i.Name);
+                    Assert.Equal("[GenericComparer`1]", i.ValueString);
+                },
+                (i) =>
+                {
+                    Assert.Equal("Keys", i.Name);
+                    Assert.Equal("[KeyCollection: 4]", i.ValueString);
+                },
+                (i) =>
+                {
+                    Assert.Equal("Values", i.Name);
+                    Assert.Equal("[ValueCollection: 4]", i.ValueString);
+                }
+            );
         }
 
         [Fact]
@@ -1029,8 +1096,8 @@ namespace PowerShellEditorServices.Test.Debugging
 
         // Verifies fix for issue #86, $proc = Get-Process foo displays just the ETS property set
         // and not all process properties.
-        [Fact(Skip = "Length of child vars is wrong now")]
-        public async Task DebuggerVariableProcessObjDisplaysCorrectly()
+        [Fact]
+        public async Task DebuggerVariableProcessObjectDisplaysCorrectly()
         {
             await debugService.SetLineBreakpointsAsync(
                 variableScriptFile,
@@ -1049,7 +1116,33 @@ namespace PowerShellEditorServices.Test.Debugging
             Assert.True(var.IsExpandable);
 
             VariableDetailsBase[] childVars = await debugService.GetVariables(var.Id, CancellationToken.None).ConfigureAwait(true);
-            Assert.Equal(53, childVars.Length);
+            Assert.Contains(childVars, i => i.Name is "Name");
+            Assert.Contains(childVars, i => i.Name is "Handles");
+#if CoreCLR
+            Assert.Contains(childVars, i => i.Name is "CommandLine");
+            Assert.Contains(childVars, i => i.Name is "ExitCode");
+            Assert.Contains(childVars, i => i.Name is "HasExited" && i.ValueString is "$false");
+#endif
+            Assert.Contains(childVars, i => i.Name is "Id");
+        }
+
+        [Fact]
+        public async Task DebuggerVariableFileObjectDisplaysCorrectly()
+        {
+            await debugService.SetCommandBreakpointsAsync(
+                new[] { CommandBreakpointDetails.Create("Write-Host") }).ConfigureAwait(true);
+
+            ScriptFile testScript = GetDebugScript("GetChildItemTest.ps1");
+            Task _ = ExecuteScriptFileAsync(testScript.FilePath);
+            AssertDebuggerStopped(testScript.FilePath, 2);
+
+            VariableDetailsBase[] variables = await GetVariables(VariableContainerDetails.LocalScopeName).ConfigureAwait(true);
+            VariableDetailsBase var = Array.Find(variables, v => v.Name == "$file");
+            VariableDetailsBase[] childVars = await debugService.GetVariables(var.Id, CancellationToken.None).ConfigureAwait(true);
+            Assert.Contains(childVars, i => i.Name is "PSPath");
+            Assert.Contains(childVars, i => i.Name is "PSProvider" && i.ValueString is "Microsoft.PowerShell.Core\\FileSystem");
+            Assert.Contains(childVars, i => i.Name is "Exists" && i.ValueString is "$true");
+            Assert.Contains(childVars, i => i.Name is "LastAccessTime");
         }
     }
 }

@@ -68,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// The PSPropertyInfo instance from which variable details will be obtained.
         /// </param>
         public VariableDetails(PSPropertyInfo psProperty)
-            : this(psProperty.Name, psProperty.Value)
+            : this(psProperty.Name, SafeGetValue(psProperty))
         {
         }
 
@@ -112,6 +112,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         #endregion
 
         #region Private Methods
+
+        private static object SafeGetValue(PSPropertyInfo psProperty)
+        {
+            try
+            {
+                return psProperty.Value;
+            }
+            catch (GetValueInvocationException ex)
+            {
+                // Sometimes we can't get the value, like ExitCode, for reasons beyond our control,
+                // so just return the message from the exception that arises.
+                return new UnableToRetrievePropertyMessage { Name = psProperty.Name, Message = ex.Message };
+            }
+        }
 
         private static bool GetIsExpandable(object valueObject)
         {
@@ -331,9 +345,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 return;
             }
 
-            PropertyInfo[] properties = objectType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-            foreach (PropertyInfo property in properties)
+            // Search all the public instance properties and add those missing.
+            foreach (PropertyInfo property in objectType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
                 // Don't display indexer properties, it causes an exception anyway.
                 if (property.GetIndexParameters().Length > 0)
@@ -343,10 +356,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
                 try
                 {
-                    childVariables.Add(
-                        new VariableDetails(
-                            property.Name,
-                            property.GetValue(obj)));
+                    // Only add unique properties because we may have already added some.
+                    if (!childVariables.Exists(p => p.Name == property.Name))
+                    {
+                        childVariables.Add(new VariableDetails(property.Name, property.GetValue(obj)));
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -360,21 +374,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                     childVariables.Add(
                         new VariableDetails(
                             property.Name,
-                            new UnableToRetrievePropertyMessage(
-                                "Error retrieving property - " + ex.GetType().Name)));
+                            new UnableToRetrievePropertyMessage { Name = property.Name, Message = ex.Message }));
                 }
             }
         }
 
         #endregion
 
-        private readonly struct UnableToRetrievePropertyMessage
+        private record UnableToRetrievePropertyMessage
         {
-            public UnableToRetrievePropertyMessage(string message) => Message = message;
+            public string Name { get; init; }
+            public string Message { get; init; }
 
-            public string Message { get; }
-
-            public override string ToString() => "<" + Message + ">";
+            public override string ToString() => $"Error retrieving property '${Name}': ${Message}";
         }
     }
 
