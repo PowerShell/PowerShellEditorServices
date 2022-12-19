@@ -1144,5 +1144,30 @@ namespace PowerShellEditorServices.Test.Debugging
             Assert.Contains(childVars, i => i.Name is "Exists" && i.ValueString is "$true");
             Assert.Contains(childVars, i => i.Name is "LastAccessTime");
         }
+
+        // Verifies Issue #1686
+        [Fact]
+        public async Task DebuggerToStringShouldMarshallToPipeline()
+        {
+            CommandBreakpointDetails breakpoint = CommandBreakpointDetails.Create("__BreakDebuggerToStringShouldMarshallToPipeline");
+            await debugService.SetCommandBreakpointsAsync(new[] { breakpoint }).ConfigureAwait(true);
+
+            // Execute the script and wait for the breakpoint to be hit
+            Task _ = ExecuteVariableScriptFileAsync();
+            AssertDebuggerStopped(commandBreakpointDetails: breakpoint);
+
+            VariableDetailsBase[] vars = await GetVariables(VariableContainerDetails.ScriptScopeName).ConfigureAwait(true);
+            VariableDetailsBase customToStrings = Array.Find(vars, i => i.Name is "$CustomToStrings");
+            Assert.True(customToStrings.IsExpandable);
+            Assert.Equal("[System.Object[]]", customToStrings.Type);
+            VariableDetailsBase[] childVars = await debugService.GetVariables(customToStrings.Id, CancellationToken.None).ConfigureAwait(true);
+            // Check everything but the last variable (which is "Raw View")
+            Assert.Equal(1001, childVars.Length); // 1000 custom variables plus "Raw View"
+            Assert.All(childVars.Take(childVars.Length - 1), i =>
+            {
+                Assert.Equal("HELLO", i.ValueString);
+                Assert.Equal("[CustomToString]", i.Type);
+            });
+        }
     }
 }
