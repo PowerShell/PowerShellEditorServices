@@ -241,11 +241,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// that is identified by the given referenced ID.
         /// </summary>
         /// <param name="variableReferenceId"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns>An array of VariableDetails instances which describe the requested variables.</returns>
-        public VariableDetailsBase[] GetVariables(int variableReferenceId)
+        public async Task<VariableDetailsBase[]> GetVariables(int variableReferenceId, CancellationToken cancellationToken)
         {
             VariableDetailsBase[] childVariables;
-            debugInfoHandle.Wait();
+            await debugInfoHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 if ((variableReferenceId < 0) || (variableReferenceId >= variables.Count))
@@ -257,7 +258,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 VariableDetailsBase parentVariable = variables[variableReferenceId];
                 if (parentVariable.IsExpandable)
                 {
-                    childVariables = parentVariable.GetChildren(_logger);
+                    // We execute this on the pipeline thread so the expansion of child variables works.
+                    childVariables = await _executionService.ExecuteDelegateAsync(
+                        $"Getting children of variable ${parentVariable.Name}",
+                        new ExecutionOptions { Priority = ExecutionPriority.Next },
+                        (_, _) => parentVariable.GetChildren(_logger), cancellationToken).ConfigureAwait(false);
+
                     foreach (VariableDetailsBase child in childVariables)
                     {
                         // Only add child if it hasn't already been added.
@@ -287,8 +293,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// walk the cached variable data for the specified stack frame.
         /// </summary>
         /// <param name="variableExpression">The variable expression string to evaluate.</param>
+        /// <param name="cancellationToken"></param>
         /// <returns>A VariableDetailsBase object containing the result.</returns>
-        public VariableDetailsBase GetVariableFromExpression(string variableExpression)
+        public async Task<VariableDetailsBase> GetVariableFromExpression(string variableExpression, CancellationToken cancellationToken)
         {
             // NOTE: From a watch we will get passed expressions that are not naked variables references.
             // Probably the right way to do this would be to examine the AST of the expr before calling
@@ -302,7 +309,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             IEnumerable<VariableDetailsBase> variableList;
 
             // Ensure debug info isn't currently being built.
-            debugInfoHandle.Wait();
+            await debugInfoHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 variableList = variables;
@@ -331,7 +338,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 if (resolvedVariable?.IsExpandable == true)
                 {
                     // Continue by searching in this variable's children.
-                    variableList = GetVariables(resolvedVariable.Id);
+                    variableList = await GetVariables(resolvedVariable.Id, cancellationToken).ConfigureAwait(false);
                 }
             }
 
@@ -491,10 +498,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="writeResultAsOutput">
         /// If true, writes the expression result as host output rather than returning the results.
         /// In this case, the return value of this function will be null.</param>
+        /// <param name="cancellationToken"></param>
         /// <returns>A VariableDetails object containing the result.</returns>
         public async Task<VariableDetails> EvaluateExpressionAsync(
             string expressionString,
-            bool writeResultAsOutput)
+            bool writeResultAsOutput,
+            CancellationToken cancellationToken)
         {
             PSCommand command = new PSCommand().AddScript(expressionString);
             IReadOnlyList<PSObject> results;
@@ -502,7 +511,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 results = await _executionService.ExecutePSCommandAsync<PSObject>(
                     command,
-                    CancellationToken.None,
+                    cancellationToken,
                     new PowerShellExecutionOptions { WriteOutputToHost = writeResultAsOutput, ThrowOnError = !writeResultAsOutput }).ConfigureAwait(false);
             }
             catch (Exception e)

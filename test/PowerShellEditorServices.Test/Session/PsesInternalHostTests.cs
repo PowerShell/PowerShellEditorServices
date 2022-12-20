@@ -180,7 +180,7 @@ namespace PowerShellEditorServices.Test.Session
                 new PSCommand().AddScript("$handled"),
                 CancellationToken.None).ConfigureAwait(true);
 
-            Assert.Collection(handled, (p) => Assert.False(p));
+            Assert.Collection(handled, Assert.False);
 
             await psesHost.ExecuteDelegateAsync(
                 nameof(psesHost.OnPowerShellIdle),
@@ -195,7 +195,7 @@ namespace PowerShellEditorServices.Test.Session
                 new PSCommand().AddScript("$handled"),
                 CancellationToken.None).ConfigureAwait(true);
 
-            Assert.Collection(handled, (p) => Assert.True(p));
+            Assert.Collection(handled, Assert.True);
         }
 
         [Fact]
@@ -301,7 +301,7 @@ namespace PowerShellEditorServices.Test.Session
                 new PSCommand().AddScript("$handledInProfile"),
                 CancellationToken.None).ConfigureAwait(true);
 
-            Assert.Collection(handled, (p) => Assert.True(p));
+            Assert.Collection(handled, Assert.True);
         }
     }
 }

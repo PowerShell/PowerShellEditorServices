@@ -15,7 +15,6 @@ using System.Globalization;
 #if DEBUG
 using System.Diagnostics;
 using System.Threading;
-
 using Debugger = System.Diagnostics.Debugger;
 #endif
 
@@ -197,9 +196,11 @@ namespace Microsoft.PowerShell.EditorServices.Commands
 #if DEBUG
             if (WaitForDebugger)
             {
+                // NOTE: Ignore the suggestion to use Environment.ProcessId as it doesn't work for
+                // .NET 4.6.2 (for Windows PowerShell), and this won't be caught in CI.
+                Console.WriteLine($"Waiting for debugger to attach, PID: {Process.GetCurrentProcess().Id}");
                 while (!Debugger.IsAttached)
                 {
-                    Console.WriteLine($"PID: {Process.GetCurrentProcess().Id}");
                     Thread.Sleep(1000);
                 }
             }
