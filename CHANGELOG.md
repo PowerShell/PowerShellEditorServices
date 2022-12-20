@@ -1,5 +1,11 @@
 # PowerShell Editor Services Release History
 
+## v3.7.2
+### Tuesday, December 20, 2022
+
+- 🐛 🔍 [vscode-powershell #4174](https://github.com/PowerShell/PowerShellEditorServices/pull/1975) - Fix several bugs in the debugger.
+- #️⃣ 🙏 [PowerShellEditorServices #1973](https://github.com/PowerShell/PowerShellEditorServices/pull/1973) - Update `Microsoft.PowerShell.SDK` with workaround.
+
 ## v3.7.1
 ### Monday, December 12, 2022
 
