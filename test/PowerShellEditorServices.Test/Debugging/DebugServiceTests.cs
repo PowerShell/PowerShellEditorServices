@@ -177,7 +177,7 @@ namespace PowerShellEditorServices.Test.Debugging
                 new PSCommand().AddScript("Get-Random -SetSeed 42 -Maximum 100"), CancellationToken.None);
 
             AssertDebuggerStopped("", 1);
-            debugService.Continue();
+            await Task.Run(debugService.Continue).ConfigureAwait(true);
             Assert.Equal(17, (await executeTask.ConfigureAwait(true))[0]);
 
             StackFrameDetails[] stackFrames = await debugService.GetStackFramesAsync().ConfigureAwait(true);
@@ -296,7 +296,7 @@ namespace PowerShellEditorServices.Test.Debugging
             Assert.Equal("1", i.ValueString);
 
             // The function breakpoint should fire the next time through the loop.
-            debugService.Continue();
+            await Task.Run(debugService.Continue).ConfigureAwait(true);
             AssertDebuggerStopped(debugScriptFile.FilePath, 6);
 
             variables = await GetVariables(VariableContainerDetails.LocalScopeName).ConfigureAwait(true);
@@ -353,7 +353,7 @@ namespace PowerShellEditorServices.Test.Debugging
 
             Task _ = ExecuteDebugFileAsync();
             AssertDebuggerStopped(debugScriptFile.FilePath, 5);
-            debugService.Continue();
+            await Task.Run(debugService.Continue).ConfigureAwait(true);
             AssertDebuggerStopped(debugScriptFile.FilePath, 7);
         }
 
@@ -382,7 +382,7 @@ namespace PowerShellEditorServices.Test.Debugging
 
             // The conditional breakpoint should not fire again, until the value of
             // i reaches breakpointValue2.
-            debugService.Continue();
+            await Task.Run(debugService.Continue).ConfigureAwait(true);
             AssertDebuggerStopped(debugScriptFile.FilePath, 7);
 
             variables = await GetVariables(VariableContainerDetails.LocalScopeName).ConfigureAwait(true);
