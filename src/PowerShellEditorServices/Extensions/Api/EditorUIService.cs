@@ -168,7 +168,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
                     Caption = string.Empty,
                     Message = message,
                     Choices = choiceDetails,
-                    DefaultChoices = defaultChoiceIndex > -1 ? new[] { defaultChoiceIndex } : null,
+                    DefaultChoices = defaultChoiceIndex > -1 ? new[] { defaultChoiceIndex } : Array.Empty<int>(),
                 })
                 .Returning<ShowChoicePromptResponse>(CancellationToken.None)
                 .ConfigureAwait(false);
