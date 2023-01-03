@@ -503,11 +503,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private Task EnableShellIntegrationAsync(CancellationToken cancellationToken)
         {
-            // Imported on 11/17/22 from
+            // Imported on 01/03/23 from
             // https://github.com/microsoft/vscode/blob/main/src/vs/workbench/contrib/terminal/browser/media/shellIntegration.ps1
             // with quotes escaped, `__VSCodeOriginalPSConsoleHostReadLine` removed (as it's done
             // in our own ReadLine function), and `[Console]::Write` replaced with `Write-Host`.
-            // TODO: We can probably clean some of this up.
             const string shellIntegrationScript = @"
 # Prevent installing more than once per session
 if (Test-Path variable:global:__VSCodeOriginalPrompt) {
@@ -523,8 +522,21 @@ $Global:__VSCodeOriginalPrompt = $function:Prompt
 
 $Global:__LastHistoryId = -1
 
+function Global:__VSCode-Escape-Value([string]$value) {
+	# NOTE: In PowerShell v6.1+, this can be written `$value -replace '…', { … }` instead of `[regex]::Replace`.
+	# Replace any non-alphanumeric characters.
+	[regex]::Replace($value, '[\\\n;]', { param($match)
+		# Encode the (ascii) matches as `\x<hex>`
+		-Join (
+			[System.Text.Encoding]::UTF8.GetBytes($match.Value) | ForEach-Object { '\x{0:x2}' -f $_ }
+		)
+	})
+}
 
 function Global:Prompt() {
+	# NOTE: We disable strict mode for the scope of this function because it unhelpfully throws an
+	# error when $LastHistoryEntry is null, and is not otherwise useful.
+	Set-StrictMode -Off
 	$FakeCode = [int]!$global:?
 	$LastHistoryEntry = Get-History -Count 1
 	# Skip finishing the command if the first command has not yet started
@@ -545,7 +557,7 @@ function Global:Prompt() {
 			} else {
 				$CommandLine = """"
 			}
-			$Result += $CommandLine.Replace(""\"", ""\\"").Replace(""`n"", ""\x0a"").Replace("";"", ""\x3b"")
+			$Result += $(__VSCode-Escape-Value $CommandLine)
 			$Result += ""`a""
 			# Command finished exit code
 			# OSC 633 ; D [; <ExitCode>] ST
@@ -557,9 +569,11 @@ function Global:Prompt() {
 	$Result += ""$([char]0x1b)]633;A`a""
 	# Current working directory
 	# OSC 633 ; <Property>=<Value> ST
-	$Result += if($pwd.Provider.Name -eq 'FileSystem'){""$([char]0x1b)]633;P;Cwd=$($pwd.ProviderPath)`a""}
+	$Result += if($pwd.Provider.Name -eq 'FileSystem'){""$([char]0x1b)]633;P;Cwd=$(__VSCode-Escape-Value $pwd.ProviderPath)`a""}
 	# Before running the original prompt, put $? back to what it was:
-	if ($FakeCode -ne 0) { Write-Error ""failure"" -ea ignore }
+	if ($FakeCode -ne 0) {
+		Write-Error ""failure"" -ea ignore
+	}
 	# Run the original prompt
 	$Result += $Global:__VSCodeOriginalPrompt.Invoke()
 	# Write command started
@@ -579,12 +593,14 @@ function Set-MappedKeyHandler {
 		Set-PSReadLineKeyHandler -Chord $Sequence -Function $Handler.Function
 	}
 }
+
 function Set-MappedKeyHandlers {
 	Set-MappedKeyHandler -Chord Ctrl+Spacebar -Sequence 'F12,a'
 	Set-MappedKeyHandler -Chord Alt+Spacebar -Sequence 'F12,b'
 	Set-MappedKeyHandler -Chord Shift+Enter -Sequence 'F12,c'
 	Set-MappedKeyHandler -Chord Shift+End -Sequence 'F12,d'
 }
+
 Set-MappedKeyHandlers
             ";
 
