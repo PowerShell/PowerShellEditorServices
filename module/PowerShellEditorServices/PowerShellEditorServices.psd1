@@ -19,7 +19,7 @@ RootModule = if ($PSEdition -eq 'Core')
     }
 
 # Version number of this module.
-ModuleVersion = '3.7.2'
+ModuleVersion = '3.7.3'
 
 # ID used to uniquely identify this module
 GUID = '9ca15887-53a2-479a-9cda-48d26bcb6c47'
