@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -25,8 +25,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// Constructor used when searching for aliases is needed
         /// </summary>
         /// <param name="symbolReference">The found symbolReference that other symbols are being compared to</param>
-        /// <param name="cmdletToAliasDictionary">Dictionary maping cmdlets to aliases for finding alias references</param>
-        /// <param name="aliasToCmdletDictionary">Dictionary maping aliases to cmdlets for finding alias references</param>
+        /// <param name="cmdletToAliasDictionary">Dictionary mapping cmdlets to aliases for finding alias references</param>
+        /// <param name="aliasToCmdletDictionary">Dictionary mapping aliases to cmdlets for finding alias references</param>
         public FindReferencesVisitor(
             SymbolReference symbolReference,
             IDictionary<string, List<string>> cmdletToAliasDictionary = default,
@@ -49,11 +49,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             // exists (if the symbol isn't an alias to a command) set symbolRefCommandName to an
             // empty string.
             aliasToCmdletDictionary.TryGetValue(symbolReference.ScriptRegion.Text, out _symbolRefCommandName);
-
-            if (_symbolRefCommandName == null)
-            {
-                _symbolRefCommandName = string.Empty;
-            }
+            _symbolRefCommandName ??= string.Empty;
         }
 
         /// <summary>
@@ -81,8 +77,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                     // set aliases to an empty List<string>
                     _cmdletToAliasDictionary.TryGetValue(commandName, out List<string> aliases);
                     _aliasToCmdletDictionary.TryGetValue(commandName, out string command);
-                    if (aliases == null) { aliases = new List<string>(); }
-                    if (command == null) { command = string.Empty; }
+                    aliases ??= new List<string>();
+                    command ??= string.Empty;
 
                     // Check if the found symbol's name is the same as the commandAst's name OR
                     // if the symbol's name is an alias for this commandAst's name (commandAst is a cmdlet) OR

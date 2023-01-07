@@ -161,13 +161,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="foundSymbol">The symbol to find all references for</param>
         /// <param name="referencedFiles">An array of scriptFiles too search for references in</param>
-        /// <param name="workspace">The workspace that will be searched for symbols</param>
         /// <param name="cancellationToken"></param>
         /// <returns>FindReferencesResult</returns>
         public async Task<List<SymbolReference>> FindReferencesOfSymbol(
             SymbolReference foundSymbol,
             ScriptFile[] referencedFiles,
-            WorkspaceService workspace,
             CancellationToken cancellationToken = default)
         {
             if (foundSymbol == null)

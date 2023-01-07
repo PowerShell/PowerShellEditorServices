@@ -26,7 +26,7 @@ internal sealed class ReferenceTable
     public ReferenceTable(ScriptFile parent) => _parent = parent;
 
     /// <summary>
-    /// Clears the reference table causing it to rescan the source AST when queried.
+    /// Clears the reference table causing it to re-scan the source AST when queried.
     /// </summary>
     public void TagAsChanged()
     {
@@ -34,9 +34,11 @@ internal sealed class ReferenceTable
         _isInited = false;
     }
 
-    // Prefer checking if the dictionary has contents to determine if initialized. The field
-    // `_isInited` is to guard against rescanning files with no command references, but will
-    // generally be less reliable of a check.
+    /// <summary>
+    /// Prefer checking if the dictionary has contents to determine if initialized. The field
+    /// `_isInited` is to guard against re-scanning files with no command references, but will
+    /// generally be less reliable of a check.
+    /// </summary>
     private bool IsInitialized => !_symbolReferences.IsEmpty || _isInited;
 
     internal bool TryGetReferences(string command, out ConcurrentBag<IScriptExtent>? references)
@@ -73,6 +75,22 @@ internal sealed class ReferenceTable
 
         public ReferenceVisitor(ReferenceTable references) => _references = references;
 
+        private static string? GetCommandName(CommandAst commandAst)
+        {
+            string commandName = commandAst.GetCommandName();
+            if (!string.IsNullOrEmpty(commandName))
+            {
+                return commandName;
+            }
+
+            if (commandAst.CommandElements[0] is not ExpandableStringExpressionAst expandableStringExpressionAst)
+            {
+                return null;
+            }
+
+            return AstOperations.TryGetInferredValue(expandableStringExpressionAst, out string value) ? value : null;
+        }
+
         public override AstVisitAction VisitCommand(CommandAst commandAst)
         {
             string? commandName = GetCommandName(commandAst);
@@ -86,22 +104,6 @@ internal sealed class ReferenceTable
                 commandAst.CommandElements[0].Extent);
 
             return AstVisitAction.Continue;
-
-            static string? GetCommandName(CommandAst commandAst)
-            {
-                string commandName = commandAst.GetCommandName();
-                if (!string.IsNullOrEmpty(commandName))
-                {
-                    return commandName;
-                }
-
-                if (commandAst.CommandElements[0] is not ExpandableStringExpressionAst expandableStringExpressionAst)
-                {
-                    return null;
-                }
-
-                return AstOperations.TryGetInferredValue(expandableStringExpressionAst, out string value) ? value : null;
-            }
         }
 
         public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)

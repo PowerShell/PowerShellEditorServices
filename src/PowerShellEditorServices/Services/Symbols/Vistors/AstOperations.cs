@@ -189,9 +189,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// </summary>
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <param name="symbolReference">The symbol that we are looking for references of</param>
-        /// <param name="cmdletToAliasDictionary">Dictionary maping cmdlets to aliases for finding alias references</param>
-        /// <param name="aliasToCmdletDictionary">Dictionary maping aliases to cmdlets for finding alias references</param>
-        /// <returns></returns>
+        /// <param name="cmdletToAliasDictionary">Dictionary mapping cmdlets to aliases for finding alias references</param>
+        /// <param name="aliasToCmdletDictionary">Dictionary mapping aliases to cmdlets for finding alias references</param>
+        /// <returns>The found symbol references as an enumerable</returns>
         public static IEnumerable<SymbolReference> FindReferencesOfSymbol(
             Ast scriptAst,
             SymbolReference symbolReference,

@@ -45,7 +45,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 await _symbolsService.FindReferencesOfSymbol(
                     foundSymbol,
                     _workspaceService.ExpandScriptReferences(scriptFile),
-                    _workspaceService,
                     cancellationToken).ConfigureAwait(false);
 
             List<Location> locations = new();

@@ -94,8 +94,7 @@ namespace PowerShellEditorServices.Test.Language
 
             return symbolsService.FindReferencesOfSymbol(
                 symbolReference,
-                workspace.ExpandScriptReferences(scriptFile),
-                workspace);
+                workspace.ExpandScriptReferences(scriptFile));
         }
 
         private IReadOnlyList<SymbolReference> GetOccurrences(ScriptRegion scriptRegion)
@@ -257,9 +256,7 @@ namespace PowerShellEditorServices.Test.Language
         {
             List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnBuiltInCommandWithAliasData.SourceDetails).ConfigureAwait(true);
             Assert.Equal(4, referencesResult.Count);
-            Assert.Equal("Get-ChildItem", referencesResult[1].SymbolName);
-            Assert.Equal("Get-ChildItem", referencesResult[2].SymbolName);
-            Assert.Equal("Get-ChildItem", referencesResult[referencesResult.Count - 1].SymbolName);
+            Assert.All(referencesResult, (i) => Assert.Equal("Get-ChildItem", i.SymbolName));
         }
 
         [Fact]

@@ -107,7 +107,6 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             List<SymbolReference> referencesResult = await _symbolsService.FindReferencesOfSymbol(
                     foundSymbol,
                     references,
-                    _workspaceService,
                     cancellationToken).ConfigureAwait(false);
 
             Location[] referenceLocations;
