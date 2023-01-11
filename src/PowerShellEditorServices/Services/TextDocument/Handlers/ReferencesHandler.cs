@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
@@ -42,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     request.Position.Character + 1);
 
             List<SymbolReference> referencesResult =
-                await _symbolsService.FindReferencesOfSymbol(
+                await _symbolsService.ScanForReferencesOfSymbol(
                     foundSymbol,
                     _workspaceService.ExpandScriptReferences(scriptFile),
                     cancellationToken).ConfigureAwait(false);

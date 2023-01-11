@@ -78,6 +78,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             PesterCodeLensProvider pesterProvider = new(configurationService);
             _codeLensProviders.TryAdd(pesterProvider.ProviderId, pesterProvider);
 
+            // TODO: Is this complication so necessary?
             _documentSymbolProviders = new ConcurrentDictionary<string, IDocumentSymbolProvider>();
             IDocumentSymbolProvider[] documentSymbolProviders = new IDocumentSymbolProvider[]
             {
@@ -160,10 +161,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// Finds all the references of a symbol
         /// </summary>
         /// <param name="foundSymbol">The symbol to find all references for</param>
-        /// <param name="referencedFiles">An array of scriptFiles too search for references in</param>
+        /// <param name="referencedFiles">An array of scriptFiles to search for references in</param>
         /// <param name="cancellationToken"></param>
         /// <returns>FindReferencesResult</returns>
-        public async Task<List<SymbolReference>> FindReferencesOfSymbol(
+        public async Task<List<SymbolReference>> ScanForReferencesOfSymbol(
             SymbolReference foundSymbol,
             ScriptFile[] referencedFiles,
             CancellationToken cancellationToken = default)

@@ -92,7 +92,7 @@ namespace PowerShellEditorServices.Test.Language
 
             Assert.NotNull(symbolReference);
 
-            return symbolsService.FindReferencesOfSymbol(
+            return symbolsService.ScanForReferencesOfSymbol(
                 symbolReference,
                 workspace.ExpandScriptReferences(scriptFile));
         }
