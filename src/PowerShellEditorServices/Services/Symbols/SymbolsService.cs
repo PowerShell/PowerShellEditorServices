@@ -159,7 +159,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="referencedFiles">An array of scriptFiles to search for references in</param>
         /// <param name="cancellationToken"></param>
         /// <returns>FindReferencesResult</returns>
-        public async Task<List<SymbolReference>> ScanForReferencesOfSymbol(
+        public async Task<IEnumerable<SymbolReference>> ScanForReferencesOfSymbol(
             SymbolReference foundSymbol,
             ScriptFile[] referencedFiles,
             CancellationToken cancellationToken = default)
@@ -222,7 +222,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             foreach (ScriptFile file in _workspaceService.GetOpenedFiles())
             {
-                List<SymbolReference> fileReferences = new();
                 foreach (string targetIdentifier in allIdentifiers)
                 {
                     if (!file.References.TryGetReferences(targetIdentifier, out ConcurrentBag<SymbolReference> references))
@@ -230,13 +229,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         continue;
                     }
 
-                    fileReferences.AddRange(references);
+                    symbolReferences.AddRange(references);
 
                     await Task.Yield();
                     cancellationToken.ThrowIfCancellationRequested();
                 }
-
-                symbolReferences.AddRange(fileReferences.OrderBy(symbol => symbol.ScriptRegion.StartOffset));
             }
 
             return symbolReferences;
@@ -249,7 +246,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="symbolLineNumber">The line number of the cursor for the given script</param>
         /// <param name="symbolColumnNumber">The column number of the cursor for the given script</param>
         /// <returns>FindOccurrencesResult</returns>
-        public static IReadOnlyList<SymbolReference> FindOccurrencesInFile(
+        public static IEnumerable<SymbolReference> FindOccurrencesInFile(
             ScriptFile file,
             int symbolLineNumber,
             int symbolColumnNumber)
@@ -266,7 +263,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (file.References.TryGetReferences(foundSymbol.SymbolName, out ConcurrentBag<SymbolReference> references))
             {
-                return references.OrderBy(symbol => symbol.ScriptRegion.StartOffset).ToArray();
+                return references;
             }
 
             return null;

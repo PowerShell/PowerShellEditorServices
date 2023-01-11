@@ -41,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     request.Position.Line + 1,
                     request.Position.Character + 1);
 
-            List<SymbolReference> referencesResult =
+            IEnumerable<SymbolReference> referencesResult =
                 await _symbolsService.ScanForReferencesOfSymbol(
                     foundSymbol,
                     _workspaceService.ExpandScriptReferences(scriptFile),

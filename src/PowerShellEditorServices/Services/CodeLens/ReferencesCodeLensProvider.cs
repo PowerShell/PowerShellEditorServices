@@ -104,7 +104,8 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                 codeLens.Range.Start.Line + 1,
                 codeLens.Range.Start.Character + 1);
 
-            List<SymbolReference> referencesResult = await _symbolsService.ScanForReferencesOfSymbol(
+            IEnumerable<SymbolReference> referencesResult =
+                await _symbolsService.ScanForReferencesOfSymbol(
                     foundSymbol,
                     references,
                     cancellationToken).ConfigureAwait(false);

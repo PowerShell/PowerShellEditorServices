@@ -81,7 +81,7 @@ namespace PowerShellEditorServices.Test.Language
             return symbolsService.GetDefinitionOfSymbolAsync(scriptFile, symbolReference);
         }
 
-        private Task<List<SymbolReference>> GetReferences(ScriptRegion scriptRegion)
+        private async Task<List<SymbolReference>> GetReferences(ScriptRegion scriptRegion)
         {
             ScriptFile scriptFile = GetScriptFile(scriptRegion);
 
@@ -92,17 +92,23 @@ namespace PowerShellEditorServices.Test.Language
 
             Assert.NotNull(symbolReference);
 
-            return symbolsService.ScanForReferencesOfSymbol(
-                symbolReference,
-                workspace.ExpandScriptReferences(scriptFile));
+            IEnumerable<SymbolReference> symbols =
+                await symbolsService.ScanForReferencesOfSymbol(
+                    symbolReference,
+                    workspace.ExpandScriptReferences(scriptFile)).ConfigureAwait(true);
+
+            return symbols.OrderBy(symbol => symbol.ScriptRegion.StartOffset).ToList();
         }
 
         private IReadOnlyList<SymbolReference> GetOccurrences(ScriptRegion scriptRegion)
         {
-            return SymbolsService.FindOccurrencesInFile(
-                GetScriptFile(scriptRegion),
-                scriptRegion.StartLineNumber,
-                scriptRegion.StartColumnNumber);
+            return SymbolsService
+                .FindOccurrencesInFile(
+                    GetScriptFile(scriptRegion),
+                    scriptRegion.StartLineNumber,
+                    scriptRegion.StartColumnNumber)
+                .OrderBy(symbol => symbol.ScriptRegion.StartOffset)
+                .ToArray();
         }
 
         private List<SymbolReference> FindSymbolsInFile(ScriptRegion scriptRegion) => symbolsService.FindSymbolsInFile(GetScriptFile(scriptRegion));
@@ -301,10 +307,11 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsReferencesOnEnum()
         {
+            // TODO: Remove definitions from references.
             List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnTypeSymbolsData.EnumSourceDetails).ConfigureAwait(true);
             Assert.Equal(4, referencesResult.Count);
-            Assert.Equal(25, referencesResult[0].ScriptRegion.StartLineNumber);
-            Assert.Equal(19, referencesResult[0].ScriptRegion.StartColumnNumber);
+            Assert.Equal(25, referencesResult[1].ScriptRegion.StartLineNumber);
+            Assert.Equal(19, referencesResult[1].ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
@@ -355,10 +362,11 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsReferencesOnTypeConstraint()
         {
+            // TODO: Remove definitions from references.
             List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnTypeSymbolsData.TypeConstraintSourceDetails).ConfigureAwait(true);
             Assert.Equal(4, referencesResult.Count);
-            Assert.Equal(25, referencesResult[0].ScriptRegion.StartLineNumber);
-            Assert.Equal(19, referencesResult[0].ScriptRegion.StartColumnNumber);
+            Assert.Equal(25, referencesResult[1].ScriptRegion.StartLineNumber);
+            Assert.Equal(19, referencesResult[1].ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
