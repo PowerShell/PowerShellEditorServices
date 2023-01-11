@@ -153,9 +153,9 @@ namespace PowerShellEditorServices.Test.Language
         public async Task FindsReferencesOnFunction()
         {
             List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(2, referencesResult.Count);
-            Assert.Equal(3, referencesResult[0].ScriptRegion.StartLineNumber);
-            Assert.Equal(2, referencesResult[0].ScriptRegion.StartColumnNumber);
+            Assert.Equal(3, referencesResult.Count);
+            Assert.Equal(1, referencesResult[0].ScriptRegion.StartLineNumber);
+            Assert.Equal(10, referencesResult[0].ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
@@ -167,9 +167,9 @@ namespace PowerShellEditorServices.Test.Language
                 CancellationToken.None).ConfigureAwait(true);
 
             List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(3, referencesResult.Count);
-            Assert.Equal(3, referencesResult[0].ScriptRegion.StartLineNumber);
-            Assert.Equal(2, referencesResult[0].ScriptRegion.StartColumnNumber);
+            Assert.Equal(4, referencesResult.Count);
+            Assert.Equal(1, referencesResult[0].ScriptRegion.StartLineNumber);
+            Assert.Equal(10, referencesResult[0].ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
@@ -255,8 +255,11 @@ namespace PowerShellEditorServices.Test.Language
         public async Task FindsReferencesOnCommandWithAlias()
         {
             List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnBuiltInCommandWithAliasData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(4, referencesResult.Count);
-            Assert.All(referencesResult, (i) => Assert.Equal("Get-ChildItem", i.SymbolName));
+            Assert.Collection(referencesResult,
+                (i) => Assert.Equal("Get-ChildItem", i.SymbolName),
+                (i) => Assert.Equal("gci", i.SymbolName),
+                (i) => Assert.Equal("dir", i.SymbolName),
+                (i) => Assert.Equal("Get-ChildItem", i.SymbolName));
         }
 
         [Fact]
@@ -282,7 +285,7 @@ namespace PowerShellEditorServices.Test.Language
         {
             IReadOnlyList<SymbolReference> occurrencesResult = GetOccurrences(FindsOccurrencesOnTypeSymbolsData.ClassSourceDetails);
             Assert.Equal(2, occurrencesResult.Count);
-            Assert.Equal("[SuperClass]", occurrencesResult[occurrencesResult.Count - 1].SymbolName);
+            Assert.Equal("SuperClass", occurrencesResult[occurrencesResult.Count - 1].SymbolName);
             Assert.Equal(34, occurrencesResult[occurrencesResult.Count - 1].ScriptRegion.StartLineNumber);
         }
 
@@ -309,7 +312,7 @@ namespace PowerShellEditorServices.Test.Language
         {
             IReadOnlyList<SymbolReference> occurrencesResult = GetOccurrences(FindsOccurrencesOnTypeSymbolsData.EnumSourceDetails);
             Assert.Equal(4, occurrencesResult.Count);
-            Assert.Equal("[MyEnum]", occurrencesResult[occurrencesResult.Count - 1].SymbolName);
+            Assert.Equal("MyEnum", occurrencesResult[occurrencesResult.Count - 1].SymbolName);
             Assert.Equal(46, occurrencesResult[occurrencesResult.Count - 1].ScriptRegion.StartLineNumber);
         }
 
@@ -479,14 +482,14 @@ namespace PowerShellEditorServices.Test.Language
         public async Task FindsReferencesOnFileWithReferencesFileB()
         {
             List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionMultiFileDotSourceFileB.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(3, referencesResult.Count);
+            Assert.Equal(4, referencesResult.Count);
         }
 
         [Fact]
         public async Task FindsReferencesOnFileWithReferencesFileC()
         {
             List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionMultiFileDotSourceFileC.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(3, referencesResult.Count);
+            Assert.Equal(4, referencesResult.Count);
         }
 
         [Fact]

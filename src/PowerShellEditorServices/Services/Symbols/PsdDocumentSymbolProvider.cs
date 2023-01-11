@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     {
         string IDocumentSymbolProvider.ProviderId => nameof(PsdDocumentSymbolProvider);
 
-        IEnumerable<ISymbolReference> IDocumentSymbolProvider.ProvideDocumentSymbols(
+        IEnumerable<SymbolReference> IDocumentSymbolProvider.ProvideDocumentSymbols(
             ScriptFile scriptFile)
         {
             if ((scriptFile.FilePath?.EndsWith(".psd1", StringComparison.OrdinalIgnoreCase) == true) ||

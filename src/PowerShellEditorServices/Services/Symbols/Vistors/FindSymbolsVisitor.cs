@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#nullable enable
+
 using Microsoft.PowerShell.EditorServices.Utility;
 using System.Collections.Generic;
 using System.Management.Automation.Language;

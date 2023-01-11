@@ -9,6 +9,8 @@ using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
+using System.Collections.Generic;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services;
 
@@ -19,7 +21,7 @@ internal sealed class ReferenceTable
 {
     private readonly ScriptFile _parent;
 
-    private readonly ConcurrentDictionary<string, ConcurrentBag<IScriptExtent>> _symbolReferences = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, ConcurrentBag<SymbolReference>> _symbolReferences = new(StringComparer.OrdinalIgnoreCase);
 
     private bool _isInited;
 
@@ -41,10 +43,22 @@ internal sealed class ReferenceTable
     /// </summary>
     private bool IsInitialized => !_symbolReferences.IsEmpty || _isInited;
 
-    internal bool TryGetReferences(string command, out ConcurrentBag<IScriptExtent>? references)
+    internal bool TryGetReferences(string command, out ConcurrentBag<SymbolReference>? references)
     {
         EnsureInitialized();
         return _symbolReferences.TryGetValue(command, out references);
+    }
+
+    // TODO: Should this be improved, or pre-sorted?
+    internal IReadOnlyList<SymbolReference> GetAllReferences()
+    {
+        EnsureInitialized();
+        List<SymbolReference> allReferences = new();
+        foreach (ConcurrentBag<SymbolReference> bag in _symbolReferences.Values)
+        {
+            allReferences.AddRange(bag);
+        }
+        return allReferences;
     }
 
     internal void EnsureInitialized()
@@ -57,51 +71,73 @@ internal sealed class ReferenceTable
         _parent.ScriptAst.Visit(new ReferenceVisitor(this));
     }
 
-    private void AddReference(string symbol, IScriptExtent extent)
+    private void AddReference(SymbolType type, string name, IScriptExtent extent)
     {
+        SymbolReference symbol = new(type, name, extent, _parent);
         _symbolReferences.AddOrUpdate(
-            symbol,
-            _ => new ConcurrentBag<IScriptExtent> { extent },
+            name,
+            _ => new ConcurrentBag<SymbolReference> { symbol },
             (_, existing) =>
             {
-                existing.Add(extent);
+                existing.Add(symbol);
                 return existing;
             });
     }
 
-    private sealed class ReferenceVisitor : AstVisitor
+    // TODO: Should we move this to AstOperations.cs? It is highly coupled to `ReferenceTable`,
+    // perhaps it doesn't have to be.
+    private sealed class ReferenceVisitor : AstVisitor2
     {
         private readonly ReferenceTable _references;
 
         public ReferenceVisitor(ReferenceTable references) => _references = references;
 
-        private static string? GetCommandName(CommandAst commandAst)
-        {
-            string commandName = commandAst.GetCommandName();
-            if (!string.IsNullOrEmpty(commandName))
-            {
-                return commandName;
-            }
-
-            if (commandAst.CommandElements[0] is not ExpandableStringExpressionAst expandableStringExpressionAst)
-            {
-                return null;
-            }
-
-            return AstOperations.TryGetInferredValue(expandableStringExpressionAst, out string value) ? value : null;
-        }
-
         public override AstVisitAction VisitCommand(CommandAst commandAst)
         {
-            string? commandName = GetCommandName(commandAst);
+            string? commandName = VisitorUtils.GetCommandName(commandAst);
             if (string.IsNullOrEmpty(commandName))
             {
                 return AstVisitAction.Continue;
             }
 
             _references.AddReference(
+                SymbolType.Function,
                 CommandHelpers.StripModuleQualification(commandName, out _),
-                commandAst.CommandElements[0].Extent);
+                commandAst.CommandElements[0].Extent
+            );
+
+            return AstVisitAction.Continue;
+        }
+
+        // TODO: We should examine if we really want to constrain the extents to the name only. This
+        // means that highlighting only highlights the symbol name, but providing the whole extend
+        // means the whole function (or class etc.) gets highlighted, which seems to be a personal
+        // preference.
+        public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
+        {
+            // Extent for constructors and method trigger both this and VisitFunctionMember(). Covered in the latter.
+            // This will not exclude nested functions as they have ScriptBlockAst as parent
+            if (functionDefinitionAst.Parent is FunctionMemberAst)
+            {
+                return AstVisitAction.Continue;
+            }
+
+            // We only want the function name
+            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionDefinitionAst);
+            _references.AddReference(
+                SymbolType.Function,
+                functionDefinitionAst.Name,
+                nameExtent);
+
+            return AstVisitAction.Continue;
+        }
+
+        public override AstVisitAction VisitCommandParameter(CommandParameterAst commandParameterAst)
+        {
+            _references.AddReference(
+                SymbolType.Parameter,
+                commandParameterAst.Extent.Text,
+                commandParameterAst.Extent);
 
             return AstVisitAction.Continue;
         }
@@ -111,10 +147,70 @@ internal sealed class ReferenceTable
             // TODO: Consider tracking unscoped variable references only when they declared within
             // the same function definition.
             _references.AddReference(
+                SymbolType.Variable,
                 $"${variableExpressionAst.VariablePath.UserPath}",
-                variableExpressionAst.Extent);
+                variableExpressionAst.Extent
+            );
 
             return AstVisitAction.Continue;
         }
+
+        public override AstVisitAction VisitTypeDefinition(TypeDefinitionAst typeDefinitionAst)
+        {
+            SymbolType symbolType = typeDefinitionAst.IsEnum ? SymbolType.Enum : SymbolType.Class;
+
+            // We only want the type name. Get start-location for name
+            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(typeDefinitionAst);
+            _references.AddReference(symbolType, typeDefinitionAst.Name, nameExtent);
+
+            return AstVisitAction.Continue;
+        }
+
+        public override AstVisitAction VisitTypeExpression(TypeExpressionAst typeExpressionAst)
+        {
+            _references.AddReference(
+                SymbolType.Type,
+                typeExpressionAst.TypeName.Name,
+                typeExpressionAst.Extent);
+
+            return AstVisitAction.Continue;
+        }
+
+        public override AstVisitAction VisitTypeConstraint(TypeConstraintAst typeConstraintAst)
+        {
+            _references.AddReference(SymbolType.Type, typeConstraintAst.TypeName.Name, typeConstraintAst.Extent);
+
+            return AstVisitAction.Continue;
+        }
+
+        public override AstVisitAction VisitFunctionMember(FunctionMemberAst functionMemberAst)
+        {
+            SymbolType symbolType = functionMemberAst.IsConstructor
+                ? SymbolType.Constructor
+                : SymbolType.Method;
+
+            // We only want the method/ctor name. Get start-location for name
+            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionMemberAst, true, false);
+            _references.AddReference(
+                symbolType,
+                VisitorUtils.GetMemberOverloadName(functionMemberAst, true, false),
+                nameExtent);
+
+            return AstVisitAction.Continue;
+        }
+
+        public override AstVisitAction VisitPropertyMember(PropertyMemberAst propertyMemberAst)
+        {
+            // We only want the property name. Get start-location for name
+            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst, false);
+            _references.AddReference(
+                SymbolType.Property,
+                VisitorUtils.GetMemberOverloadName(propertyMemberAst, false),
+                nameExtent);
+
+            return AstVisitAction.Continue;
+        }
+
+        // TODO: What else can we implement?
     }
 }

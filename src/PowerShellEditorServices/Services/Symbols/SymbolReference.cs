@@ -100,6 +100,26 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             //        "{0} {1}")
         }
 
+        public SymbolReference(
+            SymbolType symbolType,
+            string symbolName,
+            IScriptExtent scriptExtent,
+            ScriptFile file)
+        {
+            SymbolType = symbolType;
+            SymbolName = symbolName;
+            ScriptRegion = ScriptRegion.Create(scriptExtent);
+            FilePath = file.FilePath;
+            try
+            {
+                SourceLine = file.GetLine(ScriptRegion.StartLineNumber);
+            }
+            catch (System.ArgumentOutOfRangeException)
+            {
+                SourceLine = string.Empty;
+            }
+        }
+
         /// <summary>
         /// Constructs an instance of a SymbolReference
         /// </summary>

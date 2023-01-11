@@ -48,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
-            IEnumerable<ISymbolReference> foundSymbols =
+            IEnumerable<SymbolReference> foundSymbols =
                 ProvideDocumentSymbols(scriptFile);
 
             SymbolInformationOrDocumentSymbol[] symbols = null;
@@ -77,7 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return Task.FromResult(new SymbolInformationOrDocumentSymbolContainer(symbols));
         }
 
-        private IEnumerable<ISymbolReference> ProvideDocumentSymbols(
+        private IEnumerable<SymbolReference> ProvideDocumentSymbols(
             ScriptFile scriptFile)
         {
             return
@@ -139,7 +139,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             };
         }
 
-        private static string GetDecoratedSymbolName(ISymbolReference symbolReference)
+        private static string GetDecoratedSymbolName(SymbolReference symbolReference)
         {
             string name = symbolReference.SymbolName;
 

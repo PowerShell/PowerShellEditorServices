@@ -110,23 +110,18 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// Finds all the symbols in a file.
         /// </summary>
         /// <param name="scriptFile">The ScriptFile in which the symbol can be located.</param>
-        /// <returns></returns>
         public List<SymbolReference> FindSymbolsInFile(ScriptFile scriptFile)
         {
             Validate.IsNotNull(nameof(scriptFile), scriptFile);
 
-            List<SymbolReference> foundOccurrences = new();
+            List<SymbolReference> symbols = new();
             foreach (IDocumentSymbolProvider symbolProvider in GetDocumentSymbolProviders())
             {
-                foreach (SymbolReference reference in symbolProvider.ProvideDocumentSymbols(scriptFile))
-                {
-                    reference.SourceLine = scriptFile.GetLine(reference.ScriptRegion.StartLineNumber);
-                    reference.FilePath = scriptFile.FilePath;
-                    foundOccurrences.Add(reference);
-                }
+                // TODO: Each provider needs to set the source line and filepath.
+                symbols.AddRange(symbolProvider.ProvideDocumentSymbols(scriptFile));
             }
 
-            return foundOccurrences;
+            return symbols;
         }
 
         /// <summary>
@@ -174,6 +169,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return null;
             }
 
+            // TODO: Should we handle aliases at a lower level?
             CommandHelpers.AliasMap aliases = await CommandHelpers.GetAliasesAsync(
                 _executionService,
                 cancellationToken).ConfigureAwait(false);
@@ -226,36 +222,21 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             foreach (ScriptFile file in _workspaceService.GetOpenedFiles())
             {
+                List<SymbolReference> fileReferences = new();
                 foreach (string targetIdentifier in allIdentifiers)
                 {
-                    if (!file.References.TryGetReferences(targetIdentifier, out ConcurrentBag<IScriptExtent> references))
+                    if (!file.References.TryGetReferences(targetIdentifier, out ConcurrentBag<SymbolReference> references))
                     {
                         continue;
                     }
 
-                    foreach (IScriptExtent extent in references.OrderBy(e => e.StartOffset))
-                    {
-                        SymbolReference reference = new(
-                            SymbolType.Function,
-                            foundSymbol.SymbolName,
-                            extent);
-
-                        try
-                        {
-                            reference.SourceLine = file.GetLine(reference.ScriptRegion.StartLineNumber);
-                        }
-                        catch (ArgumentOutOfRangeException e)
-                        {
-                            reference.SourceLine = string.Empty;
-                            _logger.LogException("Found reference is out of range in script file", e);
-                        }
-                        reference.FilePath = file.FilePath;
-                        symbolReferences.Add(reference);
-                    }
+                    fileReferences.AddRange(references);
 
                     await Task.Yield();
                     cancellationToken.ThrowIfCancellationRequested();
                 }
+
+                symbolReferences.AddRange(fileReferences.OrderBy(symbol => symbol.ScriptRegion.StartOffset));
             }
 
             return symbolReferences;
@@ -283,7 +264,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return null;
             }
 
-            return AstOperations.FindReferencesOfSymbol(file.ScriptAst, foundSymbol).ToArray();
+            if (file.References.TryGetReferences(foundSymbol.SymbolName, out ConcurrentBag<SymbolReference> references))
+            {
+                return references.OrderBy(symbol => symbol.ScriptRegion.StartOffset).ToArray();
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -425,19 +411,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
             (Dictionary<string, List<string>> _, Dictionary<string, string> aliasToCmdlets) =
                 await CommandHelpers.GetAliasesAsync(_executionService).ConfigureAwait(false);
 
-            if (aliasToCmdlets.ContainsKey(foundSymbol.SymbolName))
+            if (aliasToCmdlets.TryGetValue(foundSymbol.SymbolName, out string value))
             {
                 foundSymbol = new SymbolReference(
                     foundSymbol.SymbolType,
-                    aliasToCmdlets[foundSymbol.SymbolName],
+value,
                     foundSymbol.ScriptRegion,
                     foundSymbol.FilePath,
                     foundSymbol.SourceLine);
             }
 
-            ScriptFile[] referencedFiles =
-                _workspaceService.ExpandScriptReferences(
-                    sourceFile);
+            ScriptFile[] referencedFiles = _workspaceService.ExpandScriptReferences(sourceFile);
 
             HashSet<string> filesSearched = new(StringComparer.OrdinalIgnoreCase);
 
@@ -461,7 +445,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     string dotSourcedPath = GetDotSourcedPath(foundSymbol, scriptFile);
                     if (scriptFile.FilePath == dotSourcedPath)
                     {
-                        foundDefinition = new SymbolReference(SymbolType.Function, foundSymbol.SymbolName, scriptFile.ScriptAst.Extent, scriptFile.FilePath);
+                        foundDefinition = new SymbolReference(
+                            SymbolType.Function,
+                            foundSymbol.SymbolName,
+                            scriptFile.ScriptAst.Extent,
+                            scriptFile.FilePath);
                         break;
                     }
                 }

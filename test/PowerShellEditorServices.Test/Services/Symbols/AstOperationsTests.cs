@@ -1,10 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Collections.Generic;
-using System.Management.Automation;
-using System.Management.Automation.Language;
+using System.Collections.Concurrent;
+using System.Linq;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
 
@@ -13,32 +16,13 @@ namespace PowerShellEditorServices.Test.Services.Symbols
     [Trait("Category", "AstOperations")]
     public class AstOperationsTests
     {
-        private const string s_scriptString = @"function BasicFunction {}
-BasicFunction
+        private readonly ScriptFile scriptFile;
 
-function          FunctionWithExtraSpace
-{
-
-} FunctionWithExtraSpace
-
-function
-
-
-       FunctionNameOnDifferentLine
-
-
-
-
-
-
-           {}
-
-
-    FunctionNameOnDifferentLine
-
-            function IndentedFunction  { } IndentedFunction
-";
-        private static readonly ScriptBlockAst s_ast = (ScriptBlockAst)ScriptBlock.Create(s_scriptString).Ast;
+        public AstOperationsTests()
+        {
+            WorkspaceService workspace = new(NullLoggerFactory.Instance);
+            scriptFile = workspace.GetFile(TestUtilities.GetSharedPath("References/FunctionReference.ps1"));
+        }
 
         [Theory]
         [InlineData(1, 15, "BasicFunction")]
@@ -51,7 +35,10 @@ function
         [InlineData(24, 52, "IndentedFunction")]
         public void CanFindSymbolAtPosition(int lineNumber, int columnNumber, string expectedName)
         {
-            SymbolReference reference = AstOperations.FindSymbolAtPosition(s_ast, lineNumber, columnNumber);
+            SymbolReference reference = AstOperations.FindSymbolAtPosition(
+                scriptFile.ScriptAst,
+                lineNumber,
+                columnNumber);
             Assert.NotNull(reference);
             Assert.Equal(expectedName, reference.SymbolName);
         }
@@ -60,12 +47,17 @@ function
         [MemberData(nameof(FindReferencesOfSymbolAtPositionData))]
         public void CanFindReferencesOfSymbolAtPosition(int lineNumber, int columnNumber, Range[] symbolRange)
         {
-            SymbolReference symbol = AstOperations.FindSymbolAtPosition(s_ast, lineNumber, columnNumber);
+            SymbolReference symbol = AstOperations.FindSymbolAtPosition(
+                scriptFile.ScriptAst,
+                lineNumber,
+                columnNumber);
 
-            IEnumerable<SymbolReference> references = AstOperations.FindReferencesOfSymbol(s_ast, symbol);
+            Assert.True(scriptFile.References.TryGetReferences(
+                symbol.SymbolName,
+                out ConcurrentBag<SymbolReference> references));
 
             int positionsIndex = 0;
-            foreach (SymbolReference reference in references)
+            foreach (SymbolReference reference in references.OrderBy((i) => i.ScriptRegion.StartOffset))
             {
                 Assert.Equal(symbolRange[positionsIndex].Start.Line, reference.ScriptRegion.StartLineNumber);
                 Assert.Equal(symbolRange[positionsIndex].Start.Character, reference.ScriptRegion.StartColumnNumber);

@@ -16,7 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     {
         string IDocumentSymbolProvider.ProviderId => nameof(ScriptDocumentSymbolProvider);
 
-        IEnumerable<ISymbolReference> IDocumentSymbolProvider.ProvideDocumentSymbols(
+        IEnumerable<SymbolReference> IDocumentSymbolProvider.ProvideDocumentSymbols(
             ScriptFile scriptFile)
         {
             // If we have an AST, then we know it's a PowerShell file

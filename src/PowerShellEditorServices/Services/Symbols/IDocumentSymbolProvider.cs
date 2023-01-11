@@ -20,6 +20,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// The document for which SymbolReferences should be provided.
         /// </param>
         /// <returns>An IEnumerable collection of SymbolReferences.</returns>
-        IEnumerable<ISymbolReference> ProvideDocumentSymbols(ScriptFile scriptFile);
+        IEnumerable<SymbolReference> ProvideDocumentSymbols(ScriptFile scriptFile);
     }
 }

@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Management.Automation.Language;
@@ -14,6 +16,22 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     /// </summary>
     internal static class VisitorUtils
     {
+        internal static string? GetCommandName(CommandAst commandAst)
+        {
+            string commandName = commandAst.GetCommandName();
+            if (!string.IsNullOrEmpty(commandName))
+            {
+                return commandName;
+            }
+
+            if (commandAst.CommandElements[0] is not ExpandableStringExpressionAst expandableStringExpressionAst)
+            {
+                return null;
+            }
+
+            return PSESSymbols.AstOperations.TryGetInferredValue(expandableStringExpressionAst, out string value) ? value : null;
+        }
+
         /// <summary>
         /// Calculates the start line and column of the actual symbol name in a AST.
         /// </summary>

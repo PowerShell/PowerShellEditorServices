@@ -157,15 +157,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             bool includeDefinitions = false,
             bool returnFullSignature = false)
         {
-            FindSymbolVisitor symbolVisitor =
-                new(
-                    lineNumber,
-                    columnNumber,
-                    includeDefinitions,
-                    returnFullSignature);
+            FindSymbolVisitor symbolVisitor = new(
+                lineNumber,
+                columnNumber,
+                includeDefinitions,
+                returnFullSignature);
 
             scriptAst.Visit(symbolVisitor);
-
             return symbolVisitor.FoundSymbolReference;
         }
 
@@ -180,33 +178,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         {
             FindCommandVisitor commandVisitor = new(lineNumber, columnNumber);
             scriptAst.Visit(commandVisitor);
-
             return commandVisitor.FoundCommandReference;
-        }
-
-        /// <summary>
-        /// Finds all references (including aliases) in a script for the given symbol
-        /// </summary>
-        /// <param name="scriptAst">The abstract syntax tree of the given script</param>
-        /// <param name="symbolReference">The symbol that we are looking for references of</param>
-        /// <param name="cmdletToAliasDictionary">Dictionary mapping cmdlets to aliases for finding alias references</param>
-        /// <param name="aliasToCmdletDictionary">Dictionary mapping aliases to cmdlets for finding alias references</param>
-        /// <returns>The found symbol references as an enumerable</returns>
-        public static IEnumerable<SymbolReference> FindReferencesOfSymbol(
-            Ast scriptAst,
-            SymbolReference symbolReference,
-            IDictionary<string, List<string>> cmdletToAliasDictionary = default,
-            IDictionary<string, string> aliasToCmdletDictionary = default)
-        {
-            // find the symbol evaluators for the node types we are handling
-            FindReferencesVisitor referencesVisitor = new(
-                symbolReference,
-                cmdletToAliasDictionary,
-                aliasToCmdletDictionary);
-
-            scriptAst.Visit(referencesVisitor);
-
-            return referencesVisitor.FoundReferences;
         }
 
         /// <summary>
@@ -240,7 +212,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// Checks if a given ast represents the root node of a *.psd1 file.
         /// </summary>
         /// <param name="ast">The abstract syntax tree of the given script</param>
-        /// <returns>true if the AST represts a *.psd1 file, otherwise false</returns>
+        /// <returns>true if the AST represents a *.psd1 file, otherwise false</returns>
         public static bool IsPowerShellDataFileAst(Ast ast)
         {
             // sometimes we don't have reliable access to the filename
@@ -295,12 +267,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// </summary>
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
         /// <param name="psScriptRoot">Pre-calculated value of $PSScriptRoot</param>
-        /// <returns></returns>
         public static string[] FindDotSourcedIncludes(Ast scriptAst, string psScriptRoot)
         {
             FindDotSourcedVisitor dotSourcedVisitor = new(psScriptRoot);
             scriptAst.Visit(dotSourcedVisitor);
-
             return dotSourcedVisitor.DotSourcedFiles.ToArray();
         }
 
