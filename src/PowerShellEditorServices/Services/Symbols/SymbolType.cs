@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {
     /// <summary>
@@ -14,7 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         Unknown = 0,
 
         /// <summary>
-        /// The symbol is a vairable
+        /// The symbol is a variable
         /// </summary>
         Variable,
 
@@ -77,5 +79,45 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// The symbol is a type reference
         /// </summary>
         Type,
+    }
+
+    internal static class SymbolTypeUtils
+    {
+        internal static SymbolKind GetSymbolKind(SymbolType symbolType)
+        {
+            return symbolType switch
+            {
+                SymbolType.Function or SymbolType.Configuration or SymbolType.Workflow => SymbolKind.Function,
+                SymbolType.Enum => SymbolKind.Enum,
+                SymbolType.Class => SymbolKind.Class,
+                SymbolType.Constructor => SymbolKind.Constructor,
+                SymbolType.Method => SymbolKind.Method,
+                SymbolType.Property => SymbolKind.Property,
+                SymbolType.EnumMember => SymbolKind.EnumMember,
+                // TODO: More delicately handle the other symbol types.
+                _ => SymbolKind.Variable,
+            };
+        }
+
+        internal static string GetDecoratedSymbolName(SymbolReference symbolReference)
+        {
+            string name = symbolReference.SymbolName;
+
+            // Append { } for symbols with scriptblock
+            // Constructors and Methods have overloaded names already
+            if (symbolReference.SymbolType is
+                SymbolType.Function or
+                SymbolType.Enum or
+                SymbolType.Class or
+                SymbolType.Constructor or
+                SymbolType.Method or
+                SymbolType.Configuration or
+                SymbolType.Workflow)
+            {
+                name += " { }";
+            }
+
+            return name;
+        }
     }
 }

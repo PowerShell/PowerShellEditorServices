@@ -38,9 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             foreach (ScriptFile scriptFile in _workspaceService.GetOpenedFiles())
             {
-                List<SymbolReference> foundSymbols =
-                    _symbolsService.FindSymbolsInFile(
-                        scriptFile);
+                List<SymbolReference> foundSymbols = _symbolsService.FindSymbolsInFile(scriptFile);
 
                 // TODO: Need to compute a relative path that is based on common path for all workspace files
                 string containerName = Path.GetFileNameWithoutExtension(scriptFile.FilePath);
@@ -66,15 +64,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     Location location = new()
                     {
                         Uri = DocumentUri.From(foundOccurrence.FilePath),
-                        Range = GetRangeFromScriptRegion(foundOccurrence.ScriptRegion)
+                        Range = ScriptRegion.GetRangeFromScriptRegion(foundOccurrence.ScriptRegion)
                     };
 
                     symbols.Add(new SymbolInformation
                     {
                         ContainerName = containerName,
-                        Kind = GetSymbolKind(foundOccurrence.SymbolType),
+                        Kind = SymbolTypeUtils.GetSymbolKind(foundOccurrence.SymbolType),
                         Location = location,
-                        Name = GetDecoratedSymbolName(foundOccurrence)
+                        Name = SymbolTypeUtils.GetDecoratedSymbolName(foundOccurrence)
                     });
                 }
             }
@@ -85,58 +83,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         #region private Methods
 
         private static bool IsQueryMatch(string query, string symbolName) => symbolName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
-
-        private static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)
-        {
-            return new Range
-            {
-                Start = new Position
-                {
-                    Line = scriptRegion.StartLineNumber - 1,
-                    Character = scriptRegion.StartColumnNumber - 1
-                },
-                End = new Position
-                {
-                    Line = scriptRegion.EndLineNumber - 1,
-                    Character = scriptRegion.EndColumnNumber - 1
-                }
-            };
-        }
-
-        private static string GetDecoratedSymbolName(SymbolReference symbolReference)
-        {
-            string name = symbolReference.SymbolName;
-
-            // Append { } for symbols with scriptblock
-            // Constructors and Methods have overloaded names already
-            if (symbolReference.SymbolType is
-                SymbolType.Function or
-                SymbolType.Enum or
-                SymbolType.Class or
-                SymbolType.Constructor or
-                SymbolType.Method or
-                SymbolType.Configuration or
-                SymbolType.Workflow)
-            {
-                name += " { }";
-            }
-
-            return name;
-        }
-
-        private static SymbolKind GetSymbolKind(SymbolType symbolType)
-        {
-            return symbolType switch
-            {
-                SymbolType.Function or SymbolType.Configuration or SymbolType.Workflow => SymbolKind.Function,
-                SymbolType.Enum => SymbolKind.Enum,
-                SymbolType.Class => SymbolKind.Class,
-                SymbolType.Constructor => SymbolKind.Constructor,
-                SymbolType.Method => SymbolKind.Method,
-                SymbolType.Property => SymbolKind.Property,
-                _ => SymbolKind.Variable,
-            };
-        }
 
         #endregion
     }

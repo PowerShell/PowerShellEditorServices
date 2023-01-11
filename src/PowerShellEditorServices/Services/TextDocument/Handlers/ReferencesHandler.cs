@@ -56,29 +56,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     locations.Add(new Location
                     {
                         Uri = DocumentUri.From(foundReference.FilePath),
-                        Range = GetRangeFromScriptRegion(foundReference.ScriptRegion)
+                        Range = ScriptRegion.GetRangeFromScriptRegion(foundReference.ScriptRegion)
                     });
                 }
             }
 
             return new LocationContainer(locations);
-        }
-
-        private static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)
-        {
-            return new Range
-            {
-                Start = new Position
-                {
-                    Line = scriptRegion.StartLineNumber - 1,
-                    Character = scriptRegion.StartColumnNumber - 1
-                },
-                End = new Position
-                {
-                    Line = scriptRegion.EndLineNumber - 1,
-                    Character = scriptRegion.EndColumnNumber - 1
-                }
-            };
         }
     }
 }

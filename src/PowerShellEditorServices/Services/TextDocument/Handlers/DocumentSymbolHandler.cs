@@ -62,13 +62,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                             return new SymbolInformationOrDocumentSymbol(new SymbolInformation
                             {
                                 ContainerName = containerName,
-                                Kind = GetSymbolKind(r.SymbolType),
+                                Kind = SymbolTypeUtils.GetSymbolKind(r.SymbolType),
                                 Location = new Location
                                 {
                                     Uri = DocumentUri.From(r.FilePath),
-                                    Range = GetRangeFromScriptRegion(r.ScriptRegion)
+                                    Range = ScriptRegion.GetRangeFromScriptRegion(r.ScriptRegion)
                                 },
-                                Name = GetDecoratedSymbolName(r)
+                                Name = SymbolTypeUtils.GetDecoratedSymbolName(r)
                             });
                         })
                         .ToArray()
@@ -122,59 +122,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             return providerResults;
-        }
-
-        private static SymbolKind GetSymbolKind(SymbolType symbolType)
-        {
-            return symbolType switch
-            {
-                SymbolType.Function or SymbolType.Configuration or SymbolType.Workflow => SymbolKind.Function,
-                SymbolType.Enum => SymbolKind.Enum,
-                SymbolType.Class => SymbolKind.Class,
-                SymbolType.Constructor => SymbolKind.Constructor,
-                SymbolType.Method => SymbolKind.Method,
-                SymbolType.Property => SymbolKind.Property,
-                SymbolType.EnumMember => SymbolKind.EnumMember,
-                _ => SymbolKind.Variable,
-            };
-        }
-
-        private static string GetDecoratedSymbolName(SymbolReference symbolReference)
-        {
-            string name = symbolReference.SymbolName;
-
-            // Append { } for symbols with scriptblock
-            // Constructors and Methods have overloaded names already
-            if (symbolReference.SymbolType is
-                SymbolType.Function or
-                SymbolType.Enum or
-                SymbolType.Class or
-                SymbolType.Constructor or
-                SymbolType.Method or
-                SymbolType.Configuration or
-                SymbolType.Workflow)
-            {
-                name += " { }";
-            }
-
-            return name;
-        }
-
-        private static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)
-        {
-            return new Range
-            {
-                Start = new Position
-                {
-                    Line = scriptRegion.StartLineNumber - 1,
-                    Character = scriptRegion.StartColumnNumber - 1
-                },
-                End = new Position
-                {
-                    Line = scriptRegion.EndLineNumber - 1,
-                    Character = scriptRegion.EndColumnNumber - 1
-                }
-            };
         }
     }
 }
