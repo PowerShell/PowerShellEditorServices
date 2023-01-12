@@ -109,10 +109,6 @@ internal sealed class ReferenceTable
             return AstVisitAction.Continue;
         }
 
-        // TODO: We should examine if we really want to constrain the extents to the name only. This
-        // means that highlighting only highlights the symbol name, but providing the whole extend
-        // means the whole function (or class etc.) gets highlighted, which seems to be a personal
-        // preference.
         public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
         {
             // Extent for constructors and method trigger both this and VisitFunctionMember(). Covered in the latter.
@@ -122,7 +118,7 @@ internal sealed class ReferenceTable
                 return AstVisitAction.Continue;
             }
 
-            // We only want the function name
+            // We only want the function name as the extent for highlighting (and so forth).
             IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionDefinitionAst);
             _references.AddReference(
                 SymbolType.Function,
@@ -159,7 +155,6 @@ internal sealed class ReferenceTable
         {
             SymbolType symbolType = typeDefinitionAst.IsEnum ? SymbolType.Enum : SymbolType.Class;
 
-            // We only want the type name. Get start-location for name
             IScriptExtent nameExtent = VisitorUtils.GetNameExtent(typeDefinitionAst);
             _references.AddReference(symbolType, typeDefinitionAst.Name, nameExtent);
 
@@ -189,7 +184,6 @@ internal sealed class ReferenceTable
                 ? SymbolType.Constructor
                 : SymbolType.Method;
 
-            // We only want the method/ctor name. Get start-location for name
             IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionMemberAst, true, false);
             _references.AddReference(
                 symbolType,
@@ -201,7 +195,6 @@ internal sealed class ReferenceTable
 
         public override AstVisitAction VisitPropertyMember(PropertyMemberAst propertyMemberAst)
         {
-            // We only want the property name. Get start-location for name
             IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst, false);
             _references.AddReference(
                 SymbolType.Property,
@@ -210,7 +203,5 @@ internal sealed class ReferenceTable
 
             return AstVisitAction.Continue;
         }
-
-        // TODO: What else can we implement?
     }
 }

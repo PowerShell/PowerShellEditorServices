@@ -1,74 +1,29 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#nullable enable
+
 using System.Diagnostics;
 using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {
-    internal interface ISymbolReference
-    {
-        /// <summary>
-        /// Gets the symbol's type
-        /// </summary>
-        SymbolType SymbolType { get; }
-
-        /// <summary>
-        /// Gets the name of the symbol
-        /// </summary>
-        string SymbolName { get; }
-
-        /// <summary>
-        /// Gets the script extent of the symbol
-        /// </summary>
-        ScriptRegion ScriptRegion { get; }
-
-        /// <summary>
-        /// Gets the contents of the line the given symbol is on
-        /// </summary>
-        string SourceLine { get; }
-
-        /// <summary>
-        /// Gets the path of the file in which the symbol was found.
-        /// </summary>
-        string FilePath { get; }
-    }
-
     /// <summary>
     /// A class that holds the type, name, script extent, and source line of a symbol
     /// </summary>
     [DebuggerDisplay("SymbolType = {SymbolType}, SymbolName = {SymbolName}")]
-    internal class SymbolReference : ISymbolReference
+    internal record SymbolReference
     {
-        #region Properties
-
-        /// <summary>
-        /// Gets the symbol's type
-        /// </summary>
         public SymbolType SymbolType { get; }
 
-        /// <summary>
-        /// Gets the name of the symbol
-        /// </summary>
         public string SymbolName { get; }
 
-        /// <summary>
-        /// Gets the script extent of the symbol
-        /// </summary>
         public ScriptRegion ScriptRegion { get; }
 
-        /// <summary>
-        /// Gets the contents of the line the given symbol is on
-        /// </summary>
         public string SourceLine { get; internal set; }
 
-        /// <summary>
-        /// Gets the path of the file in which the symbol was found.
-        /// </summary>
         public string FilePath { get; internal set; }
-
-        #endregion
 
         /// <summary>
         /// Constructs and instance of a SymbolReference
@@ -88,16 +43,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             // TODO: Verify params
             SymbolType = symbolType;
             SymbolName = symbolName;
-            ScriptRegion = ScriptRegion.Create(scriptExtent);
+            ScriptRegion = new(scriptExtent);
             FilePath = filePath;
             SourceLine = sourceLine;
-
-            // TODO: Make sure end column number usage is correct
-
-            // Build the display string
-            //this.DisplayString =
-            //    string.Format(
-            //        "{0} {1}")
         }
 
         public SymbolReference(
@@ -108,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         {
             SymbolType = symbolType;
             SymbolName = symbolName;
-            ScriptRegion = ScriptRegion.Create(scriptExtent);
+            ScriptRegion = new(scriptExtent);
             FilePath = file.FilePath;
             try
             {

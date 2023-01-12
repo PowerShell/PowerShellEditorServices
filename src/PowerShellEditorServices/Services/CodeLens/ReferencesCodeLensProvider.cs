@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;

@@ -67,12 +67,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 symbolInfo.Add(new MarkedString("markdown", symbolDetails.Documentation));
             }
 
-            Range symbolRange = ScriptRegion.GetRangeFromScriptRegion(symbolDetails.SymbolReference.ScriptRegion);
-
             return new Hover
             {
                 Contents = new MarkedStringsOrMarkupContent(symbolInfo),
-                Range = symbolRange
+                Range = symbolDetails.SymbolReference.ScriptRegion.ToRange()
             };
         }
     }

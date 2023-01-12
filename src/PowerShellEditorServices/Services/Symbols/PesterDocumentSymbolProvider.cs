@@ -196,7 +196,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// Provides a specialization of SymbolReference containing
     /// extra information about Pester test symbols.
     /// </summary>
-    internal class PesterSymbolReference : SymbolReference
+    internal record PesterSymbolReference : SymbolReference
     {
         /// <summary>
         /// Lookup for Pester keywords we support. Ideally we could extract these from Pester itself

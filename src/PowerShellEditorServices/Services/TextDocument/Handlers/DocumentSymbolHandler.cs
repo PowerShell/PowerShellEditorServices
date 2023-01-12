@@ -59,6 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 ? foundSymbols
                         .Select(r =>
                         {
+                            // TODO: This should be a DocumentSymbol now as SymbolInformation is deprecated.
                             return new SymbolInformationOrDocumentSymbol(new SymbolInformation
                             {
                                 ContainerName = containerName,
@@ -66,7 +67,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                                 Location = new Location
                                 {
                                     Uri = DocumentUri.From(r.FilePath),
-                                    Range = ScriptRegion.GetRangeFromScriptRegion(r.ScriptRegion)
+                                    Range = r.ScriptRegion.ToRange()
                                 },
                                 Name = SymbolTypeUtils.GetDecoratedSymbolName(r)
                             });

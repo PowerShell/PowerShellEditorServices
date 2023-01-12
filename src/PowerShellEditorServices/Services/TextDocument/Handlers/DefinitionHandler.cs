@@ -57,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                             new Location
                             {
                                 Uri = DocumentUri.From(foundDefinition.FilePath),
-                                Range = ScriptRegion.GetRangeFromScriptRegion(foundDefinition.ScriptRegion)
+                                Range = foundDefinition.ScriptRegion.ToRange()
                             }));
                 }
             }
