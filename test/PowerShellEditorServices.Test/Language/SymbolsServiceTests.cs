@@ -559,9 +559,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public void FindsSymbolsInFile()
         {
-            List<SymbolReference> symbolsResult =
-                FindSymbolsInFile(
-                    FindSymbolsInMultiSymbolFile.SourceDetails);
+            List<SymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInMultiSymbolFile.SourceDetails);
 
             Assert.Equal(4, symbolsResult.Count(symbolReference => symbolReference.SymbolType == SymbolType.Function));
             Assert.Equal(3, symbolsResult.Count(symbolReference => symbolReference.SymbolType == SymbolType.Variable));
@@ -622,50 +620,47 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public void FindsSymbolsWithNewLineInFile()
         {
-            List<SymbolReference> symbolsResult =
-                FindSymbolsInFile(
-                    FindSymbolsInNewLineSymbolFile.SourceDetails);
+            List<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInNewLineSymbolFile.SourceDetails);
 
-            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Function));
-            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Class));
-            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Constructor));
-            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Property));
-            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Method));
-            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Enum));
-            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.EnumMember));
-
-            SymbolReference firstFunctionSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Function);
+            SymbolReference firstFunctionSymbol =
+                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Function));
             Assert.Equal("returnTrue", firstFunctionSymbol.SymbolName);
             Assert.Equal(2, firstFunctionSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(1, firstFunctionSymbol.ScriptRegion.StartColumnNumber);
 
-            SymbolReference firstClassSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Class);
+            SymbolReference firstClassSymbol =
+                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Class));
             Assert.Equal("NewLineClass", firstClassSymbol.SymbolName);
             Assert.Equal(7, firstClassSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(1, firstClassSymbol.ScriptRegion.StartColumnNumber);
 
-            SymbolReference firstConstructorSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Constructor);
-            Assert.Equal("NewLineClass()", firstConstructorSymbol.SymbolName);
+            SymbolReference firstConstructorSymbol =
+                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Constructor));
+            Assert.Equal("NewLineClass.NewLineClass()", firstConstructorSymbol.SymbolName);
             Assert.Equal(8, firstConstructorSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(5, firstConstructorSymbol.ScriptRegion.StartColumnNumber);
 
-            SymbolReference firstPropertySymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Property);
-            Assert.Equal("SomePropWithDefault", firstPropertySymbol.SymbolName);
+            SymbolReference firstPropertySymbol =
+                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Property));
+            Assert.Equal("NewLineClass.SomePropWithDefault", firstPropertySymbol.SymbolName);
             Assert.Equal(15, firstPropertySymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(5, firstPropertySymbol.ScriptRegion.StartColumnNumber);
 
-            SymbolReference firstMethodSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Method);
-            Assert.Equal("MyClassMethod([MyNewLineEnum]$param1)", firstMethodSymbol.SymbolName);
+            SymbolReference firstMethodSymbol =
+                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Method));
+            Assert.Equal("NewLineClass.MyClassMethod([MyNewLineEnum]$param1)", firstMethodSymbol.SymbolName);
             Assert.Equal(20, firstMethodSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(5, firstMethodSymbol.ScriptRegion.StartColumnNumber);
 
-            SymbolReference firstEnumSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Enum);
+            SymbolReference firstEnumSymbol =
+                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Enum));
             Assert.Equal("MyNewLineEnum", firstEnumSymbol.SymbolName);
             Assert.Equal(26, firstEnumSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(1, firstEnumSymbol.ScriptRegion.StartColumnNumber);
 
-            SymbolReference firstEnumMemberSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.EnumMember);
-            Assert.Equal("First", firstEnumMemberSymbol.SymbolName);
+            SymbolReference firstEnumMemberSymbol =
+                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.EnumMember));
+            Assert.Equal("MyNewLineEnum.First", firstEnumMemberSymbol.SymbolName);
             Assert.Equal(27, firstEnumMemberSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(5, firstEnumMemberSymbol.ScriptRegion.StartColumnNumber);
         }

@@ -111,6 +111,10 @@ internal sealed class ReferenceTable
 
         public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
         {
+            SymbolType symbolType = functionDefinitionAst.IsWorkflow
+                ? SymbolType.Workflow
+                : SymbolType.Function;
+
             // Extent for constructors and method trigger both this and VisitFunctionMember(). Covered in the latter.
             // This will not exclude nested functions as they have ScriptBlockAst as parent
             if (functionDefinitionAst.Parent is FunctionMemberAst)
@@ -119,9 +123,12 @@ internal sealed class ReferenceTable
             }
 
             // We only want the function name as the extent for highlighting (and so forth).
+            //
+            // TODO: After we replace the deprecated SymbolInformation usage with DocumentSymbol,
+            // we'll want *both* the name extent and the full extent.
             IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionDefinitionAst);
             _references.AddReference(
-                SymbolType.Function,
+                symbolType,
                 functionDefinitionAst.Name,
                 nameExtent,
                 isDeclaration: true);
@@ -154,7 +161,9 @@ internal sealed class ReferenceTable
 
         public override AstVisitAction VisitTypeDefinition(TypeDefinitionAst typeDefinitionAst)
         {
-            SymbolType symbolType = typeDefinitionAst.IsEnum ? SymbolType.Enum : SymbolType.Class;
+            SymbolType symbolType = typeDefinitionAst.IsEnum
+                ? SymbolType.Enum
+                : SymbolType.Class;
 
             IScriptExtent nameExtent = VisitorUtils.GetNameExtent(typeDefinitionAst);
             _references.AddReference(symbolType, typeDefinitionAst.Name, nameExtent);
@@ -196,10 +205,25 @@ internal sealed class ReferenceTable
 
         public override AstVisitAction VisitPropertyMember(PropertyMemberAst propertyMemberAst)
         {
+            SymbolType symbolType =
+                propertyMemberAst.Parent is TypeDefinitionAst typeAst && typeAst.IsEnum
+                    ? SymbolType.EnumMember : SymbolType.Property;
+
             IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst, false);
             _references.AddReference(
-                SymbolType.Property,
+                symbolType,
                 VisitorUtils.GetMemberOverloadName(propertyMemberAst, false),
+                nameExtent);
+
+            return AstVisitAction.Continue;
+        }
+
+        public override AstVisitAction VisitConfigurationDefinition(ConfigurationDefinitionAst configurationDefinitionAst)
+        {
+            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(configurationDefinitionAst);
+            _references.AddReference(
+                SymbolType.Configuration,
+                nameExtent.Text,
                 nameExtent);
 
             return AstVisitAction.Continue;
