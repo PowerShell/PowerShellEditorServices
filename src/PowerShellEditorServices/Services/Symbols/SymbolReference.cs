@@ -25,6 +25,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 
         public string FilePath { get; internal set; }
 
+        public bool IsDeclaration { get; }
+
         /// <summary>
         /// Constructs and instance of a SymbolReference
         /// </summary>
@@ -33,12 +35,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <param name="scriptExtent">The script extent of the symbol</param>
         /// <param name="filePath">The file path of the symbol</param>
         /// <param name="sourceLine">The line contents of the given symbol (defaults to empty string)</param>
+        /// <param name="isDeclaration">True if this reference is the definition of the symbol</param>
         public SymbolReference(
             SymbolType symbolType,
             string symbolName,
             IScriptExtent scriptExtent,
             string filePath = "",
-            string sourceLine = "")
+            string sourceLine = "",
+            bool isDeclaration = false)
         {
             // TODO: Verify params
             SymbolType = symbolType;
@@ -46,13 +50,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             ScriptRegion = new(scriptExtent);
             FilePath = filePath;
             SourceLine = sourceLine;
+            IsDeclaration = isDeclaration;
         }
 
         public SymbolReference(
             SymbolType symbolType,
             string symbolName,
             IScriptExtent scriptExtent,
-            ScriptFile file)
+            ScriptFile file,
+            bool isDeclaration)
         {
             SymbolType = symbolType;
             SymbolName = symbolName;
@@ -66,6 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             {
                 SourceLine = string.Empty;
             }
+            IsDeclaration = isDeclaration;
         }
 
         /// <summary>
@@ -74,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <param name="symbolType">The higher level type of the symbol</param>
         /// <param name="scriptExtent">The script extent of the symbol</param>
         public SymbolReference(SymbolType symbolType, IScriptExtent scriptExtent)
-            : this(symbolType, scriptExtent.Text, scriptExtent, scriptExtent.File, "")
+            : this(symbolType, scriptExtent.Text, scriptExtent, scriptExtent.File)
         {
         }
     }

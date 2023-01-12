@@ -71,9 +71,9 @@ internal sealed class ReferenceTable
         _parent.ScriptAst.Visit(new ReferenceVisitor(this));
     }
 
-    private void AddReference(SymbolType type, string name, IScriptExtent extent)
+    private void AddReference(SymbolType type, string name, IScriptExtent extent, bool isDeclaration = false)
     {
-        SymbolReference symbol = new(type, name, extent, _parent);
+        SymbolReference symbol = new(type, name, extent, _parent, isDeclaration);
         _symbolReferences.AddOrUpdate(
             name,
             _ => new ConcurrentBag<SymbolReference> { symbol },
@@ -123,7 +123,8 @@ internal sealed class ReferenceTable
             _references.AddReference(
                 SymbolType.Function,
                 functionDefinitionAst.Name,
-                nameExtent);
+                nameExtent,
+                isDeclaration: true);
 
             return AstVisitAction.Continue;
         }

@@ -47,18 +47,25 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     _workspaceService.ExpandScriptReferences(scriptFile),
                     cancellationToken).ConfigureAwait(false);
 
-            List<Location> locations = new();
-
-            if (referencesResult != null)
+            if (referencesResult is null)
             {
-                foreach (SymbolReference foundReference in referencesResult)
+                return new LocationContainer();
+            }
+
+            List<Location> locations = new();
+            foreach (SymbolReference foundReference in referencesResult)
+            {
+                // Respect the request's setting to include declarations.
+                if (!request.Context.IncludeDeclaration && foundReference.IsDeclaration)
                 {
-                    locations.Add(new Location
-                    {
-                        Uri = DocumentUri.From(foundReference.FilePath),
-                        Range = foundReference.ScriptRegion.ToRange()
-                    });
+                    continue;
                 }
+
+                locations.Add(new Location
+                {
+                    Uri = DocumentUri.From(foundReference.FilePath),
+                    Range = foundReference.ScriptRegion.ToRange()
+                });
             }
 
             return new LocationContainer(locations);

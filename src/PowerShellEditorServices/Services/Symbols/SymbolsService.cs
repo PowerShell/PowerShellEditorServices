@@ -153,7 +153,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
 
         /// <summary>
-        /// Finds all the references of a symbol
+        /// Finds all the references of a symbol (excluding definitions)
         /// </summary>
         /// <param name="foundSymbol">The symbol to find all references for</param>
         /// <param name="referencedFiles">An array of scriptFiles to search for references in</param>

@@ -94,6 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 SymbolType.Method => SymbolKind.Method,
                 SymbolType.Property => SymbolKind.Property,
                 SymbolType.EnumMember => SymbolKind.EnumMember,
+                SymbolType.Variable => SymbolKind.Variable,
                 // TODO: More delicately handle the other symbol types.
                 _ => SymbolKind.Variable,
             };

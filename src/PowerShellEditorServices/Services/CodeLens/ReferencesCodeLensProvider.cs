@@ -84,19 +84,18 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         }
 
         /// <summary>
-        /// Take a codelens and create a new codelens object with updated references.
+        /// Take a CodeLens and create a new CodeLens object with updated references.
         /// </summary>
         /// <param name="codeLens">The old code lens to get updated references for.</param>
         /// <param name="scriptFile"></param>
         /// <param name="cancellationToken"></param>
-        /// <returns>A new code lens object describing the same data as the old one but with updated references.</returns>
+        /// <returns>A new CodeLens object describing the same data as the old one but with updated references.</returns>
         public async Task<CodeLens> ResolveCodeLens(
             CodeLens codeLens,
             ScriptFile scriptFile,
             CancellationToken cancellationToken)
         {
-            ScriptFile[] references = _workspaceService.ExpandScriptReferences(
-                scriptFile);
+            ScriptFile[] references = _workspaceService.ExpandScriptReferences(scriptFile);
 
             SymbolReference foundSymbol = SymbolsService.FindSymbolDefinitionAtLocation(
                 scriptFile,
@@ -123,7 +122,8 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     // so it's helpful to add some yields.
                     await Task.Yield();
                     cancellationToken.ThrowIfCancellationRequested();
-                    if (IsReferenceDefinition(foundSymbol, foundReference))
+
+                    if (foundReference.IsDeclaration)
                     {
                         continue;
                     }
@@ -163,27 +163,6 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     LspSerializer.Instance.JsonSerializer)
                 }
             };
-        }
-
-        /// <summary>
-        /// Check whether a SymbolReference is the actual definition of that symbol.
-        /// </summary>
-        /// <param name="definition">The symbol definition that may be referenced.</param>
-        /// <param name="reference">The reference symbol to check.</param>
-        /// <returns>True if the reference is not a reference to the definition, false otherwise.</returns>
-        private static bool IsReferenceDefinition(
-            SymbolReference definition,
-            SymbolReference reference)
-        {
-            // First check if we are in the same file as the definition. if we are...
-            // check if it's on the same line number.
-
-            // TODO: Do we care about two symbol definitions of the same name?
-            // if we do, how could we possibly know that a reference in one file is a reference
-            // of a particular symbol definition?
-            return
-                definition.FilePath == reference.FilePath &&
-                definition.ScriptRegion.StartLineNumber == reference.ScriptRegion.StartLineNumber;
         }
 
         /// <summary>
