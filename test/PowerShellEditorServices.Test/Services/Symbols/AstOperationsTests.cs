@@ -57,7 +57,7 @@ namespace PowerShellEditorServices.Test.Services.Symbols
                 out ConcurrentBag<SymbolReference> references));
 
             int positionsIndex = 0;
-            foreach (SymbolReference reference in references.OrderBy((i) => i.ScriptRegion.StartOffset))
+            foreach (SymbolReference reference in references.OrderBy((i) => i.ScriptRegion.ToRange().Start))
             {
                 Assert.Equal(symbolRange[positionsIndex].Start.Line, reference.ScriptRegion.StartLineNumber);
                 Assert.Equal(symbolRange[positionsIndex].Start.Character, reference.ScriptRegion.StartColumnNumber);

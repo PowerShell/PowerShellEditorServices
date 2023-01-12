@@ -97,7 +97,7 @@ namespace PowerShellEditorServices.Test.Language
                     symbolReference,
                     workspace.ExpandScriptReferences(scriptFile)).ConfigureAwait(true);
 
-            return symbols.OrderBy(symbol => symbol.ScriptRegion.StartOffset).ToList();
+            return symbols.OrderBy(symbol => symbol.ScriptRegion.ToRange().Start).ToList();
         }
 
         private IReadOnlyList<SymbolReference> GetOccurrences(ScriptRegion scriptRegion)
@@ -107,11 +107,11 @@ namespace PowerShellEditorServices.Test.Language
                     GetScriptFile(scriptRegion),
                     scriptRegion.StartLineNumber,
                     scriptRegion.StartColumnNumber)
-                .OrderBy(symbol => symbol.ScriptRegion.StartOffset)
+                .OrderBy(symbol => symbol.ScriptRegion.ToRange().Start)
                 .ToArray();
         }
 
-        private List<SymbolReference> FindSymbolsInFile(ScriptRegion scriptRegion) => symbolsService.FindSymbolsInFile(GetScriptFile(scriptRegion));
+        private IEnumerable<SymbolReference> FindSymbolsInFile(ScriptRegion scriptRegion) => symbolsService.FindSymbolsInFile(GetScriptFile(scriptRegion)).OrderBy(symbol => symbol.ScriptRegion.ToRange().Start);
 
         [Fact]
         public async Task FindsParameterHintsOnCommand()
@@ -310,8 +310,8 @@ namespace PowerShellEditorServices.Test.Language
             // TODO: Remove definitions from references.
             List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnTypeSymbolsData.EnumSourceDetails).ConfigureAwait(true);
             Assert.Equal(4, referencesResult.Count);
-            Assert.Equal(25, referencesResult[1].ScriptRegion.StartLineNumber);
-            Assert.Equal(19, referencesResult[1].ScriptRegion.StartColumnNumber);
+            Assert.Equal(25, referencesResult[0].ScriptRegion.StartLineNumber);
+            Assert.Equal(19, referencesResult[0].ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
@@ -365,8 +365,8 @@ namespace PowerShellEditorServices.Test.Language
             // TODO: Remove definitions from references.
             List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnTypeSymbolsData.TypeConstraintSourceDetails).ConfigureAwait(true);
             Assert.Equal(4, referencesResult.Count);
-            Assert.Equal(25, referencesResult[1].ScriptRegion.StartLineNumber);
-            Assert.Equal(19, referencesResult[1].ScriptRegion.StartColumnNumber);
+            Assert.Equal(25, referencesResult[0].ScriptRegion.StartLineNumber);
+            Assert.Equal(19, referencesResult[0].ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
@@ -559,17 +559,10 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public void FindsSymbolsInFile()
         {
-            List<SymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInMultiSymbolFile.SourceDetails);
+            IEnumerable<SymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInMultiSymbolFile.SourceDetails);
 
-            Assert.Equal(4, symbolsResult.Count(symbolReference => symbolReference.SymbolType == SymbolType.Function));
-            Assert.Equal(3, symbolsResult.Count(symbolReference => symbolReference.SymbolType == SymbolType.Variable));
-            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Workflow));
-            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Class));
-            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Property));
-            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Constructor));
-            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Method));
-            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Enum));
-            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.EnumMember));
+            Assert.Equal(7, symbolsResult.Count(symbolReference => symbolReference.SymbolType == SymbolType.Function));
+            Assert.Equal(13, symbolsResult.Count(symbolReference => symbolReference.SymbolType == SymbolType.Variable));
 
             SymbolReference firstFunctionSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Function);
             Assert.Equal("AFunction", firstFunctionSymbol.SymbolName);
@@ -577,42 +570,49 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Equal(10, firstFunctionSymbol.ScriptRegion.StartColumnNumber);
 
             SymbolReference lastVariableSymbol = symbolsResult.Last(r => r.SymbolType == SymbolType.Variable);
-            Assert.Equal("$Script:ScriptVar2", lastVariableSymbol.SymbolName);
-            Assert.Equal(3, lastVariableSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, lastVariableSymbol.ScriptRegion.StartColumnNumber);
+            Assert.Equal("$param3", lastVariableSymbol.SymbolName);
+            Assert.Equal(32, lastVariableSymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(50, lastVariableSymbol.ScriptRegion.StartColumnNumber);
 
-            SymbolReference firstWorkflowSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Workflow);
+            SymbolReference firstWorkflowSymbol =
+                Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Workflow));
             Assert.Equal("AWorkflow", firstWorkflowSymbol.SymbolName);
             Assert.Equal(23, firstWorkflowSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(10, firstWorkflowSymbol.ScriptRegion.StartColumnNumber);
 
-            SymbolReference firstClassSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Class);
+            SymbolReference firstClassSymbol =
+                Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Class));
             Assert.Equal("AClass", firstClassSymbol.SymbolName);
             Assert.Equal(25, firstClassSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(7, firstClassSymbol.ScriptRegion.StartColumnNumber);
 
-            SymbolReference firstPropertySymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Property);
-            Assert.Equal("AProperty", firstPropertySymbol.SymbolName);
+            SymbolReference firstPropertySymbol =
+                Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Property));
+            Assert.Equal("AClass.AProperty", firstPropertySymbol.SymbolName);
             Assert.Equal(26, firstPropertySymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(13, firstPropertySymbol.ScriptRegion.StartColumnNumber);
 
-            SymbolReference firstConstructorSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Constructor);
-            Assert.Equal("AClass([string]$AParameter)", firstConstructorSymbol.SymbolName);
+            SymbolReference firstConstructorSymbol =
+                Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Constructor));
+            Assert.Equal("AClass.AClass([string]$AParameter)", firstConstructorSymbol.SymbolName);
             Assert.Equal(28, firstConstructorSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(5, firstConstructorSymbol.ScriptRegion.StartColumnNumber);
 
-            SymbolReference firstMethodSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Method);
-            Assert.Equal("AMethod([string]$param1, [int]$param2, $param3)", firstMethodSymbol.SymbolName);
+            SymbolReference firstMethodSymbol =
+                Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Method));
+            Assert.Equal("AClass.AMethod([string]$param1, [int]$param2, $param3)", firstMethodSymbol.SymbolName);
             Assert.Equal(32, firstMethodSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(11, firstMethodSymbol.ScriptRegion.StartColumnNumber);
 
-            SymbolReference firstEnumSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Enum);
+            SymbolReference firstEnumSymbol =
+                Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Enum));
             Assert.Equal("AEnum", firstEnumSymbol.SymbolName);
             Assert.Equal(37, firstEnumSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(6, firstEnumSymbol.ScriptRegion.StartColumnNumber);
 
-            SymbolReference firstEnumMemberSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.EnumMember);
-            Assert.Equal("AValue", firstEnumMemberSymbol.SymbolName);
+            SymbolReference firstEnumMemberSymbol =
+                Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.EnumMember));
+            Assert.Equal("AEnum.AValue", firstEnumMemberSymbol.SymbolName);
             Assert.Equal(38, firstEnumMemberSymbol.ScriptRegion.StartLineNumber);
             Assert.Equal(5, firstEnumMemberSymbol.ScriptRegion.StartColumnNumber);
         }
@@ -620,7 +620,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public void FindsSymbolsWithNewLineInFile()
         {
-            List<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInNewLineSymbolFile.SourceDetails);
+            IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInNewLineSymbolFile.SourceDetails);
 
             SymbolReference firstFunctionSymbol =
                 Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Function));
@@ -670,7 +670,7 @@ namespace PowerShellEditorServices.Test.Language
         {
             Skip.If(!s_isWindows, "DSC only works properly on Windows.");
 
-            List<SymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInDSCFile.SourceDetails);
+            IEnumerable<SymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInDSCFile.SourceDetails);
 
             Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Configuration));
             SymbolReference firstConfigurationSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Configuration);
@@ -682,7 +682,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public void FindsSymbolsInPesterFile()
         {
-            List<PesterSymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInPesterFile.SourceDetails).OfType<PesterSymbolReference>().ToList();
+            IEnumerable<PesterSymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInPesterFile.SourceDetails).OfType<PesterSymbolReference>();
             Assert.Equal(12, symbolsResult.Count(r => r.SymbolType == SymbolType.Function));
 
             Assert.Equal(1, symbolsResult.Count(r => r.Command == PesterCommandType.Describe));
@@ -737,14 +737,14 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public void LangServerFindsSymbolsInPSDFile()
         {
-            List<SymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInPSDFile.SourceDetails);
-            Assert.Equal(3, symbolsResult.Count);
+            IEnumerable<SymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInPSDFile.SourceDetails);
+            Assert.Equal(3, symbolsResult.Count());
         }
 
         [Fact]
         public void FindsSymbolsInNoSymbolsFile()
         {
-            List<SymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInNoSymbolsFile.SourceDetails);
+            IEnumerable<SymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInNoSymbolsFile.SourceDetails);
             Assert.Empty(symbolsResult);
         }
     }

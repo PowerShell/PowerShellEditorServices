@@ -110,7 +110,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// Finds all the symbols in a file.
         /// </summary>
         /// <param name="scriptFile">The ScriptFile in which the symbol can be located.</param>
-        public List<SymbolReference> FindSymbolsInFile(ScriptFile scriptFile)
+        public IEnumerable<SymbolReference> FindSymbolsInFile(ScriptFile scriptFile)
         {
             Validate.IsNotNull(nameof(scriptFile), scriptFile);
 

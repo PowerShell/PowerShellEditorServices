@@ -38,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             foreach (ScriptFile scriptFile in _workspaceService.GetOpenedFiles())
             {
-                List<SymbolReference> foundSymbols = _symbolsService.FindSymbolsInFile(scriptFile);
+                IEnumerable<SymbolReference> foundSymbols = _symbolsService.FindSymbolsInFile(scriptFile);
 
                 // TODO: Need to compute a relative path that is based on common path for all workspace files
                 string containerName = Path.GetFileNameWithoutExtension(scriptFile.FilePath);
