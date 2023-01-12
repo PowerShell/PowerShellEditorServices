@@ -119,7 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     continue;
                 }
 
-                // Skip codelense for setup/teardown block
+                // Skip CodeLens for setup/teardown block
                 if (!PesterSymbolReference.IsPesterTestCommand(pesterSymbol.Command))
                 {
                     continue;

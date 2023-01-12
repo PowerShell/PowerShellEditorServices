@@ -44,45 +44,45 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             DocumentSelector = LspUtils.PowerShellDocumentSelector
         };
 
-        public override Task<SymbolInformationOrDocumentSymbolContainer> Handle(DocumentSymbolParams request, CancellationToken cancellationToken)
+        public override async Task<SymbolInformationOrDocumentSymbolContainer> Handle(DocumentSymbolParams request, CancellationToken cancellationToken)
         {
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
-            IEnumerable<SymbolReference> foundSymbols =
-                ProvideDocumentSymbols(scriptFile);
-
-            SymbolInformationOrDocumentSymbol[] symbols = null;
+            IEnumerable<SymbolReference> foundSymbols = ProvideDocumentSymbols(scriptFile);
+            if (foundSymbols is null)
+            {
+                return null;
+            }
 
             string containerName = Path.GetFileNameWithoutExtension(scriptFile.FilePath);
+            List<SymbolInformationOrDocumentSymbol> symbols = new();
+            foreach (SymbolReference r in foundSymbols)
+            {
+                // This async method is pretty dense with synchronous code
+                // so it's helpful to add some yields.
+                await Task.Yield();
+                cancellationToken.ThrowIfCancellationRequested();
 
-            symbols = foundSymbols != null
-                ? foundSymbols
-                        .Select(r =>
-                        {
-                            // TODO: This should be a DocumentSymbol now as SymbolInformation is deprecated.
-                            return new SymbolInformationOrDocumentSymbol(new SymbolInformation
-                            {
-                                ContainerName = containerName,
-                                Kind = SymbolTypeUtils.GetSymbolKind(r.SymbolType),
-                                Location = new Location
-                                {
-                                    Uri = DocumentUri.From(r.FilePath),
-                                    Range = r.ScriptRegion.ToRange()
-                                },
-                                Name = SymbolTypeUtils.GetDecoratedSymbolName(r)
-                            });
-                        })
-                        .ToArray()
-                : Array.Empty<SymbolInformationOrDocumentSymbol>();
+                // TODO: This should be a DocumentSymbol now as SymbolInformation is deprecated.
+                symbols.Add(new SymbolInformationOrDocumentSymbol(new SymbolInformation
+                {
+                    ContainerName = containerName,
+                    Kind = SymbolTypeUtils.GetSymbolKind(r.SymbolType),
+                    Location = new Location
+                    {
+                        Uri = DocumentUri.From(r.FilePath),
+                        Range = r.ScriptRegion.ToRange()
+                    },
+                    Name = SymbolTypeUtils.GetDecoratedSymbolName(r)
+                }));
+            }
 
-            return Task.FromResult(new SymbolInformationOrDocumentSymbolContainer(symbols));
+            return new SymbolInformationOrDocumentSymbolContainer(symbols);
         }
 
-        private IEnumerable<SymbolReference> ProvideDocumentSymbols(
-            ScriptFile scriptFile)
+        private IEnumerable<SymbolReference> ProvideDocumentSymbols(ScriptFile scriptFile)
         {
-            return
-                InvokeProviders(p => p.ProvideDocumentSymbols(scriptFile))
+            return InvokeProviders(p => p.ProvideDocumentSymbols(scriptFile))
                     .SelectMany(r => r);
         }
 

@@ -231,6 +231,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                     symbolReferences.AddRange(references);
 
+                    // This async method is pretty dense with synchronous code
+                    // so it's helpful to add some yields.
                     await Task.Yield();
                     cancellationToken.ThrowIfCancellationRequested();
                 }
