@@ -57,6 +57,19 @@ namespace PowerShellEditorServices.Test.Language
             GC.SuppressFinalize(this);
         }
 
+        private static void AssertIsRegion(
+            ScriptRegion region,
+            int startLineNumber,
+            int startColumnNumber,
+            int endLineNumber,
+            int endColumnNumber)
+        {
+            Assert.Equal(startLineNumber, region.StartLineNumber);
+            Assert.Equal(startColumnNumber, region.StartColumnNumber);
+            Assert.Equal(endLineNumber, region.EndLineNumber);
+            Assert.Equal(endColumnNumber, region.EndColumnNumber);
+        }
+
         private ScriptFile GetScriptFile(ScriptRegion scriptRegion) => workspace.GetFile(TestUtilities.GetSharedPath(scriptRegion.File));
 
         private Task<ParameterSetSignatures> GetParamSetSignatures(ScriptRegion scriptRegion)
@@ -116,28 +129,31 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsParameterHintsOnCommand()
         {
-            ParameterSetSignatures paramSignatures = await GetParamSetSignatures(FindsParameterSetsOnCommandData.SourceDetails).ConfigureAwait(true);
-            Assert.NotNull(paramSignatures);
-            Assert.Equal("Get-Process", paramSignatures.CommandName);
-            Assert.Equal(6, paramSignatures.Signatures.Length);
+            ParameterSetSignatures signatures = await GetParamSetSignatures(FindsParameterSetsOnCommandData.SourceDetails).ConfigureAwait(true);
+            Assert.NotNull(signatures);
+            Assert.Equal("Get-Process", signatures.CommandName);
+            Assert.Equal(6, signatures.Signatures.Length);
         }
 
         [Fact]
         public async Task FindsCommandForParamHintsWithSpaces()
         {
-            ParameterSetSignatures paramSignatures = await GetParamSetSignatures(FindsParameterSetsOnCommandWithSpacesData.SourceDetails).ConfigureAwait(true);
-            Assert.NotNull(paramSignatures);
-            Assert.Equal("Write-Host", paramSignatures.CommandName);
-            Assert.Single(paramSignatures.Signatures);
+            ParameterSetSignatures signatures = await GetParamSetSignatures(FindsParameterSetsOnCommandWithSpacesData.SourceDetails).ConfigureAwait(true);
+            Assert.NotNull(signatures);
+            Assert.Equal("Write-Host", signatures.CommandName);
+            Assert.Single(signatures.Signatures);
         }
 
         [Fact]
         public async Task FindsFunctionDefinition()
         {
-            SymbolReference definitionResult = await GetDefinition(FindsFunctionDefinitionData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(1, definitionResult.ScriptRegion.StartLineNumber);
-            Assert.Equal(10, definitionResult.ScriptRegion.StartColumnNumber);
-            Assert.Equal("My-Function", definitionResult.SymbolName);
+            SymbolReference symbol = await GetDefinition(FindsFunctionDefinitionData.SourceDetails).ConfigureAwait(true);
+            Assert.Equal("My-Function", symbol.SymbolName);
+            AssertIsRegion(symbol.NameRegion, 1, 10, 1, 21);
+            // TODO: This should pull the declaration from references.
+            // AssertIsRegion(symbol.ScriptRegion, 1, 1, 4, 2);
+            Assert.Equal(SymbolType.Function, symbol.SymbolType);
+            // Assert.True(symbol.IsDeclaration);
         }
 
         [Fact]
@@ -149,19 +165,22 @@ namespace PowerShellEditorServices.Test.Language
                 new PSCommand().AddScript("Set-Alias -Name My-Alias -Value My-Function"),
                 CancellationToken.None).ConfigureAwait(true);
 
-            SymbolReference definitionResult = await GetDefinition(FindsFunctionDefinitionOfAliasData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(1, definitionResult.ScriptRegion.StartLineNumber);
-            Assert.Equal(10, definitionResult.ScriptRegion.StartColumnNumber);
-            Assert.Equal("My-Function", definitionResult.SymbolName);
+            SymbolReference symbol = await GetDefinition(FindsFunctionDefinitionOfAliasData.SourceDetails).ConfigureAwait(true);
+            AssertIsRegion(symbol.NameRegion, 1, 10, 1, 21);
+            Assert.Equal("My-Function", symbol.SymbolName);
+            Assert.Equal(SymbolType.Function, symbol.SymbolType);
+            // TODO: This should pull the declaration from references.
+            // Assert.True(symbol.IsDeclaration);
         }
 
         [Fact]
         public async Task FindsReferencesOnFunction()
         {
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(3, referencesResult.Count);
-            Assert.Equal(1, referencesResult[0].ScriptRegion.StartLineNumber);
-            Assert.Equal(10, referencesResult[0].ScriptRegion.StartColumnNumber);
+            List<SymbolReference> symbols = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
+            Assert.Collection(symbols,
+                (i) => AssertIsRegion(i.NameRegion, 1, 10, 1, 21),
+                (i) => AssertIsRegion(i.NameRegion, 3, 5, 3, 16),
+                (i) => AssertIsRegion(i.NameRegion, 10, 1, 10, 12));
         }
 
         [Fact]
@@ -172,10 +191,14 @@ namespace PowerShellEditorServices.Test.Language
                 new PSCommand().AddScript("Set-Alias -Name My-Alias -Value My-Function"),
                 CancellationToken.None).ConfigureAwait(true);
 
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(4, referencesResult.Count);
-            Assert.Equal(1, referencesResult[0].ScriptRegion.StartLineNumber);
-            Assert.Equal(10, referencesResult[0].ScriptRegion.StartColumnNumber);
+            List<SymbolReference> symbols = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
+            Assert.Collection(symbols,
+                (i) => AssertIsRegion(i.NameRegion, 1, 10, 1, 21),
+                (i) => AssertIsRegion(i.NameRegion, 3, 5, 3, 16),
+                (i) => AssertIsRegion(i.NameRegion, 10, 1, 10, 12),
+                // The alias.
+                (i) => AssertIsRegion(i.NameRegion, 20, 1, 20, 9));
+            Assert.Equal("My-Alias", symbols[3].SymbolName);
         }
 
         [Fact]
@@ -271,6 +294,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsClassDefinition()
         {
+            // TODO: We should find the definition by searching known symbols filtered to declarations.
             SymbolReference definitionResult = await GetDefinition(FindsTypeSymbolsDefinitionData.ClassSourceDetails).ConfigureAwait(true);
             Assert.Equal(8, definitionResult.ScriptRegion.StartLineNumber);
             Assert.Equal(7, definitionResult.ScriptRegion.StartColumnNumber);
@@ -280,10 +304,14 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsReferencesOnClass()
         {
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnTypeSymbolsData.ClassSourceDetails).ConfigureAwait(true);
-            Assert.Equal(2, referencesResult.Count);
-            Assert.Equal(8, referencesResult[0].ScriptRegion.StartLineNumber);
-            Assert.Equal(7, referencesResult[0].ScriptRegion.StartColumnNumber);
+            List<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.ClassSourceDetails).ConfigureAwait(true);
+            Assert.Collection(symbols,
+                (i) => AssertIsRegion(i.ScriptRegion, 8, 1, 31, 2),
+                (i) => AssertIsRegion(i.ScriptRegion, 34, 6, 34, 18));
+            Assert.Collection(symbols,
+                (i) => AssertIsRegion(i.NameRegion, 8, 7, 8, 17),
+                // TODO: This should exclude the [] and be 34:7 and 34:18
+                (i) => AssertIsRegion(i.NameRegion, 34, 6, 34, 18));
         }
 
         [Fact]
@@ -337,8 +365,13 @@ namespace PowerShellEditorServices.Test.Language
         {
             List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnTypeSymbolsData.TypeExpressionSourceDetails).ConfigureAwait(true);
             Assert.Equal(2, referencesResult.Count);
-            Assert.Equal(8, referencesResult[0].ScriptRegion.StartLineNumber);
-            Assert.Equal(7, referencesResult[0].ScriptRegion.StartColumnNumber);
+            SymbolReference superClass = referencesResult[0];
+            Assert.Equal(8, superClass.ScriptRegion.StartLineNumber);
+            Assert.Equal(1, superClass.ScriptRegion.StartColumnNumber);
+            Assert.Equal(31, superClass.ScriptRegion.EndLineNumber);
+            Assert.Equal(2, superClass.ScriptRegion.EndColumnNumber);
+            Assert.Equal(8, superClass.NameRegion.StartLineNumber);
+            Assert.Equal(7, superClass.NameRegion.StartColumnNumber);
         }
 
         [Fact]
@@ -417,10 +450,12 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsReferencesOnMethod()
         {
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnTypeSymbolsData.MethodSourceDetails).ConfigureAwait(true);
-            Assert.Single(referencesResult);
-            Assert.Equal(19, referencesResult[0].ScriptRegion.StartLineNumber);
-            Assert.Equal(13, referencesResult[0].ScriptRegion.StartColumnNumber);
+            List<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.MethodSourceDetails).ConfigureAwait(true);
+            SymbolReference symbol = Assert.Single(symbols);
+            Assert.Equal("SuperClass.MyClassMethod([string]$param1, $param2, [int]$param3)", symbol.SymbolName);
+            Assert.Equal(SymbolType.Method, symbol.SymbolType);
+            AssertIsRegion(symbol.NameRegion, 19, 13, 19, 26);
+            AssertIsRegion(symbol.ScriptRegion, 19, 5, 22, 6);
         }
 
         [Fact]
@@ -444,19 +479,25 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsReferencesOnProperty()
         {
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnTypeSymbolsData.PropertySourceDetails).ConfigureAwait(true);
-            Assert.Single(referencesResult);
-            Assert.Equal(17, referencesResult[0].ScriptRegion.StartLineNumber);
-            Assert.Equal(10, referencesResult[0].ScriptRegion.StartColumnNumber);
+            List<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.PropertySourceDetails).ConfigureAwait(true);
+            SymbolReference symbol = Assert.Single(symbols);
+            Assert.Equal("SuperClass.SomeProp", symbol.SymbolName);
+            Assert.Equal(SymbolType.Property, symbol.SymbolType);
+            AssertIsRegion(symbol.NameRegion, 17, 10, 17, 19);
+            AssertIsRegion(symbol.ScriptRegion, 17, 5, 17, 19);
+            // TODO: This should also find $o.SomeProp
         }
 
         [Fact]
         public void FindsOccurrencesOnProperty()
         {
-            IReadOnlyList<SymbolReference> occurrencesResult = GetOccurrences(FindsOccurrencesOnTypeSymbolsData.PropertySourceDetails);
-            Assert.Equal(1, occurrencesResult.Count);
-            Assert.Equal("SuperClass.SomePropWithDefault", occurrencesResult[occurrencesResult.Count - 1].SymbolName);
-            Assert.Equal(15, occurrencesResult[occurrencesResult.Count - 1].ScriptRegion.StartLineNumber);
+            IReadOnlyList<SymbolReference> symbols = GetOccurrences(FindsOccurrencesOnTypeSymbolsData.PropertySourceDetails);
+            SymbolReference symbol = Assert.Single(symbols);
+            Assert.Equal("SuperClass.SomePropWithDefault", symbol.SymbolName);
+            Assert.Equal(SymbolType.Property, symbol.SymbolType);
+            AssertIsRegion(symbol.NameRegion, 15, 13, 15, 33);
+            AssertIsRegion(symbol.ScriptRegion, 15, 5, 15, 61);
+            // TODO: This should also find the $this.SomePropWithDefault reference.
         }
 
         [Fact]
@@ -559,62 +600,53 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public void FindsSymbolsInFile()
         {
-            IEnumerable<SymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInMultiSymbolFile.SourceDetails);
+            IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInMultiSymbolFile.SourceDetails);
 
-            Assert.Equal(7, symbolsResult.Count(symbolReference => symbolReference.SymbolType == SymbolType.Function));
-            Assert.Equal(13, symbolsResult.Count(symbolReference => symbolReference.SymbolType == SymbolType.Variable));
+            Assert.Equal(7, symbols.Count(symbolReference => symbolReference.SymbolType == SymbolType.Function));
+            Assert.Equal(12, symbols.Count(symbolReference => symbolReference.SymbolType == SymbolType.Variable));
 
-            SymbolReference firstFunctionSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Function);
+            SymbolReference firstFunctionSymbol = symbols.First(r => r.SymbolType == SymbolType.Function);
             Assert.Equal("AFunction", firstFunctionSymbol.SymbolName);
-            Assert.Equal(7, firstFunctionSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(10, firstFunctionSymbol.ScriptRegion.StartColumnNumber);
+            AssertIsRegion(firstFunctionSymbol.NameRegion, 7, 10, 7, 19);
 
-            SymbolReference lastVariableSymbol = symbolsResult.Last(r => r.SymbolType == SymbolType.Variable);
+            SymbolReference lastVariableSymbol = symbols.Last(r => r.SymbolType == SymbolType.Variable);
             Assert.Equal("$param3", lastVariableSymbol.SymbolName);
-            Assert.Equal(32, lastVariableSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(50, lastVariableSymbol.ScriptRegion.StartColumnNumber);
+            AssertIsRegion(lastVariableSymbol.NameRegion, 32, 50, 32, 57);
 
             SymbolReference firstWorkflowSymbol =
-                Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Workflow));
+                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Workflow));
             Assert.Equal("AWorkflow", firstWorkflowSymbol.SymbolName);
-            Assert.Equal(23, firstWorkflowSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(10, firstWorkflowSymbol.ScriptRegion.StartColumnNumber);
+            AssertIsRegion(firstWorkflowSymbol.NameRegion, 23, 10, 23, 19);
 
             SymbolReference firstClassSymbol =
-                Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Class));
+                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Class));
             Assert.Equal("AClass", firstClassSymbol.SymbolName);
-            Assert.Equal(25, firstClassSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(7, firstClassSymbol.ScriptRegion.StartColumnNumber);
+            AssertIsRegion(firstClassSymbol.NameRegion, 25, 7, 25, 13);
 
             SymbolReference firstPropertySymbol =
-                Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Property));
+                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Property));
             Assert.Equal("AClass.AProperty", firstPropertySymbol.SymbolName);
-            Assert.Equal(26, firstPropertySymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(13, firstPropertySymbol.ScriptRegion.StartColumnNumber);
+            AssertIsRegion(firstPropertySymbol.NameRegion, 26, 13, 26, 23);
 
             SymbolReference firstConstructorSymbol =
-                Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Constructor));
+                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Constructor));
             Assert.Equal("AClass.AClass([string]$AParameter)", firstConstructorSymbol.SymbolName);
-            Assert.Equal(28, firstConstructorSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(5, firstConstructorSymbol.ScriptRegion.StartColumnNumber);
+            AssertIsRegion(firstConstructorSymbol.NameRegion, 28, 5, 28, 11);
 
             SymbolReference firstMethodSymbol =
-                Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Method));
+                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Method));
             Assert.Equal("AClass.AMethod([string]$param1, [int]$param2, $param3)", firstMethodSymbol.SymbolName);
-            Assert.Equal(32, firstMethodSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(11, firstMethodSymbol.ScriptRegion.StartColumnNumber);
+            AssertIsRegion(firstMethodSymbol.NameRegion, 32, 11, 32, 18);
 
             SymbolReference firstEnumSymbol =
-                Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Enum));
+                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Enum));
             Assert.Equal("AEnum", firstEnumSymbol.SymbolName);
-            Assert.Equal(37, firstEnumSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(6, firstEnumSymbol.ScriptRegion.StartColumnNumber);
+            AssertIsRegion(firstEnumSymbol.NameRegion, 37, 6, 37, 11);
 
             SymbolReference firstEnumMemberSymbol =
-                Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.EnumMember));
+                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.EnumMember));
             Assert.Equal("AEnum.AValue", firstEnumMemberSymbol.SymbolName);
-            Assert.Equal(38, firstEnumMemberSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(5, firstEnumMemberSymbol.ScriptRegion.StartColumnNumber);
+            AssertIsRegion(firstEnumMemberSymbol.NameRegion, 38, 5, 38, 11);
         }
 
         [Fact]
@@ -625,44 +657,44 @@ namespace PowerShellEditorServices.Test.Language
             SymbolReference firstFunctionSymbol =
                 Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Function));
             Assert.Equal("returnTrue", firstFunctionSymbol.SymbolName);
-            Assert.Equal(2, firstFunctionSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, firstFunctionSymbol.ScriptRegion.StartColumnNumber);
+            AssertIsRegion(firstFunctionSymbol.NameRegion, 2, 1, 2, 11);
+            AssertIsRegion(firstFunctionSymbol.ScriptRegion, 1, 1, 4, 2);
 
             SymbolReference firstClassSymbol =
                 Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Class));
             Assert.Equal("NewLineClass", firstClassSymbol.SymbolName);
-            Assert.Equal(7, firstClassSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, firstClassSymbol.ScriptRegion.StartColumnNumber);
+            AssertIsRegion(firstClassSymbol.NameRegion, 7, 1, 7, 13);
+            AssertIsRegion(firstClassSymbol.ScriptRegion, 6, 1, 23, 2);
 
             SymbolReference firstConstructorSymbol =
                 Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Constructor));
             Assert.Equal("NewLineClass.NewLineClass()", firstConstructorSymbol.SymbolName);
-            Assert.Equal(8, firstConstructorSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(5, firstConstructorSymbol.ScriptRegion.StartColumnNumber);
+            AssertIsRegion(firstConstructorSymbol.NameRegion, 8, 5, 8, 17);
+            AssertIsRegion(firstConstructorSymbol.ScriptRegion, 8, 5, 10, 6);
 
             SymbolReference firstPropertySymbol =
                 Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Property));
             Assert.Equal("NewLineClass.SomePropWithDefault", firstPropertySymbol.SymbolName);
-            Assert.Equal(15, firstPropertySymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(5, firstPropertySymbol.ScriptRegion.StartColumnNumber);
+            AssertIsRegion(firstPropertySymbol.NameRegion, 15, 5, 15, 25);
+            AssertIsRegion(firstPropertySymbol.ScriptRegion, 12, 5, 15, 40);
 
             SymbolReference firstMethodSymbol =
                 Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Method));
             Assert.Equal("NewLineClass.MyClassMethod([MyNewLineEnum]$param1)", firstMethodSymbol.SymbolName);
-            Assert.Equal(20, firstMethodSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(5, firstMethodSymbol.ScriptRegion.StartColumnNumber);
+            AssertIsRegion(firstMethodSymbol.NameRegion, 20, 5, 20, 18);
+            AssertIsRegion(firstMethodSymbol.ScriptRegion, 17, 5, 22, 6);
 
             SymbolReference firstEnumSymbol =
                 Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Enum));
             Assert.Equal("MyNewLineEnum", firstEnumSymbol.SymbolName);
-            Assert.Equal(26, firstEnumSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, firstEnumSymbol.ScriptRegion.StartColumnNumber);
+            AssertIsRegion(firstEnumSymbol.NameRegion, 26, 1, 26, 14);
+            AssertIsRegion(firstEnumSymbol.ScriptRegion, 25, 1, 28, 2);
 
             SymbolReference firstEnumMemberSymbol =
                 Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.EnumMember));
             Assert.Equal("MyNewLineEnum.First", firstEnumMemberSymbol.SymbolName);
-            Assert.Equal(27, firstEnumMemberSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(5, firstEnumMemberSymbol.ScriptRegion.StartColumnNumber);
+            AssertIsRegion(firstEnumMemberSymbol.NameRegion, 27, 5, 27, 10);
+            AssertIsRegion(firstEnumMemberSymbol.ScriptRegion, 27, 5, 27, 10);
         }
 
         [SkippableFact]

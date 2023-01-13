@@ -56,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 highlights.Add(new DocumentHighlight
                 {
                     Kind = DocumentHighlightKind.Write, // TODO: Which symbol types are writable?
-                    Range = occurrence.ScriptRegion.ToRange()
+                    Range = occurrence.NameRegion.ToRange() // Just the symbol name
                 });
             }
 

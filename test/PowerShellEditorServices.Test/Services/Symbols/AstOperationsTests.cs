@@ -59,10 +59,10 @@ namespace PowerShellEditorServices.Test.Services.Symbols
             int positionsIndex = 0;
             foreach (SymbolReference reference in references.OrderBy((i) => i.ScriptRegion.ToRange().Start))
             {
-                Assert.Equal(symbolRange[positionsIndex].Start.Line, reference.ScriptRegion.StartLineNumber);
-                Assert.Equal(symbolRange[positionsIndex].Start.Character, reference.ScriptRegion.StartColumnNumber);
-                Assert.Equal(symbolRange[positionsIndex].End.Line, reference.ScriptRegion.EndLineNumber);
-                Assert.Equal(symbolRange[positionsIndex].End.Character, reference.ScriptRegion.EndColumnNumber);
+                Assert.Equal(symbolRange[positionsIndex].Start.Line, reference.NameRegion.StartLineNumber);
+                Assert.Equal(symbolRange[positionsIndex].Start.Character, reference.NameRegion.StartColumnNumber);
+                Assert.Equal(symbolRange[positionsIndex].End.Line, reference.NameRegion.EndLineNumber);
+                Assert.Equal(symbolRange[positionsIndex].End.Character, reference.NameRegion.EndColumnNumber);
 
                 positionsIndex++;
             }

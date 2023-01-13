@@ -19,6 +19,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 
         public string SymbolName { get; }
 
+        public ScriptRegion NameRegion { get; }
+
         public ScriptRegion ScriptRegion { get; }
 
         public string SourceLine { get; internal set; }
@@ -48,6 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             SymbolType = symbolType;
             SymbolName = symbolName;
             ScriptRegion = new(scriptExtent);
+            NameRegion = ScriptRegion;
             FilePath = filePath;
             SourceLine = sourceLine;
             IsDeclaration = isDeclaration;
@@ -56,12 +59,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         public SymbolReference(
             SymbolType symbolType,
             string symbolName,
+            IScriptExtent nameExtent,
             IScriptExtent scriptExtent,
             ScriptFile file,
             bool isDeclaration)
         {
             SymbolType = symbolType;
             SymbolName = symbolName;
+            NameRegion = new(nameExtent);
             ScriptRegion = new(scriptExtent);
             FilePath = file.FilePath;
             try

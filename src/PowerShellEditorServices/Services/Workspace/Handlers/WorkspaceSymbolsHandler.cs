@@ -49,6 +49,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     // so it's helpful to add some yields.
                     await Task.Yield();
                     cancellationToken.ThrowIfCancellationRequested();
+
+                    if (foundOccurrence.SymbolType is SymbolType.Type)
+                    {
+                        continue;
+                    }
+
                     if (!IsQueryMatch(request.Query, foundOccurrence.SymbolName))
                     {
                         continue;

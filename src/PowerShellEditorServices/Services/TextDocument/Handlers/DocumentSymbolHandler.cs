@@ -55,6 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             string containerName = Path.GetFileNameWithoutExtension(scriptFile.FilePath);
+
             List<SymbolInformationOrDocumentSymbol> symbols = new();
             foreach (SymbolReference r in foundSymbols)
             {
@@ -63,7 +64,21 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 await Task.Yield();
                 cancellationToken.ThrowIfCancellationRequested();
 
+                if (r.SymbolType is SymbolType.Type)
+                {
+                    continue;
+                }
+
                 // TODO: This should be a DocumentSymbol now as SymbolInformation is deprecated.
+                // But this requires figuring out how to populate `children`.
+                //
+                // symbols.Add(new SymbolInformationOrDocumentSymbol(new DocumentSymbol
+                // {
+                //     Name = SymbolTypeUtils.GetDecoratedSymbolName(r),
+                //     Kind = SymbolTypeUtils.GetSymbolKind(r.SymbolType),
+                //     Range = r.ScriptRegion.ToRange(),
+                //     SelectionRange = r.NameRegion.ToRange()
+                // }));
                 symbols.Add(new SymbolInformationOrDocumentSymbol(new SymbolInformation
                 {
                     ContainerName = containerName,
@@ -71,7 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     Location = new Location
                     {
                         Uri = DocumentUri.From(r.FilePath),
-                        Range = r.ScriptRegion.ToRange()
+                        Range = r.ScriptRegion.ToRange() // The whole thing, not just the name.
                     },
                     Name = SymbolTypeUtils.GetDecoratedSymbolName(r)
                 }));

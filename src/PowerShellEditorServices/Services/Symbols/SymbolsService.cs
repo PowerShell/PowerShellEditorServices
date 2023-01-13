@@ -429,6 +429,7 @@ value,
             SymbolReference foundDefinition = null;
             foreach (ScriptFile scriptFile in referencedFiles)
             {
+                // TODO: This needs to just search the file's references (filtered to declarations);
                 foundDefinition = AstOperations.FindDefinitionOfSymbol(scriptFile.ScriptAst, foundSymbol);
 
                 filesSearched.Add(scriptFile.FilePath);

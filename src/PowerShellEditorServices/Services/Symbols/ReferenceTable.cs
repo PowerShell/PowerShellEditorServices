@@ -71,9 +71,20 @@ internal sealed class ReferenceTable
         _parent.ScriptAst.Visit(new ReferenceVisitor(this));
     }
 
-    private void AddReference(SymbolType type, string name, IScriptExtent extent, bool isDeclaration = false)
+    private static bool ExtentIsEmpty(IScriptExtent e) => string.IsNullOrEmpty(e.File) &&
+        e.StartLineNumber == 0 && e.StartColumnNumber == 0 &&
+        e.EndLineNumber == 0 && e.EndColumnNumber == 0 &&
+        string.IsNullOrEmpty(e.Text);
+
+    private void AddReference(SymbolType type, string name, IScriptExtent nameExtent, IScriptExtent extent, bool isDeclaration = false)
     {
-        SymbolReference symbol = new(type, name, extent, _parent, isDeclaration);
+        // We have to exclude implicit things like `$this` that don't actually exist.
+        if (ExtentIsEmpty(extent))
+        {
+            return;
+        }
+
+        SymbolReference symbol = new(type, name, nameExtent, extent, _parent, isDeclaration);
         _symbolReferences.AddOrUpdate(
             name,
             _ => new ConcurrentBag<SymbolReference> { symbol },
@@ -103,7 +114,8 @@ internal sealed class ReferenceTable
             _references.AddReference(
                 SymbolType.Function,
                 CommandHelpers.StripModuleQualification(commandName, out _),
-                commandAst.CommandElements[0].Extent
+                commandAst.CommandElements[0].Extent,
+                commandAst.Extent
             );
 
             return AstVisitAction.Continue;
@@ -122,15 +134,12 @@ internal sealed class ReferenceTable
                 return AstVisitAction.Continue;
             }
 
-            // We only want the function name as the extent for highlighting (and so forth).
-            //
-            // TODO: After we replace the deprecated SymbolInformation usage with DocumentSymbol,
-            // we'll want *both* the name extent and the full extent.
             IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionDefinitionAst);
             _references.AddReference(
                 symbolType,
                 functionDefinitionAst.Name,
                 nameExtent,
+                functionDefinitionAst.Extent,
                 isDeclaration: true);
 
             return AstVisitAction.Continue;
@@ -141,6 +150,7 @@ internal sealed class ReferenceTable
             _references.AddReference(
                 SymbolType.Parameter,
                 commandParameterAst.Extent.Text,
+                commandParameterAst.Extent,
                 commandParameterAst.Extent);
 
             return AstVisitAction.Continue;
@@ -153,6 +163,7 @@ internal sealed class ReferenceTable
             _references.AddReference(
                 SymbolType.Variable,
                 $"${variableExpressionAst.VariablePath.UserPath}",
+                variableExpressionAst.Extent,
                 variableExpressionAst.Extent
             );
 
@@ -166,7 +177,11 @@ internal sealed class ReferenceTable
                 : SymbolType.Class;
 
             IScriptExtent nameExtent = VisitorUtils.GetNameExtent(typeDefinitionAst);
-            _references.AddReference(symbolType, typeDefinitionAst.Name, nameExtent);
+            _references.AddReference(
+                symbolType,
+                typeDefinitionAst.Name,
+                nameExtent,
+                typeDefinitionAst.Extent);
 
             return AstVisitAction.Continue;
         }
@@ -176,6 +191,7 @@ internal sealed class ReferenceTable
             _references.AddReference(
                 SymbolType.Type,
                 typeExpressionAst.TypeName.Name,
+                typeExpressionAst.Extent,
                 typeExpressionAst.Extent);
 
             return AstVisitAction.Continue;
@@ -183,7 +199,11 @@ internal sealed class ReferenceTable
 
         public override AstVisitAction VisitTypeConstraint(TypeConstraintAst typeConstraintAst)
         {
-            _references.AddReference(SymbolType.Type, typeConstraintAst.TypeName.Name, typeConstraintAst.Extent);
+            _references.AddReference(
+                SymbolType.Type,
+                typeConstraintAst.TypeName.Name,
+                typeConstraintAst.Extent,
+                typeConstraintAst.Extent);
 
             return AstVisitAction.Continue;
         }
@@ -197,8 +217,9 @@ internal sealed class ReferenceTable
             IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionMemberAst, true, false);
             _references.AddReference(
                 symbolType,
-                VisitorUtils.GetMemberOverloadName(functionMemberAst, true, false),
-                nameExtent);
+                nameExtent.Text,
+                nameExtent,
+                functionMemberAst.Extent);
 
             return AstVisitAction.Continue;
         }
@@ -212,8 +233,9 @@ internal sealed class ReferenceTable
             IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst, false);
             _references.AddReference(
                 symbolType,
-                VisitorUtils.GetMemberOverloadName(propertyMemberAst, false),
-                nameExtent);
+                nameExtent.Text,
+                nameExtent,
+                propertyMemberAst.Extent);
 
             return AstVisitAction.Continue;
         }
@@ -224,7 +246,8 @@ internal sealed class ReferenceTable
             _references.AddReference(
                 SymbolType.Configuration,
                 nameExtent.Text,
-                nameExtent);
+                nameExtent,
+                configurationDefinitionAst.Extent);
 
             return AstVisitAction.Continue;
         }

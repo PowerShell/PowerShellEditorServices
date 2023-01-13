@@ -33,6 +33,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             };
         }
 
+        public override string ToString() => $"Start {StartLineNumber}:{StartColumnNumber}, End {EndLineNumber}:{EndColumnNumber}";
+
         #region Constructors
 
         public ScriptRegion(
