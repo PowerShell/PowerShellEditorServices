@@ -46,11 +46,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             List<LocationOrLocationLink> definitionLocations = new();
             if (foundSymbol != null)
             {
-                SymbolReference foundDefinition = await _symbolsService.GetDefinitionOfSymbolAsync(
-                        scriptFile,
-                        foundSymbol).ConfigureAwait(false);
+                IEnumerable<SymbolReference> foundDefinitions = await _symbolsService.GetDefinitionOfSymbolAsync(
+                    scriptFile,
+                    foundSymbol,
+                    cancellationToken).ConfigureAwait(false);
 
-                if (foundDefinition != null)
+                foreach (SymbolReference foundDefinition in foundDefinitions)
                 {
                     definitionLocations.Add(
                         new LocationOrLocationLink(

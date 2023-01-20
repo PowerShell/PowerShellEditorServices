@@ -95,8 +95,11 @@ internal sealed class ReferenceTable
             });
     }
 
-    // TODO: Should we move this to AstOperations.cs? It is highly coupled to `ReferenceTable`,
-    // perhaps it doesn't have to be.
+    // TODO: Reconstruct this to take an action lambda that returns a visit action and accepts a
+    // symbol. Then ReferenceTable can add a reference and find symbol can just stop.
+    //
+    // TODO: Have a symbol name and a separate display name, the first minimally the text so the
+    // buckets work, the second usually a more complete signature for e.g. outline view.
     private sealed class ReferenceVisitor : AstVisitor2
     {
         private readonly ReferenceTable _references;
@@ -115,8 +118,7 @@ internal sealed class ReferenceTable
                 SymbolType.Function,
                 CommandHelpers.StripModuleQualification(commandName, out _),
                 commandAst.CommandElements[0].Extent,
-                commandAst.Extent
-            );
+                commandAst.Extent);
 
             return AstVisitAction.Continue;
         }
@@ -151,7 +153,8 @@ internal sealed class ReferenceTable
                 SymbolType.Parameter,
                 commandParameterAst.Extent.Text,
                 commandParameterAst.Extent,
-                commandParameterAst.Extent);
+                commandParameterAst.Extent,
+                isDeclaration: true);
 
             return AstVisitAction.Continue;
         }
@@ -164,8 +167,8 @@ internal sealed class ReferenceTable
                 SymbolType.Variable,
                 $"${variableExpressionAst.VariablePath.UserPath}",
                 variableExpressionAst.Extent,
-                variableExpressionAst.Extent
-            );
+                variableExpressionAst.Extent, // TODO: Maybe parent?
+                isDeclaration: variableExpressionAst.Parent is AssignmentStatementAst or ParameterAst);
 
             return AstVisitAction.Continue;
         }
@@ -181,7 +184,8 @@ internal sealed class ReferenceTable
                 symbolType,
                 typeDefinitionAst.Name,
                 nameExtent,
-                typeDefinitionAst.Extent);
+                typeDefinitionAst.Extent,
+                isDeclaration: true);
 
             return AstVisitAction.Continue;
         }
@@ -214,12 +218,17 @@ internal sealed class ReferenceTable
                 ? SymbolType.Constructor
                 : SymbolType.Method;
 
-            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionMemberAst, true, false);
+            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(
+                functionMemberAst,
+                useQualifiedName: false,
+                includeReturnType: false);
+
             _references.AddReference(
                 symbolType,
-                nameExtent.Text,
+                functionMemberAst.Name, // We bucket all the overloads.
                 nameExtent,
-                functionMemberAst.Extent);
+                functionMemberAst.Extent,
+                isDeclaration: true);
 
             return AstVisitAction.Continue;
         }
@@ -230,12 +239,47 @@ internal sealed class ReferenceTable
                 propertyMemberAst.Parent is TypeDefinitionAst typeAst && typeAst.IsEnum
                     ? SymbolType.EnumMember : SymbolType.Property;
 
-            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst, false);
+            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst, false, false);
             _references.AddReference(
                 symbolType,
                 nameExtent.Text,
                 nameExtent,
-                propertyMemberAst.Extent);
+                propertyMemberAst.Extent,
+                isDeclaration: true);
+
+            return AstVisitAction.Continue;
+        }
+
+        public override AstVisitAction VisitMemberExpression(MemberExpressionAst memberExpressionAst)
+        {
+            string? memberName = memberExpressionAst.Member is StringConstantExpressionAst stringConstant ? stringConstant.Value : null;
+            if (string.IsNullOrEmpty(memberName))
+            {
+                return AstVisitAction.Continue;
+            }
+
+            _references.AddReference(
+                SymbolType.Property,
+                memberName,
+                memberExpressionAst.Member.Extent,
+                memberExpressionAst.Extent);
+
+            return AstVisitAction.Continue;
+        }
+
+        public override AstVisitAction VisitInvokeMemberExpression(InvokeMemberExpressionAst methodCallAst)
+        {
+            string? memberName = methodCallAst.Member is StringConstantExpressionAst stringConstant ? stringConstant.Value : null;
+            if (string.IsNullOrEmpty(memberName))
+            {
+                return AstVisitAction.Continue;
+            }
+
+            _references.AddReference(
+                SymbolType.Method,
+                memberName,
+                methodCallAst.Member.Extent,
+                methodCallAst.Extent);
 
             return AstVisitAction.Continue;
         }
@@ -247,7 +291,8 @@ internal sealed class ReferenceTable
                 SymbolType.Configuration,
                 nameExtent.Text,
                 nameExtent,
-                configurationDefinitionAst.Extent);
+                configurationDefinitionAst.Extent,
+                isDeclaration: true);
 
             return AstVisitAction.Continue;
         }

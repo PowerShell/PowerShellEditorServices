@@ -192,9 +192,13 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// Gets a new ScriptExtent for a given Ast for the property name only
         /// </summary>
         /// <param name="propertyMemberAst">A PropertyMemberAst in the script's AST</param>
+        /// <param name="useQualifiedName">A bool indicating if class/enum name should be prepended</param>
         /// <param name="includePropertyType">A bool indicating if type should be included for class property</param>
         /// <returns>A ScriptExtent with for the symbol name only</returns>
-        internal static PSESSymbols.ScriptExtent GetNameExtent(PropertyMemberAst propertyMemberAst, bool includePropertyType = false)
+        internal static PSESSymbols.ScriptExtent GetNameExtent(
+            PropertyMemberAst propertyMemberAst,
+            bool useQualifiedName = true,
+            bool includePropertyType = false)
         {
             bool isEnumMember = propertyMemberAst.Parent is TypeDefinitionAst typeDef && typeDef.IsEnum;
             (int startColumn, int startLine) = GetNameStartColumnAndLineFromAst(propertyMemberAst, isEnumMember);
@@ -206,7 +210,10 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
             return new PSESSymbols.ScriptExtent()
             {
-                Text = GetMemberOverloadName(propertyMemberAst, includePropertyType),
+                Text = GetMemberOverloadName(
+                    propertyMemberAst,
+                    useQualifiedName: useQualifiedName,
+                    includePropertyType: includePropertyType),
                 StartLineNumber = startLine,
                 EndLineNumber = startLine,
                 StartColumnNumber = startColumn,
@@ -283,9 +290,11 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// Gets the property name with type and class/enum.
         /// </summary>
         /// <param name="propertyMemberAst">A PropertyMemberAst object in the script's AST</param>
+        /// <param name="useQualifiedName">A bool indicating if class/enum name should be prepended</param>
         /// <param name="includePropertyType">A bool indicating if type should be included for class property</param>
         /// <returns>Property name with type (optional) and class/enum</returns>
         internal static string GetMemberOverloadName(PropertyMemberAst propertyMemberAst,
+            bool useQualifiedName = true,
             bool includePropertyType = false)
         {
             StringBuilder sb = new();
@@ -298,7 +307,10 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                     sb.Append(propertyMemberAst.PropertyType?.TypeName.Name ?? "object").Append(' ');
                 }
 
-                sb.Append(typeAst.Name).Append('.');
+                if (useQualifiedName)
+                {
+                    sb.Append(typeAst.Name).Append('.');
+                }
             }
 
             sb.Append(propertyMemberAst.Name);

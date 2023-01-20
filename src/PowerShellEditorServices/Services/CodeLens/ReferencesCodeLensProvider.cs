@@ -60,10 +60,12 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile, CancellationToken cancellationToken)
         {
             List<CodeLens> acc = new();
-            foreach (SymbolReference sym in _symbolProvider.ProvideDocumentSymbols(scriptFile))
+            foreach (SymbolReference symbol in _symbolProvider.ProvideDocumentSymbols(scriptFile))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (sym.SymbolType is
+                // TODO: Can we support more here?
+                if (symbol.IsDeclaration &&
+                    symbol.SymbolType is
                     SymbolType.Function or
                     SymbolType.Class or
                     SymbolType.Enum)
@@ -75,7 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                             Uri = scriptFile.DocumentUri,
                             ProviderId = nameof(ReferencesCodeLensProvider)
                         }, LspSerializer.Instance.JsonSerializer),
-                        Range = sym.ScriptRegion.ToRange(),
+                        Range = symbol.NameRegion.ToRange(),
                     });
                 }
             }
@@ -123,6 +125,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     await Task.Yield();
                     cancellationToken.ThrowIfCancellationRequested();
 
+                    // We only show lenses on declarations, so we exclude those from the references.
                     if (foundReference.IsDeclaration)
                     {
                         continue;
@@ -140,7 +143,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     acc.Add(new Location
                     {
                         Uri = uri,
-                        Range = foundReference.ScriptRegion.ToRange()
+                        Range = foundReference.NameRegion.ToRange()
                     });
                 }
                 referenceLocations = acc.ToArray();

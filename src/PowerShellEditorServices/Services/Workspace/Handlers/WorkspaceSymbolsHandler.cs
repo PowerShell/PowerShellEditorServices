@@ -36,6 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             List<SymbolInformation> symbols = new();
 
+            // TODO: This should (optionally) check all the files, like we do for scanning for references by calling ScanWorkspacePSFiles.
             foreach (ScriptFile scriptFile in _workspaceService.GetOpenedFiles())
             {
                 IEnumerable<SymbolReference> foundSymbols = _symbolsService.FindSymbolsInFile(scriptFile);
@@ -50,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     await Task.Yield();
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    if (foundOccurrence.SymbolType is SymbolType.Type)
+                    if (!foundOccurrence.IsDeclaration)
                     {
                         continue;
                     }

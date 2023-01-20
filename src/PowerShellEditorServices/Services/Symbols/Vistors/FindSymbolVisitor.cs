@@ -2,12 +2,14 @@
 // Licensed under the MIT License.
 
 using System.Management.Automation.Language;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {
     /// <summary>
     /// The visitor used to find the symbol at a specific location in the AST
+    /// TODO: Re-use the ReferenceVisitor.
     /// </summary>
     internal class FindSymbolVisitor : AstVisitor2
     {
@@ -40,11 +42,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         {
             Ast commandNameAst = commandAst.CommandElements[0];
 
+            string name;
+            if (returnFullSignature)
+            {
+                name = commandNameAst.Extent.Text;
+            }
+            else
+            {
+                string commandName = VisitorUtils.GetCommandName(commandAst);
+                name = CommandHelpers.StripModuleQualification(commandName, out _);
+            }
+
             if (IsPositionInExtent(commandNameAst.Extent))
             {
                 FoundSymbolReference =
                     new SymbolReference(
                         SymbolType.Function,
+                        name,
                         commandNameAst.Extent);
 
                 return AstVisitAction.StopVisit;
@@ -93,6 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 FoundSymbolReference =
                     new SymbolReference(
                         SymbolType.Function,
+                        functionDefinitionAst.Name,
                         nameExtent);
 
                 return AstVisitAction.StopVisit;
@@ -114,6 +129,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 FoundSymbolReference =
                     new SymbolReference(
                         SymbolType.Parameter,
+                        commandParameterAst.Extent.Text,
                         commandParameterAst.Extent);
                 return AstVisitAction.StopVisit;
             }
@@ -133,6 +149,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 FoundSymbolReference =
                     new SymbolReference(
                         SymbolType.Variable,
+                        returnFullSignature ? variableExpressionAst.Extent.Text : $"${variableExpressionAst.VariablePath.UserPath}",
                         variableExpressionAst.Extent);
 
                 return AstVisitAction.StopVisit;
@@ -175,6 +192,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 FoundSymbolReference =
                     new SymbolReference(
                         symbolType,
+                        returnFullSignature ? nameExtent.Text : VisitorUtils.GetMemberOverloadName(functionMemberAst, useQualifiedName: false, includeReturnType: true),
                         nameExtent);
 
                 return AstVisitAction.StopVisit;
@@ -220,6 +238,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 FoundSymbolReference =
                     new SymbolReference(
                         symbolType,
+                        returnFullSignature ? nameExtent.Text : typeDefinitionAst.Name,
                         nameExtent);
 
                 return AstVisitAction.StopVisit;
@@ -254,6 +273,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 FoundSymbolReference =
                     new SymbolReference(
                         SymbolType.Type,
+                        returnFullSignature ? nameExtent.Text : typeExpressionAst.TypeName.Name,
                         nameExtent);
                 return AstVisitAction.StopVisit;
             }
@@ -289,6 +309,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 FoundSymbolReference =
                     new SymbolReference(
                         SymbolType.Type,
+                        returnFullSignature ? nameExtent.Text : typeConstraintAst.TypeName.Name,
                         nameExtent);
                 return AstVisitAction.StopVisit;
             }
@@ -311,6 +332,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 FoundSymbolReference =
                     new SymbolReference(
                         SymbolType.Configuration,
+                        nameExtent.Text,
                         nameExtent);
 
                 return AstVisitAction.StopVisit;
@@ -328,7 +350,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         public override AstVisitAction VisitPropertyMember(PropertyMemberAst propertyMemberAst)
         {
             // We only want the property name. Get start-location for name
-            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst, returnFullSignature);
+            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst, returnFullSignature, returnFullSignature);
 
             if (IsPositionInExtent(nameExtent))
             {
@@ -339,7 +361,58 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 FoundSymbolReference =
                     new SymbolReference(
                         symbolType,
+                        returnFullSignature
+                            ? nameExtent.Text
+                            : VisitorUtils.GetMemberOverloadName(propertyMemberAst, useQualifiedName: false),
                         nameExtent);
+
+                return AstVisitAction.StopVisit;
+            }
+
+            return AstVisitAction.Continue;
+        }
+
+        public override AstVisitAction VisitMemberExpression(MemberExpressionAst memberExpressionAst)
+        {
+            string memberName = memberExpressionAst.Member is StringConstantExpressionAst stringConstant ? stringConstant.Value : null;
+            if (string.IsNullOrEmpty(memberName))
+            {
+                return AstVisitAction.Continue;
+            }
+
+            if (IsPositionInExtent(memberExpressionAst.Member.Extent))
+            {
+                FoundSymbolReference =
+                    new SymbolReference(
+                        SymbolType.Property,
+                        returnFullSignature
+                            ? memberExpressionAst.Member.Extent.Text
+                            : memberName,
+                        memberExpressionAst.Member.Extent);
+
+                return AstVisitAction.StopVisit;
+            }
+
+            return AstVisitAction.Continue;
+        }
+
+        public override AstVisitAction VisitInvokeMemberExpression(InvokeMemberExpressionAst methodCallAst)
+        {
+            string? memberName = methodCallAst.Member is StringConstantExpressionAst stringConstant ? stringConstant.Value : null;
+            if (string.IsNullOrEmpty(memberName))
+            {
+                return AstVisitAction.Continue;
+            }
+
+            if (IsPositionInExtent(methodCallAst.Member.Extent))
+            {
+                FoundSymbolReference =
+                    new SymbolReference(
+                        SymbolType.Method,
+                        returnFullSignature
+                            ? methodCallAst.Member.Extent.Text
+                            : memberName,
+                        methodCallAst.Member.Extent);
 
                 return AstVisitAction.StopVisit;
             }

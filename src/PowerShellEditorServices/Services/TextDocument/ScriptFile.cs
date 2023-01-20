@@ -53,6 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// Gets or sets a boolean that determines whether
         /// semantic analysis should be enabled for this file.
         /// For internal use only.
+        /// TODO: Actually use and respect this property to avoid built-in files from being analyzed.
         /// </summary>
         internal bool IsAnalysisEnabled { get; set; }
 
@@ -612,6 +613,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             }
 
             // Get all dot sourced referenced files and store them
+            // TODO: We're considering removing this notion.
             ReferencedFiles = AstOperations.FindDotSourcedIncludes(ScriptAst, Path.GetDirectoryName(FilePath));
         }
 

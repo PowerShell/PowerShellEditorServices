@@ -80,7 +80,7 @@ namespace PowerShellEditorServices.Test.Language
                 scriptRegion.StartColumnNumber);
         }
 
-        private Task<SymbolReference> GetDefinition(ScriptRegion scriptRegion)
+        private async Task<SymbolReference> GetDefinition(ScriptRegion scriptRegion)
         {
             ScriptFile scriptFile = GetScriptFile(scriptRegion);
 
@@ -92,7 +92,9 @@ namespace PowerShellEditorServices.Test.Language
 
             Assert.NotNull(symbol);
 
-            return symbolsService.GetDefinitionOfSymbolAsync(scriptFile, symbol);
+            IEnumerable<SymbolReference> refs = await symbolsService.GetDefinitionOfSymbolAsync(scriptFile, symbol).ConfigureAwait(true);
+
+            return refs.FirstOrDefault();
         }
 
         private async Task<List<SymbolReference>> GetReferences(ScriptRegion scriptRegion)

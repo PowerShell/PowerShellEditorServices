@@ -44,6 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             DocumentSelector = LspUtils.PowerShellDocumentSelector
         };
 
+        // AKA the outline feature
         public override async Task<SymbolInformationOrDocumentSymbolContainer> Handle(DocumentSymbolParams request, CancellationToken cancellationToken)
         {
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
@@ -64,7 +65,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 await Task.Yield();
                 cancellationToken.ThrowIfCancellationRequested();
 
-                if (r.SymbolType is SymbolType.Type)
+                // Outline view should only include declarations.
+                if (!r.IsDeclaration)
                 {
                     continue;
                 }

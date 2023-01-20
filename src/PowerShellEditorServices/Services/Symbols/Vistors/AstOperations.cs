@@ -182,21 +182,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         }
 
         /// <summary>
-        /// Finds the definition of the symbol
-        /// </summary>
-        /// <param name="scriptAst">The abstract syntax tree of the given script</param>
-        /// <param name="symbolReference">The symbol that we are looking for the definition of</param>
-        /// <returns>A SymbolReference of the definition of the symbolReference</returns>
-        public static SymbolReference FindDefinitionOfSymbol(
-            Ast scriptAst,
-            SymbolReference symbolReference)
-        {
-            FindDeclarationVisitor declarationVisitor = new(symbolReference);
-            scriptAst.Visit(declarationVisitor);
-            return declarationVisitor.FoundDeclaration;
-        }
-
-        /// <summary>
         /// Finds all files dot sourced in a script
         /// </summary>
         /// <param name="scriptAst">The abstract syntax tree of the given script</param>
