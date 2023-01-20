@@ -84,33 +84,34 @@ namespace PowerShellEditorServices.Test.Language
         {
             ScriptFile scriptFile = GetScriptFile(scriptRegion);
 
-            SymbolReference symbolReference = SymbolsService.FindSymbolAtLocation(
+            // TODO: We should just use the name to find it.
+            SymbolReference symbol = SymbolsService.FindSymbolAtLocation(
                 scriptFile,
                 scriptRegion.StartLineNumber,
                 scriptRegion.StartColumnNumber);
 
-            Assert.NotNull(symbolReference);
+            Assert.NotNull(symbol);
 
-            return symbolsService.GetDefinitionOfSymbolAsync(scriptFile, symbolReference);
+            return symbolsService.GetDefinitionOfSymbolAsync(scriptFile, symbol);
         }
 
         private async Task<List<SymbolReference>> GetReferences(ScriptRegion scriptRegion)
         {
             ScriptFile scriptFile = GetScriptFile(scriptRegion);
 
-            SymbolReference symbolReference = SymbolsService.FindSymbolAtLocation(
+            SymbolReference symbol = SymbolsService.FindSymbolAtLocation(
                 scriptFile,
                 scriptRegion.StartLineNumber,
                 scriptRegion.StartColumnNumber);
 
-            Assert.NotNull(symbolReference);
+            Assert.NotNull(symbol);
 
             IEnumerable<SymbolReference> symbols =
                 await symbolsService.ScanForReferencesOfSymbol(
-                    symbolReference,
+                    symbol,
                     workspace.ExpandScriptReferences(scriptFile)).ConfigureAwait(true);
 
-            return symbols.OrderBy(symbol => symbol.ScriptRegion.ToRange().Start).ToList();
+            return symbols.OrderBy(i => i.ScriptRegion.ToRange().Start).ToList();
         }
 
         private IReadOnlyList<SymbolReference> GetOccurrences(ScriptRegion scriptRegion)
@@ -423,10 +424,10 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsReferencesOnConstructor()
         {
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnTypeSymbolsData.ConstructorSourceDetails).ConfigureAwait(true);
-            Assert.Single(referencesResult);
-            Assert.Equal(9, referencesResult[0].ScriptRegion.StartLineNumber);
-            Assert.Equal(5, referencesResult[0].ScriptRegion.StartColumnNumber);
+            List<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.ConstructorSourceDetails).ConfigureAwait(true);
+            Assert.Single(symbols);
+            Assert.Equal(9, symbols[0].ScriptRegion.StartLineNumber);
+            Assert.Equal(5, symbols[0].ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
@@ -736,10 +737,10 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Equal(9, lastItSymbol.ScriptRegion.StartColumnNumber);
 
             Assert.Equal(1, symbolsResult.Count(r => r.Command == PesterCommandType.BeforeDiscovery));
-            SymbolReference firstBeforeDisocverySymbol = symbolsResult.First(r => r.Command == PesterCommandType.BeforeDiscovery);
-            Assert.Equal("BeforeDiscovery", firstBeforeDisocverySymbol.SymbolName);
-            Assert.Equal(1, firstBeforeDisocverySymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, firstBeforeDisocverySymbol.ScriptRegion.StartColumnNumber);
+            SymbolReference firstBeforeDiscoverySymbol = symbolsResult.First(r => r.Command == PesterCommandType.BeforeDiscovery);
+            Assert.Equal("BeforeDiscovery", firstBeforeDiscoverySymbol.SymbolName);
+            Assert.Equal(1, firstBeforeDiscoverySymbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(1, firstBeforeDiscoverySymbol.ScriptRegion.StartColumnNumber);
 
             Assert.Equal(2, symbolsResult.Count(r => r.Command == PesterCommandType.BeforeAll));
             SymbolReference lastBeforeAllSymbol = symbolsResult.Last(r => r.Command == PesterCommandType.BeforeAll);

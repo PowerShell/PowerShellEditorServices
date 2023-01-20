@@ -51,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             SymbolName = symbolName;
             ScriptRegion = new(scriptExtent);
             NameRegion = ScriptRegion;
-            FilePath = filePath;
+            FilePath = string.IsNullOrEmpty(filePath) ? scriptExtent.File : filePath;
             SourceLine = sourceLine;
             IsDeclaration = isDeclaration;
         }
