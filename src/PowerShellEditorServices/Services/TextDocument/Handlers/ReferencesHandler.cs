@@ -43,9 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             IEnumerable<SymbolReference> referencesResult =
                 await _symbolsService.ScanForReferencesOfSymbol(
-                    foundSymbol,
-                    _workspaceService.ExpandScriptReferences(scriptFile),
-                    cancellationToken).ConfigureAwait(false);
+                    foundSymbol, cancellationToken).ConfigureAwait(false);
 
             if (referencesResult is null)
             {

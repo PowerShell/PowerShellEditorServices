@@ -7,7 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
-using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 
@@ -106,15 +105,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// Gets the array of Tokens representing the parsed script contents.
         /// </summary>
         public Token[] ScriptTokens
-        {
-            get;
-            private set;
-        }
-
-        /// <summary>
-        /// Gets the array of filepaths dot sourced in this ScriptFile
-        /// </summary>
-        public string[] ReferencedFiles
         {
             get;
             private set;
@@ -600,21 +590,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                 parseErrors
                     .Select(ScriptFileMarker.FromParseError)
                     .ToList();
-
-            // Untitled files have no directory
-            // Discussed in https://github.com/PowerShell/PowerShellEditorServices/pull/815.
-            // Rather than working hard to enable things for untitled files like a phantom directory,
-            // users should save the file.
-            if (IsInMemory)
-            {
-                // Need to initialize the ReferencedFiles property to an empty array.
-                ReferencedFiles = Array.Empty<string>();
-                return;
-            }
-
-            // Get all dot sourced referenced files and store them
-            // TODO: We're considering removing this notion.
-            ReferencedFiles = AstOperations.FindDotSourcedIncludes(ScriptAst, Path.GetDirectoryName(FilePath));
         }
 
         #endregion

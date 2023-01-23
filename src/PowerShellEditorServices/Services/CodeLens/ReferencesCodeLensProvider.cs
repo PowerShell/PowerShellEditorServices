@@ -97,8 +97,6 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
             ScriptFile scriptFile,
             CancellationToken cancellationToken)
         {
-            ScriptFile[] references = _workspaceService.ExpandScriptReferences(scriptFile);
-
             SymbolReference foundSymbol = SymbolsService.FindSymbolDefinitionAtLocation(
                 scriptFile,
                 codeLens.Range.Start.Line + 1,
@@ -106,9 +104,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
 
             IEnumerable<SymbolReference> referencesResult =
                 await _symbolsService.ScanForReferencesOfSymbol(
-                    foundSymbol,
-                    references,
-                    cancellationToken).ConfigureAwait(false);
+                    foundSymbol, cancellationToken).ConfigureAwait(false);
 
             Location[] referenceLocations;
             if (referencesResult == null)

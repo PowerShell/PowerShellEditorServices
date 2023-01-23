@@ -4,11 +4,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -154,12 +152,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// Finds all the references of a symbol (excluding definitions)
         /// </summary>
         /// <param name="foundSymbol">The symbol to find all references for</param>
-        /// <param name="referencedFiles">An array of scriptFiles to search for references in</param>
         /// <param name="cancellationToken"></param>
         /// <returns>FindReferencesResult</returns>
         public async Task<IEnumerable<SymbolReference>> ScanForReferencesOfSymbol(
             SymbolReference foundSymbol,
-            ScriptFile[] referencedFiles,
             CancellationToken cancellationToken = default)
         {
             if (foundSymbol == null)
@@ -180,21 +176,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     targetName = aliasDefinition;
                 }
-            }
-
-            // TODO: This is entirely unused, but we actually DO want to search first the file, then
-            // its referenced files, then everything else!
-            //
-            // We want to look for references first in referenced files, hence we use ordered
-            // dictionary TODO: File system case-sensitivity is based on filesystem not OS, but OS
-            // is a much cheaper heuristic
-            OrderedDictionary fileMap = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
-                ? new OrderedDictionary()
-                : new OrderedDictionary(StringComparer.OrdinalIgnoreCase);
-
-            foreach (ScriptFile scriptFile in referencedFiles)
-            {
-                fileMap[scriptFile.FilePath] = scriptFile;
             }
 
             await ScanWorkspacePSFiles(cancellationToken).ConfigureAwait(false);
@@ -419,7 +400,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             IEnumerable<SymbolReference> allSymbols = await ScanForReferencesOfSymbol(
                 symbol,
-                _workspaceService.ExpandScriptReferences(file),
                 cancellationToken).ConfigureAwait(false);
 
             IEnumerable<SymbolReference> possibleDeclarations = allSymbols.Where((i) => i.IsDeclaration);
