@@ -68,13 +68,14 @@ internal sealed class SymbolVisitor : AstVisitor2
             isDeclaration: true));
     }
 
-    public override AstVisitAction VisitCommandParameter(CommandParameterAst commandParameterAst)
+    public override AstVisitAction VisitParameter(ParameterAst parameterAst)
     {
+        // TODO: When we add DisplayString, include the default value.
         return _action(new SymbolReference(
             SymbolType.Parameter,
-            commandParameterAst.Extent.Text,
-            commandParameterAst.Extent,
-            commandParameterAst.Extent,
+            $"${parameterAst.Name.VariablePath.UserPath}",
+            parameterAst.Name.Extent,
+            parameterAst.Extent,
             _file,
             isDeclaration: true));
     }
