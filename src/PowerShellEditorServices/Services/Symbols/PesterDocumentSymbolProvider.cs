@@ -229,7 +229,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                     testLine.TrimStart().TrimEnd(DefinitionTrimChars),
                     scriptExtent,
                     scriptFile.FilePath,
-                    testLine)
+                    testLine,
+                    isDeclaration: true)
         {
             Command = commandType;
             TestName = testName;
