@@ -7,10 +7,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using System.Collections.Generic;
-using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services;
 
@@ -68,7 +66,7 @@ internal sealed class ReferenceTable
             return;
         }
 
-        _parent.ScriptAst.Visit(new ReferenceVisitor(this));
+        _parent.ScriptAst.Visit(new SymbolVisitor(_parent, AddReference));
     }
 
     private static bool ExtentIsEmpty(IScriptExtent e) => string.IsNullOrEmpty(e.File) &&
@@ -76,225 +74,23 @@ internal sealed class ReferenceTable
         e.EndLineNumber == 0 && e.EndColumnNumber == 0 &&
         string.IsNullOrEmpty(e.Text);
 
-    private void AddReference(SymbolType type, string name, IScriptExtent nameExtent, IScriptExtent extent, bool isDeclaration = false)
+    private AstVisitAction AddReference(SymbolReference symbol)
     {
         // We have to exclude implicit things like `$this` that don't actually exist.
-        if (ExtentIsEmpty(extent))
+        if (ExtentIsEmpty(symbol.ScriptRegion))
         {
-            return;
+            return AstVisitAction.Continue;
         }
 
-        SymbolReference symbol = new(type, name, nameExtent, extent, _parent, isDeclaration);
         _symbolReferences.AddOrUpdate(
-            name,
+            symbol.SymbolName,
             _ => new ConcurrentBag<SymbolReference> { symbol },
             (_, existing) =>
             {
                 existing.Add(symbol);
                 return existing;
             });
-    }
 
-    // TODO: Reconstruct this to take an action lambda that returns a visit action and accepts a
-    // symbol. Then ReferenceTable can add a reference and find symbol can just stop.
-    //
-    // TODO: Have a symbol name and a separate display name, the first minimally the text so the
-    // buckets work, the second usually a more complete signature for e.g. outline view.
-    private sealed class ReferenceVisitor : AstVisitor2
-    {
-        private readonly ReferenceTable _references;
-
-        public ReferenceVisitor(ReferenceTable references) => _references = references;
-
-        public override AstVisitAction VisitCommand(CommandAst commandAst)
-        {
-            string? commandName = VisitorUtils.GetCommandName(commandAst);
-            if (string.IsNullOrEmpty(commandName))
-            {
-                return AstVisitAction.Continue;
-            }
-
-            _references.AddReference(
-                SymbolType.Function,
-                CommandHelpers.StripModuleQualification(commandName, out _),
-                commandAst.CommandElements[0].Extent,
-                commandAst.Extent);
-
-            return AstVisitAction.Continue;
-        }
-
-        public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
-        {
-            SymbolType symbolType = functionDefinitionAst.IsWorkflow
-                ? SymbolType.Workflow
-                : SymbolType.Function;
-
-            // Extent for constructors and method trigger both this and VisitFunctionMember(). Covered in the latter.
-            // This will not exclude nested functions as they have ScriptBlockAst as parent
-            if (functionDefinitionAst.Parent is FunctionMemberAst)
-            {
-                return AstVisitAction.Continue;
-            }
-
-            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionDefinitionAst);
-            _references.AddReference(
-                symbolType,
-                functionDefinitionAst.Name,
-                nameExtent,
-                functionDefinitionAst.Extent,
-                isDeclaration: true);
-
-            return AstVisitAction.Continue;
-        }
-
-        public override AstVisitAction VisitCommandParameter(CommandParameterAst commandParameterAst)
-        {
-            _references.AddReference(
-                SymbolType.Parameter,
-                commandParameterAst.Extent.Text,
-                commandParameterAst.Extent,
-                commandParameterAst.Extent,
-                isDeclaration: true);
-
-            return AstVisitAction.Continue;
-        }
-
-        public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
-        {
-            // TODO: Consider tracking unscoped variable references only when they declared within
-            // the same function definition.
-            _references.AddReference(
-                SymbolType.Variable,
-                $"${variableExpressionAst.VariablePath.UserPath}",
-                variableExpressionAst.Extent,
-                variableExpressionAst.Extent, // TODO: Maybe parent?
-                isDeclaration: variableExpressionAst.Parent is AssignmentStatementAst or ParameterAst);
-
-            return AstVisitAction.Continue;
-        }
-
-        public override AstVisitAction VisitTypeDefinition(TypeDefinitionAst typeDefinitionAst)
-        {
-            SymbolType symbolType = typeDefinitionAst.IsEnum
-                ? SymbolType.Enum
-                : SymbolType.Class;
-
-            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(typeDefinitionAst);
-            _references.AddReference(
-                symbolType,
-                typeDefinitionAst.Name,
-                nameExtent,
-                typeDefinitionAst.Extent,
-                isDeclaration: true);
-
-            return AstVisitAction.Continue;
-        }
-
-        public override AstVisitAction VisitTypeExpression(TypeExpressionAst typeExpressionAst)
-        {
-            _references.AddReference(
-                SymbolType.Type,
-                typeExpressionAst.TypeName.Name,
-                typeExpressionAst.Extent,
-                typeExpressionAst.Extent);
-
-            return AstVisitAction.Continue;
-        }
-
-        public override AstVisitAction VisitTypeConstraint(TypeConstraintAst typeConstraintAst)
-        {
-            _references.AddReference(
-                SymbolType.Type,
-                typeConstraintAst.TypeName.Name,
-                typeConstraintAst.Extent,
-                typeConstraintAst.Extent);
-
-            return AstVisitAction.Continue;
-        }
-
-        public override AstVisitAction VisitFunctionMember(FunctionMemberAst functionMemberAst)
-        {
-            SymbolType symbolType = functionMemberAst.IsConstructor
-                ? SymbolType.Constructor
-                : SymbolType.Method;
-
-            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(
-                functionMemberAst,
-                useQualifiedName: false,
-                includeReturnType: false);
-
-            _references.AddReference(
-                symbolType,
-                functionMemberAst.Name, // We bucket all the overloads.
-                nameExtent,
-                functionMemberAst.Extent,
-                isDeclaration: true);
-
-            return AstVisitAction.Continue;
-        }
-
-        public override AstVisitAction VisitPropertyMember(PropertyMemberAst propertyMemberAst)
-        {
-            SymbolType symbolType =
-                propertyMemberAst.Parent is TypeDefinitionAst typeAst && typeAst.IsEnum
-                    ? SymbolType.EnumMember : SymbolType.Property;
-
-            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst, false, false);
-            _references.AddReference(
-                symbolType,
-                nameExtent.Text,
-                nameExtent,
-                propertyMemberAst.Extent,
-                isDeclaration: true);
-
-            return AstVisitAction.Continue;
-        }
-
-        public override AstVisitAction VisitMemberExpression(MemberExpressionAst memberExpressionAst)
-        {
-            string? memberName = memberExpressionAst.Member is StringConstantExpressionAst stringConstant ? stringConstant.Value : null;
-            if (string.IsNullOrEmpty(memberName))
-            {
-                return AstVisitAction.Continue;
-            }
-
-            _references.AddReference(
-                SymbolType.Property,
-                memberName,
-                memberExpressionAst.Member.Extent,
-                memberExpressionAst.Extent);
-
-            return AstVisitAction.Continue;
-        }
-
-        public override AstVisitAction VisitInvokeMemberExpression(InvokeMemberExpressionAst methodCallAst)
-        {
-            string? memberName = methodCallAst.Member is StringConstantExpressionAst stringConstant ? stringConstant.Value : null;
-            if (string.IsNullOrEmpty(memberName))
-            {
-                return AstVisitAction.Continue;
-            }
-
-            _references.AddReference(
-                SymbolType.Method,
-                memberName,
-                methodCallAst.Member.Extent,
-                methodCallAst.Extent);
-
-            return AstVisitAction.Continue;
-        }
-
-        public override AstVisitAction VisitConfigurationDefinition(ConfigurationDefinitionAst configurationDefinitionAst)
-        {
-            IScriptExtent nameExtent = VisitorUtils.GetNameExtent(configurationDefinitionAst);
-            _references.AddReference(
-                SymbolType.Configuration,
-                nameExtent.Text,
-                nameExtent,
-                configurationDefinitionAst.Extent,
-                isDeclaration: true);
-
-            return AstVisitAction.Continue;
-        }
+        return AstVisitAction.Continue;
     }
 }

@@ -17,6 +17,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     {
         public SymbolType SymbolType { get; }
 
+        // TODO: Have a symbol name and a separate display name, the first minimally the text so the
+        // buckets work, the second usually a more complete signature for e.g. outline view.
         public string SymbolName { get; }
 
         public ScriptRegion NameRegion { get; }
@@ -31,6 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 
         /// <summary>
         /// Constructs and instance of a SymbolReference
+        /// TODO: Remove this when it becomes unused.
         /// </summary>
         /// <param name="symbolType">The higher level type of the symbol</param>
         /// <param name="symbolName">The name of the symbol</param>
@@ -81,7 +84,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         }
 
         /// <summary>
-        /// Constructs an instance of a SymbolReference
+        /// Constructs an instance of a SymbolReference.
+        /// TODO: Remove this when it becomes unused.
         /// </summary>
         /// <param name="symbolType">The higher level type of the symbol</param>
         /// <param name="scriptExtent">The script extent of the symbol</param>
