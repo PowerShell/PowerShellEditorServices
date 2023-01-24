@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.Management.Automation.Language;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {
@@ -13,6 +14,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// </summary>
     internal class FindHashtableSymbolsVisitor : AstVisitor
     {
+        private readonly ScriptFile _file;
+
         /// <summary>
         /// List of symbols (keys) found in the hashtable
         /// </summary>
@@ -21,7 +24,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <summary>
         /// Initializes a new instance of FindHashtableSymbolsVisitor class
         /// </summary>
-        public FindHashtableSymbolsVisitor() => SymbolReferences = new List<SymbolReference>();
+        public FindHashtableSymbolsVisitor(ScriptFile file)
+        {
+            SymbolReferences = new List<SymbolReference>();
+            _file = file;
+        }
 
         /// <summary>
         /// Adds keys in the input hashtable to the symbol reference
@@ -49,12 +56,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                         File = hashtableAst.Extent.File
                     };
 
-                    const SymbolType symbolType = SymbolType.HashtableKey;
-
                     SymbolReferences.Add(
                         new SymbolReference(
-                            symbolType,
-                            nameExtent));
+                            SymbolType.HashtableKey,
+                            nameExtent.Text,
+                            nameExtent,
+                            // TODO: Should this be more?
+                            nameExtent,
+                            _file,
+                            // TODO: Should this be true?
+                            isDeclaration: false));
                 }
             }
 

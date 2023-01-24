@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             if ((scriptFile.FilePath?.EndsWith(".psd1", StringComparison.OrdinalIgnoreCase) == true) ||
                  IsPowerShellDataFileAst(scriptFile.ScriptAst))
             {
-                FindHashtableSymbolsVisitor findHashtableSymbolsVisitor = new();
+                FindHashtableSymbolsVisitor findHashtableSymbolsVisitor = new(scriptFile);
                 scriptFile.ScriptAst.Visit(findHashtableSymbolsVisitor);
                 return findHashtableSymbolsVisitor.SymbolReferences;
             }

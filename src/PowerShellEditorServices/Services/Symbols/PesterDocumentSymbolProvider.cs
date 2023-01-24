@@ -75,6 +75,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             return true;
         }
 
+        private static readonly char[] DefinitionTrimChars = new char[] { ' ', '{' };
+
         /// <summary>
         /// Convert a CommandAst known to represent a Pester command and a reference to the scriptfile
         /// it is in into symbol representing a Pester call for code lens
@@ -84,7 +86,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <returns>a symbol representing the Pester call containing metadata for CodeLens to use</returns>
         private static PesterSymbolReference ConvertPesterAstToSymbolReference(ScriptFile scriptFile, CommandAst pesterCommandAst)
         {
-            string testLine = scriptFile.GetLine(pesterCommandAst.Extent.StartLineNumber);
+            string symbolName = scriptFile
+                .GetLine(pesterCommandAst.Extent.StartLineNumber)
+                .TrimStart()
+                .TrimEnd(DefinitionTrimChars);
+
             PesterCommandType? commandName = PesterSymbolReference.GetCommandType(pesterCommandAst.GetCommandName());
             if (commandName == null)
             {
@@ -126,7 +132,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             return new PesterSymbolReference(
                 scriptFile,
                 commandName.Value,
-                testLine,
+                symbolName,
                 testName,
                 pesterCommandAst.Extent
             );
@@ -206,8 +212,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 .Cast<PesterCommandType>()
                 .ToDictionary(pct => pct.ToString(), pct => pct, StringComparer.OrdinalIgnoreCase);
 
-        private static readonly char[] DefinitionTrimChars = new char[] { ' ', '{' };
-
         /// <summary>
         /// Gets the name of the test
         /// </summary>
@@ -221,15 +225,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         internal PesterSymbolReference(
             ScriptFile scriptFile,
             PesterCommandType commandType,
-            string testLine,
+            string symbolName,
             string testName,
             IScriptExtent scriptExtent)
                 : base(
                     SymbolType.Function,
-                    testLine.TrimStart().TrimEnd(DefinitionTrimChars),
+                    symbolName,
                     scriptExtent,
-                    scriptFile.FilePath,
-                    testLine,
+                    scriptExtent,
+                    scriptFile,
                     isDeclaration: true)
         {
             Command = commandType;

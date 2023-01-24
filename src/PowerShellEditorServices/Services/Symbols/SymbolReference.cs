@@ -33,32 +33,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 
         /// <summary>
         /// Constructs and instance of a SymbolReference
-        /// TODO: Remove this when it becomes unused.
         /// </summary>
         /// <param name="symbolType">The higher level type of the symbol</param>
         /// <param name="symbolName">The name of the symbol</param>
+        /// <param name="nameExtent">The extent of the symbol's name</param>
         /// <param name="scriptExtent">The script extent of the symbol</param>
-        /// <param name="filePath">The file path of the symbol</param>
-        /// <param name="sourceLine">The line contents of the given symbol (defaults to empty string)</param>
+        /// <param name="file">The script file that has the symbol</param>
         /// <param name="isDeclaration">True if this reference is the definition of the symbol</param>
-        public SymbolReference(
-            SymbolType symbolType,
-            string symbolName,
-            IScriptExtent scriptExtent,
-            string filePath = "",
-            string sourceLine = "",
-            bool isDeclaration = false)
-        {
-            // TODO: Verify params
-            SymbolType = symbolType;
-            SymbolName = symbolName;
-            ScriptRegion = new(scriptExtent);
-            NameRegion = ScriptRegion;
-            FilePath = string.IsNullOrEmpty(filePath) ? scriptExtent.File : filePath;
-            SourceLine = sourceLine;
-            IsDeclaration = isDeclaration;
-        }
-
         public SymbolReference(
             SymbolType symbolType,
             string symbolName,
@@ -81,17 +62,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 SourceLine = string.Empty;
             }
             IsDeclaration = isDeclaration;
-        }
-
-        /// <summary>
-        /// Constructs an instance of a SymbolReference.
-        /// TODO: Remove this when it becomes unused.
-        /// </summary>
-        /// <param name="symbolType">The higher level type of the symbol</param>
-        /// <param name="scriptExtent">The script extent of the symbol</param>
-        public SymbolReference(SymbolType symbolType, IScriptExtent scriptExtent)
-            : this(symbolType, scriptExtent.Text, scriptExtent, scriptExtent.File)
-        {
         }
     }
 }
