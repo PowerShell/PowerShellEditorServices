@@ -103,7 +103,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                 codeLens.Range.Start.Character + 1);
 
             IEnumerable<SymbolReference> referencesResult =
-                await _symbolsService.ScanForReferencesOfSymbol(
+                await _symbolsService.ScanForReferencesOfSymbolAsync(
                     foundSymbol, cancellationToken).ConfigureAwait(false);
 
             Location[] referenceLocations;

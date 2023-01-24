@@ -9,6 +9,7 @@ using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Microsoft.PowerShell.EditorServices.Services;
 
@@ -47,16 +48,19 @@ internal sealed class ReferenceTable
         return _symbolReferences.TryGetValue(command, out references);
     }
 
-    // TODO: Should this be improved, or pre-sorted?
-    internal IReadOnlyList<SymbolReference> GetAllReferences()
+    internal SymbolReference? TryGetSymbolAtPosition(int line, int column) => GetAllReferences()
+        .FirstOrDefault((i) => i.NameRegion.ContainsPosition(line, column));
+
+    internal IEnumerable<SymbolReference> GetAllReferences()
     {
         EnsureInitialized();
-        List<SymbolReference> allReferences = new();
         foreach (ConcurrentBag<SymbolReference> bag in _symbolReferences.Values)
         {
-            allReferences.AddRange(bag);
+            foreach (SymbolReference symbol in bag)
+            {
+                yield return symbol;
+            }
         }
-        return allReferences;
     }
 
     internal void EnsureInitialized()
@@ -69,15 +73,10 @@ internal sealed class ReferenceTable
         _parent.ScriptAst.Visit(new SymbolVisitor(_parent, AddReference));
     }
 
-    private static bool ExtentIsEmpty(IScriptExtent e) => string.IsNullOrEmpty(e.File) &&
-        e.StartLineNumber == 0 && e.StartColumnNumber == 0 &&
-        e.EndLineNumber == 0 && e.EndColumnNumber == 0 &&
-        string.IsNullOrEmpty(e.Text);
-
     private AstVisitAction AddReference(SymbolReference symbol)
     {
         // We have to exclude implicit things like `$this` that don't actually exist.
-        if (ExtentIsEmpty(symbol.ScriptRegion))
+        if (symbol.ScriptRegion.IsEmpty())
         {
             return AstVisitAction.Continue;
         }

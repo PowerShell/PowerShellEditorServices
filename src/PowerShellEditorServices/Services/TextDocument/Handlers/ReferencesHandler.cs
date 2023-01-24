@@ -42,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     request.Position.Character + 1);
 
             IEnumerable<SymbolReference> referencesResult =
-                await _symbolsService.ScanForReferencesOfSymbol(
+                await _symbolsService.ScanForReferencesOfSymbolAsync(
                     foundSymbol, cancellationToken).ConfigureAwait(false);
 
             if (referencesResult is null)

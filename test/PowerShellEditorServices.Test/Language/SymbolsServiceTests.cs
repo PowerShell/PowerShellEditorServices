@@ -109,7 +109,7 @@ namespace PowerShellEditorServices.Test.Language
             Assert.NotNull(symbol);
 
             IEnumerable<SymbolReference> symbols =
-                await symbolsService.ScanForReferencesOfSymbol(symbol).ConfigureAwait(true);
+                await symbolsService.ScanForReferencesOfSymbolAsync(symbol).ConfigureAwait(true);
 
             return symbols.OrderBy(i => i.ScriptRegion.ToRange().Start).ToList();
         }

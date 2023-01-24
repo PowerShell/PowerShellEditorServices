@@ -66,6 +66,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 cancellationToken.ThrowIfCancellationRequested();
 
                 // Outline view should only include declarations.
+                //
+                // TODO: We should also include function invocations that are part of DSLs (like
+                // Invoke-Build etc.).
                 if (!r.IsDeclaration)
                 {
                     continue;

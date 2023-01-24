@@ -33,24 +33,18 @@ namespace PowerShellEditorServices.Test.Services.Symbols
         [InlineData(22, 13, "FunctionNameOnDifferentLine")]
         [InlineData(24, 30, "IndentedFunction")]
         [InlineData(24, 52, "IndentedFunction")]
-        public void CanFindSymbolAtPosition(int lineNumber, int columnNumber, string expectedName)
+        public void CanFindSymbolAtPosition(int line, int column, string expectedName)
         {
-            SymbolReference reference = AstOperations.FindSymbolAtPosition(
-                scriptFile.ScriptAst,
-                lineNumber,
-                columnNumber);
-            Assert.NotNull(reference);
-            Assert.Equal(expectedName, reference.SymbolName);
+            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(line, column);
+            Assert.NotNull(symbol);
+            Assert.Equal(expectedName, symbol.SymbolName);
         }
 
         [Theory]
         [MemberData(nameof(FindReferencesOfSymbolAtPositionData))]
-        public void CanFindReferencesOfSymbolAtPosition(int lineNumber, int columnNumber, Range[] symbolRange)
+        public void CanFindReferencesOfSymbolAtPosition(int line, int column, Range[] symbolRange)
         {
-            SymbolReference symbol = AstOperations.FindSymbolAtPosition(
-                scriptFile.ScriptAst,
-                lineNumber,
-                columnNumber);
+            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(line, column);
 
             Assert.True(scriptFile.References.TryGetReferences(
                 symbol.SymbolName,

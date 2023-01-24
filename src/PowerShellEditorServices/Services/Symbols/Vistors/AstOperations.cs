@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Management.Automation;
 using System.Management.Automation.Language;
@@ -139,58 +138,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 commandCompletion.CompletionMatches.Count);
 
             return commandCompletion;
-        }
-
-        /// <summary>
-        /// Finds the symbol at a given file location
-        /// </summary>
-        /// <param name="scriptAst">The abstract syntax tree of the given script</param>
-        /// <param name="lineNumber">The line number of the cursor for the given script</param>
-        /// <param name="columnNumber">The column number of the cursor for the given script</param>
-        /// <param name="includeDefinitions">Includes full symbol definition ranges in the search.</param>
-        /// <param name="returnFullSignature">Includes return or property type in symbol name.</param>
-        /// <returns>SymbolReference of found symbol</returns>
-        public static SymbolReference FindSymbolAtPosition(
-            Ast scriptAst,
-            int lineNumber,
-            int columnNumber,
-            bool includeDefinitions = false,
-            bool returnFullSignature = false)
-        {
-            FindSymbolVisitor symbolVisitor = new(
-                lineNumber,
-                columnNumber,
-                includeDefinitions,
-                returnFullSignature);
-
-            scriptAst.Visit(symbolVisitor);
-            return symbolVisitor.FoundSymbolReference;
-        }
-
-        /// <summary>
-        /// Finds the symbol (always Command type) at a given file location
-        /// </summary>
-        /// <param name="scriptAst">The abstract syntax tree of the given script</param>
-        /// <param name="lineNumber">The line number of the cursor for the given script</param>
-        /// <param name="columnNumber">The column number of the cursor for the given script</param>
-        /// <returns>SymbolReference of found command</returns>
-        public static SymbolReference FindCommandAtPosition(Ast scriptAst, int lineNumber, int columnNumber)
-        {
-            FindCommandVisitor commandVisitor = new(lineNumber, columnNumber);
-            scriptAst.Visit(commandVisitor);
-            return commandVisitor.FoundCommandReference;
-        }
-
-        /// <summary>
-        /// Finds all files dot sourced in a script
-        /// </summary>
-        /// <param name="scriptAst">The abstract syntax tree of the given script</param>
-        /// <param name="psScriptRoot">Pre-calculated value of $PSScriptRoot</param>
-        public static string[] FindDotSourcedIncludes(Ast scriptAst, string psScriptRoot)
-        {
-            FindDotSourcedVisitor dotSourcedVisitor = new(psScriptRoot);
-            scriptAst.Visit(dotSourcedVisitor);
-            return dotSourcedVisitor.DotSourcedFiles.ToArray();
         }
 
         internal static bool TryGetInferredValue(ExpandableStringExpressionAst expandableStringExpressionAst, out string value)

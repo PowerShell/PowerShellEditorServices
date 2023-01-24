@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#nullable enable
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -38,8 +40,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly ConcurrentDictionary<string, ICodeLensProvider> _codeLensProviders;
         private readonly ConcurrentDictionary<string, IDocumentSymbolProvider> _documentSymbolProviders;
         private readonly ConfigurationService _configurationService;
-        #endregion
+        private Task? _workspaceScanCompleted;
 
+        #endregion Private Fields
         #region Constructors
 
         /// <summary>
@@ -68,11 +71,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (configurationService.CurrentSettings.EnableReferencesCodeLens)
             {
                 ReferencesCodeLensProvider referencesProvider = new(_workspaceService, this);
-                _codeLensProviders.TryAdd(referencesProvider.ProviderId, referencesProvider);
+                _ = _codeLensProviders.TryAdd(referencesProvider.ProviderId, referencesProvider);
             }
 
             PesterCodeLensProvider pesterProvider = new(configurationService);
-            _codeLensProviders.TryAdd(pesterProvider.ProviderId, pesterProvider);
+            _ = _codeLensProviders.TryAdd(pesterProvider.ProviderId, pesterProvider);
 
             // TODO: Is this complication so necessary?
             _documentSymbolProviders = new ConcurrentDictionary<string, IDocumentSymbolProvider>();
@@ -82,13 +85,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 new PsdDocumentSymbolProvider(),
                 new PesterDocumentSymbolProvider(),
             };
+
             foreach (IDocumentSymbolProvider documentSymbolProvider in documentSymbolProviders)
             {
-                _documentSymbolProviders.TryAdd(documentSymbolProvider.ProviderId, documentSymbolProvider);
+                _ = _documentSymbolProviders.TryAdd(documentSymbolProvider.ProviderId, documentSymbolProvider);
             }
         }
 
-        #endregion
+        #endregion Constructors
 
         public bool TryRegisterCodeLensProvider(ICodeLensProvider codeLensProvider) => _codeLensProviders.TryAdd(codeLensProvider.ProviderId, codeLensProvider);
 
@@ -103,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public IEnumerable<IDocumentSymbolProvider> GetDocumentSymbolProviders() => _documentSymbolProviders.Values;
 
         /// <summary>
-        /// Finds all the symbols in a file.
+        /// Finds all the symbols in a file, through all document symbol providers.
         /// </summary>
         /// <param name="scriptFile">The ScriptFile in which the symbol can be located.</param>
         public IEnumerable<SymbolReference> FindSymbolsInFile(ScriptFile scriptFile)
@@ -121,44 +125,43 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
 
         /// <summary>
-        /// Finds the symbol in the script given a file location
+        /// Finds the symbol in the script given a file location.
         /// </summary>
-        /// <param name="scriptFile">The details and contents of a open script file</param>
-        /// <param name="lineNumber">The line number of the cursor for the given script</param>
-        /// <param name="columnNumber">The column number of the cursor for the given script</param>
-        /// <returns>A SymbolReference of the symbol found at the given location
-        /// or null if there is no symbol at that location
-        /// </returns>
-        public static SymbolReference FindSymbolAtLocation(
-            ScriptFile scriptFile,
-            int lineNumber,
-            int columnNumber)
+        public static SymbolReference? FindSymbolAtLocation(
+            ScriptFile scriptFile, int line, int column)
         {
-            SymbolReference symbolReference =
-                AstOperations.FindSymbolAtPosition(
-                    scriptFile.ScriptAst,
-                    lineNumber,
-                    columnNumber);
+            Validate.IsNotNull(nameof(scriptFile), scriptFile);
+            return scriptFile.References.TryGetSymbolAtPosition(line, column);
+        }
 
-            if (symbolReference != null)
+        // Using a private method here to get a bit more readability and to avoid roslynator
+        // asserting we should use a giant nested ternary.
+        private static string[] GetIdentifiers(string symbolName, SymbolType symbolType, CommandHelpers.AliasMap aliases)
+        {
+            if (symbolType is not SymbolType.Function)
             {
-                symbolReference.FilePath = scriptFile.FilePath;
+                return new[] { symbolName };
             }
 
-            return symbolReference;
+            if (!aliases.CmdletToAliases.TryGetValue(symbolName, out List<string> foundAliasList))
+            {
+                return new[] { symbolName };
+            }
+
+            return foundAliasList.Prepend(symbolName)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
         }
 
         /// <summary>
-        /// Finds all the references of a symbol (excluding definitions)
+        /// Finds all the references of a symbol in the workspace, resolving aliases.
+        /// TODO: Make it not return a nullable.
         /// </summary>
-        /// <param name="foundSymbol">The symbol to find all references for</param>
-        /// <param name="cancellationToken"></param>
-        /// <returns>FindReferencesResult</returns>
-        public async Task<IEnumerable<SymbolReference>> ScanForReferencesOfSymbol(
-            SymbolReference foundSymbol,
+        public async Task<IEnumerable<SymbolReference>?> ScanForReferencesOfSymbolAsync(
+            SymbolReference symbol,
             CancellationToken cancellationToken = default)
         {
-            if (foundSymbol == null)
+            if (symbol is null)
             {
                 return null;
             }
@@ -168,148 +171,79 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 _executionService,
                 cancellationToken).ConfigureAwait(false);
 
-            string targetName = foundSymbol.SymbolName;
-            if (foundSymbol.SymbolType is SymbolType.Function)
+            string targetName = symbol.SymbolName;
+            if (symbol.SymbolType is SymbolType.Function
+                && aliases.AliasToCmdlets.TryGetValue(symbol.SymbolName, out string aliasDefinition))
             {
-                targetName = CommandHelpers.StripModuleQualification(targetName, out _);
-                if (aliases.AliasToCmdlets.TryGetValue(foundSymbol.SymbolName, out string aliasDefinition))
-                {
-                    targetName = aliasDefinition;
-                }
+                targetName = aliasDefinition;
             }
 
             await ScanWorkspacePSFiles(cancellationToken).ConfigureAwait(false);
 
-            List<SymbolReference> symbolReferences = new();
+            List<SymbolReference> symbols = new();
 
-            // Using a nested method here to get a bit more readability and to avoid roslynator
-            // asserting we should use a giant nested ternary here.
-            static string[] GetIdentifiers(string symbolName, SymbolType symbolType, CommandHelpers.AliasMap aliases)
-            {
-                if (symbolType is not SymbolType.Function)
-                {
-                    return new[] { symbolName };
-                }
-
-                if (!aliases.CmdletToAliases.TryGetValue(symbolName, out List<string> foundAliasList))
-                {
-                    return new[] { symbolName };
-                }
-
-                return foundAliasList.Prepend(symbolName)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToArray();
-            }
-
-            string[] allIdentifiers = GetIdentifiers(targetName, foundSymbol.SymbolType, aliases);
+            string[] allIdentifiers = GetIdentifiers(targetName, symbol.SymbolType, aliases);
 
             foreach (ScriptFile file in _workspaceService.GetOpenedFiles())
             {
                 foreach (string targetIdentifier in allIdentifiers)
                 {
-                    if (!file.References.TryGetReferences(targetIdentifier, out ConcurrentBag<SymbolReference> references))
+                    await Task.Yield();
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    if (!file.References.TryGetReferences(targetIdentifier, out ConcurrentBag<SymbolReference>? references))
                     {
                         continue;
                     }
 
-                    symbolReferences.AddRange(references);
-
-                    // This async method is pretty dense with synchronous code
-                    // so it's helpful to add some yields.
-                    await Task.Yield();
-                    cancellationToken.ThrowIfCancellationRequested();
+                    symbols.AddRange(references);
                 }
             }
 
-            return symbolReferences;
+            return symbols;
         }
 
         /// <summary>
-        /// Finds all the occurrences of a symbol in the script given a file location
+        /// Finds all the occurrences of a symbol in the script given a file location.
         /// </summary>
-        /// <param name="file">The details and contents of a open script file</param>
-        /// <param name="symbolLineNumber">The line number of the cursor for the given script</param>
-        /// <param name="symbolColumnNumber">The column number of the cursor for the given script</param>
-        /// <returns>FindOccurrencesResult</returns>
-        public static IEnumerable<SymbolReference> FindOccurrencesInFile(
-            ScriptFile file,
-            int symbolLineNumber,
-            int symbolColumnNumber)
+        public static IEnumerable<SymbolReference>? FindOccurrencesInFile(
+            ScriptFile scriptFile, int line, int column)
         {
-            SymbolReference foundSymbol = AstOperations.FindSymbolAtPosition(
-                file.ScriptAst,
-                symbolLineNumber,
-                symbolColumnNumber);
+            SymbolReference? symbol = FindSymbolAtLocation(scriptFile, line, column);
 
-            if (foundSymbol == null)
+            if (symbol is null)
             {
                 return null;
             }
 
-            if (file.References.TryGetReferences(foundSymbol.SymbolName, out ConcurrentBag<SymbolReference> references))
-            {
-                return references;
-            }
-
-            return null;
+            scriptFile.References.TryGetReferences(symbol.SymbolName, out ConcurrentBag<SymbolReference>? references);
+            return references;
         }
 
         /// <summary>
-        /// Finds a function, class or enum definition in the script given a file location
+        /// Finds the symbol at the location and returns it if it's a declaration.
         /// </summary>
-        /// <param name="scriptFile">The details and contents of a open script file</param>
-        /// <param name="lineNumber">The line number of the cursor for the given script</param>
-        /// <param name="columnNumber">The column number of the cursor for the given script</param>
-        /// <returns>A SymbolReference of the symbol found at the given location
-        /// or null if there is no symbol at that location
-        /// </returns>
-        public static SymbolReference FindSymbolDefinitionAtLocation(
-            ScriptFile scriptFile,
-            int lineNumber,
-            int columnNumber)
+        public static SymbolReference? FindSymbolDefinitionAtLocation(
+            ScriptFile scriptFile, int line, int column)
         {
-            SymbolReference symbolReference =
-                AstOperations.FindSymbolAtPosition(
-                    scriptFile.ScriptAst,
-                    lineNumber,
-                    columnNumber,
-                    includeDefinitions: true);
-
-            if (symbolReference != null)
-            {
-                symbolReference.FilePath = scriptFile.FilePath;
-            }
-
-            return symbolReference;
+            SymbolReference? symbol = FindSymbolAtLocation(scriptFile, line, column);
+            return symbol?.IsDeclaration == true ? symbol : null;
         }
 
         /// <summary>
         /// Finds the details of the symbol at the given script file location.
         /// </summary>
-        /// <param name="scriptFile">The ScriptFile in which the symbol can be located.</param>
-        /// <param name="lineNumber">The line number at which the symbol can be located.</param>
-        /// <param name="columnNumber">The column number at which the symbol can be located.</param>
-        /// <returns></returns>
-        public Task<SymbolDetails> FindSymbolDetailsAtLocationAsync(
-            ScriptFile scriptFile,
-            int lineNumber,
-            int columnNumber)
+        public Task<SymbolDetails?> FindSymbolDetailsAtLocationAsync(
+            ScriptFile scriptFile, int line, int column)
         {
-            SymbolReference symbolReference =
-                AstOperations.FindSymbolAtPosition(
-                    scriptFile.ScriptAst,
-                    lineNumber,
-                    columnNumber,
-                    returnFullSignature: true);
-
-            if (symbolReference == null)
+            SymbolReference? symbol = FindSymbolAtLocation(scriptFile, line, column);
+            if (symbol is null)
             {
-                return Task.FromResult<SymbolDetails>(null);
+                return Task.FromResult<SymbolDetails?>(null);
             }
 
-            symbolReference.FilePath = scriptFile.FilePath;
             return SymbolDetails.CreateAsync(
-                symbolReference,
+                symbol,
                 _runspaceContext.CurrentRunspace,
                 _executionService);
         }
@@ -317,25 +251,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         /// Finds the parameter set hints of a specific command (determined by a given file location)
         /// </summary>
-        /// <param name="file">The details and contents of a open script file</param>
-        /// <param name="lineNumber">The line number of the cursor for the given script</param>
-        /// <param name="columnNumber">The column number of the cursor for the given script</param>
-        /// <returns>ParameterSetSignatures</returns>
-        public async Task<ParameterSetSignatures> FindParameterSetsInFileAsync(
-            ScriptFile file,
-            int lineNumber,
-            int columnNumber)
+        public async Task<ParameterSetSignatures?> FindParameterSetsInFileAsync(
+            ScriptFile scriptFile, int line, int column)
         {
-            SymbolReference foundSymbol =
-                AstOperations.FindCommandAtPosition(
-                    file.ScriptAst,
-                    lineNumber,
-                    columnNumber);
+            SymbolReference? symbol = FindSymbolAtLocation(scriptFile, line, column);
 
             // If we are not possibly looking at a Function, we don't
             // need to continue because we won't be able to get the
             // CommandInfo object.
-            if (foundSymbol?.SymbolType is not SymbolType.Function
+            if (symbol?.SymbolType is not SymbolType.Function
                 and not SymbolType.Unknown)
             {
                 return null;
@@ -343,11 +267,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             CommandInfo commandInfo =
                 await CommandHelpers.GetCommandInfoAsync(
-                    foundSymbol.SymbolName,
+                    symbol.SymbolName,
                     _runspaceContext.CurrentRunspace,
                     _executionService).ConfigureAwait(false);
 
-            if (commandInfo == null)
+            if (commandInfo is null)
             {
                 return null;
             }
@@ -355,7 +279,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             try
             {
                 IEnumerable<CommandParameterSetInfo> commandParamSets = commandInfo.ParameterSets;
-                return new ParameterSetSignatures(commandParamSets, foundSymbol);
+                return new ParameterSetSignatures(commandParamSets, symbol);
             }
             catch (RuntimeException e)
             {
@@ -376,19 +300,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
 
         /// <summary>
-        /// Finds the definition of a symbol in the script file or any of the
-        /// files that it references.
+        /// Finds the possible definitions of the symbol in the file or workspace.
         /// </summary>
-        /// <param name="file">The initial script file to be searched for the symbol's definition.</param>
-        /// <param name="symbol">The symbol for which a definition will be found.</param>
-        /// <param name="cancellationToken"></param>
-        /// <returns>The resulting GetDefinitionResult for the symbol's definition.</returns>
         public async Task<IEnumerable<SymbolReference>> GetDefinitionOfSymbolAsync(
-            ScriptFile file,
+            ScriptFile scriptFile,
             SymbolReference symbol,
             CancellationToken cancellationToken = default)
         {
-            if (file.References.TryGetReferences(symbol.SymbolName, out ConcurrentBag<SymbolReference> symbols))
+            if (scriptFile.References.TryGetReferences(symbol.SymbolName, out ConcurrentBag<SymbolReference>? symbols))
             {
                 IEnumerable<SymbolReference> possibleLocalDeclarations = symbols.Where((i) => i.IsDeclaration);
                 if (possibleLocalDeclarations.Any())
@@ -398,7 +317,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 }
             }
 
-            IEnumerable<SymbolReference> allSymbols = await ScanForReferencesOfSymbol(
+            IEnumerable<SymbolReference>? allSymbols = await ScanForReferencesOfSymbolAsync(
                 symbol,
                 cancellationToken).ConfigureAwait(false);
 
@@ -411,8 +330,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // TODO: Fix "definition" of dot-source (maybe?)
         }
 
-        private Task _workspaceScanCompleted;
-
         private async Task ScanWorkspacePSFiles(CancellationToken cancellationToken = default)
         {
             if (_configurationService.CurrentSettings.AnalyzeOpenDocumentsOnly)
@@ -420,7 +337,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             }
 
-            Task scanTask = _workspaceScanCompleted;
+            Task? scanTask = _workspaceScanCompleted;
             // It's not impossible for two scans to start at once but it should be exceedingly
             // unlikely, and shouldn't break anything if it happens to. So we can save some
             // lock time by accepting that possibility.
@@ -460,25 +377,22 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // TODO: There's a new API in net6 that lets you await a task with a cancellation token.
             //       we should #if that in if feasible.
             TaskCompletionSource<bool> cancelled = new();
-            cancellationToken.Register(() => cancelled.TrySetCanceled());
-            await Task.WhenAny(scanTask, cancelled.Task).ConfigureAwait(false);
+            _ = cancellationToken.Register(() => cancelled.TrySetCanceled());
+            _ = await Task.WhenAny(scanTask, cancelled.Task).ConfigureAwait(false);
         }
 
         /// <summary>
         /// Finds a function definition that follows or contains the given line number.
         /// </summary>
-        /// <param name="scriptFile">Open script file.</param>
-        /// <param name="lineNumber">The 1 based line on which to look for function definition.</param>
-        /// <param name="helpLocation"></param>
-        /// <returns>If found, returns the function definition, otherwise, returns null.</returns>
-        public static FunctionDefinitionAst GetFunctionDefinitionForHelpComment(
+        public static FunctionDefinitionAst? GetFunctionDefinitionForHelpComment(
             ScriptFile scriptFile,
-            int lineNumber,
-            out string helpLocation)
+            int line,
+            out string? helpLocation)
         {
+            Validate.IsNotNull(nameof(scriptFile), scriptFile);
             // check if the next line contains a function definition
-            FunctionDefinitionAst funcDefnAst = GetFunctionDefinitionAtLine(scriptFile, lineNumber + 1);
-            if (funcDefnAst != null)
+            FunctionDefinitionAst? funcDefnAst = GetFunctionDefinitionAtLine(scriptFile, line + 1);
+            if (funcDefnAst is not null)
             {
                 helpLocation = "before";
                 return funcDefnAst;
@@ -493,8 +407,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         return false;
                     }
 
-                    return fdAst.Body.Extent.StartLineNumber < lineNumber &&
-                        fdAst.Body.Extent.EndLineNumber > lineNumber;
+                    return fdAst.Body.Extent.StartLineNumber < line &&
+                        fdAst.Body.Extent.EndLineNumber > line;
                 },
                 true);
 
@@ -508,7 +422,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // definition that contains `lineNumber`
             foreach (FunctionDefinitionAst foundAst in foundAsts.Cast<FunctionDefinitionAst>())
             {
-                if (funcDefnAst == null)
+                if (funcDefnAst is null)
                 {
                     funcDefnAst = foundAst;
                     continue;
@@ -521,14 +435,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 }
             }
 
-            // TODO use tokens to check for non empty character instead of just checking for line offset
-            if (funcDefnAst.Body.Extent.StartLineNumber == lineNumber - 1)
+            // TODO: use tokens to check for non empty character instead of just checking for line offset
+            if (funcDefnAst?.Body.Extent.StartLineNumber == line - 1)
             {
                 helpLocation = "begin";
                 return funcDefnAst;
             }
 
-            if (funcDefnAst.Body.Extent.EndLineNumber == lineNumber + 1)
+            if (funcDefnAst?.Body.Extent.EndLineNumber == line + 1)
             {
                 helpLocation = "end";
                 return funcDefnAst;
@@ -541,11 +455,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         /// <summary>
         /// Gets the function defined on a given line.
+        /// TODO: Remove this.
         /// </summary>
-        /// <param name="scriptFile">Open script file.</param>
-        /// <param name="lineNumber">The 1 based line on which to look for function definition.</param>
-        /// <returns>If found, returns the function definition on the given line. Otherwise, returns null.</returns>
-        public static FunctionDefinitionAst GetFunctionDefinitionAtLine(
+        public static FunctionDefinitionAst? GetFunctionDefinitionAtLine(
             ScriptFile scriptFile,
             int lineNumber)
         {
@@ -560,7 +472,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             if (e.AnalyzeOpenDocumentsOnly)
             {
-                Task scanInProgress = _workspaceScanCompleted;
+                Task? scanInProgress = _workspaceScanCompleted;
                 if (scanInProgress is not null)
                 {
                     // Wait until after the scan completes to close unopened files.
