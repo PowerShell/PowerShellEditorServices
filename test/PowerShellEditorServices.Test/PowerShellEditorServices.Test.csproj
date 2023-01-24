@@ -14,14 +14,12 @@
 
   <!-- Latest PowerShell -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net7.0' ">
-      <!-- TODO: Remove this workaround with the 7.3.2 update. -->
-      <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="7.0.0-preview.2.22152.2" NoWarn="NU1605" />
-      <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.3.1" />
+      <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.3.2" />
   </ItemGroup>
 
   <!-- PowerShell LTS -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.7" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.9" />
   </ItemGroup>
 
   <!-- Windows PowerShell 5.1 -->
