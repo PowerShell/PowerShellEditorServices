@@ -244,6 +244,56 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         }
 
         /// <summary>
+        /// Gets the function name with parameters and return type.
+        /// </summary>
+        internal static string GetFunctionDisplayName(FunctionDefinitionAst functionDefinitionAst)
+        {
+            StringBuilder sb = new();
+            sb.Append("function").Append(' ');
+            sb.Append(functionDefinitionAst.Name);
+            // Add parameters
+            sb.Append('(');
+            // TODO: Fix the parameters, this doesn't work for those specified in the body.
+            if (functionDefinitionAst.Parameters?.Count > 0)
+            {
+                List<string> parameters = new(functionDefinitionAst.Parameters.Count);
+                foreach (ParameterAst param in functionDefinitionAst.Parameters)
+                {
+                    parameters.Add(param.Extent.Text);
+                }
+
+                sb.Append(string.Join(", ", parameters));
+            }
+            sb.Append(')');
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Gets the display name of a parameter with its default value.
+        ///
+        internal static string GetParamDisplayName(ParameterAst parameterAst)
+        {
+            StringBuilder sb = new();
+
+            sb.Append("(parameter) ");
+            if (parameterAst.StaticType is not null)
+            {
+                sb.Append('[').Append(parameterAst.StaticType).Append(']');
+            }
+            sb.Append('$').Append(parameterAst.Name.VariablePath.UserPath);
+            string? constantValue = parameterAst.DefaultValue is ConstantExpressionAst constant
+                ? constant.Value.ToString() : null;
+
+            if (!string.IsNullOrEmpty(constantValue))
+            {
+                sb.Append(" = ").Append(constantValue);
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
         /// Gets the method or constructor name with parameters for current overload.
         /// </summary>
         /// <param name="functionMemberAst">A FunctionMemberAst object in the script's AST</param>

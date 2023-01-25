@@ -57,14 +57,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                     };
 
                     SymbolReferences.Add(
+                        // TODO: Should we fill this out better?
                         new SymbolReference(
                             SymbolType.HashtableKey,
                             nameExtent.Text,
+                            nameExtent.Text,
                             nameExtent,
-                            // TODO: Should this be more?
                             nameExtent,
                             _file,
-                            // TODO: Should this be true?
                             isDeclaration: false));
                 }
             }

@@ -214,6 +214,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 
         /// <summary>
         /// Gets the name of the test
+        /// TODO: We could get rid of this and use DisplayName now, but first attempt didn't work great.
         /// </summary>
         public string TestName { get; }
 
@@ -231,6 +232,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 : base(
                     SymbolType.Function,
                     symbolName,
+                    symbolName + " { }",
                     scriptExtent,
                     scriptExtent,
                     scriptFile,

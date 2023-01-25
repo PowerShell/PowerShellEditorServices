@@ -99,26 +99,5 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 _ => SymbolKind.Variable,
             };
         }
-
-        internal static string GetDecoratedSymbolName(SymbolReference symbolReference)
-        {
-            string name = symbolReference.SymbolName;
-
-            // Append { } for symbols with scriptblock
-            // Constructors and Methods have overloaded names already
-            if (symbolReference.SymbolType is
-                SymbolType.Function or
-                SymbolType.Enum or
-                SymbolType.Class or
-                SymbolType.Constructor or
-                SymbolType.Method or
-                SymbolType.Configuration or
-                SymbolType.Workflow)
-            {
-                name += " { }";
-            }
-
-            return name;
-        }
     }
 }

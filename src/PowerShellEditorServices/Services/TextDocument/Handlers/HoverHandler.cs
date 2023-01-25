@@ -52,14 +52,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         request.Position.Line + 1,
                         request.Position.Character + 1).ConfigureAwait(false);
 
-            if (symbolDetails == null)
+            if (symbolDetails is null)
             {
                 return null;
             }
 
             List<MarkedString> symbolInfo = new()
             {
-                new MarkedString("PowerShell", symbolDetails.DisplayString)
+                new MarkedString("PowerShell", symbolDetails.SymbolReference.DisplayString)
             };
 
             if (!string.IsNullOrEmpty(symbolDetails.Documentation))

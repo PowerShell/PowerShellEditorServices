@@ -69,7 +69,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 //
                 // TODO: We should also include function invocations that are part of DSLs (like
                 // Invoke-Build etc.).
-                if (!r.IsDeclaration)
+                if (!r.IsDeclaration || r.SymbolType is SymbolType.Parameter)
                 {
                     continue;
                 }
@@ -93,7 +93,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         Uri = DocumentUri.From(r.FilePath),
                         Range = r.ScriptRegion.ToRange() // The whole thing, not just the name.
                     },
-                    Name = SymbolTypeUtils.GetDecoratedSymbolName(r)
+                    Name = r.DisplayString
                 }));
             }
 

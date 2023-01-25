@@ -562,7 +562,7 @@ namespace PowerShellEditorServices.Test.Language
                 FindsDetailsForTypeSymbolsData.EnumMemberSourceDetails.StartLineNumber,
                 FindsDetailsForTypeSymbolsData.EnumMemberSourceDetails.StartColumnNumber).ConfigureAwait(true);
 
-            Assert.Equal("MyEnum.First", symbolDetails.DisplayString);
+            Assert.Equal("MyEnum.First", symbolDetails.SymbolReference.DisplayString);
         }
 
         [Fact]
@@ -573,7 +573,7 @@ namespace PowerShellEditorServices.Test.Language
                 FindsDetailsForTypeSymbolsData.PropertySourceDetails.StartLineNumber,
                 FindsDetailsForTypeSymbolsData.PropertySourceDetails.StartColumnNumber).ConfigureAwait(true);
 
-            Assert.Equal("string SuperClass.SomePropWithDefault", symbolDetails.DisplayString);
+            Assert.Equal("string SuperClass.SomePropWithDefault", symbolDetails.SymbolReference.DisplayString);
         }
 
         [Fact]
@@ -584,7 +584,7 @@ namespace PowerShellEditorServices.Test.Language
                 FindsDetailsForTypeSymbolsData.ConstructorSourceDetails.StartLineNumber,
                 FindsDetailsForTypeSymbolsData.ConstructorSourceDetails.StartColumnNumber).ConfigureAwait(true);
 
-            Assert.Equal("SuperClass.SuperClass([string]$name)", symbolDetails.DisplayString);
+            Assert.Equal("SuperClass.SuperClass([string]$name)", symbolDetails.SymbolReference.DisplayString);
         }
 
         [Fact]
@@ -595,7 +595,7 @@ namespace PowerShellEditorServices.Test.Language
                 FindsDetailsForTypeSymbolsData.MethodSourceDetails.StartLineNumber,
                 FindsDetailsForTypeSymbolsData.MethodSourceDetails.StartColumnNumber).ConfigureAwait(true);
 
-            Assert.Equal("string SuperClass.MyClassMethod([string]$param1, $param2, [int]$param3)", symbolDetails.DisplayString);
+            Assert.Equal("string SuperClass.MyClassMethod([string]$param1, $param2, [int]$param3)", symbolDetails.SymbolReference.DisplayString);
         }
 
         [Fact]

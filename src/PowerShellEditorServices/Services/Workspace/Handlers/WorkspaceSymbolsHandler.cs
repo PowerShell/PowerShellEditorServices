@@ -80,7 +80,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         ContainerName = containerName,
                         Kind = SymbolTypeUtils.GetSymbolKind(foundOccurrence.SymbolType),
                         Location = location,
-                        Name = SymbolTypeUtils.GetDecoratedSymbolName(foundOccurrence)
+                        Name = foundOccurrence.DisplayString
                     });
                 }
             }

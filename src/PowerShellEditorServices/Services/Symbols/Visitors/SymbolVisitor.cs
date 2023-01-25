@@ -31,7 +31,7 @@ internal sealed class SymbolVisitor : AstVisitor2
     public override AstVisitAction VisitCommand(CommandAst commandAst)
     {
         string? commandName = VisitorUtils.GetCommandName(commandAst);
-        if (string.IsNullOrEmpty(commandName))
+        if (commandName is null)
         {
             return AstVisitAction.Continue;
         }
@@ -39,6 +39,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         return _action(new SymbolReference(
             SymbolType.Function,
             CommandHelpers.StripModuleQualification(commandName, out _),
+            commandName,
             commandAst.CommandElements[0].Extent,
             commandAst.Extent,
             _file,
@@ -62,6 +63,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         return _action(new SymbolReference(
             symbolType,
             functionDefinitionAst.Name,
+            VisitorUtils.GetFunctionDisplayName(functionDefinitionAst),
             nameExtent,
             functionDefinitionAst.Extent,
             _file,
@@ -70,10 +72,10 @@ internal sealed class SymbolVisitor : AstVisitor2
 
     public override AstVisitAction VisitParameter(ParameterAst parameterAst)
     {
-        // TODO: When we add DisplayString, include the default value.
         return _action(new SymbolReference(
             SymbolType.Parameter,
             $"${parameterAst.Name.VariablePath.UserPath}",
+            VisitorUtils.GetParamDisplayName(parameterAst),
             parameterAst.Name.Extent,
             parameterAst.Extent,
             _file,
@@ -86,6 +88,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         // the same function definition.
         return _action(new SymbolReference(
             SymbolType.Variable,
+            $"${variableExpressionAst.VariablePath.UserPath}",
             $"${variableExpressionAst.VariablePath.UserPath}",
             variableExpressionAst.Extent,
             variableExpressionAst.Extent, // TODO: Maybe parent?
@@ -103,6 +106,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         return _action(new SymbolReference(
             symbolType,
             typeDefinitionAst.Name,
+            (symbolType is SymbolType.Enum ? "enum " : "class ") + typeDefinitionAst.Name + " { }",
             nameExtent,
             typeDefinitionAst.Extent,
             _file,
@@ -113,6 +117,7 @@ internal sealed class SymbolVisitor : AstVisitor2
     {
         return _action(new SymbolReference(
             SymbolType.Type,
+            typeExpressionAst.TypeName.Name,
             typeExpressionAst.TypeName.Name,
             typeExpressionAst.Extent,
             typeExpressionAst.Extent,
@@ -125,6 +130,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         return _action(new SymbolReference(
             SymbolType.Type,
             typeConstraintAst.TypeName.Name,
+            "[" + typeConstraintAst.TypeName.Name + "]",
             typeConstraintAst.Extent,
             typeConstraintAst.Extent,
             _file,
@@ -145,6 +151,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         return _action(new SymbolReference(
             symbolType,
             functionMemberAst.Name, // We bucket all the overloads.
+            VisitorUtils.GetMemberOverloadName(functionMemberAst, false, true),
             nameExtent,
             functionMemberAst.Extent,
             _file,
@@ -161,6 +168,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         return _action(new SymbolReference(
             symbolType,
             nameExtent.Text,
+            VisitorUtils.GetMemberOverloadName(propertyMemberAst, false, true),
             nameExtent,
             propertyMemberAst.Extent,
             _file,
@@ -180,6 +188,7 @@ internal sealed class SymbolVisitor : AstVisitor2
 #pragma warning disable CS8604 // Possible null reference argument.
             memberName,
 #pragma warning restore CS8604
+            memberExpressionAst.Member.Extent.Text,
             memberExpressionAst.Member.Extent,
             memberExpressionAst.Extent,
             _file,
@@ -199,6 +208,7 @@ internal sealed class SymbolVisitor : AstVisitor2
 #pragma warning disable CS8604 // Possible null reference argument.
             memberName,
 #pragma warning restore CS8604
+            methodCallAst.Member.Extent.Text,
             methodCallAst.Member.Extent,
             methodCallAst.Extent,
             _file,
@@ -211,6 +221,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         return _action(new SymbolReference(
             SymbolType.Configuration,
             nameExtent.Text,
+            "Configuration " + nameExtent.Text + " { }",
             nameExtent,
             configurationDefinitionAst.Extent,
             _file,
