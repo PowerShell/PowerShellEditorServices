@@ -249,10 +249,20 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         internal static string GetFunctionDisplayName(FunctionDefinitionAst functionDefinitionAst)
         {
             StringBuilder sb = new();
-            sb.Append("function").Append(' ');
-            sb.Append(functionDefinitionAst.Name);
+            if (functionDefinitionAst.IsWorkflow)
+            {
+                sb.Append("workflow");
+            }
+            else if (functionDefinitionAst.IsFilter)
+            {
+                sb.Append("filter");
+            }
+            else
+            {
+                sb.Append("function");
+            }
+            sb.Append(' ').Append(functionDefinitionAst.Name).Append('(');
             // Add parameters
-            sb.Append('(');
             // TODO: Fix the parameters, this doesn't work for those specified in the body.
             if (functionDefinitionAst.Parameters?.Count > 0)
             {

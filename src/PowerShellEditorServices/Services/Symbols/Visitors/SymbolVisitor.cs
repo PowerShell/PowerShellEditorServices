@@ -28,6 +28,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         _action = action;
     }
 
+    // TODO: Make all the display strings better (and performant).
     public override AstVisitAction VisitCommand(CommandAst commandAst)
     {
         string? commandName = VisitorUtils.GetCommandName(commandAst);
@@ -221,7 +222,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         return _action(new SymbolReference(
             SymbolType.Configuration,
             nameExtent.Text,
-            "Configuration " + nameExtent.Text + " { }",
+            "configuration " + nameExtent.Text + " { }",
             nameExtent,
             configurationDefinitionAst.Extent,
             _file,
