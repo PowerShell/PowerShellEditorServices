@@ -41,17 +41,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     request.Position.Line + 1,
                     request.Position.Character + 1);
 
-            IEnumerable<SymbolReference> referencesResult =
-                await _symbolsService.ScanForReferencesOfSymbolAsync(
-                    foundSymbol, cancellationToken).ConfigureAwait(false);
-
-            if (referencesResult is null)
-            {
-                return new LocationContainer();
-            }
-
             List<Location> locations = new();
-            foreach (SymbolReference foundReference in referencesResult)
+            foreach (SymbolReference foundReference in await _symbolsService.ScanForReferencesOfSymbolAsync(
+                    foundSymbol, cancellationToken).ConfigureAwait(false))
             {
                 // Respect the request's setting to include declarations.
                 if (!request.Context.IncludeDeclaration && foundReference.IsDeclaration)

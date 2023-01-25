@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -21,8 +20,6 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
     /// </summary>
     internal class ReferencesCodeLensProvider : ICodeLensProvider
     {
-        private static readonly Location[] s_emptyLocationArray = Array.Empty<Location>();
-
         /// <summary>
         /// The document symbol provider to supply symbols to generate the code lenses.
         /// </summary>
@@ -102,49 +99,33 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                 codeLens.Range.Start.Line + 1,
                 codeLens.Range.Start.Character + 1);
 
-            IEnumerable<SymbolReference> referencesResult =
-                await _symbolsService.ScanForReferencesOfSymbolAsync(
-                    foundSymbol, cancellationToken).ConfigureAwait(false);
-
-            Location[] referenceLocations;
-            if (referencesResult == null)
+            List<Location> acc = new();
+            foreach (SymbolReference foundReference in await _symbolsService.ScanForReferencesOfSymbolAsync(
+                foundSymbol, cancellationToken).ConfigureAwait(false))
             {
-                referenceLocations = s_emptyLocationArray;
-            }
-            else
-            {
-                List<Location> acc = new();
-                foreach (SymbolReference foundReference in referencesResult)
+                // We only show lenses on declarations, so we exclude those from the references.
+                if (foundReference.IsDeclaration)
                 {
-                    // This async method is pretty dense with synchronous code
-                    // so it's helpful to add some yields.
-                    await Task.Yield();
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    // We only show lenses on declarations, so we exclude those from the references.
-                    if (foundReference.IsDeclaration)
-                    {
-                        continue;
-                    }
-
-                    DocumentUri uri = DocumentUri.From(foundReference.FilePath);
-                    // For any vscode-notebook-cell, we need to ignore the backing file on disk.
-                    if (uri.Scheme == "file" &&
-                        scriptFile.DocumentUri.Scheme == "vscode-notebook-cell" &&
-                        uri.Path == scriptFile.DocumentUri.Path)
-                    {
-                        continue;
-                    }
-
-                    acc.Add(new Location
-                    {
-                        Uri = uri,
-                        Range = foundReference.NameRegion.ToRange()
-                    });
+                    continue;
                 }
-                referenceLocations = acc.ToArray();
+
+                DocumentUri uri = DocumentUri.From(foundReference.FilePath);
+                // For any vscode-notebook-cell, we need to ignore the backing file on disk.
+                if (uri.Scheme == "file" &&
+                    scriptFile.DocumentUri.Scheme == "vscode-notebook-cell" &&
+                    uri.Path == scriptFile.DocumentUri.Path)
+                {
+                    continue;
+                }
+
+                acc.Add(new Location
+                {
+                    Uri = uri,
+                    Range = foundReference.NameRegion.ToRange()
+                });
             }
 
+            Location[] referenceLocations = acc.ToArray();
             return new CodeLens
             {
                 Data = codeLens.Data,

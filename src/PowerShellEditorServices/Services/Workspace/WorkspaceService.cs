@@ -5,7 +5,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Security;
 using System.Text;
 using Microsoft.Extensions.FileSystemGlobbing;
@@ -275,10 +274,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
 
         /// <summary>
-        /// Gets an array of all opened ScriptFiles in the workspace.
+        /// Gets an IEnumerable of all opened ScriptFiles in the workspace.
         /// </summary>
-        /// <returns>An array of all opened ScriptFiles in the workspace.</returns>
-        public ScriptFile[] GetOpenedFiles() => workspaceFiles.Values.ToArray();
+        public IEnumerable<ScriptFile> GetOpenedFiles() => workspaceFiles.Values;
 
         /// <summary>
         /// Closes a currently open script file with the given file path.

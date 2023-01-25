@@ -114,14 +114,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             Validate.IsNotNull(nameof(scriptFile), scriptFile);
 
-            List<SymbolReference> symbols = new();
             foreach (IDocumentSymbolProvider symbolProvider in GetDocumentSymbolProviders())
             {
-                // TODO: Each provider needs to set the source line and filepath.
-                symbols.AddRange(symbolProvider.ProvideDocumentSymbols(scriptFile));
+                foreach (SymbolReference symbol in symbolProvider.ProvideDocumentSymbols(scriptFile))
+                {
+                    yield return symbol;
+                }
             }
-
-            return symbols;
         }
 
         /// <summary>
@@ -155,15 +154,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         /// <summary>
         /// Finds all the references of a symbol in the workspace, resolving aliases.
-        /// TODO: Make it not return a nullable.
+        /// TODO: One day use IAsyncEnumerable.
         /// </summary>
-        public async Task<IEnumerable<SymbolReference>?> ScanForReferencesOfSymbolAsync(
+        public async Task<IEnumerable<SymbolReference>> ScanForReferencesOfSymbolAsync(
             SymbolReference symbol,
             CancellationToken cancellationToken = default)
         {
             if (symbol is null)
             {
-                return null;
+                return Enumerable.Empty<SymbolReference>();
             }
 
             // TODO: Should we handle aliases at a lower level?
@@ -181,7 +180,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             await ScanWorkspacePSFiles(cancellationToken).ConfigureAwait(false);
 
             List<SymbolReference> symbols = new();
-
             string[] allIdentifiers = GetIdentifiers(targetName, symbol.SymbolType, aliases);
 
             foreach (ScriptFile file in _workspaceService.GetOpenedFiles())
@@ -191,7 +189,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     await Task.Yield();
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    if (!file.References.TryGetReferences(targetIdentifier, out ConcurrentBag<SymbolReference>? references))
+                    _ = file.References.TryGetReferences(targetIdentifier, out ConcurrentBag<SymbolReference>? references);
+                    if (references is null)
                     {
                         continue;
                     }
@@ -301,33 +300,45 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         /// <summary>
         /// Finds the possible definitions of the symbol in the file or workspace.
+        /// TODO: One day use IAsyncEnumerable.
+        /// TODO: Fix searching for definition of built-in commands.
+        /// TODO: Fix "definition" of dot-source (maybe?)
         /// </summary>
         public async Task<IEnumerable<SymbolReference>> GetDefinitionOfSymbolAsync(
             ScriptFile scriptFile,
             SymbolReference symbol,
             CancellationToken cancellationToken = default)
         {
-            if (scriptFile.References.TryGetReferences(symbol.SymbolName, out ConcurrentBag<SymbolReference>? symbols))
+            List<SymbolReference> declarations = new();
+            _ = scriptFile.References.TryGetReferences(symbol.SymbolName, out ConcurrentBag<SymbolReference>? symbols);
+            if (symbols is not null)
             {
-                IEnumerable<SymbolReference> possibleLocalDeclarations = symbols.Where((i) => i.IsDeclaration);
-                if (possibleLocalDeclarations.Any())
+                foreach (SymbolReference foundReference in symbols)
                 {
-                    _logger.LogDebug($"Found possible declarations ${possibleLocalDeclarations}");
-                    return possibleLocalDeclarations;
+                    if (foundReference.IsDeclaration)
+                    {
+                        _logger.LogDebug($"Found possible declaration in same file ${foundReference}");
+                        declarations.Add(foundReference);
+                    }
                 }
             }
 
-            IEnumerable<SymbolReference>? allSymbols = await ScanForReferencesOfSymbolAsync(
-                symbol,
-                cancellationToken).ConfigureAwait(false);
+            if (declarations.Any())
+            {
+                return declarations;
+            }
 
-            IEnumerable<SymbolReference> possibleDeclarations = allSymbols.Where((i) => i.IsDeclaration);
-            _logger.LogDebug($"Found possible declarations ${possibleDeclarations}");
+            foreach (SymbolReference foundReference in await ScanForReferencesOfSymbolAsync(
+                    symbol, cancellationToken).ConfigureAwait(false))
+            {
+                if (foundReference.IsDeclaration)
+                {
+                    _logger.LogDebug($"Found possible declaration in workspace ${foundReference}");
+                    declarations.Add(foundReference);
+                }
+            }
 
-            return possibleDeclarations;
-
-            // TODO: Fix searching for definition of built-in commands.
-            // TODO: Fix "definition" of dot-source (maybe?)
+            return declarations;
         }
 
         private async Task ScanWorkspacePSFiles(CancellationToken cancellationToken = default)
