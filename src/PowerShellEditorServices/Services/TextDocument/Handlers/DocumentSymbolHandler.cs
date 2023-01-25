@@ -74,8 +74,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     continue;
                 }
 
-                // TODO: This should be a DocumentSymbol now as SymbolInformation is deprecated.
-                // But this requires figuring out how to populate `children`.
+                // TODO: This should be a DocumentSymbol now as SymbolInformation is deprecated. But
+                // this requires figuring out how to populate `children`. Once we do that, the range
+                // can be NameRegion.
                 //
                 // symbols.Add(new SymbolInformationOrDocumentSymbol(new DocumentSymbol
                 // {

@@ -70,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return new Hover
             {
                 Contents = new MarkedStringsOrMarkupContent(symbolInfo),
-                Range = symbolDetails.SymbolReference.ScriptRegion.ToRange()
+                Range = symbolDetails.SymbolReference.NameRegion.ToRange()
             };
         }
     }

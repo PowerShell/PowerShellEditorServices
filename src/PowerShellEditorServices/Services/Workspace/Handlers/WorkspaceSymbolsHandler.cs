@@ -76,7 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     Location location = new()
                     {
                         Uri = DocumentUri.From(foundOccurrence.FilePath),
-                        Range = foundOccurrence.ScriptRegion.ToRange()
+                        Range = foundOccurrence.NameRegion.ToRange()
                     };
 
                     // TODO: This should be a WorkplaceSymbol now as SymbolInformation is deprecated.
