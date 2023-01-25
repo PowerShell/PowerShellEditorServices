@@ -56,6 +56,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         continue;
                     }
 
+                    if (foundOccurrence.SymbolType is SymbolType.Parameter)
+                    {
+                        continue;
+                    }
+
                     if (!IsQueryMatch(request.Query, foundOccurrence.SymbolName))
                     {
                         continue;
