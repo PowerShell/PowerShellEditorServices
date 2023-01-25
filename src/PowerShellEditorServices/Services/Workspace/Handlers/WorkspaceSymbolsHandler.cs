@@ -34,9 +34,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public override async Task<Container<SymbolInformation>> Handle(WorkspaceSymbolParams request, CancellationToken cancellationToken)
         {
+            await _symbolsService.ScanWorkspacePSFiles(cancellationToken).ConfigureAwait(false);
             List<SymbolInformation> symbols = new();
 
-            // TODO: This should (optionally) check all the files, like we do for scanning for references by calling ScanWorkspacePSFiles.
             foreach (ScriptFile scriptFile in _workspaceService.GetOpenedFiles())
             {
                 IEnumerable<SymbolReference> foundSymbols = _symbolsService.FindSymbolsInFile(scriptFile);

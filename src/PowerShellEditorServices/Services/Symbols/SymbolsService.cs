@@ -341,7 +341,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return declarations;
         }
 
-        private async Task ScanWorkspacePSFiles(CancellationToken cancellationToken = default)
+        internal async Task ScanWorkspacePSFiles(CancellationToken cancellationToken = default)
         {
             if (_configurationService.CurrentSettings.AnalyzeOpenDocumentsOnly)
             {
