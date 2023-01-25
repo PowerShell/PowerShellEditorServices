@@ -92,7 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     Location = new Location
                     {
                         Uri = DocumentUri.From(r.FilePath),
-                        Range = r.ScriptRegion.ToRange() // The whole thing, not just the name.
+                        Range = new Range(r.NameRegion.ToRange().Start, r.ScriptRegion.ToRange().End) // Jump to name start, but keep whole range to support symbol tree in outline
                     },
                     Name = r.DisplayString
                 }));
