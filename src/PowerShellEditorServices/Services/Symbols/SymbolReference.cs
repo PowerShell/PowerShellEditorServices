@@ -36,6 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// </summary>
         /// <param name="symbolType">The higher level type of the symbol</param>
         /// <param name="symbolName">The name of the symbol</param>
+        /// <param name="displayString">The string used by outline, hover, etc.</param>
         /// <param name="nameExtent">The extent of the symbol's name</param>
         /// <param name="scriptExtent">The script extent of the symbol</param>
         /// <param name="file">The script file that has the symbol</param>

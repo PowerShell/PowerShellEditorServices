@@ -25,8 +25,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// Extracts all of the unique foldable regions in a script given the list tokens
         /// </summary>
-        internal static FoldingReferenceList FoldableReferences(
-            Token[] tokens)
+#pragma warning disable CA1502 // Cyclomatic complexity we don't care about
+        internal static FoldingReferenceList FoldableReferences(Token[] tokens)
+#pragma warning restore CA1502
         {
             FoldingReferenceList refList = new();
 
