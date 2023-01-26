@@ -43,6 +43,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     request.Position.Line + 1,
                     request.Position.Character + 1);
 
+            if (foundSymbol is null)
+            {
+                return new LocationOrLocationLinks();
+            }
+
             // Short-circuit if we're already on the definition.
             if (foundSymbol.IsDeclaration)
             {
@@ -57,19 +62,16 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             List<LocationOrLocationLink> definitionLocations = new();
-            if (foundSymbol is not null)
+            foreach (SymbolReference foundDefinition in await _symbolsService.GetDefinitionOfSymbolAsync(
+                scriptFile, foundSymbol, cancellationToken).ConfigureAwait(false))
             {
-                foreach (SymbolReference foundDefinition in await _symbolsService.GetDefinitionOfSymbolAsync(
-                    scriptFile, foundSymbol, cancellationToken).ConfigureAwait(false))
-                {
-                    definitionLocations.Add(
-                        new LocationOrLocationLink(
-                            new Location
-                            {
-                                Uri = DocumentUri.From(foundDefinition.FilePath),
-                                Range = foundDefinition.NameRegion.ToRange()
-                            }));
-                }
+                definitionLocations.Add(
+                    new LocationOrLocationLink(
+                        new Location
+                        {
+                            Uri = DocumentUri.From(foundDefinition.FilePath),
+                            Range = foundDefinition.NameRegion.ToRange()
+                        }));
             }
 
             return new LocationOrLocationLinks(definitionLocations);

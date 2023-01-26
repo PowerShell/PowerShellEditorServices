@@ -89,8 +89,8 @@ internal sealed class SymbolVisitor : AstVisitor2
         // the same function definition.
         return _action(new SymbolReference(
             SymbolType.Variable,
-            $"${variableExpressionAst.VariablePath.UserPath}",
-            $"${variableExpressionAst.VariablePath.UserPath}",
+            "$" + variableExpressionAst.VariablePath.UserPath,
+            "$" + variableExpressionAst.VariablePath.UserPath,
             variableExpressionAst.Extent,
             variableExpressionAst.Extent, // TODO: Maybe parent?
             _file,
@@ -119,7 +119,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         return _action(new SymbolReference(
             SymbolType.Type,
             typeExpressionAst.TypeName.Name,
-            typeExpressionAst.TypeName.Name,
+            "(type) " + typeExpressionAst.TypeName.Name,
             typeExpressionAst.Extent,
             typeExpressionAst.Extent,
             _file,
@@ -131,7 +131,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         return _action(new SymbolReference(
             SymbolType.Type,
             typeConstraintAst.TypeName.Name,
-            "[" + typeConstraintAst.TypeName.Name + "]",
+            "(type) " + typeConstraintAst.TypeName.Name,
             typeConstraintAst.Extent,
             typeConstraintAst.Extent,
             _file,
@@ -184,12 +184,13 @@ internal sealed class SymbolVisitor : AstVisitor2
             return AstVisitAction.Continue;
         }
 
+        // TODO: It's too bad we can't get the member's real symbol and reuse its display string.
         return _action(new SymbolReference(
             SymbolType.Property,
 #pragma warning disable CS8604 // Possible null reference argument.
             memberName,
 #pragma warning restore CS8604
-            memberExpressionAst.Member.Extent.Text,
+            "(method) " + memberName,
             memberExpressionAst.Member.Extent,
             memberExpressionAst.Extent,
             _file,
@@ -209,7 +210,7 @@ internal sealed class SymbolVisitor : AstVisitor2
 #pragma warning disable CS8604 // Possible null reference argument.
             memberName,
 #pragma warning restore CS8604
-            methodCallAst.Member.Extent.Text,
+            "(method) " + memberName,
             methodCallAst.Member.Extent,
             methodCallAst.Extent,
             _file,

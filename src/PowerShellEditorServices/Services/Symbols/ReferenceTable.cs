@@ -52,7 +52,7 @@ internal sealed class ReferenceTable
     }
 
     internal SymbolReference? TryGetSymbolAtPosition(int line, int column) => GetAllReferences()
-        .FirstOrDefault((i) => i.NameRegion.ContainsPosition(line, column));
+        .FirstOrDefault(i => i.NameRegion.ContainsPosition(line, column));
 
     internal IEnumerable<SymbolReference> GetAllReferences()
     {
