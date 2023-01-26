@@ -43,6 +43,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     request.Position.Line + 1,
                     request.Position.Character + 1);
 
+            // Short-circuit if we're already on the definition.
+            if (foundSymbol.IsDeclaration)
+            {
+                return new LocationOrLocationLinks(
+                    new LocationOrLocationLink[] {
+                        new LocationOrLocationLink(
+                            new Location
+                            {
+                                Uri = DocumentUri.From(foundSymbol.FilePath),
+                                Range = foundSymbol.NameRegion.ToRange()
+                            })});
+            }
+
             List<LocationOrLocationLink> definitionLocations = new();
             if (foundSymbol is not null)
             {
