@@ -93,7 +93,6 @@ internal sealed class ReferenceTable
                 return existing;
             });
 
-        return symbol.SymbolType is SymbolType.Parameter
-            ? AstVisitAction.SkipChildren : AstVisitAction.Continue;
+        return AstVisitAction.Continue;
     }
 }

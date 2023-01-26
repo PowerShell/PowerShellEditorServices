@@ -85,6 +85,13 @@ internal sealed class SymbolVisitor : AstVisitor2
 
     public override AstVisitAction VisitVariableExpression(VariableExpressionAst variableExpressionAst)
     {
+        // Parameters are visited earlier, and we don't want to skip their children because we do
+        // want to visit their type constraints.
+        if (variableExpressionAst.Parent is ParameterAst)
+        {
+            return AstVisitAction.Continue;
+        }
+
         // TODO: Consider tracking unscoped variable references only when they declared within
         // the same function definition.
         return _action(new SymbolReference(
