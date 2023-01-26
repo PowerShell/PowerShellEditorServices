@@ -188,14 +188,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     await Task.Yield();
                     cancellationToken.ThrowIfCancellationRequested();
-
-                    _ = file.References.TryGetReferences(targetIdentifier, out ConcurrentBag<SymbolReference>? references);
-                    if (references is null)
-                    {
-                        continue;
-                    }
-
-                    symbols.AddRange(references);
+                    symbols.AddRange(file.References.TryGetReferences(symbol with { SymbolName = targetIdentifier }));
                 }
             }
 
@@ -205,19 +198,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         /// Finds all the occurrences of a symbol in the script given a file location.
         /// </summary>
-        public static IEnumerable<SymbolReference>? FindOccurrencesInFile(
-            ScriptFile scriptFile, int line, int column)
-        {
-            SymbolReference? symbol = FindSymbolAtLocation(scriptFile, line, column);
-
-            if (symbol is null)
-            {
-                return null;
-            }
-
-            scriptFile.References.TryGetReferences(symbol.SymbolName, out ConcurrentBag<SymbolReference>? references);
-            return references;
-        }
+        public static IEnumerable<SymbolReference> FindOccurrencesInFile(
+            ScriptFile scriptFile, int line, int column) => scriptFile
+                .References
+                .TryGetReferences(FindSymbolAtLocation(scriptFile, line, column));
 
         /// <summary>
         /// Finds the symbol at the location and returns it if it's a declaration.
@@ -236,15 +220,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             ScriptFile scriptFile, int line, int column)
         {
             SymbolReference? symbol = FindSymbolAtLocation(scriptFile, line, column);
-            if (symbol is null)
-            {
-                return Task.FromResult<SymbolDetails?>(null);
-            }
-
-            return SymbolDetails.CreateAsync(
-                symbol,
-                _runspaceContext.CurrentRunspace,
-                _executionService);
+            return symbol is null
+                ? Task.FromResult<SymbolDetails?>(null)
+                : SymbolDetails.CreateAsync(symbol, _runspaceContext.CurrentRunspace, _executionService);
         }
 
         /// <summary>
@@ -310,34 +288,18 @@ namespace Microsoft.PowerShell.EditorServices.Services
             CancellationToken cancellationToken = default)
         {
             List<SymbolReference> declarations = new();
-            _ = scriptFile.References.TryGetReferences(symbol.SymbolName, out ConcurrentBag<SymbolReference>? symbols);
-            if (symbols is not null)
-            {
-                foreach (SymbolReference foundReference in symbols)
-                {
-                    if (foundReference.IsDeclaration)
-                    {
-                        _logger.LogDebug($"Found possible declaration in same file ${foundReference}");
-                        declarations.Add(foundReference);
-                    }
-                }
-            }
-
+            declarations.AddRange(scriptFile.References.TryGetReferences(symbol).Where(i => i.IsDeclaration));
             if (declarations.Any())
             {
+                _logger.LogDebug($"Found possible declaration in same file ${declarations}");
                 return declarations;
             }
 
-            foreach (SymbolReference foundReference in await ScanForReferencesOfSymbolAsync(
-                    symbol, cancellationToken).ConfigureAwait(false))
-            {
-                if (foundReference.IsDeclaration)
-                {
-                    _logger.LogDebug($"Found possible declaration in workspace ${foundReference}");
-                    declarations.Add(foundReference);
-                }
-            }
+            IEnumerable<SymbolReference> references =
+                await ScanForReferencesOfSymbolAsync(symbol, cancellationToken).ConfigureAwait(false);
+            declarations.AddRange(references.Where(i => i.IsDeclaration));
 
+            _logger.LogDebug($"Found possible declaration in workspace ${declarations}");
             return declarations;
         }
 

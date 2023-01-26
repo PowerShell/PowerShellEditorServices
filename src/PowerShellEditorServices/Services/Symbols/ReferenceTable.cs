@@ -42,10 +42,13 @@ internal sealed class ReferenceTable
     /// </summary>
     private bool IsInitialized => !_symbolReferences.IsEmpty || _isInited;
 
-    internal bool TryGetReferences(string command, out ConcurrentBag<SymbolReference>? references)
+    internal IEnumerable<SymbolReference> TryGetReferences(SymbolReference? symbol)
     {
         EnsureInitialized();
-        return _symbolReferences.TryGetValue(command, out references);
+        return symbol is not null
+            && _symbolReferences.TryGetValue(symbol.SymbolName, out ConcurrentBag<SymbolReference>? bag)
+                ? bag.Where(i => SymbolTypeUtils.SymbolTypeMatches(symbol.SymbolType, i.SymbolType))
+                : Enumerable.Empty<SymbolReference>();
     }
 
     internal SymbolReference? TryGetSymbolAtPosition(int line, int column) => GetAllReferences()

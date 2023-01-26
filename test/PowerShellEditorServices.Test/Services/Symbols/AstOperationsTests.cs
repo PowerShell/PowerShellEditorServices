@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Services;
@@ -46,9 +46,8 @@ namespace PowerShellEditorServices.Test.Services.Symbols
         {
             SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(line, column);
 
-            Assert.True(scriptFile.References.TryGetReferences(
-                symbol.SymbolName,
-                out ConcurrentBag<SymbolReference> references));
+            IEnumerable<SymbolReference> references = scriptFile.References.TryGetReferences(symbol);
+            Assert.NotEmpty(references);
 
             int positionsIndex = 0;
             foreach (SymbolReference reference in references.OrderBy((i) => i.ScriptRegion.ToRange().Start))
