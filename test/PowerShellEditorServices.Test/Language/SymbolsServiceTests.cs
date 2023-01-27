@@ -737,51 +737,60 @@ namespace PowerShellEditorServices.Test.Language
         {
             IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInMultiSymbolFile.SourceDetails);
 
-            Assert.Equal(7, symbols.Count(symbolReference => symbolReference.SymbolType == SymbolType.Function));
-            Assert.Equal(12, symbols.Count(symbolReference => symbolReference.SymbolType == SymbolType.Variable));
+            Assert.Equal(7, symbols.Count(i => i.SymbolType == SymbolType.Function));
+            Assert.Equal(8, symbols.Count(i => i.SymbolType == SymbolType.Variable));
+            Assert.Equal(4, symbols.Count(i => i.SymbolType == SymbolType.Parameter));
+            Assert.Equal(12, symbols.Count(i => SymbolTypeUtils.SymbolTypeMatches(SymbolType.Variable, i.SymbolType)));
 
-            SymbolReference firstFunctionSymbol = symbols.First(r => r.SymbolType == SymbolType.Function);
-            Assert.Equal("AFunction", firstFunctionSymbol.SymbolName);
-            AssertIsRegion(firstFunctionSymbol.NameRegion, 7, 10, 7, 19);
+            SymbolReference symbol = symbols.First(i => i.SymbolType == SymbolType.Function);
+            Assert.Equal("AFunction", symbol.SymbolName);
+            Assert.Equal("function AFunction ()", symbol.DisplayString);
+            Assert.True(symbol.IsDeclaration);
 
-            SymbolReference lastVariableSymbol = symbols.Last(r => r.SymbolType == SymbolType.Variable);
-            Assert.Equal("$param3", lastVariableSymbol.SymbolName);
-            AssertIsRegion(lastVariableSymbol.NameRegion, 32, 50, 32, 57);
+            symbol = symbols.First(i => i.SymbolName == "AFilter");
+            Assert.Equal("filter AFilter ()", symbol.DisplayString);
+            Assert.True(symbol.IsDeclaration);
 
-            SymbolReference firstWorkflowSymbol =
-                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Workflow));
-            Assert.Equal("AWorkflow", firstWorkflowSymbol.SymbolName);
-            AssertIsRegion(firstWorkflowSymbol.NameRegion, 23, 10, 23, 19);
+            symbol = symbols.Last(i => i.SymbolType == SymbolType.Variable);
+            Assert.Equal("$nestedVar", symbol.SymbolName);
+            Assert.Equal("$nestedVar", symbol.DisplayString);
+            Assert.False(symbol.IsDeclaration);
+            AssertIsRegion(symbol.NameRegion, 16, 29, 16, 39);
 
-            SymbolReference firstClassSymbol =
-                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Class));
-            Assert.Equal("AClass", firstClassSymbol.SymbolName);
-            AssertIsRegion(firstClassSymbol.NameRegion, 25, 7, 25, 13);
+            symbol = Assert.Single(symbols.Where(i => i.SymbolType == SymbolType.Workflow));
+            Assert.Equal("AWorkflow", symbol.SymbolName);
+            Assert.Equal("workflow AWorkflow ()", symbol.DisplayString);
+            Assert.True(symbol.IsDeclaration);
 
-            SymbolReference firstPropertySymbol =
-                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Property));
-            Assert.Equal("AClass.AProperty", firstPropertySymbol.SymbolName);
-            AssertIsRegion(firstPropertySymbol.NameRegion, 26, 13, 26, 23);
+            symbol = Assert.Single(symbols.Where(i => i.SymbolType == SymbolType.Class));
+            Assert.Equal("AClass", symbol.SymbolName);
+            Assert.Equal("class AClass { }", symbol.DisplayString);
+            Assert.True(symbol.IsDeclaration);
 
-            SymbolReference firstConstructorSymbol =
-                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Constructor));
-            Assert.Equal("AClass.AClass([string]$AParameter)", firstConstructorSymbol.SymbolName);
-            AssertIsRegion(firstConstructorSymbol.NameRegion, 28, 5, 28, 11);
+            symbol = Assert.Single(symbols.Where(i => i.SymbolType == SymbolType.Property));
+            Assert.Equal("$AProperty", symbol.SymbolName);
+            Assert.Equal("[string] $AProperty", symbol.DisplayString);
+            Assert.True(symbol.IsDeclaration);
 
-            SymbolReference firstMethodSymbol =
-                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Method));
-            Assert.Equal("AClass.AMethod([string]$param1, [int]$param2, $param3)", firstMethodSymbol.SymbolName);
-            AssertIsRegion(firstMethodSymbol.NameRegion, 32, 11, 32, 18);
+            symbol = Assert.Single(symbols.Where(i => i.SymbolType == SymbolType.Constructor));
+            Assert.Equal("AClass", symbol.SymbolName);
+            Assert.Equal("AClass([string]$AParameter)", symbol.DisplayString);
+            Assert.True(symbol.IsDeclaration);
 
-            SymbolReference firstEnumSymbol =
-                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Enum));
-            Assert.Equal("AEnum", firstEnumSymbol.SymbolName);
-            AssertIsRegion(firstEnumSymbol.NameRegion, 37, 6, 37, 11);
+            symbol = Assert.Single(symbols.Where(i => i.SymbolType == SymbolType.Method));
+            Assert.Equal("AMethod", symbol.SymbolName);
+            Assert.Equal("void AMethod([string]$param1, [int]$param2, $param3)", symbol.DisplayString);
+            Assert.True(symbol.IsDeclaration);
 
-            SymbolReference firstEnumMemberSymbol =
-                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.EnumMember));
-            Assert.Equal("AEnum.AValue", firstEnumMemberSymbol.SymbolName);
-            AssertIsRegion(firstEnumMemberSymbol.NameRegion, 38, 5, 38, 11);
+            symbol = Assert.Single(symbols.Where(i => i.SymbolType == SymbolType.Enum));
+            Assert.Equal("AEnum", symbol.SymbolName);
+            Assert.Equal("enum AEnum { }", symbol.DisplayString);
+            Assert.True(symbol.IsDeclaration);
+
+            symbol = Assert.Single(symbols.Where(i => i.SymbolType == SymbolType.EnumMember));
+            Assert.Equal("$AValue", symbol.SymbolName);
+            Assert.Equal("AValue", symbol.DisplayString);
+            Assert.True(symbol.IsDeclaration);
         }
 
         [Fact]
@@ -789,47 +798,41 @@ namespace PowerShellEditorServices.Test.Language
         {
             IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInNewLineSymbolFile.SourceDetails);
 
-            SymbolReference firstFunctionSymbol =
-                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Function));
-            Assert.Equal("returnTrue", firstFunctionSymbol.SymbolName);
-            AssertIsRegion(firstFunctionSymbol.NameRegion, 2, 1, 2, 11);
-            AssertIsRegion(firstFunctionSymbol.ScriptRegion, 1, 1, 4, 2);
+            SymbolReference symbol = Assert.Single(symbols.Where(i => i.SymbolType == SymbolType.Function));
+            Assert.Equal("returnTrue", symbol.SymbolName);
+            AssertIsRegion(symbol.NameRegion, 2, 1, 2, 11);
+            AssertIsRegion(symbol.ScriptRegion, 1, 1, 4, 2);
 
-            SymbolReference firstClassSymbol =
-                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Class));
-            Assert.Equal("NewLineClass", firstClassSymbol.SymbolName);
-            AssertIsRegion(firstClassSymbol.NameRegion, 7, 1, 7, 13);
-            AssertIsRegion(firstClassSymbol.ScriptRegion, 6, 1, 23, 2);
+            symbol = Assert.Single(symbols.Where(i => i.SymbolType == SymbolType.Class));
+            Assert.Equal("NewLineClass", symbol.SymbolName);
+            AssertIsRegion(symbol.NameRegion, 7, 1, 7, 13);
+            AssertIsRegion(symbol.ScriptRegion, 6, 1, 23, 2);
 
-            SymbolReference firstConstructorSymbol =
-                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Constructor));
-            Assert.Equal("NewLineClass.NewLineClass()", firstConstructorSymbol.SymbolName);
-            AssertIsRegion(firstConstructorSymbol.NameRegion, 8, 5, 8, 17);
-            AssertIsRegion(firstConstructorSymbol.ScriptRegion, 8, 5, 10, 6);
+            symbol = Assert.Single(symbols.Where(i => i.SymbolType == SymbolType.Constructor));
+            Assert.Equal("NewLineClass", symbol.SymbolName);
+            AssertIsRegion(symbol.NameRegion, 8, 5, 8, 17);
+            AssertIsRegion(symbol.ScriptRegion, 8, 5, 10, 6);
 
-            SymbolReference firstPropertySymbol =
-                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Property));
-            Assert.Equal("NewLineClass.SomePropWithDefault", firstPropertySymbol.SymbolName);
-            AssertIsRegion(firstPropertySymbol.NameRegion, 15, 5, 15, 25);
-            AssertIsRegion(firstPropertySymbol.ScriptRegion, 12, 5, 15, 40);
+            symbol = Assert.Single(symbols.Where(i => i.SymbolType == SymbolType.Property));
+            Assert.Equal("$SomePropWithDefault", symbol.SymbolName);
+            AssertIsRegion(symbol.NameRegion, 15, 5, 15, 25);
+            AssertIsRegion(symbol.ScriptRegion, 12, 5, 15, 40);
 
-            SymbolReference firstMethodSymbol =
-                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Method));
-            Assert.Equal("NewLineClass.MyClassMethod([MyNewLineEnum]$param1)", firstMethodSymbol.SymbolName);
-            AssertIsRegion(firstMethodSymbol.NameRegion, 20, 5, 20, 18);
-            AssertIsRegion(firstMethodSymbol.ScriptRegion, 17, 5, 22, 6);
+            symbol = Assert.Single(symbols.Where(i => i.SymbolType == SymbolType.Method));
+            Assert.Equal("MyClassMethod", symbol.SymbolName);
+            Assert.Equal("string MyClassMethod([MyNewLineEnum]$param1)", symbol.DisplayString);
+            AssertIsRegion(symbol.NameRegion, 20, 5, 20, 18);
+            AssertIsRegion(symbol.ScriptRegion, 17, 5, 22, 6);
 
-            SymbolReference firstEnumSymbol =
-                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.Enum));
-            Assert.Equal("MyNewLineEnum", firstEnumSymbol.SymbolName);
-            AssertIsRegion(firstEnumSymbol.NameRegion, 26, 1, 26, 14);
-            AssertIsRegion(firstEnumSymbol.ScriptRegion, 25, 1, 28, 2);
+            symbol = Assert.Single(symbols.Where(i => i.SymbolType == SymbolType.Enum));
+            Assert.Equal("MyNewLineEnum", symbol.SymbolName);
+            AssertIsRegion(symbol.NameRegion, 26, 1, 26, 14);
+            AssertIsRegion(symbol.ScriptRegion, 25, 1, 28, 2);
 
-            SymbolReference firstEnumMemberSymbol =
-                Assert.Single(symbols.Where(symbolReference => symbolReference.SymbolType == SymbolType.EnumMember));
-            Assert.Equal("MyNewLineEnum.First", firstEnumMemberSymbol.SymbolName);
-            AssertIsRegion(firstEnumMemberSymbol.NameRegion, 27, 5, 27, 10);
-            AssertIsRegion(firstEnumMemberSymbol.ScriptRegion, 27, 5, 27, 10);
+            symbol = Assert.Single(symbols.Where(i => i.SymbolType == SymbolType.EnumMember));
+            Assert.Equal("$First", symbol.SymbolName);
+            AssertIsRegion(symbol.NameRegion, 27, 5, 27, 10);
+            AssertIsRegion(symbol.ScriptRegion, 27, 5, 27, 10);
         }
 
         [SkippableFact]
@@ -837,75 +840,71 @@ namespace PowerShellEditorServices.Test.Language
         {
             Skip.If(!s_isWindows, "DSC only works properly on Windows.");
 
-            IEnumerable<SymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInDSCFile.SourceDetails);
-
-            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Configuration));
-            SymbolReference firstConfigurationSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Configuration);
-            Assert.Equal("AConfiguration", firstConfigurationSymbol.SymbolName);
-            Assert.Equal(2, firstConfigurationSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(15, firstConfigurationSymbol.ScriptRegion.StartColumnNumber);
+            IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInDSCFile.SourceDetails);
+            SymbolReference symbol = Assert.Single(symbols, i => i.SymbolType == SymbolType.Configuration);
+            Assert.Equal("AConfiguration", symbol.SymbolName);
+            Assert.Equal(2, symbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(15, symbol.ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
         public void FindsSymbolsInPesterFile()
         {
-            IEnumerable<PesterSymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInPesterFile.SourceDetails).OfType<PesterSymbolReference>();
-            Assert.Equal(12, symbolsResult.Count(r => r.SymbolType == SymbolType.Function));
+            IEnumerable<PesterSymbolReference> symbols = FindSymbolsInFile(FindSymbolsInPesterFile.SourceDetails).OfType<PesterSymbolReference>();
+            Assert.Equal(12, symbols.Count(i => i.SymbolType == SymbolType.Function));
 
-            Assert.Equal(1, symbolsResult.Count(r => r.Command == PesterCommandType.Describe));
-            SymbolReference firstDescribeSymbol = symbolsResult.First(r => r.Command == PesterCommandType.Describe);
-            Assert.Equal("Describe \"Testing Pester symbols\"", firstDescribeSymbol.SymbolName);
-            Assert.Equal(9, firstDescribeSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, firstDescribeSymbol.ScriptRegion.StartColumnNumber);
+            SymbolReference symbol = Assert.Single(symbols, i => i.Command == PesterCommandType.Describe);
+            Assert.Equal("Describe \"Testing Pester symbols\"", symbol.SymbolName);
+            Assert.Equal(9, symbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(1, symbol.ScriptRegion.StartColumnNumber);
 
-            Assert.Equal(1, symbolsResult.Count(r => r.Command == PesterCommandType.Context));
-            SymbolReference firstContextSymbol = symbolsResult.First(r => r.Command == PesterCommandType.Context);
-            Assert.Equal("Context \"When a Pester file is given\"", firstContextSymbol.SymbolName);
-            Assert.Equal(10, firstContextSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(5, firstContextSymbol.ScriptRegion.StartColumnNumber);
+            symbol = Assert.Single(symbols, i => i.Command == PesterCommandType.Context);
+            Assert.Equal("Context \"When a Pester file is given\"", symbol.SymbolName);
+            Assert.Equal(10, symbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(5, symbol.ScriptRegion.StartColumnNumber);
 
-            Assert.Equal(4, symbolsResult.Count(r => r.Command == PesterCommandType.It));
-            SymbolReference lastItSymbol = symbolsResult.Last(r => r.Command == PesterCommandType.It);
-            Assert.Equal("It \"Should return setup and teardown symbols\"", lastItSymbol.SymbolName);
-            Assert.Equal(31, lastItSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(9, lastItSymbol.ScriptRegion.StartColumnNumber);
+            Assert.Equal(4, symbols.Count(i => i.Command == PesterCommandType.It));
+            symbol = symbols.Last(i => i.Command == PesterCommandType.It);
+            Assert.Equal("It \"Should return setup and teardown symbols\"", symbol.SymbolName);
+            Assert.Equal(31, symbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(9, symbol.ScriptRegion.StartColumnNumber);
 
-            Assert.Equal(1, symbolsResult.Count(r => r.Command == PesterCommandType.BeforeDiscovery));
-            SymbolReference firstBeforeDiscoverySymbol = symbolsResult.First(r => r.Command == PesterCommandType.BeforeDiscovery);
-            Assert.Equal("BeforeDiscovery", firstBeforeDiscoverySymbol.SymbolName);
-            Assert.Equal(1, firstBeforeDiscoverySymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, firstBeforeDiscoverySymbol.ScriptRegion.StartColumnNumber);
+            symbol = Assert.Single(symbols, i => i.Command == PesterCommandType.BeforeDiscovery);
+            Assert.Equal("BeforeDiscovery", symbol.SymbolName);
+            Assert.Equal(1, symbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(1, symbol.ScriptRegion.StartColumnNumber);
 
-            Assert.Equal(2, symbolsResult.Count(r => r.Command == PesterCommandType.BeforeAll));
-            SymbolReference lastBeforeAllSymbol = symbolsResult.Last(r => r.Command == PesterCommandType.BeforeAll);
-            Assert.Equal("BeforeAll", lastBeforeAllSymbol.SymbolName);
-            Assert.Equal(11, lastBeforeAllSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(9, lastBeforeAllSymbol.ScriptRegion.StartColumnNumber);
+            Assert.Equal(2, symbols.Count(i => i.Command == PesterCommandType.BeforeAll));
+            symbol = symbols.Last(i => i.Command == PesterCommandType.BeforeAll);
+            Assert.Equal("BeforeAll", symbol.SymbolName);
+            Assert.Equal(11, symbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(9, symbol.ScriptRegion.StartColumnNumber);
 
-            Assert.Equal(1, symbolsResult.Count(r => r.Command == PesterCommandType.BeforeEach));
-            SymbolReference firstBeforeEachSymbol = symbolsResult.First(r => r.Command == PesterCommandType.BeforeEach);
-            Assert.Equal("BeforeEach", firstBeforeEachSymbol.SymbolName);
-            Assert.Equal(15, firstBeforeEachSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(9, firstBeforeEachSymbol.ScriptRegion.StartColumnNumber);
+            symbol = Assert.Single(symbols, i => i.Command == PesterCommandType.BeforeEach);
+            Assert.Equal("BeforeEach", symbol.SymbolName);
+            Assert.Equal(15, symbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(9, symbol.ScriptRegion.StartColumnNumber);
 
-            Assert.Equal(1, symbolsResult.Count(r => r.Command == PesterCommandType.AfterEach));
-            SymbolReference firstAfterEachSymbol = symbolsResult.First(r => r.Command == PesterCommandType.AfterEach);
-            Assert.Equal("AfterEach", firstAfterEachSymbol.SymbolName);
-            Assert.Equal(35, firstAfterEachSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(9, firstAfterEachSymbol.ScriptRegion.StartColumnNumber);
+            symbol = Assert.Single(symbols, i => i.Command == PesterCommandType.AfterEach);
+            Assert.Equal("AfterEach", symbol.SymbolName);
+            Assert.Equal(35, symbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(9, symbol.ScriptRegion.StartColumnNumber);
 
-            Assert.Equal(1, symbolsResult.Count(r => r.Command == PesterCommandType.AfterAll));
-            SymbolReference firstAfterAllSymbol = symbolsResult.First(r => r.Command == PesterCommandType.AfterAll);
-            Assert.Equal("AfterAll", firstAfterAllSymbol.SymbolName);
-            Assert.Equal(40, firstAfterAllSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(5, firstAfterAllSymbol.ScriptRegion.StartColumnNumber);
+            symbol = Assert.Single(symbols, i => i.Command == PesterCommandType.AfterAll);
+            Assert.Equal("AfterAll", symbol.SymbolName);
+            Assert.Equal(40, symbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(5, symbol.ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
-        public void LangServerFindsSymbolsInPSDFile()
+        public void FindsSymbolsInPSDFile()
         {
-            IEnumerable<SymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInPSDFile.SourceDetails);
-            Assert.Equal(3, symbolsResult.Count());
+            IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInPSDFile.SourceDetails);
+            Assert.All(symbols, i => Assert.Equal(SymbolType.HashtableKey, i.SymbolType));
+            Assert.Collection(symbols,
+                i => Assert.Equal("property1", i.SymbolName),
+                i => Assert.Equal("property2", i.SymbolName),
+                i => Assert.Equal("property3", i.SymbolName));
         }
 
         [Fact]
