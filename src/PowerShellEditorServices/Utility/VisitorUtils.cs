@@ -251,7 +251,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             {
                 sb.Append("function");
             }
-            sb.Append(' ').Append(functionDefinitionAst.Name).Append('(');
+            sb.Append(' ').Append(functionDefinitionAst.Name).Append(" (");
             // Add parameters
             // TODO: Fix the parameters, this doesn't work for those specified in the body.
             if (functionDefinitionAst.Parameters?.Count > 0)

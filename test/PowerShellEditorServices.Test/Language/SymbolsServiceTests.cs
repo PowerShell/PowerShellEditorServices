@@ -165,7 +165,7 @@ namespace PowerShellEditorServices.Test.Language
         {
             SymbolReference symbol = await GetDefinition(FindsFunctionDefinitionData.SourceDetails).ConfigureAwait(true);
             Assert.Equal("My-Function", symbol.SymbolName);
-            Assert.Equal("function My-Function($myInput)", symbol.DisplayString);
+            Assert.Equal("function My-Function ($myInput)", symbol.DisplayString);
             Assert.Equal(SymbolType.Function, symbol.SymbolType);
             AssertIsRegion(symbol.NameRegion, 1, 10, 1, 21);
             AssertIsRegion(symbol.ScriptRegion, 1, 1, 4, 2);
@@ -182,7 +182,7 @@ namespace PowerShellEditorServices.Test.Language
                 CancellationToken.None).ConfigureAwait(true);
 
             SymbolReference symbol = await GetDefinition(FindsFunctionDefinitionOfAliasData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal("function My-Function($myInput)", symbol.DisplayString);
+            Assert.Equal("function My-Function ($myInput)", symbol.DisplayString);
             Assert.Equal(SymbolType.Function, symbol.SymbolType);
             AssertIsRegion(symbol.NameRegion, 1, 10, 1, 21);
             AssertIsRegion(symbol.ScriptRegion, 1, 1, 4, 2);
@@ -193,10 +193,17 @@ namespace PowerShellEditorServices.Test.Language
         public async Task FindsReferencesOnFunction()
         {
             IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
-            Assert.Collection(symbols,
-                (i) => AssertIsRegion(i.NameRegion, 1, 10, 1, 21),
-                (i) => AssertIsRegion(i.NameRegion, 3, 5, 3, 16),
-                (i) => AssertIsRegion(i.NameRegion, 10, 1, 10, 12));
+            Assert.Equal(8, symbols.Count());
+            Assert.All(symbols, (i) =>
+            {
+                Assert.Equal("My-Function", i.SymbolName);
+                Assert.Equal(SymbolType.Function, i.SymbolType);
+                if (i.IsDeclaration)
+                {
+                    Assert.Equal("function My-Function ($myInput)", i.DisplayString);
+                }
+            });
+            Assert.Distinct(symbols);
         }
 
         [Fact]
