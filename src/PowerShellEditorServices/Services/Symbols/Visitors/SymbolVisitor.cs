@@ -195,13 +195,13 @@ internal sealed class SymbolVisitor : AstVisitor2
             return AstVisitAction.Continue;
         }
 
-        // TODO: It's too bad we can't get the member's real symbol and reuse its display string.
+        // TODO: It's too bad we can't get the property's real symbol and reuse its display string.
         return _action(new SymbolReference(
             SymbolType.Property,
 #pragma warning disable CS8604 // Possible null reference argument.
-            memberName,
+            "$" + memberName,
 #pragma warning restore CS8604
-            "(method) " + memberName,
+            "(property) " + memberName,
             memberExpressionAst.Member.Extent,
             memberExpressionAst.Extent,
             _file,
@@ -216,6 +216,7 @@ internal sealed class SymbolVisitor : AstVisitor2
             return AstVisitAction.Continue;
         }
 
+        // TODO: It's too bad we can't get the member's real symbol and reuse its display string.
         return _action(new SymbolReference(
             SymbolType.Method,
 #pragma warning disable CS8604 // Possible null reference argument.

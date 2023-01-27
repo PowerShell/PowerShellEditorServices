@@ -613,25 +613,43 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsReferencesOnProperty()
         {
-            List<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.PropertySourceDetails).ConfigureAwait(true);
-            SymbolReference symbol = Assert.Single(symbols);
-            Assert.Equal("SuperClass.SomeProp", symbol.SymbolName);
-            Assert.Equal(SymbolType.Property, symbol.SymbolType);
-            AssertIsRegion(symbol.NameRegion, 17, 10, 17, 19);
-            AssertIsRegion(symbol.ScriptRegion, 17, 5, 17, 19);
-            // TODO: This should also find $o.SomeProp
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.PropertySourceDetails).ConfigureAwait(true);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("$SomeProp", i.SymbolName);
+                    Assert.Equal("[int] $SomeProp", i.DisplayString);
+                    Assert.Equal(SymbolType.Property, i.SymbolType);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("$SomeProp", i.SymbolName);
+                    Assert.Equal("(property) SomeProp", i.DisplayString);
+                    Assert.Equal(SymbolType.Property, i.SymbolType);
+                    Assert.False(i.IsDeclaration);
+                });
         }
 
         [Fact]
         public void FindsOccurrencesOnProperty()
         {
-            IReadOnlyList<SymbolReference> symbols = GetOccurrences(FindsOccurrencesOnTypeSymbolsData.PropertySourceDetails);
-            SymbolReference symbol = Assert.Single(symbols);
-            Assert.Equal("SuperClass.SomePropWithDefault", symbol.SymbolName);
-            Assert.Equal(SymbolType.Property, symbol.SymbolType);
-            AssertIsRegion(symbol.NameRegion, 15, 13, 15, 33);
-            AssertIsRegion(symbol.ScriptRegion, 15, 5, 15, 61);
-            // TODO: This should also find the $this.SomePropWithDefault reference.
+            IEnumerable<SymbolReference> symbols = GetOccurrences(FindsOccurrencesOnTypeSymbolsData.PropertySourceDetails);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("$SomePropWithDefault", i.SymbolName);
+                    Assert.Equal("[string] $SomePropWithDefault", i.DisplayString);
+                    Assert.Equal(SymbolType.Property, i.SymbolType);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("$SomePropWithDefault", i.SymbolName);
+                    Assert.Equal("(property) SomePropWithDefault", i.DisplayString);
+                    Assert.Equal(SymbolType.Property, i.SymbolType);
+                    Assert.False(i.IsDeclaration);
+                });
         }
 
         [Fact]
