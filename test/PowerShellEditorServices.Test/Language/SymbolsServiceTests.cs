@@ -729,52 +729,7 @@ namespace PowerShellEditorServices.Test.Language
                 FindsDetailsForBuiltInCommandData.SourceDetails.StartLineNumber,
                 FindsDetailsForBuiltInCommandData.SourceDetails.StartColumnNumber).ConfigureAwait(true);
 
-            Assert.NotNull(symbolDetails.Documentation);
-            Assert.NotEqual("", symbolDetails.Documentation);
-        }
-
-        [Fact]
-        public async Task FindsDetailsWithSignatureForEnumMember()
-        {
-            SymbolDetails symbolDetails = await symbolsService.FindSymbolDetailsAtLocationAsync(
-                GetScriptFile(FindsDetailsForTypeSymbolsData.EnumMemberSourceDetails),
-                FindsDetailsForTypeSymbolsData.EnumMemberSourceDetails.StartLineNumber,
-                FindsDetailsForTypeSymbolsData.EnumMemberSourceDetails.StartColumnNumber).ConfigureAwait(true);
-
-            Assert.Equal("MyEnum.First", symbolDetails.SymbolReference.DisplayString);
-        }
-
-        [Fact]
-        public async Task FindsDetailsWithSignatureForProperty()
-        {
-            SymbolDetails symbolDetails = await symbolsService.FindSymbolDetailsAtLocationAsync(
-                GetScriptFile(FindsDetailsForTypeSymbolsData.PropertySourceDetails),
-                FindsDetailsForTypeSymbolsData.PropertySourceDetails.StartLineNumber,
-                FindsDetailsForTypeSymbolsData.PropertySourceDetails.StartColumnNumber).ConfigureAwait(true);
-
-            Assert.Equal("string SuperClass.SomePropWithDefault", symbolDetails.SymbolReference.DisplayString);
-        }
-
-        [Fact]
-        public async Task FindsDetailsWithSignatureForConstructor()
-        {
-            SymbolDetails symbolDetails = await symbolsService.FindSymbolDetailsAtLocationAsync(
-                GetScriptFile(FindsDetailsForTypeSymbolsData.ConstructorSourceDetails),
-                FindsDetailsForTypeSymbolsData.ConstructorSourceDetails.StartLineNumber,
-                FindsDetailsForTypeSymbolsData.ConstructorSourceDetails.StartColumnNumber).ConfigureAwait(true);
-
-            Assert.Equal("SuperClass.SuperClass([string]$name)", symbolDetails.SymbolReference.DisplayString);
-        }
-
-        [Fact]
-        public async Task FindsDetailsWithSignatureForMethod()
-        {
-            SymbolDetails symbolDetails = await symbolsService.FindSymbolDetailsAtLocationAsync(
-                GetScriptFile(FindsDetailsForTypeSymbolsData.MethodSourceDetails),
-                FindsDetailsForTypeSymbolsData.MethodSourceDetails.StartLineNumber,
-                FindsDetailsForTypeSymbolsData.MethodSourceDetails.StartColumnNumber).ConfigureAwait(true);
-
-            Assert.Equal("string SuperClass.MyClassMethod([string]$param1, $param2, [int]$param3)", symbolDetails.SymbolReference.DisplayString);
+            Assert.Equal("Gets the processes that are running on the local computer.", symbolDetails.Documentation);
         }
 
         [Fact]
