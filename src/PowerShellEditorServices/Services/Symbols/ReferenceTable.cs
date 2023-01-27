@@ -51,8 +51,13 @@ internal sealed class ReferenceTable
                 : Enumerable.Empty<SymbolReference>();
     }
 
+    // Gets symbol whose name contains the position
     internal SymbolReference? TryGetSymbolAtPosition(int line, int column) => GetAllReferences()
         .FirstOrDefault(i => i.NameRegion.ContainsPosition(line, column));
+
+    // Gets symbol whose whole extent contains the position
+    internal SymbolReference? TryGetSymbolContainingPosition(int line, int column) => GetAllReferences()
+        .FirstOrDefault(i => i.ScriptRegion.ContainsPosition(line, column));
 
     internal IEnumerable<SymbolReference> GetAllReferences()
     {

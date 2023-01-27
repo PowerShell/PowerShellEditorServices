@@ -125,11 +125,17 @@ namespace PowerShellEditorServices.Test.Language
                 .ToArray();
         }
 
-        private IEnumerable<SymbolReference> FindSymbolsInFile(ScriptRegion scriptRegion) => symbolsService.FindSymbolsInFile(GetScriptFile(scriptRegion)).OrderBy(symbol => symbol.ScriptRegion.ToRange().Start);
+        private IEnumerable<SymbolReference> FindSymbolsInFile(ScriptRegion scriptRegion)
+        {
+            return symbolsService
+                .FindSymbolsInFile(GetScriptFile(scriptRegion))
+                .OrderBy(symbol => symbol.ScriptRegion.ToRange().Start);
+        }
 
         [Fact]
         public async Task FindsParameterHintsOnCommand()
         {
+            // TODO: Fix signatures to use parameters, not sets.
             ParameterSetSignatures signatures = await GetParamSetSignatures(FindsParameterSetsOnCommandData.SourceDetails).ConfigureAwait(true);
             Assert.NotNull(signatures);
             Assert.Equal("Get-Process", signatures.CommandName);

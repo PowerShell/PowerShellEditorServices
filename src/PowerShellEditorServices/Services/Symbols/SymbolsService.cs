@@ -231,7 +231,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public async Task<ParameterSetSignatures?> FindParameterSetsInFileAsync(
             ScriptFile scriptFile, int line, int column)
         {
-            SymbolReference? symbol = FindSymbolAtLocation(scriptFile, line, column);
+            // This needs to get by whole extent, not just the name, as it completes e.g.
+            // `Get-Process -` (after the dash) and so also needs to look backwards a column.
+            SymbolReference? symbol = scriptFile.References.TryGetSymbolContainingPosition(line, column - 1);
 
             // If we are not possibly looking at a Function, we don't
             // need to continue because we won't be able to get the
@@ -255,6 +257,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             try
             {
+                // TODO: We should probably look at 'Parameters' instead of 'ParameterSets'
                 IEnumerable<CommandParameterSetInfo> commandParamSets = commandInfo.ParameterSets;
                 return new ParameterSetSignatures(commandParamSets, symbol);
             }
