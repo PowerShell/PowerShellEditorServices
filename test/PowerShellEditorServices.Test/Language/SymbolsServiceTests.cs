@@ -193,17 +193,36 @@ namespace PowerShellEditorServices.Test.Language
         public async Task FindsReferencesOnFunction()
         {
             IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(8, symbols.Count());
-            Assert.All(symbols, (i) =>
+            Assert.Collection(symbols,
+            (i) =>
             {
                 Assert.Equal("My-Function", i.SymbolName);
+                Assert.Equal("function My-Function ($myInput)", i.DisplayString);
                 Assert.Equal(SymbolType.Function, i.SymbolType);
-                if (i.IsDeclaration)
-                {
-                    Assert.Equal("function My-Function ($myInput)", i.DisplayString);
-                }
+                Assert.True(i.IsDeclaration);
+            },
+            (i) =>
+            {
+                Assert.Equal("My-Function", i.SymbolName);
+                Assert.Equal("My-Function", i.DisplayString);
+                Assert.Equal(SymbolType.Function, i.SymbolType);
+                Assert.EndsWith(FindsFunctionDefinitionInWorkspaceData.SourceDetails.File, i.FilePath);
+                Assert.False(i.IsDeclaration);
+            },
+            (i) =>
+            {
+                Assert.Equal("My-Function", i.SymbolName);
+                Assert.Equal("My-Function", i.DisplayString);
+                Assert.Equal(SymbolType.Function, i.SymbolType);
+                Assert.False(i.IsDeclaration);
+            },
+            (i) =>
+            {
+                Assert.Equal("My-Function", i.SymbolName);
+                Assert.Equal("My-Function", i.DisplayString);
+                Assert.Equal(SymbolType.Function, i.SymbolType);
+                Assert.False(i.IsDeclaration);
             });
-            Assert.Distinct(symbols);
         }
 
         [Fact]
@@ -215,10 +234,10 @@ namespace PowerShellEditorServices.Test.Language
                 CancellationToken.None).ConfigureAwait(true);
 
             IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(9, symbols.Count());
 
-            Assert.Collection(symbols.Where((i) => i.FilePath.EndsWith(FindsReferencesOnFunctionData.SourceDetails.File)),
+            Assert.Collection(symbols,
                 (i) => AssertIsRegion(i.NameRegion, 1, 10, 1, 21),
+                (i) => AssertIsRegion(i.NameRegion, 3, 1, 3, 12),
                 (i) => AssertIsRegion(i.NameRegion, 3, 5, 3, 16),
                 (i) => AssertIsRegion(i.NameRegion, 10, 1, 10, 12),
                 // The alias.
@@ -230,28 +249,14 @@ namespace PowerShellEditorServices.Test.Language
         }
 
         [Fact]
-        public async Task FindsFunctionDefinitionsInWorkspace()
-        {
-            IEnumerable<SymbolReference> symbols = await GetDefinitions(FindsFunctionDefinitionInDotSourceReferenceData.SourceDetails).ConfigureAwait(true);
-            Assert.Collection(symbols.OrderBy((i) => i.FilePath),
-                (i) =>
-                {
-                    Assert.Equal("My-Function", i.SymbolName);
-                    Assert.EndsWith("ReferenceFileA.ps1", i.FilePath);
-                },
-                (i) =>
-                {
-                    Assert.Equal("My-Function", i.SymbolName);
-                    Assert.EndsWith(FindsFunctionDefinitionData.SourceDetails.File, i.FilePath);
-                });
-        }
-
-        [Fact]
         public async Task FindsFunctionDefinitionInWorkspace()
         {
-            SymbolReference symbol = await GetDefinition(FindsFunctionDefinitionInWorkspaceData.SourceDetails).ConfigureAwait(true);
-            Assert.EndsWith("ReferenceFileE.ps1", symbol.FilePath);
-            Assert.Equal("My-FunctionInFileE", symbol.SymbolName);
+            IEnumerable<SymbolReference> symbols = await GetDefinitions(FindsFunctionDefinitionInWorkspaceData.SourceDetails).ConfigureAwait(true);
+            SymbolReference symbol = Assert.Single(symbols);
+            Assert.Equal("My-Function", symbol.SymbolName);
+            Assert.Equal("function My-Function ($myInput)", symbol.DisplayString);
+            Assert.True(symbol.IsDeclaration);
+            Assert.EndsWith(FindsFunctionDefinitionData.SourceDetails.File, symbol.FilePath);
         }
 
         [Fact]
@@ -714,20 +719,6 @@ namespace PowerShellEditorServices.Test.Language
                 });
 
             Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.EnumMemberSourceDetails));
-        }
-
-        [Fact]
-        public async Task FindsReferencesOnFileWithReferencesFileB()
-        {
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionMultiFileDotSourceFileB.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(4, referencesResult.Count);
-        }
-
-        [Fact]
-        public async Task FindsReferencesOnFileWithReferencesFileC()
-        {
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionMultiFileDotSourceFileC.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(4, referencesResult.Count);
         }
 
         [Fact]
