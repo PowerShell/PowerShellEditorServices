@@ -197,6 +197,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         /// <summary>
         /// Finds all the occurrences of a symbol in the script given a file location.
+        /// TODO: Doesn't support aliases, is it worth it?
         /// </summary>
         public static IEnumerable<SymbolReference> FindOccurrencesInFile(
             ScriptFile scriptFile, int line, int column) => scriptFile

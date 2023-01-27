@@ -358,8 +358,11 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsReferencesOnCommandWithAlias()
         {
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnBuiltInCommandWithAliasData.SourceDetails).ConfigureAwait(true);
-            Assert.Collection(referencesResult,
+            // NOTE: This doesn't use GetOccurrences as it's testing for aliases.
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnBuiltInCommandWithAliasData.SourceDetails).ConfigureAwait(true);
+            Assert.Collection(symbols.Where(
+                (i) => i.FilePath
+                        .EndsWith(FindsReferencesOnBuiltInCommandWithAliasData.SourceDetails.File)),
                 (i) => Assert.Equal("Get-ChildItem", i.SymbolName),
                 (i) => Assert.Equal("gci", i.SymbolName),
                 (i) => Assert.Equal("dir", i.SymbolName),
