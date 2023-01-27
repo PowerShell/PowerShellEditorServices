@@ -655,10 +655,12 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsEnumMemberDefinition()
         {
-            SymbolReference definitionResult = await GetDefinition(FindsTypeSymbolsDefinitionData.EnumMemberSourceDetails).ConfigureAwait(true);
-            Assert.Equal(41, definitionResult.ScriptRegion.StartLineNumber);
-            Assert.Equal(5, definitionResult.ScriptRegion.StartColumnNumber);
-            Assert.Equal("MyEnum.Second", definitionResult.SymbolName);
+            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.EnumMemberSourceDetails).ConfigureAwait(true);
+            Assert.Equal("Second", symbol.SymbolName);
+            Assert.Equal("Second", symbol.DisplayString);
+            Assert.True(symbol.IsDeclaration);
+            AssertIsRegion(symbol.NameRegion, 41, 5, 41, 11);
+            Assert.Equal(41, symbol.ScriptRegion.StartLineNumber);
         }
 
         [Fact]

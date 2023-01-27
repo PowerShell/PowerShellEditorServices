@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Occurrences
             file: TestUtilities.NormalizePath("References/SimpleFile.ps1"),
             text: string.Empty,
             startLineNumber: 1,
-            startColumnNumber: 30,
+            startColumnNumber: 31,
             startOffset: 0,
             endLineNumber: 0,
             endColumnNumber: 0,

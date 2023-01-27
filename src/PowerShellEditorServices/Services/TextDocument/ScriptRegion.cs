@@ -42,45 +42,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                 && string.IsNullOrEmpty(Text);
         }
 
-        // Same as PowerShell's ContainsLineAndColumn
+        // Do not use PowerShell's ContainsLineAndColumn, it's nonsense.
         public bool ContainsPosition(int line, int column)
         {
-            if (StartLineNumber == line)
-            {
-                if (column == 0)
-                {
-                    return true;
-                }
-
-                if (column >= StartColumnNumber)
-                {
-                    if (EndLineNumber != StartLineNumber)
-                    {
-                        return true;
-                    }
-
-                    return column < EndColumnNumber;
-                }
-
-                return false;
-            }
-
-            if (StartLineNumber > line)
-            {
-                return false;
-            }
-
-            if (line > EndLineNumber)
-            {
-                return false;
-            }
-
-            if (EndLineNumber == line)
-            {
-                return column < EndColumnNumber;
-            }
-
-            return true;
+            return StartLineNumber <= line && line <= EndLineNumber
+                && StartColumnNumber <= column && column <= EndColumnNumber;
         }
 
         public override string ToString() => $"Start {StartLineNumber}:{StartColumnNumber}, End {EndLineNumber}:{EndColumnNumber}";

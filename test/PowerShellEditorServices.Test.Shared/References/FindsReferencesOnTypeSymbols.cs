@@ -50,8 +50,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.References
         public static readonly ScriptRegion PropertySourceDetails = new(
             file: TestUtilities.NormalizePath("References/TypeAndClassesFile.ps1"),
             text: string.Empty,
-            startLineNumber: 17,
-            startColumnNumber: 15,
+            startLineNumber: 35,
+            startColumnNumber: 12,
             startOffset: 0,
             endLineNumber: 0,
             endColumnNumber: 0,

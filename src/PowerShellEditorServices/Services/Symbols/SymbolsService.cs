@@ -233,8 +233,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             ScriptFile scriptFile, int line, int column)
         {
             // This needs to get by whole extent, not just the name, as it completes e.g.
-            // `Get-Process -` (after the dash) and so also needs to look backwards a column.
-            SymbolReference? symbol = scriptFile.References.TryGetSymbolContainingPosition(line, column - 1);
+            // `Get-Process -` (after the dash).
+            SymbolReference? symbol = scriptFile.References.TryGetSymbolContainingPosition(line, column);
 
             // If we are not possibly looking at a Function, we don't
             // need to continue because we won't be able to get the
