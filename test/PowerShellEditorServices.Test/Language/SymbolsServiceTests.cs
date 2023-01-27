@@ -607,6 +607,20 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.MethodSourceDetails));
         }
 
+        [Theory]
+        [InlineData(SymbolType.Class, SymbolType.Type)]
+        [InlineData(SymbolType.Enum, SymbolType.Type)]
+        [InlineData(SymbolType.EnumMember, SymbolType.Property)]
+        [InlineData(SymbolType.Variable, SymbolType.Parameter)]
+        internal void SymbolTypeEquivalencies(SymbolType left, SymbolType right)
+        {
+            // When checking if a symbol's type is the "same" we use this utility method which
+            // semantically equates the above theory, since for the purposes of narrowing down
+            // matching symbols, these types are equivalent.
+            Assert.NotEqual(left, right);
+            Assert.True(SymbolTypeUtils.SymbolTypeMatches(left, right));
+        }
+
         [Fact]
         public async Task FindsPropertyDefinition()
         {
