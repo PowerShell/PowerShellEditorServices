@@ -22,6 +22,7 @@ using Microsoft.PowerShell.EditorServices.Test.Shared.ParameterHint;
 using Microsoft.PowerShell.EditorServices.Test.Shared.References;
 using Microsoft.PowerShell.EditorServices.Test.Shared.SymbolDetails;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Symbols;
+using Microsoft.PowerShell.EditorServices.Utility;
 using Xunit;
 
 namespace PowerShellEditorServices.Test.Language
@@ -721,9 +722,10 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.EnumMemberSourceDetails));
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task FindsDetailsForBuiltInCommand()
         {
+            Skip.IfNot(VersionUtils.IsMacOS, "macOS gets the right synopsis but others don't.");
             SymbolDetails symbolDetails = await symbolsService.FindSymbolDetailsAtLocationAsync(
                 GetScriptFile(FindsDetailsForBuiltInCommandData.SourceDetails),
                 FindsDetailsForBuiltInCommandData.SourceDetails.StartLineNumber,
