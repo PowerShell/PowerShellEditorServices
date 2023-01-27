@@ -603,10 +603,11 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsPropertyDefinition()
         {
-            SymbolReference definitionResult = await GetDefinition(FindsTypeSymbolsDefinitionData.PropertySourceDetails).ConfigureAwait(true);
-            Assert.Equal(15, definitionResult.ScriptRegion.StartLineNumber);
-            Assert.Equal(13, definitionResult.ScriptRegion.StartColumnNumber);
-            Assert.Equal("SuperClass.SomePropWithDefault", definitionResult.SymbolName);
+            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.PropertySourceDetails).ConfigureAwait(true);
+            Assert.Equal("$SomePropWithDefault", symbol.SymbolName);
+            Assert.Equal("[string] $SomePropWithDefault", symbol.DisplayString);
+            Assert.Equal(SymbolType.Property, symbol.SymbolType);
+            Assert.True(symbol.IsDeclaration);
         }
 
         [Fact]

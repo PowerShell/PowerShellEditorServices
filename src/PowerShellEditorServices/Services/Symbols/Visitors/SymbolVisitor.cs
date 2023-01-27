@@ -153,15 +153,12 @@ internal sealed class SymbolVisitor : AstVisitor2
             ? SymbolType.Constructor
             : SymbolType.Method;
 
-        IScriptExtent nameExtent = VisitorUtils.GetNameExtent(
-            functionMemberAst,
-            useQualifiedName: false,
-            includeReturnType: false);
+        IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionMemberAst);
 
         return _action(new SymbolReference(
             symbolType,
             functionMemberAst.Name, // We bucket all the overloads.
-            VisitorUtils.GetMemberOverloadName(functionMemberAst, false, true),
+            VisitorUtils.GetMemberOverloadName(functionMemberAst),
             nameExtent,
             functionMemberAst.Extent,
             _file,
@@ -172,13 +169,18 @@ internal sealed class SymbolVisitor : AstVisitor2
     {
         SymbolType symbolType =
             propertyMemberAst.Parent is TypeDefinitionAst typeAst && typeAst.IsEnum
-                ? SymbolType.EnumMember : SymbolType.Property;
+                ? SymbolType.EnumMember
+                : SymbolType.Property;
 
-        IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst, false, false);
+        IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst);
+        string name = symbolType == SymbolType.EnumMember
+            ? propertyMemberAst.Name
+            : "$" + propertyMemberAst.Name;
+
         return _action(new SymbolReference(
             symbolType,
-            nameExtent.Text,
-            VisitorUtils.GetMemberOverloadName(propertyMemberAst, false, true),
+            name,
+            VisitorUtils.GetMemberOverloadName(propertyMemberAst),
             nameExtent,
             propertyMemberAst.Extent,
             _file,
@@ -228,11 +230,20 @@ internal sealed class SymbolVisitor : AstVisitor2
 
     public override AstVisitAction VisitConfigurationDefinition(ConfigurationDefinitionAst configurationDefinitionAst)
     {
+        string? name = configurationDefinitionAst.InstanceName is StringConstantExpressionAst stringConstant
+            ? stringConstant.Value : null;
+        if (string.IsNullOrEmpty(name))
+        {
+            return AstVisitAction.Continue;
+        }
+
         IScriptExtent nameExtent = VisitorUtils.GetNameExtent(configurationDefinitionAst);
         return _action(new SymbolReference(
             SymbolType.Configuration,
-            nameExtent.Text,
-            "configuration " + nameExtent.Text + " { }",
+#pragma warning disable CS8604 // Possible null reference argument.
+            name,
+#pragma warning restore CS8604
+            "configuration " + name + " { }",
             nameExtent,
             configurationDefinitionAst.Extent,
             _file,
