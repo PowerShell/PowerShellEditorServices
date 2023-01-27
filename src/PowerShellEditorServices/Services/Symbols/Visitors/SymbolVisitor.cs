@@ -167,21 +167,18 @@ internal sealed class SymbolVisitor : AstVisitor2
 
     public override AstVisitAction VisitPropertyMember(PropertyMemberAst propertyMemberAst)
     {
+        // Enum members and properties are the "same" according to PowerShell, so the symbol name's
+        // must be the same since we can't distinguish them in VisitMemberExpression.
         SymbolType symbolType =
             propertyMemberAst.Parent is TypeDefinitionAst typeAst && typeAst.IsEnum
                 ? SymbolType.EnumMember
                 : SymbolType.Property;
 
-        IScriptExtent nameExtent = VisitorUtils.GetNameExtent(propertyMemberAst);
-        string name = symbolType == SymbolType.EnumMember
-            ? propertyMemberAst.Name
-            : "$" + propertyMemberAst.Name;
-
         return _action(new SymbolReference(
             symbolType,
-            name,
+            "$" + propertyMemberAst.Name,
             VisitorUtils.GetMemberOverloadName(propertyMemberAst),
-            nameExtent,
+            VisitorUtils.GetNameExtent(propertyMemberAst),
             propertyMemberAst.Extent,
             _file,
             isDeclaration: true));

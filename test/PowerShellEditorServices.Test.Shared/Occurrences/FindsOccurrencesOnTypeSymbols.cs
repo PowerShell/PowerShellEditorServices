@@ -80,8 +80,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Occurrences
         public static readonly ScriptRegion EnumMemberSourceDetails = new(
             file: TestUtilities.NormalizePath("References/TypeAndClassesFile.ps1"),
             text: string.Empty,
-            startLineNumber: 40,
-            startColumnNumber: 6,
+            startLineNumber: 45,
+            startColumnNumber: 16,
             startOffset: 0,
             endLineNumber: 0,
             endColumnNumber: 0,

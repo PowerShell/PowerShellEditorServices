@@ -663,29 +663,43 @@ namespace PowerShellEditorServices.Test.Language
         public async Task FindsEnumMemberDefinition()
         {
             SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.EnumMemberSourceDetails).ConfigureAwait(true);
-            Assert.Equal("Second", symbol.SymbolName);
+            Assert.Equal("$Second", symbol.SymbolName);
+            // Doesn't include [MyEnum]:: because that'd be redundant in the outline.
             Assert.Equal("Second", symbol.DisplayString);
+            Assert.Equal(SymbolType.EnumMember, symbol.SymbolType);
             Assert.True(symbol.IsDeclaration);
             AssertIsRegion(symbol.NameRegion, 41, 5, 41, 11);
-            Assert.Equal(41, symbol.ScriptRegion.StartLineNumber);
+
+            symbol = await GetDefinition(FindsReferencesOnTypeSymbolsData.EnumMemberSourceDetails).ConfigureAwait(true);
+            Assert.Equal("$First", symbol.SymbolName);
+            Assert.Equal("First", symbol.DisplayString);
+            Assert.Equal(SymbolType.EnumMember, symbol.SymbolType);
+            Assert.True(symbol.IsDeclaration);
+            AssertIsRegion(symbol.NameRegion, 40, 5, 40, 10);
         }
 
         [Fact]
         public async Task FindsReferencesOnEnumMember()
         {
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnTypeSymbolsData.EnumMemberSourceDetails).ConfigureAwait(true);
-            Assert.Single(referencesResult);
-            Assert.Equal(41, referencesResult[0].ScriptRegion.StartLineNumber);
-            Assert.Equal(5, referencesResult[0].ScriptRegion.StartColumnNumber);
-        }
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.EnumMemberSourceDetails).ConfigureAwait(true);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("$First", i.SymbolName);
+                    Assert.Equal("First", i.DisplayString);
+                    Assert.Equal(SymbolType.EnumMember, i.SymbolType);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("$First", i.SymbolName);
+                    // The reference is just a member invocation, and so indistinguishable from a property.
+                    Assert.Equal("(property) First", i.DisplayString);
+                    Assert.Equal(SymbolType.Property, i.SymbolType);
+                    Assert.False(i.IsDeclaration);
+                });
 
-        [Fact]
-        public void FindsOccurrencesOnEnumMember()
-        {
-            IReadOnlyList<SymbolReference> occurrencesResult = GetOccurrences(FindsOccurrencesOnTypeSymbolsData.EnumMemberSourceDetails);
-            Assert.Single(occurrencesResult);
-            Assert.Equal("MyEnum.First", occurrencesResult[occurrencesResult.Count - 1].SymbolName);
-            Assert.Equal(40, occurrencesResult[occurrencesResult.Count - 1].ScriptRegion.StartLineNumber);
+            Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.EnumMemberSourceDetails));
         }
 
         [Fact]
