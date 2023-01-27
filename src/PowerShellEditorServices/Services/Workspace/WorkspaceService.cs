@@ -341,7 +341,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             bool ignoreReparsePoints
         )
         {
-            if (WorkspacePath == null || !Directory.Exists(WorkspacePath))
+            if (WorkspacePath is null || !Directory.Exists(WorkspacePath))
             {
                 yield break;
             }

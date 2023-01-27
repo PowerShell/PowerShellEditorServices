@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Runtime.InteropServices;
@@ -38,7 +37,10 @@ namespace PowerShellEditorServices.Test.Language
         public SymbolsServiceTests()
         {
             psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
-            workspace = new WorkspaceService(NullLoggerFactory.Instance);
+            workspace = new WorkspaceService(NullLoggerFactory.Instance)
+            {
+                WorkspacePath = TestUtilities.GetSharedPath("References")
+            };
             symbolsService = new SymbolsService(
                 NullLoggerFactory.Instance,
                 psesHost,
@@ -80,7 +82,7 @@ namespace PowerShellEditorServices.Test.Language
                 scriptRegion.StartColumnNumber);
         }
 
-        private async Task<SymbolReference> GetDefinition(ScriptRegion scriptRegion)
+        private async Task<IEnumerable<SymbolReference>> GetDefinitions(ScriptRegion scriptRegion)
         {
             ScriptFile scriptFile = GetScriptFile(scriptRegion);
 
@@ -92,9 +94,13 @@ namespace PowerShellEditorServices.Test.Language
 
             Assert.NotNull(symbol);
 
-            IEnumerable<SymbolReference> refs = await symbolsService.GetDefinitionOfSymbolAsync(scriptFile, symbol).ConfigureAwait(true);
+            return await symbolsService.GetDefinitionOfSymbolAsync(scriptFile, symbol).ConfigureAwait(true);
+        }
 
-            return refs.FirstOrDefault();
+        private async Task<SymbolReference> GetDefinition(ScriptRegion scriptRegion)
+        {
+            IEnumerable<SymbolReference> definitions = await GetDefinitions(scriptRegion).ConfigureAwait(true);
+            return definitions.FirstOrDefault();
         }
 
         private async Task<List<SymbolReference>> GetReferences(ScriptRegion scriptRegion)
@@ -156,11 +162,11 @@ namespace PowerShellEditorServices.Test.Language
         {
             SymbolReference symbol = await GetDefinition(FindsFunctionDefinitionData.SourceDetails).ConfigureAwait(true);
             Assert.Equal("My-Function", symbol.SymbolName);
-            AssertIsRegion(symbol.NameRegion, 1, 10, 1, 21);
-            // TODO: This should pull the declaration from references.
-            // AssertIsRegion(symbol.ScriptRegion, 1, 1, 4, 2);
+            Assert.Equal("function My-Function($myInput)", symbol.DisplayString);
             Assert.Equal(SymbolType.Function, symbol.SymbolType);
-            // Assert.True(symbol.IsDeclaration);
+            AssertIsRegion(symbol.NameRegion, 1, 10, 1, 21);
+            AssertIsRegion(symbol.ScriptRegion, 1, 1, 4, 2);
+            Assert.True(symbol.IsDeclaration);
         }
 
         [Fact]
@@ -173,11 +179,11 @@ namespace PowerShellEditorServices.Test.Language
                 CancellationToken.None).ConfigureAwait(true);
 
             SymbolReference symbol = await GetDefinition(FindsFunctionDefinitionOfAliasData.SourceDetails).ConfigureAwait(true);
-            AssertIsRegion(symbol.NameRegion, 1, 10, 1, 21);
-            Assert.Equal("My-Function", symbol.SymbolName);
+            Assert.Equal("function My-Function($myInput)", symbol.DisplayString);
             Assert.Equal(SymbolType.Function, symbol.SymbolType);
-            // TODO: This should pull the declaration from references.
-            // Assert.True(symbol.IsDeclaration);
+            AssertIsRegion(symbol.NameRegion, 1, 10, 1, 21);
+            AssertIsRegion(symbol.ScriptRegion, 1, 1, 4, 2);
+            Assert.True(symbol.IsDeclaration);
         }
 
         [Fact]
@@ -209,37 +215,28 @@ namespace PowerShellEditorServices.Test.Language
         }
 
         [Fact]
-        public async Task FindsFunctionDefinitionInDotSourceReference()
+        public async Task FindsFunctionDefinitionsInWorkspace()
         {
-            SymbolReference definitionResult = await GetDefinition(FindsFunctionDefinitionInDotSourceReferenceData.SourceDetails).ConfigureAwait(true);
-            Assert.True(
-                definitionResult.FilePath.EndsWith(FindsFunctionDefinitionData.SourceDetails.File),
-                "Unexpected reference file: " + definitionResult.FilePath);
-            Assert.Equal(1, definitionResult.ScriptRegion.StartLineNumber);
-            Assert.Equal(10, definitionResult.ScriptRegion.StartColumnNumber);
-            Assert.Equal("My-Function", definitionResult.SymbolName);
-        }
-
-        [Fact]
-        public async Task FindsDotSourcedFile()
-        {
-            SymbolReference definitionResult = await GetDefinition(FindsDotSourcedFileData.SourceDetails).ConfigureAwait(true);
-            Assert.NotNull(definitionResult);
-            Assert.True(
-                definitionResult.FilePath.EndsWith(Path.Combine("References", "ReferenceFileE.ps1")),
-                "Unexpected reference file: " + definitionResult.FilePath);
-            Assert.Equal(1, definitionResult.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, definitionResult.ScriptRegion.StartColumnNumber);
-            Assert.Equal("./ReferenceFileE.ps1", definitionResult.SymbolName);
+            IEnumerable<SymbolReference> symbols = await GetDefinitions(FindsFunctionDefinitionInDotSourceReferenceData.SourceDetails).ConfigureAwait(true);
+            Assert.Collection(symbols.OrderBy((i) => i.FilePath),
+                (i) =>
+                {
+                    Assert.Equal("My-Function", i.SymbolName);
+                    Assert.EndsWith("ReferenceFileA.ps1", i.FilePath);
+                },
+                (i) =>
+                {
+                    Assert.Equal("My-Function", i.SymbolName);
+                    Assert.EndsWith(FindsFunctionDefinitionData.SourceDetails.File, i.FilePath);
+                });
         }
 
         [Fact]
         public async Task FindsFunctionDefinitionInWorkspace()
         {
-            workspace.WorkspacePath = TestUtilities.GetSharedPath("References");
-            SymbolReference definitionResult = await GetDefinition(FindsFunctionDefinitionInWorkspaceData.SourceDetails).ConfigureAwait(true);
-            Assert.EndsWith("ReferenceFileE.ps1", definitionResult.FilePath);
-            Assert.Equal("My-FunctionInFileE", definitionResult.SymbolName);
+            SymbolReference symbol = await GetDefinition(FindsFunctionDefinitionInWorkspaceData.SourceDetails).ConfigureAwait(true);
+            Assert.EndsWith("ReferenceFileE.ps1", symbol.FilePath);
+            Assert.Equal("My-FunctionInFileE", symbol.SymbolName);
         }
 
         [Fact]
