@@ -103,7 +103,7 @@ namespace PowerShellEditorServices.Test.Language
             return definitions.FirstOrDefault();
         }
 
-        private async Task<List<SymbolReference>> GetReferences(ScriptRegion scriptRegion)
+        private async Task<IEnumerable<SymbolReference>> GetReferences(ScriptRegion scriptRegion)
         {
             ScriptFile scriptFile = GetScriptFile(scriptRegion);
 
@@ -117,10 +117,10 @@ namespace PowerShellEditorServices.Test.Language
             IEnumerable<SymbolReference> symbols =
                 await symbolsService.ScanForReferencesOfSymbolAsync(symbol).ConfigureAwait(true);
 
-            return symbols.OrderBy(i => i.ScriptRegion.ToRange().Start).ToList();
+            return symbols.OrderBy((i) => i.ScriptRegion.ToRange().Start).ToList();
         }
 
-        private IReadOnlyList<SymbolReference> GetOccurrences(ScriptRegion scriptRegion)
+        private IEnumerable<SymbolReference> GetOccurrences(ScriptRegion scriptRegion)
         {
             return SymbolsService
                 .FindOccurrencesInFile(
@@ -189,7 +189,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsReferencesOnFunction()
         {
-            List<SymbolReference> symbols = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
             Assert.Collection(symbols,
                 (i) => AssertIsRegion(i.NameRegion, 1, 10, 1, 21),
                 (i) => AssertIsRegion(i.NameRegion, 3, 5, 3, 16),
@@ -204,14 +204,19 @@ namespace PowerShellEditorServices.Test.Language
                 new PSCommand().AddScript("Set-Alias -Name My-Alias -Value My-Function"),
                 CancellationToken.None).ConfigureAwait(true);
 
-            List<SymbolReference> symbols = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
-            Assert.Collection(symbols,
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
+            Assert.Equal(9, symbols.Count());
+
+            Assert.Collection(symbols.Where((i) => i.FilePath.EndsWith(FindsReferencesOnFunctionData.SourceDetails.File)),
                 (i) => AssertIsRegion(i.NameRegion, 1, 10, 1, 21),
                 (i) => AssertIsRegion(i.NameRegion, 3, 5, 3, 16),
                 (i) => AssertIsRegion(i.NameRegion, 10, 1, 10, 12),
                 // The alias.
-                (i) => AssertIsRegion(i.NameRegion, 20, 1, 20, 9));
-            Assert.Equal("My-Alias", symbols[3].SymbolName);
+                (i) =>
+                {
+                    AssertIsRegion(i.NameRegion, 20, 1, 20, 9);
+                    Assert.Equal("My-Alias", i.SymbolName);
+                });
         }
 
         [Fact]
@@ -242,37 +247,89 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsVariableDefinition()
         {
-            SymbolReference definitionResult = await GetDefinition(FindsVariableDefinitionData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(6, definitionResult.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, definitionResult.ScriptRegion.StartColumnNumber);
-            Assert.Equal("$things", definitionResult.SymbolName);
+            SymbolReference symbol = await GetDefinition(FindsVariableDefinitionData.SourceDetails).ConfigureAwait(true);
+            Assert.Equal("$things", symbol.SymbolName);
+            Assert.Equal("$things", symbol.DisplayString);
+            Assert.Equal(SymbolType.Variable, symbol.SymbolType);
+            Assert.True(symbol.IsDeclaration);
+            AssertIsRegion(symbol.NameRegion, 6, 1, 6, 8);
         }
 
         [Fact]
         public async Task FindsReferencesOnVariable()
         {
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnVariableData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(3, referencesResult.Count);
-            Assert.Equal(10, referencesResult[referencesResult.Count - 1].ScriptRegion.StartLineNumber);
-            Assert.Equal(13, referencesResult[referencesResult.Count - 1].ScriptRegion.StartColumnNumber);
+            // TODO: Technically this also finds references in the workspace, but since there aren't
+            // any, it's identical to the test below.
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnVariableData.SourceDetails).ConfigureAwait(true);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("$things", i.SymbolName);
+                    Assert.Equal(SymbolType.Variable, i.SymbolType);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("$things", i.SymbolName);
+                    Assert.Equal(SymbolType.Variable, i.SymbolType);
+                    Assert.False(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("$things", i.SymbolName);
+                    Assert.Equal(SymbolType.Variable, i.SymbolType);
+                    Assert.False(i.IsDeclaration);
+                });
         }
 
         [Fact]
         public void FindsOccurrencesOnVariable()
         {
-            IReadOnlyList<SymbolReference> occurrencesResult = GetOccurrences(FindsOccurrencesOnVariableData.SourceDetails);
-            Assert.Equal(3, occurrencesResult.Count);
-            Assert.Equal(10, occurrencesResult[occurrencesResult.Count - 1].ScriptRegion.StartLineNumber);
-            Assert.Equal(13, occurrencesResult[occurrencesResult.Count - 1].ScriptRegion.StartColumnNumber);
+            IEnumerable<SymbolReference> symbols = GetOccurrences(FindsOccurrencesOnVariableData.SourceDetails);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("$things", i.SymbolName);
+                    Assert.Equal(SymbolType.Variable, i.SymbolType);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("$things", i.SymbolName);
+                    Assert.Equal(SymbolType.Variable, i.SymbolType);
+                    Assert.False(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("$things", i.SymbolName);
+                    Assert.Equal(SymbolType.Variable, i.SymbolType);
+                    Assert.False(i.IsDeclaration);
+                });
         }
 
         [Fact]
         public void FindsOccurrencesOnFunction()
         {
-            IReadOnlyList<SymbolReference> occurrencesResult = GetOccurrences(FindsOccurrencesOnFunctionData.SourceDetails);
-            Assert.Equal(3, occurrencesResult.Count);
-            Assert.Equal(10, occurrencesResult[occurrencesResult.Count - 1].ScriptRegion.StartLineNumber);
-            Assert.Equal(1, occurrencesResult[occurrencesResult.Count - 1].ScriptRegion.StartColumnNumber);
+            IEnumerable<SymbolReference> symbols = GetOccurrences(FindsOccurrencesOnFunctionData.SourceDetails);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("My-Function", i.SymbolName);
+                    Assert.Equal(SymbolType.Function, i.SymbolType);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("My-Function", i.SymbolName);
+                    Assert.Equal(SymbolType.Function, i.SymbolType);
+                    Assert.False(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("My-Function", i.SymbolName);
+                    Assert.Equal(SymbolType.Function, i.SymbolType);
+                    Assert.False(i.IsDeclaration);
+                });
         }
 
         [Fact]
