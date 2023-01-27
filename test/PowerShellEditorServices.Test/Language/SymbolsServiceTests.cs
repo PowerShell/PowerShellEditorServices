@@ -335,10 +335,24 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public void FindsOccurrencesOnParameter()
         {
-            IReadOnlyList<SymbolReference> occurrencesResult = GetOccurrences(FindOccurrencesOnParameterData.SourceDetails);
-            Assert.Equal(2, occurrencesResult.Count);
-            Assert.Equal("$myInput", occurrencesResult[occurrencesResult.Count - 1].SymbolName);
-            Assert.Equal(3, occurrencesResult[occurrencesResult.Count - 1].ScriptRegion.StartLineNumber);
+            IEnumerable<SymbolReference> symbols = GetOccurrences(FindOccurrencesOnParameterData.SourceDetails);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("$myInput", i.SymbolName);
+                    // TODO: Parameter display strings need work.
+                    Assert.Equal("(parameter) [System.Object]$myInput", i.DisplayString);
+                    Assert.Equal(SymbolType.Parameter, i.SymbolType);
+                    AssertIsRegion(i.NameRegion, 1, 23, 1, 31);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("$myInput", i.SymbolName);
+                    Assert.Equal(SymbolType.Variable, i.SymbolType);
+                    AssertIsRegion(i.NameRegion, 3, 17, 3, 25);
+                    Assert.False(i.IsDeclaration);
+                });
         }
 
         [Fact]

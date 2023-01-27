@@ -73,9 +73,11 @@ internal sealed class SymbolVisitor : AstVisitor2
 
     public override AstVisitAction VisitParameter(ParameterAst parameterAst)
     {
+        // TODO: Can we fix the display name's type by visiting this in VisitVariableExpression and
+        // getting the TypeConstraintAst somehow?
         return _action(new SymbolReference(
             SymbolType.Parameter,
-            $"${parameterAst.Name.VariablePath.UserPath}",
+            "$" + parameterAst.Name.VariablePath.UserPath,
             VisitorUtils.GetParamDisplayName(parameterAst),
             parameterAst.Name.Extent,
             parameterAst.Extent,
