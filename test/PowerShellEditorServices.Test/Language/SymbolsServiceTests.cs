@@ -94,7 +94,10 @@ namespace PowerShellEditorServices.Test.Language
 
             Assert.NotNull(symbol);
 
-            return await symbolsService.GetDefinitionOfSymbolAsync(scriptFile, symbol).ConfigureAwait(true);
+            IEnumerable<SymbolReference> symbols =
+                await symbolsService.GetDefinitionOfSymbolAsync(scriptFile, symbol).ConfigureAwait(true);
+
+            return symbols.OrderBy((i) => i.ScriptRegion.ToRange().Start);
         }
 
         private async Task<SymbolReference> GetDefinition(ScriptRegion scriptRegion)
@@ -117,7 +120,7 @@ namespace PowerShellEditorServices.Test.Language
             IEnumerable<SymbolReference> symbols =
                 await symbolsService.ScanForReferencesOfSymbolAsync(symbol).ConfigureAwait(true);
 
-            return symbols.OrderBy((i) => i.ScriptRegion.ToRange().Start).ToList();
+            return symbols.OrderBy((i) => i.ScriptRegion.ToRange().Start);
         }
 
         private IEnumerable<SymbolReference> GetOccurrences(ScriptRegion scriptRegion)
@@ -258,8 +261,6 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsReferencesOnVariable()
         {
-            // TODO: Technically this also finds references in the workspace, but since there aren't
-            // any, it's identical to the test below.
             IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnVariableData.SourceDetails).ConfigureAwait(true);
             Assert.Collection(symbols,
                 (i) =>
@@ -280,31 +281,8 @@ namespace PowerShellEditorServices.Test.Language
                     Assert.Equal(SymbolType.Variable, i.SymbolType);
                     Assert.False(i.IsDeclaration);
                 });
-        }
 
-        [Fact]
-        public void FindsOccurrencesOnVariable()
-        {
-            IEnumerable<SymbolReference> symbols = GetOccurrences(FindsOccurrencesOnVariableData.SourceDetails);
-            Assert.Collection(symbols,
-                (i) =>
-                {
-                    Assert.Equal("$things", i.SymbolName);
-                    Assert.Equal(SymbolType.Variable, i.SymbolType);
-                    Assert.True(i.IsDeclaration);
-                },
-                (i) =>
-                {
-                    Assert.Equal("$things", i.SymbolName);
-                    Assert.Equal(SymbolType.Variable, i.SymbolType);
-                    Assert.False(i.IsDeclaration);
-                },
-                (i) =>
-                {
-                    Assert.Equal("$things", i.SymbolName);
-                    Assert.Equal(SymbolType.Variable, i.SymbolType);
-                    Assert.False(i.IsDeclaration);
-                });
+            Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnVariableData.SourceDetails));
         }
 
         [Fact]
@@ -372,177 +350,254 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsClassDefinition()
         {
-            // TODO: We should find the definition by searching known symbols filtered to declarations.
-            SymbolReference definitionResult = await GetDefinition(FindsTypeSymbolsDefinitionData.ClassSourceDetails).ConfigureAwait(true);
-            Assert.Equal(8, definitionResult.ScriptRegion.StartLineNumber);
-            Assert.Equal(7, definitionResult.ScriptRegion.StartColumnNumber);
-            Assert.Equal("SuperClass", definitionResult.SymbolName);
+            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.ClassSourceDetails).ConfigureAwait(true);
+            Assert.Equal("SuperClass", symbol.SymbolName);
+            Assert.Equal("class SuperClass { }", symbol.DisplayString);
+            Assert.Equal(SymbolType.Class, symbol.SymbolType);
+            Assert.True(symbol.IsDeclaration);
+            AssertIsRegion(symbol.NameRegion, 8, 7, 8, 17);
         }
 
         [Fact]
         public async Task FindsReferencesOnClass()
         {
-            List<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.ClassSourceDetails).ConfigureAwait(true);
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.ClassSourceDetails).ConfigureAwait(true);
             Assert.Collection(symbols,
-                (i) => AssertIsRegion(i.ScriptRegion, 8, 1, 31, 2),
-                (i) => AssertIsRegion(i.ScriptRegion, 34, 6, 34, 18));
-            Assert.Collection(symbols,
-                (i) => AssertIsRegion(i.NameRegion, 8, 7, 8, 17),
-                // TODO: This should exclude the [] and be 34:7 and 34:18
-                (i) => AssertIsRegion(i.NameRegion, 34, 6, 34, 18));
-        }
+                (i) =>
+                {
+                    Assert.Equal("SuperClass", i.SymbolName);
+                    Assert.Equal("class SuperClass { }", i.DisplayString);
+                    Assert.Equal(SymbolType.Class, i.SymbolType);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("SuperClass", i.SymbolName);
+                    Assert.Equal("(type) SuperClass", i.DisplayString);
+                    Assert.Equal(SymbolType.Type, i.SymbolType);
+                    Assert.False(i.IsDeclaration);
+                });
 
-        [Fact]
-        public void FindsOccurrencesOnClass()
-        {
-            IReadOnlyList<SymbolReference> occurrencesResult = GetOccurrences(FindsOccurrencesOnTypeSymbolsData.ClassSourceDetails);
-            Assert.Equal(2, occurrencesResult.Count);
-            Assert.Equal("SuperClass", occurrencesResult[occurrencesResult.Count - 1].SymbolName);
-            Assert.Equal(34, occurrencesResult[occurrencesResult.Count - 1].ScriptRegion.StartLineNumber);
+            Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.ClassSourceDetails));
         }
 
         [Fact]
         public async Task FindsEnumDefinition()
         {
-            SymbolReference definitionResult = await GetDefinition(FindsTypeSymbolsDefinitionData.EnumSourceDetails).ConfigureAwait(true);
-            Assert.Equal(39, definitionResult.ScriptRegion.StartLineNumber);
-            Assert.Equal(6, definitionResult.ScriptRegion.StartColumnNumber);
-            Assert.Equal("MyEnum", definitionResult.SymbolName);
+            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.EnumSourceDetails).ConfigureAwait(true);
+            Assert.Equal("MyEnum", symbol.SymbolName);
+            Assert.Equal("enum MyEnum { }", symbol.DisplayString);
+            Assert.Equal(SymbolType.Enum, symbol.SymbolType);
+            Assert.True(symbol.IsDeclaration);
+            AssertIsRegion(symbol.NameRegion, 39, 6, 39, 12);
         }
 
         [Fact]
         public async Task FindsReferencesOnEnum()
         {
-            // TODO: Remove definitions from references.
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnTypeSymbolsData.EnumSourceDetails).ConfigureAwait(true);
-            Assert.Equal(4, referencesResult.Count);
-            Assert.Equal(25, referencesResult[0].ScriptRegion.StartLineNumber);
-            Assert.Equal(19, referencesResult[0].ScriptRegion.StartColumnNumber);
-        }
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.EnumSourceDetails).ConfigureAwait(true);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("MyEnum", i.SymbolName);
+                    Assert.Equal("(type) MyEnum", i.DisplayString);
+                    Assert.Equal(SymbolType.Type, i.SymbolType);
+                    Assert.False(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("MyEnum", i.SymbolName);
+                    Assert.Equal("enum MyEnum { }", i.DisplayString);
+                    Assert.Equal(SymbolType.Enum, i.SymbolType);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("MyEnum", i.SymbolName);
+                    Assert.Equal("(type) MyEnum", i.DisplayString);
+                    Assert.Equal(SymbolType.Type, i.SymbolType);
+                    Assert.False(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("MyEnum", i.SymbolName);
+                    Assert.Equal("(type) MyEnum", i.DisplayString);
+                    Assert.Equal(SymbolType.Type, i.SymbolType);
+                    Assert.False(i.IsDeclaration);
+                });
 
-        [Fact]
-        public void FindsOccurrencesOnEnum()
-        {
-            IReadOnlyList<SymbolReference> occurrencesResult = GetOccurrences(FindsOccurrencesOnTypeSymbolsData.EnumSourceDetails);
-            Assert.Equal(4, occurrencesResult.Count);
-            Assert.Equal("MyEnum", occurrencesResult[occurrencesResult.Count - 1].SymbolName);
-            Assert.Equal(46, occurrencesResult[occurrencesResult.Count - 1].ScriptRegion.StartLineNumber);
+            Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.EnumSourceDetails));
         }
 
         [Fact]
         public async Task FindsTypeExpressionDefinition()
         {
-            SymbolReference definitionResult = await GetDefinition(FindsTypeSymbolsDefinitionData.TypeExpressionSourceDetails).ConfigureAwait(true);
-            Assert.Equal(39, definitionResult.ScriptRegion.StartLineNumber);
-            Assert.Equal(6, definitionResult.ScriptRegion.StartColumnNumber);
-            Assert.Equal("MyEnum", definitionResult.SymbolName);
+            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.TypeExpressionSourceDetails).ConfigureAwait(true);
+            AssertIsRegion(symbol.NameRegion, 39, 6, 39, 12);
+            Assert.Equal("MyEnum", symbol.SymbolName);
+            Assert.Equal("enum MyEnum { }", symbol.DisplayString);
+            Assert.True(symbol.IsDeclaration);
         }
 
         [Fact]
         public async Task FindsReferencesOnTypeExpression()
         {
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnTypeSymbolsData.TypeExpressionSourceDetails).ConfigureAwait(true);
-            Assert.Equal(2, referencesResult.Count);
-            SymbolReference superClass = referencesResult[0];
-            Assert.Equal(8, superClass.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, superClass.ScriptRegion.StartColumnNumber);
-            Assert.Equal(31, superClass.ScriptRegion.EndLineNumber);
-            Assert.Equal(2, superClass.ScriptRegion.EndColumnNumber);
-            Assert.Equal(8, superClass.NameRegion.StartLineNumber);
-            Assert.Equal(7, superClass.NameRegion.StartColumnNumber);
-        }
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.TypeExpressionSourceDetails).ConfigureAwait(true);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("SuperClass", i.SymbolName);
+                    Assert.Equal("class SuperClass { }", i.DisplayString);
+                    Assert.Equal(SymbolType.Class, i.SymbolType);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("SuperClass", i.SymbolName);
+                    Assert.Equal("(type) SuperClass", i.DisplayString);
+                    Assert.Equal(SymbolType.Type, i.SymbolType);
+                    Assert.False(i.IsDeclaration);
+                });
 
-        [Fact]
-        public void FindsOccurrencesOnTypeExpression()
-        {
-            IReadOnlyList<SymbolReference> occurrencesResult = GetOccurrences(FindsOccurrencesOnTypeSymbolsData.TypeExpressionSourceDetails);
-            Assert.Equal(2, occurrencesResult.Count);
-            Assert.Equal("SuperClass", occurrencesResult[0].SymbolName);
-            Assert.Equal(8, occurrencesResult[0].ScriptRegion.StartLineNumber);
+            Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.TypeExpressionSourceDetails));
         }
 
         [Fact]
         public async Task FindsTypeConstraintDefinition()
         {
-            SymbolReference definitionResult = await GetDefinition(FindsTypeSymbolsDefinitionData.TypeConstraintSourceDetails).ConfigureAwait(true);
-            Assert.Equal(39, definitionResult.ScriptRegion.StartLineNumber);
-            Assert.Equal(6, definitionResult.ScriptRegion.StartColumnNumber);
-            Assert.Equal("MyEnum", definitionResult.SymbolName);
+            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.TypeConstraintSourceDetails).ConfigureAwait(true);
+            AssertIsRegion(symbol.NameRegion, 39, 6, 39, 12);
+            Assert.Equal("MyEnum", symbol.SymbolName);
+            Assert.Equal("enum MyEnum { }", symbol.DisplayString);
+            Assert.True(symbol.IsDeclaration);
         }
 
         [Fact]
         public async Task FindsReferencesOnTypeConstraint()
         {
-            // TODO: Remove definitions from references.
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnTypeSymbolsData.TypeConstraintSourceDetails).ConfigureAwait(true);
-            Assert.Equal(4, referencesResult.Count);
-            Assert.Equal(25, referencesResult[0].ScriptRegion.StartLineNumber);
-            Assert.Equal(19, referencesResult[0].ScriptRegion.StartColumnNumber);
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.TypeConstraintSourceDetails).ConfigureAwait(true);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("MyEnum", i.SymbolName);
+                    Assert.Equal("(type) MyEnum", i.DisplayString);
+                    Assert.Equal(SymbolType.Type, i.SymbolType);
+                    Assert.False(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("MyEnum", i.SymbolName);
+                    Assert.Equal("enum MyEnum { }", i.DisplayString);
+                    Assert.Equal(SymbolType.Enum, i.SymbolType);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("MyEnum", i.SymbolName);
+                    Assert.Equal("(type) MyEnum", i.DisplayString);
+                    Assert.Equal(SymbolType.Type, i.SymbolType);
+                    Assert.False(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("MyEnum", i.SymbolName);
+                    Assert.Equal("(type) MyEnum", i.DisplayString);
+                    Assert.Equal(SymbolType.Type, i.SymbolType);
+                    Assert.False(i.IsDeclaration);
+                });
         }
 
         [Fact]
         public void FindsOccurrencesOnTypeConstraint()
         {
-            IReadOnlyList<SymbolReference> occurrencesResult = GetOccurrences(FindsOccurrencesOnTypeSymbolsData.TypeConstraintSourceDetails);
-            Assert.Equal(2, occurrencesResult.Count);
-            Assert.Equal("BaseClass", occurrencesResult[0].SymbolName);
-            Assert.Equal(4, occurrencesResult[0].ScriptRegion.StartLineNumber);
+            IEnumerable<SymbolReference> symbols = GetOccurrences(FindsOccurrencesOnTypeSymbolsData.TypeConstraintSourceDetails);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("BaseClass", i.SymbolName);
+                    Assert.Equal("class BaseClass { }", i.DisplayString);
+                    Assert.Equal(SymbolType.Class, i.SymbolType);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("BaseClass", i.SymbolName);
+                    Assert.Equal("(type) BaseClass", i.DisplayString);
+                    Assert.Equal(SymbolType.Type, i.SymbolType);
+                    Assert.False(i.IsDeclaration);
+                });
         }
 
         [Fact]
         public async Task FindsConstructorDefinition()
         {
-            SymbolReference definitionResult = await GetDefinition(FindsTypeSymbolsDefinitionData.ConstructorSourceDetails).ConfigureAwait(true);
-            Assert.Equal(9, definitionResult.ScriptRegion.StartLineNumber);
-            Assert.Equal(5, definitionResult.ScriptRegion.StartColumnNumber);
-            Assert.Equal("SuperClass.SuperClass([string]$name)", definitionResult.SymbolName);
-        }
+            IEnumerable<SymbolReference> symbols = await GetDefinitions(FindsTypeSymbolsDefinitionData.ConstructorSourceDetails).ConfigureAwait(true);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("SuperClass", i.SymbolName);
+                    Assert.Equal("SuperClass([string]$name)", i.DisplayString);
+                    Assert.Equal(SymbolType.Constructor, i.SymbolType);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("SuperClass", i.SymbolName);
+                    Assert.Equal("SuperClass()", i.DisplayString);
+                    Assert.Equal(SymbolType.Constructor, i.SymbolType);
+                    Assert.True(i.IsDeclaration);
+                });
 
-        [Fact]
-        public async Task FindsReferencesOnConstructor()
-        {
-            List<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.ConstructorSourceDetails).ConfigureAwait(true);
-            Assert.Single(symbols);
-            Assert.Equal(9, symbols[0].ScriptRegion.StartLineNumber);
-            Assert.Equal(5, symbols[0].ScriptRegion.StartColumnNumber);
-        }
-
-        [Fact]
-        public void FindsOccurrencesOnConstructor()
-        {
-            IReadOnlyList<SymbolReference> occurrencesResult = GetOccurrences(FindsOccurrencesOnTypeSymbolsData.ConstructorSourceDetails);
-            Assert.Single(occurrencesResult);
-            Assert.Equal("SuperClass.SuperClass()", occurrencesResult[occurrencesResult.Count - 1].SymbolName);
-            Assert.Equal(13, occurrencesResult[occurrencesResult.Count - 1].ScriptRegion.StartLineNumber);
+            Assert.Equal(symbols, await GetReferences(FindsReferencesOnTypeSymbolsData.ConstructorSourceDetails).ConfigureAwait(true));
+            Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.ConstructorSourceDetails));
         }
 
         [Fact]
         public async Task FindsMethodDefinition()
         {
-            SymbolReference definitionResult = await GetDefinition(FindsTypeSymbolsDefinitionData.MethodSourceDetails).ConfigureAwait(true);
-            Assert.Equal(19, definitionResult.ScriptRegion.StartLineNumber);
-            Assert.Equal(13, definitionResult.ScriptRegion.StartColumnNumber);
-            Assert.Equal("SuperClass.MyClassMethod([string]$param1, $param2, [int]$param3)", definitionResult.SymbolName);
+            IEnumerable<SymbolReference> symbols = await GetDefinitions(FindsTypeSymbolsDefinitionData.MethodSourceDetails).ConfigureAwait(true);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("MyClassMethod", i.SymbolName);
+                    Assert.Equal("string MyClassMethod([string]$param1, $param2, [int]$param3)", i.DisplayString);
+                    Assert.Equal(SymbolType.Method, i.SymbolType);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("MyClassMethod", i.SymbolName);
+                    Assert.Equal("string MyClassMethod([MyEnum]$param1)", i.DisplayString);
+                    Assert.Equal(SymbolType.Method, i.SymbolType);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("MyClassMethod", i.SymbolName);
+                    Assert.Equal("string MyClassMethod()", i.DisplayString);
+                    Assert.Equal(SymbolType.Method, i.SymbolType);
+                    Assert.True(i.IsDeclaration);
+                });
         }
 
         [Fact]
         public async Task FindsReferencesOnMethod()
         {
-            List<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.MethodSourceDetails).ConfigureAwait(true);
-            SymbolReference symbol = Assert.Single(symbols);
-            Assert.Equal("SuperClass.MyClassMethod([string]$param1, $param2, [int]$param3)", symbol.SymbolName);
-            Assert.Equal(SymbolType.Method, symbol.SymbolType);
-            AssertIsRegion(symbol.NameRegion, 19, 13, 19, 26);
-            AssertIsRegion(symbol.ScriptRegion, 19, 5, 22, 6);
-        }
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.MethodSourceDetails).ConfigureAwait(true);
+            Assert.Collection(symbols,
+                (i) => Assert.Equal("string MyClassMethod([string]$param1, $param2, [int]$param3)", i.DisplayString),
+                (i) => Assert.Equal("string MyClassMethod([MyEnum]$param1)", i.DisplayString),
+                (i) => Assert.Equal("string MyClassMethod()", i.DisplayString),
+                (i) => // The invocation!
+                {
+                    Assert.Equal("MyClassMethod", i.SymbolName);
+                    Assert.Equal("(method) MyClassMethod", i.DisplayString);
+                    Assert.Equal("$o.MyClassMethod()", i.SourceLine);
+                    Assert.Equal(SymbolType.Method, i.SymbolType);
+                    Assert.False(i.IsDeclaration);
+                });
 
-        [Fact]
-        public void FindsOccurrencesOnMethod()
-        {
-            IReadOnlyList<SymbolReference> occurrencesResult = GetOccurrences(FindsOccurrencesOnTypeSymbolsData.MethodSourceDetails);
-            Assert.Single(occurrencesResult);
-            Assert.Equal("SuperClass.MyClassMethod()", occurrencesResult[occurrencesResult.Count - 1].SymbolName);
-            Assert.Equal(28, occurrencesResult[occurrencesResult.Count - 1].ScriptRegion.StartLineNumber);
+            Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.MethodSourceDetails));
         }
 
         [Fact]

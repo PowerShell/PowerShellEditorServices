@@ -33,7 +33,7 @@ class SuperClass : BaseClass {
 New-Object SuperClass
 $o = [SuperClass]::new()
 $o.SomeProp
-$o.MyClassMeth
+$o.MyClassMethod()
 
 
 enum MyEnum {

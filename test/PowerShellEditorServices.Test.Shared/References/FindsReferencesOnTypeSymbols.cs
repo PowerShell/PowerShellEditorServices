@@ -40,8 +40,8 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.References
         public static readonly ScriptRegion MethodSourceDetails = new(
             file: TestUtilities.NormalizePath("References/TypeAndClassesFile.ps1"),
             text: string.Empty,
-            startLineNumber: 19,
-            startColumnNumber: 20,
+            startLineNumber: 36,
+            startColumnNumber: 16,
             startOffset: 0,
             endLineNumber: 0,
             endColumnNumber: 0,
