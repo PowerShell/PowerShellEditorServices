@@ -293,7 +293,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             List<SymbolReference> declarations = new();
             declarations.AddRange(scriptFile.References.TryGetReferences(symbol).Where(i => i.IsDeclaration));
-            if (declarations.Any())
+            if (declarations.Count > 0)
             {
                 _logger.LogDebug($"Found possible declaration in same file ${declarations}");
                 return declarations;

@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     /// </summary>
     public sealed class ScriptRegion : IScriptExtent
     {
-        public TextEdit ToTextEdit() => new() { NewText = Text, Range = ToRange() };
+        internal TextEdit ToTextEdit() => new() { NewText = Text, Range = ToRange() };
 
         public Range ToRange()
         {
@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         }
 
         // Same as PowerShell's EmptyScriptExtent
-        public bool IsEmpty()
+        internal bool IsEmpty()
         {
             return StartLineNumber == 0 && StartColumnNumber == 0
                 && EndLineNumber == 0 && EndColumnNumber == 0
@@ -43,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         }
 
         // Do not use PowerShell's ContainsLineAndColumn, it's nonsense.
-        public bool ContainsPosition(int line, int column)
+        internal bool ContainsPosition(int line, int column)
         {
             return StartLineNumber <= line && line <= EndLineNumber
                 && StartColumnNumber <= column && column <= EndColumnNumber;
