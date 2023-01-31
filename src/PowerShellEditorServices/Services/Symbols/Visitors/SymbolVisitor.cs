@@ -15,6 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols;
 /// The goal of this is to be our one and only visitor, which parses a file when necessary
 /// performing Action, which takes a SymbolReference (that this visitor creates) and returns an
 /// AstVisitAction. In this way, all our symbols are created with the same initialization logic.
+/// TODO: Visit hashtable keys, constants, arrays, namespaces, interfaces, operators, etc.
 /// </summary>
 internal sealed class SymbolVisitor : AstVisitor2
 {
