@@ -99,18 +99,5 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 _ => SymbolKind.Variable,
             };
         }
-
-        // Provides a partial equivalence between type constraints and custom types, and between
-        // variables and parameters.
-        internal static bool SymbolTypeMatches(SymbolType left, SymbolType right)
-        {
-            return left == right
-                || (left is SymbolType.Class or SymbolType.Enum or SymbolType.Type
-                && right is SymbolType.Class or SymbolType.Enum or SymbolType.Type)
-                || (left is SymbolType.EnumMember or SymbolType.Property
-                && right is SymbolType.EnumMember or SymbolType.Property)
-                || (left is SymbolType.Variable or SymbolType.Parameter
-                && right is SymbolType.Variable or SymbolType.Parameter);
-        }
     }
 }

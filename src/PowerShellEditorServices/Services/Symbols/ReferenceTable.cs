@@ -47,7 +47,7 @@ internal sealed class ReferenceTable
         EnsureInitialized();
         return symbol is not null
             && _symbolReferences.TryGetValue(symbol.Id, out ConcurrentBag<SymbolReference>? bag)
-                ? bag.Where(i => SymbolTypeUtils.SymbolTypeMatches(symbol.Type, i.Type))
+                ? bag
                 : Enumerable.Empty<SymbolReference>();
     }
 

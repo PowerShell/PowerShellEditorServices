@@ -39,7 +39,7 @@ internal sealed class SymbolVisitor : AstVisitor2
 
         return _action(new SymbolReference(
             SymbolType.Function,
-            CommandHelpers.StripModuleQualification(commandName, out _),
+            "fn " + CommandHelpers.StripModuleQualification(commandName, out _),
             commandName,
             commandAst.CommandElements[0].Extent,
             commandAst.Extent,
@@ -63,7 +63,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionDefinitionAst);
         return _action(new SymbolReference(
             symbolType,
-            functionDefinitionAst.Name,
+            "fn " + functionDefinitionAst.Name,
             VisitorUtils.GetFunctionDisplayName(functionDefinitionAst),
             nameExtent,
             functionDefinitionAst.Extent,
@@ -77,7 +77,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         // getting the TypeConstraintAst somehow?
         return _action(new SymbolReference(
             SymbolType.Parameter,
-            "$" + parameterAst.Name.VariablePath.UserPath,
+            "var " + parameterAst.Name.VariablePath.UserPath,
             VisitorUtils.GetParamDisplayName(parameterAst),
             parameterAst.Name.Extent,
             parameterAst.Extent,
@@ -98,7 +98,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         // the same function definition.
         return _action(new SymbolReference(
             SymbolType.Variable,
-            "$" + variableExpressionAst.VariablePath.UserPath,
+            "var " + variableExpressionAst.VariablePath.UserPath,
             "$" + variableExpressionAst.VariablePath.UserPath,
             variableExpressionAst.Extent,
             variableExpressionAst.Extent, // TODO: Maybe parent?
@@ -115,7 +115,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         IScriptExtent nameExtent = VisitorUtils.GetNameExtent(typeDefinitionAst);
         return _action(new SymbolReference(
             symbolType,
-            typeDefinitionAst.Name,
+            "type " + typeDefinitionAst.Name,
             (symbolType is SymbolType.Enum ? "enum " : "class ") + typeDefinitionAst.Name + " { }",
             nameExtent,
             typeDefinitionAst.Extent,
@@ -127,7 +127,7 @@ internal sealed class SymbolVisitor : AstVisitor2
     {
         return _action(new SymbolReference(
             SymbolType.Type,
-            typeExpressionAst.TypeName.Name,
+            "type " + typeExpressionAst.TypeName.Name,
             "(type) " + typeExpressionAst.TypeName.Name,
             typeExpressionAst.Extent,
             typeExpressionAst.Extent,
@@ -139,7 +139,7 @@ internal sealed class SymbolVisitor : AstVisitor2
     {
         return _action(new SymbolReference(
             SymbolType.Type,
-            typeConstraintAst.TypeName.Name,
+            "type " + typeConstraintAst.TypeName.Name,
             "(type) " + typeConstraintAst.TypeName.Name,
             typeConstraintAst.Extent,
             typeConstraintAst.Extent,
@@ -157,7 +157,7 @@ internal sealed class SymbolVisitor : AstVisitor2
 
         return _action(new SymbolReference(
             symbolType,
-            functionMemberAst.Name, // We bucket all the overloads.
+            "fn " + functionMemberAst.Name, // We bucket all the overloads.
             VisitorUtils.GetMemberOverloadName(functionMemberAst),
             nameExtent,
             functionMemberAst.Extent,
@@ -176,7 +176,7 @@ internal sealed class SymbolVisitor : AstVisitor2
 
         return _action(new SymbolReference(
             symbolType,
-            "$" + propertyMemberAst.Name,
+            "var " + propertyMemberAst.Name,
             VisitorUtils.GetMemberOverloadName(propertyMemberAst),
             VisitorUtils.GetNameExtent(propertyMemberAst),
             propertyMemberAst.Extent,
@@ -195,9 +195,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         // TODO: It's too bad we can't get the property's real symbol and reuse its display string.
         return _action(new SymbolReference(
             SymbolType.Property,
-#pragma warning disable CS8604 // Possible null reference argument.
-            "$" + memberName,
-#pragma warning restore CS8604
+            "var " + memberName,
             "(property) " + memberName,
             memberExpressionAst.Member.Extent,
             memberExpressionAst.Extent,
@@ -216,9 +214,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         // TODO: It's too bad we can't get the member's real symbol and reuse its display string.
         return _action(new SymbolReference(
             SymbolType.Method,
-#pragma warning disable CS8604 // Possible null reference argument.
-            memberName,
-#pragma warning restore CS8604
+            "fn " + memberName,
             "(method) " + memberName,
             methodCallAst.Member.Extent,
             methodCallAst.Extent,
@@ -238,9 +234,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         IScriptExtent nameExtent = VisitorUtils.GetNameExtent(configurationDefinitionAst);
         return _action(new SymbolReference(
             SymbolType.Configuration,
-#pragma warning disable CS8604 // Possible null reference argument.
-            name,
-#pragma warning restore CS8604
+            "dsc " + name,
             "configuration " + name + " { }",
             nameExtent,
             configurationDefinitionAst.Extent,

@@ -25,14 +25,14 @@ namespace PowerShellEditorServices.Test.Services.Symbols
         }
 
         [Theory]
-        [InlineData(1, 15, "BasicFunction")]
-        [InlineData(2, 3, "BasicFunction")]
-        [InlineData(4, 31, "FunctionWithExtraSpace")]
-        [InlineData(7, 18, "FunctionWithExtraSpace")]
-        [InlineData(12, 22, "FunctionNameOnDifferentLine")]
-        [InlineData(22, 13, "FunctionNameOnDifferentLine")]
-        [InlineData(24, 30, "IndentedFunction")]
-        [InlineData(24, 52, "IndentedFunction")]
+        [InlineData(1, 15, "fn BasicFunction")]
+        [InlineData(2, 3, "fn BasicFunction")]
+        [InlineData(4, 31, "fn FunctionWithExtraSpace")]
+        [InlineData(7, 18, "fn FunctionWithExtraSpace")]
+        [InlineData(12, 22, "fn FunctionNameOnDifferentLine")]
+        [InlineData(22, 13, "fn FunctionNameOnDifferentLine")]
+        [InlineData(24, 30, "fn IndentedFunction")]
+        [InlineData(24, 52, "fn IndentedFunction")]
         public void CanFindSymbolAtPosition(int line, int column, string expectedName)
         {
             SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(line, column);
