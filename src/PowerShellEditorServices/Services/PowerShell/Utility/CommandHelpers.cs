@@ -14,6 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 {
     /// <summary>
     /// Provides utility methods for working with PowerShell commands.
+    /// TODO: Handle the `fn ` prefix better.
     /// </summary>
     internal static class CommandHelpers
     {
@@ -113,6 +114,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
             Validate.IsNotNull(nameof(commandName), commandName);
             Validate.IsNotNull(nameof(executionService), executionService);
+
+            // Remove the bucket identifier from symbol references.
+            if (commandName.StartsWith("fn "))
+            {
+                commandName = commandName.Substring(3);
+            }
 
             // If we have a CommandInfo cached, return that.
             if (s_commandInfoCache.TryGetValue(commandName, out CommandInfo cmdInfo))
@@ -239,11 +246,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 // TODO: When we move to netstandard2.1, we can use another overload which generates
                 // static delegates and thus reduces allocations.
                 s_cmdletToAliasCache.AddOrUpdate(
-                    aliasInfo.Definition,
-                    (_) => new List<string> { aliasInfo.Name },
-                    (_, v) => { v.Add(aliasInfo.Name); return v; });
+                    "fn " + aliasInfo.Definition,
+                    (_) => new List<string> { "fn " + aliasInfo.Name },
+                    (_, v) => { v.Add("fn " + aliasInfo.Name); return v; });
 
-                s_aliasToCmdletCache.TryAdd(aliasInfo.Name, aliasInfo.Definition);
+                s_aliasToCmdletCache.TryAdd("fn " + aliasInfo.Name, "fn " + aliasInfo.Definition);
             }
 
             return new AliasMap(
