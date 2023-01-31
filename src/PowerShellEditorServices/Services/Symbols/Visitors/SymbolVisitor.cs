@@ -94,11 +94,11 @@ internal sealed class SymbolVisitor : AstVisitor2
             return AstVisitAction.Continue;
         }
 
-        // TODO: Consider tracking unscoped variable references only when they declared within
+        // TODO: Consider tracking unscoped variable references only when they're declared within
         // the same function definition.
         return _action(new SymbolReference(
             SymbolType.Variable,
-            "var " + variableExpressionAst.VariablePath.UserPath,
+            "var " + VisitorUtils.GetUnqualifiedVariableName(variableExpressionAst.VariablePath),
             "$" + variableExpressionAst.VariablePath.UserPath,
             variableExpressionAst.Extent,
             variableExpressionAst.Extent, // TODO: Maybe parent?

@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Text;
 using PSESSymbols = Microsoft.PowerShell.EditorServices.Services.Symbols;
@@ -30,6 +31,14 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             }
 
             return PSESSymbols.AstOperations.TryGetInferredValue(expandableStringExpressionAst, out string value) ? value : null;
+        }
+
+        // Strip the qualification, if there is any, so $var is a reference of $script:var etc.
+        internal static string GetUnqualifiedVariableName(VariablePath variablePath)
+        {
+            return variablePath.IsUnqualified
+                ? variablePath.UserPath
+                : variablePath.UserPath.Substring(variablePath.UserPath.IndexOf(':') + 1);
         }
 
         /// <summary>
