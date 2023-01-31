@@ -61,7 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         continue;
                     }
 
-                    if (!IsQueryMatch(request.Query, symbol.Id))
+                    if (!IsQueryMatch(request.Query, symbol.Name))
                     {
                         continue;
                     }
