@@ -69,7 +69,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 //
                 // TODO: We should also include function invocations that are part of DSLs (like
                 // Invoke-Build etc.).
-                if (!r.IsDeclaration || r.SymbolType is SymbolType.Parameter)
+                if (!r.IsDeclaration || r.Type is SymbolType.Parameter)
                 {
                     continue;
                 }
@@ -88,13 +88,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 symbols.Add(new SymbolInformationOrDocumentSymbol(new SymbolInformation
                 {
                     ContainerName = containerName,
-                    Kind = SymbolTypeUtils.GetSymbolKind(r.SymbolType),
+                    Kind = SymbolTypeUtils.GetSymbolKind(r.Type),
                     Location = new Location
                     {
                         Uri = DocumentUri.From(r.FilePath),
                         Range = new Range(r.NameRegion.ToRange().Start, r.ScriptRegion.ToRange().End) // Jump to name start, but keep whole range to support symbol tree in outline
                     },
-                    Name = r.DisplayString
+                    Name = r.Name
                 }));
             }
 

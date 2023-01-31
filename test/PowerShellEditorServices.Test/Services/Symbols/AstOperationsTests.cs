@@ -37,7 +37,7 @@ namespace PowerShellEditorServices.Test.Services.Symbols
         {
             SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(line, column);
             Assert.NotNull(symbol);
-            Assert.Equal(expectedName, symbol.SymbolName);
+            Assert.Equal(expectedName, symbol.Id);
         }
 
         [Theory]

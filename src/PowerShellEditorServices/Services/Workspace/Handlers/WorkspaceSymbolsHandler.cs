@@ -44,30 +44,30 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 // TODO: Need to compute a relative path that is based on common path for all workspace files
                 string containerName = Path.GetFileNameWithoutExtension(scriptFile.FilePath);
 
-                foreach (SymbolReference foundOccurrence in foundSymbols)
+                foreach (SymbolReference symbol in foundSymbols)
                 {
                     // This async method is pretty dense with synchronous code
                     // so it's helpful to add some yields.
                     await Task.Yield();
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    if (!foundOccurrence.IsDeclaration)
+                    if (!symbol.IsDeclaration)
                     {
                         continue;
                     }
 
-                    if (foundOccurrence.SymbolType is SymbolType.Parameter)
+                    if (symbol.Type is SymbolType.Parameter)
                     {
                         continue;
                     }
 
-                    if (!IsQueryMatch(request.Query, foundOccurrence.SymbolName))
+                    if (!IsQueryMatch(request.Query, symbol.Id))
                     {
                         continue;
                     }
 
                     // Exclude Pester setup/teardown symbols as they're unnamed
-                    if (foundOccurrence is PesterSymbolReference pesterSymbol &&
+                    if (symbol is PesterSymbolReference pesterSymbol &&
                         !PesterSymbolReference.IsPesterTestCommand(pesterSymbol.Command))
                     {
                         continue;
@@ -75,17 +75,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                     Location location = new()
                     {
-                        Uri = DocumentUri.From(foundOccurrence.FilePath),
-                        Range = foundOccurrence.NameRegion.ToRange()
+                        Uri = DocumentUri.From(symbol.FilePath),
+                        Range = symbol.NameRegion.ToRange()
                     };
 
                     // TODO: This should be a WorkplaceSymbol now as SymbolInformation is deprecated.
                     symbols.Add(new SymbolInformation
                     {
                         ContainerName = containerName,
-                        Kind = SymbolTypeUtils.GetSymbolKind(foundOccurrence.SymbolType),
+                        Kind = SymbolTypeUtils.GetSymbolKind(symbol.Type),
                         Location = location,
-                        Name = foundOccurrence.DisplayString
+                        Name = symbol.Name
                     });
                 }
             }

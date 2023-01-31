@@ -44,10 +44,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 SymbolReference = symbolReference
             };
 
-            if (symbolReference.SymbolType is SymbolType.Function)
+            if (symbolReference.Type is SymbolType.Function)
             {
                 CommandInfo commandInfo = await CommandHelpers.GetCommandInfoAsync(
-                    symbolReference.SymbolName,
+                    symbolReference.Id,
                     currentRunspace,
                     executionService).ConfigureAwait(false);
 
@@ -60,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 
                     if (commandInfo.CommandType == CommandTypes.Application)
                     {
-                        symbolDetails.SymbolReference = symbolReference with { DisplayString = $"(application) ${symbolReference.DisplayString}" };
+                        symbolDetails.SymbolReference = symbolReference with { Name = $"(application) ${symbolReference.Name}" };
                     }
                 }
             }

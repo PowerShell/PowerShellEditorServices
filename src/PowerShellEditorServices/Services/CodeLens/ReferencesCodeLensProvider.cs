@@ -62,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                 cancellationToken.ThrowIfCancellationRequested();
                 // TODO: Can we support more here?
                 if (symbol.IsDeclaration &&
-                    symbol.SymbolType is
+                    symbol.Type is
                     SymbolType.Function or
                     SymbolType.Class or
                     SymbolType.Enum)

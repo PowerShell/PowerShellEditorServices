@@ -170,9 +170,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 _executionService,
                 cancellationToken).ConfigureAwait(false);
 
-            string targetName = symbol.SymbolName;
-            if (symbol.SymbolType is SymbolType.Function
-                && aliases.AliasToCmdlets.TryGetValue(symbol.SymbolName, out string aliasDefinition))
+            string targetName = symbol.Id;
+            if (symbol.Type is SymbolType.Function
+                && aliases.AliasToCmdlets.TryGetValue(symbol.Id, out string aliasDefinition))
             {
                 targetName = aliasDefinition;
             }
@@ -180,7 +180,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             await ScanWorkspacePSFiles(cancellationToken).ConfigureAwait(false);
 
             List<SymbolReference> symbols = new();
-            string[] allIdentifiers = GetIdentifiers(targetName, symbol.SymbolType, aliases);
+            string[] allIdentifiers = GetIdentifiers(targetName, symbol.Type, aliases);
 
             foreach (ScriptFile file in _workspaceService.GetOpenedFiles())
             {
@@ -188,7 +188,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     await Task.Yield();
                     cancellationToken.ThrowIfCancellationRequested();
-                    symbols.AddRange(file.References.TryGetReferences(symbol with { SymbolName = targetIdentifier }));
+                    symbols.AddRange(file.References.TryGetReferences(symbol with { Id = targetIdentifier }));
                 }
             }
 
@@ -239,7 +239,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // If we are not possibly looking at a Function, we don't
             // need to continue because we won't be able to get the
             // CommandInfo object.
-            if (symbol?.SymbolType is not SymbolType.Function
+            if (symbol?.Type is not SymbolType.Function
                 and not SymbolType.Unknown)
             {
                 return null;
@@ -247,7 +247,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             CommandInfo commandInfo =
                 await CommandHelpers.GetCommandInfoAsync(
-                    symbol.SymbolName,
+                    symbol.Id,
                     _runspaceContext.CurrentRunspace,
                     _executionService).ConfigureAwait(false);
 

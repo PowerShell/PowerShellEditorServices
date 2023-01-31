@@ -12,14 +12,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
     /// <summary>
     /// A class that holds the type, name, script extent, and source line of a symbol
     /// </summary>
-    [DebuggerDisplay("SymbolType = {SymbolType}, SymbolName = {SymbolName}")]
+    [DebuggerDisplay("Type = {Type}, Id = {Id}, Name = {Name}")]
     internal record SymbolReference
     {
-        public SymbolType SymbolType { get; init; }
+        public SymbolType Type { get; init; }
 
-        public string SymbolName { get; init; }
+        public string Id { get; init; }
 
-        public string DisplayString { get; init; }
+        public string Name { get; init; }
 
         public ScriptRegion NameRegion { get; init; }
 
@@ -34,25 +34,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <summary>
         /// Constructs and instance of a SymbolReference
         /// </summary>
-        /// <param name="symbolType">The higher level type of the symbol</param>
-        /// <param name="symbolName">The name of the symbol</param>
-        /// <param name="displayString">The string used by outline, hover, etc.</param>
+        /// <param name="type">The higher level type of the symbol</param>
+        /// <param name="id">The name of the symbol</param>
+        /// <param name="name">The string used by outline, hover, etc.</param>
         /// <param name="nameExtent">The extent of the symbol's name</param>
         /// <param name="scriptExtent">The script extent of the symbol</param>
         /// <param name="file">The script file that has the symbol</param>
         /// <param name="isDeclaration">True if this reference is the definition of the symbol</param>
         public SymbolReference(
-            SymbolType symbolType,
-            string symbolName,
-            string displayString,
+            SymbolType type,
+            string id,
+            string name,
             IScriptExtent nameExtent,
             IScriptExtent scriptExtent,
             ScriptFile file,
             bool isDeclaration)
         {
-            SymbolType = symbolType;
-            SymbolName = symbolName;
-            DisplayString = displayString;
+            Type = type;
+            Id = id;
+            Name = name;
             NameRegion = new(nameExtent);
             ScriptRegion = new(scriptExtent);
             FilePath = file.FilePath;

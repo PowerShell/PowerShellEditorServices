@@ -59,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             List<MarkedString> symbolInfo = new()
             {
-                new MarkedString("PowerShell", symbolDetails.SymbolReference.DisplayString)
+                new MarkedString("PowerShell", symbolDetails.SymbolReference.Name)
             };
 
             if (!string.IsNullOrEmpty(symbolDetails.Documentation))
