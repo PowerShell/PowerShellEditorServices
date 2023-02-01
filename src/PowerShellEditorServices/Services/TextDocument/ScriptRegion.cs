@@ -16,7 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     {
         internal TextEdit ToTextEdit() => new() { NewText = Text, Range = ToRange() };
 
-        public Range ToRange()
+        internal Range ToRange()
         {
             return new Range
             {
@@ -73,7 +73,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             EndOffset = endOffset;
         }
 
-        public ScriptRegion (IScriptExtent scriptExtent)
+        public ScriptRegion(IScriptExtent scriptExtent)
         {
             File = scriptExtent.File;
 
@@ -94,6 +94,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             EndColumnNumber = scriptExtent.EndColumnNumber;
             EndOffset = scriptExtent.EndOffset;
         }
+
+        /// <summary>
+        /// NOTE: While unused, we kept this as it was previously exposed on a public class.
+        /// </summary>
+        public static ScriptRegion Create(IScriptExtent scriptExtent) => new(scriptExtent);
 
         #endregion
 
