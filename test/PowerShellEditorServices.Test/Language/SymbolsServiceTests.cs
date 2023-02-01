@@ -552,14 +552,14 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Collection(symbols,
                 (i) =>
                 {
-                    Assert.Equal("fn SuperClass", i.Id);
+                    Assert.Equal("mtd SuperClass", i.Id);
                     Assert.Equal("SuperClass([string]$name)", i.Name);
                     Assert.Equal(SymbolType.Constructor, i.Type);
                     Assert.True(i.IsDeclaration);
                 },
                 (i) =>
                 {
-                    Assert.Equal("fn SuperClass", i.Id);
+                    Assert.Equal("mtd SuperClass", i.Id);
                     Assert.Equal("SuperClass()", i.Name);
                     Assert.Equal(SymbolType.Constructor, i.Type);
                     Assert.True(i.IsDeclaration);
@@ -576,21 +576,21 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Collection(symbols,
                 (i) =>
                 {
-                    Assert.Equal("fn MyClassMethod", i.Id);
+                    Assert.Equal("mtd MyClassMethod", i.Id);
                     Assert.Equal("string MyClassMethod([string]$param1, $param2, [int]$param3)", i.Name);
                     Assert.Equal(SymbolType.Method, i.Type);
                     Assert.True(i.IsDeclaration);
                 },
                 (i) =>
                 {
-                    Assert.Equal("fn MyClassMethod", i.Id);
+                    Assert.Equal("mtd MyClassMethod", i.Id);
                     Assert.Equal("string MyClassMethod([MyEnum]$param1)", i.Name);
                     Assert.Equal(SymbolType.Method, i.Type);
                     Assert.True(i.IsDeclaration);
                 },
                 (i) =>
                 {
-                    Assert.Equal("fn MyClassMethod", i.Id);
+                    Assert.Equal("mtd MyClassMethod", i.Id);
                     Assert.Equal("string MyClassMethod()", i.Name);
                     Assert.Equal(SymbolType.Method, i.Type);
                     Assert.True(i.IsDeclaration);
@@ -607,7 +607,7 @@ namespace PowerShellEditorServices.Test.Language
                 (i) => Assert.Equal("string MyClassMethod()", i.Name),
                 (i) => // The invocation!
                 {
-                    Assert.Equal("fn MyClassMethod", i.Id);
+                    Assert.Equal("mtd MyClassMethod", i.Id);
                     Assert.Equal("(method) MyClassMethod", i.Name);
                     Assert.Equal("$o.MyClassMethod()", i.SourceLine);
                     Assert.Equal(SymbolType.Method, i.Type);
@@ -766,12 +766,12 @@ namespace PowerShellEditorServices.Test.Language
             Assert.True(symbol.IsDeclaration);
 
             symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Constructor));
-            Assert.Equal("fn AClass", symbol.Id);
+            Assert.Equal("mtd AClass", symbol.Id);
             Assert.Equal("AClass([string]$AParameter)", symbol.Name);
             Assert.True(symbol.IsDeclaration);
 
             symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Method));
-            Assert.Equal("fn AMethod", symbol.Id);
+            Assert.Equal("mtd AMethod", symbol.Id);
             Assert.Equal("void AMethod([string]$param1, [int]$param2, $param3)", symbol.Name);
             Assert.True(symbol.IsDeclaration);
 
@@ -802,7 +802,7 @@ namespace PowerShellEditorServices.Test.Language
             AssertIsRegion(symbol.ScriptRegion, 6, 1, 23, 2);
 
             symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Constructor));
-            Assert.Equal("fn NewLineClass", symbol.Id);
+            Assert.Equal("mtd NewLineClass", symbol.Id);
             AssertIsRegion(symbol.NameRegion, 8, 5, 8, 17);
             AssertIsRegion(symbol.ScriptRegion, 8, 5, 10, 6);
 
@@ -812,7 +812,7 @@ namespace PowerShellEditorServices.Test.Language
             AssertIsRegion(symbol.ScriptRegion, 12, 5, 15, 40);
 
             symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Method));
-            Assert.Equal("fn MyClassMethod", symbol.Id);
+            Assert.Equal("mtd MyClassMethod", symbol.Id);
             Assert.Equal("string MyClassMethod([MyNewLineEnum]$param1)", symbol.Name);
             AssertIsRegion(symbol.NameRegion, 20, 5, 20, 18);
             AssertIsRegion(symbol.ScriptRegion, 17, 5, 22, 6);

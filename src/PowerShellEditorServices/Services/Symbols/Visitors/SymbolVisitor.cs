@@ -158,7 +158,7 @@ internal sealed class SymbolVisitor : AstVisitor2
 
         return _action(new SymbolReference(
             symbolType,
-            "fn " + functionMemberAst.Name, // We bucket all the overloads.
+            "mtd " + functionMemberAst.Name, // We bucket all the overloads.
             VisitorUtils.GetMemberOverloadName(functionMemberAst),
             nameExtent,
             functionMemberAst.Extent,
@@ -215,7 +215,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         // TODO: It's too bad we can't get the member's real symbol and reuse its display string.
         return _action(new SymbolReference(
             SymbolType.Method,
-            "fn " + memberName,
+            "mtd " + memberName,
             "(method) " + memberName,
             methodCallAst.Member.Extent,
             methodCallAst.Extent,
