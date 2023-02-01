@@ -177,7 +177,7 @@ internal sealed class SymbolVisitor : AstVisitor2
 
         return _action(new SymbolReference(
             symbolType,
-            "var " + propertyMemberAst.Name,
+            "prop " + propertyMemberAst.Name,
             VisitorUtils.GetMemberOverloadName(propertyMemberAst),
             VisitorUtils.GetNameExtent(propertyMemberAst),
             propertyMemberAst.Extent,
@@ -196,7 +196,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         // TODO: It's too bad we can't get the property's real symbol and reuse its display string.
         return _action(new SymbolReference(
             SymbolType.Property,
-            "var " + memberName,
+            "prop " + memberName,
             "(property) " + memberName,
             memberExpressionAst.Member.Extent,
             memberExpressionAst.Extent,

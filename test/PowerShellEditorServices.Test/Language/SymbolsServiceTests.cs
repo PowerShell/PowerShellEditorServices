@@ -621,7 +621,7 @@ namespace PowerShellEditorServices.Test.Language
         public async Task FindsPropertyDefinition()
         {
             SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.PropertySourceDetails).ConfigureAwait(true);
-            Assert.Equal("var SomePropWithDefault", symbol.Id);
+            Assert.Equal("prop SomePropWithDefault", symbol.Id);
             Assert.Equal("[string] $SomePropWithDefault", symbol.Name);
             Assert.Equal(SymbolType.Property, symbol.Type);
             Assert.True(symbol.IsDeclaration);
@@ -634,14 +634,14 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Collection(symbols,
                 (i) =>
                 {
-                    Assert.Equal("var SomeProp", i.Id);
+                    Assert.Equal("prop SomeProp", i.Id);
                     Assert.Equal("[int] $SomeProp", i.Name);
                     Assert.Equal(SymbolType.Property, i.Type);
                     Assert.True(i.IsDeclaration);
                 },
                 (i) =>
                 {
-                    Assert.Equal("var SomeProp", i.Id);
+                    Assert.Equal("prop SomeProp", i.Id);
                     Assert.Equal("(property) SomeProp", i.Name);
                     Assert.Equal(SymbolType.Property, i.Type);
                     Assert.False(i.IsDeclaration);
@@ -655,14 +655,14 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Collection(symbols,
                 (i) =>
                 {
-                    Assert.Equal("var SomePropWithDefault", i.Id);
+                    Assert.Equal("prop SomePropWithDefault", i.Id);
                     Assert.Equal("[string] $SomePropWithDefault", i.Name);
                     Assert.Equal(SymbolType.Property, i.Type);
                     Assert.True(i.IsDeclaration);
                 },
                 (i) =>
                 {
-                    Assert.Equal("var SomePropWithDefault", i.Id);
+                    Assert.Equal("prop SomePropWithDefault", i.Id);
                     Assert.Equal("(property) SomePropWithDefault", i.Name);
                     Assert.Equal(SymbolType.Property, i.Type);
                     Assert.False(i.IsDeclaration);
@@ -673,7 +673,7 @@ namespace PowerShellEditorServices.Test.Language
         public async Task FindsEnumMemberDefinition()
         {
             SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.EnumMemberSourceDetails).ConfigureAwait(true);
-            Assert.Equal("var Second", symbol.Id);
+            Assert.Equal("prop Second", symbol.Id);
             // Doesn't include [MyEnum]:: because that'd be redundant in the outline.
             Assert.Equal("Second", symbol.Name);
             Assert.Equal(SymbolType.EnumMember, symbol.Type);
@@ -681,7 +681,7 @@ namespace PowerShellEditorServices.Test.Language
             AssertIsRegion(symbol.NameRegion, 41, 5, 41, 11);
 
             symbol = await GetDefinition(FindsReferencesOnTypeSymbolsData.EnumMemberSourceDetails).ConfigureAwait(true);
-            Assert.Equal("var First", symbol.Id);
+            Assert.Equal("prop First", symbol.Id);
             Assert.Equal("First", symbol.Name);
             Assert.Equal(SymbolType.EnumMember, symbol.Type);
             Assert.True(symbol.IsDeclaration);
@@ -695,14 +695,14 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Collection(symbols,
                 (i) =>
                 {
-                    Assert.Equal("var First", i.Id);
+                    Assert.Equal("prop First", i.Id);
                     Assert.Equal("First", i.Name);
                     Assert.Equal(SymbolType.EnumMember, i.Type);
                     Assert.True(i.IsDeclaration);
                 },
                 (i) =>
                 {
-                    Assert.Equal("var First", i.Id);
+                    Assert.Equal("prop First", i.Id);
                     // The reference is just a member invocation, and so indistinguishable from a property.
                     Assert.Equal("(property) First", i.Name);
                     Assert.Equal(SymbolType.Property, i.Type);
@@ -732,7 +732,8 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Equal(7, symbols.Count(i => i.Type == SymbolType.Function));
             Assert.Equal(8, symbols.Count(i => i.Type == SymbolType.Variable));
             Assert.Equal(4, symbols.Count(i => i.Type == SymbolType.Parameter));
-            Assert.Equal(14, symbols.Count(i => i.Id.StartsWith("var ")));
+            Assert.Equal(12, symbols.Count(i => i.Id.StartsWith("var ")));
+            Assert.Equal(2, symbols.Count(i => i.Id.StartsWith("prop ")));
 
             SymbolReference symbol = symbols.First(i => i.Type == SymbolType.Function);
             Assert.Equal("fn AFunction", symbol.Id);
@@ -760,7 +761,7 @@ namespace PowerShellEditorServices.Test.Language
             Assert.True(symbol.IsDeclaration);
 
             symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Property));
-            Assert.Equal("var AProperty", symbol.Id);
+            Assert.Equal("prop AProperty", symbol.Id);
             Assert.Equal("[string] $AProperty", symbol.Name);
             Assert.True(symbol.IsDeclaration);
 
@@ -780,7 +781,7 @@ namespace PowerShellEditorServices.Test.Language
             Assert.True(symbol.IsDeclaration);
 
             symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.EnumMember));
-            Assert.Equal("var AValue", symbol.Id);
+            Assert.Equal("prop AValue", symbol.Id);
             Assert.Equal("AValue", symbol.Name);
             Assert.True(symbol.IsDeclaration);
         }
@@ -806,7 +807,7 @@ namespace PowerShellEditorServices.Test.Language
             AssertIsRegion(symbol.ScriptRegion, 8, 5, 10, 6);
 
             symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Property));
-            Assert.Equal("var SomePropWithDefault", symbol.Id);
+            Assert.Equal("prop SomePropWithDefault", symbol.Id);
             AssertIsRegion(symbol.NameRegion, 15, 5, 15, 25);
             AssertIsRegion(symbol.ScriptRegion, 12, 5, 15, 40);
 
@@ -822,7 +823,7 @@ namespace PowerShellEditorServices.Test.Language
             AssertIsRegion(symbol.ScriptRegion, 25, 1, 28, 2);
 
             symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.EnumMember));
-            Assert.Equal("var First", symbol.Id);
+            Assert.Equal("prop First", symbol.Id);
             AssertIsRegion(symbol.NameRegion, 27, 5, 27, 10);
             AssertIsRegion(symbol.ScriptRegion, 27, 5, 27, 10);
         }
