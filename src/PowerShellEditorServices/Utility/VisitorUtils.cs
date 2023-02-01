@@ -106,7 +106,8 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         internal static (int startColumn, int startLine) GetNameStartColumnAndLineFromAst(FunctionMemberAst functionMemberAst)
         {
             // find name index to get offset even with attributes, static, hidden ++
-            int nameStartIndex = functionMemberAst.Extent.Text.LastIndexOf(string.Concat(functionMemberAst.Name, '('), StringComparison.OrdinalIgnoreCase);
+            int nameStartIndex = functionMemberAst.Extent.Text.IndexOf(
+                functionMemberAst.Name + '(', StringComparison.OrdinalIgnoreCase);
             return GetNameStartColumnAndLineFromAst(functionMemberAst, nameStartIndex);
         }
 
@@ -119,8 +120,10 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         internal static (int startColumn, int startLine) GetNameStartColumnAndLineFromAst(PropertyMemberAst propertyMemberAst, bool isEnumMember)
         {
             // find name index to get offset even with attributes, static, hidden ++
-            string searchString = isEnumMember ? propertyMemberAst.Name : string.Concat('$', propertyMemberAst.Name);
-            int nameStartIndex = propertyMemberAst.Extent.Text.LastIndexOf(searchString, StringComparison.OrdinalIgnoreCase);
+            string searchString = isEnumMember
+                ? propertyMemberAst.Name : '$' + propertyMemberAst.Name;
+            int nameStartIndex = propertyMemberAst.Extent.Text.IndexOf(
+                    searchString, StringComparison.OrdinalIgnoreCase);
             return GetNameStartColumnAndLineFromAst(propertyMemberAst, nameStartIndex);
         }
 
