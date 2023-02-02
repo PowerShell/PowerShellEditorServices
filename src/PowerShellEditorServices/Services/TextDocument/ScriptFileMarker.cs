@@ -34,19 +34,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// Information: This warning is trivial, but may be useful. They are recommended by PowerShell best practice.
         /// </summary>
-        Information = 0,
+        Information = 0,
         /// <summary>
         /// WARNING: This warning may cause a problem or does not follow PowerShell's recommended guidelines.
         /// </summary>
-        Warning = 1,
+        Warning = 1,
         /// <summary>
         /// ERROR: This warning is likely to cause a problem or does not follow PowerShell's required guidelines.
         /// </summary>
-        Error = 2,
+        Error = 2,
         /// <summary>
         /// ERROR: This diagnostic is caused by an actual parsing error, and is generated only by the engine.
         /// </summary>
-        ParseError = 3
+        ParseError = 3
     };
 
     /// <summary>
@@ -102,7 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             {
                 Message = parseError.Message,
                 Level = ScriptFileMarkerLevel.Error,
-                ScriptRegion = ScriptRegion.Create(parseError.Extent),
+                ScriptRegion = new(parseError.Extent),
                 Source = "PowerShell"
             };
         }
@@ -157,7 +157,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                 Message = diagnosticRecord.Message as string ?? string.Empty,
                 RuleName = diagnosticRecord.RuleName as string ?? string.Empty,
                 Level = level,
-                ScriptRegion = ScriptRegion.Create(diagnosticRecord.Extent as IScriptExtent),
+                ScriptRegion = new(diagnosticRecord.Extent as IScriptExtent),
                 Corrections = markerCorrections,
                 Source = "PSScriptAnalyzer"
             };

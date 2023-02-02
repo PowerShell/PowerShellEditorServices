@@ -5,7 +5,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Security;
 using System.Text;
 using Microsoft.Extensions.FileSystemGlobbing;
@@ -275,10 +274,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
 
         /// <summary>
-        /// Gets an array of all opened ScriptFiles in the workspace.
+        /// Gets an IEnumerable of all opened ScriptFiles in the workspace.
         /// </summary>
-        /// <returns>An array of all opened ScriptFiles in the workspace.</returns>
-        public ScriptFile[] GetOpenedFiles() => workspaceFiles.Values.ToArray();
+        public IEnumerable<ScriptFile> GetOpenedFiles() => workspaceFiles.Values;
 
         /// <summary>
         /// Closes a currently open script file with the given file path.
@@ -290,35 +288,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             string keyName = GetFileKey(scriptFile.DocumentUri);
             workspaceFiles.TryRemove(keyName, out ScriptFile _);
-        }
-
-        /// <summary>
-        /// Gets all file references by recursively searching
-        /// through referenced files in a scriptfile
-        /// </summary>
-        /// <param name="scriptFile">Contains the details and contents of an open script file</param>
-        /// <returns>A scriptfile array where the first file
-        /// in the array is the "root file" of the search</returns>
-        public ScriptFile[] ExpandScriptReferences(ScriptFile scriptFile)
-        {
-            Dictionary<string, ScriptFile> referencedScriptFiles = new();
-            List<ScriptFile> expandedReferences = new();
-
-            // add original file so it's not searched for, then find all file references
-            referencedScriptFiles.Add(scriptFile.Id, scriptFile);
-            RecursivelyFindReferences(scriptFile, referencedScriptFiles);
-
-            // remove original file from referenced file and add it as the first element of the
-            // expanded referenced list to maintain order so the original file is always first in the list
-            referencedScriptFiles.Remove(scriptFile.Id);
-            expandedReferences.Add(scriptFile);
-
-            if (referencedScriptFiles.Count > 0)
-            {
-                expandedReferences.AddRange(referencedScriptFiles.Values);
-            }
-
-            return expandedReferences.ToArray();
         }
 
         /// <summary>
@@ -372,7 +341,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             bool ignoreReparsePoints
         )
         {
-            if (WorkspacePath == null || !Directory.Exists(WorkspacePath))
+            if (WorkspacePath is null || !Directory.Exists(WorkspacePath))
             {
                 yield break;
             }
@@ -401,54 +370,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         #endregion
 
         #region Private Methods
-        /// <summary>
-        /// Recursively searches through referencedFiles in scriptFiles
-        /// and builds a Dictionary of the file references
-        /// </summary>
-        /// <param name="scriptFile">Details an contents of "root" script file</param>
-        /// <param name="referencedScriptFiles">A Dictionary of referenced script files</param>
-        private void RecursivelyFindReferences(
-            ScriptFile scriptFile,
-            Dictionary<string, ScriptFile> referencedScriptFiles)
-        {
-            // Get the base path of the current script for use in resolving relative paths
-            string baseFilePath = scriptFile.IsInMemory
-                ? WorkspacePath
-                : Path.GetDirectoryName(scriptFile.FilePath);
-
-            foreach (string referencedFileName in scriptFile.ReferencedFiles)
-            {
-                string resolvedScriptPath =
-                    ResolveRelativeScriptPath(
-                        baseFilePath,
-                        referencedFileName);
-
-                // If there was an error resolving the string, skip this reference
-                if (resolvedScriptPath == null)
-                {
-                    continue;
-                }
-
-                logger.LogDebug(
-                    string.Format(
-                        "Resolved relative path '{0}' to '{1}'",
-                        referencedFileName,
-                        resolvedScriptPath));
-
-                // Get the referenced file if it's not already in referencedScriptFiles
-                if (TryGetFile(resolvedScriptPath, out ScriptFile referencedFile))
-                {
-                    // Normalize the resolved script path and add it to the
-                    // referenced files list if it isn't there already
-                    resolvedScriptPath = resolvedScriptPath.ToLower();
-                    if (!referencedScriptFiles.ContainsKey(resolvedScriptPath))
-                    {
-                        referencedScriptFiles.Add(resolvedScriptPath, referencedFile);
-                        RecursivelyFindReferences(referencedFile, referencedScriptFiles);
-                    }
-                }
-            }
-        }
 
         internal static StreamReader OpenStreamReader(DocumentUri uri)
         {

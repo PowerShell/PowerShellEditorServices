@@ -22,8 +22,20 @@ function AnAdvancedFunction {
 
 workflow AWorkflow {}
 
-Configuration AConfiguration {
-    Node "TEST-PC" {}
+class AClass {
+    [string]$AProperty
+
+    AClass([string]$AParameter) {
+
+    }
+
+    [void]AMethod([string]$param1, [int]$param2, $param3) {
+
+    }
+}
+
+enum AEnum {
+    AValue = 0
 }
 
 AFunction

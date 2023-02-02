@@ -46,8 +46,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 paramSetSignatures.Add(new ParameterSetSignature(setInfo));
             }
             Signatures = paramSetSignatures.ToArray();
-            CommandName = foundSymbol.ScriptRegion.Text;
-            ScriptRegion = foundSymbol.ScriptRegion;
+            CommandName = foundSymbol.NameRegion.Text;
+            ScriptRegion = foundSymbol.NameRegion;
         }
     }
 

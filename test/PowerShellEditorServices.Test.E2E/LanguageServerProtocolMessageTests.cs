@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -442,7 +442,7 @@ CanSendDocumentSymbolRequest
                     Range range = symInfoOrDocSym.SymbolInformation.Location.Range;
 
                     Assert.Equal(1, range.Start.Line);
-                    Assert.Equal(0, range.Start.Character);
+                    Assert.Equal(9, range.Start.Character);
                     Assert.Equal(3, range.End.Line);
                     Assert.Equal(1, range.End.Character);
                 });
@@ -841,7 +841,7 @@ Describe 'DescribeName' {
         }
 
         [Fact]
-        public async Task CanSendReferencesCodeLensRequestAsync()
+        public async Task CanSendFunctionReferencesCodeLensRequestAsync()
         {
             string filePath = NewTestFile(@"
 function CanSendReferencesCodeLensRequest {
@@ -867,7 +867,7 @@ CanSendReferencesCodeLensRequest
 
             Range range = codeLens.Range;
             Assert.Equal(1, range.Start.Line);
-            Assert.Equal(0, range.Start.Character);
+            Assert.Equal(9, range.Start.Character);
             Assert.Equal(3, range.End.Line);
             Assert.Equal(1, range.End.Character);
 
@@ -876,6 +876,110 @@ CanSendReferencesCodeLensRequest
                 .Returning<CodeLens>(CancellationToken.None).ConfigureAwait(true);
 
             Assert.Equal("1 reference", codeLensResolveResult.Command.Title);
+        }
+
+        [Fact]
+        public async Task CanSendClassReferencesCodeLensRequestAsync()
+        {
+            string filePath = NewTestFile(@"
+param(
+    [MyBaseClass]$enumValue
+)
+
+class MyBaseClass {
+
+}
+
+class ChildClass : MyBaseClass, System.IDisposable {
+
+}
+
+$o = [MyBaseClass]::new()
+$o -is [MyBaseClass]
+");
+
+            CodeLensContainer codeLenses = await PsesLanguageClient
+                .SendRequest(
+                    "textDocument/codeLens",
+                    new CodeLensParams
+                    {
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = new Uri(filePath)
+                        }
+                    })
+                .Returning<CodeLensContainer>(CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Collection(codeLenses,
+                codeLens =>
+                {
+                    Range range = codeLens.Range;
+                    Assert.Equal(5, range.Start.Line);
+                    Assert.Equal(6, range.Start.Character);
+                    Assert.Equal(7, range.End.Line);
+                    Assert.Equal(1, range.End.Character);
+                },
+                codeLens =>
+                {
+                    Range range = codeLens.Range;
+                    Assert.Equal(9, range.Start.Line);
+                    Assert.Equal(6, range.Start.Character);
+                    Assert.Equal(11, range.End.Line);
+                    Assert.Equal(1, range.End.Character);
+                }
+            );
+
+            CodeLens baseClassCodeLens = codeLenses.First();
+            CodeLens codeLensResolveResult = await PsesLanguageClient
+                .SendRequest("codeLens/resolve", baseClassCodeLens)
+                .Returning<CodeLens>(CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Equal("4 references", codeLensResolveResult.Command.Title);
+        }
+
+        [Fact]
+        public async Task CanSendEnumReferencesCodeLensRequestAsync()
+        {
+            string filePath = NewTestFile(@"
+param(
+    [MyEnum]$enumValue
+)
+
+enum MyEnum {
+    First = 1
+    Second
+    Third
+}
+
+[MyEnum]::First
+'First' -is [MyEnum]
+");
+
+            CodeLensContainer codeLenses = await PsesLanguageClient
+                .SendRequest(
+                    "textDocument/codeLens",
+                    new CodeLensParams
+                    {
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = new Uri(filePath)
+                        }
+                    })
+                .Returning<CodeLensContainer>(CancellationToken.None).ConfigureAwait(true);
+
+            CodeLens codeLens = Assert.Single(codeLenses);
+
+            Range range = codeLens.Range;
+            Assert.Equal(5, range.Start.Line);
+            Assert.Equal(5, range.Start.Character);
+            Assert.Equal(9, range.End.Line);
+            Assert.Equal(1, range.End.Character);
+
+            CodeLens codeLensResolveResult = await PsesLanguageClient
+                .SendRequest("codeLens/resolve", codeLens)
+                .Returning<CodeLens>(CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Equal("3 references", codeLensResolveResult.Command.Title);
         }
 
         [SkippableFact]

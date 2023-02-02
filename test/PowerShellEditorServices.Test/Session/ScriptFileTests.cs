@@ -176,30 +176,6 @@ namespace PowerShellEditorServices.Test.Session
 
         [Trait("Category", "ScriptFile")]
         [Fact]
-        public void FindsDotSourcedFiles()
-        {
-            string exampleScriptContents = TestUtilities.PlatformNormalize(
-                ". ./athing.ps1\n" +
-                ". ./somefile.ps1\n" +
-                ". ./somefile.ps1\n" +
-                "Do-Stuff $uri\n" +
-                ". simpleps.ps1");
-
-            using StringReader stringReader = new(exampleScriptContents);
-            ScriptFile scriptFile =
-                new(
-                    // Use any absolute path. Even if it doesn't exist.
-                    DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
-                    stringReader,
-                    PowerShellVersion);
-
-            Assert.Equal(3, scriptFile.ReferencedFiles.Length);
-            Console.Write("a" + scriptFile.ReferencedFiles[0]);
-            Assert.Equal(TestUtilities.NormalizePath("./athing.ps1"), scriptFile.ReferencedFiles[0]);
-        }
-
-        [Trait("Category", "ScriptFile")]
-        [Fact]
         public void ThrowsExceptionWithEditOutsideOfRange()
         {
             Assert.Throws<ArgumentOutOfRangeException>(
@@ -610,7 +586,6 @@ First line
             Assert.Equal(path, scriptFile.FilePath, ignoreCase: !VersionUtils.IsLinux);
             Assert.True(scriptFile.IsAnalysisEnabled);
             Assert.False(scriptFile.IsInMemory);
-            Assert.Empty(scriptFile.ReferencedFiles);
             Assert.Empty(scriptFile.DiagnosticMarkers);
             Assert.Single(scriptFile.ScriptTokens);
             Assert.Single(scriptFile.FileLines);
@@ -635,7 +610,6 @@ First line
             Assert.Equal(path, scriptFile.DocumentUri);
             Assert.True(scriptFile.IsAnalysisEnabled);
             Assert.True(scriptFile.IsInMemory);
-            Assert.Empty(scriptFile.ReferencedFiles);
             Assert.Empty(scriptFile.DiagnosticMarkers);
             Assert.Equal(10, scriptFile.ScriptTokens.Length);
             Assert.Equal(3, scriptFile.FileLines.Count);

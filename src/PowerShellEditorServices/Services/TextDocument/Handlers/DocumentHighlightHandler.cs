@@ -40,25 +40,26 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
-            IReadOnlyList<SymbolReference> symbolOccurrences = SymbolsService.FindOccurrencesInFile(
+            IEnumerable<SymbolReference> occurrences = SymbolsService.FindOccurrencesInFile(
                 scriptFile,
                 request.Position.Line + 1,
                 request.Position.Character + 1);
 
-            if (symbolOccurrences is null)
+            if (occurrences is null)
             {
                 return Task.FromResult(s_emptyHighlightContainer);
             }
 
-            DocumentHighlight[] highlights = new DocumentHighlight[symbolOccurrences.Count];
-            for (int i = 0; i < symbolOccurrences.Count; i++)
+            List<DocumentHighlight> highlights = new();
+            foreach (SymbolReference occurrence in occurrences)
             {
-                highlights[i] = new DocumentHighlight
+                highlights.Add(new DocumentHighlight
                 {
                     Kind = DocumentHighlightKind.Write, // TODO: Which symbol types are writable?
-                    Range = symbolOccurrences[i].ScriptRegion.ToRange()
-                };
+                    Range = occurrence.NameRegion.ToRange() // Just the symbol name
+                });
             }
+
             _logger.LogDebug("Highlights: " + highlights);
 
             return Task.FromResult(new DocumentHighlightContainer(highlights));

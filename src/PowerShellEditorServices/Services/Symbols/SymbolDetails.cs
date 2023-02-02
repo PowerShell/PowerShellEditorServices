@@ -12,6 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {
     /// <summary>
     /// Provides detailed information for a given symbol.
+    /// TODO: Get rid of this and just use return documentation.
     /// </summary>
     [DebuggerDisplay("SymbolReference = {SymbolReference.SymbolType}/{SymbolReference.SymbolName}, DisplayString = {DisplayString}")]
     internal class SymbolDetails
@@ -22,11 +23,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// Gets the original symbol reference which was used to gather details.
         /// </summary>
         public SymbolReference SymbolReference { get; private set; }
-
-        /// <summary>
-        /// Gets the display string for this symbol.
-        /// </summary>
-        public string DisplayString { get; private set; }
 
         /// <summary>
         /// Gets the documentation string for this symbol.  Returns an
@@ -48,43 +44,28 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 SymbolReference = symbolReference
             };
 
-            switch (symbolReference.SymbolType)
+            if (symbolReference.Type is SymbolType.Function)
             {
-                case SymbolType.Function:
-                    CommandInfo commandInfo = await CommandHelpers.GetCommandInfoAsync(
-                        symbolReference.SymbolName,
-                        currentRunspace,
-                        executionService).ConfigureAwait(false);
+                CommandInfo commandInfo = await CommandHelpers.GetCommandInfoAsync(
+                    symbolReference.Id,
+                    currentRunspace,
+                    executionService).ConfigureAwait(false);
 
-                    if (commandInfo != null)
+                if (commandInfo is not null)
+                {
+                    symbolDetails.Documentation =
+                        await CommandHelpers.GetCommandSynopsisAsync(
+                            commandInfo,
+                            executionService).ConfigureAwait(false);
+
+                    if (commandInfo.CommandType == CommandTypes.Application)
                     {
-                        symbolDetails.Documentation =
-                            await CommandHelpers.GetCommandSynopsisAsync(
-                                commandInfo,
-                                executionService).ConfigureAwait(false);
-
-                        if (commandInfo.CommandType == CommandTypes.Application)
-                        {
-                            symbolDetails.DisplayString = "(application) " + symbolReference.SymbolName;
-                            return symbolDetails;
-                        }
+                        symbolDetails.SymbolReference = symbolReference with { Name = $"(application) ${symbolReference.Name}" };
                     }
-
-                    symbolDetails.DisplayString = "function " + symbolReference.SymbolName;
-                    return symbolDetails;
-
-                case SymbolType.Parameter:
-                    // TODO: Get parameter help
-                    symbolDetails.DisplayString = "(parameter) " + symbolReference.SymbolName;
-                    return symbolDetails;
-
-                case SymbolType.Variable:
-                    symbolDetails.DisplayString = symbolReference.SymbolName;
-                    return symbolDetails;
-
-                default:
-                    return symbolDetails;
+                }
             }
+
+            return symbolDetails;
         }
 
         #endregion

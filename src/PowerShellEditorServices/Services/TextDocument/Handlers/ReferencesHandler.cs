@@ -41,45 +41,24 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     request.Position.Line + 1,
                     request.Position.Character + 1);
 
-            List<SymbolReference> referencesResult =
-                await _symbolsService.FindReferencesOfSymbol(
-                    foundSymbol,
-                    _workspaceService.ExpandScriptReferences(scriptFile),
-                    _workspaceService,
-                    cancellationToken).ConfigureAwait(false);
-
             List<Location> locations = new();
-
-            if (referencesResult != null)
+            foreach (SymbolReference foundReference in await _symbolsService.ScanForReferencesOfSymbolAsync(
+                    foundSymbol, cancellationToken).ConfigureAwait(false))
             {
-                foreach (SymbolReference foundReference in referencesResult)
+                // Respect the request's setting to include declarations.
+                if (!request.Context.IncludeDeclaration && foundReference.IsDeclaration)
                 {
-                    locations.Add(new Location
-                    {
-                        Uri = DocumentUri.From(foundReference.FilePath),
-                        Range = GetRangeFromScriptRegion(foundReference.ScriptRegion)
-                    });
+                    continue;
                 }
+
+                locations.Add(new Location
+                {
+                    Uri = DocumentUri.From(foundReference.FilePath),
+                    Range = foundReference.NameRegion.ToRange()
+                });
             }
 
             return new LocationContainer(locations);
-        }
-
-        private static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)
-        {
-            return new Range
-            {
-                Start = new Position
-                {
-                    Line = scriptRegion.StartLineNumber - 1,
-                    Character = scriptRegion.StartColumnNumber - 1
-                },
-                End = new Position
-                {
-                    Line = scriptRegion.EndLineNumber - 1,
-                    Character = scriptRegion.EndColumnNumber - 1
-                }
-            };
         }
     }
 }

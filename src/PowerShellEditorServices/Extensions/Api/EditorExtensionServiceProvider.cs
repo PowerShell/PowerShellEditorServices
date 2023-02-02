@@ -42,7 +42,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         {
             _serviceProvider = serviceProvider;
             LanguageServer = new LanguageServerService(_serviceProvider.GetService<ILanguageServerFacade>());
-            //DocumentSymbols = new DocumentSymbolService(_serviceProvider.GetService<SymbolsService>());
             ExtensionCommands = new ExtensionCommandService(_serviceProvider.GetService<ExtensionService>());
             Workspace = new WorkspaceService(_serviceProvider.GetService<InternalServices.WorkspaceService>());
             EditorContext = new EditorContextService(_serviceProvider.GetService<ILanguageServerFacade>());

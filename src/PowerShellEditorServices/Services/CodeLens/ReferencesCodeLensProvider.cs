@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -9,7 +8,6 @@ using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -22,8 +20,6 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
     /// </summary>
     internal class ReferencesCodeLensProvider : ICodeLensProvider
     {
-        private static readonly Location[] s_emptyLocationArray = Array.Empty<Location>();
-
         /// <summary>
         /// The document symbol provider to supply symbols to generate the code lenses.
         /// </summary>
@@ -57,14 +53,19 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// </summary>
         /// <param name="scriptFile">The PowerShell script file to get code lenses for.</param>
         /// <param name="cancellationToken"></param>
-        /// <returns>An array of CodeLenses describing all functions in the given script file.</returns>
+        /// <returns>An array of CodeLenses describing all functions, classes and enums in the given script file.</returns>
         public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile, CancellationToken cancellationToken)
         {
             List<CodeLens> acc = new();
-            foreach (SymbolReference sym in _symbolProvider.ProvideDocumentSymbols(scriptFile))
+            foreach (SymbolReference symbol in _symbolProvider.ProvideDocumentSymbols(scriptFile))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (sym.SymbolType == SymbolType.Function)
+                // TODO: Can we support more here?
+                if (symbol.IsDeclaration &&
+                    symbol.Type is
+                    SymbolType.Function or
+                    SymbolType.Class or
+                    SymbolType.Enum)
                 {
                     acc.Add(new CodeLens
                     {
@@ -73,7 +74,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                             Uri = scriptFile.DocumentUri,
                             ProviderId = nameof(ReferencesCodeLensProvider)
                         }, LspSerializer.Instance.JsonSerializer),
-                        Range = sym.ScriptRegion.ToRange(),
+                        Range = symbol.NameRegion.ToRange(),
                     });
                 }
             }
@@ -82,68 +83,49 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         }
 
         /// <summary>
-        /// Take a codelens and create a new codelens object with updated references.
+        /// Take a CodeLens and create a new CodeLens object with updated references.
         /// </summary>
         /// <param name="codeLens">The old code lens to get updated references for.</param>
         /// <param name="scriptFile"></param>
         /// <param name="cancellationToken"></param>
-        /// <returns>A new code lens object describing the same data as the old one but with updated references.</returns>
+        /// <returns>A new CodeLens object describing the same data as the old one but with updated references.</returns>
         public async Task<CodeLens> ResolveCodeLens(
             CodeLens codeLens,
             ScriptFile scriptFile,
             CancellationToken cancellationToken)
         {
-            ScriptFile[] references = _workspaceService.ExpandScriptReferences(
-                scriptFile);
-
-            SymbolReference foundSymbol = SymbolsService.FindFunctionDefinitionAtLocation(
+            SymbolReference foundSymbol = SymbolsService.FindSymbolDefinitionAtLocation(
                 scriptFile,
                 codeLens.Range.Start.Line + 1,
                 codeLens.Range.Start.Character + 1);
 
-            List<SymbolReference> referencesResult = await _symbolsService.FindReferencesOfSymbol(
-                    foundSymbol,
-                    references,
-                    _workspaceService,
-                    cancellationToken).ConfigureAwait(false);
-
-            Location[] referenceLocations;
-            if (referencesResult == null)
+            List<Location> acc = new();
+            foreach (SymbolReference foundReference in await _symbolsService.ScanForReferencesOfSymbolAsync(
+                foundSymbol, cancellationToken).ConfigureAwait(false))
             {
-                referenceLocations = s_emptyLocationArray;
-            }
-            else
-            {
-                List<Location> acc = new();
-                foreach (SymbolReference foundReference in referencesResult)
+                // We only show lenses on declarations, so we exclude those from the references.
+                if (foundReference.IsDeclaration)
                 {
-                    // This async method is pretty dense with synchronous code
-                    // so it's helpful to add some yields.
-                    await Task.Yield();
-                    cancellationToken.ThrowIfCancellationRequested();
-                    if (IsReferenceDefinition(foundSymbol, foundReference))
-                    {
-                        continue;
-                    }
-
-                    DocumentUri uri = DocumentUri.From(foundReference.FilePath);
-                    // For any vscode-notebook-cell, we need to ignore the backing file on disk.
-                    if (uri.Scheme == "file" &&
-                        scriptFile.DocumentUri.Scheme == "vscode-notebook-cell" &&
-                        uri.Path == scriptFile.DocumentUri.Path)
-                    {
-                        continue;
-                    }
-
-                    acc.Add(new Location
-                    {
-                        Uri = uri,
-                        Range = foundReference.ScriptRegion.ToRange()
-                    });
+                    continue;
                 }
-                referenceLocations = acc.ToArray();
+
+                DocumentUri uri = DocumentUri.From(foundReference.FilePath);
+                // For any vscode-notebook-cell, we need to ignore the backing file on disk.
+                if (uri.Scheme == "file" &&
+                    scriptFile.DocumentUri.Scheme == "vscode-notebook-cell" &&
+                    uri.Path == scriptFile.DocumentUri.Path)
+                {
+                    continue;
+                }
+
+                acc.Add(new Location
+                {
+                    Uri = uri,
+                    Range = foundReference.NameRegion.ToRange()
+                });
             }
 
+            Location[] referenceLocations = acc.ToArray();
             return new CodeLens
             {
                 Data = codeLens.Data,
@@ -161,27 +143,6 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     LspSerializer.Instance.JsonSerializer)
                 }
             };
-        }
-
-        /// <summary>
-        /// Check whether a SymbolReference is the actual definition of that symbol.
-        /// </summary>
-        /// <param name="definition">The symbol definition that may be referenced.</param>
-        /// <param name="reference">The reference symbol to check.</param>
-        /// <returns>True if the reference is not a reference to the definition, false otherwise.</returns>
-        private static bool IsReferenceDefinition(
-            SymbolReference definition,
-            SymbolReference reference)
-        {
-            // First check if we are in the same file as the definition. if we are...
-            // check if it's on the same line number.
-
-            // TODO: Do we care about two symbol definitions of the same name?
-            // if we do, how could we possibly know that a reference in one file is a reference
-            // of a particular symbol definition?
-            return
-                definition.FilePath == reference.FilePath &&
-                definition.ScriptRegion.StartLineNumber == reference.ScriptRegion.StartLineNumber;
         }
 
         /// <summary>

@@ -2,9 +2,12 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
-using System.Management.Automation;
-using System.Management.Automation.Language;
+using System.Linq;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
+using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Test.Shared;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
 
@@ -13,64 +16,46 @@ namespace PowerShellEditorServices.Test.Services.Symbols
     [Trait("Category", "AstOperations")]
     public class AstOperationsTests
     {
-        private const string s_scriptString = @"function BasicFunction {}
-BasicFunction
+        private readonly ScriptFile scriptFile;
 
-function          FunctionWithExtraSpace
-{
-
-} FunctionWithExtraSpace
-
-function
-
-
-       FunctionNameOnDifferentLine
-
-
-
-
-
-
-           {}
-
-
-    FunctionNameOnDifferentLine
-
-            function IndentedFunction  { } IndentedFunction
-";
-        private static readonly ScriptBlockAst s_ast = (ScriptBlockAst)ScriptBlock.Create(s_scriptString).Ast;
+        public AstOperationsTests()
+        {
+            WorkspaceService workspace = new(NullLoggerFactory.Instance);
+            scriptFile = workspace.GetFile(TestUtilities.GetSharedPath("References/FunctionReference.ps1"));
+        }
 
         [Theory]
-        [InlineData(1, 15, "BasicFunction")]
-        [InlineData(2, 3, "BasicFunction")]
-        [InlineData(4, 31, "FunctionWithExtraSpace")]
-        [InlineData(7, 18, "FunctionWithExtraSpace")]
-        [InlineData(12, 22, "FunctionNameOnDifferentLine")]
-        [InlineData(22, 13, "FunctionNameOnDifferentLine")]
-        [InlineData(24, 30, "IndentedFunction")]
-        [InlineData(24, 52, "IndentedFunction")]
-        public void CanFindSymbolAtPosition(int lineNumber, int columnNumber, string expectedName)
+        [InlineData(1, 15, "fn BasicFunction")]
+        [InlineData(2, 3, "fn BasicFunction")]
+        [InlineData(4, 31, "fn FunctionWithExtraSpace")]
+        [InlineData(7, 18, "fn FunctionWithExtraSpace")]
+        [InlineData(12, 22, "fn FunctionNameOnDifferentLine")]
+        [InlineData(22, 13, "fn FunctionNameOnDifferentLine")]
+        [InlineData(24, 30, "fn IndentedFunction")]
+        [InlineData(24, 52, "fn IndentedFunction")]
+        public void CanFindSymbolAtPosition(int line, int column, string expectedName)
         {
-            SymbolReference reference = AstOperations.FindSymbolAtPosition(s_ast, lineNumber, columnNumber);
-            Assert.NotNull(reference);
-            Assert.Equal(expectedName, reference.SymbolName);
+            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(line, column);
+            Assert.NotNull(symbol);
+            Assert.Equal(expectedName, symbol.Id);
         }
 
         [Theory]
         [MemberData(nameof(FindReferencesOfSymbolAtPositionData))]
-        public void CanFindReferencesOfSymbolAtPosition(int lineNumber, int columnNumber, Range[] symbolRange)
+        public void CanFindReferencesOfSymbolAtPosition(int line, int column, Range[] symbolRange)
         {
-            SymbolReference symbol = AstOperations.FindSymbolAtPosition(s_ast, lineNumber, columnNumber);
+            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(line, column);
 
-            IEnumerable<SymbolReference> references = AstOperations.FindReferencesOfSymbol(s_ast, symbol);
+            IEnumerable<SymbolReference> references = scriptFile.References.TryGetReferences(symbol);
+            Assert.NotEmpty(references);
 
             int positionsIndex = 0;
-            foreach (SymbolReference reference in references)
+            foreach (SymbolReference reference in references.OrderBy((i) => i.ScriptRegion.ToRange().Start))
             {
-                Assert.Equal(symbolRange[positionsIndex].Start.Line, reference.ScriptRegion.StartLineNumber);
-                Assert.Equal(symbolRange[positionsIndex].Start.Character, reference.ScriptRegion.StartColumnNumber);
-                Assert.Equal(symbolRange[positionsIndex].End.Line, reference.ScriptRegion.EndLineNumber);
-                Assert.Equal(symbolRange[positionsIndex].End.Character, reference.ScriptRegion.EndColumnNumber);
+                Assert.Equal(symbolRange[positionsIndex].Start.Line, reference.NameRegion.StartLineNumber);
+                Assert.Equal(symbolRange[positionsIndex].Start.Character, reference.NameRegion.StartColumnNumber);
+                Assert.Equal(symbolRange[positionsIndex].End.Line, reference.NameRegion.EndLineNumber);
+                Assert.Equal(symbolRange[positionsIndex].End.Character, reference.NameRegion.EndColumnNumber);
 
                 positionsIndex++;
             }

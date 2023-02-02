@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Serialization;
@@ -47,7 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         private static CodeLens[] GetPesterLens(PesterSymbolReference pesterSymbol, ScriptFile scriptFile)
         {
             string word = pesterSymbol.Command == PesterCommandType.It ? "test" : "tests";
-            CodeLens[] codeLensResults = new CodeLens[]
+            return new CodeLens[]
             {
                 new CodeLens()
                 {
@@ -92,8 +91,6 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     }
                 }
             };
-
-            return codeLensResults;
         }
 
         /// <summary>
@@ -120,7 +117,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     continue;
                 }
 
-                // Skip codelense for setup/teardown block
+                // Skip CodeLens for setup/teardown block
                 if (!PesterSymbolReference.IsPesterTestCommand(pesterSymbol.Command))
                 {
                     continue;
