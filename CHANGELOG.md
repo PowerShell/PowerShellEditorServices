@@ -1,5 +1,26 @@
 # PowerShell Editor Services Release History
 
+## v3.8.0
+### Thursday, February 02, 2023
+
+In the PR below we rewrote all the symbol logic. Classes (and their properties and
+methods) are now proper symbols. Instead of a dozen similar-yet-different Abstract Symbol
+Tree (AST) PowerShell script visitors handling different parts of each symbol-related
+request, we have a single visitor that builds a cached dictionary of symbols for each
+file. This was a massive simplification of the code that also leads to huge performance
+improvements across all the symbol related features:
+
+- [Go to Symbol in Workspace](https://code.visualstudio.com/Docs/editor/editingevolved#_open-symbol-by-name)
+- [Go to Symbol in Editor](https://code.visualstudio.com/Docs/editor/editingevolved#_go-to-symbol)
+- [Go to Definition](https://code.visualstudio.com/Docs/editor/editingevolved#_go-to-definition)
+- [Go to References / CodeLens](https://code.visualstudio.com/Docs/editor/editingevolved#_reference-information)
+- [Outline view](https://code.visualstudio.com/docs/getstarted/userinterface#_outline-view)
+
+Please try it out and give us feedback! There's plenty of room for more improvement, and
+this will be much easier going forward.
+
+- ✨ 🙏 [PowerShellEditorServices #1984](https://github.com/PowerShell/PowerShellEditorServices/pull/1984) - Integrating class symbol support.
+
 ## v3.7.3
 ### Wednesday, January 04, 2023
 
