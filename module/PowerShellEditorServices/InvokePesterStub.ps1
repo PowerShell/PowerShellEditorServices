@@ -59,10 +59,24 @@ param(
     [string] $OutputPath
 )
 
-$pesterModule = Microsoft.PowerShell.Core\Get-Module Pester
 # add one line, so the subsequent output is not shifted to the side
 Write-Output ''
 
+# checking and importing PSKoans first as it will import the required Pester-version (v4 vs v5)
+if ($ScriptPath -match '\.Koans\.ps1$') {
+    $psKoansModule = Microsoft.PowerShell.Core\Get-Module PSKoans
+    if (!$psKoansModule) {
+        Write-Output "Importing PSKoans module..."
+        $psKoansModule = Microsoft.PowerShell.Core\Import-Module PSKoans -ErrorAction Ignore -PassThru
+    }
+
+    if (!$psKoansModule) {
+        Write-Warning "Failed to import PSKoans. You must install PSKoans module to run or debug tests in *.Koans.ps1 files."
+        return
+    }
+}
+
+$pesterModule = Microsoft.PowerShell.Core\Get-Module Pester
 if (!$pesterModule) {
     Write-Output "Importing Pester module..."
     if ($MinimumVersion5) {
