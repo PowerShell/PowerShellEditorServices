@@ -890,6 +890,15 @@ namespace PowerShellEditorServices.Test.Language
         }
 
         [Fact]
+        public void FindsSymbolsInPSKoansFile()
+        {
+            IEnumerable<PesterSymbolReference> symbols = FindSymbolsInFile(FindSymbolsInPSKoansFile.SourceDetails).OfType<PesterSymbolReference>();
+
+            // Pester symbols are properly tested in FindsSymbolsInPesterFile so only counting to make sure they appear
+            Assert.Equal(7, symbols.Count(i => i.Type == SymbolType.Function));
+        }
+
+        [Fact]
         public void FindsSymbolsInPSDFile()
         {
             IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInPSDFile.SourceDetails);
