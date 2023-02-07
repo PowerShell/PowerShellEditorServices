@@ -20,9 +20,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         IEnumerable<SymbolReference> IDocumentSymbolProvider.ProvideDocumentSymbols(
             ScriptFile scriptFile)
         {
-            if (!scriptFile.FilePath.EndsWith(
-                    "tests.ps1",
-                    StringComparison.OrdinalIgnoreCase))
+            if (!scriptFile.FilePath.EndsWith(".tests.ps1", StringComparison.OrdinalIgnoreCase) &&
+                !scriptFile.FilePath.EndsWith(".Koans.ps1", StringComparison.OrdinalIgnoreCase))
             {
                 return Enumerable.Empty<SymbolReference>();
             }
