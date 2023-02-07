@@ -40,7 +40,7 @@ internal sealed class SymbolVisitor : AstVisitor2
 
         return _action(new SymbolReference(
             SymbolType.Function,
-            "fn " + CommandHelpers.StripModuleQualification(commandName, out _),
+            "fn " + VisitorUtils.GetUnqualifiedFunctionName(CommandHelpers.StripModuleQualification(commandName, out _)),
             commandName,
             commandAst.CommandElements[0].Extent,
             commandAst.Extent,
@@ -64,7 +64,7 @@ internal sealed class SymbolVisitor : AstVisitor2
         IScriptExtent nameExtent = VisitorUtils.GetNameExtent(functionDefinitionAst);
         return _action(new SymbolReference(
             symbolType,
-            "fn " + functionDefinitionAst.Name,
+            "fn " + VisitorUtils.GetUnqualifiedFunctionName(functionDefinitionAst.Name),
             VisitorUtils.GetFunctionDisplayName(functionDefinitionAst),
             nameExtent,
             functionDefinitionAst.Extent,

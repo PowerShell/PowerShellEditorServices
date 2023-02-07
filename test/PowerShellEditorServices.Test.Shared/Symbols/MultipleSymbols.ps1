@@ -4,7 +4,7 @@ $Script:ScriptVar2 = 2
 
 "`$Script:ScriptVar2 is $Script:ScriptVar2"
 
-function AFunction {}
+function script:AFunction {}
 
 filter AFilter {$_}
 

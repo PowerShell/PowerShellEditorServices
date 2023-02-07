@@ -33,6 +33,20 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             return PSESSymbols.AstOperations.TryGetInferredValue(expandableStringExpressionAst, out string value) ? value : null;
         }
 
+        // Strip the qualification, if there is any, so script:my-function is a reference of my-function etc.
+        internal static string GetUnqualifiedFunctionName(string name)
+        {
+            foreach (string scope in new string[] { "private:", "script:", "global:", "local:" })
+            {
+                if (name.StartsWith(scope, StringComparison.OrdinalIgnoreCase))
+                {
+                    return name.Substring(scope.Length);
+                }
+            }
+
+            return name;
+        }
+
         // Strip the qualification, if there is any, so $var is a reference of $script:var etc.
         internal static string GetUnqualifiedVariableName(VariablePath variablePath)
         {
