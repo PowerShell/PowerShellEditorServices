@@ -94,6 +94,15 @@ internal sealed class ReferenceTable
             _ => new ConcurrentBag<SymbolReference> { symbol },
             (_, existing) =>
             {
+                // Keep only the first variable encountered as a declaration marked as such. This
+                // keeps the first assignment without also counting every reassignment as a
+                // declaration (cleaning up e.g. Code's outline view).
+                if (symbol.Type is SymbolType.Variable && symbol.IsDeclaration
+                    && existing.Any(i => i.IsDeclaration))
+                {
+                    symbol = symbol with { IsDeclaration = false };
+                }
+
                 existing.Add(symbol);
                 return existing;
             });
