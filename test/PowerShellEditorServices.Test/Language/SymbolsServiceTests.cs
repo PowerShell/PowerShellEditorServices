@@ -263,7 +263,8 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsVariableDefinition()
         {
-            SymbolReference symbol = await GetDefinition(FindsVariableDefinitionData.SourceDetails).ConfigureAwait(true);
+            IEnumerable<SymbolReference> definitions = await GetDefinitions(FindsVariableDefinitionData.SourceDetails).ConfigureAwait(true);
+            SymbolReference symbol = Assert.Single(definitions); // Even though it's re-assigned
             Assert.Equal("var things", symbol.Id);
             Assert.Equal("$things", symbol.Name);
             Assert.Equal(SymbolType.Variable, symbol.Type);

@@ -5,7 +5,7 @@ function My-Function ($myInput)
 
 $things = 4
 
-$things
+$things = 3
 
 My-Function $things
 
