@@ -738,8 +738,9 @@ namespace PowerShellEditorServices.Test.Language
 
             SymbolReference symbol = symbols.First(i => i.Type == SymbolType.Function);
             Assert.Equal("fn AFunction", symbol.Id);
-            Assert.Equal("function AFunction ()", symbol.Name);
+            Assert.Equal("function script:AFunction ()", symbol.Name);
             Assert.True(symbol.IsDeclaration);
+            Assert.Equal(2, GetOccurrences(symbol.NameRegion).Count());
 
             symbol = symbols.First(i => i.Id == "fn AFilter");
             Assert.Equal("filter AFilter ()", symbol.Name);
