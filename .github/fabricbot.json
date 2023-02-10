@@ -1244,6 +1244,17 @@
       "version": "1.0",
       "config": {
         "taskName": "Clean emails"
+            {
+              "operator": "not",
+              "operands": [
+                {
+                  "name": "activitySenderHasAssociation",
+                  "parameters": {
+                    "association": "COLLABORATOR"
+                  }
+                }
+              ]
+            }
       },
       "id": "B7xR1x_vo-NjhnYhgfCKE"
     }
