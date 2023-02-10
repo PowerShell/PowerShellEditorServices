@@ -23,6 +23,8 @@ using Microsoft.PowerShell.EditorServices.Test.Shared.References;
 using Microsoft.PowerShell.EditorServices.Test.Shared.SymbolDetails;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Symbols;
 using Microsoft.PowerShell.EditorServices.Utility;
+using OmniSharp.Extensions.LanguageServer.Protocol;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
 
 namespace PowerShellEditorServices.Test.Language
@@ -38,10 +40,11 @@ namespace PowerShellEditorServices.Test.Language
         public SymbolsServiceTests()
         {
             psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
-            workspace = new WorkspaceService(NullLoggerFactory.Instance)
+            workspace = new WorkspaceService(NullLoggerFactory.Instance);
+            workspace.WorkspaceFolders.Add(new WorkspaceFolder
             {
-                InitialWorkingDirectory = TestUtilities.GetSharedPath("References")
-            };
+                Uri = DocumentUri.FromFileSystemPath(TestUtilities.GetSharedPath("References"))
+            });
             symbolsService = new SymbolsService(
                 NullLoggerFactory.Instance,
                 psesHost,

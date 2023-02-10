@@ -1,10 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security;
 using System.Text;
 using Microsoft.Extensions.FileSystemGlobbing;
@@ -13,6 +14,7 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Services.Workspace;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -68,6 +70,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public string InitialWorkingDirectory { get; set; }
 
         /// <summary>
+        /// Gets or sets the folders of the workspace.
+        /// </summary>
+        public List<WorkspaceFolder> WorkspaceFolders { get; set; }
+
+        /// <summary>
         /// Gets or sets the default list of file globs to exclude during workspace searches.
         /// </summary>
         public List<string> ExcludeFilesGlob { get; set; }
@@ -88,6 +95,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             powerShellVersion = VersionUtils.PSVersion;
             logger = factory.CreateLogger<WorkspaceService>();
+            WorkspaceFolders = new List<WorkspaceFolder>();
             ExcludeFilesGlob = new List<string>();
             FollowSymlinks = true;
         }
@@ -336,39 +344,46 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
 
         /// <summary>
-        /// Enumerate all the PowerShell (ps1, psm1, psd1) files in the workspace in a recursive manner.
+        /// Enumerate all the PowerShell (ps1, psm1, psd1) files in the workspace folders in a
+        /// recursive manner. Falls back to initial working directory if there are no workspace folders.
         /// </summary>
         /// <returns>An enumerator over the PowerShell files found in the workspace.</returns>
         public IEnumerable<string> EnumeratePSFiles(
             string[] excludeGlobs,
             string[] includeGlobs,
             int maxDepth,
-            bool ignoreReparsePoints
-        )
+            bool ignoreReparsePoints)
         {
-            if (InitialWorkingDirectory is null || !Directory.Exists(InitialWorkingDirectory))
-            {
-                yield break;
-            }
+            IEnumerable<string> rootPaths = WorkspaceFolders.Count == 0
+                ? new List<string> { InitialWorkingDirectory }
+                : WorkspaceFolders.Select(i => i.Uri.GetFileSystemPath());
 
             Matcher matcher = new();
             foreach (string pattern in includeGlobs) { matcher.AddInclude(pattern); }
             foreach (string pattern in excludeGlobs) { matcher.AddExclude(pattern); }
 
-            WorkspaceFileSystemWrapperFactory fsFactory = new(
-                InitialWorkingDirectory,
-                maxDepth,
-                VersionUtils.IsNetCore ? s_psFileExtensionsCoreFramework : s_psFileExtensionsFullFramework,
-                ignoreReparsePoints,
-                logger
-            );
-            PatternMatchingResult fileMatchResult = matcher.Execute(fsFactory.RootDirectory);
-            foreach (FilePatternMatch item in fileMatchResult.Files)
+            foreach (string rootPath in rootPaths)
             {
-                // item.Path always contains forward slashes in paths when it should be backslashes on Windows.
-                // Since we're returning strings here, it's important to use the correct directory separator.
-                string path = VersionUtils.IsWindows ? item.Path.Replace('/', Path.DirectorySeparatorChar) : item.Path;
-                yield return Path.Combine(InitialWorkingDirectory, path);
+                if (!Directory.Exists(rootPath))
+                {
+                    continue;
+                }
+
+                WorkspaceFileSystemWrapperFactory fsFactory = new(
+                    rootPath,
+                    maxDepth,
+                    VersionUtils.IsNetCore ? s_psFileExtensionsCoreFramework : s_psFileExtensionsFullFramework,
+                    ignoreReparsePoints,
+                    logger);
+
+                PatternMatchingResult fileMatchResult = matcher.Execute(fsFactory.RootDirectory);
+                foreach (FilePatternMatch item in fileMatchResult.Files)
+                {
+                    // item.Path always contains forward slashes in paths when it should be backslashes on Windows.
+                    // Since we're returning strings here, it's important to use the correct directory separator.
+                    string path = VersionUtils.IsWindows ? item.Path.Replace('/', Path.DirectorySeparatorChar) : item.Path;
+                    yield return Path.Combine(rootPath, path);
+                }
             }
         }
 
