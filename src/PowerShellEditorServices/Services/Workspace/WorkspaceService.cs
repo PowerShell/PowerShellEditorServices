@@ -58,9 +58,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
         #region Properties
 
         /// <summary>
-        /// Gets or sets the root path of the workspace.
+        /// <para>Gets or sets the initial working directory.</para>
+        /// <para>
+        /// This is settable by the same key in the initialization options, and likely corresponds
+        /// to the root of the workspace if only one workspace folder is being used. However, in
+        /// multi-root workspaces this may be any workspace folder's root (or none if overridden).
+        /// </para>
         /// </summary>
-        public string WorkspacePath { get; set; }
+        public string InitialWorkingDirectory { get; set; }
 
         /// <summary>
         /// Gets or sets the default list of file globs to exclude during workspace searches.
@@ -299,9 +304,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             string resolvedPath = filePath;
 
-            if (!IsPathInMemory(filePath) && !string.IsNullOrEmpty(WorkspacePath))
+            if (!IsPathInMemory(filePath) && !string.IsNullOrEmpty(InitialWorkingDirectory))
             {
-                Uri workspaceUri = new(WorkspacePath);
+                Uri workspaceUri = new(InitialWorkingDirectory);
                 Uri fileUri = new(filePath);
 
                 resolvedPath = workspaceUri.MakeRelativeUri(fileUri).ToString();
@@ -341,7 +346,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             bool ignoreReparsePoints
         )
         {
-            if (WorkspacePath is null || !Directory.Exists(WorkspacePath))
+            if (InitialWorkingDirectory is null || !Directory.Exists(InitialWorkingDirectory))
             {
                 yield break;
             }
@@ -351,7 +356,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             foreach (string pattern in excludeGlobs) { matcher.AddExclude(pattern); }
 
             WorkspaceFileSystemWrapperFactory fsFactory = new(
-                WorkspacePath,
+                InitialWorkingDirectory,
                 maxDepth,
                 VersionUtils.IsNetCore ? s_psFileExtensionsCoreFramework : s_psFileExtensionsFullFramework,
                 ignoreReparsePoints,
@@ -363,7 +368,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // item.Path always contains forward slashes in paths when it should be backslashes on Windows.
                 // Since we're returning strings here, it's important to use the correct directory separator.
                 string path = VersionUtils.IsWindows ? item.Path.Replace('/', Path.DirectorySeparatorChar) : item.Path;
-                yield return Path.Combine(WorkspacePath, path);
+                yield return Path.Combine(InitialWorkingDirectory, path);
             }
         }
 
@@ -423,7 +428,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return isInMemory;
         }
 
-        internal string ResolveWorkspacePath(string path) => ResolveRelativeScriptPath(WorkspacePath, path);
+        internal string ResolveWorkspacePath(string path) => ResolveRelativeScriptPath(InitialWorkingDirectory, path);
 
         internal string ResolveRelativeScriptPath(string baseFilePath, string relativePath)
         {

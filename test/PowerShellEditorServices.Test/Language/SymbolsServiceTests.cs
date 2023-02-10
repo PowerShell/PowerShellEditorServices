@@ -40,7 +40,7 @@ namespace PowerShellEditorServices.Test.Language
             psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
             workspace = new WorkspaceService(NullLoggerFactory.Instance)
             {
-                WorkspacePath = TestUtilities.GetSharedPath("References")
+                InitialWorkingDirectory = TestUtilities.GetSharedPath("References")
             };
             symbolsService = new SymbolsService(
                 NullLoggerFactory.Instance,

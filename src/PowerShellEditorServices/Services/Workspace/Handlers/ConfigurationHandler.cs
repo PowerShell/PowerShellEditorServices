@@ -58,7 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             _configurationService.CurrentSettings.Update(
                 incomingSettings.Powershell,
-                _workspaceService.WorkspacePath,
+                _workspaceService.InitialWorkingDirectory,
                 _logger);
 
             // Run any events subscribed to configuration updates

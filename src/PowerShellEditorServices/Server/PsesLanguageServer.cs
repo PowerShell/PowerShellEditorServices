@@ -133,7 +133,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                                 // TODO: Support multi-workspace.
                                 foreach (WorkspaceFolder workspaceFolder in initializeParams.WorkspaceFolders)
                                 {
-                                    workspaceService.WorkspacePath = workspaceFolder.Uri.GetFileSystemPath();
+                                    workspaceService.InitialWorkingDirectory = workspaceFolder.Uri.GetFileSystemPath();
                                     break;
                                 }
                             }
@@ -152,7 +152,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                                 LoadProfiles = initializationOptions?.GetValue("enableProfileLoading")?.Value<bool>() ?? true,
                                 // TODO: Consider deprecating the setting which sets this and
                                 // instead use WorkspacePath exclusively.
-                                InitialWorkingDirectory = initializationOptions?.GetValue("initialWorkingDirectory")?.Value<string>() ?? workspaceService.WorkspacePath,
+                                InitialWorkingDirectory = initializationOptions?.GetValue("initialWorkingDirectory")?.Value<string>() ?? workspaceService.InitialWorkingDirectory,
                                 ShellIntegrationEnabled = initializationOptions?.GetValue("shellIntegrationEnabled")?.Value<bool>() ?? false
                             };
 
