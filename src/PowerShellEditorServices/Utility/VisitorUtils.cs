@@ -33,10 +33,18 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             return PSESSymbols.AstOperations.TryGetInferredValue(expandableStringExpressionAst, out string value) ? value : null;
         }
 
+        private static readonly string[] s_scopes = new string[]
+        {
+            "private:",
+            "script:",
+            "global:",
+            "local:"
+        };
+
         // Strip the qualification, if there is any, so script:my-function is a reference of my-function etc.
         internal static string GetUnqualifiedFunctionName(string name)
         {
-            foreach (string scope in new string[] { "private:", "script:", "global:", "local:" })
+            foreach (string scope in s_scopes)
             {
                 if (name.StartsWith(scope, StringComparison.OrdinalIgnoreCase))
                 {
