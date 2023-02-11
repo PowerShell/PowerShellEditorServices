@@ -223,6 +223,13 @@ namespace PowerShellEditorServices.Test.Language
                 Assert.Equal("My-Function", i.Name);
                 Assert.Equal(SymbolType.Function, i.Type);
                 Assert.False(i.IsDeclaration);
+            },
+            (i) =>
+            {
+                Assert.Equal("fn My-Function", i.Id);
+                Assert.Equal("$Function:My-Function", i.Name);
+                Assert.Equal(SymbolType.Function, i.Type);
+                Assert.False(i.IsDeclaration);
             });
         }
 
@@ -246,7 +253,8 @@ namespace PowerShellEditorServices.Test.Language
                 {
                     AssertIsRegion(i.NameRegion, 20, 1, 20, 9);
                     Assert.Equal("fn My-Alias", i.Id);
-                });
+                },
+                (i) => AssertIsRegion(i.NameRegion, 22, 29, 22, 52));
         }
 
         [Fact]
@@ -322,6 +330,13 @@ namespace PowerShellEditorServices.Test.Language
                 (i) =>
                 {
                     Assert.Equal("fn My-Function", i.Id);
+                    Assert.Equal(SymbolType.Function, i.Type);
+                    Assert.False(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("fn My-Function", i.Id);
+                    Assert.Equal("$Function:My-Function", i.Name);
                     Assert.Equal(SymbolType.Function, i.Type);
                     Assert.False(i.IsDeclaration);
                 });

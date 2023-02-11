@@ -95,6 +95,21 @@ internal sealed class SymbolVisitor : AstVisitor2
             return AstVisitAction.Continue;
         }
 
+        // Count $Function:MyFunction as function references.
+        if (variableExpressionAst.VariablePath.IsDriveQualified
+            && variableExpressionAst.VariablePath.DriveName.Equals("Function", StringComparison.OrdinalIgnoreCase))
+        {
+            return _action(new SymbolReference(
+                SymbolType.Function,
+                "fn " + VisitorUtils.GetUnqualifiedVariableName(variableExpressionAst.VariablePath),
+                "$" + variableExpressionAst.VariablePath.UserPath,
+                variableExpressionAst.Extent,
+                variableExpressionAst.Extent,
+                _file,
+                false
+            ));
+        }
+
         // TODO: Consider tracking unscoped variable references only when they're declared within
         // the same function definition.
         return _action(new SymbolReference(

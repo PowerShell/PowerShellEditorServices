@@ -18,3 +18,5 @@ Write-Host
 Get-ChildItem
 
 My-Alias
+
+Invoke-Command -ScriptBlock ${Function:My-Function}
