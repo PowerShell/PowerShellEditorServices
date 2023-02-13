@@ -191,7 +191,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
         }
 
-        public string GetWorkspacePath() => _workspaceService.WorkspacePath;
+        // TODO: This should get the current editor's context and use it to determine which
+        // workspace it's in.
+        public string GetWorkspacePath() => _workspaceService.InitialWorkingDirectory;
 
         public string GetWorkspaceRelativePath(string filePath) => _workspaceService.GetRelativePath(filePath);
 

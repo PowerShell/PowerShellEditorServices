@@ -23,6 +23,8 @@ using Microsoft.PowerShell.EditorServices.Test.Shared.References;
 using Microsoft.PowerShell.EditorServices.Test.Shared.SymbolDetails;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Symbols;
 using Microsoft.PowerShell.EditorServices.Utility;
+using OmniSharp.Extensions.LanguageServer.Protocol;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
 
 namespace PowerShellEditorServices.Test.Language
@@ -38,10 +40,11 @@ namespace PowerShellEditorServices.Test.Language
         public SymbolsServiceTests()
         {
             psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
-            workspace = new WorkspaceService(NullLoggerFactory.Instance)
+            workspace = new WorkspaceService(NullLoggerFactory.Instance);
+            workspace.WorkspaceFolders.Add(new WorkspaceFolder
             {
-                WorkspacePath = TestUtilities.GetSharedPath("References")
-            };
+                Uri = DocumentUri.FromFileSystemPath(TestUtilities.GetSharedPath("References"))
+            });
             symbolsService = new SymbolsService(
                 NullLoggerFactory.Instance,
                 psesHost,
@@ -231,6 +234,23 @@ namespace PowerShellEditorServices.Test.Language
                 Assert.Equal(SymbolType.Function, i.Type);
                 Assert.False(i.IsDeclaration);
             });
+        }
+
+        [Fact]
+        public async Task FindsReferenceAcrossMultiRootWorkspace()
+        {
+            workspace.WorkspaceFolders = new[] { "Debugging", "ParameterHints", "SymbolDetails" }
+                .Select(i => new WorkspaceFolder
+                {
+                    Uri = DocumentUri.FromFileSystemPath(TestUtilities.GetSharedPath(i))
+                }).ToList();
+
+            SymbolReference symbol = new("fn Get-Process", SymbolType.Function);
+            IEnumerable<SymbolReference> symbols = await symbolsService.ScanForReferencesOfSymbolAsync(symbol).ConfigureAwait(true);
+            Assert.Collection(symbols.OrderBy(i => i.FilePath),
+                i => Assert.EndsWith("VariableTest.ps1", i.FilePath),
+                i => Assert.EndsWith("ParamHints.ps1", i.FilePath),
+                i => Assert.EndsWith("SymbolDetails.ps1", i.FilePath));
         }
 
         [Fact]

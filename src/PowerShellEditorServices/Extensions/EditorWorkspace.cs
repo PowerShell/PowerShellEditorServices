@@ -18,7 +18,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         #region Properties
 
         /// <summary>
-        /// Gets the current workspace path if there is one or null otherwise.
+        /// Gets the current workspace path if there is one for the open editor or null otherwise.
         /// </summary>
         public string Path => editorOperations.GetWorkspacePath();
 

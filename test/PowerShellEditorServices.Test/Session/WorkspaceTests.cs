@@ -39,7 +39,7 @@ namespace PowerShellEditorServices.Test.Session
             string expectedOutsidePath = TestUtilities.NormalizePath("../PeerPath/FilePath.ps1");
 
             // Test with a workspace path
-            workspace.WorkspacePath = workspacePath;
+            workspace.InitialWorkingDirectory = workspacePath;
             Assert.Equal(expectedInsidePath, workspace.GetRelativePath(testPathInside));
             Assert.Equal(expectedOutsidePath, workspace.GetRelativePath(testPathOutside));
             Assert.Equal(testPathAnotherDrive, workspace.GetRelativePath(testPathAnotherDrive));
@@ -49,7 +49,7 @@ namespace PowerShellEditorServices.Test.Session
         {
             return new WorkspaceService(NullLoggerFactory.Instance)
             {
-                WorkspacePath = TestUtilities.NormalizePath("Fixtures/Workspace")
+                InitialWorkingDirectory = TestUtilities.NormalizePath("Fixtures/Workspace")
             };
         }
 
@@ -94,10 +94,10 @@ namespace PowerShellEditorServices.Test.Session
 
             List<string> expected = new()
             {
-                Path.Combine(workspace.WorkspacePath, "nested", "donotfind.ps1"),
-                Path.Combine(workspace.WorkspacePath, "nested", "nestedmodule.psd1"),
-                Path.Combine(workspace.WorkspacePath, "nested", "nestedmodule.psm1"),
-                Path.Combine(workspace.WorkspacePath, "rootfile.ps1")
+                Path.Combine(workspace.InitialWorkingDirectory, "nested", "donotfind.ps1"),
+                Path.Combine(workspace.InitialWorkingDirectory, "nested", "nestedmodule.psd1"),
+                Path.Combine(workspace.InitialWorkingDirectory, "nested", "nestedmodule.psm1"),
+                Path.Combine(workspace.InitialWorkingDirectory, "rootfile.ps1")
             };
 
             // .NET Core doesn't appear to use the same three letter pattern matching rule although the docs
@@ -105,7 +105,7 @@ namespace PowerShellEditorServices.Test.Session
             // ref https://docs.microsoft.com/en-us/dotnet/api/system.io.directory.getfiles?view=netcore-2.1#System_IO_Directory_GetFiles_System_String_System_String_System_IO_EnumerationOptions_
             if (RuntimeInformation.FrameworkDescription.StartsWith(".NET Framework"))
             {
-                expected.Insert(3, Path.Combine(workspace.WorkspacePath, "other", "other.ps1xml"));
+                expected.Insert(3, Path.Combine(workspace.InitialWorkingDirectory, "other", "other.ps1xml"));
             }
 
             Assert.Equal(expected, actual);
@@ -122,7 +122,7 @@ namespace PowerShellEditorServices.Test.Session
                 maxDepth: 1,
                 ignoreReparsePoints: s_defaultIgnoreReparsePoints
             );
-            Assert.Equal(new[] { Path.Combine(workspace.WorkspacePath, "rootfile.ps1") }, actual);
+            Assert.Equal(new[] { Path.Combine(workspace.InitialWorkingDirectory, "rootfile.ps1") }, actual);
         }
 
         [Fact]
@@ -138,8 +138,8 @@ namespace PowerShellEditorServices.Test.Session
             );
 
             Assert.Equal(new[] {
-                    Path.Combine(workspace.WorkspacePath, "nested", "nestedmodule.psd1"),
-                    Path.Combine(workspace.WorkspacePath, "rootfile.ps1")
+                    Path.Combine(workspace.InitialWorkingDirectory, "nested", "nestedmodule.psd1"),
+                    Path.Combine(workspace.InitialWorkingDirectory, "rootfile.ps1")
                 }, actual);
         }
 
@@ -181,7 +181,7 @@ namespace PowerShellEditorServices.Test.Session
         public void CanOpenAndCloseFile()
         {
             WorkspaceService workspace = FixturesWorkspace();
-            string filePath = Path.GetFullPath(Path.Combine(workspace.WorkspacePath, "rootfile.ps1"));
+            string filePath = Path.GetFullPath(Path.Combine(workspace.InitialWorkingDirectory, "rootfile.ps1"));
 
             ScriptFile file = workspace.GetFile(filePath);
             Assert.Equal(workspace.GetOpenedFiles(), new[] { file });
