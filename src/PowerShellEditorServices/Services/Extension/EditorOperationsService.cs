@@ -195,7 +195,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         // workspace it's in.
         public string GetWorkspacePath() => _workspaceService.InitialWorkingDirectory;
 
-        public string GetWorkspaceRelativePath(string filePath) => _workspaceService.GetRelativePath(filePath);
+        public string GetWorkspaceRelativePath(ScriptFile scriptFile) => _workspaceService.GetRelativePath(scriptFile);
 
         public async Task ShowInformationMessageAsync(string message)
         {

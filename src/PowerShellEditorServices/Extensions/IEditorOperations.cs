@@ -28,9 +28,8 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Resolves the given file path relative to the current workspace path.
         /// </summary>
-        /// <param name="filePath">The file path to be resolved.</param>
         /// <returns>The resolved file path.</returns>
-        string GetWorkspaceRelativePath(string filePath);
+        string GetWorkspaceRelativePath(ScriptFile scriptFile);
 
         /// <summary>
         /// Causes a new untitled file to be created in the editor.

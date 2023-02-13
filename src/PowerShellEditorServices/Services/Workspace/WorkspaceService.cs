@@ -306,18 +306,23 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         /// Gets the workspace-relative path of the given file path.
         /// </summary>
-        /// <param name="filePath">The original full file path.</param>
         /// <returns>A relative file path</returns>
-        public string GetRelativePath(string filePath)
+        public string GetRelativePath(ScriptFile scriptFile)
         {
-            string resolvedPath = filePath;
+            string resolvedPath = scriptFile.FilePath;
 
-            if (!IsPathInMemory(filePath) && !string.IsNullOrEmpty(InitialWorkingDirectory))
+            if (!scriptFile.IsInMemory)
             {
-                Uri workspaceUri = new(InitialWorkingDirectory);
-                Uri fileUri = new(filePath);
-
-                resolvedPath = workspaceUri.MakeRelativeUri(fileUri).ToString();
+                Uri fileUri = scriptFile.DocumentUri.ToUri();
+                foreach (WorkspaceFolder workspaceFolder in WorkspaceFolders)
+                {
+                    Uri workspaceUri = workspaceFolder.Uri.ToUri();
+                    if (workspaceUri.IsBaseOf(fileUri))
+                    {
+                        resolvedPath = workspaceUri.MakeRelativeUri(fileUri).ToString();
+                        break;
+                    }
+                }
 
                 // Convert the directory separators if necessary
                 if (Path.DirectorySeparatorChar == '\\')
