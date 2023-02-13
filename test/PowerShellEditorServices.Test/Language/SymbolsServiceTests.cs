@@ -230,6 +230,23 @@ namespace PowerShellEditorServices.Test.Language
         }
 
         [Fact]
+        public async Task FindsReferenceAcrossMultiRootWorkspace()
+        {
+            workspace.WorkspaceFolders = new[] { "Debugging", "ParameterHints", "SymbolDetails" }
+                .Select(i => new WorkspaceFolder
+                {
+                    Uri = DocumentUri.FromFileSystemPath(TestUtilities.GetSharedPath(i))
+                }).ToList();
+
+            SymbolReference symbol = new("fn Get-Process", SymbolType.Function);
+            IEnumerable<SymbolReference> symbols = await symbolsService.ScanForReferencesOfSymbolAsync(symbol).ConfigureAwait(true);
+            Assert.Collection(symbols.OrderBy(i => i.FilePath),
+                i => Assert.EndsWith("VariableTest.ps1", i.FilePath),
+                i => Assert.EndsWith("ParamHints.ps1", i.FilePath),
+                i => Assert.EndsWith("SymbolDetails.ps1", i.FilePath));
+        }
+
+        [Fact]
         public async Task FindsReferencesOnFunctionIncludingAliases()
         {
             // TODO: Same as in FindsFunctionDefinitionForAlias.

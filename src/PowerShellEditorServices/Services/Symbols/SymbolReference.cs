@@ -66,5 +66,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             }
             IsDeclaration = isDeclaration;
         }
+
+        /// <summary>
+        /// This is only used for unit tests!
+        /// </summary>
+        internal SymbolReference(string id, SymbolType type)
+        {
+            Id = id;
+            Type = type;
+            Name = "";
+            NameRegion = new("", "", 0, 0, 0, 0, 0, 0);
+            ScriptRegion = NameRegion;
+            SourceLine = "";
+            FilePath = "";
+        }
     }
 }
