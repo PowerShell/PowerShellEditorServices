@@ -1,5 +1,14 @@
 # PowerShell Editor Services Release History
 
+## v3.8.1
+### Monday, February 13, 2023
+
+- ✨ 📁 [vscode-powershell #2112](https://github.com/PowerShell/PowerShellEditorServices/pull/1995) - Add `WorkspaceFolders` and use it when enumerating files.
+- ✨ 🙏 [vscode-powershell #1481](https://github.com/PowerShell/PowerShellEditorServices/pull/1993) - Count `${Function:My-Function}` as a function reference.
+- 🐛 🙏 [vscode-powershell #1089](https://github.com/PowerShell/PowerShellEditorServices/pull/1990) - Strip scope from function references.
+- 🐛 🙏 [PowerShellEditorServices #1989](https://github.com/PowerShell/PowerShellEditorServices/pull/1989) - Keep only first assignment as declaration.
+- ✨ 🐢 [PowerShellEditorServices #1988](https://github.com/PowerShell/PowerShellEditorServices/pull/1988) - Support Run/Debug tests in PSKoans-files. (Thanks @fflaten!)
+
 ## v3.8.0
 ### Thursday, February 02, 2023
 
