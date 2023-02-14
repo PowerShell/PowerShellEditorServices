@@ -41,3 +41,11 @@ enum AEnum {
 AFunction
 1..3 | AFilter
 AnAdvancedFunction
+
+<#
+#region don't find me
+abc
+#endregion
+#>
+#region my region 123
+#endregion

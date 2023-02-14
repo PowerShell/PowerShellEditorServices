@@ -821,6 +821,12 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Equal("prop AValue", symbol.Id);
             Assert.Equal("AValue", symbol.Name);
             Assert.True(symbol.IsDeclaration);
+
+            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Region));
+            Assert.Equal("region my region 123", symbol.Id);
+            Assert.Equal("#region my region 123", symbol.Name);
+            AssertIsRegion(symbol.NameRegion, 50, 1, 50, 22);
+            Assert.True(symbol.IsDeclaration);
         }
 
         [Fact]
