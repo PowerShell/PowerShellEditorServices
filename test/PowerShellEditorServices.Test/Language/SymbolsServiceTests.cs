@@ -826,6 +826,7 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Equal("region my region 123", symbol.Id);
             Assert.Equal("#region my region 123", symbol.Name);
             AssertIsRegion(symbol.NameRegion, 50, 1, 50, 22);
+            AssertIsRegion(symbol.ScriptRegion, 50, 1, 52, 11);
             Assert.True(symbol.IsDeclaration);
         }
 
