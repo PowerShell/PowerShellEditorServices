@@ -50,8 +50,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 
                         action(new SymbolReference(
                             SymbolType.Region,
-                            regionStart.Extent.Text.TrimStart().TrimStart('#'),
-                            regionStart.Extent.Text,
+                            regionStart.Extent.Text.Trim().TrimStart('#'),
+                            regionStart.Extent.Text.Trim(),
                             regionStart.Extent,
                             new ScriptExtent()
                             {
