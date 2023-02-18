@@ -53,6 +53,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             List<DocumentHighlight> highlights = new();
             foreach (SymbolReference occurrence in occurrences)
             {
+                if (occurrence.Type is SymbolType.Region)
+                {
+                    continue;
+                }
+
                 highlights.Add(new DocumentHighlight
                 {
                     Kind = DocumentHighlightKind.Write, // TODO: Which symbol types are writable?
