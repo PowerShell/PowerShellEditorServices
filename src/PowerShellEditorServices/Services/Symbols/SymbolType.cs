@@ -81,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         Type,
 
         /// <summary>
-        /// The symbol is a region
+        /// The symbol is a region. Only used for navigation-features.
         /// </summary>
         Region
     }
