@@ -155,7 +155,7 @@ function New-EditorFile {
                     }
 
                     $psEditor.Workspace.OpenFile($fileName, $preview)
-                    $editorContext.CurrentFile.InsertText(($valueList | Out-String))
+                    $psEditor.GetEditorContext().CurrentFile.InsertText(($valueList | Out-String))
                 } else {
                     $PSCmdlet.WriteError( (
                         New-Object -TypeName System.Management.Automation.ErrorRecord -ArgumentList @(
@@ -167,7 +167,7 @@ function New-EditorFile {
             }
         } else {
             $psEditor.Workspace.NewFile()
-            $editorContext.CurrentFile.InsertText(($valueList | Out-String))
+            $psEditor.GetEditorContext().CurrentFile.InsertText(($valueList | Out-String))
         }
     }
 }
