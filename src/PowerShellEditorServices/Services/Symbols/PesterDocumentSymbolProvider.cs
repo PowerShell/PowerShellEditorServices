@@ -62,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             // Ensure the first word is a Pester keyword and in Pester-module if using module-qualified call
             string commandName = CommandHelpers.StripModuleQualification(commandAst.GetCommandName(), out ReadOnlyMemory<char> module);
             if (!PesterSymbolReference.PesterKeywords.ContainsKey(commandName) ||
-                !module.Span.Equals("pester".AsSpan(), StringComparison.OrdinalIgnoreCase))
+                (!module.IsEmpty && !module.Span.Equals("pester".AsSpan(), StringComparison.OrdinalIgnoreCase)))
             {
                 return false;
             }
