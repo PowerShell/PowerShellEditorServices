@@ -274,7 +274,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         ILspFileRange SelectionRange { get; }
     }
 
-    internal struct OmnisharpLspPosition : ILspFilePosition, IEquatable<OmnisharpLspPosition>
+    internal readonly struct OmnisharpLspPosition : ILspFilePosition, IEquatable<OmnisharpLspPosition>
     {
         private readonly Position _position;
 
@@ -287,7 +287,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public bool Equals(OmnisharpLspPosition other) => _position == other._position;
     }
 
-    internal struct OmnisharpLspRange : ILspFileRange, IEquatable<OmnisharpLspRange>
+    internal readonly struct OmnisharpLspRange : ILspFileRange, IEquatable<OmnisharpLspRange>
     {
         private readonly Range _range;
 
@@ -300,7 +300,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public bool Equals(OmnisharpLspRange other) => _range == other._range;
     }
 
-    internal struct BufferFilePosition : IFilePosition, IEquatable<BufferFilePosition>
+    internal readonly struct BufferFilePosition : IFilePosition, IEquatable<BufferFilePosition>
     {
         private readonly BufferPosition _position;
 
@@ -317,7 +317,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         }
     }
 
-    internal struct BufferFileRange : IFileRange, IEquatable<BufferFileRange>
+    internal readonly struct BufferFileRange : IFileRange, IEquatable<BufferFileRange>
     {
         private readonly BufferRange _range;
 

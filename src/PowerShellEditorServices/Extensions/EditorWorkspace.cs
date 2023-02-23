@@ -31,6 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         #endregion
 
         #region Public Methods
+        #pragma warning disable VSTHRD002 // These are public APIs that use async internal methods.
 
         /// <summary>
         /// Creates a new file in the editor
@@ -53,6 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="preview">Determines wether the file is opened as a preview or as a durable editor.</param>
         public void OpenFile(string filePath, bool preview) => editorOperations.OpenFileAsync(filePath, preview).Wait();
 
+        #pragma warning restore VSTHRD002
         #endregion
     }
 }

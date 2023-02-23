@@ -174,7 +174,7 @@ $foo = 'bar'
             // Remove and CR characters
             string testString = allInOneScript.Replace("\r", "");
             // Ensure that there are no CR characters in the string
-            Assert.True(testString.IndexOf("\r\n") == -1, "CRLF should not be present in the test string");
+            Assert.False(testString.Contains("\r\n"), "CRLF should not be present in the test string");
             FoldingReference[] result = GetRegions(testString);
             AssertFoldingReferenceArrays(expectedAllInOneScriptFolds, result);
         }

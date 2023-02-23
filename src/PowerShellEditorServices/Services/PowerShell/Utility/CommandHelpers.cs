@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
@@ -241,7 +242,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                     .AddParameter("CommandType", CommandTypes.Alias),
                 cancellationToken).ConfigureAwait(false);
 
-            foreach (AliasInfo aliasInfo in aliases)
+            foreach (AliasInfo aliasInfo in aliases.Cast<AliasInfo>())
             {
                 // TODO: When we move to netstandard2.1, we can use another overload which generates
                 // static delegates and thus reduces allocations.

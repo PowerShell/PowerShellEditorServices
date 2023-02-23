@@ -97,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                 return Task.FromResult<DscBreakpointCapability>(null);
             }
 
-            Func<SMA.PowerShell, CancellationToken, DscBreakpointCapability> getDscBreakpointCapabilityFunc = (pwsh, _) =>
+            DscBreakpointCapability getDscBreakpointCapabilityFunc(SMA.PowerShell pwsh, CancellationToken _)
             {
                 PSInvocationSettings invocationSettings = new()
                 {
@@ -159,7 +159,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                 logger.LogTrace($"DSC resources found: {resourcePaths.Count}");
 
                 return capability;
-            };
+            }
 
             return psesHost.ExecuteDelegateAsync(
                 nameof(getDscBreakpointCapabilityFunc),

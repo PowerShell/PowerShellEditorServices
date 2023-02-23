@@ -62,10 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             IEnumerable<PSObject> runspaces = null;
 
-            if (request.ProcessId == null)
-            {
-                request.ProcessId = "current";
-            }
+            request.ProcessId ??= "current";
 
             // If the processId is a valid int, we need to run Get-Runspace within that process
             // otherwise just use the current runspace.

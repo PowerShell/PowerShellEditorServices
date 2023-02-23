@@ -14,9 +14,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// Initializes a new instance of the SetVariableExpressionException class.
         /// </summary>
         /// <param name="message">Message indicating why the expression is invalid.</param>
-        public InvalidPowerShellExpressionException(string message)
-            : base(message)
-        {
-        }
+        public InvalidPowerShellExpressionException(string message) : base(message) { }
+
+        public InvalidPowerShellExpressionException() { }
+
+        public InvalidPowerShellExpressionException(string message, Exception innerException) : base(message, innerException) { }
     }
 }

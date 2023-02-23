@@ -10,15 +10,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class GetVersionHandler : IGetVersionHandler
     {
-        public async Task<PowerShellVersion> Handle(GetVersionParams request, CancellationToken cancellationToken)
+        public Task<PowerShellVersion> Handle(GetVersionParams request, CancellationToken cancellationToken)
         {
-            return new PowerShellVersion
+            return Task.FromResult(new PowerShellVersion
             {
                 Version = VersionUtils.PSVersionString,
                 Edition = VersionUtils.PSEdition,
                 Commit = VersionUtils.GitCommitId,
                 Architecture = VersionUtils.Architecture
-            };
+            });
         }
     }
 }
