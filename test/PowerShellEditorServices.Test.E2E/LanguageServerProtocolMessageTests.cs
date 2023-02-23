@@ -151,7 +151,7 @@ function CanSendWorkspaceSymbolRequest {
                 .Returning<Container<SymbolInformation>>(CancellationToken.None).ConfigureAwait(true);
 
             SymbolInformation symbol = Assert.Single(symbols);
-            Assert.Equal("CanSendWorkspaceSymbolRequest { }", symbol.Name);
+            Assert.Equal("function CanSendWorkspaceSymbolRequest ()", symbol.Name);
         }
 
         [SkippableFact]
@@ -518,7 +518,7 @@ Write-Host 'Goodbye'
                         })
                     .Returning<DocumentHighlightContainer>(CancellationToken.None).ConfigureAwait(true);
 
-            Assert.Collection(documentHighlights,
+            Assert.Collection(documentHighlights.OrderBy(i => i.Range.Start.Line),
                 documentHighlight1 =>
                 {
                     Range range = documentHighlight1.Range;
@@ -868,8 +868,8 @@ CanSendReferencesCodeLensRequest
             Range range = codeLens.Range;
             Assert.Equal(1, range.Start.Line);
             Assert.Equal(9, range.Start.Character);
-            Assert.Equal(3, range.End.Line);
-            Assert.Equal(1, range.End.Character);
+            Assert.Equal(1, range.End.Line);
+            Assert.Equal(41, range.End.Character);
 
             CodeLens codeLensResolveResult = await PsesLanguageClient
                 .SendRequest("codeLens/resolve", codeLens)
@@ -910,26 +910,26 @@ $o -is [MyBaseClass]
                     })
                 .Returning<CodeLensContainer>(CancellationToken.None).ConfigureAwait(true);
 
-            Assert.Collection(codeLenses,
+            Assert.Collection(codeLenses.OrderBy(i => i.Range.Start.Line),
                 codeLens =>
                 {
                     Range range = codeLens.Range;
                     Assert.Equal(5, range.Start.Line);
                     Assert.Equal(6, range.Start.Character);
-                    Assert.Equal(7, range.End.Line);
-                    Assert.Equal(1, range.End.Character);
+                    Assert.Equal(5, range.End.Line);
+                    Assert.Equal(17, range.End.Character);
                 },
                 codeLens =>
                 {
                     Range range = codeLens.Range;
                     Assert.Equal(9, range.Start.Line);
                     Assert.Equal(6, range.Start.Character);
-                    Assert.Equal(11, range.End.Line);
-                    Assert.Equal(1, range.End.Character);
+                    Assert.Equal(9, range.End.Line);
+                    Assert.Equal(16, range.End.Character);
                 }
             );
 
-            CodeLens baseClassCodeLens = codeLenses.First();
+            CodeLens baseClassCodeLens = codeLenses.OrderBy(i => i.Range.Start.Line).First();
             CodeLens codeLensResolveResult = await PsesLanguageClient
                 .SendRequest("codeLens/resolve", baseClassCodeLens)
                 .Returning<CodeLens>(CancellationToken.None).ConfigureAwait(true);
@@ -972,8 +972,8 @@ enum MyEnum {
             Range range = codeLens.Range;
             Assert.Equal(5, range.Start.Line);
             Assert.Equal(5, range.Start.Character);
-            Assert.Equal(9, range.End.Line);
-            Assert.Equal(1, range.End.Character);
+            Assert.Equal(5, range.End.Line);
+            Assert.Equal(11, range.End.Character);
 
             CodeLens codeLensResolveResult = await PsesLanguageClient
                 .SendRequest("codeLens/resolve", codeLens)
@@ -1146,7 +1146,7 @@ enum MyEnum {
 
             Assert.True(hover.Contents.HasMarkedStrings);
             Assert.Collection(hover.Contents.MarkedStrings,
-                str1 => Assert.Equal("function Write-Host", str1.Value),
+                str1 => Assert.Equal("Write-Host", str1.Value),
                 str2 =>
                 {
                     Assert.Equal("markdown", str2.Language);
@@ -1157,7 +1157,7 @@ enum MyEnum {
         [Fact]
         public async Task CanSendSignatureHelpRequestAsync()
         {
-            string filePath = NewTestFile("Get-Date ");
+            string filePath = NewTestFile("Get-Date -");
 
             SignatureHelp signatureHelp = await PsesLanguageClient
                 .SendRequest(
@@ -1171,7 +1171,7 @@ enum MyEnum {
                         Position = new Position
                         {
                             Line = 0,
-                            Character = 9
+                            Character = 10
                         }
                     })
                 .Returning<SignatureHelp>(CancellationToken.None).ConfigureAwait(true);

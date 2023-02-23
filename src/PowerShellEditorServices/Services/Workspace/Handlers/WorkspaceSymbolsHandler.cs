@@ -39,6 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             foreach (ScriptFile scriptFile in _workspaceService.GetOpenedFiles())
             {
+                _logger.LogDebug($"Handling workspace symbols request for: {request.Query}");
                 IEnumerable<SymbolReference> foundSymbols = _symbolsService.FindSymbolsInFile(scriptFile);
 
                 // TODO: Need to compute a relative path that is based on common path for all workspace files
@@ -89,7 +90,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     });
                 }
             }
-            _logger.LogWarning("Logging in a handler works now.");
+
             return new Container<SymbolInformation>(symbols);
         }
 
