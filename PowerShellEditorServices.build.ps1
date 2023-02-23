@@ -203,7 +203,7 @@ Task TestE2E Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test.E2E\
 
     $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
-    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS72 }
+    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS73 }
 
     if (!$script:IsNix) {
         if (-not [Security.Principal.WindowsIdentity]::GetCurrent().Owner.IsWellKnown("BuiltInAdministratorsSid")) {
@@ -214,7 +214,7 @@ Task TestE2E Build, SetupHelpForTests, {
         try {
             Write-Host "Running end-to-end tests in Constrained Language Mode."
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", "0x80000007", [System.EnvironmentVariableTarget]::Machine);
-            Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS72 }
+            Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS73 }
         } finally {
             [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", $null, [System.EnvironmentVariableTarget]::Machine);
         }
