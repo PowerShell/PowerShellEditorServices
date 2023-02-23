@@ -4,48 +4,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq.Expressions;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
-using System.Reflection;
 using System.Text;
 
 namespace Microsoft.PowerShell.EditorServices.Utility
 {
     internal static class PSCommandHelpers
     {
-        private static readonly Func<CommandInfo, Command> s_commandCtor;
-
-        static PSCommandHelpers()
-        {
-            ConstructorInfo ctor = typeof(Command).GetConstructor(
-                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
-                binder: null,
-                new[] { typeof(CommandInfo) },
-                modifiers: null);
-
-            ParameterExpression commandInfo = Expression.Parameter(typeof(CommandInfo), nameof(commandInfo));
-
-            s_commandCtor = Expression.Lambda<Func<CommandInfo, Command>>(
-                Expression.New(ctor, commandInfo),
-                new[] { commandInfo })
-                .Compile();
-        }
-
-        /// <summary>
-        /// PowerShell's missing an API for us to AddCommand using a CommandInfo.
-        /// An issue was filed here: https://github.com/PowerShell/PowerShell/issues/12295
-        /// This works around this by creating a `Command` and passing it into PSCommand.AddCommand(Command command)
-        /// </summary>
-        /// <param name="command"></param>
-        /// <param name="commandInfo"></param>
-        /// <returns></returns>
-        public static PSCommand AddCommand(this PSCommand command, CommandInfo commandInfo)
-        {
-            Command rsCommand = s_commandCtor(commandInfo);
-            return command.AddCommand(rsCommand);
-        }
-
         public static PSCommand AddOutputCommand(this PSCommand psCommand)
         {
             return psCommand.MergePipelineResults()
