@@ -161,7 +161,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             CancellationToken cancellationToken = default)
         {
             // Never scan for regions as they're only useful in current document
-            if (symbol is null || symbol.Type is SymbolType.Region)
+            if (symbol is null)
             {
                 return Enumerable.Empty<SymbolReference>();
             }

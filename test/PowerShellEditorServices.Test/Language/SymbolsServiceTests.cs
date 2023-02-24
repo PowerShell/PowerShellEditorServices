@@ -145,6 +145,13 @@ namespace PowerShellEditorServices.Test.Language
                 .OrderBy(symbol => symbol.ScriptRegion.ToRange().Start);
         }
 
+        private IEnumerable<SymbolReference> FindRegionsInFile(ScriptRegion scriptRegion)
+        {
+            return RegionVisitor
+                .GetRegionsInDocument(GetScriptFile(scriptRegion))
+                .OrderBy(symbol => symbol.ScriptRegion.ToRange().Start);
+        }
+
         [Fact]
         public async Task FindsParameterHintsOnCommand()
         {
@@ -821,13 +828,6 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Equal("prop AValue", symbol.Id);
             Assert.Equal("AValue", symbol.Name);
             Assert.True(symbol.IsDeclaration);
-
-            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Region));
-            Assert.Equal("region my region 123", symbol.Id);
-            Assert.Equal("#region my region 123", symbol.Name);
-            AssertIsRegion(symbol.NameRegion, 50, 1, 50, 22);
-            AssertIsRegion(symbol.ScriptRegion, 50, 1, 52, 11);
-            Assert.True(symbol.IsDeclaration);
         }
 
         [Fact]
@@ -958,6 +958,31 @@ namespace PowerShellEditorServices.Test.Language
         {
             IEnumerable<SymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInNoSymbolsFile.SourceDetails);
             Assert.Empty(symbolsResult);
+        }
+
+        [Fact]
+        public void FindsRegionSymbolsInFile()
+        {
+            IEnumerable<SymbolReference> symbols = FindRegionsInFile(FindSymbolsInMultiSymbolFile.SourceDetails);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("region find me outer", i.Id);
+                    Assert.Equal("#region find me outer", i.Name);
+                    Assert.Equal(SymbolType.Region, i.Type);
+                    Assert.True(i.IsDeclaration);
+                    AssertIsRegion(i.NameRegion, 51, 1, 51, 22);
+                    AssertIsRegion(i.ScriptRegion, 51, 1, 55, 11);
+                },
+                (i) =>
+                {
+                    Assert.Equal("region find me inner", i.Id);
+                    Assert.Equal("#region find me inner", i.Name);
+                    Assert.Equal(SymbolType.Region, i.Type);
+                    Assert.True(i.IsDeclaration);
+                    AssertIsRegion(i.NameRegion, 52, 1, 52, 22);
+                    AssertIsRegion(i.ScriptRegion, 52, 1, 54, 11);
+                });
         }
     }
 }

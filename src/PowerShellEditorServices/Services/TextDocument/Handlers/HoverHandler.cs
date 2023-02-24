@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         request.Position.Line + 1,
                         request.Position.Character + 1).ConfigureAwait(false);
 
-            if (symbolDetails is null || symbolDetails.SymbolReference.Type is SymbolType.Region)
+            if (symbolDetails is null)
             {
                 return null;
             }

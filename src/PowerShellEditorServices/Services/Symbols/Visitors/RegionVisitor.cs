@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {
     internal static class RegionVisitor
     {
-        internal static void GetRegionsInDocument(ScriptFile file, Func<SymbolReference, AstVisitAction> action)
+        internal static IEnumerable<SymbolReference> GetRegionsInDocument(ScriptFile file)
         {
             Stack<Token> tokenCommentRegionStack = new();
             Token[] tokens = file.ScriptTokens;
@@ -48,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                             regionEnd.Extent.EndLineNumber,
                             regionEnd.Extent.EndColumnNumber);
 
-                        action(new SymbolReference(
+                        yield return new SymbolReference(
                             SymbolType.Region,
                             regionStart.Extent.Text.Trim().TrimStart('#'),
                             regionStart.Extent.Text.Trim(),
@@ -65,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                                 File = regionStart.Extent.File
                             },
                             file,
-                            isDeclaration: true));
+                            isDeclaration: true);
                     }
                 }
             }

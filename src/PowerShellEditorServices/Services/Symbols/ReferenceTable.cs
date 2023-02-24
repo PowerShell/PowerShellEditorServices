@@ -79,7 +79,6 @@ internal sealed class ReferenceTable
         }
 
         _parent.ScriptAst.Visit(new SymbolVisitor(_parent, AddReference));
-        RegionVisitor.GetRegionsInDocument(_parent, AddReference);
     }
 
     private AstVisitAction AddReference(SymbolReference symbol)

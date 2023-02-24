@@ -50,10 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
             IEnumerable<SymbolReference> foundSymbols = ProvideDocumentSymbols(scriptFile);
-            if (foundSymbols is null)
-            {
-                return null;
-            }
+            foundSymbols = foundSymbols.Concat(RegionVisitor.GetRegionsInDocument(scriptFile));
 
             string containerName = Path.GetFileNameWithoutExtension(scriptFile.FilePath);
 

@@ -43,11 +43,14 @@ AFunction
 AnAdvancedFunction
 
 <#
-#region don't find me
+#region don't find me inside comment block
 abc
 #endregion
 #>
-#region my region 123
+
+#region find me outer
+#region find me inner
 
 #endregion
-#region unclosed region
+#endregion
+#region ignore this unclosed region
