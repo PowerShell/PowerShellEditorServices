@@ -3,13 +3,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.CodeLenses;
-using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
@@ -21,6 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class PsesCodeLensHandlers : CodeLensHandlerBase
     {
+        private static readonly CodeLensContainer s_emptyCodeLensContainer = new();
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
@@ -40,12 +39,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public override Task<CodeLensContainer> Handle(CodeLensParams request, CancellationToken cancellationToken)
         {
+            _logger.LogDebug($"Handling code lens request for {request.TextDocument.Uri}");
+
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
-            CodeLens[] codeLensResults = ProvideCodeLenses(scriptFile, cancellationToken);
-            return Task.FromResult(new CodeLensContainer(codeLensResults));
+            IEnumerable<CodeLens> codeLensResults = ProvideCodeLenses(scriptFile, cancellationToken);
+
+            return !codeLensResults.Any()
+                ? Task.FromResult(s_emptyCodeLensContainer)
+                : Task.FromResult(new CodeLensContainer(codeLensResults));
         }
 
-        public override async Task<CodeLens> Handle(CodeLens request, CancellationToken cancellationToken)
+        public override Task<CodeLens> Handle(CodeLens request, CancellationToken cancellationToken)
         {
             // TODO: Catch deserialization exception on bad object
             CodeLensData codeLensData = request.Data.ToObject<CodeLensData>();
@@ -55,8 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 .FirstOrDefault(provider => provider.ProviderId.Equals(codeLensData.ProviderId, StringComparison.Ordinal));
 
             ScriptFile scriptFile = _workspaceService.GetFile(codeLensData.Uri);
-            return await originalProvider.ResolveCodeLens(request, scriptFile, cancellationToken)
-                .ConfigureAwait(false);
+            return originalProvider.ResolveCodeLens(request, scriptFile, cancellationToken);
         }
 
         /// <summary>
@@ -65,43 +68,20 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         /// <param name="scriptFile">The PowerShell script file to get CodeLenses for.</param>
         /// <param name="cancellationToken"></param>
         /// <returns>All generated CodeLenses for the given script file.</returns>
-        private CodeLens[] ProvideCodeLenses(ScriptFile scriptFile, CancellationToken cancellationToken)
+        private IEnumerable<CodeLens> ProvideCodeLenses(ScriptFile scriptFile, CancellationToken cancellationToken)
         {
-            return InvokeProviders(provider => provider.ProvideCodeLenses(scriptFile, cancellationToken))
-                .SelectMany(codeLens => codeLens)
-                .ToArray();
-        }
-
-        /// <summary>
-        /// Invokes the given function synchronously against all
-        /// registered providers.
-        /// </summary>
-        /// <param name="invokeFunc">The function to be invoked.</param>
-        /// <returns>
-        /// An IEnumerable containing the results of all providers
-        /// that were invoked successfully.
-        /// </returns>
-        private IEnumerable<TResult> InvokeProviders<TResult>(Func<ICodeLensProvider, TResult> invokeFunc)
-        {
-            Stopwatch invokeTimer = new();
-            List<TResult> providerResults = new();
-
             foreach (ICodeLensProvider provider in _symbolsService.GetCodeLensProviders())
             {
-                try
+                foreach (CodeLens codeLens in provider.ProvideCodeLenses(scriptFile, cancellationToken))
                 {
-                    invokeTimer.Restart();
-                    providerResults.Add(invokeFunc(provider));
-                    invokeTimer.Stop();
-                    _logger.LogTrace($"Invocation of provider '{provider.GetType().Name}' completed in {invokeTimer.ElapsedMilliseconds}ms.");
-                }
-                catch (Exception e)
-                {
-                    _logger.LogException($"Exception caught while invoking provider {provider.GetType().Name}:", e);
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        yield break;
+                    }
+
+                    yield return codeLens;
                 }
             }
-
-            return providerResults;
         }
     }
 }

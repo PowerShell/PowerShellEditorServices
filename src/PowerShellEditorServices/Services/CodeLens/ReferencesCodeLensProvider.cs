@@ -53,13 +53,16 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// </summary>
         /// <param name="scriptFile">The PowerShell script file to get code lenses for.</param>
         /// <param name="cancellationToken"></param>
-        /// <returns>An array of CodeLenses describing all functions, classes and enums in the given script file.</returns>
-        public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile, CancellationToken cancellationToken)
+        /// <returns>An IEnumerable of CodeLenses describing all functions, classes and enums in the given script file.</returns>
+        public IEnumerable<CodeLens> ProvideCodeLenses(ScriptFile scriptFile, CancellationToken cancellationToken)
         {
-            List<CodeLens> acc = new();
             foreach (SymbolReference symbol in _symbolProvider.ProvideDocumentSymbols(scriptFile))
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    yield break;
+                }
+
                 // TODO: Can we support more here?
                 if (symbol.IsDeclaration &&
                     symbol.Type is
@@ -67,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     SymbolType.Class or
                     SymbolType.Enum)
                 {
-                    acc.Add(new CodeLens
+                    yield return new CodeLens
                     {
                         Data = JToken.FromObject(new
                         {
@@ -75,11 +78,9 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                             ProviderId = nameof(ReferencesCodeLensProvider)
                         }, LspSerializer.Instance.JsonSerializer),
                         Range = symbol.NameRegion.ToRange(),
-                    });
+                    };
                 }
             }
-
-            return acc.ToArray();
         }
 
         /// <summary>
