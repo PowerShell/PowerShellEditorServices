@@ -19,6 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class PsesWorkspaceSymbolsHandler : WorkspaceSymbolsHandlerBase
     {
+        private static readonly Container<SymbolInformation> s_emptySymbolInformationContainer = new();
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
@@ -34,23 +35,26 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public override async Task<Container<SymbolInformation>> Handle(WorkspaceSymbolParams request, CancellationToken cancellationToken)
         {
+            _logger.LogDebug($"Handling workspace symbols request for query {request.Query}");
+
             await _symbolsService.ScanWorkspacePSFiles(cancellationToken).ConfigureAwait(false);
             List<SymbolInformation> symbols = new();
 
             foreach (ScriptFile scriptFile in _workspaceService.GetOpenedFiles())
             {
                 _logger.LogDebug($"Handling workspace symbols request for: {request.Query}");
-                IEnumerable<SymbolReference> foundSymbols = _symbolsService.FindSymbolsInFile(scriptFile);
-
                 // TODO: Need to compute a relative path that is based on common path for all workspace files
                 string containerName = Path.GetFileNameWithoutExtension(scriptFile.FilePath);
 
-                foreach (SymbolReference symbol in foundSymbols)
+                foreach (SymbolReference symbol in _symbolsService.FindSymbolsInFile(scriptFile))
                 {
                     // This async method is pretty dense with synchronous code
                     // so it's helpful to add some yields.
                     await Task.Yield();
-                    cancellationToken.ThrowIfCancellationRequested();
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
 
                     if (!symbol.IsDeclaration)
                     {
@@ -91,13 +95,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
             }
 
-            return new Container<SymbolInformation>(symbols);
+            return symbols.Count == 0
+                ? s_emptySymbolInformationContainer
+                : symbols;
         }
 
-        #region private Methods
-
         private static bool IsQueryMatch(string query, string symbolName) => symbolName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
-
-        #endregion
     }
 }

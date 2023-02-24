@@ -17,6 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class PsesDefinitionHandler : DefinitionHandlerBase
     {
+        private static readonly LocationOrLocationLinks s_emptyLocationOrLocationLinks = new();
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
 
@@ -45,20 +46,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (foundSymbol is null)
             {
-                return new LocationOrLocationLinks();
+                return s_emptyLocationOrLocationLinks;
             }
 
             // Short-circuit if we're already on the definition.
             if (foundSymbol.IsDeclaration)
             {
-                return new LocationOrLocationLinks(
-                    new LocationOrLocationLink[] {
-                        new LocationOrLocationLink(
-                            new Location
-                            {
-                                Uri = DocumentUri.From(foundSymbol.FilePath),
-                                Range = foundSymbol.NameRegion.ToRange()
-                            })});
+                return new LocationOrLocationLink[] {
+                    new LocationOrLocationLink(
+                        new Location
+                        {
+                            Uri = DocumentUri.From(foundSymbol.FilePath),
+                            Range = foundSymbol.NameRegion.ToRange()
+                        })};
             }
 
             List<LocationOrLocationLink> definitionLocations = new();
@@ -74,7 +74,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         }));
             }
 
-            return new LocationOrLocationLinks(definitionLocations);
+            return definitionLocations.Count == 0
+                ? s_emptyLocationOrLocationLinks
+                : definitionLocations;
         }
     }
 }

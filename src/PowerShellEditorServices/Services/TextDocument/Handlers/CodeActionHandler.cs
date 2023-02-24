@@ -19,6 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class PsesCodeActionHandler : CodeActionHandlerBase
     {
+        private static readonly CommandOrCodeActionContainer s_emptyCommandOrCodeActionContainer = new();
         private readonly ILogger _logger;
         private readonly AnalysisService _analysisService;
 
@@ -42,16 +43,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (cancellationToken.IsCancellationRequested)
             {
                 _logger.LogDebug($"CodeAction request canceled at range: {request.Range}");
-                return Array.Empty<CommandOrCodeAction>();
+                return s_emptyCommandOrCodeActionContainer;
             }
 
             IReadOnlyDictionary<string, IEnumerable<MarkerCorrection>> corrections = await _analysisService.GetMostRecentCodeActionsForFileAsync(
                 request.TextDocument.Uri)
                 .ConfigureAwait(false);
 
-            if (corrections == null)
+            // GetMostRecentCodeActionsForFileAsync actually returns null if there's no corrections.
+            if (corrections is null)
             {
-                return Array.Empty<CommandOrCodeAction>();
+                return s_emptyCommandOrCodeActionContainer;
             }
 
             List<CommandOrCodeAction> codeActions = new();
@@ -59,6 +61,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // If there are any code fixes, send these commands first so they appear at top of "Code Fix" menu in the client UI.
             foreach (Diagnostic diagnostic in request.Context.Diagnostics)
             {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 if (string.IsNullOrEmpty(diagnostic.Code?.String))
                 {
                     _logger.LogWarning(
@@ -100,8 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             HashSet<string> ruleNamesProcessed = new();
             foreach (Diagnostic diagnostic in request.Context.Diagnostics)
             {
-                if (
-                    !diagnostic.Code.HasValue ||
+                if (!diagnostic.Code.HasValue ||
                     !diagnostic.Code.Value.IsString ||
                     string.IsNullOrEmpty(diagnostic.Code?.String))
                 {
@@ -134,7 +140,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
             }
 
-            return codeActions;
+            return codeActions.Count == 0
+                ? s_emptyCommandOrCodeActionContainer
+                : codeActions;
         }
     }
 }
