@@ -34,6 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 
         #region Constructors
 
+        // TODO: This should take a cancellation token!
         internal static async Task<SymbolDetails> CreateAsync(
             SymbolReference symbolReference,
             IRunspaceInfo currentRunspace,

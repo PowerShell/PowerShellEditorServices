@@ -187,7 +187,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 foreach (string targetIdentifier in allIdentifiers)
                 {
                     await Task.Yield();
-                    cancellationToken.ThrowIfCancellationRequested();
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
                     symbols.AddRange(file.References.TryGetReferences(symbol with { Id = targetIdentifier }));
                 }
             }
