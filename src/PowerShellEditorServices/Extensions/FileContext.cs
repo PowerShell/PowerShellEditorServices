@@ -209,12 +209,14 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         /// <param name="textToInsert">The text string to insert.</param>
         /// <param name="insertRange">The buffer range which will be replaced by the string.</param>
+        #pragma warning disable VSTHRD002
         public void InsertText(string textToInsert, IFileRange insertRange)
         {
             editorOperations
                 .InsertTextAsync(scriptFile.DocumentUri.ToString(), textToInsert, insertRange.ToBufferRange())
                 .Wait();
         }
+        #pragma warning restore VSTHRD002
 
         #endregion
 
@@ -232,6 +234,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// the path where the file should be saved,
         /// including the file name with extension as the leaf
         /// </param>
+        #pragma warning disable VSTHRD002
         public void SaveAs(string newFilePath)
         {
             // Do some validation here so that we can provide a helpful error if the path won't work
@@ -244,8 +247,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
                 throw new IOException(string.Format("The file '{0}' already exists", absolutePath));
             }
 
-            editorOperations.SaveFileAsync(scriptFile.FilePath, newFilePath);
+            editorOperations.SaveFileAsync(scriptFile.FilePath, newFilePath).Wait();
         }
+        #pragma warning restore VSTHRD002
 
         #endregion
     }

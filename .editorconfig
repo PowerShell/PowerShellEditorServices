@@ -39,7 +39,7 @@ dotnet_diagnostic.CS0649.severity = error
 # CS1570: Parameter has no matching param tag in the XML comment
 dotnet_diagnostic.CS1570.severity = silent
 # CS1574: XML comment has cref attribute that could not be resolved.
-dotnet_diagnostic.CS1574.severity = suggestion
+dotnet_diagnostic.CS1574.severity = silent
 # CS1591: Missing XML comment for publicly visible type or member
 dotnet_diagnostic.CS1591.severity = silent
 # CS1998: This async method lacks 'await' operators and will run synchronously

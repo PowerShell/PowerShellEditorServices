@@ -559,19 +559,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        internal StackFrameDetails[] GetStackFrames(CancellationToken cancellationToken)
-        {
-            debugInfoHandle.Wait(cancellationToken);
-            try
-            {
-                return stackFrameDetails;
-            }
-            finally
-            {
-                debugInfoHandle.Release();
-            }
-        }
-
         internal async Task<StackFrameDetails[]> GetStackFramesAsync()
         {
             await debugInfoHandle.WaitAsync().ConfigureAwait(false);

@@ -61,8 +61,9 @@ namespace Microsoft.PowerShell.EditorServices.Test
 
             PsesInternalHost psesHost = new(loggerFactory, null, testHostDetails);
 
-            // NOTE: Because this is used by constructors it can't use await.
+            #pragma warning disable VSTHRD002 // Because this is used by constructors it can't use await.
             if (psesHost.TryStartAsync(new HostStartOptions { LoadProfiles = loadProfiles }, CancellationToken.None).GetAwaiter().GetResult())
+            #pragma warning restore VSTHRD002
             {
                 return psesHost;
             }

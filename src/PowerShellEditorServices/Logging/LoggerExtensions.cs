@@ -9,6 +9,7 @@ namespace Microsoft.PowerShell.EditorServices.Logging
 {
     internal static class LoggerExtensions
     {
+        // TODO: These need to be fixed (and used consistently).
         public static void LogException(
             this ILogger logger,
             string message,

@@ -136,7 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                     refList.SafeAdd(CreateFoldingReference(blockStartToken, blockNextLine - 1, FoldingRangeKind.Comment));
                     blockStartToken = token;
                 }
-                if (blockStartToken == null) { blockStartToken = token; }
+                blockStartToken ??= token;
                 blockNextLine = thisLine + 1;
             }
 
