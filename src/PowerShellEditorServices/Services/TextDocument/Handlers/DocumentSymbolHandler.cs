@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -35,7 +35,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 new ScriptDocumentSymbolProvider(),
                 new PsdDocumentSymbolProvider(),
-                new PesterDocumentSymbolProvider()
+                new PesterDocumentSymbolProvider(),
+                new RegionDocumentSymbolProvider()
             };
         }
 

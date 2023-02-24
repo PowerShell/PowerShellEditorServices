@@ -41,3 +41,16 @@ enum AEnum {
 AFunction
 1..3 | AFilter
 AnAdvancedFunction
+
+<#
+#region don't find me inside comment block
+abc
+#endregion
+#>
+
+#region find me outer
+#region find me inner
+
+#endregion
+#endregion
+#region ignore this unclosed region

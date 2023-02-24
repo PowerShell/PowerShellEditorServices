@@ -17,9 +17,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         // script. They are based on the defaults in the VS Code Language Configuration at;
         // https://github.com/Microsoft/vscode/blob/64186b0a26/extensions/powershell/language-configuration.json#L26-L31
         // https://github.com/Microsoft/vscode/issues/49070
-        private static readonly Regex s_startRegionTextRegex = new(
+        internal static readonly Regex s_startRegionTextRegex = new(
            @"^\s*#[rR]egion\b", RegexOptions.Compiled);
-        private static readonly Regex s_endRegionTextRegex = new(
+        internal static readonly Regex s_endRegionTextRegex = new(
            @"^\s*#[eE]nd[rR]egion\b", RegexOptions.Compiled);
 
         /// <summary>
@@ -199,7 +199,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// - Token text must start with a '#'.false  This is because comment regions
         ///   start with '&lt;#' but have the same TokenKind
         /// </summary>
-        private static bool IsBlockComment(int index, Token[] tokens)
+        internal static bool IsBlockComment(int index, Token[] tokens)
         {
             Token thisToken = tokens[index];
             if (thisToken.Kind != TokenKind.Comment) { return false; }

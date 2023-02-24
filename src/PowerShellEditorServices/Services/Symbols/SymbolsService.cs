@@ -77,13 +77,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
             PesterCodeLensProvider pesterProvider = new(configurationService);
             _ = _codeLensProviders.TryAdd(pesterProvider.ProviderId, pesterProvider);
 
-            // TODO: Is this complication so necessary?
             _documentSymbolProviders = new ConcurrentDictionary<string, IDocumentSymbolProvider>();
             IDocumentSymbolProvider[] documentSymbolProviders = new IDocumentSymbolProvider[]
             {
                 new ScriptDocumentSymbolProvider(),
                 new PsdDocumentSymbolProvider(),
-                new PesterDocumentSymbolProvider(),
+                new PesterDocumentSymbolProvider()
+                // NOTE: This specifically does not include RegionDocumentSymbolProvider.
             };
 
             foreach (IDocumentSymbolProvider documentSymbolProvider in documentSymbolProviders)
