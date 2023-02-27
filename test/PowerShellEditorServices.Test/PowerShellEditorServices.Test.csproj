@@ -19,7 +19,7 @@
 
   <!-- PowerShell LTS -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.10" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.3.3" />
   </ItemGroup>
 
   <!-- Windows PowerShell 5.1 -->
