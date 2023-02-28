@@ -77,13 +77,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
             PesterCodeLensProvider pesterProvider = new(configurationService);
             _ = _codeLensProviders.TryAdd(pesterProvider.ProviderId, pesterProvider);
 
-            // TODO: Is this complication so necessary?
             _documentSymbolProviders = new ConcurrentDictionary<string, IDocumentSymbolProvider>();
             IDocumentSymbolProvider[] documentSymbolProviders = new IDocumentSymbolProvider[]
             {
                 new ScriptDocumentSymbolProvider(),
                 new PsdDocumentSymbolProvider(),
-                new PesterDocumentSymbolProvider(),
+                new PesterDocumentSymbolProvider()
+                // NOTE: This specifically does not include RegionDocumentSymbolProvider.
             };
 
             foreach (IDocumentSymbolProvider documentSymbolProvider in documentSymbolProviders)
@@ -187,7 +187,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 foreach (string targetIdentifier in allIdentifiers)
                 {
                     await Task.Yield();
-                    cancellationToken.ThrowIfCancellationRequested();
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
                     symbols.AddRange(file.References.TryGetReferences(symbol with { Id = targetIdentifier }));
                 }
             }
@@ -218,12 +222,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// Finds the details of the symbol at the given script file location.
         /// </summary>
         public Task<SymbolDetails?> FindSymbolDetailsAtLocationAsync(
-            ScriptFile scriptFile, int line, int column)
+            ScriptFile scriptFile, int line, int column, CancellationToken cancellationToken)
         {
             SymbolReference? symbol = FindSymbolAtLocation(scriptFile, line, column);
             return symbol is null
                 ? Task.FromResult<SymbolDetails?>(null)
-                : SymbolDetails.CreateAsync(symbol, _runspaceContext.CurrentRunspace, _executionService);
+                : SymbolDetails.CreateAsync(
+                    symbol,
+                    _runspaceContext.CurrentRunspace,
+                    _executionService,
+                    cancellationToken);
         }
 
         /// <summary>

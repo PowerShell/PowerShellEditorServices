@@ -244,6 +244,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
             foreach (AliasInfo aliasInfo in aliases.Cast<AliasInfo>())
             {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 // TODO: When we move to netstandard2.1, we can use another overload which generates
                 // static delegates and thus reduces allocations.
                 s_cmdletToAliasCache.AddOrUpdate(

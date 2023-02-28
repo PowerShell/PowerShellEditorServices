@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using System.Management.Automation;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
@@ -37,7 +38,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         internal static async Task<SymbolDetails> CreateAsync(
             SymbolReference symbolReference,
             IRunspaceInfo currentRunspace,
-            IInternalPowerShellExecutionService executionService)
+            IInternalPowerShellExecutionService executionService,
+            CancellationToken cancellationToken)
         {
             SymbolDetails symbolDetails = new()
             {
@@ -49,14 +51,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 CommandInfo commandInfo = await CommandHelpers.GetCommandInfoAsync(
                     symbolReference.Id,
                     currentRunspace,
-                    executionService).ConfigureAwait(false);
+                    executionService,
+                    cancellationToken).ConfigureAwait(false);
 
                 if (commandInfo is not null)
                 {
                     symbolDetails.Documentation =
                         await CommandHelpers.GetCommandSynopsisAsync(
                             commandInfo,
-                            executionService).ConfigureAwait(false);
+                            executionService,
+                            cancellationToken).ConfigureAwait(false);
 
                     if (commandInfo.CommandType == CommandTypes.Application)
                     {

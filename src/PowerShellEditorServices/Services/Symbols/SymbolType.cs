@@ -79,6 +79,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// The symbol is a type reference
         /// </summary>
         Type,
+
+        /// <summary>
+        /// The symbol is a region. Only used for navigation-features.
+        /// </summary>
+        Region
     }
 
     internal static class SymbolTypeUtils
@@ -97,6 +102,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 SymbolType.Variable or SymbolType.Parameter => SymbolKind.Variable,
                 SymbolType.HashtableKey => SymbolKind.Key,
                 SymbolType.Type => SymbolKind.TypeParameter,
+                SymbolType.Region => SymbolKind.String,
                 SymbolType.Unknown or _ => SymbolKind.Object,
             };
         }

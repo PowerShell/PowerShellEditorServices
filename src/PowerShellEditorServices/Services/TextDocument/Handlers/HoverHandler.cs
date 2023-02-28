@@ -50,7 +50,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 await _symbolsService.FindSymbolDetailsAtLocationAsync(
                         scriptFile,
                         request.Position.Line + 1,
-                        request.Position.Character + 1).ConfigureAwait(false);
+                        request.Position.Character + 1,
+                        cancellationToken).ConfigureAwait(false);
 
             if (symbolDetails is null)
             {

@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -97,21 +96,17 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// Get all Pester CodeLenses for a given script file.
         /// </summary>
         /// <param name="scriptFile">The script file to get Pester CodeLenses for.</param>
-        /// <param name="cancellationToken"></param>
         /// <returns>All Pester CodeLenses for the given script file.</returns>
-        public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile, CancellationToken cancellationToken)
+        public IEnumerable<CodeLens> ProvideCodeLenses(ScriptFile scriptFile)
         {
             // Don't return anything if codelens setting is disabled
             if (!_configurationService.CurrentSettings.Pester.CodeLens)
             {
-                return Array.Empty<CodeLens>();
+                yield break;
             }
 
-            List<CodeLens> lenses = new();
             foreach (SymbolReference symbol in _symbolProvider.ProvideDocumentSymbols(scriptFile))
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
                 if (symbol is not PesterSymbolReference pesterSymbol)
                 {
                     continue;
@@ -129,10 +124,11 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     continue;
                 }
 
-                lenses.AddRange(GetPesterLens(pesterSymbol, scriptFile));
+                foreach (CodeLens codeLens in GetPesterLens(pesterSymbol, scriptFile))
+                {
+                    yield return codeLens;
+                }
             }
-
-            return lenses.ToArray();
         }
 
         /// <summary>

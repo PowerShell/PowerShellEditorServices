@@ -123,6 +123,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 
         /// <summary>
         /// Format a script given its contents.
+        /// TODO: This needs to be cancellable.
         /// </summary>
         /// <param name="scriptDefinition">The full text of a script.</param>
         /// <param name="formatSettings">The formatter settings to use.</param>

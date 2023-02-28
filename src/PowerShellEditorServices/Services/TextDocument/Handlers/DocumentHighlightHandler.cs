@@ -45,11 +45,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 request.Position.Line + 1,
                 request.Position.Character + 1);
 
-            if (occurrences is null)
-            {
-                return Task.FromResult(s_emptyHighlightContainer);
-            }
-
             List<DocumentHighlight> highlights = new();
             foreach (SymbolReference occurrence in occurrences)
             {
@@ -62,7 +57,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             _logger.LogDebug("Highlights: " + highlights);
 
-            return Task.FromResult(new DocumentHighlightContainer(highlights));
+            return cancellationToken.IsCancellationRequested || highlights.Count == 0
+                ? Task.FromResult(s_emptyHighlightContainer)
+                : Task.FromResult(new DocumentHighlightContainer(highlights));
         }
     }
 }

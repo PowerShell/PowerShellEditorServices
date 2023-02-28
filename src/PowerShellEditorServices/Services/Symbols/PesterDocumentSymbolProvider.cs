@@ -54,7 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// <returns>true if the CommandAst represents a Pester command, false otherwise</returns>
         private static bool IsPesterCommand(CommandAst commandAst)
         {
-            if (commandAst == null)
+            if (commandAst is null)
             {
                 return false;
             }
@@ -94,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 
             string commandName = CommandHelpers.StripModuleQualification(pesterCommandAst.GetCommandName(), out _);
             PesterCommandType? commandType = PesterSymbolReference.GetCommandType(commandName);
-            if (commandType == null)
+            if (commandType is null)
             {
                 return null;
             }
@@ -247,10 +247,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 
         internal static PesterCommandType? GetCommandType(string commandName)
         {
-            if (commandName == null || !PesterKeywords.TryGetValue(commandName, out PesterCommandType pesterCommandType))
+            if (commandName is null || !PesterKeywords.TryGetValue(commandName, out PesterCommandType pesterCommandType))
             {
                 return null;
             }
+
             return pesterCommandType;
         }
 
