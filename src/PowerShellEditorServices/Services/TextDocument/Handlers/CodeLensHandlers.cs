@@ -42,9 +42,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _logger.LogDebug($"Handling code lens request for {request.TextDocument.Uri}");
 
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
-            IEnumerable<CodeLens> codeLensResults = ProvideCodeLenses(scriptFile, cancellationToken);
+            IEnumerable<CodeLens> codeLensResults = ProvideCodeLenses(scriptFile);
 
-            return !codeLensResults.Any()
+            return cancellationToken.IsCancellationRequested
                 ? Task.FromResult(s_emptyCodeLensContainer)
                 : Task.FromResult(new CodeLensContainer(codeLensResults));
         }
@@ -66,19 +66,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         /// Get all the CodeLenses for a given script file.
         /// </summary>
         /// <param name="scriptFile">The PowerShell script file to get CodeLenses for.</param>
-        /// <param name="cancellationToken"></param>
         /// <returns>All generated CodeLenses for the given script file.</returns>
-        private IEnumerable<CodeLens> ProvideCodeLenses(ScriptFile scriptFile, CancellationToken cancellationToken)
+        private IEnumerable<CodeLens> ProvideCodeLenses(ScriptFile scriptFile)
         {
             foreach (ICodeLensProvider provider in _symbolsService.GetCodeLensProviders())
             {
-                foreach (CodeLens codeLens in provider.ProvideCodeLenses(scriptFile, cancellationToken))
+                foreach (CodeLens codeLens in provider.ProvideCodeLenses(scriptFile))
                 {
-                    if (cancellationToken.IsCancellationRequested)
-                    {
-                        yield break;
-                    }
-
                     yield return codeLens;
                 }
             }

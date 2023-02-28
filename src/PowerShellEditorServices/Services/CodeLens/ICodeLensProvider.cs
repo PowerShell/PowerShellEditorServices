@@ -27,9 +27,8 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// <param name="scriptFile">
         /// The document for which CodeLenses should be provided.
         /// </param>
-        /// <param name="cancellationToken"></param>
         /// <returns>An IEnumerable of CodeLenses.</returns>
-        IEnumerable<CodeLens> ProvideCodeLenses(ScriptFile scriptFile, CancellationToken cancellationToken);
+        IEnumerable<CodeLens> ProvideCodeLenses(ScriptFile scriptFile);
 
         /// <summary>
         /// Resolves a CodeLens that was created without a Command.

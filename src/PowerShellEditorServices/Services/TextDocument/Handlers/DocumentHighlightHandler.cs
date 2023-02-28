@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -46,11 +45,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 request.Position.Line + 1,
                 request.Position.Character + 1);
 
-            if (!occurrences.Any())
-            {
-                return Task.FromResult(s_emptyHighlightContainer);
-            }
-
             List<DocumentHighlight> highlights = new();
             foreach (SymbolReference occurrence in occurrences)
             {
@@ -63,7 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             _logger.LogDebug("Highlights: " + highlights);
 
-            return highlights.Count == 0
+            return cancellationToken.IsCancellationRequested || highlights.Count == 0
                 ? Task.FromResult(s_emptyHighlightContainer)
                 : Task.FromResult(new DocumentHighlightContainer(highlights));
         }

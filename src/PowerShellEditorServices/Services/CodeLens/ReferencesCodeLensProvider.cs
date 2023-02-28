@@ -52,17 +52,11 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// Get all reference code lenses for a given script file.
         /// </summary>
         /// <param name="scriptFile">The PowerShell script file to get code lenses for.</param>
-        /// <param name="cancellationToken"></param>
         /// <returns>An IEnumerable of CodeLenses describing all functions, classes and enums in the given script file.</returns>
-        public IEnumerable<CodeLens> ProvideCodeLenses(ScriptFile scriptFile, CancellationToken cancellationToken)
+        public IEnumerable<CodeLens> ProvideCodeLenses(ScriptFile scriptFile)
         {
             foreach (SymbolReference symbol in _symbolProvider.ProvideDocumentSymbols(scriptFile))
             {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    yield break;
-                }
-
                 // TODO: Can we support more here?
                 if (symbol.IsDeclaration &&
                     symbol.Type is

@@ -96,9 +96,8 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// Get all Pester CodeLenses for a given script file.
         /// </summary>
         /// <param name="scriptFile">The script file to get Pester CodeLenses for.</param>
-        /// <param name="cancellationToken"></param>
         /// <returns>All Pester CodeLenses for the given script file.</returns>
-        public IEnumerable<CodeLens> ProvideCodeLenses(ScriptFile scriptFile, CancellationToken cancellationToken)
+        public IEnumerable<CodeLens> ProvideCodeLenses(ScriptFile scriptFile)
         {
             // Don't return anything if codelens setting is disabled
             if (!_configurationService.CurrentSettings.Pester.CodeLens)
@@ -108,11 +107,6 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
 
             foreach (SymbolReference symbol in _symbolProvider.ProvideDocumentSymbols(scriptFile))
             {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    yield break;
-                }
-
                 if (symbol is not PesterSymbolReference pesterSymbol)
                 {
                     continue;
