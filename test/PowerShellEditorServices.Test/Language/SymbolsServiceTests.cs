@@ -755,7 +755,8 @@ namespace PowerShellEditorServices.Test.Language
             SymbolDetails symbolDetails = await symbolsService.FindSymbolDetailsAtLocationAsync(
                 GetScriptFile(FindsDetailsForBuiltInCommandData.SourceDetails),
                 FindsDetailsForBuiltInCommandData.SourceDetails.StartLineNumber,
-                FindsDetailsForBuiltInCommandData.SourceDetails.StartColumnNumber).ConfigureAwait(true);
+                FindsDetailsForBuiltInCommandData.SourceDetails.StartColumnNumber,
+                CancellationToken.None).ConfigureAwait(true);
 
             Assert.Equal("Gets the processes that are running on the local computer.", symbolDetails.Documentation);
         }

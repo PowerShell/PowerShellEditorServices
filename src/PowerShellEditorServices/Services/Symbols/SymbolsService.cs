@@ -222,12 +222,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// Finds the details of the symbol at the given script file location.
         /// </summary>
         public Task<SymbolDetails?> FindSymbolDetailsAtLocationAsync(
-            ScriptFile scriptFile, int line, int column)
+            ScriptFile scriptFile, int line, int column, CancellationToken cancellationToken)
         {
             SymbolReference? symbol = FindSymbolAtLocation(scriptFile, line, column);
             return symbol is null
                 ? Task.FromResult<SymbolDetails?>(null)
-                : SymbolDetails.CreateAsync(symbol, _runspaceContext.CurrentRunspace, _executionService);
+                : SymbolDetails.CreateAsync(
+                    symbol,
+                    _runspaceContext.CurrentRunspace,
+                    _executionService,
+                    cancellationToken);
         }
 
         /// <summary>
