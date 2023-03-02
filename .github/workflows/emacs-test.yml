@@ -25,7 +25,7 @@ jobs:
         run: tools/azurePipelinesBuild.ps1
 
       - name: Install Emacs
-        uses: purcell/setup-emacs@v3.0
+        uses: purcell/setup-emacs@v4.0
         with:
           version: '28.1'
 
