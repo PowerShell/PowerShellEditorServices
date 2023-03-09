@@ -20,3 +20,6 @@ Get-ChildItem
 My-Alias
 
 Invoke-Command -ScriptBlock ${Function:My-Function}
+
+[string]$hello = "test"
+Write-Host $hello

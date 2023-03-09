@@ -110,6 +110,27 @@ internal sealed class SymbolVisitor : AstVisitor2
             ));
         }
 
+        // Traverse the parents to determine if this is a declaration.
+        static bool isDeclaration(Ast current)
+        {
+            Ast next = current.Parent;
+            while (true)
+            {
+                // Should come from an assignment statement.
+                if (next is AssignmentStatementAst assignment)
+                {
+                    return assignment.Left == current;
+                }
+                // Or we might have type constraints or attributes to traverse first.
+                if (next is not ConvertExpressionAst or not AttributedExpressionAst)
+                {
+                    return false;
+                }
+                current = next;
+                next = next.Parent;
+            }
+        }
+
         // TODO: Consider tracking unscoped variable references only when they're declared within
         // the same function definition.
         return _action(new SymbolReference(
@@ -119,7 +140,7 @@ internal sealed class SymbolVisitor : AstVisitor2
             variableExpressionAst.Extent,
             variableExpressionAst.Extent, // TODO: Maybe parent?
             _file,
-            isDeclaration: variableExpressionAst.Parent is AssignmentStatementAst or ParameterAst));
+            isDeclaration(variableExpressionAst)));
     }
 
     public override AstVisitAction VisitTypeDefinition(TypeDefinitionAst typeDefinitionAst)

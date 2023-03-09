@@ -301,6 +301,18 @@ namespace PowerShellEditorServices.Test.Language
         }
 
         [Fact]
+        public async Task FindsTypedVariableDefinition()
+        {
+            IEnumerable<SymbolReference> definitions = await GetDefinitions(FindsTypedVariableDefinitionData.SourceDetails).ConfigureAwait(true);
+            SymbolReference symbol = Assert.Single(definitions);
+            Assert.Equal("var hello", symbol.Id);
+            Assert.Equal("$hello", symbol.Name);
+            Assert.Equal(SymbolType.Variable, symbol.Type);
+            Assert.True(symbol.IsDeclaration);
+            AssertIsRegion(symbol.NameRegion, 24, 9, 24, 15);
+        }
+
+        [Fact]
         public async Task FindsReferencesOnVariable()
         {
             IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnVariableData.SourceDetails).ConfigureAwait(true);
