@@ -159,6 +159,7 @@ git clone https://github.com/PowerShell/PowerShellEditorServices.git
 
 ```powershell
 Install-Module InvokeBuild -Scope CurrentUser
+Install-Module platyPS -Scope CurrentUser
 ```
 
 Now you're ready to build the code.  You can do so in one of two ways:

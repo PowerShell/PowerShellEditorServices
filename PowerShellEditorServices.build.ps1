@@ -42,7 +42,8 @@ $script:dotnetTestArgs = @("test") + $script:dotnetBuildArgs + $TestArgs + @(
 $script:IsNix = $IsLinux -or $IsMacOS
 # For Apple M1, pwsh might be getting emulated, in which case we need to check
 # for the proc_translated flag, otherwise we can check the architecture.
-$script:IsAppleM1 = $IsMacOS -and ((sysctl -n sysctl.proc_translated) -eq 1 -or (uname -m) -eq "arm64")
+$script:IsAppleM1 = $IsMacOS -and ((sysctl -n sysctl.proc_translated 2> $null) -eq 1 -or
+    [System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture -eq "Arm64")
 $script:IsArm64 = -not $script:IsNix -and @("ARM64") -contains $env:PROCESSOR_ARCHITECTURE
 $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Hosting", "BuildInfo.cs")
 $script:PsesCommonProps = [xml](Get-Content -Raw "$PSScriptRoot/PowerShellEditorServices.Common.props")
@@ -272,7 +273,6 @@ Task LayoutModule -After Build {
     }
 
     # Assemble the PowerShellEditorServices.VSCode module
-
     foreach ($vscodeComponent in Get-ChildItem $script:VSCodeOutput) {
         if (-not $includedDlls.Contains($vscodeComponent.Name)) {
             Copy-Item -Path $vscodeComponent.FullName -Destination $psesVSCodeBinOutputPath -Force
