@@ -11,6 +11,7 @@ App_Data
 *.sln.cache
 *.suo
 TestResults
+test/emacs-session.json
 [Tt]humbs.db
 buildd.*
 release/
