@@ -8,7 +8,8 @@
 
 ;;; Code:
 
-(require 'ert)
+;; Avoid using old packages.
+(setq load-prefer-newer t)
 
 ;; Improved TLS Security.
 (with-eval-after-load 'gnutls
@@ -21,16 +22,17 @@
 (add-to-list 'package-archives
              '("melpa" . "https://melpa.org/packages/") t)
 (package-initialize)
+(package-refresh-contents)
+
+(require 'ert)
 
 (require 'flymake)
 
 (unless (package-installed-p 'powershell)
-  (package-refresh-contents)
   (package-install 'powershell))
 (require 'powershell)
 
 (unless (package-installed-p 'eglot)
-  (package-refresh-contents)
   (package-install 'eglot))
 (require 'eglot)
 
