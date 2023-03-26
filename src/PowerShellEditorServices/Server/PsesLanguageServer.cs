@@ -123,6 +123,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<ExpandAliasHandler>()
                     .WithHandler<PsesSemanticTokensHandler>()
                     .WithHandler<DidChangeWatchedFilesHandler>()
+                    .WithHandler<RenameSymbolHandler>()
                     // NOTE: The OnInitialize delegate gets run when we first receive the
                     // _Initialize_ request:
                     // https://microsoft.github.io/language-server-protocol/specifications/specification-current/#initialize
