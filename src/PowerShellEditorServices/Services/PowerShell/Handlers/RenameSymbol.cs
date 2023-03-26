@@ -174,14 +174,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
                     request.Line + 1,
                     request.Column + 1);
-                if (symbol == null)
-                {
-                    return null;
-                }
-                IEnumerable<SymbolReference> SymbolOccurances = SymbolsService.FindOccurrencesInFile(
-                    scriptFile,
-                    request.Line + 1,
-                    request.Column + 1);
+
+                if (symbol == null){return null;}
 
                 ModifiedFileResponse FileModifications = new(request.FileName);
                 Ast token = scriptFile.ScriptAst.Find(ast =>
@@ -211,9 +205,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     });
                     IEnumerable<Ast> CommandCalls = scriptFile.ScriptAst.FindAll(ast =>
                     {
-                        return ast is StringConstantExpressionAst funccall &&
+                        return ast is StringConstantExpressionAst funcCall &&
                         ast.Parent is CommandAst &&
-                        funccall.Value == funcDef.Name;
+                        funcCall.Value == funcDef.Name;
                     }, true);
                     foreach (Ast CommandCall in CommandCalls)
                     {
