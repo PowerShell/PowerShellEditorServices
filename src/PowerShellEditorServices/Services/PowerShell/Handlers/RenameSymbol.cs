@@ -46,8 +46,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
     internal class RenameSymbolHandler : IRenameSymbolHandler
     {
-        private readonly IInternalPowerShellExecutionService _executionService;
-
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
 
@@ -57,7 +55,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             _logger = loggerFactory.CreateLogger<RenameSymbolHandler>();
             _workspaceService = workspaceService;
-            _executionService = executionService;
         }
 
         /// Method to get a symbols parent function(s) if any
@@ -79,19 +76,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     ast is VariableExpressionAst;
                 }, true);
         }
-        public async Task<RenameSymbolResult> Handle(RenameSymbolParams request, CancellationToken cancellationToken)
+        public Task<RenameSymbolResult> Handle(RenameSymbolParams request, CancellationToken cancellationToken)
         {
             if (!_workspaceService.TryGetFile(request.FileName, out ScriptFile scriptFile))
             {
                 _logger.LogDebug("Failed to open file!");
-                return null;
+                return Task.FromResult<RenameSymbolResult>(null);
             }
             // Locate the Symbol in the file
             // Look at its parent to find its script scope
             //  I.E In a function
             // Lookup all other occurances of the symbol
             // replace symbols that fall in the same scope as the initial symbol
-
+            return Task.Run(()=>{
             SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(request.Line + 1, request.Column + 1);
             Ast ast = scriptFile.ScriptAst;
 
@@ -127,8 +124,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             psCommand
                 .AddScript("Return 'Not sure how to make this non Async :('")
                 .AddStatement();
-            IReadOnlyList<string> result = await _executionService.ExecutePSCommandAsync<string>(psCommand, cancellationToken).ConfigureAwait(false);
+            //IReadOnlyList<string> result = await _executionService.ExecutePSCommandAsync<string>(psCommand, cancellationToken).ConfigureAwait(false);
             return response;
+            });
         }
     }
 }
