@@ -1,18 +1,18 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Management.Automation;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using System.Management.Automation.Language;
 using OmniSharp.Extensions.JsonRpc;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using System.Linq;
+
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     [Serial, Method("powerShell/renameSymbol")]
@@ -37,10 +37,29 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     {
         public string FileName { get; set; }
         public List<TextChange> Changes { get; set; }
+        public ModifiedFileResponse(string fileName)
+        {
+            FileName = fileName;
+            Changes = new List<TextChange>();
+        }
 
+        public void AddTextChange(Ast Symbol, string NewText)
+        {
+            Changes.Add(
+                new TextChange
+                {
+                    StartColumn = Symbol.Extent.StartColumnNumber - 1,
+                    StartLine = Symbol.Extent.StartLineNumber - 1,
+                    EndColumn = Symbol.Extent.EndColumnNumber - 1,
+                    EndLine = Symbol.Extent.EndLineNumber - 1,
+                    NewText = NewText
+                }
+            );
+        }
     }
     internal class RenameSymbolResult
     {
+        public RenameSymbolResult() => Changes = new List<ModifiedFileResponse>();
         public List<ModifiedFileResponse> Changes { get; set; }
     }
 
@@ -49,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
 
-        public RenameSymbolHandler(IInternalPowerShellExecutionService executionService,
+        public RenameSymbolHandler(
         ILoggerFactory loggerFactory,
             WorkspaceService workspaceService)
         {
@@ -58,14 +77,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         }
 
         /// Method to get a symbols parent function(s) if any
-        internal static IEnumerable<Ast> GetParentFunction(SymbolReference symbol, Ast Ast)
+        internal static List<Ast> GetParentFunctions(SymbolReference symbol, Ast Ast)
         {
-            return Ast.FindAll(ast =>
+            return new List<Ast>(Ast.FindAll(ast =>
             {
                 return ast.Extent.StartLineNumber <= symbol.ScriptRegion.StartLineNumber &&
                     ast.Extent.EndLineNumber >= symbol.ScriptRegion.EndLineNumber &&
                     ast is FunctionDefinitionAst;
-            }, true);
+            }, true));
         }
         internal static IEnumerable<Ast> GetVariablesWithinExtent(Ast symbol, Ast Ast)
         {
@@ -76,57 +95,135 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     ast is VariableExpressionAst;
                 }, true);
         }
-        public Task<RenameSymbolResult> Handle(RenameSymbolParams request, CancellationToken cancellationToken)
+        internal static Ast GetLargestExtentInCollection(IEnumerable<Ast> Nodes)
+        {
+            Ast LargestNode = null;
+            foreach (Ast Node in Nodes)
+            {
+                LargestNode ??= Node;
+                if (Node.Extent.EndLineNumber - Node.Extent.StartLineNumber >
+                LargestNode.Extent.EndLineNumber - LargestNode.Extent.StartLineNumber)
+                {
+                    LargestNode = Node;
+                }
+            }
+            return LargestNode;
+        }
+        internal static Ast GetSmallestExtentInCollection(IEnumerable<Ast> Nodes)
+        {
+            Ast SmallestNode = null;
+            foreach (Ast Node in Nodes)
+            {
+                SmallestNode ??= Node;
+                if (Node.Extent.EndLineNumber - Node.Extent.StartLineNumber <
+                SmallestNode.Extent.EndLineNumber - SmallestNode.Extent.StartLineNumber)
+                {
+                    SmallestNode = Node;
+                }
+            }
+            return SmallestNode;
+        }
+        internal static List<Ast> GetFunctionExcludedNestedFunctions(Ast function, SymbolReference symbol)
+        {
+            IEnumerable<Ast> nestedFunctions = function.FindAll(ast => ast is FunctionDefinitionAst && ast != function, true);
+            List<Ast> excludeExtents = new();
+            foreach (Ast nestedfunction in nestedFunctions)
+            {
+                if (IsVarInFunctionParamBlock(nestedfunction, symbol))
+                {
+                    excludeExtents.Add(nestedfunction);
+                }
+            }
+            return excludeExtents;
+        }
+        internal static bool IsVarInFunctionParamBlock(Ast Function, SymbolReference symbol)
+        {
+            Ast paramBlock = Function.Find(ast => ast is ParamBlockAst, true);
+            if (paramBlock != null)
+            {
+                IEnumerable<Ast> variables = paramBlock.FindAll(ast =>
+                {
+                    return ast is VariableExpressionAst &&
+                    ast.Parent is ParameterAst;
+                }, true);
+                foreach (VariableExpressionAst variable in variables.Cast<VariableExpressionAst>())
+                {
+                    if (variable.Extent.Text == symbol.ScriptRegion.Text)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        public async Task<RenameSymbolResult> Handle(RenameSymbolParams request, CancellationToken cancellationToken)
         {
             if (!_workspaceService.TryGetFile(request.FileName, out ScriptFile scriptFile))
             {
                 _logger.LogDebug("Failed to open file!");
-                return Task.FromResult<RenameSymbolResult>(null);
+                return await Task.FromResult<RenameSymbolResult>(null).ConfigureAwait(false);
             }
             // Locate the Symbol in the file
             // Look at its parent to find its script scope
             //  I.E In a function
             // Lookup all other occurances of the symbol
             // replace symbols that fall in the same scope as the initial symbol
-            return Task.Run(()=>{
-            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(request.Line + 1, request.Column + 1);
-            Ast ast = scriptFile.ScriptAst;
-
-            RenameSymbolResult response = new()
+            return await Task.Run(() =>
             {
-                Changes = new List<ModifiedFileResponse>
-            {
-                new ModifiedFileResponse()
+                SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
+                    request.Line + 1,
+                    request.Column + 1);
+                if (symbol == null)
                 {
-                    FileName = request.FileName,
-                    Changes = new List<TextChange>()
+                    return null;
                 }
-            }
-            };
+                IEnumerable<SymbolReference> SymbolOccurances = SymbolsService.FindOccurrencesInFile(
+                    scriptFile,
+                    request.Line + 1,
+                    request.Column + 1);
 
-            foreach (Ast e in GetParentFunction(symbol, ast))
-            {
-                foreach (Ast v in GetVariablesWithinExtent(e, ast))
+                ModifiedFileResponse FileModifications = new(request.FileName);
+                Ast token = scriptFile.ScriptAst.Find(ast =>
                 {
-                    TextChange change = new()
+                    return ast.Extent.StartLineNumber == symbol.ScriptRegion.StartLineNumber &&
+                    ast.Extent.StartColumnNumber == symbol.ScriptRegion.StartColumnNumber;
+                }, true);
+
+                if (symbol.Type is SymbolType.Function)
+                {
+                    string functionName = !symbol.Name.Contains("function ") ? symbol.Name : symbol.Name.Replace("function ", "").Replace(" ()", "");
+
+                    FunctionDefinitionAst funcDef = (FunctionDefinitionAst)scriptFile.ScriptAst.Find(ast =>
                     {
-                        StartColumn = v.Extent.StartColumnNumber - 1,
-                        StartLine = v.Extent.StartLineNumber - 1,
-                        EndColumn = v.Extent.EndColumnNumber - 1,
-                        EndLine = v.Extent.EndLineNumber - 1,
-                        NewText = request.RenameTo
-                    };
-                    response.Changes[0].Changes.Add(change);
+                        return ast is FunctionDefinitionAst astfunc &&
+                        astfunc.Name == functionName;
+                    }, true);
+                    // No nice way to actually update the function name other than manually specifying the location
+                    // going to assume all function definitions start with "function "
+                    FileModifications.Changes.Add(new TextChange
+                    {
+                        NewText = request.RenameTo,
+                        StartLine = funcDef.Extent.StartLineNumber - 1,
+                        EndLine = funcDef.Extent.StartLineNumber - 1,
+                        StartColumn = funcDef.Extent.StartColumnNumber + "function ".Length - 1,
+                        EndColumn = funcDef.Extent.StartColumnNumber + "function ".Length + funcDef.Name.Length - 1
+                    });
+                    IEnumerable<Ast> CommandCalls = scriptFile.ScriptAst.FindAll(ast =>
+                    {
+                        return ast is StringConstantExpressionAst funccall &&
+                        ast.Parent is CommandAst &&
+                        funccall.Value == funcDef.Name;
+                    }, true);
+                    foreach (Ast CommandCall in CommandCalls)
+                    {
+                        FileModifications.AddTextChange(CommandCall, request.RenameTo);
+                    }
                 }
-            }
-
-            PSCommand psCommand = new();
-            psCommand
-                .AddScript("Return 'Not sure how to make this non Async :('")
-                .AddStatement();
-            //IReadOnlyList<string> result = await _executionService.ExecutePSCommandAsync<string>(psCommand, cancellationToken).ConfigureAwait(false);
-            return response;
-            });
+                RenameSymbolResult result = new();
+                result.Changes.Add(FileModifications);
+                return result;
+            }).ConfigureAwait(false);
         }
     }
 }
