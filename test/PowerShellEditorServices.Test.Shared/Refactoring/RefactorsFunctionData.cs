@@ -31,12 +31,19 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring
             Line = 0,
             RenameTo = "OneMethod"
         };
-                public static readonly RenameSymbolParams FunctionsSingleNested = new()
+        public static readonly RenameSymbolParams FunctionsSingleNested = new()
         {
             FileName = "FunctionsNestedSimple.ps1",
             Column = 16,
             Line = 4,
             RenameTo = "OneMethod"
+        };
+        public static readonly RenameSymbolParams FunctionsSimpleFlat = new()
+        {
+            FileName = "FunctionsFlat.ps1",
+            Column = 81,
+            Line = 0,
+            RenameTo = "ChangedFlat"
         };
     }
 }

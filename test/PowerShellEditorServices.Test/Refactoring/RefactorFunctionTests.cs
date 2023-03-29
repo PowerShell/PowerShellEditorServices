@@ -125,5 +125,33 @@ namespace PowerShellEditorServices.Test.Refactoring
                         request.RenameTo == item.NewText;
             });
         }
+        [Fact]
+        public void RefactorFlatFunction()
+        {
+            RenameSymbolParams request = RefactorsFunctionData.FunctionsSimpleFlat;
+            ScriptFile scriptFile = GetTestScript(request.FileName);
+            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
+                    request.Line + 1,
+                    request.Column + 1);
+            ModifiedFileResponse changes = RenameSymbolHandler.RefactorFunction(symbol, scriptFile.ScriptAst, request);
+            Assert.Equal(2, changes.Changes.Count);
+
+            Assert.Contains(changes.Changes, item =>
+            {
+                return item.StartColumn == 47 &&
+                        item.EndColumn == 50 &&
+                        item.StartLine == 0 &&
+                        item.EndLine == 0 &&
+                        request.RenameTo == item.NewText;
+            });
+            Assert.Contains(changes.Changes, item =>
+            {
+                return item.StartColumn == 81 &&
+                        item.EndColumn == 84 &&
+                        item.StartLine == 0 &&
+                        item.EndLine == 0 &&
+                        request.RenameTo == item.NewText;
+            });
+        }
     }
 }
