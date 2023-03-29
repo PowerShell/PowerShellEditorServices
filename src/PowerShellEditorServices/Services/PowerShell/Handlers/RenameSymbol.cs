@@ -157,6 +157,53 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return false;
         }
 
+        internal static ModifiedFileResponse RefactorFunction(SymbolReference symbol, Ast scriptAst, RenameSymbolParams request)
+        {
+            if (symbol.Type is not SymbolType.Function)
+            {
+                return null;
+            }
+
+            // we either get the CommandAst or the FunctionDeginitionAts
+            string functionName = !symbol.Name.Contains("function ") ? symbol.Name : symbol.Name.Replace("function ", "").Replace(" ()", "");
+
+            FunctionDefinitionAst funcDef = (FunctionDefinitionAst)scriptAst.Find(ast =>
+            {
+                return ast is FunctionDefinitionAst astfunc &&
+                astfunc.Name == functionName;
+            }, true);
+            if (funcDef == null)
+            {
+                return null;
+            }
+            // No nice way to actually update the function name other than manually specifying the location
+            // going to assume all function definitions start with "function "
+
+            ModifiedFileResponse FileModifications = new(request.FileName);
+
+            FileModifications.Changes.Add(new TextChange
+            {
+                NewText = request.RenameTo,
+                StartLine = funcDef.Extent.StartLineNumber - 1,
+                EndLine = funcDef.Extent.StartLineNumber - 1,
+                StartColumn = funcDef.Extent.StartColumnNumber + "function ".Length - 1,
+                EndColumn = funcDef.Extent.StartColumnNumber + "function ".Length + funcDef.Name.Length - 1
+            });
+
+            IEnumerable<Ast> CommandCalls = scriptAst.FindAll(ast =>
+            {
+                return ast is StringConstantExpressionAst funcCall &&
+                ast.Parent is CommandAst &&
+                funcCall.Value == funcDef.Name;
+            }, true);
+
+            foreach (Ast CommandCall in CommandCalls)
+            {
+                FileModifications.AddTextChange(CommandCall, request.RenameTo);
+            }
+
+            return FileModifications;
+        }
         public async Task<RenameSymbolResult> Handle(RenameSymbolParams request, CancellationToken cancellationToken)
         {
             if (!_workspaceService.TryGetFile(request.FileName, out ScriptFile scriptFile))
@@ -175,45 +222,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     request.Line + 1,
                     request.Column + 1);
 
-                if (symbol == null){return null;}
+                if (symbol == null) { return null; }
 
-                ModifiedFileResponse FileModifications = new(request.FileName);
                 Ast token = scriptFile.ScriptAst.Find(ast =>
                 {
                     return ast.Extent.StartLineNumber == symbol.ScriptRegion.StartLineNumber &&
                     ast.Extent.StartColumnNumber == symbol.ScriptRegion.StartColumnNumber;
                 }, true);
-
+                ModifiedFileResponse FileModifications = null;
                 if (symbol.Type is SymbolType.Function)
                 {
-                    string functionName = !symbol.Name.Contains("function ") ? symbol.Name : symbol.Name.Replace("function ", "").Replace(" ()", "");
-
-                    FunctionDefinitionAst funcDef = (FunctionDefinitionAst)scriptFile.ScriptAst.Find(ast =>
-                    {
-                        return ast is FunctionDefinitionAst astfunc &&
-                        astfunc.Name == functionName;
-                    }, true);
-                    // No nice way to actually update the function name other than manually specifying the location
-                    // going to assume all function definitions start with "function "
-                    FileModifications.Changes.Add(new TextChange
-                    {
-                        NewText = request.RenameTo,
-                        StartLine = funcDef.Extent.StartLineNumber - 1,
-                        EndLine = funcDef.Extent.StartLineNumber - 1,
-                        StartColumn = funcDef.Extent.StartColumnNumber + "function ".Length - 1,
-                        EndColumn = funcDef.Extent.StartColumnNumber + "function ".Length + funcDef.Name.Length - 1
-                    });
-                    IEnumerable<Ast> CommandCalls = scriptFile.ScriptAst.FindAll(ast =>
-                    {
-                        return ast is StringConstantExpressionAst funcCall &&
-                        ast.Parent is CommandAst &&
-                        funcCall.Value == funcDef.Name;
-                    }, true);
-                    foreach (Ast CommandCall in CommandCalls)
-                    {
-                        FileModifications.AddTextChange(CommandCall, request.RenameTo);
-                    }
+                    FileModifications = RefactorFunction(symbol, scriptFile.ScriptAst, request);
                 }
+
                 RenameSymbolResult result = new();
                 result.Changes.Add(FileModifications);
                 return result;
