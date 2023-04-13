@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
 
   <PropertyGroup>
@@ -14,12 +14,12 @@
 
   <!-- Latest PowerShell -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net7.0' ">
-      <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.3.3" />
+      <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.3.4" />
   </ItemGroup>
 
   <!-- PowerShell LTS -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.10" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.11" />
   </ItemGroup>
 
   <!-- Windows PowerShell 5.1 -->
