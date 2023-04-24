@@ -42,15 +42,19 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private readonly string _sessionFilePath;
 
+        private readonly Version _powerShellVersion;
+
         /// <summary>
         /// Construct a new session file writer for the given session file path.
         /// </summary>
         /// <param name="logger">The logger to log actions with.</param>
         /// <param name="sessionFilePath">The path to write the session file path to.</param>
-        public SessionFileWriter(HostLogger logger, string sessionFilePath)
+        /// <param name="powerShellVersion">The process's PowerShell version object.</param>
+        public SessionFileWriter(HostLogger logger, string sessionFilePath, Version powerShellVersion)
         {
             _logger = logger;
             _sessionFilePath = sessionFilePath;
+            _powerShellVersion = powerShellVersion;
         }
 
         /// <summary>
@@ -84,11 +88,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 { "status", "started" },
             };
 
-            if (languageServiceTransport != null)
+            if (languageServiceTransport is not null)
             {
                 sessionObject["languageServiceTransport"] = languageServiceTransport.SessionFileTransportName;
 
-                if (languageServiceTransport.SessionFileEntries != null)
+                if (languageServiceTransport.SessionFileEntries is not null)
                 {
                     foreach (KeyValuePair<string, object> sessionEntry in languageServiceTransport.SessionFileEntries)
                     {
@@ -97,7 +101,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 }
             }
 
-            if (debugAdapterTransport != null)
+            if (debugAdapterTransport is not null)
             {
                 sessionObject["debugServiceTransport"] = debugAdapterTransport.SessionFileTransportName;
 
@@ -119,6 +123,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <param name="sessionObject">The dictionary representing the session file.</param>
         private void WriteSessionObject(Dictionary<string, object> sessionObject)
         {
+            sessionObject["powerShellVersion"] = _powerShellVersion.ToString();
+
             string psModulePath = Environment.GetEnvironmentVariable("PSModulePath");
             string content = null;
             using (SMA.PowerShell pwsh = SMA.PowerShell.Create(RunspaceMode.NewRunspace))
