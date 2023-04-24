@@ -20,8 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// Write a session file describing a failed startup.
         /// </summary>
         /// <param name="reason">The reason for the startup failure.</param>
-        /// <param name="details">Any details to accompany the reason.</param>
-        void WriteSessionFailure(string reason, object details);
+        void WriteSessionFailure(string reason);
 
         /// <summary>
         /// Write a session file describing a successful startup.
@@ -58,8 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// Write a startup failure to the session file.
         /// </summary>
         /// <param name="reason">The reason for the startup failure.</param>
-        /// <param name="details">Any extra details, which will be serialized as JSON.</param>
-        public void WriteSessionFailure(string reason, object details)
+        public void WriteSessionFailure(string reason)
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Writing session failure");
 
@@ -68,11 +66,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 { "status", "failed" },
                 { "reason", reason },
             };
-
-            if (details != null)
-            {
-                sessionObject["details"] = details;
-            }
 
             WriteSessionObject(sessionObject);
         }
