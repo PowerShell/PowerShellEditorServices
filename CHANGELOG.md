@@ -1,5 +1,11 @@
 # PowerShell Editor Services Release History
 
+## v3.8.4
+### Tuesday, April 25, 2023
+
+- 🐛 🛫 [vscode-powershell #4509](https://github.com/PowerShell/PowerShellEditorServices/pull/2018) - Set session failure with reason when applicable.
+- ✨ 📖 [PowerShellEditorServices #2016](https://github.com/PowerShell/PowerShellEditorServices/pull/2016) - Add guide to configure Neovim. (Thanks @csc027!)
+
 ## v3.8.3
 ### Monday, March 27, 2023
 
