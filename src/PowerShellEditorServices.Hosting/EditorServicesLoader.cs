@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     {
 #if !CoreCLR
         // See https://docs.microsoft.com/en-us/dotnet/framework/migration-guide/how-to-determine-which-versions-are-installed
-        private const int Net462Version = 394802;
+        private const int Net48Version = 528040;
 
         private static readonly string s_psesBaseDirPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 #endif
@@ -49,36 +49,27 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// </summary>
         /// <param name="logger">The host logger to use.</param>
         /// <param name="hostConfig">The host configuration to start editor services with.</param>
-        /// <param name="sessionFileWriter">The session file writer to write the session file with.</param>
-        /// <returns></returns>
-        public static EditorServicesLoader Create(
-            HostLogger logger,
-            EditorServicesConfig hostConfig,
-            ISessionFileWriter sessionFileWriter) => Create(logger, hostConfig, sessionFileWriter, loggersToUnsubscribe: null);
-
-        /// <summary>
-        /// Create a new Editor Services loader.
-        /// </summary>
-        /// <param name="logger">The host logger to use.</param>
-        /// <param name="hostConfig">The host configuration to start editor services with.</param>
-        /// <param name="sessionFileWriter">The session file writer to write the session file with.</param>
+        /// <param name="sessionDetailsPath">Path to the session file to create on startup or startup failure.</param>
         /// <param name="loggersToUnsubscribe">The loggers to unsubscribe form writing to the terminal.</param>
-        /// <returns></returns>
         public static EditorServicesLoader Create(
             HostLogger logger,
             EditorServicesConfig hostConfig,
-            ISessionFileWriter sessionFileWriter,
+            string sessionDetailsPath,
             IReadOnlyCollection<IDisposable> loggersToUnsubscribe)
         {
-            if (logger == null)
+            if (logger is null)
             {
                 throw new ArgumentNullException(nameof(logger));
             }
 
-            if (hostConfig == null)
+            if (hostConfig is null)
             {
                 throw new ArgumentNullException(nameof(hostConfig));
             }
+
+            Version powerShellVersion = GetPSVersion();
+            SessionFileWriter sessionFileWriter = new(logger, sessionDetailsPath, powerShellVersion);
+            logger.Log(PsesLogLevel.Diagnostic, "Session file writer created");
 
 #if CoreCLR
             // In .NET Core, we add an event here to redirect dependency loading to the new AssemblyLoadContext we load PSES' dependencies into
@@ -167,7 +158,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             };
 #endif
 
-            return new EditorServicesLoader(logger, hostConfig, sessionFileWriter, loggersToUnsubscribe);
+            return new EditorServicesLoader(logger, hostConfig, sessionFileWriter, loggersToUnsubscribe, powerShellVersion);
         }
 
         private readonly EditorServicesConfig _hostConfig;
@@ -178,33 +169,38 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private readonly IReadOnlyCollection<IDisposable> _loggersToUnsubscribe;
 
+        private readonly Version _powerShellVersion;
+
         private EditorServicesRunner _editorServicesRunner;
 
         private EditorServicesLoader(
             HostLogger logger,
             EditorServicesConfig hostConfig,
             ISessionFileWriter sessionFileWriter,
-            IReadOnlyCollection<IDisposable> loggersToUnsubscribe)
+            IReadOnlyCollection<IDisposable> loggersToUnsubscribe,
+            Version powerShellVersion)
         {
             _logger = logger;
             _hostConfig = hostConfig;
             _sessionFileWriter = sessionFileWriter;
             _loggersToUnsubscribe = loggersToUnsubscribe;
+            _powerShellVersion = powerShellVersion;
         }
 
         /// <summary>
         /// Load Editor Services and its dependencies in an isolated way and start it.
         /// This method's returned task will end when Editor Services shuts down.
         /// </summary>
-        /// <returns></returns>
         public Task LoadAndRunEditorServicesAsync()
         {
             // Log important host information here
             LogHostInformation();
 
+            CheckPowerShellVersion();
+
 #if !CoreCLR
             // Make sure the .NET Framework version supports .NET Standard 2.0
-            CheckNetFxVersion();
+            CheckDotNetVersion();
 #endif
 
             // Add the bundled modules to the PSModulePath
@@ -241,10 +237,30 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             // The call within this method is therefore a total no-op
             EditorServicesLoading.LoadEditorServicesForHost();
 
-#if !CoreCLR
-        private void CheckNetFxVersion()
+        private void CheckPowerShellVersion()
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Checking that .NET Framework version is at least 4.6.2");
+            PSLanguageMode languageMode = Runspace.DefaultRunspace.SessionStateProxy.LanguageMode;
+
+            _logger.Log(PsesLogLevel.Verbose, $@"
+== PowerShell Details ==
+- PowerShell version: {_powerShellVersion}
+- Language mode:      {languageMode}
+");
+
+            if ((_powerShellVersion < new Version(5, 1))
+                || (_powerShellVersion >= new Version(6, 0) && _powerShellVersion < new Version(7, 2)))
+            {
+                _logger.Log(PsesLogLevel.Error, $"PowerShell {_powerShellVersion} is not supported, please update!");
+                _sessionFileWriter.WriteSessionFailure("powerShellVersion");
+            }
+
+            // TODO: Check if language mode still matters for support.
+        }
+
+#if !CoreCLR
+        private void CheckDotNetVersion()
+        {
+            _logger.Log(PsesLogLevel.Verbose, "Checking that .NET Framework version is at least 4.8");
             using RegistryKey key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Net Framework Setup\NDP\v4\Full");
             object netFxValue = key?.GetValue("Release");
             if (netFxValue == null || netFxValue is not int netFxVersion)
@@ -254,9 +270,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             _logger.Log(PsesLogLevel.Verbose, $".NET registry version: {netFxVersion}");
 
-            if (netFxVersion < Net462Version)
+            if (netFxVersion < Net48Version)
             {
-                _logger.Log(PsesLogLevel.Warning, $".NET Framework version {netFxVersion} lower than .NET 4.6.2. This runtime is not supported and you may experience errors. Please update your .NET runtime version.");
+                _logger.Log(PsesLogLevel.Error, $".NET Framework {netFxVersion} is out-of-date, please install at least 4.8: https://dotnet.microsoft.com/en-us/download/dotnet-framework");
+                _sessionFileWriter.WriteSessionFailure("dotNetVersion");
             }
         }
 #endif
@@ -322,36 +339,18 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
  - PowerShell output encoding: {GetPSOutputEncoding()}
 ");
 
-            LogPowerShellDetails();
-
-            LogOperatingSystemDetails();
-        }
-
-        private static string GetPSOutputEncoding()
-        {
-            using SMA.PowerShell pwsh = SMA.PowerShell.Create();
-            return pwsh.AddScript("$OutputEncoding.EncodingName", useLocalScope: true).Invoke<string>()[0];
-        }
-
-        private void LogPowerShellDetails()
-        {
-            PSLanguageMode languageMode = Runspace.DefaultRunspace.SessionStateProxy.LanguageMode;
-
-            _logger.Log(PsesLogLevel.Verbose, $@"
-== PowerShell Details ==
-- PowerShell version: {GetPSVersion()}
-- Language mode:      {languageMode}
-");
-        }
-
-        private void LogOperatingSystemDetails()
-        {
             _logger.Log(PsesLogLevel.Verbose, $@"
 == Environment Details ==
  - OS description:  {RuntimeInformation.OSDescription}
  - OS architecture: {GetOSArchitecture()}
  - Process bitness: {(Environment.Is64BitProcess ? "64" : "32")}
 ");
+        }
+
+        private static string GetPSOutputEncoding()
+        {
+            using SMA.PowerShell pwsh = SMA.PowerShell.Create();
+            return pwsh.AddScript("$OutputEncoding.EncodingName", useLocalScope: true).Invoke<string>()[0];
         }
 
         // TODO: Deduplicate this with VersionUtils.
@@ -401,7 +400,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             }
         }
 
-        private static object GetPSVersion()
+        private static Version GetPSVersion()
         {
             // In order to read the $PSVersionTable variable,
             // we are forced to create a new runspace to avoid concurrency issues,
@@ -412,7 +411,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             return typeof(PSObject).Assembly
                 .GetType("System.Management.Automation.PSVersionInfo")
                 .GetMethod("get_PSVersion", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
-                .Invoke(null, new object[0] /* Cannot use Array.Empty, since it must work in net452 */);
+                .Invoke(null, new object[0] /* Cannot use Array.Empty, since it must work in net452 */) as Version;
 #pragma warning restore CA1825
         }
     }
