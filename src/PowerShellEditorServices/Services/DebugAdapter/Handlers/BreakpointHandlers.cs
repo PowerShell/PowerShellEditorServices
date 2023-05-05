@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (!_workspaceService.TryGetFile(request.Source.Path, out ScriptFile scriptFile))
             {
                 string message = _debugStateService.NoDebug ? string.Empty : "Source file could not be accessed, breakpoint not set.";
-                System.Collections.Generic.IEnumerable<Breakpoint> srcBreakpoints = request.Breakpoints
+                IEnumerable<Breakpoint> srcBreakpoints = request.Breakpoints
                     .Select(srcBkpt => LspDebugUtils.CreateBreakpoint(
                         srcBkpt, request.Source.Path, message, verified: _debugStateService.NoDebug));
 
@@ -71,7 +71,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 string message = _debugStateService.NoDebug ? string.Empty : "Source is not a PowerShell script, breakpoint not set.";
 
-                System.Collections.Generic.IEnumerable<Breakpoint> srcBreakpoints = request.Breakpoints
+                IEnumerable<Breakpoint> srcBreakpoints = request.Breakpoints
                     .Select(srcBkpt => LspDebugUtils.CreateBreakpoint(
                         srcBkpt, request.Source.Path, message, verified: _debugStateService.NoDebug));
 

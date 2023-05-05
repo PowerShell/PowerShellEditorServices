@@ -3,7 +3,6 @@
 
 using System;
 using System.Management.Automation;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
@@ -81,10 +80,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         public event Action<object, DebuggerResumingEventArgs> DebuggerResuming;
         public event Action<object, BreakpointUpdatedEventArgs> BreakpointUpdated;
 
-        public Task<DscBreakpointCapability> GetDscBreakpointCapabilityAsync(CancellationToken cancellationToken)
+        public Task<DscBreakpointCapability> GetDscBreakpointCapabilityAsync()
         {
             _psesHost.Runspace.ThrowCancelledIfUnusable();
-            return _psesHost.CurrentRunspace.GetDscBreakpointCapabilityAsync(_logger, _psesHost, cancellationToken);
+            return _psesHost.CurrentRunspace.GetDscBreakpointCapabilityAsync(_logger, _psesHost);
         }
 
         // This is required by the PowerShell API so that remote debugging works. Without it, a

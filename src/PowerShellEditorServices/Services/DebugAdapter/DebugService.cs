@@ -135,7 +135,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             IEnumerable<BreakpointDetails> breakpoints,
             bool clearExisting = true)
         {
-            DscBreakpointCapability dscBreakpoints = await _debugContext.GetDscBreakpointCapabilityAsync(CancellationToken.None).ConfigureAwait(false);
+            DscBreakpointCapability dscBreakpoints = await _debugContext.GetDscBreakpointCapabilityAsync().ConfigureAwait(false);
 
             string scriptPath = scriptFile.FilePath;
 
