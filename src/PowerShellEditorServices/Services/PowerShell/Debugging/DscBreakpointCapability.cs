@@ -22,24 +22,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
     {
         private string[] dscResourceRootPaths = Array.Empty<string>();
 
-        private readonly Dictionary<string, int[]> breakpointsPerFile =
-            new();
+        private readonly Dictionary<string, int[]> breakpointsPerFile = new();
 
-        public async Task<BreakpointDetails[]> SetLineBreakpointsAsync(
+        public async Task<IEnumerable<BreakpointDetails>> SetLineBreakpointsAsync(
             IInternalPowerShellExecutionService executionService,
             string scriptPath,
-            BreakpointDetails[] breakpoints)
+            IEnumerable<BreakpointDetails> breakpoints)
         {
-            List<BreakpointDetails> resultBreakpointDetails =
-                new();
-
             // We always get the latest array of breakpoint line numbers
             // so store that for future use
-            if (breakpoints.Length > 0)
+            if (breakpoints.Any())
             {
                 // Set the breakpoints for this scriptPath
-                breakpointsPerFile[scriptPath] =
-                    breakpoints.Select(b => b.LineNumber).ToArray();
+                breakpointsPerFile[scriptPath] = breakpoints.Select(b => b.LineNumber).ToArray();
             }
             else
             {
@@ -72,7 +67,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                 breakpoint.Verified = true;
             }
 
-            return breakpoints.ToArray();
+            return breakpoints;
         }
 
         public bool IsDscResourcePath(string scriptPath)

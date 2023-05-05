@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -82,18 +83,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             // At this point, the source file has been verified as a PowerShell script.
-            BreakpointDetails[] breakpointDetails = request.Breakpoints
+            IEnumerable<BreakpointDetails> breakpointDetails = request.Breakpoints
                 .Select((srcBreakpoint) => BreakpointDetails.Create(
                     scriptFile.FilePath,
                     srcBreakpoint.Line,
                     srcBreakpoint.Column,
                     srcBreakpoint.Condition,
                     srcBreakpoint.HitCondition,
-                    srcBreakpoint.LogMessage))
-                .ToArray();
+                    srcBreakpoint.LogMessage));
 
             // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
-            BreakpointDetails[] updatedBreakpointDetails = breakpointDetails;
+            IEnumerable<BreakpointDetails> updatedBreakpointDetails = breakpointDetails;
             if (!_debugStateService.NoDebug)
             {
                 await _debugStateService.WaitForSetBreakpointHandleAsync().ConfigureAwait(false);

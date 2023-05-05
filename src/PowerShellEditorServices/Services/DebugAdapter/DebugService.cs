@@ -130,9 +130,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="breakpoints">BreakpointDetails for each breakpoint that will be set.</param>
         /// <param name="clearExisting">If true, causes all existing breakpoints to be cleared before setting new ones.</param>
         /// <returns>An awaitable Task that will provide details about the breakpoints that were set.</returns>
-        public async Task<BreakpointDetails[]> SetLineBreakpointsAsync(
+        public async Task<IEnumerable<BreakpointDetails>> SetLineBreakpointsAsync(
             ScriptFile scriptFile,
-            BreakpointDetails[] breakpoints,
+            IEnumerable<BreakpointDetails> breakpoints,
             bool clearExisting = true)
         {
             DscBreakpointCapability dscBreakpoints = await _debugContext.GetDscBreakpointCapabilityAsync(CancellationToken.None).ConfigureAwait(false);
@@ -146,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 if (!_remoteFileManager.IsUnderRemoteTempPath(scriptPath))
                 {
                     _logger.LogTrace($"Could not set breakpoints for local path '{scriptPath}' in a remote session.");
-                    return Array.Empty<BreakpointDetails>();
+                    return Enumerable.Empty<BreakpointDetails>();
                 }
 
                 scriptPath = _remoteFileManager.GetMappedPath(scriptPath, _psesHost.CurrentRunspace);
@@ -154,7 +154,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             else if (temporaryScriptListingPath?.Equals(scriptPath, StringComparison.CurrentCultureIgnoreCase) == true)
             {
                 _logger.LogTrace($"Could not set breakpoint on temporary script listing path '{scriptPath}'.");
-                return Array.Empty<BreakpointDetails>();
+                return Enumerable.Empty<BreakpointDetails>();
             }
 
             // Fix for issue #123 - file paths that contain wildcard chars [ and ] need to
@@ -168,7 +168,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     await _breakpointService.RemoveAllBreakpointsAsync(scriptFile.FilePath).ConfigureAwait(false);
                 }
 
-                return (await _breakpointService.SetBreakpointsAsync(escapedScriptPath, breakpoints).ConfigureAwait(false)).ToArray();
+                return await _breakpointService.SetBreakpointsAsync(escapedScriptPath, breakpoints).ConfigureAwait(false);
             }
 
             return await dscBreakpoints
