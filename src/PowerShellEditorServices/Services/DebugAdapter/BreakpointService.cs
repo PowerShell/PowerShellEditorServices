@@ -40,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _debugStateService = debugStateService;
         }
 
-        public async Task<List<Breakpoint>> GetBreakpointsAsync()
+        public async Task<IReadOnlyList<Breakpoint>> GetBreakpointsAsync()
         {
             if (BreakpointApiUtils.SupportsBreakpointApis(_editorServicesHost.CurrentRunspace))
             {
@@ -52,14 +52,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // Legacy behavior
             PSCommand psCommand = new PSCommand().AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
-            IEnumerable<Breakpoint> breakpoints = await _executionService
+            return await _executionService
                 .ExecutePSCommandAsync<Breakpoint>(psCommand, CancellationToken.None)
                 .ConfigureAwait(false);
-
-            return breakpoints.ToList();
         }
 
-        public async Task<IEnumerable<BreakpointDetails>> SetBreakpointsAsync(string escapedScriptPath, IEnumerable<BreakpointDetails> breakpoints)
+        public async Task<IReadOnlyList<BreakpointDetails>> SetBreakpointsAsync(string escapedScriptPath, IReadOnlyList<BreakpointDetails> breakpoints)
         {
             if (BreakpointApiUtils.SupportsBreakpointApis(_editorServicesHost.CurrentRunspace))
             {
@@ -147,7 +145,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return configuredBreakpoints;
         }
 
-        public async Task<IEnumerable<CommandBreakpointDetails>> SetCommandBreakpointsAsync(IEnumerable<CommandBreakpointDetails> breakpoints)
+        public async Task<IReadOnlyList<CommandBreakpointDetails>> SetCommandBreakpointsAsync(IReadOnlyList<CommandBreakpointDetails> breakpoints)
         {
             if (BreakpointApiUtils.SupportsBreakpointApis(_editorServicesHost.CurrentRunspace))
             {
@@ -216,7 +214,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // If no PSCommand was created then there are no breakpoints to set.
             if (psCommand is not null)
             {
-                IEnumerable<Breakpoint> setBreakpoints = await _executionService
+                IReadOnlyList<Breakpoint> setBreakpoints = await _executionService
                     .ExecutePSCommandAsync<Breakpoint>(psCommand, CancellationToken.None)
                     .ConfigureAwait(false);
                 configuredBreakpoints.AddRange(setBreakpoints.Select(CommandBreakpointDetails.Create));

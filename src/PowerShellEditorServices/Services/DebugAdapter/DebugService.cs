@@ -130,9 +130,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="breakpoints">BreakpointDetails for each breakpoint that will be set.</param>
         /// <param name="clearExisting">If true, causes all existing breakpoints to be cleared before setting new ones.</param>
         /// <returns>An awaitable Task that will provide details about the breakpoints that were set.</returns>
-        public async Task<IEnumerable<BreakpointDetails>> SetLineBreakpointsAsync(
+        public async Task<IReadOnlyList<BreakpointDetails>> SetLineBreakpointsAsync(
             ScriptFile scriptFile,
-            IEnumerable<BreakpointDetails> breakpoints,
+            IReadOnlyList<BreakpointDetails> breakpoints,
             bool clearExisting = true)
         {
             DscBreakpointCapability dscBreakpoints = await _debugContext.GetDscBreakpointCapabilityAsync().ConfigureAwait(false);
@@ -146,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 if (!_remoteFileManager.IsUnderRemoteTempPath(scriptPath))
                 {
                     _logger.LogTrace($"Could not set breakpoints for local path '{scriptPath}' in a remote session.");
-                    return Enumerable.Empty<BreakpointDetails>();
+                    return Array.Empty<BreakpointDetails>();
                 }
 
                 scriptPath = _remoteFileManager.GetMappedPath(scriptPath, _psesHost.CurrentRunspace);
@@ -154,7 +154,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             else if (temporaryScriptListingPath?.Equals(scriptPath, StringComparison.CurrentCultureIgnoreCase) == true)
             {
                 _logger.LogTrace($"Could not set breakpoint on temporary script listing path '{scriptPath}'.");
-                return Enumerable.Empty<BreakpointDetails>();
+                return Array.Empty<BreakpointDetails>();
             }
 
             // Fix for issue #123 - file paths that contain wildcard chars [ and ] need to
@@ -182,25 +182,20 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="breakpoints">CommandBreakpointDetails for each command breakpoint that will be set.</param>
         /// <param name="clearExisting">If true, causes all existing function breakpoints to be cleared before setting new ones.</param>
         /// <returns>An awaitable Task that will provide details about the breakpoints that were set.</returns>
-        public async Task<CommandBreakpointDetails[]> SetCommandBreakpointsAsync(
-            CommandBreakpointDetails[] breakpoints,
+        public async Task<IReadOnlyList<CommandBreakpointDetails>> SetCommandBreakpointsAsync(
+            IReadOnlyList<CommandBreakpointDetails> breakpoints,
             bool clearExisting = true)
         {
-            CommandBreakpointDetails[] resultBreakpointDetails = null;
-
             if (clearExisting)
             {
                 // Flatten dictionary values into one list and remove them all.
-                IEnumerable<Breakpoint> existingBreakpoints = await _breakpointService.GetBreakpointsAsync().ConfigureAwait(false);
+                IReadOnlyList<Breakpoint> existingBreakpoints = await _breakpointService.GetBreakpointsAsync().ConfigureAwait(false);
                 await _breakpointService.RemoveBreakpointsAsync(existingBreakpoints.OfType<CommandBreakpoint>()).ConfigureAwait(false);
             }
 
-            if (breakpoints.Length > 0)
-            {
-                resultBreakpointDetails = (await _breakpointService.SetCommandBreakpointsAsync(breakpoints).ConfigureAwait(false)).ToArray();
-            }
-
-            return resultBreakpointDetails ?? Array.Empty<CommandBreakpointDetails>();
+            return breakpoints.Count > 0
+                ? await _breakpointService.SetCommandBreakpointsAsync(breakpoints).ConfigureAwait(false)
+                : Array.Empty<CommandBreakpointDetails>();
         }
 
         /// <summary>

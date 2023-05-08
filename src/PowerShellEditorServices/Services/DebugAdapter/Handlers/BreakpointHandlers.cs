@@ -83,17 +83,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             // At this point, the source file has been verified as a PowerShell script.
-            IEnumerable<BreakpointDetails> breakpointDetails = request.Breakpoints
+            IReadOnlyList<BreakpointDetails> breakpointDetails = request.Breakpoints
                 .Select((srcBreakpoint) => BreakpointDetails.Create(
                     scriptFile.FilePath,
                     srcBreakpoint.Line,
                     srcBreakpoint.Column,
                     srcBreakpoint.Condition,
                     srcBreakpoint.HitCondition,
-                    srcBreakpoint.LogMessage));
+                    srcBreakpoint.LogMessage)).ToList();
 
             // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
-            IEnumerable<BreakpointDetails> updatedBreakpointDetails = breakpointDetails;
+            IReadOnlyList<BreakpointDetails> updatedBreakpointDetails = breakpointDetails;
             if (!_debugStateService.NoDebug)
             {
                 await _debugStateService.WaitForSetBreakpointHandleAsync().ConfigureAwait(false);
@@ -125,23 +125,20 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<SetFunctionBreakpointsResponse> Handle(SetFunctionBreakpointsArguments request, CancellationToken cancellationToken)
         {
-            CommandBreakpointDetails[] breakpointDetails = request.Breakpoints
+            IReadOnlyList<CommandBreakpointDetails> breakpointDetails = request.Breakpoints
                 .Select((funcBreakpoint) => CommandBreakpointDetails.Create(
                     funcBreakpoint.Name,
-                    funcBreakpoint.Condition))
-                .ToArray();
+                    funcBreakpoint.Condition)).ToList();
 
             // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
-            CommandBreakpointDetails[] updatedBreakpointDetails = breakpointDetails;
+            IReadOnlyList<CommandBreakpointDetails> updatedBreakpointDetails = breakpointDetails;
             if (!_debugStateService.NoDebug)
             {
                 await _debugStateService.WaitForSetBreakpointHandleAsync().ConfigureAwait(false);
 
                 try
                 {
-                    updatedBreakpointDetails =
-                        await _debugService.SetCommandBreakpointsAsync(
-                            breakpointDetails).ConfigureAwait(false);
+                    updatedBreakpointDetails = await _debugService.SetCommandBreakpointsAsync(breakpointDetails).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -156,9 +153,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             return new SetFunctionBreakpointsResponse
             {
-                Breakpoints = updatedBreakpointDetails
-                    .Select(LspDebugUtils.CreateBreakpoint)
-                    .ToArray()
+                Breakpoints = updatedBreakpointDetails.Select(LspDebugUtils.CreateBreakpoint).ToList()
             };
         }
 

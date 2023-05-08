@@ -203,7 +203,7 @@ namespace PowerShellEditorServices.Test.Debugging
         [MemberData(nameof(DebuggerAcceptsScriptArgsTestData))]
         public async Task DebuggerAcceptsScriptArgs(string[] args)
         {
-            IEnumerable<BreakpointDetails> breakpoints = await debugService.SetLineBreakpointsAsync(
+            IReadOnlyList<BreakpointDetails> breakpoints = await debugService.SetLineBreakpointsAsync(
                 oddPathScriptFile,
                 new[] { BreakpointDetails.Create(oddPathScriptFile.FilePath, 3) }).ConfigureAwait(true);
 
@@ -257,15 +257,15 @@ namespace PowerShellEditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerSetsAndClearsFunctionBreakpoints()
         {
-            CommandBreakpointDetails[] breakpoints = await debugService.SetCommandBreakpointsAsync(
+            IReadOnlyList<CommandBreakpointDetails> breakpoints = await debugService.SetCommandBreakpointsAsync(
                 new[] {
                     CommandBreakpointDetails.Create("Write-Host"),
                     CommandBreakpointDetails.Create("Get-Date")
                 }).ConfigureAwait(true);
 
-            Assert.Equal(2, breakpoints.Length);
-            Assert.Equal("Write-Host", breakpoints.ElementAt(0).Name);
-            Assert.Equal("Get-Date", breakpoints.ElementAt(1).Name);
+            Assert.Equal(2, breakpoints.Count);
+            Assert.Equal("Write-Host", breakpoints[0].Name);
+            Assert.Equal("Get-Date", breakpoints[1].Name);
 
             breakpoints = await debugService.SetCommandBreakpointsAsync(
                 new[] { CommandBreakpointDetails.Create("Get-Host") }).ConfigureAwait(true);
@@ -281,7 +281,7 @@ namespace PowerShellEditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerStopsOnFunctionBreakpoints()
         {
-            CommandBreakpointDetails[] breakpoints = await debugService.SetCommandBreakpointsAsync(
+            IReadOnlyList<CommandBreakpointDetails> breakpoints = await debugService.SetCommandBreakpointsAsync(
                 new[] { CommandBreakpointDetails.Create("Write-Host") }).ConfigureAwait(true);
 
             Task _ = ExecuteDebugFileAsync();
@@ -311,7 +311,7 @@ namespace PowerShellEditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerSetsAndClearsLineBreakpoints()
         {
-            IEnumerable<BreakpointDetails> breakpoints =
+            IReadOnlyList<BreakpointDetails> breakpoints =
                 await debugService.SetLineBreakpointsAsync(
                     debugScriptFile,
                     new[] {
@@ -322,8 +322,8 @@ namespace PowerShellEditorServices.Test.Debugging
             IReadOnlyList<LineBreakpoint> confirmedBreakpoints = await GetConfirmedBreakpoints(debugScriptFile).ConfigureAwait(true);
 
             Assert.Equal(2, confirmedBreakpoints.Count);
-            Assert.Equal(5, breakpoints.ElementAt(0).LineNumber);
-            Assert.Equal(10, breakpoints.ElementAt(1).LineNumber);
+            Assert.Equal(5, breakpoints[0].LineNumber);
+            Assert.Equal(10, breakpoints[1].LineNumber);
 
             breakpoints = await debugService.SetLineBreakpointsAsync(
                 debugScriptFile,
@@ -331,7 +331,7 @@ namespace PowerShellEditorServices.Test.Debugging
             confirmedBreakpoints = await GetConfirmedBreakpoints(debugScriptFile).ConfigureAwait(true);
 
             Assert.Single(confirmedBreakpoints);
-            Assert.Equal(2, breakpoints.ElementAt(0).LineNumber);
+            Assert.Equal(2, breakpoints[0].LineNumber);
 
             await debugService.SetLineBreakpointsAsync(
                 debugScriptFile,
@@ -442,7 +442,7 @@ namespace PowerShellEditorServices.Test.Debugging
         [Fact]
         public async Task DebuggerProvidesMessageForInvalidConditionalBreakpoint()
         {
-            IEnumerable<BreakpointDetails> breakpoints =
+            IReadOnlyList<BreakpointDetails> breakpoints =
                 await debugService.SetLineBreakpointsAsync(
                     debugScriptFile,
                     new[] {
@@ -457,20 +457,20 @@ namespace PowerShellEditorServices.Test.Debugging
                     }).ConfigureAwait(true);
 
             Assert.Single(breakpoints);
-            // Assert.Equal(5, breakpoints.ElementAt(0).LineNumber);
-            // Assert.True(breakpoints.ElementAt(0).Verified);
-            // Assert.Null(breakpoints.ElementAt(0).Message);
+            // Assert.Equal(5, breakpoints[0].LineNumber);
+            // Assert.True(breakpoints[0].Verified);
+            // Assert.Null(breakpoints[0].Message);
 
-            Assert.Equal(10, breakpoints.ElementAt(0).LineNumber);
-            Assert.False(breakpoints.ElementAt(0).Verified);
-            Assert.NotNull(breakpoints.ElementAt(0).Message);
-            Assert.Contains("Unexpected token '-ez'", breakpoints.ElementAt(0).Message);
+            Assert.Equal(10, breakpoints[0].LineNumber);
+            Assert.False(breakpoints[0].Verified);
+            Assert.NotNull(breakpoints[0].Message);
+            Assert.Contains("Unexpected token '-ez'", breakpoints[0].Message);
         }
 
         [Fact]
         public async Task DebuggerFindsParsableButInvalidSimpleBreakpointConditions()
         {
-            IEnumerable<BreakpointDetails> breakpoints =
+            IReadOnlyList<BreakpointDetails> breakpoints =
                 await debugService.SetLineBreakpointsAsync(
                     debugScriptFile,
                     new[] {
@@ -478,15 +478,15 @@ namespace PowerShellEditorServices.Test.Debugging
                         BreakpointDetails.Create(debugScriptFile.FilePath, 7, column: null, condition: "$i > 100")
                     }).ConfigureAwait(true);
 
-            Assert.Equal(2, breakpoints.Count());
-            Assert.Equal(5, breakpoints.ElementAt(0).LineNumber);
-            Assert.False(breakpoints.ElementAt(0).Verified);
-            Assert.Contains("Use '-eq' instead of '=='", breakpoints.ElementAt(0).Message);
+            Assert.Equal(2, breakpoints.Count);
+            Assert.Equal(5, breakpoints[0].LineNumber);
+            Assert.False(breakpoints[0].Verified);
+            Assert.Contains("Use '-eq' instead of '=='", breakpoints[0].Message);
 
-            Assert.Equal(7, breakpoints.ElementAt(1).LineNumber);
-            Assert.False(breakpoints.ElementAt(1).Verified);
-            Assert.NotNull(breakpoints.ElementAt(1).Message);
-            Assert.Contains("Use '-gt' instead of '>'", breakpoints.ElementAt(1).Message);
+            Assert.Equal(7, breakpoints[1].LineNumber);
+            Assert.False(breakpoints[1].Verified);
+            Assert.NotNull(breakpoints[1].Message);
+            Assert.Contains("Use '-gt' instead of '>'", breakpoints[1].Message);
         }
 
         [Fact]
