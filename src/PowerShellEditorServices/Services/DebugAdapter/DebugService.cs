@@ -130,12 +130,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="breakpoints">BreakpointDetails for each breakpoint that will be set.</param>
         /// <param name="clearExisting">If true, causes all existing breakpoints to be cleared before setting new ones.</param>
         /// <returns>An awaitable Task that will provide details about the breakpoints that were set.</returns>
-        public async Task<BreakpointDetails[]> SetLineBreakpointsAsync(
+        public async Task<IReadOnlyList<BreakpointDetails>> SetLineBreakpointsAsync(
             ScriptFile scriptFile,
-            BreakpointDetails[] breakpoints,
+            IReadOnlyList<BreakpointDetails> breakpoints,
             bool clearExisting = true)
         {
-            DscBreakpointCapability dscBreakpoints = await _debugContext.GetDscBreakpointCapabilityAsync(CancellationToken.None).ConfigureAwait(false);
+            DscBreakpointCapability dscBreakpoints = await _debugContext.GetDscBreakpointCapabilityAsync().ConfigureAwait(false);
 
             string scriptPath = scriptFile.FilePath;
 
@@ -168,7 +168,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     await _breakpointService.RemoveAllBreakpointsAsync(scriptFile.FilePath).ConfigureAwait(false);
                 }
 
-                return (await _breakpointService.SetBreakpointsAsync(escapedScriptPath, breakpoints).ConfigureAwait(false)).ToArray();
+                return await _breakpointService.SetBreakpointsAsync(escapedScriptPath, breakpoints).ConfigureAwait(false);
             }
 
             return await dscBreakpoints
@@ -182,25 +182,20 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="breakpoints">CommandBreakpointDetails for each command breakpoint that will be set.</param>
         /// <param name="clearExisting">If true, causes all existing function breakpoints to be cleared before setting new ones.</param>
         /// <returns>An awaitable Task that will provide details about the breakpoints that were set.</returns>
-        public async Task<CommandBreakpointDetails[]> SetCommandBreakpointsAsync(
-            CommandBreakpointDetails[] breakpoints,
+        public async Task<IReadOnlyList<CommandBreakpointDetails>> SetCommandBreakpointsAsync(
+            IReadOnlyList<CommandBreakpointDetails> breakpoints,
             bool clearExisting = true)
         {
-            CommandBreakpointDetails[] resultBreakpointDetails = null;
-
             if (clearExisting)
             {
                 // Flatten dictionary values into one list and remove them all.
-                IEnumerable<Breakpoint> existingBreakpoints = await _breakpointService.GetBreakpointsAsync().ConfigureAwait(false);
+                IReadOnlyList<Breakpoint> existingBreakpoints = await _breakpointService.GetBreakpointsAsync().ConfigureAwait(false);
                 await _breakpointService.RemoveBreakpointsAsync(existingBreakpoints.OfType<CommandBreakpoint>()).ConfigureAwait(false);
             }
 
-            if (breakpoints.Length > 0)
-            {
-                resultBreakpointDetails = (await _breakpointService.SetCommandBreakpointsAsync(breakpoints).ConfigureAwait(false)).ToArray();
-            }
-
-            return resultBreakpointDetails ?? Array.Empty<CommandBreakpointDetails>();
+            return breakpoints.Count > 0
+                ? await _breakpointService.SetCommandBreakpointsAsync(breakpoints).ConfigureAwait(false)
+                : Array.Empty<CommandBreakpointDetails>();
         }
 
         /// <summary>

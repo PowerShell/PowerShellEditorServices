@@ -5,7 +5,6 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
-using System.Threading;
 using System;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 
@@ -86,14 +85,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
 
         public async Task<DscBreakpointCapability> GetDscBreakpointCapabilityAsync(
             ILogger logger,
-            PsesInternalHost psesHost,
-            CancellationToken cancellationToken)
+            PsesInternalHost psesHost)
         {
             return _dscBreakpointCapability ??= await DscBreakpointCapability.GetDscCapabilityAsync(
                     logger,
                     this,
-                    psesHost,
-                    cancellationToken)
+                    psesHost)
                     .ConfigureAwait(false);
         }
     }

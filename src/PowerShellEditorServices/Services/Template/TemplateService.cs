@@ -72,14 +72,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
 
                 _logger.LogTrace("Checking if Plaster is installed...");
 
-                PSObject moduleObject = (await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, CancellationToken.None).ConfigureAwait(false))[0];
+                IReadOnlyList<PSObject> moduleObject =
+                    await _executionService.ExecutePSCommandAsync<PSObject>(
+                        psCommand, CancellationToken.None).ConfigureAwait(false);
 
-                isPlasterInstalled = moduleObject != null;
-                string installedQualifier =
-                    isPlasterInstalled.Value
-                        ? string.Empty : "not ";
-
-                _logger.LogTrace($"Plaster is {installedQualifier}installed!");
+                isPlasterInstalled = moduleObject.Count > 0;
+                _logger.LogTrace("Plaster installed: " + isPlasterInstalled.Value);
 
                 // Attempt to load plaster
                 if (isPlasterInstalled.Value && !isPlasterLoaded)
@@ -89,17 +87,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
                     psCommand = new PSCommand();
                     psCommand
                         .AddCommand("Import-Module")
-                        .AddParameter("ModuleInfo", (PSModuleInfo)moduleObject.ImmediateBaseObject)
+                        .AddParameter("ModuleInfo", (PSModuleInfo)moduleObject[0].ImmediateBaseObject)
                         .AddParameter("PassThru");
 
                     IReadOnlyList<PSModuleInfo> importResult = await _executionService.ExecutePSCommandAsync<PSModuleInfo>(psCommand, CancellationToken.None).ConfigureAwait(false);
 
                     isPlasterLoaded = importResult.Count > 0;
-                    string loadedQualifier =
-                        isPlasterInstalled.Value
-                            ? "was" : "could not be";
-
-                    _logger.LogTrace($"Plaster {loadedQualifier} loaded successfully!");
+                    _logger.LogTrace("Plaster loaded: " + isPlasterLoaded);
                 }
             }
 
