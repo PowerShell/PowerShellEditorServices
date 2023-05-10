@@ -37,6 +37,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private static readonly PropertyInfo s_scriptDebuggerTriggerObjectProperty;
 
+        private static readonly MethodInfo s_getExecutionContextMethod;
+
+        private static readonly MethodInfo s_checkForInterruptsMethod;
+
         private readonly ILoggerFactory _loggerFactory;
 
         private readonly ILogger _logger;
@@ -102,6 +106,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             s_scriptDebuggerTriggerObjectProperty = scriptDebuggerType.GetProperty(
                 "TriggerObject",
                 BindingFlags.Instance | BindingFlags.NonPublic);
+
+            Type localPipelineType = typeof(PSObject).Assembly
+                .GetType("System.Management.Automation.Runspaces.LocalPipeline");
+
+            s_getExecutionContextMethod = localPipelineType.GetMethod(
+                "GetExecutionContextFromTLS",
+                 BindingFlags.Static | BindingFlags.NonPublic);
+
+            Type pipelineOpsType = typeof(PSObject).Assembly
+                .GetType("System.Management.Automation.PipelineOps");
+
+            s_checkForInterruptsMethod = pipelineOpsType.GetMethod(
+                "CheckForInterrupts",
+                BindingFlags.Static | BindingFlags.NonPublic);
         }
 
         public PsesInternalHost(
@@ -1215,10 +1233,10 @@ Set-MappedKeyHandlers
             // Go through pending event subscribers and:
             // - if we have any subscribers, ensure we process any events
             // - if we have any idle events, generate an idle event and process that
-            bool runPipelineForEventProcessing = false;
+            bool checkForInterrupts = false;
             foreach (PSEventSubscriber subscriber in eventSubscribers)
             {
-                runPipelineForEventProcessing = true;
+                checkForInterrupts = true;
 
                 if (string.Equals(subscriber.SourceIdentifier, PSEngineEvent.OnIdle, StringComparison.OrdinalIgnoreCase))
                 {
@@ -1230,7 +1248,7 @@ Set-MappedKeyHandlers
                 }
             }
 
-            if (!runPipelineForEventProcessing && _taskQueue.IsEmpty)
+            if (!checkForInterrupts && _taskQueue.IsEmpty)
             {
                 return;
             }
@@ -1248,19 +1266,19 @@ Set-MappedKeyHandlers
                         return;
                     }
 
-                    // If we're executing a PowerShell task, we don't need to run an extra pipeline
-                    // later for events.
-                    runPipelineForEventProcessing = task is not ISynchronousPowerShellTask;
+                    // If we're executing a PowerShell task, we don't need to check for interrupts later.
+                    checkForInterrupts = task is not ISynchronousPowerShellTask;
                     ExecuteTaskSynchronously(task, cancellationScope.CancellationToken);
                 }
             }
 
             // We didn't end up executing anything in the background,
-            // so we need to run a small artificial pipeline instead
-            // to force event processing
-            if (runPipelineForEventProcessing)
+            // so we need to check for interrupts / events manually.
+            if (checkForInterrupts)
             {
-                InvokePSCommand(new PSCommand().AddScript("0", useLocalScope: true), executionOptions: null, CancellationToken.None);
+                // The type is System.Management.Automation.ExecutionContext which is private.
+                object executionContext = s_getExecutionContextMethod.Invoke(null, null);
+                s_checkForInterruptsMethod.Invoke(null, new object[] { executionContext });
             }
         }
 
