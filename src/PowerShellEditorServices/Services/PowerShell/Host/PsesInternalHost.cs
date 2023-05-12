@@ -35,6 +35,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
     {
         internal const string DefaultPrompt = "> ";
 
+        private static readonly PSCommand s_promptCommand = new PSCommand().AddCommand("prompt");
+
         private static readonly PropertyInfo s_scriptDebuggerTriggerObjectProperty;
 
         private readonly ILoggerFactory _loggerFactory;
@@ -1026,10 +1028,8 @@ Set-MappedKeyHandlers
             string prompt = DefaultPrompt;
             try
             {
-                // TODO: Should we cache PSCommands like this as static members?
-                PSCommand command = new PSCommand().AddCommand("prompt");
                 IReadOnlyList<string> results = InvokePSCommand<string>(
-                    command,
+                    s_promptCommand,
                     executionOptions: new PowerShellExecutionOptions { ThrowOnError = false },
                     cancellationToken);
 
