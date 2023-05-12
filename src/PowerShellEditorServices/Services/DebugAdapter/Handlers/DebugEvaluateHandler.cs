@@ -48,7 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (isFromRepl)
             {
                 await _executionService.ExecutePSCommandAsync(
-                    new PSCommand().AddScript(request.Expression),
+                    new PSCommand().AddScript($"[System.Diagnostics.DebuggerHidden()]param() {request.Expression}"),
                     cancellationToken,
                     new PowerShellExecutionOptions { WriteOutputToHost = true, ThrowOnError = false, AddToHistory = true }).HandleErrorsAsync(_logger).ConfigureAwait(false);
             }

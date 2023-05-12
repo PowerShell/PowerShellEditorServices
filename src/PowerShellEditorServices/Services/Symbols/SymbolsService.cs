@@ -137,11 +137,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         // asserting we should use a giant nested ternary.
         private static string[] GetIdentifiers(string symbolName, SymbolType symbolType, CommandHelpers.AliasMap aliases)
         {
-            if (symbolType is not SymbolType.Function)
-            {
-                return new[] { symbolName };
-            }
-
             if (!aliases.CmdletToAliases.TryGetValue(symbolName, out List<string> foundAliasList))
             {
                 return new[] { symbolName };
@@ -165,22 +160,31 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return Enumerable.Empty<SymbolReference>();
             }
 
-            // TODO: Should we handle aliases at a lower level?
-            CommandHelpers.AliasMap aliases = await CommandHelpers.GetAliasesAsync(
-                _executionService,
-                cancellationToken).ConfigureAwait(false);
-
-            string targetName = symbol.Id;
-            if (symbol.Type is SymbolType.Function
-                && aliases.AliasToCmdlets.TryGetValue(symbol.Id, out string aliasDefinition))
+            // We want to handle aliases for functions, but we only want to do the work of getting
+            // the aliases when we must. We can't cache the alias list on first run else we won't
+            // support newly defined aliases.
+            string[] allIdentifiers;
+            if (symbol.Type is SymbolType.Function)
             {
-                targetName = aliasDefinition;
+                CommandHelpers.AliasMap aliases = await CommandHelpers.GetAliasesAsync(
+                    _executionService,
+                    cancellationToken).ConfigureAwait(false);
+
+                string targetName = symbol.Id;
+                if (aliases.AliasToCmdlets.TryGetValue(symbol.Id, out string aliasDefinition))
+                {
+                    targetName = aliasDefinition;
+                }
+                allIdentifiers = GetIdentifiers(targetName, symbol.Type, aliases);
+            }
+            else
+            {
+                allIdentifiers = new[] { symbol.Id };
             }
 
             await ScanWorkspacePSFiles(cancellationToken).ConfigureAwait(false);
 
             List<SymbolReference> symbols = new();
-            string[] allIdentifiers = GetIdentifiers(targetName, symbol.Type, aliases);
 
             foreach (ScriptFile file in _workspaceService.GetOpenedFiles())
             {

@@ -27,7 +27,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<Unit> Handle(ShowHelpParams request, CancellationToken cancellationToken)
         {
+            // TODO: Refactor to not rerun the function definition every time.
             const string CheckHelpScript = @"
+                [System.Diagnostics.DebuggerHidden()]
                 [CmdletBinding()]
                 param (
                     [String]$CommandName

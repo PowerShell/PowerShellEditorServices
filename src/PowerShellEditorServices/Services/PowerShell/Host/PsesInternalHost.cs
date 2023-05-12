@@ -35,6 +35,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
     {
         internal const string DefaultPrompt = "> ";
 
+        private static readonly PSCommand s_promptCommand = new PSCommand().AddCommand("prompt");
+
         private static readonly PropertyInfo s_scriptDebuggerTriggerObjectProperty;
 
         private readonly ILoggerFactory _loggerFactory;
@@ -474,7 +476,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public IReadOnlyList<TResult> InvokePSCommand<TResult>(PSCommand psCommand, PowerShellExecutionOptions executionOptions, CancellationToken cancellationToken)
         {
             SynchronousPowerShellTask<TResult> task = new(_logger, this, psCommand, executionOptions, cancellationToken);
-            return task.ExecuteAndGetResult(cancellationToken);
+            try
+            {
+                return task.ExecuteAndGetResult(cancellationToken);
+            }
+            finally
+            {
+                // At the end of each PowerShell command we need to reset PowerShell 5.1's
+                // `TranscribeOnly` property to avoid a bug where output disappears.
+                if (UI is EditorServicesConsolePSHostUserInterface ui)
+                {
+                    ui.DisableTranscribeOnly();
+                }
+            }
         }
 
         public void InvokePSCommand(PSCommand psCommand, PowerShellExecutionOptions executionOptions, CancellationToken cancellationToken) => InvokePSCommand<PSObject>(psCommand, executionOptions, cancellationToken);
@@ -1026,10 +1040,8 @@ Set-MappedKeyHandlers
             string prompt = DefaultPrompt;
             try
             {
-                // TODO: Should we cache PSCommands like this as static members?
-                PSCommand command = new PSCommand().AddCommand("prompt");
                 IReadOnlyList<string> results = InvokePSCommand<string>(
-                    command,
+                    s_promptCommand,
                     executionOptions: new PowerShellExecutionOptions { ThrowOnError = false },
                     cancellationToken);
 
@@ -1207,7 +1219,18 @@ Set-MappedKeyHandlers
             return runspace;
         }
 
-        // NOTE: This token is received from PSReadLine, and it _is_ the ReadKey cancellation token!
+        /// <summary>
+        /// This delegate is handed to PSReadLine and overrides similar logic within its `ReadKey`
+        /// method. Essentially we're replacing PowerShell's `OnIdle` handler since the PowerShell
+        /// engine isn't idle when we're sitting in PSReadLine's `ReadKey` loop. In our case we also
+        /// use this idle time to process queued tasks by executing those that can run in the
+        /// background, and canceling the foreground task if a queued tasks requires the foreground.
+        /// Finally, if and only if we have to, we run an artificial pipeline to force PowerShell's
+        /// own event processing.
+        /// </summary>
+        /// <param name="idleCancellationToken">
+        /// This token is received from PSReadLine, and it is the ReadKey cancellation token!
+        /// </param>
         internal void OnPowerShellIdle(CancellationToken idleCancellationToken)
         {
             IReadOnlyList<PSEventSubscriber> eventSubscribers = _mainRunspaceEngineIntrinsics.Events.Subscribers;
@@ -1250,17 +1273,27 @@ Set-MappedKeyHandlers
 
                     // If we're executing a PowerShell task, we don't need to run an extra pipeline
                     // later for events.
-                    runPipelineForEventProcessing = task is not ISynchronousPowerShellTask;
+                    if (task is ISynchronousPowerShellTask)
+                    {
+                        // We don't ever want to set this to true here, just skip if it had
+                        // previously been set true.
+                        runPipelineForEventProcessing = false;
+                    }
                     ExecuteTaskSynchronously(task, cancellationScope.CancellationToken);
                 }
             }
 
             // We didn't end up executing anything in the background,
             // so we need to run a small artificial pipeline instead
-            // to force event processing
+            // to force event processing.
             if (runPipelineForEventProcessing)
             {
-                InvokePSCommand(new PSCommand().AddScript("0", useLocalScope: true), executionOptions: null, CancellationToken.None);
+                InvokePSCommand(
+                    new PSCommand().AddScript(
+                        "[System.Diagnostics.DebuggerHidden()]param() 0",
+                        useLocalScope: true),
+                    executionOptions: null,
+                    CancellationToken.None);
             }
         }
 

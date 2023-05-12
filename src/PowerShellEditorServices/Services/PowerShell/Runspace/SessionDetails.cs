@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
         {
             Hashtable detailsObject = pwsh
                 .AddScript(
-                    $"@{{ '{Property_ComputerName}' = if ([Environment]::MachineName) {{[Environment]::MachineName}}  else {{'localhost'}}; '{Property_ProcessId}' = $PID; '{Property_InstanceId}' = $host.InstanceId }}",
+                    $"[System.Diagnostics.DebuggerHidden()]param() @{{ '{Property_ComputerName}' = if ([Environment]::MachineName) {{[Environment]::MachineName}} else {{'localhost'}}; '{Property_ProcessId}' = $PID; '{Property_InstanceId}' = $host.InstanceId }}",
                     useLocalScope: true)
                 .InvokeAndClear<Hashtable>()
                 .FirstOrDefault();

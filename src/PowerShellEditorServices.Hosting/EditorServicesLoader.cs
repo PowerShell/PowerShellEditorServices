@@ -350,7 +350,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         private static string GetPSOutputEncoding()
         {
             using SMA.PowerShell pwsh = SMA.PowerShell.Create();
-            return pwsh.AddScript("$OutputEncoding.EncodingName", useLocalScope: true).Invoke<string>()[0];
+            return pwsh.AddScript(
+                "[System.Diagnostics.DebuggerHidden()]param() $OutputEncoding.EncodingName",
+                useLocalScope: true).Invoke<string>()[0];
         }
 
         // TODO: Deduplicate this with VersionUtils.
