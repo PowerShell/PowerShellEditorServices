@@ -476,7 +476,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public IReadOnlyList<TResult> InvokePSCommand<TResult>(PSCommand psCommand, PowerShellExecutionOptions executionOptions, CancellationToken cancellationToken)
         {
             SynchronousPowerShellTask<TResult> task = new(_logger, this, psCommand, executionOptions, cancellationToken);
-            return task.ExecuteAndGetResult(cancellationToken);
+            try
+            {
+                return task.ExecuteAndGetResult(cancellationToken);
+            }
+            finally
+            {
+                // At the end of each PowerShell command we need to reset PowerShell 5.1's
+                // `TranscribeOnly` property to avoid a bug where output disappears.
+                if (UI is EditorServicesConsolePSHostUserInterface ui)
+                {
+                    ui.DisableTranscribeOnly();
+                }
+            }
         }
 
         public void InvokePSCommand(PSCommand psCommand, PowerShellExecutionOptions executionOptions, CancellationToken cancellationToken) => InvokePSCommand<PSObject>(psCommand, executionOptions, cancellationToken);
