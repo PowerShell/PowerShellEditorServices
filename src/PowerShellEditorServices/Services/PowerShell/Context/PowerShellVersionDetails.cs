@@ -55,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Context
             try
             {
                 Hashtable psVersionTable = pwsh
-                    .AddScript("$PSVersionTable", useLocalScope: true)
+                    .AddScript("[System.Diagnostics.DebuggerHidden()]param() $PSVersionTable", useLocalScope: true)
                     .InvokeAndClear<Hashtable>()
                     .FirstOrDefault();
 

@@ -367,7 +367,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // Evaluate the expression to get back a PowerShell object from the expression string.
             // This may throw, in which case the exception is propagated to the caller
-            PSCommand evaluateExpressionCommand = new PSCommand().AddScript(value);
+            PSCommand evaluateExpressionCommand = new PSCommand().AddScript($"[System.Diagnostics.DebuggerHidden()]param() {value}");
             IReadOnlyList<object> expressionResults = await _executionService.ExecutePSCommandAsync<object>(evaluateExpressionCommand, CancellationToken.None).ConfigureAwait(false);
             if (expressionResults.Count == 0)
             {
@@ -500,7 +500,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             bool writeResultAsOutput,
             CancellationToken cancellationToken)
         {
-            PSCommand command = new PSCommand().AddScript(expressionString);
+            PSCommand command = new PSCommand().AddScript($"[System.Diagnostics.DebuggerHidden()]param() {expressionString}");
             IReadOnlyList<PSObject> results;
             try
             {
@@ -799,7 +799,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // PSObject is used here instead of the specific type because we get deserialized
             // objects from remote sessions and want a common interface.
-            PSCommand psCommand = new PSCommand().AddScript($"[Collections.ArrayList]{callStackVarName} = @(); {getPSCallStack}; {returnSerializedIfInRemoteRunspace}");
+            PSCommand psCommand = new PSCommand().AddScript($"[System.Diagnostics.DebuggerHidden()]param() [Collections.ArrayList]{callStackVarName} = @(); {getPSCallStack}; {returnSerializedIfInRemoteRunspace}");
             IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, CancellationToken.None).ConfigureAwait(false);
 
             IEnumerable callStack = isRemoteRunspace
