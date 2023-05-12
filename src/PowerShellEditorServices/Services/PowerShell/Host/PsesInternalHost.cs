@@ -1261,7 +1261,12 @@ Set-MappedKeyHandlers
 
                     // If we're executing a PowerShell task, we don't need to run an extra pipeline
                     // later for events.
-                    runPipelineForEventProcessing = task is not ISynchronousPowerShellTask;
+                    if (task is ISynchronousPowerShellTask)
+                    {
+                        // We don't ever want to set this to true here, just skip if it had
+                        // previously been set true.
+                        runPipelineForEventProcessing = false;
+                    }
                     ExecuteTaskSynchronously(task, cancellationScope.CancellationToken);
                 }
             }
