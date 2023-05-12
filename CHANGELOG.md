@@ -1,5 +1,11 @@
 # PowerShell Editor Services Release History
 
+## v3.8.5
+### Friday, May 12, 2023
+
+- 🐛 📟 [vscode-powershell #3991](https://github.com/PowerShell/PowerShellEditorServices/pull/2023) - Fix disappearing output in PowerShell 5.1.
+- 🐛 🔍 [PowerShellEditorServices #2020](https://github.com/PowerShell/PowerShellEditorServices/pull/2020) - Fix repeated failure to load DSC module.
+
 ## v3.8.4
 ### Tuesday, April 25, 2023
 
