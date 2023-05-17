@@ -105,6 +105,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             if (PowerShellExecutionOptions.WriteOutputToHost)
             {
                 _psCommand.AddOutputCommand();
+
+                // Fix the transcription bug!
+                if (!_pwsh.Runspace.RunspaceIsRemote)
+                {
+                    _psesHost.DisableTranscribeOnly();
+                }
             }
 
             cancellationToken.Register(CancelNormalExecution);
@@ -148,7 +154,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 if (e is PSRemotingTransportException)
                 {
                     _ = System.Threading.Tasks.Task.Run(
-                        () => _psesHost.UnwindCallStack(),
+                        _psesHost.UnwindCallStack,
                         CancellationToken.None)
                         .HandleErrorsAsync(_logger);
 
@@ -189,8 +195,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private IReadOnlyList<TResult> ExecuteInDebugger(CancellationToken cancellationToken)
         {
-            // TODO: How much of this method can we remove now that it only processes PowerShell's
-            // intrinsic debugger commands?
             cancellationToken.Register(CancelDebugExecution);
 
             PSDataCollection<PSObject> outputCollection = new();
@@ -247,7 +251,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 if (e is PSRemotingTransportException)
                 {
                     _ = System.Threading.Tasks.Task.Run(
-                        () => _psesHost.UnwindCallStack(),
+                        _psesHost.UnwindCallStack,
                         CancellationToken.None)
                         .HandleErrorsAsync(_logger);
 

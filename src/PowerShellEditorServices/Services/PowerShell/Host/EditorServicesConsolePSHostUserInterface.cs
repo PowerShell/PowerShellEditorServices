@@ -7,10 +7,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Management.Automation;
 using System.Management.Automation.Host;
-using System.Reflection;
 using System.Security;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 {
@@ -18,27 +16,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
     {
         private readonly PSHostUserInterface _underlyingHostUI;
 
-        private static readonly Action<PSHostUserInterface, bool> s_setTranscribeOnlyDelegate;
-
         /// <summary>
         /// We use a ConcurrentDictionary because ConcurrentHashSet does not exist, hence the value
         /// is never actually used, and `WriteProgress` must be thread-safe.
         /// </summary>
         private readonly ConcurrentDictionary<(long, int), object> _currentProgressRecords = new();
-
-        static EditorServicesConsolePSHostUserInterface()
-        {
-            if (VersionUtils.IsPS5)
-            {
-                PropertyInfo transcribeOnlyProperty = typeof(PSHostUserInterface)
-                    .GetProperty("TranscribeOnly", BindingFlags.NonPublic | BindingFlags.Instance);
-
-                MethodInfo transcribeOnlySetMethod = transcribeOnlyProperty.GetSetMethod(nonPublic: true);
-
-                s_setTranscribeOnlyDelegate = (Action<PSHostUserInterface, bool>)Delegate.CreateDelegate(
-                    typeof(Action<PSHostUserInterface, bool>), transcribeOnlySetMethod);
-            }
-        }
 
         public EditorServicesConsolePSHostUserInterface(
             ILoggerFactory loggerFactory,
@@ -103,17 +85,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 _currentProgressRecords.Clear();
             }
             // TODO: Maybe send the OSC sequence to turn off progress indicator.
-        }
-
-        // This works around a bug in PowerShell 5.1 (that was later fixed) where a running
-        // transcription could cause output to disappear since the `TranscribeOnly` property was
-        // accidentally not reset to false.
-        internal void DisableTranscribeOnly()
-        {
-            if (VersionUtils.IsPS5)
-            {
-                s_setTranscribeOnlyDelegate(_underlyingHostUI, false);
-            }
         }
 
         public override void WriteVerboseLine(string message) => _underlyingHostUI.WriteVerboseLine(message);
