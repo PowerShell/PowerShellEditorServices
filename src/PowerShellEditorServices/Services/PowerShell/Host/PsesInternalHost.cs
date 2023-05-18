@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         /// cref="DisableTranscribeOnly()" /> when necessary.
         /// See: https://github.com/PowerShell/PowerShell/pull/3436
         /// </summary>
-        [ThreadStatic] // Because we can re-use it, but only for each PowerShell.
+        [ThreadStatic] // Because we can re-use it, but only once per instance of PSES.
         private static PSHostUserInterface s_internalPSHostUserInterface;
 
         private static readonly Func<PSHostUserInterface, bool> s_getTranscribeOnlyDelegate;
@@ -62,8 +62,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private static readonly PropertyInfo s_executionContextProperty;
 
         private static readonly PropertyInfo s_internalHostProperty;
-
-        private static readonly PropertyInfo s_internalHostUIProperty;
 #endif
 
         private readonly ILoggerFactory _loggerFactory;
@@ -151,10 +149,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             s_internalHostProperty = s_executionContextProperty.PropertyType
                 .GetProperty("InternalHost", BindingFlags.NonPublic | BindingFlags.Instance);
-
-            // It's public but we want the override and reflection confuses me.
-            s_internalHostUIProperty = s_internalHostProperty.PropertyType
-                .GetProperty("UI", BindingFlags.Public | BindingFlags.Instance);
 #endif
         }
 
@@ -558,10 +552,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             // To fix the TranscribeOnly bug, we have to get the internal UI, which involves a lot
             // of reflection since we can't always just use PowerShell to execute `$Host.UI`.
             s_internalPSHostUserInterface ??=
-                s_internalHostUIProperty.GetValue(
-                    s_internalHostProperty.GetValue(
-                        s_executionContextProperty.GetValue(CurrentPowerShell.Runspace)))
-                as PSHostUserInterface;
+                (s_internalHostProperty.GetValue(
+                    s_executionContextProperty.GetValue(CurrentPowerShell.Runspace))
+                    as PSHost).UI;
 
             if (s_getTranscribeOnlyDelegate(s_internalPSHostUserInterface))
             {
