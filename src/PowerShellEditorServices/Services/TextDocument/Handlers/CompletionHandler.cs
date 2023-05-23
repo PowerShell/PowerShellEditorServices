@@ -82,6 +82,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 // (typically files) returned by the space completion
                 return new CompletionList(completionResults, isIncomplete || request?.Context?.TriggerCharacter is " ");
             }
+            // Ignore canceled requests (logging will pollute the output).
+            catch (TaskCanceledException)
+            {
+                return new CompletionList(isIncomplete: true);
+            }
             // We can't do anything about completions failing.
             catch (Exception e)
             {
