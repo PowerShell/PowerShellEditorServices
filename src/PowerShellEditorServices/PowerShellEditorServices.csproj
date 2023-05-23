@@ -9,6 +9,10 @@
     <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(TargetFramework)' != 'net462' ">
+    <DefineConstants>$(DefineConstants);CoreCLR</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>Microsoft.PowerShell.EditorServices.Hosting</_Parameter1>
