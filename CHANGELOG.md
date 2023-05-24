@@ -1,5 +1,11 @@
 # PowerShell Editor Services Release History
 
+## v3.8.6
+### Tuesday, May 23, 2023
+
+- 🐛 💭 [vscode-powershell #4582](https://github.com/PowerShell/PowerShellEditorServices/pull/2028) - Ignore cancellation of completion requests.
+- 🐛 📟 [vscode-powershell #3991](https://github.com/PowerShell/PowerShellEditorServices/pull/2026) - Fix the `TranscribeOnly` bug (take two).
+
 ## v3.8.5
 ### Friday, May 12, 2023
 
