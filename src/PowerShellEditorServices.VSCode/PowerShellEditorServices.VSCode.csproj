@@ -9,10 +9,6 @@
     <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' != 'net462' ">
-    <DefineConstants>$(DefineConstants);CoreCLR</DefineConstants>
-  </PropertyGroup>
-
   <!-- Fail the release build if there are missing public API documentation comments -->
   <PropertyGroup>
     <WarningsAsErrors>1591,1573,1572</WarningsAsErrors>

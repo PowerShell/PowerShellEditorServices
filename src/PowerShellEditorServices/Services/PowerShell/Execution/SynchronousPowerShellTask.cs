@@ -106,7 +106,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             {
                 _psCommand.AddOutputCommand();
 
-                // Fix the transcription bug!
+                // Fix the transcription bug! Here we're fixing immediately before the invocation of
+                // our command, that has had `Out-Default` added to it.
                 if (!_pwsh.Runspace.RunspaceIsRemote)
                 {
                     _psesHost.DisableTranscribeOnly();
@@ -281,6 +282,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 if (_pwsh.HadErrors)
                 {
                     _pwsh.Streams.Error.Clear();
+                }
+
+                // Fix the transcription bug! Since we don't depend on `Out-Default` for
+                // `ExecuteDebugger`, we fix the bug here so the original invocation (before the
+                // script is executed) is good to go.
+                if (!_pwsh.Runspace.RunspaceIsRemote)
+                {
+                    _psesHost.DisableTranscribeOnly();
                 }
             }
 

@@ -32,6 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     public sealed class EditorServicesLoader : IDisposable
     {
 #if !CoreCLR
+        // TODO: Well, we're saying we need 4.8 here but we're building for 4.6.2...
         // See https://docs.microsoft.com/en-us/dotnet/framework/migration-guide/how-to-determine-which-versions-are-installed
         private const int Net48Version = 528040;
 
@@ -342,7 +343,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _logger.Log(PsesLogLevel.Verbose, $@"
 == Environment Details ==
  - OS description:  {RuntimeInformation.OSDescription}
- - OS architecture: {GetOSArchitecture()}
+ - OS architecture: {RuntimeInformation.OSArchitecture}
  - Process bitness: {(Environment.Is64BitProcess ? "64" : "32")}
 ");
         }
@@ -353,27 +354,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             return pwsh.AddScript(
                 "[System.Diagnostics.DebuggerHidden()]param() $OutputEncoding.EncodingName",
                 useLocalScope: true).Invoke<string>()[0];
-        }
-
-        // TODO: Deduplicate this with VersionUtils.
-        private static string GetOSArchitecture()
-        {
-#if CoreCLR
-            if (Environment.OSVersion.Platform != PlatformID.Win32NT)
-            {
-                return RuntimeInformation.OSArchitecture.ToString();
-            }
-#endif
-
-            // If on win7 (version 6.1.x), avoid System.Runtime.InteropServices.RuntimeInformation
-            if (Environment.OSVersion.Version < new Version(6, 2))
-            {
-                return Environment.Is64BitProcess
-                    ? "X64"
-                    : "X86";
-            }
-
-            return RuntimeInformation.OSArchitecture.ToString();
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2208:Instantiate argument exceptions correctly", Justification = "Checking user-defined configuration")]

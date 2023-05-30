@@ -39,7 +39,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         private static readonly PropertyInfo s_scriptDebuggerTriggerObjectProperty;
 
-#if !CoreCLR
         /// <summary>
         /// To workaround a horrid bug where the `TranscribeOnly` field of the PSHostUserInterface
         /// can accidentally remain true, we have to use a bunch of reflection so that <see
@@ -62,7 +61,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private static readonly PropertyInfo s_executionContextProperty;
 
         private static readonly PropertyInfo s_internalHostProperty;
-#endif
 
         private readonly ILoggerFactory _loggerFactory;
 
@@ -130,7 +128,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 "TriggerObject",
                 BindingFlags.Instance | BindingFlags.NonPublic);
 
-#if !CoreCLR
+            if (VersionUtils.IsNetCore)
+            {
+                // The following reflection methods are only needed for the .NET Framework.
+                return;
+            }
+
             PropertyInfo transcribeOnlyProperty = typeof(PSHostUserInterface)
                 .GetProperty("TranscribeOnly", BindingFlags.NonPublic | BindingFlags.Instance);
 
@@ -144,12 +147,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             s_setTranscribeOnlyDelegate = (Action<PSHostUserInterface, bool>)Delegate.CreateDelegate(
                 typeof(Action<PSHostUserInterface, bool>), transcribeOnlySetMethod);
 
-            s_executionContextProperty = typeof(System.Management.Automation.Runspaces.Runspace)
+            s_executionContextProperty = typeof(Runspace)
                 .GetProperty("ExecutionContext", BindingFlags.NonPublic | BindingFlags.Instance);
 
             s_internalHostProperty = s_executionContextProperty.PropertyType
                 .GetProperty("InternalHost", BindingFlags.NonPublic | BindingFlags.Instance);
-#endif
         }
 
         public PsesInternalHost(
@@ -544,23 +546,29 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         // This works around a bug in PowerShell 5.1 (that was later fixed) where a running
         // transcription could cause output to disappear since the `TranscribeOnly` property was
         // accidentally not reset to false.
-#pragma warning disable CA1822 // Warning to make it static when it's empty for CoreCLR.
         internal void DisableTranscribeOnly()
-#pragma warning restore CA1822
         {
-#if !CoreCLR
+            if (VersionUtils.IsNetCore)
+            {
+                return;
+            }
+
             // To fix the TranscribeOnly bug, we have to get the internal UI, which involves a lot
             // of reflection since we can't always just use PowerShell to execute `$Host.UI`.
             s_internalPSHostUserInterface ??=
                 (s_internalHostProperty.GetValue(
                     s_executionContextProperty.GetValue(CurrentPowerShell.Runspace))
-                    as PSHost).UI;
+                    as PSHost)?.UI;
+
+            if (s_internalPSHostUserInterface is null)
+            {
+                return;
+            }
 
             if (s_getTranscribeOnlyDelegate(s_internalPSHostUserInterface))
             {
                 s_setTranscribeOnlyDelegate(s_internalPSHostUserInterface, false);
             }
-#endif
         }
 
         internal Task LoadHostProfilesAsync(CancellationToken cancellationToken)
