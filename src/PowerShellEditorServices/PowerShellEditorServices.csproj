@@ -9,9 +9,12 @@
     <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' != 'net462' ">
-    <DefineConstants>$(DefineConstants);CoreCLR</DefineConstants>
-  </PropertyGroup>
+  <!--
+    Be careful about using CoreCLR as a definition, it doesn't work for most of
+    our code because the shared libraries target netstandard2.0 and so can't use
+    a property group condition to define it. It's only available to code under
+    src/PowerShellEditorServices.Hosting and the tests.
+  -->
 
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">

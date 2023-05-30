@@ -43,11 +43,6 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         public static bool IsPS5 { get; } = PSVersion.Major == 5;
 
         /// <summary>
-        /// True if we are running in PowerShell Core 6, false otherwise.
-        /// </summary>
-        public static bool IsPS6 { get; } = PSVersion.Major == 6;
-
-        /// <summary>
         /// True if we are running in PowerShell 7, false otherwise.
         /// </summary>
         public static bool IsPS7OrGreater { get; } = PSVersion.Major >= 7;
@@ -70,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         /// <summary>
         /// The .NET Architecture as a string.
         /// </summary>
-        public static string Architecture { get; } = PowerShellReflectionUtils.GetOSArchitecture();
+        public static string Architecture { get; } = RuntimeInformation.OSArchitecture.ToString();
     }
 
     internal static class PowerShellReflectionUtils
@@ -117,24 +112,5 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         public static string PSVersionString { get; } = s_psCurrentVersionProperty != null
             ? s_psCurrentVersionProperty.GetValue(null).ToString()
             : PSVersion.ToString(3);
-
-        public static string GetOSArchitecture()
-        {
-#if CoreCLR
-            if (Environment.OSVersion.Platform != PlatformID.Win32NT)
-            {
-                return RuntimeInformation.OSArchitecture.ToString();
-            }
-#endif
-            // If on win7 (version 6.1.x), avoid System.Runtime.InteropServices.RuntimeInformation
-            if (Environment.OSVersion.Version < new Version(6, 2))
-            {
-                return Environment.Is64BitProcess
-                    ? "X64"
-                    : "X86";
-            }
-
-            return RuntimeInformation.OSArchitecture.ToString();
-        }
     }
 }
