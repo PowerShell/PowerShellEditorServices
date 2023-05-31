@@ -1,5 +1,10 @@
 # PowerShell Editor Services Release History
 
+## v3.8.7
+### Tuesday, May 30, 2023
+
+- 🐛 📟 [PowerShellEditorServices #2031](https://github.com/PowerShell/PowerShellEditorServices/pull/2031) - Fix the `TranscribeOnly` bug (take three).
+
 ## v3.8.6
 ### Tuesday, May 23, 2023
 
