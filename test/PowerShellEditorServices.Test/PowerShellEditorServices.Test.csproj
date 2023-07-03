@@ -16,14 +16,14 @@
     <ProjectReference Include="..\PowerShellEditorServices.Test.Shared\PowerShellEditorServices.Test.Shared.csproj" />
   </ItemGroup>
 
-  <!-- Latest PowerShell -->
+  <!-- Latest PowerShell i.e. 7.3.x -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net7.0' ">
-      <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.3.4" />
+      <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.3.5" />
   </ItemGroup>
 
-  <!-- PowerShell LTS -->
+  <!-- PowerShell LTS i.e. 7.2.x -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.11" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.12" />
   </ItemGroup>
 
   <!-- Windows PowerShell 5.1 -->
