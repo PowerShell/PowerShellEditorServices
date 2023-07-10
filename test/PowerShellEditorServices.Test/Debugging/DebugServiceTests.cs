@@ -493,7 +493,7 @@ namespace PowerShellEditorServices.Test.Debugging
         public async Task DebuggerBreaksWhenRequested()
         {
             IReadOnlyList<LineBreakpoint> confirmedBreakpoints = await GetConfirmedBreakpoints(debugScriptFile).ConfigureAwait(true);
-            Assert.Equal(0, confirmedBreakpoints.Count);
+            Assert.Empty(confirmedBreakpoints);
             Task _ = ExecuteDebugFileAsync();
             // NOTE: This must be run on a separate thread so the async event handlers can fire.
             await Task.Run(debugService.Break).ConfigureAwait(true);
