@@ -663,7 +663,11 @@ function Global:Prompt() {
 }
 
 # Set IsWindows property
-Write-Host -NoNewLine ""$([char]0x1b)]633;P;IsWindows=$($IsWindows)`a""
+if ($PSVersionTable.PSVersion -lt ""6.0"") {
+	[Console]::Write(""$([char]0x1b)]633;P;IsWindows=$true`a"")
+} else {
+	[Console]::Write(""$([char]0x1b)]633;P;IsWindows=$IsWindows`a"")
+}
 
 # Set always on key handlers which map to default VS Code keybindings
 function Set-MappedKeyHandler {
