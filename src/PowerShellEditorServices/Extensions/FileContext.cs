@@ -58,8 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Gets the workspace-relative path of the file.
         /// </summary>
-        public string WorkspacePath => editorOperations.GetWorkspaceRelativePath(
-                        scriptFile.FilePath);
+        public string WorkspacePath => editorOperations.GetWorkspaceRelativePath(scriptFile);
 
         #endregion
 

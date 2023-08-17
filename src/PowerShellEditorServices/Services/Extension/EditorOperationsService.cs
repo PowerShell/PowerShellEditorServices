@@ -192,7 +192,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         // from another for the extension API.
         public string GetWorkspacePath() => _workspaceService.InitialWorkingDirectory;
 
-        public string GetWorkspaceRelativePath(string filePath) => _workspaceService.GetRelativePath(filePath);
+        public string GetWorkspaceRelativePath(ScriptFile scriptFile) => _workspaceService.GetRelativePath(scriptFile);
 
         public async Task ShowInformationMessageAsync(string message)
         {
