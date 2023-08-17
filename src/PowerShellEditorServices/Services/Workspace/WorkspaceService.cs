@@ -306,27 +306,31 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         /// Gets the workspace-relative path of the given file path.
         /// </summary>
-        /// <param name="filePath">The original full file path.</param>
         /// <returns>A relative file path</returns>
-        public string GetRelativePath(string filePath)
+        public string GetRelativePath(ScriptFile scriptFile)
         {
-            string resolvedPath = filePath;
-
-            if (!IsPathInMemory(filePath) && !string.IsNullOrEmpty(InitialWorkingDirectory))
+            Uri fileUri = scriptFile.DocumentUri.ToUri();
+            if (!scriptFile.IsInMemory)
             {
-                Uri workspaceUri = new(InitialWorkingDirectory);
-                Uri fileUri = new(filePath);
-
-                resolvedPath = workspaceUri.MakeRelativeUri(fileUri).ToString();
-
-                // Convert the directory separators if necessary
-                if (Path.DirectorySeparatorChar == '\\')
+                // Support calculating out-of-workspace relative paths in the common case of a
+                // single workspace folder. Otherwise try to get the matching folder.
+                foreach (WorkspaceFolder workspaceFolder in WorkspaceFolders)
                 {
-                    resolvedPath = resolvedPath.Replace('/', '\\');
+                    Uri workspaceUri = workspaceFolder.Uri.ToUri();
+                    if (WorkspaceFolders.Count == 1 || workspaceUri.IsBaseOf(fileUri))
+                    {
+                        return workspaceUri.MakeRelativeUri(fileUri).ToString();
+                    }
                 }
             }
 
-            return resolvedPath;
+            // Default to the absolute file path if possible, otherwise just return the URI. This
+            // removes the scheme and initial slash when possible.
+            if (fileUri.IsAbsoluteUri)
+            {
+                return fileUri.AbsolutePath;
+            }
+            return fileUri.ToString();
         }
 
         /// <summary>
@@ -405,42 +409,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             using StreamReader reader = OpenStreamReader(uri);
             return reader.ReadToEnd();
-        }
-
-        internal static bool IsPathInMemory(string filePath)
-        {
-            bool isInMemory = false;
-
-            // In cases where a "virtual" file is displayed in the editor,
-            // we need to treat the file differently than one that exists
-            // on disk.  A virtual file could be something like a diff
-            // view of the current file or an untitled file.
-            try
-            {
-                // File system absolute paths will have a URI scheme of file:.
-                // Other schemes like "untitled:" and "gitlens-git:" will return false for IsFile.
-                Uri uri = new(filePath);
-                isInMemory = !uri.IsFile;
-            }
-            catch (UriFormatException)
-            {
-                // Relative file paths cause a UriFormatException.
-                // In this case, fallback to using Path.GetFullPath().
-                try
-                {
-                    Path.GetFullPath(filePath);
-                }
-                catch (Exception ex) when (ex is ArgumentException or NotSupportedException)
-                {
-                    isInMemory = true;
-                }
-                catch (PathTooLongException)
-                {
-                    // If we ever get here, it should be an actual file so, not in memory
-                }
-            }
-
-            return isInMemory;
         }
 
         internal string ResolveWorkspacePath(string path) => ResolveRelativeScriptPath(InitialWorkingDirectory, path);

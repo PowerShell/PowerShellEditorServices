@@ -32,13 +32,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         #region Properties
 
         /// <summary>
-        /// Gets a unique string that identifies this file.  At this time,
-        /// this property returns a normalized version of the value stored
-        /// in the FilePath property.
-        /// </summary>
-        public string Id => FilePath.ToLower();
-
-        /// <summary>
         /// Gets the path at which this file resides.
         /// </summary>
         public string FilePath { get; }
@@ -173,14 +166,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// </summary>
         /// <param name="text">Input string to be split up into lines.</param>
         /// <returns>The lines in the string.</returns>
-        internal static IList<string> GetLines(string text) => GetLinesInternal(text);
-
-        /// <summary>
-        /// Get the lines in a string.
-        /// </summary>
-        /// <param name="text">Input string to be split up into lines.</param>
-        /// <returns>The lines in the string.</returns>
-        internal static List<string> GetLinesInternal(string text)
+        internal static List<string> GetLines(string text)
         {
             if (text == null)
             {
@@ -520,7 +506,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         {
             // Split the file contents into lines and trim
             // any carriage returns from the strings.
-            FileLines = GetLinesInternal(fileContents);
+            FileLines = GetLines(fileContents);
 
             // Parse the contents to get syntax tree and errors
             ParseFileContents();
