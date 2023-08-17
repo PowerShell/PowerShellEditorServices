@@ -39,8 +39,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         #endregion
 
         #region Public Methods
-        #pragma warning disable VSTHRD002 // These are public APIs that use async internal methods.
-
         /// <summary>
         /// Shows an informational message to the user.
         /// </summary>
@@ -72,7 +70,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="timeout">A timeout in milliseconds for how long the message should remain visible.</param>
         public void SetStatusBarMessage(string message, int timeout) => editorOperations.SetStatusBarMessageAsync(message, timeout).Wait();
 
-        #pragma warning restore VSTHRD002
         #endregion
     }
 }

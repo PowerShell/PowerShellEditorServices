@@ -13,11 +13,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 {
     internal class EditorOperationsService : IEditorOperations
     {
-        private const bool DefaultPreviewSetting = true;
-
         private readonly PsesInternalHost _psesHost;
         private readonly WorkspaceService _workspaceService;
-
         private readonly ILanguageServerFacade _languageServer;
 
         public EditorOperationsService(
@@ -72,7 +69,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
                             Character = insertRange.End.Column - 1
                         }
                     }
-            }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
+            }).Returning<EditorOperationResponse>(CancellationToken.None).ConfigureAwait(false);
         }
 
         public async Task SetSelectionAsync(BufferRange selectionRange)
@@ -98,7 +95,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
                             Character = selectionRange.End.Column - 1
                         }
                     }
-            }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
+            }).Returning<EditorOperationResponse>(CancellationToken.None).ConfigureAwait(false);
         }
 
         public EditorContext ConvertClientEditorContext(
@@ -123,15 +120,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
                     clientContext.CurrentFileLanguage);
         }
 
-        public async Task NewFileAsync()
+        public async Task NewFileAsync(string content = "")
         {
             if (!TestHasLanguageServer())
             {
                 return;
             }
 
-            await _languageServer.SendRequest<string>("editor/newFile", null)
-                .ReturningVoid(CancellationToken.None)
+            await _languageServer.SendRequest("editor/newFile", content)
+                .Returning<EditorOperationResponse>(CancellationToken.None)
                 .ConfigureAwait(false);
         }
 
@@ -145,8 +142,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             await _languageServer.SendRequest("editor/openFile", new OpenFileDetails
             {
                 FilePath = filePath,
-                Preview = DefaultPreviewSetting
-            }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
+                Preview = true
+            }).Returning<EditorOperationResponse>(CancellationToken.None).ConfigureAwait(false);
         }
 
         public async Task OpenFileAsync(string filePath, bool preview)
@@ -160,7 +157,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             {
                 FilePath = filePath,
                 Preview = preview
-            }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
+            }).Returning<EditorOperationResponse>(CancellationToken.None).ConfigureAwait(false);
         }
 
         public async Task CloseFileAsync(string filePath)
@@ -171,7 +168,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             }
 
             await _languageServer.SendRequest("editor/closeFile", filePath)
-                .ReturningVoid(CancellationToken.None)
+                .Returning<EditorOperationResponse>(CancellationToken.None)
                 .ConfigureAwait(false);
         }
 
@@ -188,11 +185,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             {
                 FilePath = currentPath,
                 NewPath = newSavePath
-            }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
+            }).Returning<EditorOperationResponse>(CancellationToken.None).ConfigureAwait(false);
         }
 
-        // TODO: This should get the current editor's context and use it to determine which
-        // workspace it's in.
+        // NOTE: This name is now outdated since we don't have a way to distinguish one workspace
+        // from another for the extension API.
         public string GetWorkspacePath() => _workspaceService.InitialWorkingDirectory;
 
         public string GetWorkspaceRelativePath(string filePath) => _workspaceService.GetRelativePath(filePath);
@@ -205,7 +202,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             }
 
             await _languageServer.SendRequest("editor/showInformationMessage", message)
-                .ReturningVoid(CancellationToken.None)
+                .Returning<EditorOperationResponse>(CancellationToken.None)
                 .ConfigureAwait(false);
         }
 
@@ -217,7 +214,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             }
 
             await _languageServer.SendRequest("editor/showErrorMessage", message)
-                .ReturningVoid(CancellationToken.None)
+                .Returning<EditorOperationResponse>(CancellationToken.None)
                 .ConfigureAwait(false);
         }
 
@@ -229,7 +226,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             }
 
             await _languageServer.SendRequest("editor/showWarningMessage", message)
-                .ReturningVoid(CancellationToken.None)
+                .Returning<EditorOperationResponse>(CancellationToken.None)
                 .ConfigureAwait(false);
         }
 
@@ -244,7 +241,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             {
                 Message = message,
                 Timeout = timeout
-            }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
+            }).Returning<EditorOperationResponse>(CancellationToken.None).ConfigureAwait(false);
         }
 
         public void ClearTerminal()
@@ -267,7 +264,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (warnUser)
             {
                 _psesHost.UI.WriteWarningLine(
-                    "Editor operations are not supported in temporary consoles. Re-run the command in the main PowerShell Intergrated Console.");
+                    "Editor operations are not supported in temporary consoles. Re-run the command in the main Extension Terminal.");
             }
 
             return false;
