@@ -27,6 +27,12 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         string GetWorkspacePath();
 
         /// <summary>
+        /// Get all the workspace folders' paths.
+        /// </summary>
+        /// <returns></returns>
+        string[] GetWorkspacePaths();
+
+        /// <summary>
         /// Resolves the given file path relative to the current workspace path.
         /// </summary>
         /// <returns>The resolved file path.</returns>

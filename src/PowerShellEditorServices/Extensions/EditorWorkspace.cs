@@ -23,6 +23,11 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         public string Path => editorOperations.GetWorkspacePath();
 
+        /// <summary>
+        /// Get all the workspace folders' paths.
+        /// </summary>
+        public string[] Paths => editorOperations.GetWorkspacePaths();
+
         #endregion
 
         #region Constructors

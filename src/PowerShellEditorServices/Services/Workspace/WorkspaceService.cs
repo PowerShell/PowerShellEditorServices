@@ -104,6 +104,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         #region Public Methods
 
+        public IEnumerable<string> WorkspacePaths => WorkspaceFolders.Count == 0
+                ? new List<string> { InitialWorkingDirectory }
+                : WorkspaceFolders.Select(i => i.Uri.GetFileSystemPath());
+
         /// <summary>
         /// Gets an open file in the workspace. If the file isn't open but exists on the filesystem, load and return it.
         /// <para>IMPORTANT: Not all documents have a backing file e.g. untitled: scheme documents.  Consider using
@@ -358,15 +362,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             int maxDepth,
             bool ignoreReparsePoints)
         {
-            IEnumerable<string> rootPaths = WorkspaceFolders.Count == 0
-                ? new List<string> { InitialWorkingDirectory }
-                : WorkspaceFolders.Select(i => i.Uri.GetFileSystemPath());
-
             Matcher matcher = new();
             foreach (string pattern in includeGlobs) { matcher.AddInclude(pattern); }
             foreach (string pattern in excludeGlobs) { matcher.AddExclude(pattern); }
 
-            foreach (string rootPath in rootPaths)
+            foreach (string rootPath in WorkspacePaths)
             {
                 if (!Directory.Exists(rootPath))
                 {
