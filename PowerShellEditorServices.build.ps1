@@ -175,7 +175,7 @@ Task Build FindDotNet, CreateBuildInfo, {
     Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj -f $script:NetRuntime.Standard }
 }
 
-Task Test TestServer, TestE2E
+Task Test TestServer, TestE2E, TestConstrainedLanguageMode
 
 Task TestServer TestServerWinPS, TestServerPS72, TestServerPS73
 
@@ -202,23 +202,25 @@ Task TestServerPS73 -If ($PSVersionTable.PSEdition -eq "Core") Build, SetupHelpF
 
 Task TestE2E Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test.E2E\
-
     $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS73 }
+}
 
-    if (!$script:IsNix) {
-        if (-not [Security.Principal.WindowsIdentity]::GetCurrent().Owner.IsWellKnown("BuiltInAdministratorsSid")) {
-            Write-Warning "Skipping Constrained Language Mode tests as they must be ran in an elevated process."
-            return
-        }
+Task TestConstrainedLanguageMode -If (-not $script:IsNix) Build, SetupHelpForTests, {
+    Set-Location .\test\PowerShellEditorServices.Test.E2E\
+    $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
 
-        try {
-            Write-Host "Running end-to-end tests in Constrained Language Mode."
-            [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", "0x80000007", [System.EnvironmentVariableTarget]::Machine);
-            Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS73 }
-        } finally {
-            [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", $null, [System.EnvironmentVariableTarget]::Machine);
-        }
+    if (-not [Security.Principal.WindowsIdentity]::GetCurrent().Owner.IsWellKnown("BuiltInAdministratorsSid")) {
+        Write-Warning "Skipping Constrained Language Mode tests as they must be ran in an elevated process."
+        return
+    }
+
+    try {
+        Write-Host "Running end-to-end tests in Constrained Language Mode."
+        [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", "0x80000007", [System.EnvironmentVariableTarget]::Machine)
+        Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS73 }
+    } finally {
+        [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", $null, [System.EnvironmentVariableTarget]::Machine)
     }
 }
 
@@ -290,11 +292,11 @@ task RestorePsesModules -After Build {
     (Get-Content -Raw $ModulesJsonPath | ConvertFrom-Json).PSObject.Properties | ForEach-Object {
         $name = $_.Name
         $body = @{
-            Name = $name
-            Version = $_.Value.Version
+            Name            = $name
+            Version         = $_.Value.Version
             AllowPrerelease = $_.Value.AllowPrerelease
-            Repository = if ($_.Value.Repository) { $_.Value.Repository } else { $DefaultModuleRepository }
-            Path = $submodulePath
+            Repository      = if ($_.Value.Repository) { $_.Value.Repository } else { $DefaultModuleRepository }
+            Path            = $submodulePath
         }
 
         if (-not $name) {
@@ -321,11 +323,11 @@ task RestorePsesModules -After Build {
         $moduleInstallDetails = $moduleInfos[$moduleName]
 
         $splatParameters = @{
-           Name = $moduleName
-           RequiredVersion = $moduleInstallDetails.Version
-           AllowPrerelease = $moduleInstallDetails.AllowPrerelease
-           Repository = if ($moduleInstallDetails.Repository) { $moduleInstallDetails.Repository } else { $DefaultModuleRepository }
-           Path = $submodulePath
+            Name            = $moduleName
+            RequiredVersion = $moduleInstallDetails.Version
+            AllowPrerelease = $moduleInstallDetails.AllowPrerelease
+            Repository      = if ($moduleInstallDetails.Repository) { $moduleInstallDetails.Repository } else { $DefaultModuleRepository }
+            Path            = $submodulePath
         }
 
         Write-Host "`tInstalling module: ${moduleName} with arguments $(ConvertTo-Json $splatParameters)"
