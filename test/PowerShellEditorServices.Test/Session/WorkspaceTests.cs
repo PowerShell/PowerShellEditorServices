@@ -80,6 +80,14 @@ namespace PowerShellEditorServices.Test.Session
             };
         }
 
+        [Fact]
+        public void HasDefaultForWorkspacePaths()
+        {
+            WorkspaceService workspace = FixturesWorkspace();
+            string actual = Assert.Single(workspace.WorkspacePaths);
+            Assert.Equal(workspace.InitialWorkingDirectory, actual);
+        }
+
         // These are the default values for the EnumeratePSFiles() method
         // in Microsoft.PowerShell.EditorServices.Workspace class
         private static readonly string[] s_defaultExcludeGlobs = Array.Empty<string>();

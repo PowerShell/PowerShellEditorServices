@@ -6,6 +6,7 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -191,6 +192,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         // NOTE: This name is now outdated since we don't have a way to distinguish one workspace
         // from another for the extension API.
         public string GetWorkspacePath() => _workspaceService.InitialWorkingDirectory;
+
+        public string[] GetWorkspacePaths() => _workspaceService.WorkspacePaths.ToArray();
 
         public string GetWorkspaceRelativePath(ScriptFile scriptFile) => _workspaceService.GetRelativePath(scriptFile);
 
