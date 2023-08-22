@@ -42,8 +42,13 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Creates a new file in the editor.
         /// </summary>
+        public void NewFile() => editorOperations.NewFileAsync(string.Empty).Wait();
+
+        /// <summary>
+        /// Creates a new file in the editor.
+        /// </summary>
         /// <param name="content">The content to place in the new file.</param>
-        public void NewFile(string content = "") => editorOperations.NewFileAsync(content).Wait();
+        public void NewFile(string content) => editorOperations.NewFileAsync(content).Wait();
 
         /// <summary>
         /// Opens a file in the workspace. If the file is already open
