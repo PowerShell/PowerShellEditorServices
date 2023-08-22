@@ -121,7 +121,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
                     clientContext.CurrentFileLanguage);
         }
 
-        public async Task NewFileAsync(string content = "")
+        public async Task NewFileAsync() => await NewFileAsync(string.Empty).ConfigureAwait(false);
+
+        public async Task NewFileAsync(string content)
         {
             if (!TestHasLanguageServer())
             {

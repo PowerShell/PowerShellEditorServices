@@ -41,9 +41,15 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Causes a new untitled file to be created in the editor.
         /// </summary>
+        /// <returns>A task that can be awaited for completion.</returns>
+        Task NewFileAsync();
+
+        /// <summary>
+        /// Causes a new untitled file to be created in the editor.
+        /// </summary>
         /// <param name="content">The content to insert into the new file.</param>
         /// <returns>A task that can be awaited for completion.</returns>
-        Task NewFileAsync(string content = "");
+        Task NewFileAsync(string content);
 
         /// <summary>
         /// Causes a file to be opened in the editor.  If the file is
