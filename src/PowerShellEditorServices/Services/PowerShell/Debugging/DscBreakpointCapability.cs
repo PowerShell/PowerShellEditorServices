@@ -94,7 +94,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                 PSCommand psCommand = new PSCommand()
                     .AddCommand("Import-Module")
                     .AddArgument(@"C:\Program Files\DesiredStateConfiguration\1.0.0.0\Modules\PSDesiredStateConfiguration\PSDesiredStateConfiguration.psd1")
-                    .AddParameter("PassThru");
+                    .AddParameter("PassThru")
+                    .AddParameter("ErrorAction", ActionPreference.Ignore);
 
                 IReadOnlyList<PSModuleInfo> dscModule =
                     await psesHost.ExecutePSCommandAsync<PSModuleInfo>(
