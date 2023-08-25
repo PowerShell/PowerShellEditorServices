@@ -1,5 +1,14 @@
 # PowerShell Editor Services Release History
 
+## v3.10.0
+### Friday, August 25, 2023
+
+- 🐛 🔍 [PowerShellEditorServices #2037](https://github.com/PowerShell/PowerShellEditorServices/pull/2058) - Ignore not finding DSC module.
+- ✨ 🚨 [vscode-powershell #3484](https://github.com/PowerShell/PowerShellEditorServices/pull/2055) - Move `ConstrainedLanguageMode` tests to separate task.
+- ✨ 📟 [PowerShellEditorServices #2054](https://github.com/PowerShell/PowerShellEditorServices/pull/2054) - Update PSReadLine to `v2.3.2-beta2`.
+- ✨ 🙏 [PowerShellEditorServices #2053](https://github.com/PowerShell/PowerShellEditorServices/pull/2053) - Fix up extension API.
+- 🐛 📟 [PowerShellEditorServices #2050](https://github.com/PowerShell/PowerShellEditorServices/pull/2052) - Fix shell integration for PowerShell 5.1 with strict mode.
+
 ## v3.9.0
 ### Wednesday, August 09, 2023
 
