@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install dotnet
         uses: actions/setup-dotnet@v3
@@ -31,13 +31,13 @@ jobs:
         id: vim
 
       - name: Checkout vim-ps1
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: PProvost/vim-ps1
           path: vim-ps1
 
       - name: Checkout LanguageClient-neovim
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: autozimu/LanguageClient-neovim
           path: LanguageClient-neovim
@@ -47,7 +47,7 @@ jobs:
         working-directory: LanguageClient-neovim
 
       - name: Checkout Themis
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: thinca/vim-themis
           path: vim-themis
