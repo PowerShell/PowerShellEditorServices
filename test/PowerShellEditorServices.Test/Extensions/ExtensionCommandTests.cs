@@ -51,7 +51,7 @@ namespace PowerShellEditorServices.Test.Extensions
         [Fact]
         public async Task CanRegisterAndInvokeCommandWithCmdletName()
         {
-            string filePath = TestUtilities.NormalizePath("C:\\Temp\\Test.ps1");
+            string filePath = TestUtilities.NormalizePath(@"C:\Temp\Test.ps1");
             ScriptFile currentFile = new(new Uri(filePath), "This is a test file", new Version("7.0"));
             EditorContext editorContext = new(
                 editorOperations: null,
@@ -87,7 +87,7 @@ namespace PowerShellEditorServices.Test.Extensions
         [Fact]
         public async Task CanRegisterAndInvokeCommandWithScriptBlock()
         {
-            string filePath = TestUtilities.NormalizePath("C:\\Temp\\Test.ps1");
+            string filePath = TestUtilities.NormalizePath(@"C:\Temp\Test.ps1");
             ScriptFile currentFile = new(new Uri(filePath), "This is a test file", new Version("7.0"));
             EditorContext editorContext = new(
                 editorOperations: null,
@@ -149,7 +149,7 @@ namespace PowerShellEditorServices.Test.Extensions
         [Fact]
         public async Task CanUnregisterCommand()
         {
-            string filePath = TestUtilities.NormalizePath("C:\\Temp\\Test.ps1");
+            string filePath = TestUtilities.NormalizePath(@"C:\Temp\Test.ps1");
             ScriptFile currentFile = new(new Uri(filePath), "This is a test file", new Version("7.0"));
             EditorContext editorContext = new(
                 editorOperations: null,

@@ -654,7 +654,7 @@ First line
                 scriptFile = new ScriptFile(DocumentUri.FromFileSystemPath(path), emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///home/NaomiNagata/projects/Rocinate/Proto%3AMole%3Acule.ps1", scriptFile.DocumentUri);
 
-                path = "/home/JamesHolden/projects/Rocinate/Proto:Mole\\cule.ps1";
+                path = @"/home/JamesHolden/projects/Rocinate/Proto:Mole\cule.ps1";
                 scriptFile = new ScriptFile(DocumentUri.FromFileSystemPath(path), emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///home/JamesHolden/projects/Rocinate/Proto%3AMole%5Ccule.ps1", scriptFile.DocumentUri);
             }
@@ -662,12 +662,13 @@ First line
 
         [Trait("Category", "ScriptFile")]
         [Theory]
-        [InlineData("C:\\Users\\me\\Documents\\test.ps1", false)]
+        [InlineData(@"C:\Users\me\Documents\test.ps1", false)]
         [InlineData("/Users/me/Documents/test.ps1", false)]
         [InlineData("vscode-notebook-cell:/Users/me/Documents/test.ps1#0001", true)]
         [InlineData("https://microsoft.com", true)]
         [InlineData("Untitled:Untitled-1", true)]
-        [InlineData("'a log statement' > 'c:\\Users\\me\\Documents\\test.txt'\r\n", false)]
+        [InlineData(@"'a log statement' > 'c:\Users\me\Documents\test.txt'
+", false)]
         public void IsUntitledFileIsCorrect(string path, bool expected) => Assert.Equal(expected, ScriptFile.IsUntitledPath(path));
     }
 }

@@ -223,7 +223,7 @@ namespace PowerShellEditorServices.Test.Session
 
         [Theory]
         [InlineData("")] // Regression test for "unset" path.
-        [InlineData("C:\\Some\\Bad\\Directory")] // Non-existent directory.
+        [InlineData(@"C:\Some\Bad\Directory")] // Non-existent directory.
         [InlineData("testhost.dll")] // Existent file.
         public async Task CanHandleBadInitialWorkingDirectory(string path)
         {
