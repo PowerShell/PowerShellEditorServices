@@ -237,7 +237,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             // our PSRL on idle handler.
             IReadOnlyList<CommandInfo> aliases = await executionService.ExecutePSCommandAsync<CommandInfo>(
                 new PSCommand()
-                    .AddCommand("Microsoft.PowerShell.Core\\Get-Command")
+                    .AddCommand(@"Microsoft.PowerShell.Core\Get-Command")
                     .AddParameter("ListImported", true)
                     .AddParameter("CommandType", CommandTypes.Alias),
                 cancellationToken).ConfigureAwait(false);

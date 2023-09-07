@@ -1140,7 +1140,7 @@ namespace PowerShellEditorServices.Test.Debugging
             VariableDetailsBase var = Array.Find(variables, v => v.Name == "$file");
             VariableDetailsBase[] childVars = await debugService.GetVariables(var.Id, CancellationToken.None).ConfigureAwait(true);
             Assert.Contains(childVars, i => i.Name is "PSPath");
-            Assert.Contains(childVars, i => i.Name is "PSProvider" && i.ValueString is "Microsoft.PowerShell.Core\\FileSystem");
+            Assert.Contains(childVars, i => i.Name is "PSProvider" && i.ValueString is @"Microsoft.PowerShell.Core\FileSystem");
             Assert.Contains(childVars, i => i.Name is "Exists" && i.ValueString is "$true");
             Assert.Contains(childVars, i => i.Name is "LastAccessTime");
         }

@@ -378,9 +378,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (request.RunspaceName != null)
             {
                 PSCommand getRunspaceIdCommand = new PSCommand()
-                    .AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace")
+                    .AddCommand(@"Microsoft.PowerShell.Utility\Get-Runspace")
                         .AddParameter("Name", request.RunspaceName)
-                    .AddCommand("Microsoft.PowerShell.Utility\\Select-Object")
+                    .AddCommand(@"Microsoft.PowerShell.Utility\Select-Object")
                         .AddParameter("ExpandProperty", "Id");
 
                 try

@@ -89,7 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
 
                     psCommand = new PSCommand();
                     psCommand
-                        .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                        .AddCommand(@"Microsoft.PowerShell.Core\Import-Module")
                         .AddParameter("ModuleInfo", (PSModuleInfo)moduleObject[0].ImmediateBaseObject)
                         .AddParameter("PassThru")
                         .AddParameter("ErrorAction", ActionPreference.Ignore);
