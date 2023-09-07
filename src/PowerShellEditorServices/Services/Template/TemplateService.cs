@@ -74,7 +74,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
 
                 IReadOnlyList<PSObject> moduleObject =
                     await _executionService.ExecutePSCommandAsync<PSObject>(
-                        psCommand, CancellationToken.None).ConfigureAwait(false);
+                        psCommand,
+                        CancellationToken.None,
+                        new PowerShellExecutionOptions { ThrowOnError = false })
+                    .ConfigureAwait(false);
 
                 isPlasterInstalled = moduleObject.Count > 0;
                 _logger.LogTrace("Plaster installed: " + isPlasterInstalled.Value);
@@ -86,13 +89,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
 
                     psCommand = new PSCommand();
                     psCommand
-                        .AddCommand("Import-Module")
+                        .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
                         .AddParameter("ModuleInfo", (PSModuleInfo)moduleObject[0].ImmediateBaseObject)
-                        .AddParameter("PassThru");
+                        .AddParameter("PassThru")
+                        .AddParameter("ErrorAction", ActionPreference.Ignore);
 
-                    IReadOnlyList<PSModuleInfo> importResult = await _executionService.ExecutePSCommandAsync<PSModuleInfo>(psCommand, CancellationToken.None).ConfigureAwait(false);
+                    IReadOnlyList<PSModuleInfo> plasterModule =
+                        await _executionService.ExecutePSCommandAsync<PSModuleInfo>(
+                            psCommand,
+                            CancellationToken.None,
+                            new PowerShellExecutionOptions { ThrowOnError = false })
+                        .ConfigureAwait(false);
 
-                    isPlasterLoaded = importResult.Count > 0;
+                    isPlasterLoaded = plasterModule.Count > 0;
                     _logger.LogTrace("Plaster loaded: " + isPlasterLoaded);
                 }
             }

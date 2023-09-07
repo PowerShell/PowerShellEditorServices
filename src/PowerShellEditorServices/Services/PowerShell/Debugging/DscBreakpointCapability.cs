@@ -92,8 +92,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
             if (!isDscInstalled.HasValue)
             {
                 PSCommand psCommand = new PSCommand()
-                    .AddCommand("Import-Module")
-                    .AddArgument(@"C:\Program Files\DesiredStateConfiguration\1.0.0.0\Modules\PSDesiredStateConfiguration\PSDesiredStateConfiguration.psd1")
+                    .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                    .AddParameter("-Name", "PSDesiredStateConfiguration")
                     .AddParameter("PassThru")
                     .AddParameter("ErrorAction", ActionPreference.Ignore);
 
@@ -101,7 +101,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                     await psesHost.ExecutePSCommandAsync<PSModuleInfo>(
                         psCommand,
                         CancellationToken.None,
-                        new PowerShellExecutionOptions { ThrowOnError = false }).ConfigureAwait(false);
+                        new PowerShellExecutionOptions { ThrowOnError = false })
+                    .ConfigureAwait(false);
 
                 isDscInstalled = dscModule.Count > 0;
                 logger.LogTrace("Side-by-side DSC module found: " + isDscInstalled.Value);
