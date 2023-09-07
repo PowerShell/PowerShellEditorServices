@@ -301,7 +301,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         {
             _logger.Log(PsesLogLevel.Verbose, "Removing PSReadLine");
             using SMA.PowerShell pwsh = SMA.PowerShell.Create(RunspaceMode.CurrentRunspace);
-            bool hasPSReadLine = pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Get-Module", typeof(GetModuleCommand)))
+            bool hasPSReadLine = pwsh.AddCommand(new CmdletInfo(@"Microsoft.PowerShell.Core\Get-Module", typeof(GetModuleCommand)))
                 .AddParameter("Name", "PSReadLine")
                 .Invoke()
                 .Count > 0;
@@ -310,7 +310,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             {
                 pwsh.Commands.Clear();
 
-                pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Remove-Module", typeof(RemoveModuleCommand)))
+                pwsh.AddCommand(new CmdletInfo(@"Microsoft.PowerShell.Core\Remove-Module", typeof(RemoveModuleCommand)))
                     .AddParameter("Name", "PSReadLine")
                     .AddParameter("ErrorAction", "SilentlyContinue");
 

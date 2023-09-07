@@ -42,9 +42,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // Executes the following:
             // Get-Command -CommandType Function,Cmdlet,ExternalScript | Sort-Object -Property Name
             psCommand
-                .AddCommand("Microsoft.PowerShell.Core\\Get-Command")
+                .AddCommand(@"Microsoft.PowerShell.Core\Get-Command")
                     .AddParameter("CommandType", new[] { "Function", "Cmdlet", "ExternalScript" })
-                .AddCommand("Microsoft.PowerShell.Utility\\Sort-Object")
+                .AddCommand(@"Microsoft.PowerShell.Utility\Sort-Object")
                     .AddParameter("Property", "Name");
 
             IEnumerable<CommandInfo> result = await _executionService.ExecutePSCommandAsync<CommandInfo>(psCommand, cancellationToken).ConfigureAwait(false);

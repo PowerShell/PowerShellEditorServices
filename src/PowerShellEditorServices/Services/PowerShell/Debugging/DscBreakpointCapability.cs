@@ -92,7 +92,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
             if (!isDscInstalled.HasValue)
             {
                 PSCommand psCommand = new PSCommand()
-                    .AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                    .AddCommand(@"Microsoft.PowerShell.Core\Import-Module")
                     .AddParameter("-Name", "PSDesiredStateConfiguration")
                     .AddParameter("PassThru")
                     .AddParameter("ErrorAction", ActionPreference.Ignore);

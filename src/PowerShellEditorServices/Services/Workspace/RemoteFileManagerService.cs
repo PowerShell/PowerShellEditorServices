@@ -316,7 +316,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         {
                             // Load the file contents from the remote machine and create the buffer
                             PSCommand command = new PSCommand()
-                                .AddCommand("Microsoft.PowerShell.Management\\Get-Content")
+                                .AddCommand(@"Microsoft.PowerShell.Management\Get-Content")
                                 .AddParameter("Path", remoteFilePath)
                                 .AddParameter("Raw");
 

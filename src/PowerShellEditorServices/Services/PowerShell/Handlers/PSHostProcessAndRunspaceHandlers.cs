@@ -74,11 +74,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 rs.Open();
                 ps.Runspace = rs;
                 // Returns deserialized Runspaces. For simpler code, we use PSObject and rely on dynamic later.
-                runspaces = ps.AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace").Invoke<PSObject>();
+                runspaces = ps.AddCommand(@"Microsoft.PowerShell.Utility\Get-Runspace").Invoke<PSObject>();
             }
             else
             {
-                PSCommand psCommand = new PSCommand().AddCommand("Microsoft.PowerShell.Utility\\Get-Runspace");
+                PSCommand psCommand = new PSCommand().AddCommand(@"Microsoft.PowerShell.Utility\Get-Runspace");
                 // returns (not deserialized) Runspaces. For simpler code, we use PSObject and rely on dynamic later.
                 runspaces = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, cancellationToken).ConfigureAwait(false);
             }
