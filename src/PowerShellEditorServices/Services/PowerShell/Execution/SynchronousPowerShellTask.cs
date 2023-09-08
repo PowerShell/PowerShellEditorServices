@@ -73,9 +73,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 // state that we sync with the LSP debugger. The former commands we want to send
                 // through PowerShell's `Debugger.ProcessCommand` so that they work as expected, but
                 // the latter we must not send through it else they pollute the history as this
-                // PowerShell API does not let us exclude them from it.
+                // PowerShell API does not let us exclude them from it. Notably we also need to send
+                // the `prompt` command and our special `list 1 <MaxInt>` through the debugger too.
+                // The former needs the context in order to show `DBG 1>` etc., and the latter is
+                // used to gather the lines when debugging a script that isn't in a file.
                 return _pwsh.Runspace.Debugger.InBreakpoint
-                    && (PowerShellExecutionOptions.AddToHistory || IsPromptCommand(_psCommand) || _pwsh.Runspace.RunspaceIsRemote)
+                    && (PowerShellExecutionOptions.AddToHistory || IsPromptOrListCommand(_psCommand) || _pwsh.Runspace.RunspaceIsRemote)
                     ? ExecuteInDebugger(cancellationToken)
                     : ExecuteNormally(cancellationToken);
             }
@@ -87,7 +90,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public override string ToString() => _psCommand.GetInvocationText();
 
-        private static bool IsPromptCommand(PSCommand command)
+        private static bool IsPromptOrListCommand(PSCommand command)
         {
             if (command.Commands.Count is not 1
                 || command.Commands[0] is { IsScript: false } or { Parameters.Count: > 0 })
@@ -96,7 +99,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             }
 
             string commandText = command.Commands[0].CommandText;
-            return commandText.Equals("prompt", StringComparison.OrdinalIgnoreCase);
+            return commandText.Equals("prompt", StringComparison.OrdinalIgnoreCase)
+                || commandText.Equals($"list 1 {int.MaxValue}", StringComparison.OrdinalIgnoreCase);
         }
 
         private IReadOnlyList<TResult> ExecuteNormally(CancellationToken cancellationToken)
@@ -301,11 +305,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 return Array.Empty<TResult>();
             }
 
-            // If we've been asked for a PSObject, no need to allocate a new collection
-            if (typeof(TResult) == typeof(PSObject)
-                && outputCollection is IReadOnlyList<TResult> resultCollection)
+            // If we've been asked for a PSObject, no need to convert
+            if (typeof(TResult) == typeof(PSObject))
             {
-                return resultCollection;
+                return new List<PSObject>(outputCollection) as IReadOnlyList<TResult>;
             }
 
             // Otherwise, convert things over

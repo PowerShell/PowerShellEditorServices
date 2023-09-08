@@ -930,13 +930,24 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 if (_remoteFileManager is not null && string.IsNullOrEmpty(localScriptPath))
                 {
                     // Get the current script listing and create the buffer
-                    PSCommand command = new PSCommand().AddScript($"list 1 {int.MaxValue}");
+                    IReadOnlyList<PSObject> scriptListingLines;
+                    await debugInfoHandle.WaitAsync().ConfigureAwait(false);
+                    try
+                    {
+                        // This command must be run through `ExecuteInDebugger`!
+                        PSCommand psCommand = new PSCommand().AddScript($"list 1 {int.MaxValue}");
 
-                    IReadOnlyList<PSObject> scriptListingLines =
-                        await _executionService.ExecutePSCommandAsync<PSObject>(
-                            command, CancellationToken.None).ConfigureAwait(false);
+                        scriptListingLines =
+                            await _executionService.ExecutePSCommandAsync<PSObject>(
+                                psCommand,
+                                CancellationToken.None).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        debugInfoHandle.Release();
+                    }
 
-                    if (scriptListingLines is not null)
+                    if (scriptListingLines.Count > 0)
                     {
                         int linePrefixLength = 0;
 
