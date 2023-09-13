@@ -694,7 +694,9 @@ internal sealed class BreakpointSyncService
         if (clientBreakpoint.Location is not null)
         {
             kind = SyncedBreakpointKind.Line;
-            script = clientBreakpoint.Location.Uri.GetFileSystemPath();
+            script = clientBreakpoint.Location.Uri.Scheme is "untitled"
+                ? clientBreakpoint.Location.Uri.ToString()
+                : clientBreakpoint.Location.Uri.GetFileSystemPath();
             line = clientBreakpoint.Location.Range.Start.Line + 1;
             column = clientBreakpoint.Location.Range.Start.Character is int c and not 0 ? c : 0;
         }
