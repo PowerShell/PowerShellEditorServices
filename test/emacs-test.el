@@ -3,12 +3,13 @@
 ;; Copyright (c) Microsoft Corporation.
 ;; Licensed under the MIT License.
 
-;; Author: Andy Schwartzmeyer <andschwa@microsoft.com>
+;; Author: Andy Jordan <andy.jordan@microsoft.com>
 ;; Keywords: PowerShell, LSP
 
 ;;; Code:
 
-(require 'ert)
+;; Avoid using old packages.
+(setq load-prefer-newer t)
 
 ;; Improved TLS Security.
 (with-eval-after-load 'gnutls
@@ -21,16 +22,17 @@
 (add-to-list 'package-archives
              '("melpa" . "https://melpa.org/packages/") t)
 (package-initialize)
+(package-refresh-contents)
+
+(require 'ert)
 
 (require 'flymake)
 
 (unless (package-installed-p 'powershell)
-  (package-refresh-contents)
   (package-install 'powershell))
 (require 'powershell)
 
 (unless (package-installed-p 'eglot)
-  (package-refresh-contents)
   (package-install 'eglot))
 (require 'eglot)
 
@@ -57,10 +59,9 @@
       (should (apply #'eglot--connect (eglot--guess-contact)))
       (should (eglot-current-server))
       (let ((lsp (eglot-current-server)))
-        (should (string= (oref lsp project-nickname) "PowerShellEditorServices"))
-        (should (eq (oref lsp major-mode) 'powershell-mode))
-        (should (string= (oref lsp language-id) "powershell")))
-      (sleep-for 3) ; TODO: Wait for "textDocument/publishDiagnostics" instead
+        (should (string= (eglot--project-nickname lsp) "PowerShellEditorServices"))
+        (should (member (cons 'powershell-mode "powershell") (eglot--languages lsp))))
+      (sleep-for 5) ; TODO: Wait for "textDocument/publishDiagnostics" instead
       (flymake-start)
       (goto-char (point-min))
       (flymake-goto-next-error)

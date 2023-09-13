@@ -51,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 // check if the previous character is `<` because it invalidates
                 // the param block the follows it.
-                IList<string> lines = ScriptFile.GetLinesInternal(funcText);
+                IList<string> lines = ScriptFile.GetLines(funcText);
                 int relativeTriggerLine0b = triggerLine - funcExtent.StartLineNumber;
                 if (relativeTriggerLine0b > 0 && lines[relativeTriggerLine0b].IndexOf("<", StringComparison.OrdinalIgnoreCase) > -1)
                 {
@@ -68,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return result;
             }
 
-            List<string> helpLines = ScriptFile.GetLinesInternal(helpText);
+            List<string> helpLines = ScriptFile.GetLines(helpText);
 
             if (helpLocation?.Equals("before", StringComparison.OrdinalIgnoreCase) == false)
             {

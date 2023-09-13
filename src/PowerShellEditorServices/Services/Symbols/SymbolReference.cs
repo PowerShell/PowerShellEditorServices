@@ -1,113 +1,84 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#nullable enable
+
 using System.Diagnostics;
 using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {
-    internal interface ISymbolReference
-    {
-        /// <summary>
-        /// Gets the symbol's type
-        /// </summary>
-        SymbolType SymbolType { get; }
-
-        /// <summary>
-        /// Gets the name of the symbol
-        /// </summary>
-        string SymbolName { get; }
-
-        /// <summary>
-        /// Gets the script extent of the symbol
-        /// </summary>
-        ScriptRegion ScriptRegion { get; }
-
-        /// <summary>
-        /// Gets the contents of the line the given symbol is on
-        /// </summary>
-        string SourceLine { get; }
-
-        /// <summary>
-        /// Gets the path of the file in which the symbol was found.
-        /// </summary>
-        string FilePath { get; }
-    }
-
     /// <summary>
     /// A class that holds the type, name, script extent, and source line of a symbol
     /// </summary>
-    [DebuggerDisplay("SymbolType = {SymbolType}, SymbolName = {SymbolName}")]
-    internal class SymbolReference : ISymbolReference
+    [DebuggerDisplay("Type = {Type}, Id = {Id}, Name = {Name}")]
+    internal record SymbolReference
     {
-        #region Properties
+        public SymbolType Type { get; init; }
 
-        /// <summary>
-        /// Gets the symbol's type
-        /// </summary>
-        public SymbolType SymbolType { get; }
+        public string Id { get; init; }
 
-        /// <summary>
-        /// Gets the name of the symbol
-        /// </summary>
-        public string SymbolName { get; }
+        public string Name { get; init; }
 
-        /// <summary>
-        /// Gets the script extent of the symbol
-        /// </summary>
-        public ScriptRegion ScriptRegion { get; }
+        public ScriptRegion NameRegion { get; init; }
 
-        /// <summary>
-        /// Gets the contents of the line the given symbol is on
-        /// </summary>
+        public ScriptRegion ScriptRegion { get; init; }
+
         public string SourceLine { get; internal set; }
 
-        /// <summary>
-        /// Gets the path of the file in which the symbol was found.
-        /// </summary>
         public string FilePath { get; internal set; }
 
-        #endregion
+        public bool IsDeclaration { get; init; }
 
         /// <summary>
         /// Constructs and instance of a SymbolReference
         /// </summary>
-        /// <param name="symbolType">The higher level type of the symbol</param>
-        /// <param name="symbolName">The name of the symbol</param>
+        /// <param name="type">The higher level type of the symbol</param>
+        /// <param name="id">The name of the symbol</param>
+        /// <param name="name">The string used by outline, hover, etc.</param>
+        /// <param name="nameExtent">The extent of the symbol's name</param>
         /// <param name="scriptExtent">The script extent of the symbol</param>
-        /// <param name="filePath">The file path of the symbol</param>
-        /// <param name="sourceLine">The line contents of the given symbol (defaults to empty string)</param>
+        /// <param name="file">The script file that has the symbol</param>
+        /// <param name="isDeclaration">True if this reference is the definition of the symbol</param>
         public SymbolReference(
-            SymbolType symbolType,
-            string symbolName,
+            SymbolType type,
+            string id,
+            string name,
+            IScriptExtent nameExtent,
             IScriptExtent scriptExtent,
-            string filePath = "",
-            string sourceLine = "")
+            ScriptFile file,
+            bool isDeclaration)
         {
-            // TODO: Verify params
-            SymbolType = symbolType;
-            SymbolName = symbolName;
-            ScriptRegion = ScriptRegion.Create(scriptExtent);
-            FilePath = filePath;
-            SourceLine = sourceLine;
-
-            // TODO: Make sure end column number usage is correct
-
-            // Build the display string
-            //this.DisplayString =
-            //    string.Format(
-            //        "{0} {1}")
+            Type = type;
+            Id = id;
+            Name = name;
+            NameRegion = new(nameExtent);
+            ScriptRegion = new(scriptExtent);
+            FilePath = file.FilePath;
+            try
+            {
+                SourceLine = file.GetLine(ScriptRegion.StartLineNumber);
+            }
+            catch (System.ArgumentOutOfRangeException)
+            {
+                SourceLine = string.Empty;
+            }
+            IsDeclaration = isDeclaration;
         }
 
         /// <summary>
-        /// Constructs an instance of a SymbolReference
+        /// This is only used for unit tests!
         /// </summary>
-        /// <param name="symbolType">The higher level type of the symbol</param>
-        /// <param name="scriptExtent">The script extent of the symbol</param>
-        public SymbolReference(SymbolType symbolType, IScriptExtent scriptExtent)
-            : this(symbolType, scriptExtent.Text, scriptExtent, scriptExtent.File, "")
+        internal SymbolReference(string id, SymbolType type)
         {
+            Id = id;
+            Type = type;
+            Name = "";
+            NameRegion = new("", "", 0, 0, 0, 0, 0, 0);
+            ScriptRegion = NameRegion;
+            SourceLine = "";
+            FilePath = "";
         }
     }
 }

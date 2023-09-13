@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Management.Automation.Host;
 using System.Management.Automation.Runspaces;
 
@@ -71,7 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public IReadOnlyList<string> AdditionalModules { get; }
 
         /// <summary>
-        /// True if the integrated console is to be enabled.
+        /// True if the Extension Terminal is to be enabled.
         /// </summary>
         public bool ConsoleReplEnabled { get; }
 
@@ -92,7 +93,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public string LogPath { get; }
 
         /// <summary>
-        /// The InitialSessionState will be inherited from the orginal PowerShell process. This will
+        /// The InitialSessionState will be inherited from the original PowerShell process. This will
         /// be used when creating runspaces so that we honor the same InitialSessionState.
         /// </summary>
         public InitialSessionState InitialSessionState { get; }
@@ -167,7 +168,15 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             LogLevel = logLevel;
             ConsoleReplEnabled = consoleReplEnabled;
             UsesLegacyReadLine = usesLegacyReadLine;
-            BundledModulePath = bundledModulePath;
+
+            // Respect a user provided bundled module path.
+            BundledModulePath = Directory.Exists(bundledModulePath)
+                ? bundledModulePath
+                : Path.GetFullPath(Path.Combine(
+                    Path.GetDirectoryName(typeof(HostStartupInfo).Assembly.Location),
+                    "..",
+                    "..",
+                    ".."));
         }
 
         #endregion

@@ -20,23 +20,36 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         Task<EditorContext> GetEditorContextAsync();
 
         /// <summary>
-        /// Gets the path to the editor's active workspace.
+        /// Gets the server's initial working directory, since the extension API doesn't have a
+        /// multi-root workspace concept.
         /// </summary>
-        /// <returns>The workspace path or null if there isn't one.</returns>
+        /// <returns>The server's initial working directory.</returns>
         string GetWorkspacePath();
+
+        /// <summary>
+        /// Get all the workspace folders' paths.
+        /// </summary>
+        /// <returns></returns>
+        string[] GetWorkspacePaths();
 
         /// <summary>
         /// Resolves the given file path relative to the current workspace path.
         /// </summary>
-        /// <param name="filePath">The file path to be resolved.</param>
         /// <returns>The resolved file path.</returns>
-        string GetWorkspaceRelativePath(string filePath);
+        string GetWorkspaceRelativePath(ScriptFile scriptFile);
 
         /// <summary>
         /// Causes a new untitled file to be created in the editor.
         /// </summary>
         /// <returns>A task that can be awaited for completion.</returns>
         Task NewFileAsync();
+
+        /// <summary>
+        /// Causes a new untitled file to be created in the editor.
+        /// </summary>
+        /// <param name="content">The content to insert into the new file.</param>
+        /// <returns>A task that can be awaited for completion.</returns>
+        Task NewFileAsync(string content);
 
         /// <summary>
         /// Causes a file to be opened in the editor.  If the file is

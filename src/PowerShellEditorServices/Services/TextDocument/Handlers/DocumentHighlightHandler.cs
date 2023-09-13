@@ -40,28 +40,26 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
-            IReadOnlyList<SymbolReference> symbolOccurrences = SymbolsService.FindOccurrencesInFile(
+            IEnumerable<SymbolReference> occurrences = SymbolsService.FindOccurrencesInFile(
                 scriptFile,
                 request.Position.Line + 1,
                 request.Position.Character + 1);
 
-            if (symbolOccurrences is null)
+            List<DocumentHighlight> highlights = new();
+            foreach (SymbolReference occurrence in occurrences)
             {
-                return Task.FromResult(s_emptyHighlightContainer);
-            }
-
-            DocumentHighlight[] highlights = new DocumentHighlight[symbolOccurrences.Count];
-            for (int i = 0; i < symbolOccurrences.Count; i++)
-            {
-                highlights[i] = new DocumentHighlight
+                highlights.Add(new DocumentHighlight
                 {
                     Kind = DocumentHighlightKind.Write, // TODO: Which symbol types are writable?
-                    Range = symbolOccurrences[i].ScriptRegion.ToRange()
-                };
+                    Range = occurrence.NameRegion.ToRange() // Just the symbol name
+                });
             }
+
             _logger.LogDebug("Highlights: " + highlights);
 
-            return Task.FromResult(new DocumentHighlightContainer(highlights));
+            return cancellationToken.IsCancellationRequested || highlights.Count == 0
+                ? Task.FromResult(s_emptyHighlightContainer)
+                : Task.FromResult(new DocumentHighlightContainer(highlights));
         }
     }
 }

@@ -1,12 +1,11 @@
-name: PR-$(System.PullRequest.PullRequestNumber)-$(Date:yyyyMMdd)$(Rev:.rr)
+name: Misc-$(Build.SourceBranchName)-$(Date:yyyyMMdd)$(Rev:.rr)
 
 trigger:
-  branches:
-    include:
-    - main
-
+  - gh-readonly-queue/main/*
 pr:
-- main
+  paths:
+    exclude:
+    - '**/*.md'
 
 resources:
   repositories:

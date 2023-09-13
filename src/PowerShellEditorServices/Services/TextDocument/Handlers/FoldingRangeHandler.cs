@@ -16,6 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class PsesFoldingRangeHandler : FoldingRangeHandlerBase
     {
+        private static readonly Container<FoldingRange> s_emptyFoldingRangeContainer = new();
         private readonly ILogger _logger;
         private readonly ConfigurationService _configurationService;
         private readonly WorkspaceService _workspaceService;
@@ -37,27 +38,36 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (cancellationToken.IsCancellationRequested)
             {
                 _logger.LogDebug("FoldingRange request canceled for file: {Uri}", request.TextDocument.Uri);
-                return Task.FromResult(new Container<FoldingRange>());
+                return Task.FromResult(s_emptyFoldingRangeContainer);
             }
 
-            // TODO Should be using dynamic registrations
-            if (!_configurationService.CurrentSettings.CodeFolding.Enable) { return Task.FromResult(new Container<FoldingRange>()); }
+            // TODO: Should be using dynamic registrations
+            if (!_configurationService.CurrentSettings.CodeFolding.Enable)
+            {
+                return Task.FromResult(s_emptyFoldingRangeContainer);
+            }
 
             // Avoid crash when using untitled: scheme or any other scheme where the document doesn't
             // have a backing file.  https://github.com/PowerShell/vscode-powershell/issues/1676
             // Perhaps a better option would be to parse the contents of the document as a string
             // as opposed to reading a file but the scenario of "no backing file" probably doesn't
             // warrant the extra effort.
-            if (!_workspaceService.TryGetFile(request.TextDocument.Uri, out ScriptFile scriptFile)) { return Task.FromResult(new Container<FoldingRange>()); }
-
-            List<FoldingRange> result = new();
+            if (!_workspaceService.TryGetFile(request.TextDocument.Uri, out ScriptFile scriptFile))
+            {
+                return Task.FromResult(s_emptyFoldingRangeContainer);
+            }
 
             // If we're showing the last line, decrement the Endline of all regions by one.
             int endLineOffset = _configurationService.CurrentSettings.CodeFolding.ShowLastLine ? -1 : 0;
-
+            List<FoldingRange> folds = new();
             foreach (FoldingReference fold in TokenOperations.FoldableReferences(scriptFile.ScriptTokens).References)
             {
-                result.Add(new FoldingRange
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                folds.Add(new FoldingRange
                 {
                     EndCharacter = fold.EndCharacter,
                     EndLine = fold.EndLine + endLineOffset,
@@ -67,7 +77,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 });
             }
 
-            return Task.FromResult(new Container<FoldingRange>(result));
+            return folds.Count == 0
+                ? Task.FromResult(s_emptyFoldingRangeContainer)
+                : Task.FromResult(new Container<FoldingRange>(folds));
         }
     }
 }

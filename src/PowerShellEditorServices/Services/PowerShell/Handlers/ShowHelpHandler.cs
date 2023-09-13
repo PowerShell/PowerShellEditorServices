@@ -27,7 +27,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<Unit> Handle(ShowHelpParams request, CancellationToken cancellationToken)
         {
+            // TODO: Refactor to not rerun the function definition every time.
             const string CheckHelpScript = @"
+                [System.Diagnostics.DebuggerHidden()]
                 [CmdletBinding()]
                 param (
                     [String]$CommandName
@@ -67,7 +69,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             // TODO: Rather than print the help in the console, we should send the string back
             //       to VSCode to display in a help pop-up (or similar)
-            await _executionService.ExecutePSCommandAsync<PSObject>(checkHelpPSCommand, cancellationToken, new PowerShellExecutionOptions { WriteOutputToHost = true, ThrowOnError = false }).ConfigureAwait(false);
+            await _executionService.ExecutePSCommandAsync<PSObject>(
+                checkHelpPSCommand,
+                cancellationToken,
+                new PowerShellExecutionOptions
+                {
+                    RequiresForeground = true,
+                    WriteOutputToHost = true,
+                    ThrowOnError = false
+                }).ConfigureAwait(false);
             return Unit.Value;
         }
     }

@@ -25,7 +25,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
             FilterText = "ValueFromPipeline",
             InsertText = "ValueFromPipeline",
             Label = "ValueFromPipeline",
-            SortText = "0001ValueFromPipeline",
             TextEdit = new TextEdit
             {
                 NewText = "ValueFromPipeline",
@@ -44,7 +43,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
             FilterText = "ValueFromPipelineByPropertyName",
             InsertText = "ValueFromPipelineByPropertyName",
             Label = "ValueFromPipelineByPropertyName",
-            SortText = "0002ValueFromPipelineByPropertyName",
             TextEdit = new TextEdit
             {
                 NewText = "ValueFromPipelineByPropertyName",
@@ -63,7 +61,6 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
             FilterText = "ValueFromRemainingArguments",
             InsertText = "ValueFromRemainingArguments",
             Label = "ValueFromRemainingArguments",
-            SortText = "0003ValueFromRemainingArguments",
             TextEdit = new TextEdit
             {
                 NewText = "ValueFromRemainingArguments",

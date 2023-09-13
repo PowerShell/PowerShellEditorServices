@@ -33,8 +33,9 @@ namespace PowerShellEditorServices.Test.E2E
         private const bool IsDebugAdapterTests = false;
 
         public ILanguageClient PsesLanguageClient { get; private set; }
-        public List<Diagnostic> Diagnostics { get; set; }
-        internal List<PsesTelemetryEvent> TelemetryEvents { get; set; }
+        public List<LogMessageParams> Messages = new();
+        public List<Diagnostic> Diagnostics = new();
+        internal List<PsesTelemetryEvent> TelemetryEvents = new();
         public ITestOutputHelper Output { get; set; }
 
         protected PsesStdioProcess _psesProcess;
@@ -46,9 +47,7 @@ namespace PowerShellEditorServices.Test.E2E
             _psesProcess = new PsesStdioProcess(factory, IsDebugAdapterTests);
             await _psesProcess.Start().ConfigureAwait(false);
 
-            Diagnostics = new List<Diagnostic>();
-            TelemetryEvents = new List<PsesTelemetryEvent>();
-            DirectoryInfo testdir =
+            DirectoryInfo testDir =
                 Directory.CreateDirectory(Path.Combine(s_binDir, Path.GetRandomFileName()));
 
             PsesLanguageClient = LanguageClient.PreInit(options =>
@@ -56,10 +55,13 @@ namespace PowerShellEditorServices.Test.E2E
                 options
                     .WithInput(_psesProcess.OutputStream)
                     .WithOutput(_psesProcess.InputStream)
-                    .WithWorkspaceFolder(DocumentUri.FromFileSystemPath(testdir.FullName), "testdir")
+                    .WithWorkspaceFolder(DocumentUri.FromFileSystemPath(testDir.FullName), "testdir")
                     .WithInitializationOptions(new { EnableProfileLoading = false })
                     .OnPublishDiagnostics(diagnosticParams => Diagnostics.AddRange(diagnosticParams.Diagnostics.Where(d => d != null)))
-                    .OnLogMessage(logMessageParams => Output?.WriteLine($"{logMessageParams.Type}: {logMessageParams.Message}"))
+                    .OnLogMessage(logMessageParams => {
+                        Output?.WriteLine($"{logMessageParams.Type}: {logMessageParams.Message}");
+                        Messages.Add(logMessageParams);
+                    })
                     .OnTelemetryEvent(telemetryEventParams => TelemetryEvents.Add(
                         new PsesTelemetryEvent
                         {
@@ -95,16 +97,9 @@ namespace PowerShellEditorServices.Test.E2E
 
         public async Task DisposeAsync()
         {
-            try
-            {
-                await PsesLanguageClient.Shutdown().ConfigureAwait(false);
-                await _psesProcess.Stop().ConfigureAwait(false);
-                PsesLanguageClient?.Dispose();
-            }
-            catch (ObjectDisposedException)
-            {
-                // Language client has a disposal bug in it
-            }
+            await PsesLanguageClient.Shutdown().ConfigureAwait(false);
+            await _psesProcess.Stop().ConfigureAwait(false);
+            PsesLanguageClient?.Dispose();
         }
     }
 }

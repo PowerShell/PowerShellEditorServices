@@ -50,16 +50,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 await _symbolsService.FindSymbolDetailsAtLocationAsync(
                         scriptFile,
                         request.Position.Line + 1,
-                        request.Position.Character + 1).ConfigureAwait(false);
+                        request.Position.Character + 1,
+                        cancellationToken).ConfigureAwait(false);
 
-            if (symbolDetails == null)
+            if (symbolDetails is null)
             {
                 return null;
             }
 
             List<MarkedString> symbolInfo = new()
             {
-                new MarkedString("PowerShell", symbolDetails.DisplayString)
+                new MarkedString("PowerShell", symbolDetails.SymbolReference.Name)
             };
 
             if (!string.IsNullOrEmpty(symbolDetails.Documentation))
@@ -67,29 +68,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 symbolInfo.Add(new MarkedString("markdown", symbolDetails.Documentation));
             }
 
-            Range symbolRange = GetRangeFromScriptRegion(symbolDetails.SymbolReference.ScriptRegion);
-
             return new Hover
             {
                 Contents = new MarkedStringsOrMarkupContent(symbolInfo),
-                Range = symbolRange
-            };
-        }
-
-        private static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)
-        {
-            return new Range
-            {
-                Start = new Position
-                {
-                    Line = scriptRegion.StartLineNumber - 1,
-                    Character = scriptRegion.StartColumnNumber - 1
-                },
-                End = new Position
-                {
-                    Line = scriptRegion.EndLineNumber - 1,
-                    Character = scriptRegion.EndColumnNumber - 1
-                }
+                Range = symbolDetails.SymbolReference.NameRegion.ToRange()
             };
         }
     }

@@ -1,8 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 {
     /// <summary>
     /// Provides utility methods for working with PowerShell commands.
+    /// TODO: Handle the `fn ` prefix better.
     /// </summary>
     internal static class CommandHelpers
     {
@@ -58,6 +61,39 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         internal static readonly ConcurrentDictionary<string, string> s_aliasToCmdletCache = new(System.StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
+        /// Gets the actual command behind a fully module qualified command invocation, e.g.
+        /// <c>Microsoft.PowerShell.Management\Get-ChildItem</c> will return <c>Get-ChildItem</c>
+        /// </summary>
+        /// <param name="invocationName">
+        /// The potentially module qualified command name at the site of invocation.
+        /// </param>
+        /// <param name="moduleName">
+        /// A reference that will contain the module name if the invocation is module qualified.
+        /// </param>
+        /// <returns>The actual command name.</returns>
+        public static string StripModuleQualification(string invocationName, out ReadOnlyMemory<char> moduleName)
+        {
+            int slashIndex = invocationName.LastIndexOfAny(new[] { '\\', '/' });
+            if (slashIndex is -1)
+            {
+                moduleName = default;
+                return invocationName;
+            }
+
+            // If '\' is the last character then it's probably not a module qualified command.
+            if (slashIndex == invocationName.Length - 1)
+            {
+                moduleName = default;
+                return invocationName;
+            }
+
+            // Storing moduleName as ROMemory saves a string allocation in the common case where it
+            // is not needed.
+            moduleName = invocationName.AsMemory().Slice(0, slashIndex);
+            return invocationName.Substring(slashIndex + 1);
+        }
+
+        /// <summary>
         /// Gets the CommandInfo instance for a command with a particular name.
         /// </summary>
         /// <param name="commandName">The name of the command.</param>
@@ -79,6 +115,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
             Validate.IsNotNull(nameof(commandName), commandName);
             Validate.IsNotNull(nameof(executionService), executionService);
+
+            // Remove the bucket identifier from symbol references.
+            if (commandName.StartsWith("fn "))
+            {
+                commandName = commandName.Substring(3);
+            }
 
             // If we have a CommandInfo cached, return that.
             if (s_commandInfoCache.TryGetValue(commandName, out CommandInfo cmdInfo))
@@ -195,21 +237,26 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             // our PSRL on idle handler.
             IReadOnlyList<CommandInfo> aliases = await executionService.ExecutePSCommandAsync<CommandInfo>(
                 new PSCommand()
-                    .AddCommand("Microsoft.PowerShell.Core\\Get-Command")
+                    .AddCommand(@"Microsoft.PowerShell.Core\Get-Command")
                     .AddParameter("ListImported", true)
                     .AddParameter("CommandType", CommandTypes.Alias),
                 cancellationToken).ConfigureAwait(false);
 
-            foreach (AliasInfo aliasInfo in aliases)
+            foreach (AliasInfo aliasInfo in aliases.Cast<AliasInfo>())
             {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 // TODO: When we move to netstandard2.1, we can use another overload which generates
                 // static delegates and thus reduces allocations.
                 s_cmdletToAliasCache.AddOrUpdate(
-                    aliasInfo.Definition,
-                    (_) => new List<string> { aliasInfo.Name },
-                    (_, v) => { v.Add(aliasInfo.Name); return v; });
+                    "fn " + aliasInfo.Definition,
+                    (_) => new List<string> { "fn " + aliasInfo.Name },
+                    (_, v) => { v.Add("fn " + aliasInfo.Name); return v; });
 
-                s_aliasToCmdletCache.TryAdd(aliasInfo.Name, aliasInfo.Definition);
+                s_aliasToCmdletCache.TryAdd("fn " + aliasInfo.Name, "fn " + aliasInfo.Definition);
             }
 
             return new AliasMap(

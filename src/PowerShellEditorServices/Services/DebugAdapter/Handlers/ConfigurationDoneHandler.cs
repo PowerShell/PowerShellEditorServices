@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Management.Automation;
@@ -102,14 +102,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return Task.FromResult(new ConfigurationDoneResponse());
         }
 
-        private async Task LaunchScriptAsync(string scriptToLaunch)
+        // NOTE: We test this function in `DebugServiceTests` so it both needs to be internal, and
+        // use conditional-access on `_debugStateService` and `_debugAdapterServer` as its not set
+        // by tests.
+        internal async Task LaunchScriptAsync(string scriptToLaunch)
         {
             PSCommand command;
             if (System.IO.File.Exists(scriptToLaunch))
             {
                 // For a saved file we just execute its path (after escaping it).
                 command = PSCommandHelpers.BuildDotSourceCommandWithArguments(
-                    string.Concat('"', scriptToLaunch, '"'), _debugStateService.Arguments);
+                    PSCommandHelpers.EscapeScriptFilePath(scriptToLaunch), _debugStateService?.Arguments);
             }
             else // It's a URI to an untitled script, or a raw script.
             {
@@ -135,7 +138,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     // on each invocation, so passing the user's arguments directly in the initial
                     // `AddScript` surprisingly works.
                     command = PSCommandHelpers
-                        .BuildDotSourceCommandWithArguments("$args[0]", _debugStateService.Arguments)
+                        .BuildDotSourceCommandWithArguments("$args[0]", _debugStateService?.Arguments)
                         .AddArgument(ast.GetScriptBlock());
                 }
                 else
@@ -148,7 +151,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                             "{" + System.Environment.NewLine,
                             isScriptFile ? untitledScript.Contents : scriptToLaunch,
                             System.Environment.NewLine + "}"),
-                            _debugStateService.Arguments);
+                            _debugStateService?.Arguments);
                 }
             }
 
@@ -156,7 +159,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 command,
                 CancellationToken.None,
                 s_debuggerExecutionOptions).ConfigureAwait(false);
-            _debugAdapterServer.SendNotification(EventNames.Terminated);
+
+            _debugAdapterServer?.SendNotification(EventNames.Terminated);
         }
     }
 }

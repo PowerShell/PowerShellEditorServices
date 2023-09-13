@@ -1,13 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Serialization;
@@ -47,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         private static CodeLens[] GetPesterLens(PesterSymbolReference pesterSymbol, ScriptFile scriptFile)
         {
             string word = pesterSymbol.Command == PesterCommandType.It ? "test" : "tests";
-            CodeLens[] codeLensResults = new CodeLens[]
+            return new CodeLens[]
             {
                 new CodeLens()
                 {
@@ -92,25 +90,21 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     }
                 }
             };
-
-            return codeLensResults;
         }
 
         /// <summary>
         /// Get all Pester CodeLenses for a given script file.
         /// </summary>
         /// <param name="scriptFile">The script file to get Pester CodeLenses for.</param>
-        /// <param name="cancellationToken"></param>
         /// <returns>All Pester CodeLenses for the given script file.</returns>
-        public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile, CancellationToken cancellationToken)
+        public IEnumerable<CodeLens> ProvideCodeLenses(ScriptFile scriptFile)
         {
             // Don't return anything if codelens setting is disabled
             if (!_configurationService.CurrentSettings.Pester.CodeLens)
             {
-                return Array.Empty<CodeLens>();
+                yield break;
             }
 
-            List<CodeLens> lenses = new();
             foreach (SymbolReference symbol in _symbolProvider.ProvideDocumentSymbols(scriptFile))
             {
                 if (symbol is not PesterSymbolReference pesterSymbol)
@@ -118,17 +112,23 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     continue;
                 }
 
-                cancellationToken.ThrowIfCancellationRequested();
+                // Skip CodeLens for setup/teardown block
+                if (!PesterSymbolReference.IsPesterTestCommand(pesterSymbol.Command))
+                {
+                    continue;
+                }
+
                 if (_configurationService.CurrentSettings.Pester.UseLegacyCodeLens
                         && pesterSymbol.Command != PesterCommandType.Describe)
                 {
                     continue;
                 }
 
-                lenses.AddRange(GetPesterLens(pesterSymbol, scriptFile));
+                foreach (CodeLens codeLens in GetPesterLens(pesterSymbol, scriptFile))
+                {
+                    yield return codeLens;
+                }
             }
-
-            return lenses.ToArray();
         }
 
         /// <summary>

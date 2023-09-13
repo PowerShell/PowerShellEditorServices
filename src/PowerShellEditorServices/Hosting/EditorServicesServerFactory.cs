@@ -83,7 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <param name="inputStream">The protocol transport input stream.</param>
         /// <param name="outputStream">The protocol transport output stream.</param>
         /// <param name="hostStartupInfo">The host details configuration for Editor Services
-        /// instantation.</param>
+        /// instantiation.</param>
         /// <returns>A new, unstarted language server instance.</returns>
         public PsesLanguageServer CreateLanguageServer(
             Stream inputStream,
@@ -163,7 +163,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             // This gets the ExtensionService which triggers the creation of the `$psEditor` variable.
             // (because services are created only when they are first retrieved)
             // Keep in mind, for Temp sessions, the `$psEditor` API is a no-op and the user is warned
-            // to run the command in the main PS Integrated Console.
+            // to run the command in the main extension terminal.
             serviceProvider.GetService<ExtensionService>();
 
             return new PsesDebugServer(

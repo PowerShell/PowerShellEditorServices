@@ -8,23 +8,30 @@ on:
     # The branches below must be a subset of the branches above
     branches: [ main ]
     paths-ignore: [ '**/*.md' ]
+  merge_group:
+    types: [ checks_requested ]
 
 jobs:
   test:
-    name: Test PSES with Emacs via Eglot
+    name: Test via Eglot
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Install dotnet
+        uses: actions/setup-dotnet@v3
 
       - name: Build PSES
         shell: pwsh
         run: tools/azurePipelinesBuild.ps1
 
       - name: Install Emacs
-        uses: purcell/setup-emacs@v3.0
+        uses: purcell/setup-emacs@master
         with:
-          version: '28.1'
+          version: '28.2'
 
       - name: Run ERT
-        run: emacs -batch -l ert -l test/emacs-test.el -f ert-run-tests-batch-and-exit
+        run: |
+          emacs -Q --batch -f package-refresh-contents --eval "(package-install 'eglot)"
+          emacs -Q --batch -l test/emacs-test.el -f ert-run-tests-batch-and-exit

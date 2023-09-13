@@ -16,7 +16,14 @@ using SMA = System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 {
-    internal class SynchronousPowerShellTask<TResult> : SynchronousTask<IReadOnlyList<TResult>>
+    internal interface ISynchronousPowerShellTask
+    {
+        PowerShellExecutionOptions PowerShellExecutionOptions { get; }
+
+        void MaybeAddToHistory();
+    }
+
+    internal class SynchronousPowerShellTask<TResult> : SynchronousTask<IReadOnlyList<TResult>>, ISynchronousPowerShellTask
     {
         private static readonly PowerShellExecutionOptions s_defaultPowerShellExecutionOptions = new();
 
@@ -66,9 +73,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 // state that we sync with the LSP debugger. The former commands we want to send
                 // through PowerShell's `Debugger.ProcessCommand` so that they work as expected, but
                 // the latter we must not send through it else they pollute the history as this
-                // PowerShell API does not let us exclude them from it.
+                // PowerShell API does not let us exclude them from it. Notably we also need to send
+                // the `prompt` command and our special `list 1 <MaxInt>` through the debugger too.
+                // The former needs the context in order to show `DBG 1>` etc., and the latter is
+                // used to gather the lines when debugging a script that isn't in a file.
                 return _pwsh.Runspace.Debugger.InBreakpoint
-                    && (PowerShellExecutionOptions.AddToHistory || IsPromptCommand(_psCommand) || _pwsh.Runspace.RunspaceIsRemote)
+                    && (PowerShellExecutionOptions.AddToHistory || IsPromptOrListCommand(_psCommand) || _pwsh.Runspace.RunspaceIsRemote)
                     ? ExecuteInDebugger(cancellationToken)
                     : ExecuteNormally(cancellationToken);
             }
@@ -80,7 +90,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public override string ToString() => _psCommand.GetInvocationText();
 
-        private static bool IsPromptCommand(PSCommand command)
+        private static bool IsPromptOrListCommand(PSCommand command)
         {
             if (command.Commands.Count is not 1
                 || command.Commands[0] is { IsScript: false } or { Parameters.Count: > 0 })
@@ -89,7 +99,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             }
 
             string commandText = command.Commands[0].CommandText;
-            return commandText.Equals("prompt", StringComparison.OrdinalIgnoreCase);
+            return commandText.Equals("prompt", StringComparison.OrdinalIgnoreCase)
+                || commandText.Equals($"list 1 {int.MaxValue}", StringComparison.OrdinalIgnoreCase);
         }
 
         private IReadOnlyList<TResult> ExecuteNormally(CancellationToken cancellationToken)
@@ -98,6 +109,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             if (PowerShellExecutionOptions.WriteOutputToHost)
             {
                 _psCommand.AddOutputCommand();
+
+                // Fix the transcription bug! Here we're fixing immediately before the invocation of
+                // our command, that has had `Out-Default` added to it.
+                if (!_pwsh.Runspace.RunspaceIsRemote)
+                {
+                    _psesHost.DisableTranscribeOnly();
+                }
             }
 
             cancellationToken.Register(CancelNormalExecution);
@@ -141,7 +159,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 if (e is PSRemotingTransportException)
                 {
                     _ = System.Threading.Tasks.Task.Run(
-                        () => _psesHost.UnwindCallStack(),
+                        _psesHost.UnwindCallStack,
                         CancellationToken.None)
                         .HandleErrorsAsync(_logger);
 
@@ -182,8 +200,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private IReadOnlyList<TResult> ExecuteInDebugger(CancellationToken cancellationToken)
         {
-            // TODO: How much of this method can we remove now that it only processes PowerShell's
-            // intrinsic debugger commands?
             cancellationToken.Register(CancelDebugExecution);
 
             PSDataCollection<PSObject> outputCollection = new();
@@ -240,7 +256,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 if (e is PSRemotingTransportException)
                 {
                     _ = System.Threading.Tasks.Task.Run(
-                        () => _psesHost.UnwindCallStack(),
+                        _psesHost.UnwindCallStack,
                         CancellationToken.None)
                         .HandleErrorsAsync(_logger);
 
@@ -271,6 +287,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 {
                     _pwsh.Streams.Error.Clear();
                 }
+
+                // Fix the transcription bug! Since we don't depend on `Out-Default` for
+                // `ExecuteDebugger`, we fix the bug here so the original invocation (before the
+                // script is executed) is good to go.
+                if (!_pwsh.Runspace.RunspaceIsRemote)
+                {
+                    _psesHost.DisableTranscribeOnly();
+                }
             }
 
             _psesHost.DebugContext.ProcessDebuggerResult(debuggerResult);
@@ -281,11 +305,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
                 return Array.Empty<TResult>();
             }
 
-            // If we've been asked for a PSObject, no need to allocate a new collection
-            if (typeof(TResult) == typeof(PSObject)
-                && outputCollection is IReadOnlyList<TResult> resultCollection)
+            // If we've been asked for a PSObject, no need to convert
+            if (typeof(TResult) == typeof(PSObject))
             {
-                return resultCollection;
+                return new List<PSObject>(outputCollection) as IReadOnlyList<TResult>;
             }
 
             // Otherwise, convert things over
@@ -353,7 +376,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             }
         }
 
-        internal void MaybeAddToHistory()
+        public void MaybeAddToHistory()
         {
             // Do not add PSES internal commands to history. Also exclude input that came from the
             // REPL (e.g. PSReadLine) as it handles history itself in that scenario.
@@ -382,7 +405,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private void CancelDebugExecution()
         {
-            if (_pwsh.Runspace.RunspaceStateInfo.IsUsable())
+            if (!_pwsh.Runspace.RunspaceStateInfo.IsUsable())
             {
                 return;
             }

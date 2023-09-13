@@ -15,7 +15,7 @@ The functionality in PowerShell Editor Services is already available in the foll
 - [The VSCode PowerShell extension](https://github.com/PowerShell/vscode-powershell), also available in Azure Data Studio
 - [coc-powershell](https://github.com/yatli/coc-powershell), a vim/neovim PowerShell plugin
 - [The IntelliJ PowerShell plugin](https://github.com/ant-druha/intellij-powershell)
-- [lsp-powershell](https://github.com/kiennq/lsp-powershell), an Emacs PowerShell plugin
+- [lsp-pwsh](https://github.com/emacs-lsp/lsp-mode/blob/master/clients/lsp-pwsh.el), an Emacs PowerShell plugin
 
 ## Features
 
@@ -24,8 +24,8 @@ The functionality in PowerShell Editor Services is already available in the foll
   - Statement completions (IntelliSense)
   - Real-time semantic analysis of scripts using PowerShell Script Analyzer
 - The Debugging Service simplifies interaction with the PowerShell debugger (breakpoints, variables, call stack, etc.)
-- The [$psEditor API](http://powershell.github.io/PowerShellEditorServices/guide/extensions.html) enables scripting of the host editor
-- A full, terminal-based Integrated Console experience for interactive development and debugging
+- The [$psEditor API](https://github.com/PowerShell/PowerShellEditorServices/blob/main/docs/guide/extensions.md) enables scripting of the host editor
+- A full, Extension Terminal experience for interactive development and debugging
 
 ## Usage
 
@@ -37,7 +37,7 @@ If you're looking for a more feature-rich experience,
 Named Pipes are the way to go.
 They give you all the benefits of the Language Server Protocol with extra capabilities that you can take advantage of:
 
-- The PowerShell Integrated Console
+- The PowerShell Extension Terminal
 - Debugging using the [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/)
 
 The typical command to start PowerShell Editor Services using named pipes is as follows:
@@ -51,6 +51,30 @@ pwsh -NoLogo -NoProfile -Command "$PSES_BUNDLE_PATH/PowerShellEditorServices/Sta
 > - `$PSES_BUNDLE_PATH` is the root of the PowerShellEditorServices.zip downloaded from the GitHub releases.
 > - `$SESSION_TEMP_PATH` is the folder path that you'll use for this specific editor session.
 
+If you are trying to automate the service in PowerShell, You can also run it under `Start-Process` to prevent hanging your script. It also gives you access to Process/PID automation features like `$process.Close()` or `$process.Kill()`
+
+```powershell
+$command = @(
+    "$PSES_BUNDLE_PATH/PowerShellEditorServices/Start-EditorServices.ps1",
+        "-BundledModulesPath $PSES_BUNDLE_PATH",
+        "-LogPath $SESSION_TEMP_PATH/logs.log",
+        "-SessionDetailsPath $SESSION_TEMP_PATH/session.json",
+        "-FeatureFlags @()",
+        "-AdditionalModules @()",
+        "-HostName 'My Client'",
+        "-HostProfileId 'myclient'",
+        "-HostVersion 1.0.0",
+        "-LogLevel Normal"
+)-join " "
+
+$pwsh_arguments = "-NoLogo -NoProfile -Command $command"
+$process = Start-Process pwsh -ArgumentList $arguments -PassThru
+
+...
+
+$process.Close(); #$process.Kill();
+```
+
 Once the command is run,
 PowerShell Editor Services will wait until the client connects to the Named Pipe.
 The `session.json` will contain the paths of the Named Pipes that you will connect to.
@@ -59,20 +83,20 @@ and once you connect to when you launch the debugger for Debug Adapter Protocol 
 
 The Visual Studio Code, Vim, and IntelliJ extensions currently use Named Pipes.
 
-#### PowerShell Integrated Console
+#### PowerShell Extension Terminal
 
 ![image](https://user-images.githubusercontent.com/2644648/66245084-6985da80-e6c0-11e9-9c7b-4c8476190df5.png)
 
-The PowerShell Integrated Console uses the host process' Stdio streams for console input and output. Please note that this is mutually exclusive from using Stdio for the language server protocol messages.
+The PowerShell Extension Terminal uses the host process' Stdio streams for console input and output. Please note that this is mutually exclusive from using Stdio for the language server protocol messages.
 
-If you want to take advantage of the PowerShell Integrated Console which automatically shares state with the editor-side,
+If you want to take advantage of the PowerShell Extension Terminal which automatically shares state with the editor-side,
 you must include the `-EnableConsoleRepl` switch when called `Start-EditorServices.ps1`.
 
 This is typically used if your client can create arbitrary terminals in the editor like below:
 
-![integrated console in vscode](https://user-images.githubusercontent.com/2644648/66245018-04ca8000-e6c0-11e9-808c-b86144149444.png)
+![Extension Terminal in vscode](https://user-images.githubusercontent.com/2644648/66245018-04ca8000-e6c0-11e9-808c-b86144149444.png)
 
-The Visual Studio Code, Vim, and IntelliJ extensions currently use the PowerShell Integrated Console.
+The Visual Studio Code, Vim, and IntelliJ extensions currently use the PowerShell Extension Terminal.
 
 #### Debugging
 
@@ -87,9 +111,9 @@ Currently, only the Visual Studio Code extension supports debugging.
 
 ### Stdio
 
-Stdio is a simpler and more universal mechanism for the Language Server Protocol. We recommend using it if your editor/client doesn't need to support the PowerShell Integrated Console or debugging.
+Stdio is a simpler and more universal mechanism for the Language Server Protocol. We recommend using it if your editor/client doesn't need to support the PowerShell Extension Terminal or debugging.
 
-> NOTE: Debugging and the Integrated Console are not features of the Stdio channel because each feature requires its own IO streams and since the Stdio model only provides a single set of streams (Stdio),
+> NOTE: Debugging and the Extension Terminal are not features of the Stdio channel because each feature requires its own IO streams and since the Stdio model only provides a single set of streams (Stdio),
 > these features cannot be leveraged.
 
 The typical command to start PowerShell Editor Services using stdio is as follows:
@@ -135,6 +159,7 @@ git clone https://github.com/PowerShell/PowerShellEditorServices.git
 
 ```powershell
 Install-Module InvokeBuild -Scope CurrentUser
+Install-Module platyPS -Scope CurrentUser
 ```
 
 Now you're ready to build the code.  You can do so in one of two ways:
@@ -153,13 +178,13 @@ Open the PowerShellEditorServices folder that you cloned locally and press <kbd>
 ## Contributions Welcome
 
 We would love to incorporate community contributions into this project.  If you would like to
-contribute code, documentation, tests, or bug reports, please read our [Contribution Guide](http://powershell.github.io/PowerShellEditorServices/CONTRIBUTING.html) to learn more.
+contribute code, documentation, tests, or bug reports, please read our [Contribution Guide](https://github.com/PowerShell/PowerShellEditorServices/blob/main/CONTRIBUTING.md) to learn more.
 
 ## Maintainers
 
 - [Justin Grote](https://github.com/JustinGrote) - [@JustinWGrote](https://twitter.com/justinwgrote)
 - [Patrick Meinecke](https://github.com/SeeminglyScience) - [@SeeminglyScienc](http://twitter.com/SeeminglyScienc)
-- [Andy Schwartzmeyer](https://github.com/andschwa) - [andschwa.com](https://andschwa.com/)
+- [Andy Jordan](https://github.com/andschwa) - [andyleejordan.com](https://andyleejordan.com/)
 
 ### Emeriti
 

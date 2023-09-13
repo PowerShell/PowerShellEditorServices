@@ -3,9 +3,9 @@
 
 using System;
 using System.Management.Automation;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 
@@ -80,10 +80,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         public event Action<object, DebuggerResumingEventArgs> DebuggerResuming;
         public event Action<object, BreakpointUpdatedEventArgs> BreakpointUpdated;
 
-        public Task<DscBreakpointCapability> GetDscBreakpointCapabilityAsync(CancellationToken cancellationToken)
+        public Task<DscBreakpointCapability> GetDscBreakpointCapabilityAsync()
         {
             _psesHost.Runspace.ThrowCancelledIfUnusable();
-            return _psesHost.CurrentRunspace.GetDscBreakpointCapabilityAsync(_logger, _psesHost, cancellationToken);
+            return _psesHost.CurrentRunspace.GetDscBreakpointCapabilityAsync(_logger, _psesHost);
         }
 
         // This is required by the PowerShell API so that remote debugging works. Without it, a
@@ -145,14 +145,26 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                 // TODO: We need to assign cancellation tokens to each frame, because the current
                 // logic results in a deadlock here when we try to cancel the scopes...which
                 // includes ourself (hence running it in a separate thread).
-                Task.Run(() => _psesHost.UnwindCallStack());
+                _ = Task.Run(_psesHost.UnwindCallStack);
                 return;
             }
 
             // Otherwise we're continuing or stepping (i.e. resuming) so we need to cancel the
             // debugger REPL.
-            if (_psesHost.CurrentFrame.IsRepl)
+            PowerShellFrameType frameType = _psesHost.CurrentFrame.FrameType;
+            if (frameType.HasFlag(PowerShellFrameType.Repl))
             {
+                _psesHost.CancelIdleParentTask();
+                return;
+            }
+
+            // If the user is running something via the REPL like `while ($true) { sleep 1 }`
+            // and then tries to step, we want to stop that so that execution can resume.
+            //
+            // This also applies to anything we're running on debugger stop like watch variables.
+            if (frameType.HasFlag(PowerShellFrameType.Debug | PowerShellFrameType.Nested))
+            {
+                _psesHost.ForceSetExit();
                 _psesHost.CancelIdleParentTask();
             }
         }
@@ -187,7 +199,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                 RaiseDebuggerResumingEvent(new DebuggerResumingEventArgs(debuggerResult.ResumeAction.Value));
 
                 // The Terminate exception is used by the engine for flow control
-                // when it needs to unwind the callstack out of the debugger.
+                // when it needs to unwind the call stack out of the debugger.
                 if (debuggerResult.ResumeAction is DebuggerResumeAction.Stop)
                 {
                     throw new TerminateException();

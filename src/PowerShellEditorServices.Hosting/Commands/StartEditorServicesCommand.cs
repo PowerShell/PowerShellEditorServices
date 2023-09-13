@@ -15,7 +15,6 @@ using System.Globalization;
 #if DEBUG
 using System.Diagnostics;
 using System.Threading;
-
 using Debugger = System.Diagnostics.Debugger;
 #endif
 
@@ -36,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
 
         public StartEditorServicesCommand()
         {
-            //Sets the distribution channel to "PSES" so starts can be distinguished in PS7+ telemetry
+            // Sets the distribution channel to "PSES" so starts can be distinguished in PS7+ telemetry
             Environment.SetEnvironmentVariable("POWERSHELL_DISTRIBUTION_CHANNEL", "PSES");
             _disposableResources = new List<IDisposable>();
             _loggerUnsubscribers = new List<IDisposable>();
@@ -149,7 +148,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         public string[] FeatureFlags { get; set; }
 
         /// <summary>
-        /// When set, enables the integrated console.
+        /// When set, enables the Extension Terminal.
         /// </summary>
         [Parameter]
         public SwitchParameter EnableConsoleRepl { get; set; }
@@ -186,7 +185,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         public SwitchParameter SplitInOutPipes { get; set; }
 
         /// <summary>
-        /// The banner/logo to display when the Integrated Console is first started.
+        /// The banner/logo to display when the extension terminal is first started.
         /// </summary>
         [Parameter]
         public string StartupBanner { get; set; }
@@ -197,9 +196,11 @@ namespace Microsoft.PowerShell.EditorServices.Commands
 #if DEBUG
             if (WaitForDebugger)
             {
+                // NOTE: Ignore the suggestion to use Environment.ProcessId as it doesn't work for
+                // .NET 4.6.2 (for Windows PowerShell), and this won't be caught in CI.
+                Console.WriteLine($"Waiting for debugger to attach, PID: {Process.GetCurrentProcess().Id}");
                 while (!Debugger.IsAttached)
                 {
-                    Console.WriteLine($"PID: {Process.GetCurrentProcess().Id}");
                     Thread.Sleep(1000);
                 }
             }
@@ -223,13 +224,12 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 // Create the configuration from parameters
                 EditorServicesConfig editorServicesConfig = CreateConfigObject();
 
-                SessionFileWriter sessionFileWriter = new(_logger, SessionDetailsPath);
-                _logger.Log(PsesLogLevel.Diagnostic, "Session file writer created");
-
-                using EditorServicesLoader psesLoader = EditorServicesLoader.Create(_logger, editorServicesConfig, sessionFileWriter, _loggerUnsubscribers);
+                using EditorServicesLoader psesLoader = EditorServicesLoader.Create(_logger, editorServicesConfig, SessionDetailsPath, _loggerUnsubscribers);
                 _logger.Log(PsesLogLevel.Verbose, "Loading EditorServices");
-                // Start editor services and wait here until it shuts down
+                // Synchronously start editor services and wait here until it shuts down.
+#pragma warning disable VSTHRD002
                 psesLoader.LoadAndRunEditorServicesAsync().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
             }
             catch (Exception e)
             {
@@ -301,7 +301,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         {
             _logger.Log(PsesLogLevel.Verbose, "Removing PSReadLine");
             using SMA.PowerShell pwsh = SMA.PowerShell.Create(RunspaceMode.CurrentRunspace);
-            bool hasPSReadLine = pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Get-Module", typeof(GetModuleCommand)))
+            bool hasPSReadLine = pwsh.AddCommand(new CmdletInfo(@"Microsoft.PowerShell.Core\Get-Module", typeof(GetModuleCommand)))
                 .AddParameter("Name", "PSReadLine")
                 .Invoke()
                 .Count > 0;
@@ -310,7 +310,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             {
                 pwsh.Commands.Clear();
 
-                pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Remove-Module", typeof(RemoveModuleCommand)))
+                pwsh.AddCommand(new CmdletInfo(@"Microsoft.PowerShell.Core\Remove-Module", typeof(RemoveModuleCommand)))
                     .AddParameter("Name", "PSReadLine")
                     .AddParameter("ErrorAction", "SilentlyContinue");
 
@@ -391,7 +391,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 $"{HostProfileId}_profile.ps1");
         }
 
-        // We should only use PSReadLine if we specificied that we want a console repl
+        // We should only use PSReadLine if we specified that we want a console repl
         // and we have not explicitly said to use the legacy ReadLine.
         // We also want it if we are either:
         // * On Windows on any version OR

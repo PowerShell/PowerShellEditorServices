@@ -10,5 +10,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public string InitialWorkingDirectory { get; set; }
 
         public bool SupportsBreakpointSync { get; set; }
-    }
+
+        public bool ShellIntegrationEnabled { get; set; }
 }

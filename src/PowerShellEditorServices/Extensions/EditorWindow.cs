@@ -39,7 +39,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         #endregion
 
         #region Public Methods
-
         /// <summary>
         /// Shows an informational message to the user.
         /// </summary>

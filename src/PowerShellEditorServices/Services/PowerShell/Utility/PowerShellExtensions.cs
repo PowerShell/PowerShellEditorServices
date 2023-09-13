@@ -139,7 +139,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             // We want to get the list hierarchy of execution policies
             // Calling the cmdlet is the simplest way to do that
             IReadOnlyList<PSObject> policies = pwsh
-                .AddCommand("Microsoft.PowerShell.Security\\Get-ExecutionPolicy")
+                .AddCommand(@"Microsoft.PowerShell.Security\Get-ExecutionPolicy")
                     .AddParameter("-List")
                 .InvokeAndClear<PSObject>();
 
@@ -181,7 +181,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             logger.LogTrace("Setting execution policy to {Policy}", policyToSet);
             try
             {
-                pwsh.AddCommand("Microsoft.PowerShell.Security\\Set-ExecutionPolicy")
+                pwsh.AddCommand(@"Microsoft.PowerShell.Security\Set-ExecutionPolicy")
                     .AddParameter("Scope", ExecutionPolicyScope.Process)
                     .AddParameter("ExecutionPolicy", policyToSet)
                     .AddParameter("Force")
@@ -222,7 +222,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
         public static void ImportModule(this PowerShell pwsh, string moduleNameOrPath)
         {
-            pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+            pwsh.AddCommand(@"Microsoft.PowerShell.Core\Import-Module")
                 .AddParameter("-Name", moduleNameOrPath)
                 .InvokeAndClear();
         }

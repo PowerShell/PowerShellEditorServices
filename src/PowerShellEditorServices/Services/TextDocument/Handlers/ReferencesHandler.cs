@@ -17,6 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class PsesReferencesHandler : ReferencesHandlerBase
     {
+        private static readonly LocationContainer s_emptyLocationContainer = new();
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
 
@@ -33,6 +34,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public override async Task<LocationContainer> Handle(ReferenceParams request, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return s_emptyLocationContainer;
+            }
+
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
             SymbolReference foundSymbol =
@@ -41,45 +47,31 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     request.Position.Line + 1,
                     request.Position.Character + 1);
 
-            List<SymbolReference> referencesResult =
-                await _symbolsService.FindReferencesOfSymbol(
-                    foundSymbol,
-                    _workspaceService.ExpandScriptReferences(scriptFile),
-                    _workspaceService,
-                    cancellationToken).ConfigureAwait(false);
-
             List<Location> locations = new();
-
-            if (referencesResult != null)
+            foreach (SymbolReference foundReference in await _symbolsService.ScanForReferencesOfSymbolAsync(
+                    foundSymbol, cancellationToken).ConfigureAwait(false))
             {
-                foreach (SymbolReference foundReference in referencesResult)
+                if (cancellationToken.IsCancellationRequested)
                 {
-                    locations.Add(new Location
-                    {
-                        Uri = DocumentUri.From(foundReference.FilePath),
-                        Range = GetRangeFromScriptRegion(foundReference.ScriptRegion)
-                    });
+                    break;
                 }
+
+                // Respect the request's setting to include declarations.
+                if (!request.Context.IncludeDeclaration && foundReference.IsDeclaration)
+                {
+                    continue;
+                }
+
+                locations.Add(new Location
+                {
+                    Uri = DocumentUri.From(foundReference.FilePath),
+                    Range = foundReference.NameRegion.ToRange()
+                });
             }
 
-            return new LocationContainer(locations);
-        }
-
-        private static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)
-        {
-            return new Range
-            {
-                Start = new Position
-                {
-                    Line = scriptRegion.StartLineNumber - 1,
-                    Character = scriptRegion.StartColumnNumber - 1
-                },
-                End = new Position
-                {
-                    Line = scriptRegion.EndLineNumber - 1,
-                    Character = scriptRegion.EndColumnNumber - 1
-                }
-            };
+            return locations.Count == 0
+                ? s_emptyLocationContainer
+                : locations;
         }
     }
 }

@@ -10,7 +10,7 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using Xunit;
 
-namespace PSLanguageService.Test
+namespace PowerShellEditorServices.Test.Session
 {
     public class ScriptFileChangeTests
     {
@@ -176,30 +176,6 @@ namespace PSLanguageService.Test
 
         [Trait("Category", "ScriptFile")]
         [Fact]
-        public void FindsDotSourcedFiles()
-        {
-            string exampleScriptContents = TestUtilities.PlatformNormalize(
-                ". ./athing.ps1\n" +
-                ". ./somefile.ps1\n" +
-                ". ./somefile.ps1\n" +
-                "Do-Stuff $uri\n" +
-                ". simpleps.ps1");
-
-            using StringReader stringReader = new(exampleScriptContents);
-            ScriptFile scriptFile =
-                new(
-                    // Use any absolute path. Even if it doesn't exist.
-                    DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
-                    stringReader,
-                    PowerShellVersion);
-
-            Assert.Equal(3, scriptFile.ReferencedFiles.Length);
-            System.Console.Write("a" + scriptFile.ReferencedFiles[0]);
-            Assert.Equal(TestUtilities.NormalizePath("./athing.ps1"), scriptFile.ReferencedFiles[0]);
-        }
-
-        [Trait("Category", "ScriptFile")]
-        [Fact]
         public void ThrowsExceptionWithEditOutsideOfRange()
         {
             Assert.Throws<ArgumentOutOfRangeException>(
@@ -235,6 +211,48 @@ namespace PSLanguageService.Test
                     InsertString = ""
                 }
             );
+        }
+
+        [Trait("Category", "ScriptFile")]
+        [Fact]
+        public void UpdatesParseErrorDiagnosticMarkers()
+        {
+            ScriptFile myScript = CreateScriptFile(TestUtilities.NormalizeNewlines("{\n{"));
+
+            // Verify parse errors were detected on file open
+            Assert.Collection(myScript.DiagnosticMarkers.OrderBy(dm => dm.ScriptRegion.StartLineNumber),
+                (actual) =>
+                {
+                    Assert.Equal(1, actual.ScriptRegion.StartLineNumber);
+                    Assert.Equal("Missing closing '}' in statement block or type definition.", actual.Message);
+                    Assert.Equal("PowerShell", actual.Source);
+                },
+                (actual) =>
+                {
+                    Assert.Equal(2, actual.ScriptRegion.StartLineNumber);
+                    Assert.Equal("Missing closing '}' in statement block or type definition.", actual.Message);
+                    Assert.Equal("PowerShell", actual.Source);
+                });
+
+            // Remove second {
+            myScript.ApplyChange(
+                new FileChange
+                {
+                    Line = 2,
+                    EndLine = 2,
+                    Offset = 1,
+                    EndOffset = 2,
+                    InsertString = ""
+                });
+
+            // Verify parse errors were updated on file change
+            Assert.Collection(myScript.DiagnosticMarkers,
+                (actual) =>
+                {
+                    Assert.Equal(1, actual.ScriptRegion.StartLineNumber);
+                    Assert.Equal("Missing closing '}' in statement block or type definition.", actual.Message);
+                    Assert.Equal("PowerShell", actual.Source);
+                });
         }
 
         internal static ScriptFile CreateScriptFile(string initialString)
@@ -568,7 +586,6 @@ First line
             Assert.Equal(path, scriptFile.FilePath, ignoreCase: !VersionUtils.IsLinux);
             Assert.True(scriptFile.IsAnalysisEnabled);
             Assert.False(scriptFile.IsInMemory);
-            Assert.Empty(scriptFile.ReferencedFiles);
             Assert.Empty(scriptFile.DiagnosticMarkers);
             Assert.Single(scriptFile.ScriptTokens);
             Assert.Single(scriptFile.FileLines);
@@ -593,7 +610,6 @@ First line
             Assert.Equal(path, scriptFile.DocumentUri);
             Assert.True(scriptFile.IsAnalysisEnabled);
             Assert.True(scriptFile.IsInMemory);
-            Assert.Empty(scriptFile.ReferencedFiles);
             Assert.Empty(scriptFile.DiagnosticMarkers);
             Assert.Equal(10, scriptFile.ScriptTokens.Length);
             Assert.Equal(3, scriptFile.FileLines.Count);
@@ -638,7 +654,7 @@ First line
                 scriptFile = new ScriptFile(DocumentUri.FromFileSystemPath(path), emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///home/NaomiNagata/projects/Rocinate/Proto%3AMole%3Acule.ps1", scriptFile.DocumentUri);
 
-                path = "/home/JamesHolden/projects/Rocinate/Proto:Mole\\cule.ps1";
+                path = @"/home/JamesHolden/projects/Rocinate/Proto:Mole\cule.ps1";
                 scriptFile = new ScriptFile(DocumentUri.FromFileSystemPath(path), emptyStringReader, PowerShellVersion);
                 Assert.Equal("file:///home/JamesHolden/projects/Rocinate/Proto%3AMole%5Ccule.ps1", scriptFile.DocumentUri);
             }
@@ -646,12 +662,13 @@ First line
 
         [Trait("Category", "ScriptFile")]
         [Theory]
-        [InlineData("C:\\Users\\me\\Documents\\test.ps1", false)]
+        [InlineData(@"C:\Users\me\Documents\test.ps1", false)]
         [InlineData("/Users/me/Documents/test.ps1", false)]
         [InlineData("vscode-notebook-cell:/Users/me/Documents/test.ps1#0001", true)]
         [InlineData("https://microsoft.com", true)]
         [InlineData("Untitled:Untitled-1", true)]
-        [InlineData("'a log statement' > 'c:\\Users\\me\\Documents\\test.txt'\r\n", false)]
+        [InlineData(@"'a log statement' > 'c:\Users\me\Documents\test.txt'
+", false)]
         public void IsUntitledFileIsCorrect(string path, bool expected) => Assert.Equal(expected, ScriptFile.IsUntitledPath(path));
     }
 }

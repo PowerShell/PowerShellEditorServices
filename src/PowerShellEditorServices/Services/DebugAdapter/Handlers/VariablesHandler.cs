@@ -18,11 +18,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public VariablesHandler(DebugService debugService) => _debugService = debugService;
 
-        public Task<VariablesResponse> Handle(VariablesArguments request, CancellationToken cancellationToken)
+        public async Task<VariablesResponse> Handle(VariablesArguments request, CancellationToken cancellationToken)
         {
-            VariableDetailsBase[] variables =
-                _debugService.GetVariables(
-                    (int)request.VariablesReference);
+            VariableDetailsBase[] variables = await _debugService.GetVariables((int)request.VariablesReference, cancellationToken).ConfigureAwait(false);
 
             VariablesResponse variablesResponse = null;
 
@@ -41,7 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 // TODO: This shouldn't be so broad
             }
 
-            return Task.FromResult(variablesResponse);
+            return variablesResponse;
         }
     }
 }

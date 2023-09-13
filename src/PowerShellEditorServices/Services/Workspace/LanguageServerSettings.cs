@@ -22,6 +22,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         public CodeFoldingSettings CodeFolding { get; set; }
         public PesterSettings Pester { get; set; }
         public string Cwd { get; set; }
+        public bool EnableReferencesCodeLens { get; set; } = true;
+        public bool AnalyzeOpenDocumentsOnly { get; set; }
 
         public LanguageServerSettings()
         {
@@ -46,6 +48,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     CodeFolding.Update(settings.CodeFolding, logger);
                     Pester.Update(settings.Pester, logger);
                     Cwd = settings.Cwd;
+                    EnableReferencesCodeLens = settings.EnableReferencesCodeLens;
+                    AnalyzeOpenDocumentsOnly = settings.AnalyzeOpenDocumentsOnly;
                 }
             }
         }
@@ -187,6 +191,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
 
         public bool AddWhitespaceAroundPipe { get; set; }
         public bool AutoCorrectAliases { get; set; }
+        public bool AvoidSemicolonsAsLineTerminators { get; set; }
         public bool UseConstantStrings { get; set; }
         public CodeFormattingPreset Preset { get; set; }
         public bool OpenBraceOnSameLine { get; set; }
@@ -307,6 +312,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     new Hashtable {
                     { "Enable", UseConstantStrings }
                 }
+                },
+                {
+                    "PSAvoidSemicolonsAsLineTerminators",
+                    new Hashtable {
+                    { "Enable", AvoidSemicolonsAsLineTerminators }
+                    }
                 },
             };
 

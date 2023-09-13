@@ -25,10 +25,10 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
     internal class GetEditorContextRequest
     { }
 
-    internal enum EditorCommandResponse
+    internal enum EditorOperationResponse
     {
-        Unsupported,
-        OK
+        Completed,
+        Failed
     }
 
     internal class InsertTextRequest

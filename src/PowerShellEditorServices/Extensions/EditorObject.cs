@@ -115,7 +115,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// at the time this method is invoked.
         /// </summary>
         /// <returns>A instance of the EditorContext class.</returns>
+        #pragma warning disable VSTHRD002, VSTHRD104
         public EditorContext GetEditorContext() => _editorOperations.GetEditorContextAsync().Result;
+        #pragma warning restore VSTHRD002, VSTHRD104
 
         internal void SetAsStaticInstance()
         {

@@ -91,6 +91,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             set;
         }
 
+        public override string ToString() => Text;
+
         /// <summary>
         /// Gets the ending script position of the extent.
         /// </summary>

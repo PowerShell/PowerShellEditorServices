@@ -86,26 +86,15 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         /// <param name="startPosition">The starting position of the selection.</param>
         /// <param name="endPosition">The ending position of the selection.</param>
-        public void SetSelection(
-            FilePosition startPosition,
-            FilePosition endPosition)
-        {
-            SetSelection(
-                new FileRange(
-                    startPosition,
-                    endPosition));
-        }
+        public void SetSelection(FilePosition startPosition, FilePosition endPosition) => SetSelection(new FileRange(startPosition, endPosition));
 
         /// <summary>
         /// Sets a selection in the host editor's active buffer.
         /// </summary>
         /// <param name="selectionRange">The range of the selection.</param>
-        public void SetSelection(FileRange selectionRange)
-        {
-            editorOperations
-                .SetSelectionAsync(selectionRange.ToBufferRange())
-                .Wait();
-        }
+        #pragma warning disable VSTHRD002
+        public void SetSelection(FileRange selectionRange) => editorOperations.SetSelectionAsync(selectionRange.ToBufferRange()).Wait();
+        #pragma warning restore VSTHRD002
 
         #endregion
     }

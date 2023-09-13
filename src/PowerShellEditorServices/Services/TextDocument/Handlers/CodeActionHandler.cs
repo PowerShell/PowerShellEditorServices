@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -12,11 +13,13 @@ using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Serialization;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class PsesCodeActionHandler : CodeActionHandlerBase
     {
+        private static readonly CommandOrCodeActionContainer s_emptyCommandOrCodeActionContainer = new();
         private readonly ILogger _logger;
         private readonly AnalysisService _analysisService;
 
@@ -33,32 +36,24 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             CodeActionKinds = new CodeActionKind[] { CodeActionKind.QuickFix }
         };
 
-        // TODO: Either fix or ignore "method lacks 'await'" warning.
-        public override async Task<CodeAction> Handle(CodeAction request, CancellationToken cancellationToken)
-        {
-            // TODO: How on earth do we handle a CodeAction? This is new...
-            if (cancellationToken.IsCancellationRequested)
-            {
-                _logger.LogDebug("CodeAction request canceled for: {Title}", request.Title);
-            }
-            return request;
-        }
+        public override Task<CodeAction> Handle(CodeAction request, CancellationToken cancellationToken) => Task.FromResult(request);
 
         public override async Task<CommandOrCodeActionContainer> Handle(CodeActionParams request, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
             {
                 _logger.LogDebug($"CodeAction request canceled at range: {request.Range}");
-                return Array.Empty<CommandOrCodeAction>();
+                return s_emptyCommandOrCodeActionContainer;
             }
 
             IReadOnlyDictionary<string, IEnumerable<MarkerCorrection>> corrections = await _analysisService.GetMostRecentCodeActionsForFileAsync(
                 request.TextDocument.Uri)
                 .ConfigureAwait(false);
 
-            if (corrections == null)
+            // GetMostRecentCodeActionsForFileAsync actually returns null if there's no corrections.
+            if (corrections is null)
             {
-                return Array.Empty<CommandOrCodeAction>();
+                return s_emptyCommandOrCodeActionContainer;
             }
 
             List<CommandOrCodeAction> codeActions = new();
@@ -66,6 +61,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // If there are any code fixes, send these commands first so they appear at top of "Code Fix" menu in the client UI.
             foreach (Diagnostic diagnostic in request.Context.Diagnostics)
             {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 if (string.IsNullOrEmpty(diagnostic.Code?.String))
                 {
                     _logger.LogWarning(
@@ -93,7 +93,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                                             {
                                                 Uri = request.TextDocument.Uri
                                             },
-                                            Edits = new TextEditContainer(ScriptRegion.ToTextEdit(markerCorrection.Edit))
+                                            Edits = new TextEditContainer(markerCorrection.Edit.ToTextEdit())
                                         }))
                             }
                         });
@@ -107,8 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             HashSet<string> ruleNamesProcessed = new();
             foreach (Diagnostic diagnostic in request.Context.Diagnostics)
             {
-                if (
-                    !diagnostic.Code.HasValue ||
+                if (!diagnostic.Code.HasValue ||
                     !diagnostic.Code.Value.IsString ||
                     string.IsNullOrEmpty(diagnostic.Code?.String))
                 {
@@ -131,13 +130,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         {
                             Title = title,
                             Name = "PowerShell.ShowCodeActionDocumentation",
-                            Arguments = Newtonsoft.Json.Linq.JArray.FromObject(new[] { diagnostic.Code?.String })
+                            Arguments = JArray.FromObject(new object[]
+                            {
+                                diagnostic.Code?.String
+                            },
+                            LspSerializer.Instance.JsonSerializer)
                         }
                     });
                 }
             }
 
-            return codeActions;
+            return codeActions.Count == 0
+                ? s_emptyCommandOrCodeActionContainer
+                : codeActions;
         }
     }
 }

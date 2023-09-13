@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -13,7 +14,6 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.Template;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.JsonRpc;
-using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Server;
 using Serilog;
@@ -70,7 +70,9 @@ namespace Microsoft.PowerShell.EditorServices.Server
         /// cref="PsesServiceCollectionExtensions.AddPsesLanguageServices"/>.
         /// </remarks>
         /// <returns>A task that completes when the server is ready and listening.</returns>
+#pragma warning disable CA1506 // Coupling complexity we don't care about
         public async Task StartAsync()
+#pragma warning restore CA1506
         {
             LanguageServer = await OmniSharp.Extensions.LanguageServer.Server.LanguageServer.From(options =>
             {
@@ -120,6 +122,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<ShowHelpHandler>()
                     .WithHandler<ExpandAliasHandler>()
                     .WithHandler<PsesSemanticTokensHandler>()
+                    .WithHandler<DidChangeWatchedFilesHandler>()
                     // NOTE: The OnInitialize delegate gets run when we first receive the
                     // _Initialize_ request:
                     // https://microsoft.github.io/language-server-protocol/specifications/specification-current/#initialize
@@ -130,12 +133,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                             WorkspaceService workspaceService = languageServer.Services.GetService<WorkspaceService>();
                             if (initializeParams.WorkspaceFolders is not null)
                             {
-                                // TODO: Support multi-workspace.
-                                foreach (WorkspaceFolder workspaceFolder in initializeParams.WorkspaceFolders)
-                                {
-                                    workspaceService.WorkspacePath = workspaceFolder.Uri.GetFileSystemPath();
-                                    break;
-                                }
+                                workspaceService.WorkspaceFolders.AddRange(initializeParams.WorkspaceFolders);
                             }
 
                             // Parse initialization options.
@@ -149,15 +147,25 @@ namespace Microsoft.PowerShell.EditorServices.Server
                                 //
                                 // NOTE: The keys start with a lowercase because OmniSharp's client
                                 // (used for testing) forces it to be that way.
-                                LoadProfiles = initializationOptions?.GetValue("enableProfileLoading")?.Value<bool>() ?? true,
-                                // TODO: Consider deprecating the setting which sets this and
-                                // instead use WorkspacePath exclusively.
-                                InitialWorkingDirectory = initializationOptions?.GetValue("initialWorkingDirectory")?.Value<string>() ?? workspaceService.WorkspacePath,
+                                LoadProfiles = initializationOptions?.GetValue("enableProfileLoading")?.Value<bool>()
+                                    ?? true,
+                                // First check the setting, then use the first workspace folder,
+                                // finally fall back to CWD.
+                                InitialWorkingDirectory = initializationOptions?.GetValue("initialWorkingDirectory")?.Value<string>()
+                                    ?? workspaceService.WorkspaceFolders.FirstOrDefault()?.Uri.GetFileSystemPath()
+                                    ?? Directory.GetCurrentDirectory(),
 
-                                SupportsBreakpointSync = initializationOptions?.GetValue("supportsBreakpointSync")?.Value<bool>() ?? false,
+                                SupportsBreakpointSync = initializationOptions?.GetValue("supportsBreakpointSync")?.Value<bool>()
+                                    ?? false,
+                              
+                                ShellIntegrationEnabled = initializationOptions?.GetValue("shellIntegrationEnabled")?.Value<bool>()
+                                    ?? false,
                             };
 
                             languageServer.Services.GetService<BreakpointSyncService>().IsSupported = hostStartOptions.SupportsBreakpointSync;
+
+                            workspaceService.InitialWorkingDirectory = hostStartOptions.InitialWorkingDirectory;
+
                             _psesHost = languageServer.Services.GetService<PsesInternalHost>();
                             return _psesHost.TryStartAsync(hostStartOptions, cancellationToken);
                         });

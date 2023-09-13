@@ -16,6 +16,15 @@ namespace PowerShellEditorServices.Test.E2E
 
         public LoggingStream(Stream underlyingStream) => _underlyingStream = underlyingStream;
 
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (disposing)
+            {
+                _underlyingStream.Dispose();
+            }
+        }
+
         public override bool CanRead => _underlyingStream.CanRead;
 
         public override bool CanSeek => _underlyingStream.CanSeek;

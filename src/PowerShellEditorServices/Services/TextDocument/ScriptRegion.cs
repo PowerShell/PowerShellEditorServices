@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+#nullable enable
+
 using System;
 using System.Management.Automation.Language;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -12,64 +14,42 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     /// </summary>
     public sealed class ScriptRegion : IScriptExtent
     {
-        #region Static Methods
+        internal TextEdit ToTextEdit() => new() { NewText = Text, Range = ToRange() };
 
-        /// <summary>
-        /// Creates a new instance of the ScriptRegion class from an
-        /// instance of an IScriptExtent implementation.
-        /// </summary>
-        /// <param name="scriptExtent">
-        /// The IScriptExtent to copy into the ScriptRegion.
-        /// </param>
-        /// <returns>
-        /// A new ScriptRegion instance with the same details as the IScriptExtent.
-        /// </returns>
-        public static ScriptRegion Create(IScriptExtent scriptExtent)
+        internal Range ToRange()
         {
-            // IScriptExtent throws an ArgumentOutOfRange exception if Text is null
-            string scriptExtentText;
-            try
+            return new Range
             {
-                scriptExtentText = scriptExtent.Text;
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                scriptExtentText = string.Empty;
-            }
-
-            return new ScriptRegion(
-                scriptExtent.File,
-                scriptExtentText,
-                scriptExtent.StartLineNumber,
-                scriptExtent.StartColumnNumber,
-                scriptExtent.StartOffset,
-                scriptExtent.EndLineNumber,
-                scriptExtent.EndColumnNumber,
-                scriptExtent.EndOffset);
-        }
-
-        internal static TextEdit ToTextEdit(ScriptRegion scriptRegion)
-        {
-            return new TextEdit
-            {
-                NewText = scriptRegion.Text,
-                Range = new Range
+                Start = new Position
                 {
-                    Start = new Position
-                    {
-                        Line = scriptRegion.StartLineNumber - 1,
-                        Character = scriptRegion.StartColumnNumber - 1,
-                    },
-                    End = new Position
-                    {
-                        Line = scriptRegion.EndLineNumber - 1,
-                        Character = scriptRegion.EndColumnNumber - 1,
-                    }
+                    Line = StartLineNumber - 1,
+                    Character = StartColumnNumber - 1
+                },
+                End = new Position
+                {
+                    Line = EndLineNumber - 1,
+                    Character = EndColumnNumber - 1
                 }
             };
         }
 
-        #endregion
+        // Same as PowerShell's EmptyScriptExtent
+        internal bool IsEmpty()
+        {
+            return StartLineNumber == 0 && StartColumnNumber == 0
+                && EndLineNumber == 0 && EndColumnNumber == 0
+                && string.IsNullOrEmpty(File)
+                && string.IsNullOrEmpty(Text);
+        }
+
+        // Do not use PowerShell's ContainsLineAndColumn, it's nonsense.
+        internal bool ContainsPosition(int line, int column)
+        {
+            return StartLineNumber <= line && line <= EndLineNumber
+                && StartColumnNumber <= column && column <= EndColumnNumber;
+        }
+
+        public override string ToString() => $"Start {StartLineNumber}:{StartColumnNumber}, End {EndLineNumber}:{EndColumnNumber}";
 
         #region Constructors
 
@@ -92,6 +72,33 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             EndColumnNumber = endColumnNumber;
             EndOffset = endOffset;
         }
+
+        public ScriptRegion(IScriptExtent scriptExtent)
+        {
+            File = scriptExtent.File;
+
+            // IScriptExtent throws an ArgumentOutOfRange exception if Text is null
+            try
+            {
+                Text = scriptExtent.Text;
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                Text = string.Empty;
+            }
+
+            StartLineNumber = scriptExtent.StartLineNumber;
+            StartColumnNumber = scriptExtent.StartColumnNumber;
+            StartOffset = scriptExtent.StartOffset;
+            EndLineNumber = scriptExtent.EndLineNumber;
+            EndColumnNumber = scriptExtent.EndColumnNumber;
+            EndOffset = scriptExtent.EndOffset;
+        }
+
+        /// <summary>
+        /// NOTE: While unused, we kept this as it was previously exposed on a public class.
+        /// </summary>
+        public static ScriptRegion Create(IScriptExtent scriptExtent) => new(scriptExtent);
 
         #endregion
 

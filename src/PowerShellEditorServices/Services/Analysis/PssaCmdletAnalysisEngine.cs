@@ -5,7 +5,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -67,34 +66,26 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             /// If PSScriptAnalyzer cannot be found, this will return null.
             /// </summary>
             /// <returns>A newly configured PssaCmdletAnalysisEngine, or null if PSScriptAnalyzer cannot be found.</returns>
-            public PssaCmdletAnalysisEngine Build()
+            public PssaCmdletAnalysisEngine Build(string pssaModulePath)
             {
                 // RunspacePool takes care of queuing commands for us so we do not
                 // need to worry about executing concurrent commands
                 ILogger logger = _loggerFactory.CreateLogger<PssaCmdletAnalysisEngine>();
                 try
                 {
-                    RunspacePool pssaRunspacePool = CreatePssaRunspacePool();
-
-                    PssaCmdletAnalysisEngine cmdletAnalysisEngine = _settingsParameter is not null
-                        ? new PssaCmdletAnalysisEngine(logger, pssaRunspacePool, _settingsParameter)
-                        : new PssaCmdletAnalysisEngine(logger, pssaRunspacePool, _rules);
-
+                    logger.LogDebug("Creating PSScriptAnalyzer runspace with module at: '{Path}'", pssaModulePath);
+                    RunspacePool pssaRunspacePool = CreatePssaRunspacePool(pssaModulePath);
+                    PssaCmdletAnalysisEngine cmdletAnalysisEngine = new(logger, pssaRunspacePool, _rules, _settingsParameter);
                     cmdletAnalysisEngine.LogAvailablePssaFeatures();
                     return cmdletAnalysisEngine;
                 }
-                catch (FileNotFoundException e)
+                catch (Exception ex)
                 {
-                    logger.LogError(e, $"Unable to find PSScriptAnalyzer. Disabling script analysis. PSModulePath: '{Environment.GetEnvironmentVariable("PSModulePath")}'");
+                    logger.LogError(ex, "Unable to load PSScriptAnalyzer, disabling script analysis!");
                     return null;
                 }
             }
         }
-
-        // This is a default that can be overriden at runtime by the user or tests.
-        // TODO: Deduplicate this logic with PsesInternalHost.
-        private static readonly string s_pssaModulePath = Path.GetFullPath(Path.Combine(
-            Path.GetDirectoryName(typeof(PssaCmdletAnalysisEngine).Assembly.Location), "..", "..", "..", "PSScriptAnalyzer"));
 
         /// <summary>
         /// The indentation to add when the logger lists errors.
@@ -114,32 +105,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 
         private readonly RunspacePool _analysisRunspacePool;
 
-        private readonly object _settingsParameter;
+        internal readonly object _settingsParameter;
 
-        private readonly string[] _rulesToInclude;
-
-        private PssaCmdletAnalysisEngine(
-            ILogger logger,
-            RunspacePool analysisRunspacePool,
-            string[] rulesToInclude)
-            : this(logger, analysisRunspacePool) => _rulesToInclude = rulesToInclude;
+        internal readonly string[] _rulesToInclude;
 
         private PssaCmdletAnalysisEngine(
             ILogger logger,
             RunspacePool analysisRunspacePool,
-            object analysisSettingsParameter)
-            : this(logger, analysisRunspacePool) => _settingsParameter = analysisSettingsParameter;
-
-        private PssaCmdletAnalysisEngine(
-            ILogger logger,
-            RunspacePool analysisRunspacePool)
+            string[] rulesToInclude = default,
+            object analysisSettingsParameter = default)
         {
             _logger = logger;
             _analysisRunspacePool = analysisRunspacePool;
+            _rulesToInclude = rulesToInclude;
+            _settingsParameter = analysisSettingsParameter;
         }
 
         /// <summary>
         /// Format a script given its contents.
+        /// TODO: This needs to be cancellable.
         /// </summary>
         /// <param name="scriptDefinition">The full text of a script.</param>
         /// <param name="formatSettings">The formatter settings to use.</param>
@@ -237,9 +221,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             return GetSemanticMarkersFromCommandAsync(command);
         }
 
-        public PssaCmdletAnalysisEngine RecreateWithNewSettings(string settingsPath) => new(_logger, _analysisRunspacePool, settingsPath);
+        public PssaCmdletAnalysisEngine RecreateWithNewSettings(string settingsPath) => new(
+            _logger,
+            _analysisRunspacePool,
+            rulesToInclude: null,
+            analysisSettingsParameter: settingsPath);
 
-        public PssaCmdletAnalysisEngine RecreateWithRules(string[] rules) => new(_logger, _analysisRunspacePool, rules);
+        public PssaCmdletAnalysisEngine RecreateWithRules(string[] rules) => new(
+            _logger,
+            _analysisRunspacePool,
+            rulesToInclude: rules,
+            analysisSettingsParameter: null);
 
         #region IDisposable Support
         private bool disposedValue; // To detect redundant calls
@@ -365,7 +357,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
         /// This looks for the latest version of PSScriptAnalyzer on the path and loads that.
         /// </summary>
         /// <returns>A runspace pool with PSScriptAnalyzer loaded for running script analysis tasks.</returns>
-        private static RunspacePool CreatePssaRunspacePool()
+        private static RunspacePool CreatePssaRunspacePool(string pssaModulePath)
         {
             using PowerShell pwsh = PowerShell.Create(RunspaceMode.NewRunspace);
 
@@ -375,10 +367,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             // We intentionally use `CreateDefault2()` as it loads `Microsoft.PowerShell.Core`
             // only, which is a more minimal and therefore safer state.
             InitialSessionState sessionState = InitialSessionState.CreateDefault2();
-
-            sessionState.ImportPSModulesFromPath(s_pssaModulePath);
-            // pwsh.ImportModule(s_pssaModulePath);
-            // sessionState.ImportPSModule(new[] { pssaModuleInfo.ModuleBase });
+            sessionState.ImportPSModulesFromPath(pssaModulePath);
 
             RunspacePool runspacePool = RunspaceFactory.CreateRunspacePool(sessionState);
 

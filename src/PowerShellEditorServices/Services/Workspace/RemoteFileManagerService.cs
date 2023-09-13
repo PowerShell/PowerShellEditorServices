@@ -316,7 +316,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         {
                             // Load the file contents from the remote machine and create the buffer
                             PSCommand command = new PSCommand()
-                                .AddCommand("Microsoft.PowerShell.Management\\Get-Content")
+                                .AddCommand(@"Microsoft.PowerShell.Management\Get-Content")
                                 .AddParameter("Path", remoteFilePath)
                                 .AddParameter("Raw");
 
@@ -528,24 +528,22 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             // Close any remote files that were opened
-            if (ShouldTearDownRemoteFiles(e))
+            if (ShouldTearDownRemoteFiles(e)
+                && filesPerComputer.TryGetValue(e.PreviousRunspace.SessionDetails.ComputerName, out RemotePathMappings remotePathMappings))
             {
-                if (filesPerComputer.TryGetValue(e.PreviousRunspace.SessionDetails.ComputerName, out RemotePathMappings remotePathMappings))
+                List<Task> fileCloseTasks = new();
+                foreach (string remotePath in remotePathMappings.OpenedPaths)
                 {
-                    List<Task> fileCloseTasks = new();
-                    foreach (string remotePath in remotePathMappings.OpenedPaths)
-                    {
-                        fileCloseTasks.Add(editorOperations?.CloseFileAsync(remotePath));
-                    }
+                    fileCloseTasks.Add(editorOperations?.CloseFileAsync(remotePath));
+                }
 
-                    try
-                    {
-                        Task.WaitAll(fileCloseTasks.ToArray());
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogError(ex, "Unable to close all files in closed runspace");
-                    }
+                try
+                {
+                    Task.WaitAll(fileCloseTasks.ToArray());
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Unable to close all files in closed runspace");
                 }
             }
 

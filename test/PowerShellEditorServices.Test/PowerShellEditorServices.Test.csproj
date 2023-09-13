@@ -1,15 +1,14 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;netcoreapp3.1;net462</TargetFrameworks>
+    <TargetFrameworks>net7.0;net6.0;net462</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices.Test</AssemblyName>
     <TargetPlatform>x64</TargetPlatform>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+  <PropertyGroup Condition=" '$(TargetFramework)' != 'net462' ">
+    <DefineConstants>$(DefineConstants);CoreCLR</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,26 +16,26 @@
     <ProjectReference Include="..\PowerShellEditorServices.Test.Shared\PowerShellEditorServices.Test.Shared.csproj" />
   </ItemGroup>
 
-  <!-- This is for testing PowerShell 7.2 LTS -->
+  <!-- Latest PowerShell i.e. 7.3.x -->
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net7.0' ">
+      <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.3.5" />
+  </ItemGroup>
+
+  <!-- PowerShell LTS i.e. 7.2.x -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.5" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.12" />
   </ItemGroup>
 
-  <!-- This is for testing PowerShell 7.0 LTS and so needs to be 7.0.x -->
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.0.11" />
-  </ItemGroup>
-
+  <!-- Windows PowerShell 5.1 -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net462' ">
     <PackageReference Include="Microsoft.PowerShell.5.ReferenceAssemblies" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
-    <PackageReference Include="xunit" Version="2.4.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
+    <PackageReference Include="xunit" Version="2.5.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.0" />
     <PackageReference Include="Xunit.SkippableFact" Version="1.4.13" />
-    <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.19.5" />
   </ItemGroup>
 
   <ItemGroup>
@@ -53,7 +52,4 @@
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' != 'net462' ">
-    <DefineConstants>$(DefineConstants);CoreCLR</DefineConstants>
-  </PropertyGroup>
 </Project>

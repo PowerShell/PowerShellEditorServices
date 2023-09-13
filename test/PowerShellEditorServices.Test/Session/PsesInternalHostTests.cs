@@ -11,9 +11,10 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
+using Microsoft.PowerShell.EditorServices.Test;
 using Xunit;
 
-namespace Microsoft.PowerShell.EditorServices.Test.Console
+namespace PowerShellEditorServices.Test.Session
 {
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;
@@ -27,7 +28,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
 
         public void Dispose()
         {
+#pragma warning disable VSTHRD002
             psesHost.StopAsync().Wait();
+#pragma warning restore VSTHRD002
             GC.SuppressFinalize(this);
         }
 
@@ -84,11 +87,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         [Fact]
         public async Task CanCancelExecutionWithToken()
         {
-            await Assert.ThrowsAsync<TaskCanceledException>(() =>
+            using CancellationTokenSource cancellationSource = new(millisecondsDelay: 1000);
+            _ = await Assert.ThrowsAsync<TaskCanceledException>(() =>
             {
                 return psesHost.ExecutePSCommandAsync(
                     new PSCommand().AddScript("Start-Sleep 10"),
-                    new CancellationTokenSource(1000).Token);
+                    cancellationSource.Token);
             }).ConfigureAwait(true);
         }
 
@@ -108,11 +112,149 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
         }
 
         [Fact]
+        public async Task CanHandleNoProfiles()
+        {
+            // Call LoadProfiles with profile paths that won't exist, and assert that it does not
+            // throw PSInvalidOperationException (which it previously did when it tried to invoke an
+            // empty command).
+            ProfilePathInfo emptyProfilePaths = new("", "", "", "");
+            await psesHost.ExecuteDelegateAsync(
+                "LoadProfiles",
+                executionOptions: null,
+                (pwsh, _) =>
+                {
+                    pwsh.LoadProfiles(emptyProfilePaths);
+                    Assert.Empty(pwsh.Commands.Commands);
+                },
+                CancellationToken.None).ConfigureAwait(true);
+        }
+
+        // NOTE: Tests where we call functions that use PowerShell runspaces are slightly more
+        // complicated than one would expect because we explicitly need the methods to run on the
+        // pipeline thread, otherwise Windows complains about the the thread's apartment state not
+        // matching. Hence we use a delegate where it looks like we could just call the method.
+
+        [Fact]
+        public async Task CanHandleBrokenPrompt()
+        {
+            _ = await Assert.ThrowsAsync<RuntimeException>(() =>
+            {
+                return psesHost.ExecutePSCommandAsync(
+                    new PSCommand().AddScript("function prompt { throw }; prompt"),
+                    CancellationToken.None);
+            }).ConfigureAwait(true);
+
+            string prompt = await psesHost.ExecuteDelegateAsync(
+                nameof(psesHost.GetPrompt),
+                executionOptions: null,
+                (_, _) => psesHost.GetPrompt(CancellationToken.None),
+                CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Equal(PsesInternalHost.DefaultPrompt, prompt);
+        }
+
+        [Fact]
+        public async Task CanHandleUndefinedPrompt()
+        {
+            Assert.Empty(await psesHost.ExecutePSCommandAsync<PSObject>(
+                new PSCommand().AddScript("Remove-Item function:prompt; Get-Item function:prompt -ErrorAction Ignore"),
+                CancellationToken.None).ConfigureAwait(true));
+
+            string prompt = await psesHost.ExecuteDelegateAsync(
+                nameof(psesHost.GetPrompt),
+                executionOptions: null,
+                (_, _) => psesHost.GetPrompt(CancellationToken.None),
+                CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Equal(PsesInternalHost.DefaultPrompt, prompt);
+        }
+
+        [Fact]
+        public async Task CanRunOnIdleTask()
+        {
+            IReadOnlyList<PSObject> task = await psesHost.ExecutePSCommandAsync<PSObject>(
+                new PSCommand().AddScript("$handled = $false; Register-EngineEvent -SourceIdentifier PowerShell.OnIdle -MaxTriggerCount 1 -Action { $global:handled = $true }"),
+                CancellationToken.None).ConfigureAwait(true);
+
+            IReadOnlyList<bool> handled = await psesHost.ExecutePSCommandAsync<bool>(
+                new PSCommand().AddScript("$handled"),
+                CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Collection(handled, Assert.False);
+
+            await psesHost.ExecuteDelegateAsync(
+                nameof(psesHost.OnPowerShellIdle),
+                executionOptions: null,
+                (_, _) => psesHost.OnPowerShellIdle(CancellationToken.None),
+                CancellationToken.None).ConfigureAwait(true);
+
+            // TODO: Why is this racy?
+            Thread.Sleep(2000);
+
+            handled = await psesHost.ExecutePSCommandAsync<bool>(
+                new PSCommand().AddScript("$handled"),
+                CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Collection(handled, Assert.True);
+        }
+
+        [Fact]
+        public async Task CanLoadPSReadLine()
+        {
+            Assert.True(await psesHost.ExecuteDelegateAsync(
+                nameof(psesHost.TryLoadPSReadLine),
+                executionOptions: null,
+                (pwsh, _) => psesHost.TryLoadPSReadLine(
+                    pwsh,
+                    (EngineIntrinsics)pwsh.Runspace.SessionStateProxy.GetVariable("ExecutionContext"),
+                    out IReadLine readLine),
+                CancellationToken.None).ConfigureAwait(true));
+        }
+
+        // This test asserts that we do not mess up the console encoding, which leads to native
+        // commands receiving piped input failing.
+        [Fact]
+        public async Task ExecutesNativeCommandsCorrectly()
+        {
+            await psesHost.ExecutePSCommandAsync(
+                new PSCommand().AddScript("\"protocol=https`nhost=myhost.com`nusername=john`npassword=doe`n`n\" | git.exe credential approve; if ($LastExitCode) { throw }"),
+                CancellationToken.None).ConfigureAwait(true);
+        }
+
+        [Theory]
+        [InlineData("")] // Regression test for "unset" path.
+        [InlineData(@"C:\Some\Bad\Directory")] // Non-existent directory.
+        [InlineData("testhost.dll")] // Existent file.
+        public async Task CanHandleBadInitialWorkingDirectory(string path)
+        {
+            string cwd = Environment.CurrentDirectory;
+            await psesHost.SetInitialWorkingDirectoryAsync(path, CancellationToken.None).ConfigureAwait(true);
+
+            IReadOnlyList<string> getLocation = await psesHost.ExecutePSCommandAsync<string>(
+                new PSCommand().AddCommand("Get-Location"),
+                CancellationToken.None).ConfigureAwait(true);
+            Assert.Collection(getLocation, (d) => Assert.Equal(cwd, d, ignoreCase: true));
+        }
+    }
+
+    [Trait("Category", "PsesInternalHost")]
+    public class PsesInternalHostWithProfileTests : IDisposable
+    {
+        private readonly PsesInternalHost psesHost;
+
+        public PsesInternalHostWithProfileTests() => psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance, loadProfiles: true);
+
+        public void Dispose()
+        {
+#pragma warning disable VSTHRD002
+            psesHost.StopAsync().Wait();
+#pragma warning restore VSTHRD002
+            GC.SuppressFinalize(this);
+        }
+
+        [Fact]
         public async Task CanResolveAndLoadProfilesForHostId()
         {
-            // Load the profiles for the test host name
-            await psesHost.LoadHostProfilesAsync(CancellationToken.None).ConfigureAwait(true);
-
             // Ensure that the $PROFILE variable is a string with the value of CurrentUserCurrentHost.
             IReadOnlyList<string> profileVariable = await psesHost.ExecutePSCommandAsync<string>(
                 new PSCommand().AddScript("$PROFILE"),
@@ -137,50 +279,29 @@ namespace Microsoft.PowerShell.EditorServices.Test.Console
                 new PSCommand().AddScript("Assert-ProfileLoaded"),
                 CancellationToken.None).ConfigureAwait(true);
 
-            Assert.Collection(profileLoaded, (p) => Assert.True(p));
+            Assert.Collection(profileLoaded, Assert.True);
         }
 
+        // This test specifically relies on a handler registered in the test profile, and on the
+        // test host loading the profiles during startup, that way the pipeline timing is
+        // consistent.
         [Fact]
-        public async Task CanHandleNoProfiles()
+        public async Task CanRunOnIdleInProfileTask()
         {
-            // Call LoadProfiles with profile paths that won't exist, and assert that it does not
-            // throw PSInvalidOperationException (which it previously did when it tried to invoke an
-            // empty command).
-            ProfilePathInfo emptyProfilePaths = new("", "", "", "");
             await psesHost.ExecuteDelegateAsync(
-                "LoadProfiles",
+                nameof(psesHost.OnPowerShellIdle),
                 executionOptions: null,
-                (pwsh, _) => {
-                    pwsh.LoadProfiles(emptyProfilePaths);
-                    Assert.Empty(pwsh.Commands.Commands);
-                },
+                (_, _) => psesHost.OnPowerShellIdle(CancellationToken.None),
                 CancellationToken.None).ConfigureAwait(true);
-        }
 
-        [Fact]
-        public async Task CanLoadPSReadLine()
-        {
-            // NOTE: This is slightly more complicated than one would expect because we explicitly
-            // need it to run on the pipeline thread otherwise Windows complains about the the
-            // thread's appartment state not matching.
-            Assert.True(await psesHost.ExecuteDelegateAsync(
-                nameof(psesHost.TryLoadPSReadLine),
-                executionOptions: null,
-                (pwsh, _) => psesHost.TryLoadPSReadLine(
-                    pwsh,
-                    (EngineIntrinsics)pwsh.Runspace.SessionStateProxy.GetVariable("ExecutionContext"),
-                    out IReadLine readLine),
-                CancellationToken.None).ConfigureAwait(true));
-        }
+            // TODO: Why is this racy?
+            Thread.Sleep(2000);
 
-        // This test asserts that we do not mess up the console encoding, which leads to native
-        // commands receiving piped input failing.
-        [Fact]
-        public async Task ExecutesNativeCommandsCorrectly()
-        {
-            await psesHost.ExecutePSCommandAsync(
-                new PSCommand().AddScript("\"protocol=https`nhost=myhost.com`nusername=john`npassword=doe`n`n\" | git.exe credential approve; if ($LastExitCode) { throw }"),
+            IReadOnlyList<bool> handled = await psesHost.ExecutePSCommandAsync<bool>(
+                new PSCommand().AddScript("$handledInProfile"),
                 CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Collection(handled, Assert.True);
         }
     }
 }

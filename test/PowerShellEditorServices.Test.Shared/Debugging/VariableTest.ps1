@@ -51,3 +51,16 @@ $sortedDictionary['blue'] = 'red'
 
 # This is a dummy function that the test will use to stop and evaluate the debug environment
 function __BreakDebuggerDerivedDictionaryPropertyInRawView{}; __BreakDebuggerDerivedDictionaryPropertyInRawView
+
+class CustomToString {
+    [String]$String = 'Hello'
+    [String]ToString() {
+        return $this.String.ToUpper()
+    }
+}
+$SCRIPT:CustomToStrings = 1..1000 | ForEach-Object {
+    [CustomToString]::new()
+}
+
+# This is a dummy function that the test will use to stop and evaluate the debug environment
+function __BreakDebuggerToStringShouldMarshallToPipeline{}; __BreakDebuggerToStringShouldMarshallToPipeline

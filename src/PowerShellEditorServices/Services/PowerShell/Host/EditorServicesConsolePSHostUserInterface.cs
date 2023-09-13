@@ -70,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             _underlyingHostUI.WriteProgress(sourceId, record);
         }
 
-        public void ResetProgress()
+        internal void ResetProgress()
         {
             // Mark all processed progress records as completed.
             foreach ((long sourceId, int activityId) in _currentProgressRecords.Keys)

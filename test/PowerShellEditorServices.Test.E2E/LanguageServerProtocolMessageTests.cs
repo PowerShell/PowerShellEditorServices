@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -12,6 +12,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Handlers;
+using Microsoft.PowerShell.EditorServices.Logging;
+using Microsoft.PowerShell.EditorServices.Services.Configuration;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.Template;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client;
@@ -21,10 +25,6 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 using Xunit;
 using Xunit.Abstractions;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
-using Microsoft.PowerShell.EditorServices.Logging;
-using Microsoft.PowerShell.EditorServices.Services.Configuration;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell;
-using Microsoft.PowerShell.EditorServices.Services.Template;
 
 namespace PowerShellEditorServices.Test.E2E
 {
@@ -38,6 +38,7 @@ namespace PowerShellEditorServices.Test.E2E
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
         private readonly ILanguageClient PsesLanguageClient;
+        private readonly List<LogMessageParams> Messages;
         private readonly List<Diagnostic> Diagnostics;
         private readonly List<PsesTelemetryEvent> TelemetryEvents;
         private readonly string PwshExe;
@@ -46,6 +47,8 @@ namespace PowerShellEditorServices.Test.E2E
         {
             data.Output = output;
             PsesLanguageClient = data.PsesLanguageClient;
+            Messages = data.Messages;
+            Messages.Clear();
             Diagnostics = data.Diagnostics;
             Diagnostics.Clear();
             TelemetryEvents = data.TelemetryEvents;
@@ -148,14 +151,13 @@ function CanSendWorkspaceSymbolRequest {
                 .Returning<Container<SymbolInformation>>(CancellationToken.None).ConfigureAwait(true);
 
             SymbolInformation symbol = Assert.Single(symbols);
-            Assert.Equal("CanSendWorkspaceSymbolRequest { }", symbol.Name);
+            Assert.Equal("function CanSendWorkspaceSymbolRequest ()", symbol.Name);
         }
 
         [SkippableFact]
         public async Task CanReceiveDiagnosticsFromFileOpenAsync()
         {
-            Skip.If(
-                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             NewTestFile("$a = 4");
@@ -177,8 +179,7 @@ function CanSendWorkspaceSymbolRequest {
         [SkippableFact]
         public async Task CanReceiveDiagnosticsFromFileChangedAsync()
         {
-            Skip.If(
-                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string filePath = NewTestFile("$a = 4");
@@ -229,8 +230,7 @@ function CanSendWorkspaceSymbolRequest {
         [SkippableFact]
         public async Task CanReceiveDiagnosticsFromConfigurationChangeAsync()
         {
-            Skip.If(
-                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             NewTestFile("gci | % { $_ }");
@@ -330,8 +330,7 @@ $_
         [SkippableFact]
         public async Task CanSendFormattingRequestAsync()
         {
-            Skip.If(
-                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string scriptPath = NewTestFile(@"
@@ -367,8 +366,7 @@ Get-Process
         [SkippableFact]
         public async Task CanSendRangeFormattingRequestAsync()
         {
-            Skip.If(
-                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string scriptPath = NewTestFile(@"
@@ -444,7 +442,7 @@ CanSendDocumentSymbolRequest
                     Range range = symInfoOrDocSym.SymbolInformation.Location.Range;
 
                     Assert.Equal(1, range.Start.Line);
-                    Assert.Equal(0, range.Start.Character);
+                    Assert.Equal(9, range.Start.Character);
                     Assert.Equal(3, range.End.Line);
                     Assert.Equal(1, range.End.Character);
                 });
@@ -483,17 +481,9 @@ CanSendReferencesRequest
                 .Returning<LocationContainer>(CancellationToken.None).ConfigureAwait(true);
 
             Assert.Collection(locations,
-                location1 =>
+                location =>
                 {
-                    Range range = location1.Range;
-                    Assert.Equal(1, range.Start.Line);
-                    Assert.Equal(9, range.Start.Character);
-                    Assert.Equal(1, range.End.Line);
-                    Assert.Equal(33, range.End.Character);
-                },
-                location2 =>
-                {
-                    Range range = location2.Range;
+                    Range range = location.Range;
                     Assert.Equal(5, range.Start.Line);
                     Assert.Equal(0, range.Start.Character);
                     Assert.Equal(5, range.End.Line);
@@ -528,7 +518,7 @@ Write-Host 'Goodbye'
                         })
                     .Returning<DocumentHighlightContainer>(CancellationToken.None).ConfigureAwait(true);
 
-            Assert.Collection(documentHighlights,
+            Assert.Collection(documentHighlights.OrderBy(i => i.Range.Start.Line),
                 documentHighlight1 =>
                 {
                     Range range = documentHighlight1.Range;
@@ -576,7 +566,7 @@ Write-Host 'Goodbye'
                     await PsesLanguageClient
                         .SendRequest(
                             "powerShell/getPSHostProcesses",
-                            new GetPSHostProcesssesParams())
+                            new GetPSHostProcessesParams())
                         .Returning<PSHostProcessResponse[]>(CancellationToken.None).ConfigureAwait(true);
             }
             finally
@@ -851,7 +841,7 @@ Describe 'DescribeName' {
         }
 
         [Fact]
-        public async Task CanSendReferencesCodeLensRequestAsync()
+        public async Task CanSendFunctionReferencesCodeLensRequestAsync()
         {
             string filePath = NewTestFile(@"
 function CanSendReferencesCodeLensRequest {
@@ -877,9 +867,9 @@ CanSendReferencesCodeLensRequest
 
             Range range = codeLens.Range;
             Assert.Equal(1, range.Start.Line);
-            Assert.Equal(0, range.Start.Character);
-            Assert.Equal(3, range.End.Line);
-            Assert.Equal(1, range.End.Character);
+            Assert.Equal(9, range.Start.Character);
+            Assert.Equal(1, range.End.Line);
+            Assert.Equal(41, range.End.Character);
 
             CodeLens codeLensResolveResult = await PsesLanguageClient
                 .SendRequest("codeLens/resolve", codeLens)
@@ -888,11 +878,114 @@ CanSendReferencesCodeLensRequest
             Assert.Equal("1 reference", codeLensResolveResult.Command.Title);
         }
 
+        [Fact]
+        public async Task CanSendClassReferencesCodeLensRequestAsync()
+        {
+            string filePath = NewTestFile(@"
+param(
+    [MyBaseClass]$enumValue
+)
+
+class MyBaseClass {
+
+}
+
+class ChildClass : MyBaseClass, System.IDisposable {
+
+}
+
+$o = [MyBaseClass]::new()
+$o -is [MyBaseClass]
+");
+
+            CodeLensContainer codeLenses = await PsesLanguageClient
+                .SendRequest(
+                    "textDocument/codeLens",
+                    new CodeLensParams
+                    {
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = new Uri(filePath)
+                        }
+                    })
+                .Returning<CodeLensContainer>(CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Collection(codeLenses.OrderBy(i => i.Range.Start.Line),
+                codeLens =>
+                {
+                    Range range = codeLens.Range;
+                    Assert.Equal(5, range.Start.Line);
+                    Assert.Equal(6, range.Start.Character);
+                    Assert.Equal(5, range.End.Line);
+                    Assert.Equal(17, range.End.Character);
+                },
+                codeLens =>
+                {
+                    Range range = codeLens.Range;
+                    Assert.Equal(9, range.Start.Line);
+                    Assert.Equal(6, range.Start.Character);
+                    Assert.Equal(9, range.End.Line);
+                    Assert.Equal(16, range.End.Character);
+                }
+            );
+
+            CodeLens baseClassCodeLens = codeLenses.OrderBy(i => i.Range.Start.Line).First();
+            CodeLens codeLensResolveResult = await PsesLanguageClient
+                .SendRequest("codeLens/resolve", baseClassCodeLens)
+                .Returning<CodeLens>(CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Equal("4 references", codeLensResolveResult.Command.Title);
+        }
+
+        [Fact]
+        public async Task CanSendEnumReferencesCodeLensRequestAsync()
+        {
+            string filePath = NewTestFile(@"
+param(
+    [MyEnum]$enumValue
+)
+
+enum MyEnum {
+    First = 1
+    Second
+    Third
+}
+
+[MyEnum]::First
+'First' -is [MyEnum]
+");
+
+            CodeLensContainer codeLenses = await PsesLanguageClient
+                .SendRequest(
+                    "textDocument/codeLens",
+                    new CodeLensParams
+                    {
+                        TextDocument = new TextDocumentIdentifier
+                        {
+                            Uri = new Uri(filePath)
+                        }
+                    })
+                .Returning<CodeLensContainer>(CancellationToken.None).ConfigureAwait(true);
+
+            CodeLens codeLens = Assert.Single(codeLenses);
+
+            Range range = codeLens.Range;
+            Assert.Equal(5, range.Start.Line);
+            Assert.Equal(5, range.Start.Character);
+            Assert.Equal(5, range.End.Line);
+            Assert.Equal(11, range.End.Character);
+
+            CodeLens codeLensResolveResult = await PsesLanguageClient
+                .SendRequest("codeLens/resolve", codeLens)
+                .Returning<CodeLens>(CancellationToken.None).ConfigureAwait(true);
+
+            Assert.Equal("3 references", codeLensResolveResult.Command.Title);
+        }
+
         [SkippableFact]
         public async Task CanSendCodeActionRequestAsync()
         {
-            Skip.If(
-                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string filePath = NewTestFile("gci");
@@ -971,7 +1064,37 @@ CanSendReferencesCodeLensRequest
             Assert.Contains("Writes customized output to a host", updatedCompletionItem.Documentation.String);
         }
 
-        [SkippableFact(Skip = "This test is too flaky right now.")]
+        // Regression test for https://github.com/PowerShell/PowerShellEditorServices/issues/1926
+        [SkippableFact]
+        public async Task CanRequestCompletionsAndHandleExceptions()
+        {
+            Skip.If(PsesStdioProcess.IsWindowsPowerShell, "This is a temporary bug in PowerShell 7, the fix is making its way upstream.");
+            string filePath = NewTestFile(@"
+@() | ForEach-Object {
+    if ($false) {
+      return
+    }
+
+    @{key=$}
+  }");
+
+            Messages.Clear(); //  On some systems there's a warning message about configuration items too.
+            CompletionList completionItems = await PsesLanguageClient.TextDocument.RequestCompletion(
+                new CompletionParams
+                {
+                    TextDocument = new TextDocumentIdentifier
+                    {
+                        Uri = DocumentUri.FromFileSystemPath(filePath)
+                    },
+                    Position = new Position(line: 6, character: 11)
+                });
+
+            Assert.Empty(completionItems);
+            LogMessageParams message = Assert.Single(Messages);
+            Assert.Contains("Exception occurred while running handling completion request", message.Message);
+        }
+
+        [SkippableFact(Skip = "Completion for Expand-SlowArchive is flaky.")]
         public async Task CanSendCompletionResolveWithModulePrefixRequestAsync()
         {
             await PsesLanguageClient
@@ -1023,7 +1146,7 @@ CanSendReferencesCodeLensRequest
 
             Assert.True(hover.Contents.HasMarkedStrings);
             Assert.Collection(hover.Contents.MarkedStrings,
-                str1 => Assert.Equal("function Write-Host", str1.Value),
+                str1 => Assert.Equal("Write-Host", str1.Value),
                 str2 =>
                 {
                     Assert.Equal("markdown", str2.Language);
@@ -1034,7 +1157,7 @@ CanSendReferencesCodeLensRequest
         [Fact]
         public async Task CanSendSignatureHelpRequestAsync()
         {
-            string filePath = NewTestFile("Get-Date ");
+            string filePath = NewTestFile("Get-Date -");
 
             SignatureHelp signatureHelp = await PsesLanguageClient
                 .SendRequest(
@@ -1048,7 +1171,7 @@ CanSendReferencesCodeLensRequest
                         Position = new Position
                         {
                             Line = 0,
-                            Character = 9
+                            Character = 10
                         }
                     })
                 .Returning<SignatureHelp>(CancellationToken.None).ConfigureAwait(true);
@@ -1090,7 +1213,8 @@ CanSendDefinitionRequest
         [SkippableFact]
         public async Task CanSendGetProjectTemplatesRequestAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode, "Plaster doesn't work in ConstrainedLanguage mode.");
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode,
+                "Plaster doesn't work in Constrained Language Mode.");
 
             GetProjectTemplatesResponse getProjectTemplatesResponse =
                 await PsesLanguageClient
@@ -1109,8 +1233,7 @@ CanSendDefinitionRequest
         [SkippableFact]
         public async Task CanSendGetCommentHelpRequestAsync()
         {
-            Skip.If(
-                PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string scriptPath = NewTestFile(@"
@@ -1149,8 +1272,6 @@ function CanSendGetCommentHelpRequest {
         [Fact]
         public async Task CanSendEvaluateRequestAsync()
         {
-            using CancellationTokenSource cancellationSource = new(millisecondsDelay: 5000);
-
             EvaluateResponseBody evaluateResponseBody =
                 await PsesLanguageClient
                     .SendRequest(
@@ -1159,7 +1280,7 @@ function CanSendGetCommentHelpRequest {
                         {
                             Expression = "Get-ChildItem"
                         })
-                    .Returning<EvaluateResponseBody>(cancellationSource.Token).ConfigureAwait(true);
+                    .Returning<EvaluateResponseBody>(CancellationToken.None).ConfigureAwait(true);
 
             // These always gets returned so this test really just makes sure we get _any_ response.
             Assert.Equal("", evaluateResponseBody.Result);
@@ -1182,9 +1303,8 @@ function CanSendGetCommentHelpRequest {
         [SkippableFact]
         public async Task CanSendExpandAliasRequestAsync()
         {
-            Skip.If(
-                PsesStdioProcess.RunningInConstrainedLanguageMode,
-                "This feature currently doesn't support ConstrainedLanguage Mode.");
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode,
+                "The expand alias request doesn't work in Constrained Language Mode.");
 
             ExpandAliasResult expandAliasResult =
                 await PsesLanguageClient

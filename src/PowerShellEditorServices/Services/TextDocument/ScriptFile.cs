@@ -7,7 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Language;
-using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 
@@ -33,13 +32,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         #region Properties
 
         /// <summary>
-        /// Gets a unique string that identifies this file.  At this time,
-        /// this property returns a normalized version of the value stored
-        /// in the FilePath property.
-        /// </summary>
-        public string Id => FilePath.ToLower();
-
-        /// <summary>
         /// Gets the path at which this file resides.
         /// </summary>
         public string FilePath { get; }
@@ -53,6 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// Gets or sets a boolean that determines whether
         /// semantic analysis should be enabled for this file.
         /// For internal use only.
+        /// TODO: Actually use and respect this property to avoid built-in files from being analyzed.
         /// </summary>
         internal bool IsAnalysisEnabled { get; set; }
 
@@ -110,14 +103,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             private set;
         }
 
-        /// <summary>
-        /// Gets the array of filepaths dot sourced in this ScriptFile
-        /// </summary>
-        public string[] ReferencedFiles
-        {
-            get;
-            private set;
-        }
+        internal ReferenceTable References { get; }
+
+        internal bool IsOpen { get; set; }
 
         #endregion
 
@@ -149,6 +137,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
             // SetFileContents() calls ParseFileContents() which initializes the rest of the properties.
             SetFileContents(textReader.ReadToEnd());
+            References = new ReferenceTable(this);
         }
 
         /// <summary>
@@ -177,14 +166,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// </summary>
         /// <param name="text">Input string to be split up into lines.</param>
         /// <returns>The lines in the string.</returns>
-        internal static IList<string> GetLines(string text) => GetLinesInternal(text);
-
-        /// <summary>
-        /// Get the lines in a string.
-        /// </summary>
-        /// <param name="text">Input string to be split up into lines.</param>
-        /// <returns>The lines in the string.</returns>
-        internal static List<string> GetLinesInternal(string text)
+        internal static List<string> GetLines(string text)
         {
             if (text == null)
             {
@@ -383,6 +365,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
             // Parse the script again to be up-to-date
             ParseFileContents();
+            References.TagAsChanged();
         }
 
         /// <summary>
@@ -519,11 +502,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
         #region Private Methods
 
-        private void SetFileContents(string fileContents)
+        internal void SetFileContents(string fileContents)
         {
             // Split the file contents into lines and trim
             // any carriage returns from the strings.
-            FileLines = GetLinesInternal(fileContents);
+            FileLines = GetLines(fileContents);
 
             // Parse the contents to get syntax tree and errors
             ParseFileContents();
@@ -593,20 +576,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                 parseErrors
                     .Select(ScriptFileMarker.FromParseError)
                     .ToList();
-
-            // Untitled files have no directory
-            // Discussed in https://github.com/PowerShell/PowerShellEditorServices/pull/815.
-            // Rather than working hard to enable things for untitled files like a phantom directory,
-            // users should save the file.
-            if (IsInMemory)
-            {
-                // Need to initialize the ReferencedFiles property to an empty array.
-                ReferencedFiles = Array.Empty<string>();
-                return;
-            }
-
-            // Get all dot sourced referenced files and store them
-            ReferencedFiles = AstOperations.FindDotSourcedIncludes(ScriptAst, Path.GetDirectoryName(FilePath));
         }
 
         #endregion

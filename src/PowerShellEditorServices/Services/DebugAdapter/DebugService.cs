@@ -130,12 +130,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="breakpoints">BreakpointDetails for each breakpoint that will be set.</param>
         /// <param name="clearExisting">If true, causes all existing breakpoints to be cleared before setting new ones.</param>
         /// <returns>An awaitable Task that will provide details about the breakpoints that were set.</returns>
-        public async Task<BreakpointDetails[]> SetLineBreakpointsAsync(
+        public async Task<IReadOnlyList<BreakpointDetails>> SetLineBreakpointsAsync(
             ScriptFile scriptFile,
-            BreakpointDetails[] breakpoints,
+            IReadOnlyList<BreakpointDetails> breakpoints,
             bool clearExisting = true)
         {
-            DscBreakpointCapability dscBreakpoints = await _debugContext.GetDscBreakpointCapabilityAsync(CancellationToken.None).ConfigureAwait(false);
+            DscBreakpointCapability dscBreakpoints = await _debugContext.GetDscBreakpointCapabilityAsync().ConfigureAwait(false);
 
             string scriptPath = scriptFile.FilePath;
 
@@ -168,7 +168,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     await _breakpointService.RemoveAllBreakpointsAsync(scriptFile.FilePath).ConfigureAwait(false);
                 }
 
-                return (await _breakpointService.SetBreakpointsAsync(escapedScriptPath, breakpoints).ConfigureAwait(false)).ToArray();
+                return await _breakpointService.SetBreakpointsAsync(escapedScriptPath, breakpoints).ConfigureAwait(false);
             }
 
             return await dscBreakpoints
@@ -182,25 +182,20 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="breakpoints">CommandBreakpointDetails for each command breakpoint that will be set.</param>
         /// <param name="clearExisting">If true, causes all existing function breakpoints to be cleared before setting new ones.</param>
         /// <returns>An awaitable Task that will provide details about the breakpoints that were set.</returns>
-        public async Task<CommandBreakpointDetails[]> SetCommandBreakpointsAsync(
-            CommandBreakpointDetails[] breakpoints,
+        public async Task<IReadOnlyList<CommandBreakpointDetails>> SetCommandBreakpointsAsync(
+            IReadOnlyList<CommandBreakpointDetails> breakpoints,
             bool clearExisting = true)
         {
-            CommandBreakpointDetails[] resultBreakpointDetails = null;
-
             if (clearExisting)
             {
                 // Flatten dictionary values into one list and remove them all.
-                IEnumerable<Breakpoint> existingBreakpoints = await _breakpointService.GetBreakpointsAsync().ConfigureAwait(false);
+                IReadOnlyList<Breakpoint> existingBreakpoints = await _breakpointService.GetBreakpointsAsync().ConfigureAwait(false);
                 await _breakpointService.RemoveBreakpointsAsync(existingBreakpoints.OfType<CommandBreakpoint>()).ConfigureAwait(false);
             }
 
-            if (breakpoints.Length > 0)
-            {
-                resultBreakpointDetails = (await _breakpointService.SetCommandBreakpointsAsync(breakpoints).ConfigureAwait(false)).ToArray();
-            }
-
-            return resultBreakpointDetails ?? Array.Empty<CommandBreakpointDetails>();
+            return breakpoints.Count > 0
+                ? await _breakpointService.SetCommandBreakpointsAsync(breakpoints).ConfigureAwait(false)
+                : Array.Empty<CommandBreakpointDetails>();
         }
 
         /// <summary>
@@ -241,11 +236,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// that is identified by the given referenced ID.
         /// </summary>
         /// <param name="variableReferenceId"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns>An array of VariableDetails instances which describe the requested variables.</returns>
-        public VariableDetailsBase[] GetVariables(int variableReferenceId)
+        public async Task<VariableDetailsBase[]> GetVariables(int variableReferenceId, CancellationToken cancellationToken)
         {
             VariableDetailsBase[] childVariables;
-            debugInfoHandle.Wait();
+            await debugInfoHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 if ((variableReferenceId < 0) || (variableReferenceId >= variables.Count))
@@ -257,7 +253,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 VariableDetailsBase parentVariable = variables[variableReferenceId];
                 if (parentVariable.IsExpandable)
                 {
-                    childVariables = parentVariable.GetChildren(_logger);
+                    // We execute this on the pipeline thread so the expansion of child variables works.
+                    childVariables = await _executionService.ExecuteDelegateAsync(
+                        $"Getting children of variable ${parentVariable.Name}",
+                        new ExecutionOptions { Priority = ExecutionPriority.Next },
+                        (_, _) => parentVariable.GetChildren(_logger), cancellationToken).ConfigureAwait(false);
+
                     foreach (VariableDetailsBase child in childVariables)
                     {
                         // Only add child if it hasn't already been added.
@@ -287,8 +288,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// walk the cached variable data for the specified stack frame.
         /// </summary>
         /// <param name="variableExpression">The variable expression string to evaluate.</param>
+        /// <param name="cancellationToken"></param>
         /// <returns>A VariableDetailsBase object containing the result.</returns>
-        public VariableDetailsBase GetVariableFromExpression(string variableExpression)
+        public async Task<VariableDetailsBase> GetVariableFromExpression(string variableExpression, CancellationToken cancellationToken)
         {
             // NOTE: From a watch we will get passed expressions that are not naked variables references.
             // Probably the right way to do this would be to examine the AST of the expr before calling
@@ -302,7 +304,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             IEnumerable<VariableDetailsBase> variableList;
 
             // Ensure debug info isn't currently being built.
-            debugInfoHandle.Wait();
+            await debugInfoHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 variableList = variables;
@@ -331,7 +333,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 if (resolvedVariable?.IsExpandable == true)
                 {
                     // Continue by searching in this variable's children.
-                    variableList = GetVariables(resolvedVariable.Id);
+                    variableList = await GetVariables(resolvedVariable.Id, cancellationToken).ConfigureAwait(false);
                 }
             }
 
@@ -365,7 +367,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // Evaluate the expression to get back a PowerShell object from the expression string.
             // This may throw, in which case the exception is propagated to the caller
-            PSCommand evaluateExpressionCommand = new PSCommand().AddScript(value);
+            PSCommand evaluateExpressionCommand = new PSCommand().AddScript($"[System.Diagnostics.DebuggerHidden()]param() {value}");
             IReadOnlyList<object> expressionResults = await _executionService.ExecutePSCommandAsync<object>(evaluateExpressionCommand, CancellationToken.None).ConfigureAwait(false);
             if (expressionResults.Count == 0)
             {
@@ -491,16 +493,30 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="writeResultAsOutput">
         /// If true, writes the expression result as host output rather than returning the results.
         /// In this case, the return value of this function will be null.</param>
+        /// <param name="cancellationToken"></param>
         /// <returns>A VariableDetails object containing the result.</returns>
         public async Task<VariableDetails> EvaluateExpressionAsync(
             string expressionString,
-            bool writeResultAsOutput)
+            bool writeResultAsOutput,
+            CancellationToken cancellationToken)
         {
-            PSCommand command = new PSCommand().AddScript(expressionString);
-            IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(
-                command,
-                CancellationToken.None,
-                new PowerShellExecutionOptions { WriteOutputToHost = writeResultAsOutput, ThrowOnError = !writeResultAsOutput }).ConfigureAwait(false);
+            PSCommand command = new PSCommand().AddScript($"[System.Diagnostics.DebuggerHidden()]param() {expressionString}");
+            IReadOnlyList<PSObject> results;
+            try
+            {
+                results = await _executionService.ExecutePSCommandAsync<PSObject>(
+                    command,
+                    cancellationToken,
+                    new PowerShellExecutionOptions { WriteOutputToHost = writeResultAsOutput, ThrowOnError = !writeResultAsOutput }).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                // If a watch expression throws we want to show the exception.
+                // TODO: Show the exception as an expandable object.
+                return new VariableDetails(
+                    expressionString,
+                    $"{e.GetType().Name}: {e.Message}");
+            }
 
             // Since this method should only be getting invoked in the debugger,
             // we can assume that Out-String will be getting used to format results
@@ -528,19 +544,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public StackFrameDetails[] GetStackFrames()
         {
             debugInfoHandle.Wait();
-            try
-            {
-                return stackFrameDetails;
-            }
-            finally
-            {
-                debugInfoHandle.Release();
-            }
-        }
-
-        internal StackFrameDetails[] GetStackFrames(CancellationToken cancellationToken)
-        {
-            debugInfoHandle.Wait(cancellationToken);
             try
             {
                 return stackFrameDetails;
@@ -796,7 +799,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // PSObject is used here instead of the specific type because we get deserialized
             // objects from remote sessions and want a common interface.
-            PSCommand psCommand = new PSCommand().AddScript($"[Collections.ArrayList]{callStackVarName} = @(); {getPSCallStack}; {returnSerializedIfInRemoteRunspace}");
+            PSCommand psCommand = new PSCommand().AddScript($"[System.Diagnostics.DebuggerHidden()]param() [Collections.ArrayList]{callStackVarName} = @(); {getPSCallStack}; {returnSerializedIfInRemoteRunspace}");
             IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, CancellationToken.None).ConfigureAwait(false);
 
             IEnumerable callStack = isRemoteRunspace
@@ -927,13 +930,24 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 if (_remoteFileManager is not null && string.IsNullOrEmpty(localScriptPath))
                 {
                     // Get the current script listing and create the buffer
-                    PSCommand command = new PSCommand().AddScript($"list 1 {int.MaxValue}");
+                    IReadOnlyList<PSObject> scriptListingLines;
+                    await debugInfoHandle.WaitAsync().ConfigureAwait(false);
+                    try
+                    {
+                        // This command must be run through `ExecuteInDebugger`!
+                        PSCommand psCommand = new PSCommand().AddScript($"list 1 {int.MaxValue}");
 
-                    IReadOnlyList<PSObject> scriptListingLines =
-                        await _executionService.ExecutePSCommandAsync<PSObject>(
-                            command, CancellationToken.None).ConfigureAwait(false);
+                        scriptListingLines =
+                            await _executionService.ExecutePSCommandAsync<PSObject>(
+                                psCommand,
+                                CancellationToken.None).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        debugInfoHandle.Release();
+                    }
 
-                    if (scriptListingLines is not null)
+                    if (scriptListingLines.Count > 0)
                     {
                         int linePrefixLength = 0;
 
@@ -982,10 +996,45 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     // Augment the top stack frame with details from the stop event
                     if (invocationTypeScriptPositionProperty.GetValue(e.InvocationInfo) is IScriptExtent scriptExtent)
                     {
-                        stackFrameDetails[0].StartLineNumber = scriptExtent.StartLineNumber;
-                        stackFrameDetails[0].EndLineNumber = scriptExtent.EndLineNumber;
-                        stackFrameDetails[0].StartColumnNumber = scriptExtent.StartColumnNumber;
-                        stackFrameDetails[0].EndColumnNumber = scriptExtent.EndColumnNumber;
+                        StackFrameDetails targetFrame = stackFrameDetails[0];
+
+                        // Certain context changes (like stepping into the default value expression
+                        // of a parameter) do not create a call stack frame. In order to represent
+                        // this context change we create a fake call stack frame.
+                        if (!string.IsNullOrEmpty(scriptExtent.File)
+                            && !PathUtils.IsPathEqual(scriptExtent.File, targetFrame.ScriptPath))
+                        {
+                            await debugInfoHandle.WaitAsync().ConfigureAwait(false);
+                            try
+                            {
+                                targetFrame = new StackFrameDetails
+                                {
+                                    ScriptPath = scriptExtent.File,
+                                    // Just use the last frame's variables since we don't have a
+                                    // good way to get real values.
+                                    AutoVariables = targetFrame.AutoVariables,
+                                    CommandVariables = targetFrame.CommandVariables,
+                                    // Ideally we'd get a real value here but since there's no real
+                                    // call stack frame for this, we'd need to replicate a lot of
+                                    // engine code.
+                                    FunctionName = "<ScriptBlock>",
+                                };
+
+                                StackFrameDetails[] newFrames = new StackFrameDetails[stackFrameDetails.Length + 1];
+                                newFrames[0] = targetFrame;
+                                stackFrameDetails.CopyTo(newFrames, 1);
+                                stackFrameDetails = newFrames;
+                            }
+                            finally
+                            {
+                                debugInfoHandle.Release();
+                            }
+                        }
+
+                        targetFrame.StartLineNumber = scriptExtent.StartLineNumber;
+                        targetFrame.EndLineNumber = scriptExtent.EndLineNumber;
+                        targetFrame.StartColumnNumber = scriptExtent.StartColumnNumber;
+                        targetFrame.EndColumnNumber = scriptExtent.EndColumnNumber;
                     }
                 }
 

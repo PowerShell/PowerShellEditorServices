@@ -19,6 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class PsesWorkspaceSymbolsHandler : WorkspaceSymbolsHandlerBase
     {
+        private static readonly Container<SymbolInformation> s_emptySymbolInformationContainer = new();
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
@@ -34,82 +35,71 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public override async Task<Container<SymbolInformation>> Handle(WorkspaceSymbolParams request, CancellationToken cancellationToken)
         {
+            _logger.LogDebug($"Handling workspace symbols request for query {request.Query}");
+
+            await _symbolsService.ScanWorkspacePSFiles(cancellationToken).ConfigureAwait(false);
             List<SymbolInformation> symbols = new();
 
             foreach (ScriptFile scriptFile in _workspaceService.GetOpenedFiles())
             {
-                List<SymbolReference> foundSymbols =
-                    _symbolsService.FindSymbolsInFile(
-                        scriptFile);
-
+                _logger.LogDebug($"Handling workspace symbols request for: {request.Query}");
                 // TODO: Need to compute a relative path that is based on common path for all workspace files
                 string containerName = Path.GetFileNameWithoutExtension(scriptFile.FilePath);
 
-                foreach (SymbolReference foundOccurrence in foundSymbols)
+                foreach (SymbolReference symbol in _symbolsService.FindSymbolsInFile(scriptFile))
                 {
                     // This async method is pretty dense with synchronous code
                     // so it's helpful to add some yields.
                     await Task.Yield();
-                    cancellationToken.ThrowIfCancellationRequested();
-                    if (!IsQueryMatch(request.Query, foundOccurrence.SymbolName))
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    if (!symbol.IsDeclaration)
+                    {
+                        continue;
+                    }
+
+                    if (symbol.Type is SymbolType.Parameter)
+                    {
+                        continue;
+                    }
+
+                    if (!IsQueryMatch(request.Query, symbol.Name))
+                    {
+                        continue;
+                    }
+
+                    // Exclude Pester setup/teardown symbols as they're unnamed
+                    if (symbol is PesterSymbolReference pesterSymbol &&
+                        !PesterSymbolReference.IsPesterTestCommand(pesterSymbol.Command))
                     {
                         continue;
                     }
 
                     Location location = new()
                     {
-                        Uri = DocumentUri.From(foundOccurrence.FilePath),
-                        Range = GetRangeFromScriptRegion(foundOccurrence.ScriptRegion)
+                        Uri = DocumentUri.From(symbol.FilePath),
+                        Range = symbol.NameRegion.ToRange()
                     };
 
+                    // TODO: This should be a WorkplaceSymbol now as SymbolInformation is deprecated.
                     symbols.Add(new SymbolInformation
                     {
                         ContainerName = containerName,
-                        Kind = foundOccurrence.SymbolType == SymbolType.Variable ? SymbolKind.Variable : SymbolKind.Function,
+                        Kind = SymbolTypeUtils.GetSymbolKind(symbol.Type),
                         Location = location,
-                        Name = GetDecoratedSymbolName(foundOccurrence)
+                        Name = symbol.Name
                     });
                 }
             }
-            _logger.LogWarning("Logging in a handler works now.");
-            return new Container<SymbolInformation>(symbols);
-        }
 
-        #region private Methods
+            return symbols.Count == 0
+                ? s_emptySymbolInformationContainer
+                : symbols;
+        }
 
         private static bool IsQueryMatch(string query, string symbolName) => symbolName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
-
-        private static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)
-        {
-            return new Range
-            {
-                Start = new Position
-                {
-                    Line = scriptRegion.StartLineNumber - 1,
-                    Character = scriptRegion.StartColumnNumber - 1
-                },
-                End = new Position
-                {
-                    Line = scriptRegion.EndLineNumber - 1,
-                    Character = scriptRegion.EndColumnNumber - 1
-                }
-            };
-        }
-
-        private static string GetDecoratedSymbolName(SymbolReference symbolReference)
-        {
-            string name = symbolReference.SymbolName;
-
-            if (symbolReference.SymbolType is SymbolType.Configuration or
-                SymbolType.Function or
-                SymbolType.Workflow)
-            {
-                name += " { }";
-            }
-
-            return name;
-        }
-
-        #endregion
     }
 }

@@ -33,7 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             const string script = @"
 function __Expand-Alias {
-
+    [System.Diagnostics.DebuggerHidden()]
     param($targetScript)
 
     [ref]$errors=$null

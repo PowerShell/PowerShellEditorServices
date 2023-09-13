@@ -15,6 +15,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     // TODO: Add IDocumentOnTypeFormatHandler to support on-type formatting.
     internal class PsesDocumentFormattingHandler : DocumentFormattingHandlerBase
     {
+        private static readonly TextEditContainer s_emptyTextEditContainer = new();
         private readonly ILogger _logger;
         private readonly AnalysisService _analysisService;
         private readonly ConfigurationService _configurationService;
@@ -39,6 +40,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public override async Task<TextEditContainer> Handle(DocumentFormattingParams request, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogDebug($"Formatting request canceled for: {request.TextDocument.Uri}");
+                return s_emptyTextEditContainer;
+            }
+
             Services.TextDocument.ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
             System.Collections.Hashtable pssaSettings = _configurationService.CurrentSettings.CodeFormatting.GetPSSASettingsHashtable(
                 request.Options.TabSize,
@@ -72,14 +79,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (formattedScript is null)
             {
-                _logger.LogWarning($"Formatting returned null. Not formatting: {scriptFile.DocumentUri}");
-                return null;
+                _logger.LogDebug($"Formatting returned null. Not formatting: {scriptFile.DocumentUri}");
+                return s_emptyTextEditContainer;
             }
 
+            // Just in case the user really requested a cancellation.
             if (cancellationToken.IsCancellationRequested)
             {
-                _logger.LogWarning($"Formatting request canceled for: {scriptFile.DocumentUri}");
-                return null;
+                _logger.LogDebug($"Formatting request canceled for: {scriptFile.DocumentUri}");
+                return s_emptyTextEditContainer;
             }
 
             return new TextEditContainer(new TextEdit
@@ -92,6 +100,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
     internal class PsesDocumentRangeFormattingHandler : DocumentRangeFormattingHandlerBase
     {
+        private static readonly TextEditContainer s_emptyTextEditContainer = new();
         private readonly ILogger _logger;
         private readonly AnalysisService _analysisService;
         private readonly ConfigurationService _configurationService;
@@ -116,6 +125,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public override async Task<TextEditContainer> Handle(DocumentRangeFormattingParams request, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogDebug($"Formatting request canceled for: {request.TextDocument.Uri}");
+                return s_emptyTextEditContainer;
+            }
+
             Services.TextDocument.ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
             System.Collections.Hashtable pssaSettings = _configurationService.CurrentSettings.CodeFormatting.GetPSSASettingsHashtable(
                 request.Options.TabSize,
@@ -158,14 +173,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (formattedScript is null)
             {
-                _logger.LogWarning($"Formatting returned null. Not formatting: {scriptFile.DocumentUri}");
-                return null;
+                _logger.LogDebug($"Formatting returned null. Not formatting: {scriptFile.DocumentUri}");
+                return s_emptyTextEditContainer;
             }
 
+            // Just in case the user really requested a cancellation.
             if (cancellationToken.IsCancellationRequested)
             {
-                _logger.LogWarning($"Formatting request canceled for: {scriptFile.DocumentUri}");
-                return null;
+                _logger.LogDebug($"Formatting request canceled for: {scriptFile.DocumentUri}");
+                return s_emptyTextEditContainer;
             }
 
             return new TextEditContainer(new TextEdit

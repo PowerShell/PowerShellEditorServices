@@ -35,7 +35,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             _onIdleAction = onIdleAction;
         }
 
+#pragma warning disable CA1502 // Cyclomatic complexity we don't care about
         public override string ReadLine(CancellationToken cancellationToken)
+#pragma warning restore CA1502
         {
             string inputBeforeCompletion = null;
             string inputAfterCompletion = null;

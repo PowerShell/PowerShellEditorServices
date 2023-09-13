@@ -34,7 +34,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         protected override SignatureHelpRegistrationOptions CreateRegistrationOptions(SignatureHelpCapability capability, ClientCapabilities clientCapabilities) => new()
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector,
-            // A sane default of " ". We may be able to include others like "-".
+            // TODO: We should evaluate what triggers (and re-triggers) signature help (like dash?)
             TriggerCharacters = new Container<string>(" ")
         };
 
@@ -54,7 +54,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     request.Position.Line + 1,
                     request.Position.Character + 1).ConfigureAwait(false);
 
-            if (parameterSets == null)
+            if (parameterSets is null)
             {
                 return new SignatureHelp();
             }
@@ -89,7 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return new ParameterInformation
             {
                 Label = parameterInfo.Name,
-                Documentation = string.Empty
+                Documentation = parameterInfo.HelpMessage
             };
         }
     }

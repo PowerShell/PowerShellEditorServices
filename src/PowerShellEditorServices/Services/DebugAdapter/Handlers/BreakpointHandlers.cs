@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -74,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (!_workspaceService.TryGetFile(request.Source.Path, out ScriptFile scriptFile))
             {
                 string message = _debugStateService.NoDebug ? string.Empty : "Source file could not be accessed, breakpoint not set.";
-                System.Collections.Generic.IEnumerable<Breakpoint> srcBreakpoints = request.Breakpoints
+                IEnumerable<Breakpoint> srcBreakpoints = request.Breakpoints
                     .Select(srcBkpt => LspDebugUtils.CreateBreakpoint(
                         srcBkpt, request.Source.Path, message, verified: _debugStateService.NoDebug));
 
@@ -93,7 +94,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 string message = _debugStateService.NoDebug ? string.Empty : "Source is not a PowerShell script, breakpoint not set.";
 
-                System.Collections.Generic.IEnumerable<Breakpoint> srcBreakpoints = request.Breakpoints
+                IEnumerable<Breakpoint> srcBreakpoints = request.Breakpoints
                     .Select(srcBkpt => LspDebugUtils.CreateBreakpoint(
                         srcBkpt, request.Source.Path, message, verified: _debugStateService.NoDebug));
 
@@ -105,18 +106,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             // At this point, the source file has been verified as a PowerShell script.
-            BreakpointDetails[] breakpointDetails = request.Breakpoints
+            IReadOnlyList<BreakpointDetails> breakpointDetails = request.Breakpoints
                 .Select((srcBreakpoint) => BreakpointDetails.Create(
                     scriptFile.FilePath,
                     srcBreakpoint.Line,
                     srcBreakpoint.Column,
                     srcBreakpoint.Condition,
                     srcBreakpoint.HitCondition,
-                    srcBreakpoint.LogMessage))
-                .ToArray();
+                    srcBreakpoint.LogMessage)).ToList();
 
             // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
-            BreakpointDetails[] updatedBreakpointDetails = breakpointDetails;
+            IReadOnlyList<BreakpointDetails> updatedBreakpointDetails = breakpointDetails;
             if (!_debugStateService.NoDebug)
             {
                 await _debugStateService.WaitForSetBreakpointHandleAsync().ConfigureAwait(false);
@@ -163,23 +163,20 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 };
             }
 
-            CommandBreakpointDetails[] breakpointDetails = request.Breakpoints
+            IReadOnlyList<CommandBreakpointDetails> breakpointDetails = request.Breakpoints
                 .Select((funcBreakpoint) => CommandBreakpointDetails.Create(
                     funcBreakpoint.Name,
-                    funcBreakpoint.Condition))
-                .ToArray();
+                    funcBreakpoint.Condition)).ToList();
 
             // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
-            CommandBreakpointDetails[] updatedBreakpointDetails = breakpointDetails;
+            IReadOnlyList<CommandBreakpointDetails> updatedBreakpointDetails = breakpointDetails;
             if (!_debugStateService.NoDebug)
             {
                 await _debugStateService.WaitForSetBreakpointHandleAsync().ConfigureAwait(false);
 
                 try
                 {
-                    updatedBreakpointDetails =
-                        await _debugService.SetCommandBreakpointsAsync(
-                            breakpointDetails).ConfigureAwait(false);
+                    updatedBreakpointDetails = await _debugService.SetCommandBreakpointsAsync(breakpointDetails).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -194,9 +191,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             return new SetFunctionBreakpointsResponse
             {
-                Breakpoints = updatedBreakpointDetails
-                    .Select(LspDebugUtils.CreateBreakpoint)
-                    .ToArray()
+                Breakpoints = updatedBreakpointDetails.Select(LspDebugUtils.CreateBreakpoint).ToList()
             };
         }
 
