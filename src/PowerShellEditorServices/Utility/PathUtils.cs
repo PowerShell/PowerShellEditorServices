@@ -70,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 return false;
             }
 
-            ReadOnlySpan<char> pathSeparators = stackalloc char[] { DefaultPathSeparator, AlternatePathSeparator };
+            ReadOnlySpan<char> pathSeparators = stackalloc char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
             ReadOnlySpan<char> asSpan = fileNameOrPath.AsSpan().TrimEnd(pathSeparators);
             int separatorIndex = asSpan.LastIndexOfAny(pathSeparators);
             if (separatorIndex is not -1)
