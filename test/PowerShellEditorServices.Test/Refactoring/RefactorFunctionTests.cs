@@ -98,7 +98,7 @@ namespace PowerShellEditorServices.Test.Refactoring
             });
         }
         [Fact]
-        public void RefactorNestedFunction()
+        public void RefactorFunctionMultiple()
         {
             RenameSymbolParams request = RefactorsFunctionData.FunctionsMultiple;
             ScriptFile scriptFile = GetTestScript(request.FileName);
@@ -126,7 +126,35 @@ namespace PowerShellEditorServices.Test.Refactoring
             });
         }
         [Fact]
-        public void RefactorFlatFunction()
+        public void RefactorNestedOverlapedFunction()
+        {
+            RenameSymbolParams request = RefactorsFunctionData.FunctionsNestedOverlap;
+            ScriptFile scriptFile = GetTestScript(request.FileName);
+            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
+                    request.Line + 1,
+                    request.Column + 1);
+            ModifiedFileResponse changes = RenameSymbolHandler.RefactorFunction(symbol, scriptFile.ScriptAst, request);
+            Assert.Equal(2, changes.Changes.Count);
+
+            Assert.Contains(changes.Changes, item =>
+            {
+                return item.StartColumn == 13 &&
+                        item.EndColumn == 16 &&
+                        item.StartLine == 8 &&
+                        item.EndLine == 8 &&
+                        request.RenameTo == item.NewText;
+            });
+            Assert.Contains(changes.Changes, item =>
+            {
+                return item.StartColumn == 4 &&
+                        item.EndColumn == 10 &&
+                        item.StartLine == 10 &&
+                        item.EndLine == 10 &&
+                        request.RenameTo == item.NewText;
+            });
+        }
+        [Fact]
+        public void RefactorFunctionSimpleFlat()
         {
             RenameSymbolParams request = RefactorsFunctionData.FunctionsSimpleFlat;
             ScriptFile scriptFile = GetTestScript(request.FileName);
