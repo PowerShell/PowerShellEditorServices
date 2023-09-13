@@ -7,13 +7,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
-using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
-using OmniSharp.Extensions.LanguageServer.Protocol.Window;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
@@ -23,19 +19,16 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
         private readonly ConfigurationService _configurationService;
-        private readonly ILanguageServerFacade _languageServer;
         public PsesConfigurationHandler(
             ILoggerFactory factory,
             WorkspaceService workspaceService,
             AnalysisService analysisService,
             ConfigurationService configurationService,
-            ILanguageServerFacade languageServer,
             SymbolsService symbolsService)
         {
             _logger = factory.CreateLogger<PsesConfigurationHandler>();
             _workspaceService = workspaceService;
             _configurationService = configurationService;
-            _languageServer = languageServer;
 
             ConfigurationUpdated += analysisService.OnConfigurationUpdated;
             ConfigurationUpdated += symbolsService.OnConfigurationUpdated;
@@ -50,8 +43,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 _logger.LogTrace("Incoming settings were null");
                 return await Unit.Task.ConfigureAwait(false);
             }
-
-            SendFeatureChangesTelemetry(incomingSettings);
 
             bool oldScriptAnalysisEnabled = _configurationService.CurrentSettings.ScriptAnalysis.Enable;
             string oldScriptAnalysisSettingsPath = _configurationService.CurrentSettings.ScriptAnalysis?.SettingsPath;
@@ -109,59 +100,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return await Unit.Task.ConfigureAwait(false);
         }
 
-        private void SendFeatureChangesTelemetry(LanguageServerSettingsWrapper incomingSettings)
-        {
-            if (incomingSettings is null)
-            {
-                _logger.LogTrace("Incoming settings were null");
-                return;
-            }
-
-            Dictionary<string, bool> configChanges = new();
-            // Send telemetry if the user opted-out of ScriptAnalysis
-            if (!incomingSettings.Powershell.ScriptAnalysis.Enable &&
-                _configurationService.CurrentSettings.ScriptAnalysis.Enable != incomingSettings.Powershell.ScriptAnalysis.Enable)
-            {
-                configChanges["ScriptAnalysis"] = incomingSettings.Powershell.ScriptAnalysis.Enable;
-            }
-
-            // Send telemetry if the user opted-out of CodeFolding
-            if (!incomingSettings.Powershell.CodeFolding.Enable &&
-                _configurationService.CurrentSettings.CodeFolding.Enable != incomingSettings.Powershell.CodeFolding.Enable)
-            {
-                configChanges["CodeFolding"] = incomingSettings.Powershell.CodeFolding.Enable;
-            }
-
-            // Send telemetry if the user opted-out of Profile loading
-            if (!incomingSettings.Powershell.EnableProfileLoading &&
-                _configurationService.CurrentSettings.EnableProfileLoading != incomingSettings.Powershell.EnableProfileLoading)
-            {
-                configChanges["ProfileLoading"] = incomingSettings.Powershell.EnableProfileLoading;
-            }
-
-            // Send telemetry if the user opted-in to Pester 5+ CodeLens
-            if (!incomingSettings.Powershell.Pester.UseLegacyCodeLens &&
-                _configurationService.CurrentSettings.Pester.UseLegacyCodeLens != incomingSettings.Powershell.Pester.UseLegacyCodeLens)
-            {
-                // From our perspective we want to see how many people are opting in to this so we flip the value
-                configChanges["Pester5CodeLens"] = !incomingSettings.Powershell.Pester.UseLegacyCodeLens;
-            }
-
-            // No need to send any telemetry since nothing changed
-            if (configChanges.Count == 0)
-            {
-                return;
-            }
-
-            _languageServer.Window.SendTelemetryEvent(new TelemetryEventParams
-            {
-                ExtensionData = new PsesTelemetryEvent
-                {
-                    EventName = "NonDefaultPsesFeatureConfiguration",
-                    Data = JObject.FromObject(configChanges)
-                }
-            });
-        }
 
         public event EventHandler<LanguageServerSettings> ConfigurationUpdated;
     }
