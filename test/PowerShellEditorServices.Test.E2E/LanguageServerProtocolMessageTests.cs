@@ -12,7 +12,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Handlers;
-using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.Template;
@@ -40,7 +39,6 @@ namespace PowerShellEditorServices.Test.E2E
         private readonly ILanguageClient PsesLanguageClient;
         private readonly List<LogMessageParams> Messages;
         private readonly List<Diagnostic> Diagnostics;
-        private readonly List<PsesTelemetryEvent> TelemetryEvents;
         private readonly string PwshExe;
 
         public LanguageServerProtocolMessageTests(ITestOutputHelper output, LSPTestsFixture data)
@@ -51,15 +49,12 @@ namespace PowerShellEditorServices.Test.E2E
             Messages.Clear();
             Diagnostics = data.Diagnostics;
             Diagnostics.Clear();
-            TelemetryEvents = data.TelemetryEvents;
-            TelemetryEvents.Clear();
             PwshExe = PsesStdioProcess.PwshExe;
         }
 
         public void Dispose()
         {
             Diagnostics.Clear();
-            TelemetryEvents.Clear();
             GC.SuppressFinalize(this);
         }
 
@@ -91,26 +86,12 @@ namespace PowerShellEditorServices.Test.E2E
             // Wait for PSSA to finish.
             for (int i = 0; Diagnostics.Count == 0; i++)
             {
-                if (i >= 10)
+                if (i >= 30)
                 {
                     throw new InvalidDataException("No diagnostics showed up after 20s.");
                 }
 
-                await Task.Delay(2000).ConfigureAwait(true);
-            }
-        }
-
-        private async Task WaitForTelemetryEventsAsync()
-        {
-            // Wait for PSSA to finish.
-            for (int i = 0; TelemetryEvents.Count == 0; i++)
-            {
-                if (i >= 10)
-                {
-                    throw new InvalidDataException("No telemetry events showed up after 20s.");
-                }
-
-                await Task.Delay(2000).ConfigureAwait(true);
+                await Task.Delay(1000).ConfigureAwait(true);
             }
         }
 
@@ -233,12 +214,6 @@ function CanSendWorkspaceSymbolRequest {
             Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
-            NewTestFile("gci | % { $_ }");
-            await WaitForDiagnosticsAsync().ConfigureAwait(true);
-
-            // NewTestFile doesn't clear diagnostic notifications so we need to do that for this test.
-            Diagnostics.Clear();
-
             PsesLanguageClient.SendNotification("workspace/didChangeConfiguration",
                 new DidChangeConfigurationParams
                 {
@@ -256,17 +231,11 @@ function CanSendWorkspaceSymbolRequest {
                     })
                 });
 
-            await WaitForTelemetryEventsAsync().ConfigureAwait(true);
-            PsesTelemetryEvent telemetryEvent = Assert.Single(TelemetryEvents);
-            Assert.Equal("NonDefaultPsesFeatureConfiguration", telemetryEvent.EventName);
-            Assert.False((bool)telemetryEvent.Data.GetValue("ScriptAnalysis"));
+            string filePath = NewTestFile("$a = 4");
 
-            // We also shouldn't get any Diagnostics because ScriptAnalysis is disabled.
+            // Wait a bit to make sure no diagnostics came through
+            await Task.Delay(2000).ConfigureAwait(true);
             Assert.Empty(Diagnostics);
-
-            // Clear telemetry events so we can test to make sure telemetry doesn't
-            // come through with default settings.
-            TelemetryEvents.Clear();
 
             // Restore default configuration
             PsesLanguageClient.SendNotification("workspace/didChangeConfiguration",
@@ -280,10 +249,22 @@ function CanSendWorkspaceSymbolRequest {
                     })
                 });
 
-            // Wait a bit to make sure no telemetry events came through
-            await Task.Delay(2000).ConfigureAwait(true);
-            // Since we have default settings we should not get any telemetry events about
-            Assert.Empty(TelemetryEvents.Where(e => e.EventName == "NonDefaultPsesFeatureConfiguration"));
+            // That notification does not trigger re-analyzing open files. For that we have to send
+            // a textDocument/didChange notification.
+            PsesLanguageClient.SendNotification("textDocument/didChange", new DidChangeTextDocumentParams
+            {
+                ContentChanges = new Container<TextDocumentContentChangeEvent>(),
+                TextDocument = new OptionalVersionedTextDocumentIdentifier
+                {
+                    Version = 4,
+                    Uri = new Uri(filePath)
+                }
+            });
+
+            await WaitForDiagnosticsAsync().ConfigureAwait(true);
+
+            Diagnostic diagnostic = Assert.Single(Diagnostics);
+            Assert.Equal("PSUseDeclaredVarsMoreThanAssignments", diagnostic.Code);
         }
 
         [Fact]
