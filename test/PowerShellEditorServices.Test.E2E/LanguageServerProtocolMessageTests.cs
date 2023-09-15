@@ -122,16 +122,16 @@ function CanSendWorkspaceSymbolRequest {
 }
 ");
 
-            Container<SymbolInformation> symbols = await PsesLanguageClient
+            Container<WorkspaceSymbol> symbols = await PsesLanguageClient
                 .SendRequest(
                     "workspace/symbol",
                     new WorkspaceSymbolParams
                     {
                         Query = "CanSendWorkspaceSymbolRequest"
                     })
-                .Returning<Container<SymbolInformation>>(CancellationToken.None).ConfigureAwait(true);
+                .Returning<Container<WorkspaceSymbol>>(CancellationToken.None).ConfigureAwait(true);
 
-            SymbolInformation symbol = Assert.Single(symbols);
+            WorkspaceSymbol symbol = Assert.Single(symbols);
             Assert.Equal("function CanSendWorkspaceSymbolRequest ()", symbol.Name);
         }
 
@@ -420,12 +420,22 @@ CanSendDocumentSymbolRequest
             Assert.Collection(symbolInformationOrDocumentSymbols,
                 symInfoOrDocSym =>
                 {
-                    Range range = symInfoOrDocSym.SymbolInformation.Location.Range;
+                    Assert.True(symInfoOrDocSym.IsDocumentSymbol);
+                    Assert.NotNull(symInfoOrDocSym.DocumentSymbol);
+                    DocumentSymbol symbol = symInfoOrDocSym.DocumentSymbol;
 
-                    Assert.Equal(1, range.Start.Line);
-                    Assert.Equal(9, range.Start.Character);
-                    Assert.Equal(3, range.End.Line);
-                    Assert.Equal(1, range.End.Character);
+                    Assert.Equal(symbol.Name, "function CanSendDocumentSymbolRequest ()");
+                    Assert.Equal(symbol.Kind, SymbolKind.Function);
+
+                    Assert.Equal(1, symbol.Range.Start.Line);
+                    Assert.Equal(0, symbol.Range.Start.Character);
+                    Assert.Equal(3, symbol.Range.End.Line);
+                    Assert.Equal(1, symbol.Range.End.Character);
+
+                    Assert.Equal(1, symbol.SelectionRange.Start.Line);
+                    Assert.Equal(9, symbol.SelectionRange.Start.Character);
+                    Assert.Equal(1, symbol.SelectionRange.End.Line);
+                    Assert.Equal(37, symbol.SelectionRange.End.Character);
                 });
         }
 

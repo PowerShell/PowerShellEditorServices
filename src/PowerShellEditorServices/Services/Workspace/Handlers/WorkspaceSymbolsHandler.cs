@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class PsesWorkspaceSymbolsHandler : WorkspaceSymbolsHandlerBase
     {
-        private static readonly Container<SymbolInformation> s_emptySymbolInformationContainer = new();
+        private static readonly Container<WorkspaceSymbol> s_emptySymbolInformationContainer = new();
         private readonly ILogger _logger;
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
@@ -33,12 +33,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         protected override WorkspaceSymbolRegistrationOptions CreateRegistrationOptions(WorkspaceSymbolCapability capability, ClientCapabilities clientCapabilities) => new() { };
 
-        public override async Task<Container<SymbolInformation>> Handle(WorkspaceSymbolParams request, CancellationToken cancellationToken)
+        public override async Task<Container<WorkspaceSymbol>> Handle(WorkspaceSymbolParams request, CancellationToken cancellationToken)
         {
             _logger.LogDebug($"Handling workspace symbols request for query {request.Query}");
 
             await _symbolsService.ScanWorkspacePSFiles(cancellationToken).ConfigureAwait(false);
-            List<SymbolInformation> symbols = new();
+            List<WorkspaceSymbol> symbols = new();
 
             foreach (ScriptFile scriptFile in _workspaceService.GetOpenedFiles())
             {
@@ -84,8 +84,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         Range = symbol.NameRegion.ToRange()
                     };
 
-                    // TODO: This should be a WorkplaceSymbol now as SymbolInformation is deprecated.
-                    symbols.Add(new SymbolInformation
+                    symbols.Add(new WorkspaceSymbol
                     {
                         ContainerName = containerName,
                         Kind = SymbolTypeUtils.GetSymbolKind(symbol.Type),
