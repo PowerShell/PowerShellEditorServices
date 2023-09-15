@@ -25,7 +25,7 @@
     <Otherwise>
       <ItemGroup>
         <PackageReference Include="OmniSharp.Extensions.LanguageClient" Version="0.19.7" />
-        <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Client" Version="0.19.7" />
+        <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Client" Version="0.19.8" />
       </ItemGroup>
     </Otherwise>
   </Choose>
