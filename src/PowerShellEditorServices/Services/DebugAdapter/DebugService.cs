@@ -30,7 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     {
         #region Fields
 
-        private const string PsesGlobalVariableNamePrefix = "__psEditorServices_";
+        internal const string PsesGlobalVariableNamePrefix = "__psEditorServices_";
         private const string TemporaryScriptFileName = "Script Listing.ps1";
 
         private readonly ILogger _logger;

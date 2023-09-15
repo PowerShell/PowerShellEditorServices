@@ -92,10 +92,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
             if (!isDscInstalled.HasValue)
             {
                 PSCommand psCommand = new PSCommand()
+                    .AddScript($"$global:{DebugService.PsesGlobalVariableNamePrefix}prevProgressPreference = $ProgressPreference")
+                    .AddScript("$ProgressPreference = 'SilentlyContinue'")
                     .AddCommand(@"Microsoft.PowerShell.Core\Import-Module")
-                    .AddParameter("-Name", "PSDesiredStateConfiguration")
+                    .AddParameter("Name", "PSDesiredStateConfiguration")
                     .AddParameter("PassThru")
-                    .AddParameter("ErrorAction", ActionPreference.Ignore);
+                    .AddParameter("ErrorAction", ActionPreference.Ignore)
+                    .AddScript($"$ProgressPreference = $global:{DebugService.PsesGlobalVariableNamePrefix}prevProgressPreference");
 
                 IReadOnlyList<PSModuleInfo> dscModule =
                     await psesHost.ExecutePSCommandAsync<PSModuleInfo>(
