@@ -122,16 +122,16 @@ function CanSendWorkspaceSymbolRequest {
 }
 ");
 
-            Container<SymbolInformation> symbols = await PsesLanguageClient
+            Container<WorkspaceSymbol> symbols = await PsesLanguageClient
                 .SendRequest(
                     "workspace/symbol",
                     new WorkspaceSymbolParams
                     {
                         Query = "CanSendWorkspaceSymbolRequest"
                     })
-                .Returning<Container<SymbolInformation>>(CancellationToken.None).ConfigureAwait(true);
+                .Returning<Container<WorkspaceSymbol>>(CancellationToken.None).ConfigureAwait(true);
 
-            SymbolInformation symbol = Assert.Single(symbols);
+            WorkspaceSymbol symbol = Assert.Single(symbols);
             Assert.Equal("function CanSendWorkspaceSymbolRequest ()", symbol.Name);
         }
 

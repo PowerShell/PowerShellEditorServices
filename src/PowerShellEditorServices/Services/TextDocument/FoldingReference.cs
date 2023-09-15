@@ -58,22 +58,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             if (EndCharacter > that.EndCharacter) { return 1; }
 
             // They're the same range, but what about kind
-            if (Kind == null)
+            if (Kind == that.Kind)
             {
-                if (that.Kind == null)
-                {
-                    return 0;
-                }
-                // that has a kind but this doesn't.
+                return 0;
+            }
+
+            // That has a kind but this doesn't.
+            if (Kind is null && that.Kind is not null)
+            {
                 return 1;
             }
 
-            if (that.Kind != null)
-            {
-                return that.Kind.Value - Kind.Value;
-            }
-
-            // this has a kind but that doesn't.
+            // This has a kind but that doesn't.
             return -1;
         }
 
