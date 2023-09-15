@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -10,7 +9,6 @@ using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
-using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -48,7 +46,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _logger.LogDebug($"Handling document symbols for {request.TextDocument.Uri}");
 
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
-            string containerName = Path.GetFileNameWithoutExtension(scriptFile.FilePath);
             List<SymbolInformationOrDocumentSymbol> symbols = new();
 
             foreach (SymbolReference r in ProvideDocumentSymbols(scriptFile))
@@ -70,27 +67,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     continue;
                 }
 
-                // TODO: This should be a DocumentSymbol now as SymbolInformation is deprecated. But
-                // this requires figuring out how to populate `children`. Once we do that, the range
-                // can be NameRegion.
-                //
-                // symbols.Add(new SymbolInformationOrDocumentSymbol(new DocumentSymbol
-                // {
-                //     Name = SymbolTypeUtils.GetDecoratedSymbolName(r),
-                //     Kind = SymbolTypeUtils.GetSymbolKind(r.SymbolType),
-                //     Range = r.ScriptRegion.ToRange(),
-                //     SelectionRange = r.NameRegion.ToRange()
-                // }));
-                symbols.Add(new SymbolInformationOrDocumentSymbol(new SymbolInformation
+                // TODO: This now needs the Children property filled out to support hierarchical
+                // symbols, and we don't have the information nor algorithm to do that currently.
+                // OmniSharp was previously doing this for us based on the range, perhaps we can
+                // find that logic and reuse it.
+                symbols.Add(new SymbolInformationOrDocumentSymbol(new DocumentSymbol
                 {
-                    ContainerName = containerName,
                     Kind = SymbolTypeUtils.GetSymbolKind(r.Type),
-                    Location = new Location
-                    {
-                        Uri = DocumentUri.From(r.FilePath),
-                        // Jump to name start, but keep whole range to support symbol tree in outline
-                        Range = new Range(r.NameRegion.ToRange().Start, r.ScriptRegion.ToRange().End)
-                    },
+                    Range = r.ScriptRegion.ToRange(),
+                    SelectionRange = r.NameRegion.ToRange(),
                     Name = r.Name
                 }));
             }

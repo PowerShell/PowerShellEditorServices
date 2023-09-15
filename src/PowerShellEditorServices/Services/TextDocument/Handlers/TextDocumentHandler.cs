@@ -61,7 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return Unit.Task;
         }
 
-        protected override TextDocumentSyncRegistrationOptions CreateRegistrationOptions(SynchronizationCapability capability, ClientCapabilities clientCapabilities)
+        protected override TextDocumentSyncRegistrationOptions CreateRegistrationOptions(TextSynchronizationCapability capability, ClientCapabilities clientCapabilities)
         {
             _isFileWatcherSupported = clientCapabilities.Workspace.DidChangeWatchedFiles.IsSupported;
             return new TextDocumentSyncRegistrationOptions()
