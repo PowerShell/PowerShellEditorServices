@@ -18,8 +18,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
     {
         #region Private Static Fields
 
-        private const string s_psesGlobalVariableNamePrefix = "__psEditorServices_";
-
         private static readonly Lazy<Func<Debugger, string, int, int, ScriptBlock, int?, LineBreakpoint>> s_setLineBreakpointLazy;
 
         private static readonly Lazy<Func<Debugger, string, ScriptBlock, string, int?, CommandBreakpoint>> s_setCommandBreakpointLazy;
@@ -199,7 +197,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                     int incrementResult = Interlocked.Increment(ref breakpointHitCounter);
 
                     string globalHitCountVarName =
-                        $"$global:{s_psesGlobalVariableNamePrefix}BreakHitCounter_{incrementResult}";
+                        $"$global:{DebugService.PsesGlobalVariableNamePrefix}BreakHitCounter_{incrementResult}";
 
                     builder.Insert(0, $"if (++{globalHitCountVarName} -eq {parsedHitCount}) {{ ")
                         .Append(" }");
