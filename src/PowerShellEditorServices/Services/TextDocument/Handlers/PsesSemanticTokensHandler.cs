@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 Delta = true
             },
-            Range = true
+            Range = new SemanticTokensCapabilityRequestRange() { }
         };
 
         private readonly WorkspaceService _workspaceService;
