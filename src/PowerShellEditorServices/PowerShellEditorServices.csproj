@@ -54,8 +54,8 @@
     </When>
     <Otherwise>
       <ItemGroup>
-        <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.19.7" />
-        <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Server" Version="0.19.7" />
+        <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.19.8" />
+        <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Server" Version="0.19.8" />
       </ItemGroup>
     </Otherwise>
   </Choose>
