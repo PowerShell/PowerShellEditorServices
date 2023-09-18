@@ -9,6 +9,10 @@ updates:
     OmniSharp:
       patterns:
         - "OmniSharp.Extensions.*"
+    xUnit:
+      patterns:
+        - "xunit"
+        - "xunit.*"
 - package-ecosystem: github-actions
   directory: "/"
   schedule:
