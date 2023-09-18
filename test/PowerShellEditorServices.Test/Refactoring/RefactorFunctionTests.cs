@@ -126,9 +126,9 @@ namespace PowerShellEditorServices.Test.Refactoring
             });
         }
         [Fact]
-        public void RefactorNestedOverlapedFunction()
+        public void RefactorNestedOverlapedFunctionCommand()
         {
-            RenameSymbolParams request = RefactorsFunctionData.FunctionsNestedOverlap;
+            RenameSymbolParams request = RefactorsFunctionData.FunctionsNestedOverlapCommand;
             ScriptFile scriptFile = GetTestScript(request.FileName);
             SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
                     request.Line + 1,
@@ -150,6 +150,34 @@ namespace PowerShellEditorServices.Test.Refactoring
                         item.EndColumn == 10 &&
                         item.StartLine == 10 &&
                         item.EndLine == 10 &&
+                        request.RenameTo == item.NewText;
+            });
+        }
+        [Fact]
+        public void RefactorNestedOverlapedFunctionFunction()
+        {
+            RenameSymbolParams request = RefactorsFunctionData.FunctionsNestedOverlapFunction;
+            ScriptFile scriptFile = GetTestScript(request.FileName);
+            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
+                    request.Line + 1,
+                    request.Column + 1);
+            ModifiedFileResponse changes = RenameSymbolHandler.RefactorFunction(symbol, scriptFile.ScriptAst, request);
+            Assert.Equal(2, changes.Changes.Count);
+
+            Assert.Contains(changes.Changes, item =>
+            {
+                return item.StartColumn == 14 &&
+                        item.EndColumn == 16 &&
+                        item.StartLine == 16 &&
+                        item.EndLine == 17 &&
+                        request.RenameTo == item.NewText;
+            });
+            Assert.Contains(changes.Changes, item =>
+            {
+                return item.StartColumn == 4 &&
+                        item.EndColumn == 10 &&
+                        item.StartLine == 19 &&
+                        item.EndLine == 19 &&
                         request.RenameTo == item.NewText;
             });
         }

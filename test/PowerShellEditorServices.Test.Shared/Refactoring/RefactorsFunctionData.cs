@@ -38,11 +38,18 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring
             Line = 4,
             RenameTo = "OneMethod"
         };
-        public static readonly RenameSymbolParams FunctionsNestedOverlap = new()
+        public static readonly RenameSymbolParams FunctionsNestedOverlapCommand = new()
         {
             FileName = "FunctionsNestedOverlap.ps1",
             Column = 5,
             Line = 15,
+            RenameTo = "OneMethod"
+        };
+        public static readonly RenameSymbolParams FunctionsNestedOverlapFunction = new()
+        {
+            FileName = "FunctionsNestedOverlap.ps1",
+            Column = 14,
+            Line = 16,
             RenameTo = "OneMethod"
         };
         public static readonly RenameSymbolParams FunctionsSimpleFlat = new()
