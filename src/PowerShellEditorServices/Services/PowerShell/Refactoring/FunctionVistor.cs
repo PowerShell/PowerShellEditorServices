@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using System;
+using System.Linq;
 
 namespace Microsoft.PowerShell.EditorServices.Refactoring
 {
@@ -13,8 +14,8 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         private readonly string OldName;
         private readonly string NewName;
         internal Stack<string> ScopeStack = new();
-        internal bool ShouldRename = false;
-        internal List<TextChange> Modifications = new();
+        internal bool ShouldRename;
+        public List<TextChange> Modifications = new();
         private readonly List<string> Log = new();
         internal int StartLineNumber;
         internal int StartColumnNumber;
@@ -25,9 +26,11 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         public FunctionRename(string OldName, string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
         {
             this.OldName = OldName;
+            this.NewName = NewName;
             this.StartLineNumber = StartLineNumber;
             this.StartColumnNumber = StartColumnNumber;
             this.ScriptAst = ScriptAst;
+            this.ShouldRename = false;
 
             Ast Node = FunctionRename.GetAstNodeByLineAndColumn(OldName, StartLineNumber, StartColumnNumber, ScriptAst);
             if (Node != null)
@@ -57,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                 return ast.Extent.StartLineNumber == StartLineNumber &&
                 ast.Extent.StartColumnNumber == StartColumnNumber &&
                 ast is FunctionDefinitionAst FuncDef &&
-                FuncDef.Name == OldName;
+                FuncDef.Name.ToLower() == OldName.ToLower();
             }, true);
             // Looking for a a Command call
             if (null == result)
@@ -67,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     return ast.Extent.StartLineNumber == StartLineNumber &&
                     ast.Extent.StartColumnNumber == StartColumnNumber &&
                     ast is CommandAst CommDef &&
-                    CommDef.GetCommandName() == OldName;
+                    CommDef.GetCommandName().ToLower() == OldName.ToLower();
                 }, true);
             }
 
@@ -80,31 +83,32 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             CommandAst TargetCommand = (CommandAst)ScriptFile.Find(ast =>
             {
                 return ast is CommandAst CommDef &&
-                CommDef.GetCommandName() == OldName &&
+                CommDef.GetCommandName().ToLower() == OldName.ToLower() &&
                 CommDef.Extent.StartLineNumber == StartLineNumber &&
                 CommDef.Extent.StartColumnNumber == StartColumnNumber;
             }, true);
 
             string FunctionName = TargetCommand.GetCommandName();
 
-            List<FunctionDefinitionAst> FunctionDefinitions = (List<FunctionDefinitionAst>)ScriptFile.FindAll(ast =>
+            List<FunctionDefinitionAst> FunctionDefinitions = ScriptFile.FindAll(ast =>
             {
                 return ast is FunctionDefinitionAst FuncDef &&
+                FuncDef.Name.ToLower() == OldName.ToLower() &&
                 (FuncDef.Extent.EndLineNumber < TargetCommand.Extent.StartLineNumber ||
                 (FuncDef.Extent.EndColumnNumber <= TargetCommand.Extent.StartColumnNumber &&
                 FuncDef.Extent.EndLineNumber <= TargetCommand.Extent.StartLineNumber));
-            }, true);
+            }, true).Cast<FunctionDefinitionAst>().ToList();
             // return the function def if we only have one match
             if (FunctionDefinitions.Count == 1)
             {
                 return FunctionDefinitions[0];
             }
             // Sort function definitions
-            FunctionDefinitions.Sort((a, b) =>
-            {
-                return a.Extent.EndColumnNumber + a.Extent.EndLineNumber -
-                    b.Extent.EndLineNumber + b.Extent.EndColumnNumber;
-            });
+            //FunctionDefinitions.Sort((a, b) =>
+            //{
+            //    return b.Extent.EndColumnNumber + b.Extent.EndLineNumber -
+            //       a.Extent.EndLineNumber + a.Extent.EndColumnNumber;
+            //});
             // Determine which function definition is the right one
             FunctionDefinitionAst CorrectDefinition = null;
             for (int i = FunctionDefinitions.Count - 1; i >= 0; i--)
@@ -165,7 +169,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     DuplicateFunctionAst = ast;
                 }
             }
-            ast.Visit(this);
+            ast.Body.Visit(this);
 
             ScopeStack.Pop();
             return null;
@@ -189,14 +193,14 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             ast.BeginBlock?.Visit(this);
             ast.ProcessBlock?.Visit(this);
             ast.EndBlock?.Visit(this);
-            ast.DynamicParamBlock.Visit(this);
+            ast.DynamicParamBlock?.Visit(this);
 
             if (ShouldRename && TargetFunctionAst.Parent.Parent == ast)
             {
                 ShouldRename = false;
             }
 
-            if (DuplicateFunctionAst.Parent.Parent == ast)
+            if (DuplicateFunctionAst?.Parent.Parent == ast)
             {
                 ShouldRename = true;
             }
@@ -224,6 +228,12 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             {
                 element.Visit(this);
             }
+
+            if (DuplicateFunctionAst?.Parent == ast)
+            {
+                ShouldRename = true;
+            }
+
             return null;
         }
         public object VisitForStatement(ForStatementAst ast)
@@ -276,10 +286,11 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     {
                         NewText = NewName,
                         StartLine = ast.Extent.StartLineNumber - 1,
-                        StartColumn = ast.Extent.StartColumnNumber + "function ".Length - 1,
+                        StartColumn = ast.Extent.StartColumnNumber - 1,
                         EndLine = ast.Extent.StartLineNumber - 1,
-                        EndColumn = ast.Extent.StartColumnNumber + ast.GetCommandName().Length - 1,
+                        EndColumn = ast.Extent.StartColumnNumber + OldName.Length - 1,
                     };
+                    Modifications.Add(Change);
                 }
             }
             foreach (CommandElementAst element in ast.CommandElements)
@@ -290,54 +301,64 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             return null;
         }
 
-        public object VisitBaseCtorInvokeMemberExpression(BaseCtorInvokeMemberExpressionAst baseCtorInvokeMemberExpressionAst) => throw new NotImplementedException();
-        public object VisitConfigurationDefinition(ConfigurationDefinitionAst configurationDefinitionAst) => throw new NotImplementedException();
-        public object VisitDynamicKeywordStatement(DynamicKeywordStatementAst dynamicKeywordAst) => throw new NotImplementedException();
-        public object VisitFunctionMember(FunctionMemberAst functionMemberAst) => throw new NotImplementedException();
-        public object VisitPropertyMember(PropertyMemberAst propertyMemberAst) => throw new NotImplementedException();
-        public object VisitTypeDefinition(TypeDefinitionAst typeDefinitionAst) => throw new NotImplementedException();
-        public object VisitUsingStatement(UsingStatementAst usingStatement) => throw new NotImplementedException();
-        public object VisitArrayExpression(ArrayExpressionAst arrayExpressionAst) => throw new NotImplementedException();
-        public object VisitArrayLiteral(ArrayLiteralAst arrayLiteralAst) => throw new NotImplementedException();
-        public object VisitAttribute(AttributeAst attributeAst) => throw new NotImplementedException();
-        public object VisitAttributedExpression(AttributedExpressionAst attributedExpressionAst) => throw new NotImplementedException();
-        public object VisitBinaryExpression(BinaryExpressionAst binaryExpressionAst) => throw new NotImplementedException();
-        public object VisitBlockStatement(BlockStatementAst blockStatementAst) => throw new NotImplementedException();
-        public object VisitBreakStatement(BreakStatementAst breakStatementAst) => throw new NotImplementedException();
-        public object VisitCatchClause(CatchClauseAst catchClauseAst) => throw new NotImplementedException();
-        public object VisitCommandParameter(CommandParameterAst commandParameterAst) => throw new NotImplementedException();
-        public object VisitConstantExpression(ConstantExpressionAst constantExpressionAst) => throw new NotImplementedException();
-        public object VisitContinueStatement(ContinueStatementAst continueStatementAst) => throw new NotImplementedException();
-        public object VisitConvertExpression(ConvertExpressionAst convertExpressionAst) => throw new NotImplementedException();
-        public object VisitDataStatement(DataStatementAst dataStatementAst) => throw new NotImplementedException();
-        public object VisitDoUntilStatement(DoUntilStatementAst doUntilStatementAst) => throw new NotImplementedException();
-        public object VisitDoWhileStatement(DoWhileStatementAst doWhileStatementAst) => throw new NotImplementedException();
-        public object VisitErrorExpression(ErrorExpressionAst errorExpressionAst) => throw new NotImplementedException();
-        public object VisitErrorStatement(ErrorStatementAst errorStatementAst) => throw new NotImplementedException();
-        public object VisitExitStatement(ExitStatementAst exitStatementAst) => throw new NotImplementedException();
-        public object VisitExpandableStringExpression(ExpandableStringExpressionAst expandableStringExpressionAst) => throw new NotImplementedException();
-        public object VisitFileRedirection(FileRedirectionAst fileRedirectionAst) => throw new NotImplementedException();
-        public object VisitHashtable(HashtableAst hashtableAst) => throw new NotImplementedException();
-        public object VisitIndexExpression(IndexExpressionAst indexExpressionAst) => throw new NotImplementedException();
-        public object VisitInvokeMemberExpression(InvokeMemberExpressionAst invokeMemberExpressionAst) => throw new NotImplementedException();
-        public object VisitMemberExpression(MemberExpressionAst memberExpressionAst) => throw new NotImplementedException();
-        public object VisitMergingRedirection(MergingRedirectionAst mergingRedirectionAst) => throw new NotImplementedException();
-        public object VisitNamedAttributeArgument(NamedAttributeArgumentAst namedAttributeArgumentAst) => throw new NotImplementedException();
-        public object VisitParamBlock(ParamBlockAst paramBlockAst) => throw new NotImplementedException();
-        public object VisitParameter(ParameterAst parameterAst) => throw new NotImplementedException();
-        public object VisitParenExpression(ParenExpressionAst parenExpressionAst) => throw new NotImplementedException();
-        public object VisitReturnStatement(ReturnStatementAst returnStatementAst) => throw new NotImplementedException();
-        public object VisitStringConstantExpression(StringConstantExpressionAst stringConstantExpressionAst) => throw new NotImplementedException();
-        public object VisitSubExpression(SubExpressionAst subExpressionAst) => throw new NotImplementedException();
-        public object VisitSwitchStatement(SwitchStatementAst switchStatementAst) => throw new NotImplementedException();
-        public object VisitThrowStatement(ThrowStatementAst throwStatementAst) => throw new NotImplementedException();
-        public object VisitTrap(TrapStatementAst trapStatementAst) => throw new NotImplementedException();
-        public object VisitTryStatement(TryStatementAst tryStatementAst) => throw new NotImplementedException();
-        public object VisitTypeConstraint(TypeConstraintAst typeConstraintAst) => throw new NotImplementedException();
-        public object VisitTypeExpression(TypeExpressionAst typeExpressionAst) => throw new NotImplementedException();
-        public object VisitUnaryExpression(UnaryExpressionAst unaryExpressionAst) => throw new NotImplementedException();
-        public object VisitUsingExpression(UsingExpressionAst usingExpressionAst) => throw new NotImplementedException();
-        public object VisitVariableExpression(VariableExpressionAst variableExpressionAst) => throw new NotImplementedException();
-        public object VisitWhileStatement(WhileStatementAst whileStatementAst) => throw new NotImplementedException();
+        public object VisitBaseCtorInvokeMemberExpression(BaseCtorInvokeMemberExpressionAst baseCtorInvokeMemberExpressionAst) => null;
+        public object VisitConfigurationDefinition(ConfigurationDefinitionAst configurationDefinitionAst) => null;
+        public object VisitDynamicKeywordStatement(DynamicKeywordStatementAst dynamicKeywordAst) => null;
+        public object VisitFunctionMember(FunctionMemberAst functionMemberAst) => null;
+        public object VisitPropertyMember(PropertyMemberAst propertyMemberAst) => null;
+        public object VisitTypeDefinition(TypeDefinitionAst typeDefinitionAst) => null;
+        public object VisitUsingStatement(UsingStatementAst usingStatement) => null;
+        public object VisitArrayExpression(ArrayExpressionAst arrayExpressionAst) => null;
+        public object VisitArrayLiteral(ArrayLiteralAst arrayLiteralAst) => null;
+        public object VisitAttribute(AttributeAst attributeAst) => null;
+        public object VisitAttributedExpression(AttributedExpressionAst attributedExpressionAst) => null;
+        public object VisitBinaryExpression(BinaryExpressionAst binaryExpressionAst) => null;
+        public object VisitBlockStatement(BlockStatementAst blockStatementAst) => null;
+        public object VisitBreakStatement(BreakStatementAst breakStatementAst) => null;
+        public object VisitCatchClause(CatchClauseAst catchClauseAst) => null;
+        public object VisitCommandParameter(CommandParameterAst commandParameterAst) => null;
+        public object VisitConstantExpression(ConstantExpressionAst constantExpressionAst) => null;
+        public object VisitContinueStatement(ContinueStatementAst continueStatementAst) => null;
+        public object VisitConvertExpression(ConvertExpressionAst convertExpressionAst) => null;
+        public object VisitDataStatement(DataStatementAst dataStatementAst) => null;
+        public object VisitDoUntilStatement(DoUntilStatementAst doUntilStatementAst) => null;
+        public object VisitDoWhileStatement(DoWhileStatementAst doWhileStatementAst) => null;
+        public object VisitErrorExpression(ErrorExpressionAst errorExpressionAst) => null;
+        public object VisitErrorStatement(ErrorStatementAst errorStatementAst) => null;
+        public object VisitExitStatement(ExitStatementAst exitStatementAst) => null;
+        public object VisitExpandableStringExpression(ExpandableStringExpressionAst expandableStringExpressionAst){
+
+            foreach (ExpressionAst element in expandableStringExpressionAst.NestedExpressions)
+            {
+                element.Visit(this);
+            }
+            return null;
+            }
+        public object VisitFileRedirection(FileRedirectionAst fileRedirectionAst) => null;
+        public object VisitHashtable(HashtableAst hashtableAst) => null;
+        public object VisitIndexExpression(IndexExpressionAst indexExpressionAst) => null;
+        public object VisitInvokeMemberExpression(InvokeMemberExpressionAst invokeMemberExpressionAst) => null;
+        public object VisitMemberExpression(MemberExpressionAst memberExpressionAst) => null;
+        public object VisitMergingRedirection(MergingRedirectionAst mergingRedirectionAst) => null;
+        public object VisitNamedAttributeArgument(NamedAttributeArgumentAst namedAttributeArgumentAst) => null;
+        public object VisitParamBlock(ParamBlockAst paramBlockAst) => null;
+        public object VisitParameter(ParameterAst parameterAst) => null;
+        public object VisitParenExpression(ParenExpressionAst parenExpressionAst) => null;
+        public object VisitReturnStatement(ReturnStatementAst returnStatementAst) => null;
+        public object VisitStringConstantExpression(StringConstantExpressionAst stringConstantExpressionAst) => null;
+        public object VisitSubExpression(SubExpressionAst subExpressionAst) {
+            subExpressionAst.SubExpression.Visit(this);
+            return null;
+        }
+        public object VisitSwitchStatement(SwitchStatementAst switchStatementAst) => null;
+        public object VisitThrowStatement(ThrowStatementAst throwStatementAst) => null;
+        public object VisitTrap(TrapStatementAst trapStatementAst) => null;
+        public object VisitTryStatement(TryStatementAst tryStatementAst) => null;
+        public object VisitTypeConstraint(TypeConstraintAst typeConstraintAst) => null;
+        public object VisitTypeExpression(TypeExpressionAst typeExpressionAst) => null;
+        public object VisitUnaryExpression(UnaryExpressionAst unaryExpressionAst) => null;
+        public object VisitUsingExpression(UsingExpressionAst usingExpressionAst) => null;
+        public object VisitVariableExpression(VariableExpressionAst variableExpressionAst) => null;
+        public object VisitWhileStatement(WhileStatementAst whileStatementAst) => null;
     }
 }
