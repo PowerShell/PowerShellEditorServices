@@ -6,58 +6,97 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring
 {
     internal static class RefactorsFunctionData
     {
-        public static readonly RenameSymbolParams FunctionsMultiple = new()
+
+        public static readonly RenameSymbolParams FunctionsSingle = new()
         {
-            // rename function Two { ...}
-            FileName = "FunctionsMultiple.ps1",
-            Column = 9,
-            Line = 3,
-            RenameTo = "TwoFours"
+            FileName = "BasicFunction.ps1",
+            Column = 1,
+            Line = 5,
+            RenameTo = "Renamed"
         };
-        public static readonly RenameSymbolParams FunctionsMultipleFromCommandDef = new()
+        public static readonly RenameSymbolParams FunctionMultipleOccurrences = new()
         {
-            //  ... write-host "Three Hello" ...
-            // Two
-            //
-            FileName = "FunctionsMultiple.ps1",
+            FileName = "MultipleOccurrences.ps1",
+            Column = 1,
+            Line = 5,
+            RenameTo = "Renamed"
+        };
+        public static readonly RenameSymbolParams FunctionInnerIsNested = new()
+        {
+            FileName = "NestedFunctions.ps1",
             Column = 5,
-            Line = 15,
-            RenameTo = "OnePlusOne"
+            Line = 5,
+            RenameTo = "bar"
         };
-        public static readonly RenameSymbolParams FunctionsSingleParams = new()
+        public static readonly RenameSymbolParams FunctionOuterHasNestedFunction = new()
         {
-            FileName = "FunctionsSingle.ps1",
-            Column = 9,
-            Line = 0,
-            RenameTo = "OneMethod"
+            FileName = "OuterFunction.ps1",
+            Column = 10,
+            Line = 1,
+            RenameTo = "RenamedOuterFunction"
         };
-        public static readonly RenameSymbolParams FunctionsSingleNested = new()
+        public static readonly RenameSymbolParams FunctionWithInnerFunction = new()
         {
-            FileName = "FunctionsNestedSimple.ps1",
-            Column = 16,
-            Line = 4,
-            RenameTo = "OneMethod"
-        };
-        public static readonly RenameSymbolParams FunctionsNestedOverlapCommand = new()
-        {
-            FileName = "FunctionsNestedOverlap.ps1",
+            FileName = "InnerFunction.ps1",
             Column = 5,
-            Line = 15,
-            RenameTo = "OneMethod"
+            Line = 5,
+            RenameTo = "RenamedInnerFunction"
         };
-        public static readonly RenameSymbolParams FunctionsNestedOverlapFunction = new()
+        public static readonly RenameSymbolParams FunctionWithInternalCalls = new()
         {
-            FileName = "FunctionsNestedOverlap.ps1",
+            FileName = "InternalCalls.ps1",
+            Column = 1,
+            Line = 5,
+            RenameTo = "Renamed"
+        };
+        public static readonly RenameSymbolParams FunctionCmdlet = new()
+        {
+            FileName = "CmdletFunction.ps1",
+            Column = 10,
+            Line = 1,
+            RenameTo = "Renamed"
+        };
+        public static readonly RenameSymbolParams FunctionSameName = new()
+        {
+            FileName = "SamenameFunctions.ps1",
             Column = 14,
-            Line = 16,
-            RenameTo = "OneMethod"
+            Line = 3,
+            RenameTo = "RenamedSameNameFunction"
         };
-        public static readonly RenameSymbolParams FunctionsSimpleFlat = new()
+        public static readonly RenameSymbolParams FunctionScriptblock = new()
         {
-            FileName = "FunctionsFlat.ps1",
-            Column = 81,
-            Line = 0,
-            RenameTo = "ChangedFlat"
+            FileName = "ScriptblockFunction.ps1",
+            Column = 5,
+            Line = 5,
+            RenameTo = "Renamed"
+        };
+        public static readonly RenameSymbolParams FunctionLoop = new()
+        {
+            FileName = "LoopFunction.ps1",
+            Column = 5,
+            Line = 5,
+            RenameTo = "Renamed"
+        };
+        public static readonly RenameSymbolParams FunctionForeach = new()
+        {
+            FileName = "ForeachFunction.ps1",
+            Column = 5,
+            Line = 11,
+            RenameTo = "Renamed"
+        };
+        public static readonly RenameSymbolParams FunctionForeachObject = new()
+        {
+            FileName = "ForeachObjectFunction.ps1",
+            Column = 5,
+            Line = 11,
+            RenameTo = "Renamed"
+        };
+        public static readonly RenameSymbolParams FunctionCallWIthinStringExpression = new()
+        {
+            FileName = "FunctionCallWIthinStringExpression.ps1",
+            Column = 10,
+            Line = 1,
+            RenameTo = "Renamed"
         };
     }
 }
