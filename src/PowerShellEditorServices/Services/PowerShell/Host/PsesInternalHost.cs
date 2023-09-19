@@ -240,7 +240,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private bool ShouldExitExecutionLoop => _shouldExit || _shuttingDown != 0;
 
         private BreakpointSyncService BreakpointSync
-            => _breakpointSyncService ??= _languageServer.GetService<BreakpointSyncService>();
+            => _breakpointSyncService ??= _languageServer?.GetService<BreakpointSyncService>();
 
         public override void EnterNestedPrompt() => PushPowerShellAndRunLoop(
             CreateNestedPowerShell(CurrentRunspace),
@@ -894,7 +894,7 @@ Set-MappedKeyHandlers
                                 newRunspaceFrame.RunspaceInfo));
                     }
 
-                    if (BreakpointSync.IsSupported)
+                    if (BreakpointSync?.IsSupported is true)
                     {
                         BreakpointSync.SyncServerAfterRunspacePop();
                     }

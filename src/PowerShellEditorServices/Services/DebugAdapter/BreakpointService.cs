@@ -62,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task<IReadOnlyList<BreakpointDetails>> SetBreakpointsAsync(string escapedScriptPath, IReadOnlyList<BreakpointDetails> breakpoints)
         {
-            if (_breakpointSyncService.IsSupported)
+            if (_breakpointSyncService?.IsSupported is true)
             {
                 // Since we're syncing breakpoints outside of debug configurations, if we can't find
                 // an existing breakpoint then mark it as unverified.
@@ -249,7 +249,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             // Only need to remove all breakpoints if we're not able to sync outside of debug
             // sessions.
-            if (_breakpointSyncService.IsSupported)
+            if (_breakpointSyncService?.IsSupported is true)
             {
                 return;
             }
