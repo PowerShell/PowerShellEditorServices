@@ -3,7 +3,6 @@
 
 #nullable enable
 
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,22 +27,9 @@ internal record ClientBreakpoint(
     [property: Optional] ClientLocation? Location = null,
     [property: Optional] string? FunctionName = null)
 {
-    private string? _id;
-
     // The ID needs to come from the client, so if the breakpoint is originating on the server
     // then we need to create an ID-less breakpoint to send over to the client.
-    public string Id
-    {
-        get
-        {
-            Debug.Assert(
-                _id is not null,
-                "Caller should ensure ClientBreakpoint ID is retrieved by the client prior to calling this property.");
-
-            return _id!;
-        }
-        set => _id = value;
-    }
+    public string? Id { get; set; }
 }
 
 internal record ClientBreakpointsChangedEvents(
