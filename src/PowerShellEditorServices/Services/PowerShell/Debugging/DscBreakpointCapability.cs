@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
@@ -54,10 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                     ? $"Enable-DscDebug -Breakpoint {hashtableString}"
                     : "Disable-DscDebug");
 
-            await executionService.ExecutePSCommandAsync(
-                dscCommand,
-                CancellationToken.None)
-                .ConfigureAwait(false);
+            await executionService.ExecutePSCommandAsync(dscCommand, CancellationToken.None).ConfigureAwait(false);
 
             // Verify all the breakpoints and return them
             foreach (BreakpointDetails breakpoint in breakpoints)
@@ -80,7 +76,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         public static async Task<DscBreakpointCapability> GetDscCapabilityAsync(
             ILogger logger,
             IRunspaceInfo currentRunspace,
-            PsesInternalHost psesHost)
+            IInternalPowerShellExecutionService executionService)
         {
             // DSC support is enabled only for Windows PowerShell.
             if ((currentRunspace.PowerShellVersionDetails.Version.Major >= 6) &&
@@ -92,16 +88,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
             if (!isDscInstalled.HasValue)
             {
                 PSCommand psCommand = new PSCommand()
-                    .AddScript($"$global:{DebugService.PsesGlobalVariableNamePrefix}prevProgressPreference = $ProgressPreference")
-                    .AddScript("$ProgressPreference = 'SilentlyContinue'")
                     .AddCommand(@"Microsoft.PowerShell.Core\Import-Module")
                     .AddParameter("Name", "PSDesiredStateConfiguration")
                     .AddParameter("PassThru")
-                    .AddParameter("ErrorAction", ActionPreference.Ignore)
-                    .AddScript($"$ProgressPreference = $global:{DebugService.PsesGlobalVariableNamePrefix}prevProgressPreference");
+                    .AddParameter("ErrorAction", ActionPreference.Ignore);
 
                 IReadOnlyList<PSModuleInfo> dscModule =
-                    await psesHost.ExecutePSCommandAsync<PSModuleInfo>(
+                    await executionService.ExecutePSCommandAsync<PSModuleInfo>(
                         psCommand,
                         CancellationToken.None,
                         new PowerShellExecutionOptions { ThrowOnError = false })
@@ -113,19 +106,29 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
             if (isDscInstalled.Value)
             {
-                PSCommand psCommand = new PSCommand()
-                    .AddCommand("Get-DscResource")
-                    .AddCommand("Select-Object")
-                    .AddParameter("ExpandProperty", "ParentPath");
+                // Note that __psEditorServices_ is DebugService.PsesGlobalVariableNamePrefix but
+                // it's notoriously difficult to interpolate it in this script, which has to be a
+                // single script to guarantee everything is run at once.
+                PSCommand psCommand = new PSCommand().AddScript(
+                """
+                try {
+                    $global:__psEditorServices_prevProgressPreference = $ProgressPreference
+                    $global:ProgressPreference = 'SilentlyContinue'
+                    return Get-DscResource | Select-Object -ExpandProperty ParentPath
+                } finally {
+                    $ProgressPreference = $global:__psEditorServices_prevProgressPreference
+                }
+                """);
 
                 IReadOnlyList<string> resourcePaths =
-                    await psesHost.ExecutePSCommandAsync<string>(
+                    await executionService.ExecutePSCommandAsync<string>(
                         psCommand,
                         CancellationToken.None,
                         new PowerShellExecutionOptions { ThrowOnError = false }
                     ).ConfigureAwait(false);
 
                 logger.LogTrace($"DSC resources found: {resourcePaths.Count}");
+
                 return new DscBreakpointCapability
                 {
                     dscResourceRootPaths = resourcePaths.ToArray()
