@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Management.Automation;
 using System.Management.Automation.Remoting;
-using System.Management.Automation.Runspaces;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -241,12 +240,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         private async Task<AttachResponse> HandleImpl(PsesAttachRequestArguments request, CancellationToken cancellationToken)
         {
-            cancellationToken.Register(() =>
-                {
-                    if (Runspace.DefaultRunspace != null)
-                    {
-                    }
-                });
             // The debugger has officially started. We use this to later check if we should stop it.
             ((PsesInternalHost)_executionService).DebugContext.IsActive = true;
 

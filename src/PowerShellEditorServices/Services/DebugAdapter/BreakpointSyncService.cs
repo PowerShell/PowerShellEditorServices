@@ -141,50 +141,60 @@ internal sealed class BreakpointSyncService
 
     public async Task UpdatedByServerAsync(BreakpointUpdatedEventArgs eventArgs)
     {
-        if (!_map.ByPwshId.TryGetValue(eventArgs.Breakpoint.Id, out SyncedBreakpoint existing))
+        if (_map.ByPwshId.TryGetValue(eventArgs.Breakpoint.Id, out SyncedBreakpoint existing))
         {
-            // If we haven't told the client about the breakpoint yet then we can just ignore.
+            await ProcessExistingBreakpoint(eventArgs, existing).ConfigureAwait(false);
+            return;
+        }
+
+        // If we haven't told the client about the breakpoint yet then we can just ignore.
+        if (eventArgs.UpdateType is BreakpointUpdateType.Removed)
+        {
+            return;
+        }
+
+        SyncedBreakpoint newBreakpoint = CreateFromServerBreakpoint(eventArgs.Breakpoint);
+        string? id = await SendToClientAsync(newBreakpoint.Client, BreakpointUpdateType.Set)
+            .ConfigureAwait(false);
+
+        if (id is null)
+        {
+            LogBreakpointError(newBreakpoint, "Did not receive a breakpoint ID from the client.");
+        }
+
+        newBreakpoint.Client.Id = id;
+        RegisterBreakpoint(newBreakpoint);
+
+        async Task ProcessExistingBreakpoint(BreakpointUpdatedEventArgs eventArgs, SyncedBreakpoint existing)
+        {
             if (eventArgs.UpdateType is BreakpointUpdateType.Removed)
             {
+                UnregisterBreakpoint(existing);
+                await SendToClientAsync(existing.Client, BreakpointUpdateType.Removed).ConfigureAwait(false);
                 return;
             }
 
-            existing = CreateFromServerBreakpoint(eventArgs.Breakpoint);
-            string? id = await SendToClientAsync(existing.Client, BreakpointUpdateType.Set)
-                .ConfigureAwait(false);
-
-            existing.Client.Id = id!;
-            RegisterBreakpoint(existing);
-            return;
-        }
-
-        if (eventArgs.UpdateType is BreakpointUpdateType.Removed)
-        {
-            UnregisterBreakpoint(existing);
-            await SendToClientAsync(existing.Client, BreakpointUpdateType.Removed).ConfigureAwait(false);
-            return;
-        }
-
-        if (eventArgs.UpdateType is BreakpointUpdateType.Enabled or BreakpointUpdateType.Disabled)
-        {
-            await SendToClientAsync(existing.Client, eventArgs.UpdateType).ConfigureAwait(false);
-            bool isActive = eventArgs.UpdateType is BreakpointUpdateType.Enabled;
-            SyncedBreakpoint newBreakpoint = existing with
+            if (eventArgs.UpdateType is BreakpointUpdateType.Enabled or BreakpointUpdateType.Disabled)
             {
-                Client = existing.Client with
+                await SendToClientAsync(existing.Client, eventArgs.UpdateType).ConfigureAwait(false);
+                bool isActive = eventArgs.UpdateType is BreakpointUpdateType.Enabled;
+                SyncedBreakpoint newBreakpoint = existing with
                 {
-                    Enabled = isActive,
-                },
-            };
+                    Client = existing.Client with
+                    {
+                        Enabled = isActive,
+                    },
+                };
 
-            UnregisterBreakpoint(existing);
-            RegisterBreakpoint(newBreakpoint);
-            return;
+                UnregisterBreakpoint(existing);
+                RegisterBreakpoint(newBreakpoint);
+                return;
+            }
+
+            LogBreakpointError(
+                existing,
+                "Somehow we're syncing a new breakpoint that we've already sync'd. That's not supposed to happen.");
         }
-
-        LogBreakpointError(
-            existing,
-            "Somehow we're syncing a new breakpoint that we've already sync'd. That's not supposed to happen.");
     }
 
     public IReadOnlyList<SyncedBreakpoint> GetSyncedBreakpoints() => _map.ByGuid.Values.ToArray();
@@ -521,7 +531,6 @@ internal sealed class BreakpointSyncService
         else if (serverBreakpoint is LineBreakpoint lbp)
         {
             location = new ClientLocation(
-                // TODO: fix the translation of this
                 lbp.Script,
                 new Range(
                     lbp.Line - 1,
