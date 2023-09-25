@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         private readonly string OldName;
         private readonly string NewName;
         internal Stack<string> ScopeStack = new();
-        internal bool ShouldRename;
+        internal bool ShouldRename = false;
         public List<TextChange> Modifications = new();
         private readonly List<string> Log = new();
         internal int StartLineNumber;
@@ -30,7 +30,6 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             this.StartLineNumber = StartLineNumber;
             this.StartColumnNumber = StartColumnNumber;
             this.ScriptAst = ScriptAst;
-            this.ShouldRename = false;
 
             Ast Node = FunctionRename.GetAstNodeByLineAndColumn(OldName, StartLineNumber, StartColumnNumber, ScriptAst);
             if (Node != null)
@@ -39,7 +38,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                 {
                     TargetFunctionAst = FuncDef;
                 }
-                if (Node is CommandAst CommDef)
+                if (Node is CommandAst)
                 {
                     TargetFunctionAst = FunctionRename.GetFunctionDefByCommandAst(OldName, StartLineNumber, StartColumnNumber, ScriptAst);
                     if (TargetFunctionAst == null)
@@ -326,14 +325,15 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         public object VisitErrorExpression(ErrorExpressionAst errorExpressionAst) => null;
         public object VisitErrorStatement(ErrorStatementAst errorStatementAst) => null;
         public object VisitExitStatement(ExitStatementAst exitStatementAst) => null;
-        public object VisitExpandableStringExpression(ExpandableStringExpressionAst expandableStringExpressionAst){
+        public object VisitExpandableStringExpression(ExpandableStringExpressionAst expandableStringExpressionAst)
+        {
 
             foreach (ExpressionAst element in expandableStringExpressionAst.NestedExpressions)
             {
                 element.Visit(this);
             }
             return null;
-            }
+        }
         public object VisitFileRedirection(FileRedirectionAst fileRedirectionAst) => null;
         public object VisitHashtable(HashtableAst hashtableAst) => null;
         public object VisitIndexExpression(IndexExpressionAst indexExpressionAst) => null;
@@ -346,7 +346,8 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         public object VisitParenExpression(ParenExpressionAst parenExpressionAst) => null;
         public object VisitReturnStatement(ReturnStatementAst returnStatementAst) => null;
         public object VisitStringConstantExpression(StringConstantExpressionAst stringConstantExpressionAst) => null;
-        public object VisitSubExpression(SubExpressionAst subExpressionAst) {
+        public object VisitSubExpression(SubExpressionAst subExpressionAst)
+        {
             subExpressionAst.SubExpression.Visit(this);
             return null;
         }
