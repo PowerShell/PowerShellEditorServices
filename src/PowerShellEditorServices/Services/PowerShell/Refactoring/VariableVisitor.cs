@@ -12,13 +12,14 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
     {
         private readonly string OldName;
         private readonly string NewName;
-        internal Stack<string> ScopeStack = new();
+        internal Stack<Ast> ScopeStack = new();
         internal bool ShouldRename;
         public List<TextChange> Modifications = new();
         internal int StartLineNumber;
         internal int StartColumnNumber;
         internal VariableExpressionAst TargetVariableAst;
         internal VariableExpressionAst DuplicateVariableAst;
+        internal List<string> dotSourcedScripts = new();
         internal readonly Ast ScriptAst;
 
         public VariableRename(string OldName, string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
@@ -66,6 +67,17 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         public object VisitCatchClause(CatchClauseAst catchClauseAst) => throw new NotImplementedException();
         public object VisitCommand(CommandAst commandAst)
         {
+
+            // Check for dot sourcing
+            // TODO Handle the dot sourcing after detection
+            if (commandAst.InvocationOperator == TokenKind.Dot && commandAst.CommandElements.Count > 1)
+            {
+                if (commandAst.CommandElements[1] is StringConstantExpressionAst scriptPath)
+                {
+                    dotSourcedScripts.Add(scriptPath.Value);
+                }
+            }
+
             foreach (CommandElementAst element in commandAst.CommandElements)
             {
                 element.Visit(this);
@@ -102,15 +114,27 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         public object VisitFileRedirection(FileRedirectionAst fileRedirectionAst) => throw new NotImplementedException();
         public object VisitForEachStatement(ForEachStatementAst forEachStatementAst)
         {
+            ScopeStack.Push(forEachStatementAst);
             forEachStatementAst.Body.Visit(this);
+            ScopeStack.Pop();
             return null;
         }
         public object VisitForStatement(ForStatementAst forStatementAst)
         {
+            forStatementAst.Condition.Visit(this);
+            ScopeStack.Push(forStatementAst);
             forStatementAst.Body.Visit(this);
+            ScopeStack.Pop();
             return null;
         }
-        public object VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst) => throw new NotImplementedException();
+        public object VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst) {
+            ScopeStack.Push(functionDefinitionAst);
+
+            functionDefinitionAst.Body.Visit(this);
+
+            ScopeStack.Pop();
+            return null;
+        }
         public object VisitFunctionMember(FunctionMemberAst functionMemberAst) => throw new NotImplementedException();
         public object VisitHashtable(HashtableAst hashtableAst) => throw new NotImplementedException();
         public object VisitIfStatement(IfStatementAst ifStmtAst)
@@ -153,7 +177,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         public object VisitReturnStatement(ReturnStatementAst returnStatementAst) => throw new NotImplementedException();
         public object VisitScriptBlock(ScriptBlockAst scriptBlockAst)
         {
-            ScopeStack.Push("scriptblock");
+            ScopeStack.Push(scriptBlockAst);
 
             scriptBlockAst.BeginBlock?.Visit(this);
             scriptBlockAst.ProcessBlock?.Visit(this);
@@ -167,7 +191,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         public object VisitLoopStatement(LoopStatementAst loopAst)
         {
 
-            ScopeStack.Push("Loop");
+            ScopeStack.Push(loopAst);
 
             loopAst.Body.Visit(this);
 
