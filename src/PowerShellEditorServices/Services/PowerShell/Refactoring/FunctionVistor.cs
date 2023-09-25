@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         private readonly string OldName;
         private readonly string NewName;
         internal Stack<string> ScopeStack = new();
-        internal bool ShouldRename = false;
+        internal bool ShouldRename;
         public List<TextChange> Modifications = new();
         private readonly List<string> Log = new();
         internal int StartLineNumber;
@@ -219,6 +219,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         public object VisitAssignmentStatement(AssignmentStatementAst ast)
         {
             ast.Right.Visit(this);
+            ast.Left.Visit(this);
             return null;
         }
         public object VisitStatementBlock(StatementBlockAst ast)
