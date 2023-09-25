@@ -141,7 +141,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 {
                     FileModifications = RenameFunction(symbol, scriptFile.ScriptAst, request);
                 }else if(symbol.Type is SymbolType.Variable){
-                    FileModifications = RenameVarible(symbol, scriptFile.ScriptAst, request);
+                    FileModifications = RenameVariable(symbol, scriptFile.ScriptAst, request);
                 }
 
                 RenameSymbolResult result = new();
