@@ -53,6 +53,67 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             }, true);
             return result;
         }
+        public static VariableExpressionAst GetVariableTopAssignment(string OldName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
+        {
+            static Ast GetAstParentScope(Ast node)
+            {
+                Ast parent = node.Parent;
+                // Walk backwards up the tree look
+                while (parent != null)
+                {
+                    if (parent is ScriptBlockAst)
+                    {
+                        break;
+                    }
+                    parent = parent.Parent;
+                }
+                return parent;
+            }
+
+            // Look up the target object
+            VariableExpressionAst node = GetAstNodeByLineAndColumn(OldName, StartLineNumber, StartColumnNumber, ScriptAst);
+
+            Ast TargetParent = GetAstParentScope(node);
+
+            List<VariableExpressionAst> VariableAssignments = ScriptAst.FindAll(ast =>
+            {
+                return ast is VariableExpressionAst VarDef &&
+                VarDef.Parent is AssignmentStatementAst &&
+                VarDef.VariablePath.UserPath.ToLower() == OldName.ToLower() &&
+                (VarDef.Extent.EndLineNumber < node.Extent.StartLineNumber ||
+                (VarDef.Extent.EndColumnNumber <= node.Extent.StartColumnNumber &&
+                VarDef.Extent.EndLineNumber <= node.Extent.StartLineNumber));
+            }, true).Cast<VariableExpressionAst>().ToList();
+            // return the def if we only have one match
+            if (VariableAssignments.Count == 1)
+            {
+                return VariableAssignments[0];
+            }
+            if (VariableAssignments.Count == 0)
+            {
+                return node;
+            }
+            VariableExpressionAst CorrectDefinition = null;
+            for (int i = VariableAssignments.Count - 1; i >= 0; i--)
+            {
+                VariableExpressionAst element = VariableAssignments[i];
+
+                Ast parent = GetAstParentScope(element);
+
+                // we have hit the global scope of the script file
+                if (null == parent)
+                {
+                    CorrectDefinition = element;
+                    break;
+                }
+
+                if (TargetParent == parent)
+                {
+                    CorrectDefinition = element;
+                }
+            }
+            return CorrectDefinition;
+        }
         public object VisitArrayExpression(ArrayExpressionAst arrayExpressionAst) => throw new NotImplementedException();
         public object VisitArrayLiteral(ArrayLiteralAst arrayLiteralAst) => throw new NotImplementedException();
         public object VisitAssignmentStatement(AssignmentStatementAst assignmentStatementAst)
