@@ -125,7 +125,13 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         public object VisitAttribute(AttributeAst attributeAst) => throw new NotImplementedException();
         public object VisitAttributedExpression(AttributedExpressionAst attributedExpressionAst) => throw new NotImplementedException();
         public object VisitBaseCtorInvokeMemberExpression(BaseCtorInvokeMemberExpressionAst baseCtorInvokeMemberExpressionAst) => throw new NotImplementedException();
-        public object VisitBinaryExpression(BinaryExpressionAst binaryExpressionAst) => throw new NotImplementedException();
+        public object VisitBinaryExpression(BinaryExpressionAst binaryExpressionAst)
+        {
+            binaryExpressionAst.Left.Visit(this);
+            binaryExpressionAst.Right.Visit(this);
+
+            return null;
+        }
         public object VisitBlockStatement(BlockStatementAst blockStatementAst) => throw new NotImplementedException();
         public object VisitBreakStatement(BreakStatementAst breakStatementAst) => throw new NotImplementedException();
         public object VisitCatchClause(CatchClauseAst catchClauseAst) => throw new NotImplementedException();
