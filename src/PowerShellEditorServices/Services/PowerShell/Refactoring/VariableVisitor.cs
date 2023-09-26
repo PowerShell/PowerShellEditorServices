@@ -40,11 +40,11 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             }
         }
 
-        public static VariableExpressionAst GetAstNodeByLineAndColumn(string OldName, int StartLineNumber, int StartColumnNumber, Ast ScriptFile)
+        public static VariableExpressionAst GetAstNodeByLineAndColumn(string OldName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
         {
             VariableExpressionAst result = null;
             // Looking for a function
-            result = (VariableExpressionAst)ScriptFile.Find(ast =>
+            result = (VariableExpressionAst)ScriptAst.Find(ast =>
             {
                 return ast.Extent.StartLineNumber == StartLineNumber &&
                 ast.Extent.StartColumnNumber == StartColumnNumber &&
