@@ -30,10 +30,13 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             this.StartColumnNumber = StartColumnNumber;
             this.ScriptAst = ScriptAst;
 
-            VariableExpressionAst Node = VariableRename.GetAstNodeByLineAndColumn(OldName, StartLineNumber, StartColumnNumber, ScriptAst);
+            VariableExpressionAst Node = VariableRename.GetVariableTopAssignment(this.OldName, StartLineNumber, StartColumnNumber, ScriptAst);
             if (Node != null)
             {
+
                 TargetVariableAst = Node;
+                this.StartColumnNumber = TargetVariableAst.Extent.StartColumnNumber;
+                this.StartLineNumber = TargetVariableAst.Extent.StartLineNumber;
             }
         }
 
