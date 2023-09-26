@@ -268,6 +268,22 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             scriptBlockAst.EndBlock?.Visit(this);
             scriptBlockAst.DynamicParamBlock?.Visit(this);
 
+            if (ShouldRename && TargetVariableAst.Parent.Parent == scriptBlockAst)
+            {
+                ShouldRename = false;
+            }
+
+            if (DuplicateVariableAst?.Parent.Parent.Parent == scriptBlockAst)
+            {
+                ShouldRename = true;
+                DuplicateVariableAst = null;
+            }
+
+            if (TargetVariableAst?.Parent.Parent == scriptBlockAst)
+            {
+                ShouldRename = true;
+            }
+
             ScopeStack.Pop();
 
             return null;
