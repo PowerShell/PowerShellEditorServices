@@ -34,7 +34,10 @@ namespace PowerShellEditorServices.Test.Refactoring
 
         internal static string GetModifiedScript(string OriginalScript, ModifiedFileResponse Modification)
         {
-
+            Modification.Changes.Sort((a,b) =>{
+                return b.EndColumn + b.EndLine -
+                a.EndColumn + a.EndLine;
+            });
             string[] Lines = OriginalScript.Split(
                             new string[] { Environment.NewLine },
                             StringSplitOptions.None);
@@ -74,6 +77,62 @@ namespace PowerShellEditorServices.Test.Refactoring
         public void RefactorFunctionSingle()
         {
             RenameSymbolParams request = RenameVariableData.SimpleVariableAssignment;
+            ScriptFile scriptFile = GetTestScript(request.FileName);
+            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
+            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
+                    request.Line,
+                    request.Column);
+            string modifiedcontent = TestRenaming(scriptFile, request, symbol);
+
+            Assert.Equal(expectedContent.Contents, modifiedcontent);
+
+        }
+        [Fact]
+        public void RefactorVariableNestedScopeFunction()
+        {
+            RenameSymbolParams request = RenameVariableData.VariableNestedScopeFunction;
+            ScriptFile scriptFile = GetTestScript(request.FileName);
+            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
+            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
+                    request.Line,
+                    request.Column);
+            string modifiedcontent = TestRenaming(scriptFile, request, symbol);
+
+            Assert.Equal(expectedContent.Contents, modifiedcontent);
+
+        }
+        [Fact]
+        public void RefactorVariableInPipeline()
+        {
+            RenameSymbolParams request = RenameVariableData.VariableInPipeline;
+            ScriptFile scriptFile = GetTestScript(request.FileName);
+            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
+            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
+                    request.Line,
+                    request.Column);
+            string modifiedcontent = TestRenaming(scriptFile, request, symbol);
+
+            Assert.Equal(expectedContent.Contents, modifiedcontent);
+
+        }
+        [Fact]
+        public void RefactorVariableInScriptBlock()
+        {
+            RenameSymbolParams request = RenameVariableData.VariableInScriptblock;
+            ScriptFile scriptFile = GetTestScript(request.FileName);
+            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
+            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
+                    request.Line,
+                    request.Column);
+            string modifiedcontent = TestRenaming(scriptFile, request, symbol);
+
+            Assert.Equal(expectedContent.Contents, modifiedcontent);
+
+        }
+        [Fact]
+        public void RefactorVariableInScriptBlockScoped()
+        {
+            RenameSymbolParams request = RenameVariableData.VariableInScriptblockScoped;
             ScriptFile scriptFile = GetTestScript(request.FileName);
             ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
             SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
