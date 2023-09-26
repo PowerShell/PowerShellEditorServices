@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using System;
+using System.Linq;
 
 namespace Microsoft.PowerShell.EditorServices.Refactoring
 {
@@ -211,7 +212,8 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             ScopeStack.Pop();
             return null;
         }
-        public object VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst) {
+        public object VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
+        {
             ScopeStack.Push(functionDefinitionAst);
 
             functionDefinitionAst.Body.Visit(this);
