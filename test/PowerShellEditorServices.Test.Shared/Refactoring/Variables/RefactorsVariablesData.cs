@@ -45,7 +45,15 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring.Variables
         public static readonly RenameSymbolParams VariableInScriptblock = new()
         {
             FileName = "VariableInScriptblock.ps1",
-            Column = 23,
+            Column = 26,
+            Line = 2,
+            RenameTo = "Renamed"
+        };
+
+        public static readonly RenameSymbolParams VariableInScriptblockScoped = new()
+        {
+            FileName = "VariableInScriptblockScoped.ps1",
+            Column = 36,
             Line = 2,
             RenameTo = "Renamed"
         };
