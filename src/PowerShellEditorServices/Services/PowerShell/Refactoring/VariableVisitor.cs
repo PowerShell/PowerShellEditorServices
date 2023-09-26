@@ -166,8 +166,22 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         public object VisitContinueStatement(ContinueStatementAst continueStatementAst) => throw new NotImplementedException();
         public object VisitConvertExpression(ConvertExpressionAst convertExpressionAst) => throw new NotImplementedException();
         public object VisitDataStatement(DataStatementAst dataStatementAst) => throw new NotImplementedException();
-        public object VisitDoUntilStatement(DoUntilStatementAst doUntilStatementAst) => throw new NotImplementedException();
-        public object VisitDoWhileStatement(DoWhileStatementAst doWhileStatementAst) => throw new NotImplementedException();
+        public object VisitDoUntilStatement(DoUntilStatementAst doUntilStatementAst)
+        {
+            doUntilStatementAst.Condition.Visit(this);
+            ScopeStack.Push(doUntilStatementAst);
+            doUntilStatementAst.Body.Visit(this);
+            ScopeStack.Pop();
+            return null;
+        }
+        public object VisitDoWhileStatement(DoWhileStatementAst doWhileStatementAst)
+        {
+            doWhileStatementAst.Condition.Visit(this);
+            ScopeStack.Push(doWhileStatementAst);
+            doWhileStatementAst.Body.Visit(this);
+            ScopeStack.Pop();
+            return null;
+        }
         public object VisitDynamicKeywordStatement(DynamicKeywordStatementAst dynamicKeywordAst) => throw new NotImplementedException();
         public object VisitErrorExpression(ErrorExpressionAst errorExpressionAst) => throw new NotImplementedException();
         public object VisitErrorStatement(ErrorStatementAst errorStatementAst) => throw new NotImplementedException();
