@@ -298,7 +298,11 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             ScopeStack.Pop();
             return null;
         }
-        public object VisitScriptBlockExpression(ScriptBlockExpressionAst scriptBlockExpressionAst) => throw new NotImplementedException();
+        public object VisitScriptBlockExpression(ScriptBlockExpressionAst scriptBlockExpressionAst)
+        {
+            scriptBlockExpressionAst.ScriptBlock.Visit(this);
+            return null;
+        }
         public object VisitStatementBlock(StatementBlockAst statementBlockAst)
         {
             foreach (StatementAst element in statementBlockAst.Statements)
