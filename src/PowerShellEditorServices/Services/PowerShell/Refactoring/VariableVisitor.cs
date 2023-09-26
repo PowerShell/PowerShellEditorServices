@@ -310,6 +310,11 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                 element.Visit(this);
             }
 
+            if (DuplicateVariableAst?.Parent == statementBlockAst)
+            {
+                ShouldRename = true;
+            }
+
             return null;
         }
         public object VisitStringConstantExpression(StringConstantExpressionAst stringConstantExpressionAst) => null;
