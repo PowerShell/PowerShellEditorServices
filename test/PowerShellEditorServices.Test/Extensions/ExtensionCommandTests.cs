@@ -69,18 +69,18 @@ namespace PowerShellEditorServices.Test.Extensions
                 new PSCommand().AddScript(
                     "function Invoke-Extension { $global:extensionValue = 5 }; " +
                     $"Register-EditorCommand -Name {commandName} -DisplayName \"{commandDisplayName}\" -Function Invoke-Extension"),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
             Assert.NotNull(commandAdded);
             Assert.Equal(commandName, commandAdded.Name);
             Assert.Equal(commandDisplayName, commandAdded.DisplayName);
 
             // Invoke the command
-            await extensionCommandService.InvokeCommandAsync(commandName, editorContext).ConfigureAwait(true);
+            await extensionCommandService.InvokeCommandAsync(commandName, editorContext);
 
             // Assert the expected value
             PSCommand psCommand = new PSCommand().AddScript("$global:extensionValue");
-            IEnumerable<int> results = await psesHost.ExecutePSCommandAsync<int>(psCommand, CancellationToken.None).ConfigureAwait(true);
+            IEnumerable<int> results = await psesHost.ExecutePSCommandAsync<int>(psCommand, CancellationToken.None);
             Assert.Equal(5, results.FirstOrDefault());
         }
 
@@ -107,7 +107,7 @@ namespace PowerShellEditorServices.Test.Extensions
                     .AddParameter("Name", commandName)
                     .AddParameter("DisplayName", commandDisplayName)
                     .AddParameter("ScriptBlock", ScriptBlock.Create("$global:extensionValue = 10")),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
             Assert.NotNull(commandAdded);
             Assert.Equal(commandName, commandAdded.Name);
@@ -115,11 +115,11 @@ namespace PowerShellEditorServices.Test.Extensions
 
             // Invoke the command.
             // TODO: What task was this cancelling?
-            await extensionCommandService.InvokeCommandAsync("test.scriptblock", editorContext).ConfigureAwait(true);
+            await extensionCommandService.InvokeCommandAsync("test.scriptblock", editorContext);
 
             // Assert the expected value
             PSCommand psCommand = new PSCommand().AddScript("$global:extensionValue");
-            IEnumerable<int> results = await psesHost.ExecutePSCommandAsync<int>(psCommand, CancellationToken.None).ConfigureAwait(true);
+            IEnumerable<int> results = await psesHost.ExecutePSCommandAsync<int>(psCommand, CancellationToken.None);
             Assert.Equal(10, results.FirstOrDefault());
         }
 
@@ -138,7 +138,7 @@ namespace PowerShellEditorServices.Test.Extensions
                     "function Invoke-Extension { Write-Output \"Extension output!\" }; " +
                     $"Register-EditorCommand -Name {commandName} -DisplayName \"Old function extension\" -Function Invoke-Extension; " +
                     $"Register-EditorCommand -Name {commandName} -DisplayName \"{commandDisplayName}\" -Function Invoke-Extension"),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
             // Wait for the add and update events
             Assert.NotNull(updatedCommand);
@@ -170,12 +170,12 @@ namespace PowerShellEditorServices.Test.Extensions
                     .AddParameter("Name", commandName)
                     .AddParameter("DisplayName", commandDisplayName)
                     .AddParameter("ScriptBlock", ScriptBlock.Create("Write-Output \"Extension output!\"")),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
             // Remove the command and wait for the remove event
             await psesHost.ExecutePSCommandAsync(
                 new PSCommand().AddCommand("Unregister-EditorCommand").AddParameter("Name", commandName),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
             Assert.NotNull(removedCommand);
             Assert.Equal(commandName, removedCommand.Name);
@@ -183,7 +183,7 @@ namespace PowerShellEditorServices.Test.Extensions
 
             // Ensure that the command has been unregistered
             await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => extensionCommandService.InvokeCommandAsync("test.scriptblock", editorContext)).ConfigureAwait(true);
+                () => extensionCommandService.InvokeCommandAsync("test.scriptblock", editorContext));
         }
 
         [Fact]
@@ -193,7 +193,7 @@ namespace PowerShellEditorServices.Test.Extensions
                 () => psesHost.ExecutePSCommandAsync<string>(
                     new PSCommand().AddScript("Remove-Variable psEditor -ErrorAction Stop"),
                     CancellationToken.None)
-            ).ConfigureAwait(true);
+            );
 
             Assert.Equal(
                 "The running command stopped because the preference variable \"ErrorActionPreference\" or common parameter is set to Stop: Cannot remove variable psEditor because it is constant or read-only. If the variable is read-only, try the operation again specifying the Force option.",

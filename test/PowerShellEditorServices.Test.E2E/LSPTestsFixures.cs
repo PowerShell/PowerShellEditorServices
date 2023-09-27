@@ -45,7 +45,7 @@ namespace PowerShellEditorServices.Test.E2E
         {
             LoggerFactory factory = new();
             _psesProcess = new PsesStdioProcess(factory, IsDebugAdapterTests);
-            await _psesProcess.Start().ConfigureAwait(false);
+            await _psesProcess.Start();
 
             DirectoryInfo testDir =
                 Directory.CreateDirectory(Path.Combine(s_binDir, Path.GetRandomFileName()));
@@ -79,7 +79,7 @@ namespace PowerShellEditorServices.Test.E2E
                 }
             });
 
-            await PsesLanguageClient.Initialize(CancellationToken.None).ConfigureAwait(false);
+            await PsesLanguageClient.Initialize(CancellationToken.None);
 
             // Make sure Script Analysis is enabled because we'll need it in the tests.
             // This also makes sure the configuration is set to default values.
@@ -97,8 +97,8 @@ namespace PowerShellEditorServices.Test.E2E
 
         public async Task DisposeAsync()
         {
-            await PsesLanguageClient.Shutdown().ConfigureAwait(false);
-            await _psesProcess.Stop().ConfigureAwait(false);
+            await PsesLanguageClient.Shutdown();
+            await _psesProcess.Stop();
             PsesLanguageClient?.Dispose();
         }
     }

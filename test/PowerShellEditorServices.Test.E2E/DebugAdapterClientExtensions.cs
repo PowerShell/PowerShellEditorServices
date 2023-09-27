@@ -20,7 +20,7 @@ namespace PowerShellEditorServices.Test.E2E
                     Script = script,
                     Cwd = "",
                     CreateTemporaryIntegratedConsole = false
-                }).ConfigureAwait(true);
+                });
 
             if (launchResponse is null)
             {
@@ -28,7 +28,7 @@ namespace PowerShellEditorServices.Test.E2E
             }
 
             // This will check to see if we received the Initialized event from the server.
-            await started.Task.ConfigureAwait(true);
+            await started.Task;
         }
     }
 }
