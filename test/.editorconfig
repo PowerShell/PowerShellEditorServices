@@ -1,0 +1,15 @@
+# EditorConfig is awesome: http://EditorConfig.org
+
+# not the top-most EditorConfig file
+root = false
+
+[*.{cs}]
+# CA2007: Do not directly await a Task
+dotnet_diagnostic.CA2007.severity = none
+
+# xUnit1004: Test methods should not be skipped
+dotnet_diagnostic.xUnit1004.severity = suggestion
+# xUnit1030: Do not call ConfigureAwait in test method
+dotnet_diagnostic.xUnit1030.severity = error
+# xUnit2013: Do not use equality check to check for collection size
+dotnet_diagnostic.xUnit2013.severity = error

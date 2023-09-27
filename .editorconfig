@@ -116,11 +116,6 @@ dotnet_diagnostic.VSTHRD114.severity = error
 # VSTHRD200: Use "Async" suffix for awaitable methods
 dotnet_diagnostic.VSTHRD200.severity = silent
 
-# xUnit2013: Do not use equality check to check for collection size
-dotnet_diagnostic.xUnit2013.severity = error
-# xUnit1004: Test methods should not be skipped
-dotnet_diagnostic.xUnit1004.severity = suggestion
-
 # IDE0001: Simplify name
 dotnet_diagnostic.IDE0001.severity = error
 # IDE0002: Simplify member access

@@ -39,7 +39,7 @@ namespace PowerShellEditorServices.Test.E2E
         {
             LoggerFactory factory = new();
             _psesProcess = new PsesStdioProcess(factory, true);
-            await _psesProcess.Start().ConfigureAwait(true);
+            await _psesProcess.Start();
 
             TaskCompletionSource<bool> initialized = new();
 
@@ -91,9 +91,9 @@ namespace PowerShellEditorServices.Test.E2E
             // This tells us that we are ready to send messages to PSES... but are not stuck waiting for
             // Initialized.
 #pragma warning disable CS4014
-            PsesDebugAdapterClient.Initialize(CancellationToken.None).ConfigureAwait(true);
+            PsesDebugAdapterClient.Initialize(CancellationToken.None);
 #pragma warning restore CS4014
-            await initialized.Task.ConfigureAwait(true);
+            await initialized.Task;
         }
 
         public async Task DisposeAsync()
@@ -102,8 +102,8 @@ namespace PowerShellEditorServices.Test.E2E
             {
                 Restart = false,
                 TerminateDebuggee = true
-            }).ConfigureAwait(true);
-            await _psesProcess.Stop().ConfigureAwait(true);
+            });
+            await _psesProcess.Stop();
         }
 
         public void Dispose()
@@ -164,10 +164,10 @@ namespace PowerShellEditorServices.Test.E2E
         {
             for (int i = 0; !File.Exists(s_testOutputPath) && i < 60; i++)
             {
-                await Task.Delay(1000).ConfigureAwait(true);
+                await Task.Delay(1000);
             }
             // Sleep one more time after the file exists so whatever is writing can finish.
-            await Task.Delay(1000).ConfigureAwait(true);
+            await Task.Delay(1000);
             return File.ReadLines(s_testOutputPath).ToArray();
         }
 
@@ -186,10 +186,10 @@ namespace PowerShellEditorServices.Test.E2E
         public async Task UsesDotSourceOperatorAndQuotesAsync()
         {
             string filePath = NewTestFile(GenerateScriptFromLoggingStatements("$($MyInvocation.Line)"));
-            await PsesDebugAdapterClient.LaunchScript(filePath, Started).ConfigureAwait(true);
-            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(true);
+            await PsesDebugAdapterClient.LaunchScript(filePath, Started);
+            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments());
             Assert.NotNull(configDoneResponse);
-            Assert.Collection(await GetLog().ConfigureAwait(true),
+            Assert.Collection(await GetLog(),
                 (i) => Assert.StartsWith(". '", i));
         }
 
@@ -198,11 +198,11 @@ namespace PowerShellEditorServices.Test.E2E
         {
             string filePath = NewTestFile(GenerateScriptFromLoggingStatements("works"));
 
-            await PsesDebugAdapterClient.LaunchScript(filePath, Started).ConfigureAwait(true);
+            await PsesDebugAdapterClient.LaunchScript(filePath, Started);
 
-            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(true);
+            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments());
             Assert.NotNull(configDoneResponse);
-            Assert.Collection(await GetLog().ConfigureAwait(true),
+            Assert.Collection(await GetLog(),
                 (i) => Assert.Equal("works", i));
         }
 
@@ -218,7 +218,7 @@ namespace PowerShellEditorServices.Test.E2E
                 "after breakpoint"
             ));
 
-            await PsesDebugAdapterClient.LaunchScript(filePath, Started).ConfigureAwait(true);
+            await PsesDebugAdapterClient.LaunchScript(filePath, Started);
 
             // {"command":"setBreakpoints","arguments":{"source":{"name":"dfsdfg.ps1","path":"/Users/tyleonha/Code/PowerShell/Misc/foo/dfsdfg.ps1"},"lines":[2],"breakpoints":[{"line":2}],"sourceModified":false},"type":"request","seq":3}
             SetBreakpointsResponse setBreakpointsResponse = await PsesDebugAdapterClient.SetBreakpoints(new SetBreakpointsArguments
@@ -226,24 +226,24 @@ namespace PowerShellEditorServices.Test.E2E
                 Source = new Source { Name = Path.GetFileName(filePath), Path = filePath },
                 Breakpoints = new SourceBreakpoint[] { new SourceBreakpoint { Line = 2 } },
                 SourceModified = false,
-            }).ConfigureAwait(true);
+            });
 
             Breakpoint breakpoint = setBreakpointsResponse.Breakpoints.First();
             Assert.True(breakpoint.Verified);
             Assert.Equal(filePath, breakpoint.Source.Path, ignoreCase: s_isWindows);
             Assert.Equal(2, breakpoint.Line);
 
-            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(true);
+            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments());
             Assert.NotNull(configDoneResponse);
-            Assert.Collection(await GetLog().ConfigureAwait(true),
+            Assert.Collection(await GetLog(),
                 (i) => Assert.Equal("before breakpoint", i));
             File.Delete(s_testOutputPath);
 
             ContinueResponse continueResponse = await PsesDebugAdapterClient.RequestContinue(
-                new ContinueArguments { ThreadId = 1 }).ConfigureAwait(true);
+                new ContinueArguments { ThreadId = 1 });
 
             Assert.NotNull(continueResponse);
-            Assert.Collection(await GetLog().ConfigureAwait(true),
+            Assert.Collection(await GetLog(),
                 (i) => Assert.Equal("at breakpoint", i),
                 (i) => Assert.Equal("after breakpoint", i));
         }
@@ -274,24 +274,24 @@ namespace PowerShellEditorServices.Test.E2E
                     "Write-Host $form"
                 }));
 
-            await PsesDebugAdapterClient.LaunchScript(filePath, Started).ConfigureAwait(true);
+            await PsesDebugAdapterClient.LaunchScript(filePath, Started);
 
             SetFunctionBreakpointsResponse setBreakpointsResponse = await PsesDebugAdapterClient.SetFunctionBreakpoints(
                 new SetFunctionBreakpointsArguments
                 {
                     Breakpoints = new FunctionBreakpoint[]
                         { new FunctionBreakpoint { Name = "Write-Host", } }
-                }).ConfigureAwait(true);
+                });
 
             Breakpoint breakpoint = setBreakpointsResponse.Breakpoints.First();
             Assert.True(breakpoint.Verified);
 
-            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(true);
+            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments());
             Assert.NotNull(configDoneResponse);
-            await Task.Delay(5000).ConfigureAwait(true);
+            await Task.Delay(5000);
 
             VariablesResponse variablesResponse = await PsesDebugAdapterClient.RequestVariables(
-                new VariablesArguments { VariablesReference = 1 }).ConfigureAwait(true);
+                new VariablesArguments { VariablesReference = 1 });
 
             Variable form = variablesResponse.Variables.FirstOrDefault(v => v.Name == "$form");
             Assert.NotNull(form);
@@ -312,15 +312,15 @@ namespace PowerShellEditorServices.Test.E2E
             // PsesLaunchRequestArguments.Script, which is then assigned to
             // DebugStateService.ScriptToLaunch in that handler, and finally used by the
             // ConfigurationDoneHandler in LaunchScriptAsync.
-            await PsesDebugAdapterClient.LaunchScript(script, Started).ConfigureAwait(true);
+            await PsesDebugAdapterClient.LaunchScript(script, Started);
 
-            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(true);
+            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments());
             Assert.NotNull(configDoneResponse);
             // We can check that the script was invoked as expected, which is to dot-source a script
             // block with the contents surrounded by newlines. While we can't check that the last
             // line was a curly brace by itself, we did check that the contents ended with a
             // comment, so if this output exists then the bug did not recur.
-            Assert.Collection(await GetLog().ConfigureAwait(true),
+            Assert.Collection(await GetLog(),
                 (i) => Assert.Equal(". {", i),
                 (i) => Assert.Equal("", i));
         }
@@ -342,9 +342,9 @@ namespace PowerShellEditorServices.Test.E2E
             using CancellationTokenSource cts = new(5000);
             while (!File.Exists(pesterLog) && !cts.Token.IsCancellationRequested)
             {
-                await Task.Delay(1000).ConfigureAwait(true);
+                await Task.Delay(1000);
             }
-            await Task.Delay(15000).ConfigureAwait(true);
+            await Task.Delay(15000);
             _output.WriteLine(File.ReadAllText(pesterLog));
             */
 
@@ -360,9 +360,9 @@ namespace PowerShellEditorServices.Test.E2E
                     }
                 }", isPester: true);
 
-            await PsesDebugAdapterClient.LaunchScript($"Invoke-Pester -Script '{pesterTest}'", Started).ConfigureAwait(true);
-            await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments()).ConfigureAwait(true);
-            Assert.Collection(await GetLog().ConfigureAwait(true), (i) => Assert.Equal("pester", i));
+            await PsesDebugAdapterClient.LaunchScript($"Invoke-Pester -Script '{pesterTest}'", Started);
+            await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments());
+            Assert.Collection(await GetLog(), (i) => Assert.Equal("pester", i));
         }
     }
 }
