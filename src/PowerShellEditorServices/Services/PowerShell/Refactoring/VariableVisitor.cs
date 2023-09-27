@@ -222,7 +222,15 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             return null;
         }
         public object VisitFunctionMember(FunctionMemberAst functionMemberAst) => throw new NotImplementedException();
-        public object VisitHashtable(HashtableAst hashtableAst) => throw new NotImplementedException();
+        public object VisitHashtable(HashtableAst hashtableAst)
+        {
+            foreach (Tuple<ExpressionAst, StatementAst> element in hashtableAst.KeyValuePairs)
+            {
+                element.Item1.Visit(this);
+                element.Item2.Visit(this);
+            }
+            return null;
+        }
         public object VisitIfStatement(IfStatementAst ifStmtAst)
         {
             foreach (Tuple<PipelineBaseAst, StatementBlockAst> element in ifStmtAst.Clauses)
