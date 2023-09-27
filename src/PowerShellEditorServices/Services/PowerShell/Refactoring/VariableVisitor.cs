@@ -104,11 +104,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                 (VarDef.Extent.EndColumnNumber <= node.Extent.StartColumnNumber &&
                 VarDef.Extent.EndLineNumber <= node.Extent.StartLineNumber));
             }, true).Cast<VariableExpressionAst>().ToList();
-            // return the def if we only have one match
-            if (VariableAssignments.Count == 1)
-            {
-                return VariableAssignments[0];
-            }
+            // return the def if we have no matches
             if (VariableAssignments.Count == 0)
             {
                 return node;
@@ -119,20 +115,34 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                 VariableExpressionAst element = VariableAssignments[i];
 
                 Ast parent = GetAstParentScope(element);
-
-                // we have hit the global scope of the script file
-                if (null == parent)
-                {
-                    CorrectDefinition = element;
-                    break;
-                }
-
+                // closest assignment statement is within the scope of the node
                 if (TargetParent == parent)
                 {
                     CorrectDefinition = element;
                 }
+                else if (node.Parent is AssignmentStatementAst)
+                {
+                    // the node is probably the first assignment statement within the scope
+                    CorrectDefinition = node;
+                    break;
+                }
+                // node is proably just a reference of an assignment statement within the global scope or higher
+                if (node.Parent is not AssignmentStatementAst)
+                {
+                    if (null == parent || null == parent.Parent)
+                    {
+                        // we have hit the global scope of the script file
+                        CorrectDefinition = element;
+                        break;
+                    }
+                    if (WithinTargetsScope(element,node))
+                    {
+                        CorrectDefinition=element;
+                    }
+                }
             }
-            return CorrectDefinition;
+
+            return CorrectDefinition ?? node;
         }
         public object VisitArrayExpression(ArrayExpressionAst arrayExpressionAst) => throw new NotImplementedException();
         public object VisitArrayLiteral(ArrayLiteralAst arrayLiteralAst) => throw new NotImplementedException();
