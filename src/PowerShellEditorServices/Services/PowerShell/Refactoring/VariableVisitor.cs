@@ -291,7 +291,10 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         }
         public object VisitParamBlock(ParamBlockAst paramBlockAst) => throw new NotImplementedException();
         public object VisitParameter(ParameterAst parameterAst) => throw new NotImplementedException();
-        public object VisitParenExpression(ParenExpressionAst parenExpressionAst) => throw new NotImplementedException();
+        public object VisitParenExpression(ParenExpressionAst parenExpressionAst) {
+            parenExpressionAst.Pipeline.Visit(this);
+            return null;
+        }
         public object VisitPipeline(PipelineAst pipelineAst)
         {
             foreach (Ast element in pipelineAst.PipelineElements)
