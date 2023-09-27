@@ -389,8 +389,10 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     ShouldRename = true;
                     TargetVariableAst = variableExpressionAst;
                 }
-                else if (variableExpressionAst.Parent is AssignmentStatementAst)
+                else if (variableExpressionAst.Parent is AssignmentStatementAst assignment &&
+                    assignment.Operator == TokenKind.Equals)
                 {
+
                     DuplicateVariableAst = variableExpressionAst;
                     ShouldRename = false;
                 }
