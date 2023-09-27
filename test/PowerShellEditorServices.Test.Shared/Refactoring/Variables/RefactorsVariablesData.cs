@@ -72,5 +72,19 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring.Variables
             Line = 4,
             RenameTo = "Renamed"
         };
+        public static readonly RenameSymbolParams VariableWithinCommandAstScriptBlock = new()
+        {
+            FileName = "VariableWithinCommandAstScriptBlock.ps1",
+            Column = 75,
+            Line = 3,
+            RenameTo = "Renamed"
+        };
+        public static readonly RenameSymbolParams VariableWithinForeachObject = new()
+        {
+            FileName = "VariableWithinForeachObject.ps1",
+            Column = 1,
+            Line = 2,
+            RenameTo = "Renamed"
+        };
     }
 }
