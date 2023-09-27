@@ -71,6 +71,25 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                 return parent;
             }
 
+            static bool WithinTargetsScope(Ast Target ,Ast Child){
+                bool r = false;
+                Ast childParent = Child.Parent;
+                Ast TargetScope = GetAstParentScope(Target);
+                while (childParent != null)
+                {
+                    if (childParent == TargetScope)
+                    {
+                        break;
+                    }
+                    childParent = childParent.Parent;
+                }
+                if (childParent == TargetScope)
+                {
+                    r = true;
+                }
+                return r;
+            }
+
             // Look up the target object
             VariableExpressionAst node = GetAstNodeByLineAndColumn(OldName, StartLineNumber, StartColumnNumber, ScriptAst);
 
