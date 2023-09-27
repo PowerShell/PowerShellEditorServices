@@ -74,7 +74,7 @@ namespace PowerShellEditorServices.Test.Refactoring
             workspace = new WorkspaceService(NullLoggerFactory.Instance);
         }
         [Fact]
-        public void RefactorFunctionSingle()
+        public void RefactorVariableSingle()
         {
             RenameSymbolParams request = RenameVariableData.SimpleVariableAssignment;
             ScriptFile scriptFile = GetTestScript(request.FileName);
@@ -132,7 +132,20 @@ namespace PowerShellEditorServices.Test.Refactoring
         [Fact]
         public void RefactorVariableInScriptBlockScoped()
         {
-            RenameSymbolParams request = RenameVariableData.VariableInScriptblockScoped;
+            RenameSymbolParams request = RenameVariableData.VariablewWithinHastableExpression;
+            ScriptFile scriptFile = GetTestScript(request.FileName);
+            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
+            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
+                    request.Line,
+                    request.Column);
+            string modifiedcontent = TestRenaming(scriptFile, request, symbol);
+
+            Assert.Equal(expectedContent.Contents, modifiedcontent);
+
+        }
+        [Fact]
+        public void VariableNestedFunctionScriptblock(){
+            RenameSymbolParams request = RenameVariableData.VariableNestedFunctionScriptblock;
             ScriptFile scriptFile = GetTestScript(request.FileName);
             ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
             SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(

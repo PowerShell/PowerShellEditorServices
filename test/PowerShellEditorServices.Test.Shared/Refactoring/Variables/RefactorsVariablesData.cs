@@ -57,5 +57,20 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring.Variables
             Line = 2,
             RenameTo = "Renamed"
         };
+
+        public static readonly RenameSymbolParams VariablewWithinHastableExpression = new()
+        {
+            FileName = "VariablewWithinHastableExpression.ps1",
+            Column = 46,
+            Line = 3,
+            RenameTo = "Renamed"
+        };
+        public static readonly RenameSymbolParams VariableNestedFunctionScriptblock = new()
+        {
+            FileName = "VariableNestedFunctionScriptblock.ps1",
+            Column = 20,
+            Line = 4,
+            RenameTo = "Renamed"
+        };
     }
 }
