@@ -275,7 +275,10 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         }
         public object VisitIndexExpression(IndexExpressionAst indexExpressionAst) => throw new NotImplementedException();
         public object VisitInvokeMemberExpression(InvokeMemberExpressionAst invokeMemberExpressionAst) => throw new NotImplementedException();
-        public object VisitMemberExpression(MemberExpressionAst memberExpressionAst) => throw new NotImplementedException();
+        public object VisitMemberExpression(MemberExpressionAst memberExpressionAst) {
+            memberExpressionAst.Expression.Visit(this);
+            return null;
+        }
         public object VisitMergingRedirection(MergingRedirectionAst mergingRedirectionAst) => throw new NotImplementedException();
         public object VisitNamedAttributeArgument(NamedAttributeArgumentAst namedAttributeArgumentAst) => throw new NotImplementedException();
         public object VisitNamedBlock(NamedBlockAst namedBlockAst)
