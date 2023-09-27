@@ -191,7 +191,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             commandExpressionAst.Expression.Visit(this);
             return null;
         }
-        public object VisitCommandParameter(CommandParameterAst commandParameterAst) => throw new NotImplementedException();
+        public object VisitCommandParameter(CommandParameterAst commandParameterAst) => null;
         public object VisitConfigurationDefinition(ConfigurationDefinitionAst configurationDefinitionAst) => throw new NotImplementedException();
         public object VisitConstantExpression(ConstantExpressionAst constantExpressionAst) => null;
         public object VisitContinueStatement(ContinueStatementAst continueStatementAst) => throw new NotImplementedException();
