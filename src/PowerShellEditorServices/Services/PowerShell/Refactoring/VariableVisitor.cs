@@ -119,6 +119,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                 if (TargetParent == parent)
                 {
                     CorrectDefinition = element;
+                    break;
                 }
                 else if (node.Parent is AssignmentStatementAst)
                 {
