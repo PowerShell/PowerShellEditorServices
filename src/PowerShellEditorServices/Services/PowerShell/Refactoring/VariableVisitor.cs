@@ -275,7 +275,13 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         public object VisitConfigurationDefinition(ConfigurationDefinitionAst configurationDefinitionAst) => throw new NotImplementedException();
         public object VisitConstantExpression(ConstantExpressionAst constantExpressionAst) => null;
         public object VisitContinueStatement(ContinueStatementAst continueStatementAst) => throw new NotImplementedException();
-        public object VisitConvertExpression(ConvertExpressionAst convertExpressionAst) => throw new NotImplementedException();
+        public object VisitConvertExpression(ConvertExpressionAst convertExpressionAst)
+        {
+            // TODO figure out if there is a case to visit the type
+            //convertExpressionAst.Type.Visit(this);
+            convertExpressionAst.Child.Visit(this);
+            return null;
+        }
         public object VisitDataStatement(DataStatementAst dataStatementAst) => throw new NotImplementedException();
         public object VisitDoUntilStatement(DoUntilStatementAst doUntilStatementAst)
         {
@@ -325,7 +331,13 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         public object VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
         {
             ScopeStack.Push(functionDefinitionAst);
-
+            if (null != functionDefinitionAst.Parameters)
+            {
+                foreach (ParameterAst element in functionDefinitionAst.Parameters)
+                {
+                    element.Visit(this);
+                }
+            }
             functionDefinitionAst.Body.Visit(this);
 
             ScopeStack.Pop();
@@ -353,9 +365,14 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
 
             return null;
         }
-        public object VisitIndexExpression(IndexExpressionAst indexExpressionAst) => throw new NotImplementedException();
+        public object VisitIndexExpression(IndexExpressionAst indexExpressionAst) {
+            indexExpressionAst.Target.Visit(this);
+            indexExpressionAst.Index.Visit(this);
+            return null;
+        }
         public object VisitInvokeMemberExpression(InvokeMemberExpressionAst invokeMemberExpressionAst) => throw new NotImplementedException();
-        public object VisitMemberExpression(MemberExpressionAst memberExpressionAst) {
+        public object VisitMemberExpression(MemberExpressionAst memberExpressionAst)
+        {
             memberExpressionAst.Expression.Visit(this);
             return null;
         }
@@ -369,9 +386,25 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             }
             return null;
         }
-        public object VisitParamBlock(ParamBlockAst paramBlockAst) => throw new NotImplementedException();
-        public object VisitParameter(ParameterAst parameterAst) => throw new NotImplementedException();
-        public object VisitParenExpression(ParenExpressionAst parenExpressionAst) {
+        public object VisitParamBlock(ParamBlockAst paramBlockAst)
+        {
+            foreach (ParameterAst element in paramBlockAst.Parameters)
+            {
+                element.Visit(this);
+            }
+            return null;
+        }
+        public object VisitParameter(ParameterAst parameterAst)
+        {
+            parameterAst.Name.Visit(this);
+            foreach (AttributeBaseAst element in parameterAst.Attributes)
+            {
+                element.Visit(this);
+            }
+            return null;
+        }
+        public object VisitParenExpression(ParenExpressionAst parenExpressionAst)
+        {
             parenExpressionAst.Pipeline.Visit(this);
             return null;
         }
@@ -384,7 +417,10 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             return null;
         }
         public object VisitPropertyMember(PropertyMemberAst propertyMemberAst) => throw new NotImplementedException();
-        public object VisitReturnStatement(ReturnStatementAst returnStatementAst) => throw new NotImplementedException();
+        public object VisitReturnStatement(ReturnStatementAst returnStatementAst) {
+            returnStatementAst.Pipeline.Visit(this);
+            return null;
+        }
         public object VisitScriptBlock(ScriptBlockAst scriptBlockAst)
         {
             ScopeStack.Push(scriptBlockAst);
@@ -472,9 +508,12 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                 else if (variableExpressionAst.Parent is AssignmentStatementAst assignment &&
                     assignment.Operator == TokenKind.Equals)
                 {
-
+                    if (!WithinTargetsScope(TargetVariableAst, variableExpressionAst))
+                    {
                     DuplicateVariableAst = variableExpressionAst;
                     ShouldRename = false;
+                }
+
                 }
 
                 if (ShouldRename)
@@ -494,6 +533,12 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             }
             return null;
         }
-        public object VisitWhileStatement(WhileStatementAst whileStatementAst) => throw new NotImplementedException();
+        public object VisitWhileStatement(WhileStatementAst whileStatementAst)
+        {
+            whileStatementAst.Condition.Visit(this);
+            whileStatementAst.Body.Visit(this);
+
+            return null;
+        }
     }
 }
