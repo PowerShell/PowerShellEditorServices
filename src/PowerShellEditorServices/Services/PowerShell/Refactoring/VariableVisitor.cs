@@ -514,9 +514,9 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                 {
                     if (!WithinTargetsScope(TargetVariableAst, variableExpressionAst))
                     {
-                    DuplicateVariableAst = variableExpressionAst;
-                    ShouldRename = false;
-                }
+                        DuplicateVariableAst = variableExpressionAst;
+                        ShouldRename = false;
+                    }
 
                 }
 
