@@ -86,5 +86,12 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring.Variables
             Line = 2,
             RenameTo = "Renamed"
         };
+        public static readonly RenameSymbolParams VariableusedInWhileLoop = new()
+        {
+            FileName = "VariableusedInWhileLoop.ps1",
+            Column = 5,
+            Line = 2,
+            RenameTo = "Renamed"
+        };
     }
 }
