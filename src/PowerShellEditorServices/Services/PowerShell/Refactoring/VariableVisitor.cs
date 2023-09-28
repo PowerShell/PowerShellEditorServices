@@ -245,7 +245,33 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             commandExpressionAst.Expression.Visit(this);
             return null;
         }
-        public object VisitCommandParameter(CommandParameterAst commandParameterAst) => null;
+        public object VisitCommandParameter(CommandParameterAst commandParameterAst)
+        {
+            // TODO implement command parameter renaming
+            if (commandParameterAst.ParameterName == OldName)
+            {
+                if (commandParameterAst.Extent.StartLineNumber == StartLineNumber &&
+                    commandParameterAst.Extent.StartColumnNumber == StartColumnNumber)
+                {
+                    ShouldRename = true;
+                }
+
+                if (ShouldRename)
+                {
+                    TextChange Change = new()
+                    {
+                        NewText = NewName.Contains("-") ? NewName : "-" + NewName,
+                        StartLine = commandParameterAst.Extent.StartLineNumber - 1,
+                        StartColumn = commandParameterAst.Extent.StartColumnNumber - 1,
+                        EndLine = commandParameterAst.Extent.StartLineNumber - 1,
+                        EndColumn = commandParameterAst.Extent.StartColumnNumber + OldName.Length,
+                    };
+
+                    Modifications.Add(Change);
+                }
+            }
+            return null;
+        }
         public object VisitConfigurationDefinition(ConfigurationDefinitionAst configurationDefinitionAst) => throw new NotImplementedException();
         public object VisitConstantExpression(ConstantExpressionAst constantExpressionAst) => null;
         public object VisitContinueStatement(ContinueStatementAst continueStatementAst) => throw new NotImplementedException();
