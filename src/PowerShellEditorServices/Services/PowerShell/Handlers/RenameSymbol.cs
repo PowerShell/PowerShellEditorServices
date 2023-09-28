@@ -99,8 +99,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return null;
             }
 
-            VariableRename visitor = new(symbol.NameRegion.Text,
-                                        request.RenameTo,
+            VariableRename visitor = new(request.RenameTo,
                                         symbol.ScriptRegion.StartLineNumber,
                                         symbol.ScriptRegion.StartColumnNumber,
                                         scriptAst);

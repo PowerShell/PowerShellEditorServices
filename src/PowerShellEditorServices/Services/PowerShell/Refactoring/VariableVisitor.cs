@@ -9,6 +9,24 @@ using System.Linq;
 
 namespace Microsoft.PowerShell.EditorServices.Refactoring
 {
+
+    public class TargetSymbolNotFoundException : Exception
+    {
+        public TargetSymbolNotFoundException()
+        {
+        }
+
+        public TargetSymbolNotFoundException(string message)
+            : base(message)
+        {
+        }
+
+        public TargetSymbolNotFoundException(string message, Exception inner)
+            : base(message, inner)
+        {
+        }
+    }
+
     internal class VariableRename : ICustomAstVisitor2
     {
         private readonly string OldName;
@@ -23,72 +41,41 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         internal List<string> dotSourcedScripts = new();
         internal readonly Ast ScriptAst;
 
-        public VariableRename(string OldName, string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
+        public VariableRename(string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
         {
-            this.OldName = OldName.Replace("$", "");
             this.NewName = NewName;
             this.StartLineNumber = StartLineNumber;
             this.StartColumnNumber = StartColumnNumber;
             this.ScriptAst = ScriptAst;
 
-            VariableExpressionAst Node = VariableRename.GetVariableTopAssignment(this.OldName, StartLineNumber, StartColumnNumber, ScriptAst);
+            VariableExpressionAst Node = (VariableExpressionAst)VariableRename.GetVariableTopAssignment(StartLineNumber, StartColumnNumber, ScriptAst);
             if (Node != null)
             {
 
                 TargetVariableAst = Node;
+                OldName = TargetVariableAst.VariablePath.UserPath.Replace("$", "");
                 this.StartColumnNumber = TargetVariableAst.Extent.StartColumnNumber;
                 this.StartLineNumber = TargetVariableAst.Extent.StartLineNumber;
             }
         }
 
-        public static VariableExpressionAst GetAstNodeByLineAndColumn(string OldName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
+        public static Ast GetAstNodeByLineAndColumn(int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
         {
-            VariableExpressionAst result = null;
-            // Looking for a function
-            result = (VariableExpressionAst)ScriptAst.Find(ast =>
+            Ast result = null;
+            result = ScriptAst.Find(ast =>
             {
                 return ast.Extent.StartLineNumber == StartLineNumber &&
                 ast.Extent.StartColumnNumber == StartColumnNumber &&
-                ast is VariableExpressionAst VarDef &&
-                VarDef.VariablePath.UserPath.ToLower() == OldName.ToLower();
+                ast is VariableExpressionAst or CommandParameterAst;
             }, true);
+            if (result == null)
+            {
+                throw new TargetSymbolNotFoundException();
+            }
             return result;
         }
-        public static VariableExpressionAst GetVariableTopAssignment(string OldName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
+        public static Ast GetVariableTopAssignment(int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
         {
-            static Ast GetAstParentScope(Ast node)
-            {
-                Ast parent = node.Parent;
-                // Walk backwards up the tree look
-                while (parent != null)
-                {
-                    if (parent is ScriptBlockAst)
-                    {
-                        break;
-                    }
-                    parent = parent.Parent;
-                }
-                return parent;
-            }
-
-            static bool WithinTargetsScope(Ast Target ,Ast Child){
-                bool r = false;
-                Ast childParent = Child.Parent;
-                Ast TargetScope = GetAstParentScope(Target);
-                while (childParent != null)
-                {
-                    if (childParent == TargetScope)
-                    {
-                        break;
-                    }
-                    childParent = childParent.Parent;
-                }
-                if (childParent == TargetScope)
-                {
-                    r = true;
-                }
-                return r;
-            }
 
             // Look up the target object
             VariableExpressionAst node = GetAstNodeByLineAndColumn(OldName, StartLineNumber, StartColumnNumber, ScriptAst);
@@ -98,8 +85,8 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             List<VariableExpressionAst> VariableAssignments = ScriptAst.FindAll(ast =>
             {
                 return ast is VariableExpressionAst VarDef &&
-                VarDef.Parent is AssignmentStatementAst &&
-                VarDef.VariablePath.UserPath.ToLower() == OldName.ToLower() &&
+                VarDef.Parent is AssignmentStatementAst or ParameterAst &&
+                VarDef.VariablePath.UserPath.ToLower() == name.ToLower() &&
                 (VarDef.Extent.EndLineNumber < node.Extent.StartLineNumber ||
                 (VarDef.Extent.EndColumnNumber <= node.Extent.StartColumnNumber &&
                 VarDef.Extent.EndLineNumber <= node.Extent.StartLineNumber));
@@ -109,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             {
                 return node;
             }
-            VariableExpressionAst CorrectDefinition = null;
+            Ast CorrectDefinition = null;
             for (int i = VariableAssignments.Count - 1; i >= 0; i--)
             {
                 VariableExpressionAst element = VariableAssignments[i];
@@ -136,14 +123,70 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                         CorrectDefinition = element;
                         break;
                     }
-                    if (WithinTargetsScope(element,node))
+                    if (parent is FunctionDefinitionAst funcDef && node is CommandParameterAst)
                     {
-                        CorrectDefinition=element;
+                        if (node.Parent is CommandAst commDef)
+                        {
+                            if (funcDef.Name == commDef.GetCommandName()
+                            && funcDef.Parent.Parent == TargetParent)
+                            {
+                                CorrectDefinition = element;
+                                break;
+                            }
+                        }
+                    }
+                    if (WithinTargetsScope(element, node))
+                    {
+                        CorrectDefinition = element;
                     }
                 }
-            }
 
+
+            }
             return CorrectDefinition ?? node;
+        }
+
+        internal static Ast GetAstParentScope(Ast node)
+        {
+            Ast parent = node;
+            // Walk backwards up the tree look
+            while (parent != null)
+            {
+                if (parent is ScriptBlockAst or FunctionDefinitionAst)
+                {
+                    break;
+                }
+                parent = parent.Parent;
+            }
+            if (parent is ScriptBlockAst && parent.Parent != null)
+            {
+                parent = GetAstParentScope(parent.Parent);
+            }
+            return parent;
+        }
+
+        internal static bool WithinTargetsScope(Ast Target, Ast Child)
+        {
+            bool r = false;
+            Ast childParent = Child.Parent;
+            Ast TargetScope = GetAstParentScope(Target);
+            while (childParent != null)
+            {
+                if (childParent is FunctionDefinitionAst)
+                {
+                    break;
+                }
+                if (childParent == TargetScope)
+                {
+                    break;
+                }
+                childParent = childParent.Parent;
+            }
+            if (childParent == TargetScope)
+            {
+                r = true;
+            }
+            return r;
         }
         public object VisitArrayExpression(ArrayExpressionAst arrayExpressionAst) => throw new NotImplementedException();
         public object VisitArrayLiteral(ArrayLiteralAst arrayLiteralAst) => throw new NotImplementedException();
