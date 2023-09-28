@@ -157,7 +157,8 @@ namespace PowerShellEditorServices.Test.Refactoring
 
         }
                 [Fact]
-        public void VariableWithinCommandAstScriptBlock(){
+        public void VariableWithinCommandAstScriptBlock()
+        {
             RenameSymbolParams request = RenameVariableData.VariableWithinCommandAstScriptBlock;
             ScriptFile scriptFile = GetTestScript(request.FileName);
             ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
@@ -170,8 +171,23 @@ namespace PowerShellEditorServices.Test.Refactoring
 
         }
                 [Fact]
-        public void VariableWithinForeachObject(){
+        public void VariableWithinForeachObject()
+        {
             RenameSymbolParams request = RenameVariableData.VariableWithinForeachObject;
+            ScriptFile scriptFile = GetTestScript(request.FileName);
+            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
+            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
+                    request.Line,
+                    request.Column);
+            string modifiedcontent = TestRenaming(scriptFile, request, symbol);
+
+            Assert.Equal(expectedContent.Contents, modifiedcontent);
+
+        }
+        [Fact]
+        public void VariableusedInWhileLoop()
+        {
+            RenameSymbolParams request = RenameVariableData.VariableusedInWhileLoop;
             ScriptFile scriptFile = GetTestScript(request.FileName);
             ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
             SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
