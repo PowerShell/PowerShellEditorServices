@@ -189,14 +189,25 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             return r;
         }
         public object VisitArrayExpression(ArrayExpressionAst arrayExpressionAst) => throw new NotImplementedException();
-        public object VisitArrayLiteral(ArrayLiteralAst arrayLiteralAst) => throw new NotImplementedException();
+        public object VisitArrayLiteral(ArrayLiteralAst arrayLiteralAst)
+        {
+            foreach (ExpressionAst element in arrayLiteralAst.Elements)
+            {
+                element.Visit(this);
+            }
+            return null;
+        }
         public object VisitAssignmentStatement(AssignmentStatementAst assignmentStatementAst)
         {
             assignmentStatementAst.Left.Visit(this);
             assignmentStatementAst.Right.Visit(this);
             return null;
         }
-        public object VisitAttribute(AttributeAst attributeAst) => throw new NotImplementedException();
+        public object VisitAttribute(AttributeAst attributeAst)
+        {
+            attributeAst.Visit(this);
+            return null;
+        }
         public object VisitAttributedExpression(AttributedExpressionAst attributedExpressionAst) => throw new NotImplementedException();
         public object VisitBaseCtorInvokeMemberExpression(BaseCtorInvokeMemberExpressionAst baseCtorInvokeMemberExpressionAst) => throw new NotImplementedException();
         public object VisitBinaryExpression(BinaryExpressionAst binaryExpressionAst)
