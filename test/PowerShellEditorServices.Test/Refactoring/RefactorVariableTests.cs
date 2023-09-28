@@ -34,9 +34,14 @@ namespace PowerShellEditorServices.Test.Refactoring
 
         internal static string GetModifiedScript(string OriginalScript, ModifiedFileResponse Modification)
         {
-            Modification.Changes.Sort((a,b) =>{
-                return b.EndColumn + b.EndLine -
-                a.EndColumn + a.EndLine;
+            Modification.Changes.Sort((a, b) =>
+            {
+                if (b.StartLine == a.StartLine)
+                {
+                    return b.EndColumn - a.EndColumn;
+                }
+                return b.StartLine - a.StartLine;
+
             });
             string[] Lines = OriginalScript.Split(
                             new string[] { Environment.NewLine },
@@ -144,7 +149,8 @@ namespace PowerShellEditorServices.Test.Refactoring
 
         }
         [Fact]
-        public void VariableNestedFunctionScriptblock(){
+        public void VariableNestedFunctionScriptblock()
+        {
             RenameSymbolParams request = RenameVariableData.VariableNestedFunctionScriptblock;
             ScriptFile scriptFile = GetTestScript(request.FileName);
             ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
