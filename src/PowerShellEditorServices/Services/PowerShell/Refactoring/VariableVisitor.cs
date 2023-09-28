@@ -78,7 +78,11 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         {
 
             // Look up the target object
-            VariableExpressionAst node = GetAstNodeByLineAndColumn(OldName, StartLineNumber, StartColumnNumber, ScriptAst);
+            Ast node = GetAstNodeByLineAndColumn(StartLineNumber, StartColumnNumber, ScriptAst);
+
+            string name = node is CommandParameterAst commdef
+                ? commdef.ParameterName
+                : node is VariableExpressionAst varDef ? varDef.VariablePath.UserPath : throw new TargetSymbolNotFoundException();
 
             Ast TargetParent = GetAstParentScope(node);
 
