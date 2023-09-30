@@ -162,9 +162,9 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                 }
                 parent = parent.Parent;
             }
-            if (parent is ScriptBlockAst && parent.Parent != null)
+            if (parent is ScriptBlockAst && parent.Parent != null && parent.Parent is FunctionDefinitionAst)
             {
-                parent = GetAstParentScope(parent.Parent);
+                parent = parent.Parent;
             }
             return parent;
         }
@@ -252,7 +252,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         public object VisitCommandParameter(CommandParameterAst commandParameterAst)
         {
             // TODO implement command parameter renaming
-            if (commandParameterAst.ParameterName == OldName)
+            if (commandParameterAst.ParameterName.ToLower() == OldName.ToLower())
             {
                 if (commandParameterAst.Extent.StartLineNumber == StartLineNumber &&
                     commandParameterAst.Extent.StartColumnNumber == StartColumnNumber)
@@ -429,6 +429,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         {
             ScopeStack.Push(scriptBlockAst);
 
+            scriptBlockAst.ParamBlock?.Visit(this);
             scriptBlockAst.BeginBlock?.Visit(this);
             scriptBlockAst.ProcessBlock?.Visit(this);
             scriptBlockAst.EndBlock?.Visit(this);
@@ -493,7 +494,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         public object VisitThrowStatement(ThrowStatementAst throwStatementAst) => throw new NotImplementedException();
         public object VisitTrap(TrapStatementAst trapStatementAst) => throw new NotImplementedException();
         public object VisitTryStatement(TryStatementAst tryStatementAst) => throw new NotImplementedException();
-        public object VisitTypeConstraint(TypeConstraintAst typeConstraintAst) => throw new NotImplementedException();
+        public object VisitTypeConstraint(TypeConstraintAst typeConstraintAst) => null;
         public object VisitTypeDefinition(TypeDefinitionAst typeDefinitionAst) => throw new NotImplementedException();
         public object VisitTypeExpression(TypeExpressionAst typeExpressionAst) => throw new NotImplementedException();
         public object VisitUnaryExpression(UnaryExpressionAst unaryExpressionAst) => throw new NotImplementedException();
@@ -501,7 +502,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         public object VisitUsingStatement(UsingStatementAst usingStatement) => throw new NotImplementedException();
         public object VisitVariableExpression(VariableExpressionAst variableExpressionAst)
         {
-            if (variableExpressionAst.VariablePath.UserPath == OldName)
+            if (variableExpressionAst.VariablePath.UserPath.ToLower() == OldName.ToLower())
             {
                 if (variableExpressionAst.Extent.StartColumnNumber == StartColumnNumber &&
                 variableExpressionAst.Extent.StartLineNumber == StartLineNumber)
