@@ -97,7 +97,7 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring.Variables
         {
             FileName = "VariableInParam.ps1",
             Column = 16,
-            Line = 2,
+            Line = 24,
             RenameTo = "Renamed"
         };
         public static readonly RenameSymbolParams VariableCommandParameter = new()
@@ -105,6 +105,20 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring.Variables
             FileName = "VariableCommandParameter.ps1",
             Column = 9,
             Line = 10,
+            RenameTo = "Renamed"
+        };
+        public static readonly RenameSymbolParams VariableCommandParameterReverse = new()
+        {
+            FileName = "VariableCommandParameter.ps1",
+            Column = 17,
+            Line = 3,
+            RenameTo = "Renamed"
+        };
+        public static readonly RenameSymbolParams VariableScriptWithParamBlock = new()
+        {
+            FileName = "VariableScriptWithParamBlock.ps1",
+            Column = 28,
+            Line = 1,
             RenameTo = "Renamed"
         };
     }

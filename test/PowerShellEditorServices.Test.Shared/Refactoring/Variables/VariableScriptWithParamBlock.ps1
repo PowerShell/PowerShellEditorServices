@@ -1,4 +1,4 @@
-param([int]$Count=50, [int]$DelayMilliseconds=200)
+param([int]$Count=50, [int]$DelayMilliSeconds=200)
 
 function Write-Item($itemCount) {
     $i = 1
@@ -12,16 +12,16 @@ function Write-Item($itemCount) {
         $i = $i + 1
 
         # Slow down execution a bit so user can test the "Pause debugger" feature.
-        Start-Sleep -Milliseconds $DelayMilliseconds
+        Start-Sleep -Milliseconds $DelayMilliSeconds
     }
 }
 
 # Do-Work will be underlined in green if you haven't disable script analysis.
 # Hover over the function name below to see the PSScriptAnalyzer warning that "Do-Work"
 # doesn't use an approved verb.
-function Do-Work($Renamed) {
+function Do-Work($workCount) {
     Write-Output "Doing work..."
-    Write-Item $Renamed
+    Write-Item $workcount
     Write-Host "Done!"
 }
 
