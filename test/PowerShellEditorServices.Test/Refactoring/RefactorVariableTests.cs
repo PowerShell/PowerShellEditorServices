@@ -208,5 +208,29 @@ namespace PowerShellEditorServices.Test.Refactoring
             Assert.Equal(expectedContent.Contents, modifiedcontent);
 
         }
+        [Fact]
+        public void VariableCommandParameterReverse()
+        {
+            RenameSymbolParams request = RenameVariableData.VariableCommandParameterReverse;
+            ScriptFile scriptFile = GetTestScript(request.FileName);
+            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
+
+            string modifiedcontent = TestRenaming(scriptFile, request);
+
+            Assert.Equal(expectedContent.Contents, modifiedcontent);
+
+        }
+       [Fact]
+        public void VariableScriptWithParamBlock()
+        {
+            RenameSymbolParams request = RenameVariableData.VariableScriptWithParamBlock;
+            ScriptFile scriptFile = GetTestScript(request.FileName);
+            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
+
+            string modifiedcontent = TestRenaming(scriptFile, request);
+
+            Assert.Equal(expectedContent.Contents, modifiedcontent);
+
+        }
     }
 }
