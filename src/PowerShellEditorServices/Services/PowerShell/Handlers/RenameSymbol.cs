@@ -94,14 +94,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         }
         internal static ModifiedFileResponse RenameVariable(SymbolReference symbol, Ast scriptAst, RenameSymbolParams request)
         {
-            if (symbol.Type is not SymbolType.Variable)
+            if (symbol.Type is not (SymbolType.Variable or SymbolType.Parameter))
             {
                 return null;
             }
 
             VariableRename visitor = new(request.RenameTo,
-                                        symbol.ScriptRegion.StartLineNumber,
-                                        symbol.ScriptRegion.StartColumnNumber,
+                                        symbol.NameRegion.StartLineNumber,
+                                        symbol.NameRegion.StartColumnNumber,
                                         scriptAst);
             scriptAst.Visit(visitor);
             ModifiedFileResponse FileModifications = new(request.FileName)
@@ -132,17 +132,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 Ast token = scriptFile.ScriptAst.Find(ast =>
                 {
-                    return ast.Extent.StartLineNumber == symbol.ScriptRegion.StartLineNumber &&
-                    ast.Extent.StartColumnNumber == symbol.ScriptRegion.StartColumnNumber;
+                    return ast.Extent.StartLineNumber == symbol.NameRegion.StartLineNumber &&
+                    ast.Extent.StartColumnNumber == symbol.NameRegion.StartColumnNumber;
                 }, true);
-                ModifiedFileResponse FileModifications = null;
-                if (symbol.Type is SymbolType.Function)
-                {
-                    FileModifications = RenameFunction(symbol, scriptFile.ScriptAst, request);
-                }else if(symbol.Type is SymbolType.Variable){
-                    FileModifications = RenameVariable(symbol, scriptFile.ScriptAst, request);
-                }
-
+                ModifiedFileResponse FileModifications = symbol.Type is SymbolType.Function
+                    ? RenameFunction(symbol, scriptFile.ScriptAst, request)
+                    : RenameVariable(symbol, scriptFile.ScriptAst, request);
                 RenameSymbolResult result = new();
                 result.Changes.Add(FileModifications);
                 return result;
