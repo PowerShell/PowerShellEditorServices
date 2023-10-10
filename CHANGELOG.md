@@ -1,5 +1,10 @@
 # PowerShell Editor Services Release History
 
+## v3.13.0
+### Tuesday, October 10, 2023
+
+- ✨ 📟 [PowerShellEditorServices #2087](https://github.com/PowerShell/PowerShellEditorServices/pull/2087) - Upgrade bundled PSReadLine module to v2.3.4.
+
 ## v3.12.0
 ### Thursday, September 28, 2023
 
