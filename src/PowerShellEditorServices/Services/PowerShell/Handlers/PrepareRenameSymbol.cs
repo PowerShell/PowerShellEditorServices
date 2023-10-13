@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using MediatR;
 using System.Management.Automation.Language;
 using OmniSharp.Extensions.JsonRpc;
-using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -40,8 +39,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspaceService;
         }
 
-
-
         public async Task<PrepareRenameSymbolResult> Handle(PrepareRenameSymbolParams request, CancellationToken cancellationToken)
         {
             if (!_workspaceService.TryGetFile(request.FileName, out ScriptFile scriptFile))
@@ -55,26 +52,24 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 {
                     message = ""
                 };
-                SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-                    request.Line + 1,
-                    request.Column + 1);
-
-                if (symbol == null) { result.message = "Unable to Find Symbol"; return result; }
 
                 Ast token = scriptFile.ScriptAst.Find(ast =>
                 {
-                    return ast.Extent.StartLineNumber == symbol.NameRegion.StartLineNumber &&
-                    ast.Extent.StartColumnNumber == symbol.NameRegion.StartColumnNumber;
+                    return request.Line == ast.Extent.StartLineNumber &&
+                        request.Column >= ast.Extent.StartColumnNumber && request.Column <= ast.Extent.EndColumnNumber;
                 }, true);
-                if (symbol.Type is SymbolType.Function)
+
+                if (token == null) { result.message = "Unable to Find Symbol"; return result; }
+
+                if (token is FunctionDefinitionAst funcDef)
                 {
                     try
                     {
 
-                        FunctionRename visitor = new(symbol.NameRegion.Text,
+                        FunctionRename visitor = new(funcDef.Name,
                                     request.RenameTo,
-                                    symbol.ScriptRegion.StartLineNumber,
-                                    symbol.ScriptRegion.StartColumnNumber,
+                                    funcDef.Extent.StartLineNumber,
+                                    funcDef.Extent.StartColumnNumber,
                                     scriptFile.ScriptAst);
                     }
                     catch (FunctionDefinitionNotFoundException)
@@ -83,14 +78,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         result.message = "Failed to Find function definition within current file";
                     }
                 }
-                else if (symbol.Type is SymbolType.Variable or SymbolType.Parameter)
+                else if (token is VariableExpressionAst or CommandAst)
                 {
 
                     try
                     {
                         VariableRename visitor = new(request.RenameTo,
-                                            symbol.NameRegion.StartLineNumber,
-                                            symbol.NameRegion.StartColumnNumber,
+                                            token.Extent.StartLineNumber,
+                                            token.Extent.StartColumnNumber,
                                             scriptFile.ScriptAst);
                         if (visitor.TargetVariableAst == null)
                         {
