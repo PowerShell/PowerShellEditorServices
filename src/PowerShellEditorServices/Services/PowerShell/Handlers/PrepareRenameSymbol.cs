@@ -10,6 +10,7 @@ using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Refactoring;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -25,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     }
     internal class PrepareRenameSymbolResult
     {
-        public string Message;
+        public string message;
     }
 
     internal class PrepareRenameSymbolHandler : IPrepareRenameSymbolHandler
@@ -38,6 +39,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _logger = loggerFactory.CreateLogger<RenameSymbolHandler>();
             _workspaceService = workspaceService;
         }
+
+
+
         public async Task<PrepareRenameSymbolResult> Handle(PrepareRenameSymbolParams request, CancellationToken cancellationToken)
         {
             if (!_workspaceService.TryGetFile(request.FileName, out ScriptFile scriptFile))
@@ -47,22 +51,54 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
             return await Task.Run(() =>
             {
-                PrepareRenameSymbolResult result = new();
+                PrepareRenameSymbolResult result = new()
+                {
+                    message = ""
+                };
                 SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
                     request.Line + 1,
                     request.Column + 1);
 
-                if (symbol == null) { result.Message="Unable to Find Symbol"; return result; }
+                if (symbol == null) { result.message = "Unable to Find Symbol"; return result; }
 
                 Ast token = scriptFile.ScriptAst.Find(ast =>
                 {
                     return ast.Extent.StartLineNumber == symbol.NameRegion.StartLineNumber &&
                     ast.Extent.StartColumnNumber == symbol.NameRegion.StartColumnNumber;
                 }, true);
+                if (symbol.Type is SymbolType.Function)
+                {
+                    FunctionRename visitor = new(symbol.NameRegion.Text,
+                                request.RenameTo,
+                                symbol.ScriptRegion.StartLineNumber,
+                                symbol.ScriptRegion.StartColumnNumber,
+                                scriptFile.ScriptAst);
+                    if (visitor.TargetFunctionAst == null)
+                    {
+                        result.message = "Failed to Find function definition within current file";
+                    }
+                }
+                else if (symbol.Type is SymbolType.Variable or SymbolType.Parameter)
+                {
 
+                    try
+                    {
+                        VariableRename visitor = new(request.RenameTo,
+                                            symbol.NameRegion.StartLineNumber,
+                                            symbol.NameRegion.StartColumnNumber,
+                                            scriptFile.ScriptAst);
+                        if (visitor.TargetVariableAst == null)
+                        {
+                            result.message = "Failed to find variable definition within the current file";
+                        }
+                    }
+                    catch (TargetVariableIsDotSourcedException)
+                    {
 
+                        result.message = "Variable is dot sourced which is currently not supported unable to perform a rename";
+                    }
 
-                result.Message = "Nope cannot do";
+                }
 
                 return result;
             }).ConfigureAwait(false);
