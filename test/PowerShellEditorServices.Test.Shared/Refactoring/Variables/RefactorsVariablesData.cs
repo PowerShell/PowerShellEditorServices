@@ -121,5 +121,12 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring.Variables
             Line = 1,
             RenameTo = "Renamed"
         };
+        public static readonly RenameSymbolParams VariableNonParam = new()
+        {
+            FileName = "VariableNonParam.ps1",
+            Column = 1,
+            Line = 7,
+            RenameTo = "Renamed"
+        };
     }
 }
