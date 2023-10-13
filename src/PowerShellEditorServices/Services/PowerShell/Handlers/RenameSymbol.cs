@@ -11,6 +11,7 @@ using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Refactoring;
+using System.Linq;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -121,11 +122,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             return await Task.Run(() =>
             {
-                Ast token = scriptFile.ScriptAst.Find(ast =>
+                IEnumerable<Ast> tokens = scriptFile.ScriptAst.FindAll(ast =>
                 {
-                    return request.Line >= ast.Extent.StartLineNumber && request.Line <= ast.Extent.EndLineNumber &&
-                        request.Column >= ast.Extent.StartColumnNumber && request.Column <= ast.Extent.EndColumnNumber;
+                    return request.Line+1 == ast.Extent.StartLineNumber &&
+                        request.Column+1 >= ast.Extent.StartColumnNumber && request.Column+1 <= ast.Extent.EndColumnNumber;
                 }, true);
+
+                Ast token = tokens.Last();
 
                 if (token == null) { return null; }
                 ModifiedFileResponse FileModifications = token is FunctionDefinitionAst
