@@ -27,6 +27,23 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         }
     }
 
+    public class TargetVariableIsDotSourcedException : Exception
+    {
+        public TargetVariableIsDotSourcedException()
+        {
+        }
+
+        public TargetVariableIsDotSourcedException(string message)
+            : base(message)
+        {
+        }
+
+        public TargetVariableIsDotSourcedException(string message, Exception inner)
+            : base(message, inner)
+        {
+        }
+    }
+
     internal class VariableRename : ICustomAstVisitor2
     {
         private readonly string OldName;
@@ -238,6 +255,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                 if (commandAst.CommandElements[1] is StringConstantExpressionAst scriptPath)
                 {
                     dotSourcedScripts.Add(scriptPath.Value);
+                    throw new TargetVariableIsDotSourcedException();
                 }
             }
 
