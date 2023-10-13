@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using MediatR;
 using System.Management.Automation.Language;
 using OmniSharp.Extensions.JsonRpc;
-using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -68,47 +67,49 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
 
-        public RenameSymbolHandler(ILoggerFactory loggerFactory,WorkspaceService workspaceService)
+        public RenameSymbolHandler(ILoggerFactory loggerFactory, WorkspaceService workspaceService)
         {
             _logger = loggerFactory.CreateLogger<RenameSymbolHandler>();
             _workspaceService = workspaceService;
         }
-        internal static ModifiedFileResponse RenameFunction(SymbolReference symbol, Ast scriptAst, RenameSymbolParams request)
+        internal static ModifiedFileResponse RenameFunction(Ast token, Ast scriptAst, RenameSymbolParams request)
         {
-            if (symbol.Type is not SymbolType.Function)
+            if (token is FunctionDefinitionAst funcDef)
             {
-                return null;
-            }
+                FunctionRename visitor = new(funcDef.Name,
+                            request.RenameTo,
+                            funcDef.Extent.StartLineNumber,
+                            funcDef.Extent.StartColumnNumber,
+                            scriptAst);
+                scriptAst.Visit(visitor);
+                ModifiedFileResponse FileModifications = new(request.FileName)
+                {
+                    Changes = visitor.Modifications
+                };
+                return FileModifications;
 
-            FunctionRename visitor = new(symbol.NameRegion.Text,
-                                        request.RenameTo,
-                                        symbol.ScriptRegion.StartLineNumber,
-                                        symbol.ScriptRegion.StartColumnNumber,
-                                        scriptAst);
-            scriptAst.Visit(visitor);
-            ModifiedFileResponse FileModifications = new(request.FileName)
-            {
-                Changes = visitor.Modifications
-            };
-            return FileModifications;
+            }
+            return null;
+
         }
-        internal static ModifiedFileResponse RenameVariable(SymbolReference symbol, Ast scriptAst, RenameSymbolParams request)
+        internal static ModifiedFileResponse RenameVariable(Ast symbol, Ast scriptAst, RenameSymbolParams request)
         {
-            if (symbol.Type is not (SymbolType.Variable or SymbolType.Parameter))
+            if (symbol is VariableExpressionAst or ParameterAst)
             {
-                return null;
-            }
+                VariableRename visitor = new(request.RenameTo,
+                                            symbol.Extent.StartLineNumber,
+                                            symbol.Extent.StartColumnNumber,
+                                            scriptAst);
+                scriptAst.Visit(visitor);
+                ModifiedFileResponse FileModifications = new(request.FileName)
+                {
+                    Changes = visitor.Modifications
+                };
+                return FileModifications;
 
-            VariableRename visitor = new(request.RenameTo,
-                                        symbol.NameRegion.StartLineNumber,
-                                        symbol.NameRegion.StartColumnNumber,
-                                        scriptAst);
-            scriptAst.Visit(visitor);
-            ModifiedFileResponse FileModifications = new(request.FileName)
-            {
-                Changes = visitor.Modifications
-            };
-            return FileModifications;
+            }
+            return null;
+
         }
         public async Task<RenameSymbolResult> Handle(RenameSymbolParams request, CancellationToken cancellationToken)
         {
@@ -117,27 +118,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 _logger.LogDebug("Failed to open file!");
                 return await Task.FromResult<RenameSymbolResult>(null).ConfigureAwait(false);
             }
-            // Locate the Symbol in the file
-            // Look at its parent to find its script scope
-            //  I.E In a function
-            // Lookup all other occurances of the symbol
-            // replace symbols that fall in the same scope as the initial symbol
+
             return await Task.Run(() =>
             {
-                SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-                    request.Line + 1,
-                    request.Column + 1);
-
-                if (symbol == null) { return null; }
-
                 Ast token = scriptFile.ScriptAst.Find(ast =>
                 {
-                    return ast.Extent.StartLineNumber == symbol.NameRegion.StartLineNumber &&
-                    ast.Extent.StartColumnNumber == symbol.NameRegion.StartColumnNumber;
+                    return request.Line >= ast.Extent.StartLineNumber && request.Line <= ast.Extent.EndLineNumber &&
+                        request.Column >= ast.Extent.StartColumnNumber && request.Column <= ast.Extent.EndColumnNumber;
                 }, true);
-                ModifiedFileResponse FileModifications = symbol.Type is SymbolType.Function
-                    ? RenameFunction(symbol, scriptFile.ScriptAst, request)
-                    : RenameVariable(symbol, scriptFile.ScriptAst, request);
+
+                if (token == null) { return null; }
+                ModifiedFileResponse FileModifications = token is FunctionDefinitionAst
+                    ? RenameFunction(token, scriptFile.ScriptAst, request)
+                    : RenameVariable(token, scriptFile.ScriptAst, request);
                 RenameSymbolResult result = new();
                 result.Changes.Add(FileModifications);
                 return result;
