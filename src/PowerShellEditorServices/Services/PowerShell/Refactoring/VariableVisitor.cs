@@ -40,6 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         internal VariableExpressionAst DuplicateVariableAst;
         internal List<string> dotSourcedScripts = new();
         internal readonly Ast ScriptAst;
+        internal bool isParam;
 
         public VariableRename(string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
         {
@@ -51,7 +52,10 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             VariableExpressionAst Node = (VariableExpressionAst)VariableRename.GetVariableTopAssignment(StartLineNumber, StartColumnNumber, ScriptAst);
             if (Node != null)
             {
-
+                if (Node.Parent is ParameterAst)
+                {
+                    isParam = true;
+                }
                 TargetVariableAst = Node;
                 OldName = TargetVariableAst.VariablePath.UserPath.Replace("$", "");
                 this.StartColumnNumber = TargetVariableAst.Extent.StartColumnNumber;
@@ -260,7 +264,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     ShouldRename = true;
                 }
 
-                if (ShouldRename)
+                if (ShouldRename && isParam)
                 {
                     TextChange Change = new()
                     {
