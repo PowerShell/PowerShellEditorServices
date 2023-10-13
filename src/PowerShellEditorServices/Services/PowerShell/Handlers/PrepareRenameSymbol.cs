@@ -10,6 +10,8 @@ using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Refactoring;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -53,11 +55,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     message = ""
                 };
 
-                Ast token = scriptFile.ScriptAst.Find(ast =>
+                IEnumerable<Ast> tokens = scriptFile.ScriptAst.FindAll(ast =>
                 {
-                    return request.Line == ast.Extent.StartLineNumber &&
-                        request.Column >= ast.Extent.StartColumnNumber && request.Column <= ast.Extent.EndColumnNumber;
+                    return request.Line+1 == ast.Extent.StartLineNumber &&
+                        request.Column+1 >= ast.Extent.StartColumnNumber && request.Column+1 <= ast.Extent.EndColumnNumber;
                 }, true);
+
+                Ast token = tokens.Last();
 
                 if (token == null) { result.message = "Unable to Find Symbol"; return result; }
 
