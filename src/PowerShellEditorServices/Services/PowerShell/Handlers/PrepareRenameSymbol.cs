@@ -68,13 +68,18 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }, true);
                 if (symbol.Type is SymbolType.Function)
                 {
-                    FunctionRename visitor = new(symbol.NameRegion.Text,
-                                request.RenameTo,
-                                symbol.ScriptRegion.StartLineNumber,
-                                symbol.ScriptRegion.StartColumnNumber,
-                                scriptFile.ScriptAst);
-                    if (visitor.TargetFunctionAst == null)
+                    try
                     {
+
+                        FunctionRename visitor = new(symbol.NameRegion.Text,
+                                    request.RenameTo,
+                                    symbol.ScriptRegion.StartLineNumber,
+                                    symbol.ScriptRegion.StartColumnNumber,
+                                    scriptFile.ScriptAst);
+                    }
+                    catch (FunctionDefinitionNotFoundException)
+                    {
+
                         result.message = "Failed to Find function definition within current file";
                     }
                 }

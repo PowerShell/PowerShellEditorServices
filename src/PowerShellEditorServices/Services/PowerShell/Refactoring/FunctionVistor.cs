@@ -9,6 +9,26 @@ using System.Linq;
 
 namespace Microsoft.PowerShell.EditorServices.Refactoring
 {
+
+
+    public class FunctionDefinitionNotFoundException : Exception
+    {
+        public FunctionDefinitionNotFoundException()
+        {
+        }
+
+        public FunctionDefinitionNotFoundException(string message)
+            : base(message)
+        {
+        }
+
+        public FunctionDefinitionNotFoundException(string message, Exception inner)
+            : base(message, inner)
+        {
+        }
+    }
+
+
     internal class FunctionRename : ICustomAstVisitor2
     {
         private readonly string OldName;
@@ -16,7 +36,6 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         internal Stack<string> ScopeStack = new();
         internal bool ShouldRename;
         public List<TextChange> Modifications = new();
-        private readonly List<string> Log = new();
         internal int StartLineNumber;
         internal int StartColumnNumber;
         internal FunctionDefinitionAst TargetFunctionAst;
@@ -43,7 +62,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     TargetFunctionAst = FunctionRename.GetFunctionDefByCommandAst(OldName, StartLineNumber, StartColumnNumber, ScriptAst);
                     if (TargetFunctionAst == null)
                     {
-                        Log.Add("Failed to get the Commands Function Definition");
+                        throw new FunctionDefinitionNotFoundException();
                     }
                     this.StartColumnNumber = TargetFunctionAst.Extent.StartColumnNumber;
                     this.StartLineNumber = TargetFunctionAst.Extent.StartLineNumber;
