@@ -60,14 +60,14 @@ namespace PowerShellEditorServices.Test.Refactoring
         internal static string TestRenaming(ScriptFile scriptFile, RenameSymbolParams request)
         {
 
-            VariableRename visitor = new(request.RenameTo,
+            VariableRenameIterative iterative = new(request.RenameTo,
                                         request.Line,
                                         request.Column,
                                         scriptFile.ScriptAst);
-            scriptFile.ScriptAst.Visit(visitor);
+            iterative.Visit(scriptFile.ScriptAst);
             ModifiedFileResponse changes = new(request.FileName)
             {
-                Changes = visitor.Modifications
+                Changes = iterative.Modifications
             };
             return GetModifiedScript(scriptFile.Contents, changes);
         }
@@ -220,7 +220,7 @@ namespace PowerShellEditorServices.Test.Refactoring
             Assert.Equal(expectedContent.Contents, modifiedcontent);
 
         }
-       [Fact]
+        [Fact]
         public void VariableScriptWithParamBlock()
         {
             RenameSymbolParams request = RenameVariableData.VariableScriptWithParamBlock;
@@ -232,7 +232,7 @@ namespace PowerShellEditorServices.Test.Refactoring
             Assert.Equal(expectedContent.Contents, modifiedcontent);
 
         }
-       [Fact]
+        [Fact]
         public void VariableNonParam()
         {
             RenameSymbolParams request = RenameVariableData.VariableNonParam;
