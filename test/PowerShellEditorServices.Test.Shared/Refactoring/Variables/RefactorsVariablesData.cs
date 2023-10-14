@@ -128,7 +128,7 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring.Variables
             Line = 7,
             RenameTo = "Renamed"
         };
-        public static readonly RenameSymbolParams VariableParameterCommndWithSameName = new()
+        public static readonly RenameSymbolParams VariableParameterCommandWithSameName = new()
         {
             FileName = "VariableParameterCommndWithSameName.ps1",
             Column = 13,
