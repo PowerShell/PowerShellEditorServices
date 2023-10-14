@@ -313,7 +313,6 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                         }
                     }
                     break;
-
             }
             Log.Add($"ShouldRename after proc: {ShouldRename}");
         }
