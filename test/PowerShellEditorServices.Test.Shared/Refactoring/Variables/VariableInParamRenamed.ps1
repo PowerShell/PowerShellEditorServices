@@ -19,7 +19,7 @@ function Write-Item($itemCount) {
 # Do-Work will be underlined in green if you haven't disable script analysis.
 # Hover over the function name below to see the PSScriptAnalyzer warning that "Do-Work"
 # doesn't use an approved verb.
-function Do-Work($Renamed) {
+function Do-Work([Alias("workCount")]$Renamed) {
     Write-Output "Doing work..."
     Write-Item $Renamed
     Write-Host "Done!"

@@ -1,4 +1,4 @@
-param([int]$Count=50, [int]$Renamed=200)
+param([int]$Count=50, [int][Alias("DelayMilliSeconds")]$Renamed=200)
 
 function Write-Item($itemCount) {
     $i = 1
