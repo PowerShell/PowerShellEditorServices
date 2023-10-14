@@ -23,6 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         internal List<string> dotSourcedScripts = new();
         internal readonly Ast ScriptAst;
         internal bool isParam;
+        internal bool AliasSet;
         internal FunctionDefinitionAst TargetFunction;
         internal List<string> Log = new();
 
@@ -156,7 +157,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         internal static Ast GetAstParentScope(Ast node)
         {
             Ast parent = node;
-            // Walk backwards up the tree look
+            // Walk backwards up the tree lookinf for a ScriptBLock of a FunctionDefinition
             while (parent != null)
             {
                 if (parent is ScriptBlockAst or FunctionDefinitionAst)
@@ -255,18 +256,25 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                         }
 
                         if (TargetFunction != null && commandParameterAst.Parent is CommandAst commandAst &&
-                            commandAst.GetCommandName().ToLower() == TargetFunction.Name.ToLower() && ShouldRename && isParam)
+                            commandAst.GetCommandName().ToLower() == TargetFunction.Name.ToLower() && isParam)
                         {
-                            TextChange Change = new()
+                            if (ShouldRename)
                             {
-                                NewText = NewName.Contains("-") ? NewName : "-" + NewName,
-                                StartLine = commandParameterAst.Extent.StartLineNumber - 1,
-                                StartColumn = commandParameterAst.Extent.StartColumnNumber - 1,
-                                EndLine = commandParameterAst.Extent.StartLineNumber - 1,
-                                EndColumn = commandParameterAst.Extent.StartColumnNumber + OldName.Length,
-                            };
+                                TextChange Change = new()
+                                {
+                                    NewText = NewName.Contains("-") ? NewName : "-" + NewName,
+                                    StartLine = commandParameterAst.Extent.StartLineNumber - 1,
+                                    StartColumn = commandParameterAst.Extent.StartColumnNumber - 1,
+                                    EndLine = commandParameterAst.Extent.StartLineNumber - 1,
+                                    EndColumn = commandParameterAst.Extent.StartColumnNumber + OldName.Length,
+                                };
 
-                            Modifications.Add(Change);
+                                Modifications.Add(Change);
+                            }
+                        }
+                        else
+                        {
+                            ShouldRename = false;
                         }
                     }
                     break;
@@ -296,9 +304,15 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                             }
 
                         }
-
+                        else
+                        {
+                            ShouldRename = WithinTargetsScope(TargetVariableAst, variableExpressionAst);
+                        }
                         if (ShouldRename)
                         {
+                            // If the variables parent is a parameterAst Add a modification
+                            //to add an Alias to the parameter so that any other scripts out of context calling it will still work
+
                             // have some modifications to account for the dollar sign prefix powershell uses for variables
                             TextChange Change = new()
                             {
@@ -308,8 +322,47 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                                 EndLine = variableExpressionAst.Extent.StartLineNumber - 1,
                                 EndColumn = variableExpressionAst.Extent.StartColumnNumber + OldName.Length,
                             };
+                            // If the variables parent is a parameterAst Add a modification
+                            //to add an Alias to the parameter so that any other scripts out of context calling it will still work
+                            if (variableExpressionAst.Parent is ParameterAst paramAst && !AliasSet)
+                            {
+                                TextChange aliasChange = new();
+                                foreach (Ast Attr in paramAst.Attributes)
+                                {
+                                    if (Attr is AttributeAst AttrAst)
+                                    {
+                                        // Alias Already Exists
+                                        if (AttrAst.TypeName.FullName == "Alias")
+                                        {
+                                            string existingEntries = AttrAst.Extent.Text
+                                            .Substring("[Alias(".Length);
+                                            existingEntries = existingEntries.Substring(0, existingEntries.Length - ")]".Length);
+                                            string nentries = existingEntries + $", \"{OldName}\"";
 
+                                            aliasChange.NewText = $"[Alias({nentries})]";
+                                            aliasChange.StartLine = Attr.Extent.StartLineNumber - 1;
+                                            aliasChange.StartColumn = Attr.Extent.StartColumnNumber - 1;
+                                            aliasChange.EndLine = Attr.Extent.StartLineNumber - 1;
+                                            aliasChange.EndColumn = Attr.Extent.EndColumnNumber - 1;
+
+                                            break;
+                                        }
+
+                                    }
+                                }
+                                if (aliasChange.NewText == null)
+                                {
+                                    aliasChange.NewText = $"[Alias(\"{OldName}\")]";
+                                    aliasChange.StartLine = variableExpressionAst.Extent.StartLineNumber - 1;
+                                    aliasChange.StartColumn = variableExpressionAst.Extent.StartColumnNumber - 1;
+                                    aliasChange.EndLine = variableExpressionAst.Extent.StartLineNumber - 1;
+                                    aliasChange.EndColumn = variableExpressionAst.Extent.StartColumnNumber - 1;
+                                }
+                                Modifications.Add(aliasChange);
+                                AliasSet = true;
+                            }
                             Modifications.Add(Change);
+
                         }
                     }
                     break;
