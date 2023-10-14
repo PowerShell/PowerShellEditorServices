@@ -77,12 +77,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             if (token is FunctionDefinitionAst funcDef)
             {
-                FunctionRenameIterative visitor = new(funcDef.Name,
+                IterativeFunctionRename visitor = new(funcDef.Name,
                             request.RenameTo,
                             funcDef.Extent.StartLineNumber,
                             funcDef.Extent.StartColumnNumber,
                             scriptAst);
-                visitor.Visit(scriptAst)
+                visitor.Visit(scriptAst);
                 ModifiedFileResponse FileModifications = new(request.FileName)
                 {
                     Changes = visitor.Modifications
@@ -97,11 +97,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             if (symbol is VariableExpressionAst or ParameterAst)
             {
-                VariableRename visitor = new(request.RenameTo,
+                VariableRenameIterative visitor = new(request.RenameTo,
                                             symbol.Extent.StartLineNumber,
                                             symbol.Extent.StartColumnNumber,
                                             scriptAst);
-                scriptAst.Visit(visitor);
+                visitor.Visit(scriptAst);
                 ModifiedFileResponse FileModifications = new(request.FileName)
                 {
                     Changes = visitor.Modifications
