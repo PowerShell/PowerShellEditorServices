@@ -23,6 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         internal List<string> dotSourcedScripts = new();
         internal readonly Ast ScriptAst;
         internal bool isParam;
+        internal FunctionDefinitionAst TargetFunction;
         internal List<string> Log = new();
 
         public VariableRenameIterative(string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
@@ -38,6 +39,20 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                 if (Node.Parent is ParameterAst)
                 {
                     isParam = true;
+                    Ast parent = Node;
+                    // Look for a target function that the parameterAst will be within if it exists
+                    while (parent != null)
+                    {
+                        if (parent is FunctionDefinitionAst)
+                        {
+                            break;
+                        }
+                        parent = parent.Parent;
+                    }
+                    if (parent != null)
+                    {
+                        TargetFunction = (FunctionDefinitionAst)parent;
+                    }
                 }
                 TargetVariableAst = Node;
                 OldName = TargetVariableAst.VariablePath.UserPath.Replace("$", "");
@@ -191,7 +206,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         {
             Stack<NodeProcessingState> processingStack = new();
 
-            processingStack.Push(new NodeProcessingState { Node = root});
+            processingStack.Push(new NodeProcessingState { Node = root });
 
             while (processingStack.Count > 0)
             {
@@ -211,7 +226,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                 if (currentState.ChildrenEnumerator.MoveNext())
                 {
                     Ast child = currentState.ChildrenEnumerator.Current;
-                    processingStack.Push(new NodeProcessingState { Node = child});
+                    processingStack.Push(new NodeProcessingState { Node = child });
                 }
                 else
                 {
@@ -239,7 +254,8 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                             ShouldRename = true;
                         }
 
-                        if (ShouldRename && isParam)
+                        if (TargetFunction != null && commandParameterAst.Parent is CommandAst commandAst &&
+                            commandAst.GetCommandName().ToLower() == TargetFunction.Name.ToLower() && ShouldRename && isParam)
                         {
                             TextChange Change = new()
                             {
@@ -262,9 +278,10 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                         {
                             ShouldRename = true;
                             TargetVariableAst = variableExpressionAst;
-                        }else if (variableExpressionAst.Parent is CommandAst commandAst)
+                        }
+                        else if (variableExpressionAst.Parent is CommandAst commandAst)
                         {
-                            if(WithinTargetsScope(TargetVariableAst, commandAst))
+                            if (WithinTargetsScope(TargetVariableAst, commandAst))
                             {
                                 ShouldRename = true;
                             }
