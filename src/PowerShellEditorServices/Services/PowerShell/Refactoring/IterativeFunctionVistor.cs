@@ -9,7 +9,7 @@ using System.Linq;
 namespace Microsoft.PowerShell.EditorServices.Refactoring
 {
 
-    internal class FunctionRenameIterative
+    internal class IterativeFunctionRename
     {
         private readonly string OldName;
         private readonly string NewName;
@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         internal FunctionDefinitionAst DuplicateFunctionAst;
         internal readonly Ast ScriptAst;
 
-        public FunctionRenameIterative(string OldName, string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
+        public IterativeFunctionRename(string OldName, string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
         {
             this.OldName = OldName;
             this.NewName = NewName;
