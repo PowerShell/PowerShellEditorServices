@@ -53,15 +53,22 @@ namespace PowerShellEditorServices.Test.Refactoring
         internal static string TestRenaming(ScriptFile scriptFile, RenameSymbolParams request, SymbolReference symbol)
         {
 
-            FunctionRename visitor = new(symbol.NameRegion.Text,
+            //FunctionRename visitor = new(symbol.NameRegion.Text,
+            //                            request.RenameTo,
+            //                            symbol.ScriptRegion.StartLineNumber,
+            //                            symbol.ScriptRegion.StartColumnNumber,
+            //                            scriptFile.ScriptAst);
+            //                            scriptFile.ScriptAst.Visit(visitor);
+            FunctionRenameIterative iterative = new(symbol.NameRegion.Text,
                                         request.RenameTo,
                                         symbol.ScriptRegion.StartLineNumber,
                                         symbol.ScriptRegion.StartColumnNumber,
                                         scriptFile.ScriptAst);
-            scriptFile.ScriptAst.Visit(visitor);
+            iterative.Visit(scriptFile.ScriptAst);
+            //scriptFile.ScriptAst.Visit(visitor);
             ModifiedFileResponse changes = new(request.FileName)
             {
-                Changes = visitor.Modifications
+                Changes = iterative.Modifications
             };
             return GetModifiedScript(scriptFile.Contents, changes);
         }
