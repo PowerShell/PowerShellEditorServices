@@ -77,12 +77,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             if (token is FunctionDefinitionAst funcDef)
             {
-                FunctionRename visitor = new(funcDef.Name,
+                FunctionRenameIterative visitor = new(funcDef.Name,
                             request.RenameTo,
                             funcDef.Extent.StartLineNumber,
                             funcDef.Extent.StartColumnNumber,
                             scriptAst);
-                scriptAst.Visit(visitor);
+                visitor.Visit(scriptAst)
                 ModifiedFileResponse FileModifications = new(request.FileName)
                 {
                     Changes = visitor.Modifications
