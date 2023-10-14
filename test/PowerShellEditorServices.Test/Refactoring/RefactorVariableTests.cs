@@ -245,15 +245,13 @@ namespace PowerShellEditorServices.Test.Refactoring
 
         }
         [Fact]
-        public void VariableParameterCommndWithSameName()
+        public void VariableParameterCommandWithSameName()
         {
-            RenameSymbolParams request = RefactorsFunctionData.VariableParameterCommndWithSameName;
+            RenameSymbolParams request = RenameVariableData.VariableParameterCommandWithSameName;
             ScriptFile scriptFile = GetTestScript(request.FileName);
             ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
-            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-                    request.Line,
-                    request.Column);
-            string modifiedcontent = TestRenaming(scriptFile, request, symbol);
+
+            string modifiedcontent = TestRenaming(scriptFile, request);
 
             Assert.Equal(expectedContent.Contents, modifiedcontent);
         }
