@@ -59,7 +59,7 @@ namespace PowerShellEditorServices.Test.Refactoring
             //                            symbol.ScriptRegion.StartColumnNumber,
             //                            scriptFile.ScriptAst);
             //                            scriptFile.ScriptAst.Visit(visitor);
-            FunctionRenameIterative iterative = new(symbol.NameRegion.Text,
+            IterativeFunctionRename iterative = new(symbol.NameRegion.Text,
                                         request.RenameTo,
                                         symbol.ScriptRegion.StartLineNumber,
                                         symbol.ScriptRegion.StartColumnNumber,
