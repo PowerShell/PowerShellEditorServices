@@ -1,6 +1,6 @@
 function Get-foo {
     param (
-        [string]$Renamed,
+        [string][Alias("string")]$Renamed,
         [int]$pos
     )
 
