@@ -35,7 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             this.StartColumnNumber = StartColumnNumber;
             this.ScriptAst = ScriptAst;
 
-            VariableExpressionAst Node = (VariableExpressionAst)VariableRename.GetVariableTopAssignment(StartLineNumber, StartColumnNumber, ScriptAst);
+            VariableExpressionAst Node = (VariableExpressionAst)GetVariableTopAssignment(StartLineNumber, StartColumnNumber, ScriptAst);
             if (Node != null)
             {
                 if (Node.Parent is ParameterAst)
@@ -70,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             {
                 return ast.Extent.StartLineNumber == StartLineNumber &&
                 ast.Extent.StartColumnNumber == StartColumnNumber &&
-                ast is VariableExpressionAst or CommandParameterAst;
+                ast is VariableExpressionAst or CommandParameterAst or StringConstantExpressionAst;
             }, true);
             if (result == null)
             {
@@ -85,17 +85,40 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             // Look up the target object
             Ast node = GetAstNodeByLineAndColumn(StartLineNumber, StartColumnNumber, ScriptAst);
 
-            string name = node is CommandParameterAst commdef
-                ? commdef.ParameterName
-                : node is VariableExpressionAst varDef ? varDef.VariablePath.UserPath : throw new TargetSymbolNotFoundException();
+            string name = node switch
+            {
+                CommandParameterAst commdef => commdef.ParameterName,
+                VariableExpressionAst varDef => varDef.VariablePath.UserPath,
+                // Key within a Hashtable
+                StringConstantExpressionAst strExp => strExp.Value,
+                _ => throw new TargetSymbolNotFoundException()
+            };
+
+            VariableExpressionAst splatAssignment = null;
+            if (node is StringConstantExpressionAst)
+            {
+                Ast parent = node;
+                while (parent != null)
+                {
+                    if (parent is AssignmentStatementAst assignmentStatementAst)
+                    {
+                        splatAssignment = (VariableExpressionAst)assignmentStatementAst.Left.Find(ast => ast is VariableExpressionAst, false);
+
+                        break;
+                    }
+                    parent = parent.Parent;
+                }
+            }
 
             Ast TargetParent = GetAstParentScope(node);
-
+            // Find All Variables and Parameter Assignments with the same name before
+            // The node found above
             List<VariableExpressionAst> VariableAssignments = ScriptAst.FindAll(ast =>
             {
                 return ast is VariableExpressionAst VarDef &&
                 VarDef.Parent is AssignmentStatementAst or ParameterAst &&
                 VarDef.VariablePath.UserPath.ToLower() == name.ToLower() &&
+                // Look Backwards from the node above
                 (VarDef.Extent.EndLineNumber < node.Extent.StartLineNumber ||
                 (VarDef.Extent.EndColumnNumber <= node.Extent.StartColumnNumber &&
                 VarDef.Extent.EndLineNumber <= node.Extent.StartLineNumber));
@@ -123,7 +146,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     CorrectDefinition = node;
                     break;
                 }
-                // node is proably just a reference of an assignment statement within the global scope or higher
+                // node is proably just a reference to an assignment statement or Parameter within the global scope or higher
                 if (node.Parent is not AssignmentStatementAst)
                 {
                     if (null == parent || null == parent.Parent)
@@ -132,8 +155,32 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                         CorrectDefinition = element;
                         break;
                     }
-                    if (parent is FunctionDefinitionAst funcDef && node is CommandParameterAst)
+
+                    if (parent is FunctionDefinitionAst funcDef && node is CommandParameterAst or StringConstantExpressionAst)
                     {
+                        if (node is StringConstantExpressionAst)
+                        {
+                            List<VariableExpressionAst> SplatReferences = ScriptAst.FindAll(ast =>
+                            {
+                                return ast is VariableExpressionAst varDef &&
+                                varDef.Splatted &&
+                                varDef.Parent is CommandAst &&
+                                varDef.VariablePath.UserPath.ToLower() == splatAssignment.VariablePath.UserPath.ToLower();
+                            }, true).Cast<VariableExpressionAst>().ToList();
+
+                            if (SplatReferences.Count >= 1)
+                            {
+                                CommandAst splatFirstRefComm = (CommandAst)SplatReferences.First().Parent;
+                                if (funcDef.Name == splatFirstRefComm.GetCommandName()
+                                && funcDef.Parent.Parent == TargetParent)
+                                {
+                                    CorrectDefinition = element;
+                                    break;
+                                }
+                            }
+                        }
+
+
                         if (node.Parent is CommandAst commDef)
                         {
                             if (funcDef.Name == commDef.GetCommandName()
