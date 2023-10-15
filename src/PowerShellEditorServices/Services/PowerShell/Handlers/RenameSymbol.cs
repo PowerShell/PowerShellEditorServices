@@ -132,11 +132,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 Ast token = tokens.LastOrDefault();
 
                 if (token == null) { return null; }
+
                 ModifiedFileResponse FileModifications = token is FunctionDefinitionAst
                     ? RenameFunction(token, scriptFile.ScriptAst, request)
                     : RenameVariable(token, scriptFile.ScriptAst, request);
+
                 RenameSymbolResult result = new();
+
                 result.Changes.Add(FileModifications);
+
                 return result;
             }).ConfigureAwait(false);
         }
