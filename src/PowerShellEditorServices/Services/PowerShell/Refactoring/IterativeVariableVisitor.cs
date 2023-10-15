@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using System.Linq;
+using System;
 
 namespace Microsoft.PowerShell.EditorServices.Refactoring
 {
@@ -245,6 +246,31 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
 
             switch (node)
             {
+                case CommandAst commandAst:
+                    // Is the Target Variable a Parameter and is this commandAst the target function
+                    if (isParam && commandAst.GetCommandName()?.ToLower() == TargetFunction?.Name.ToLower())
+                    {
+                        // Check to see if this is a splatted call to the target function.
+                        Ast Splatted = null;
+                        foreach (Ast element in commandAst.CommandElements)
+                        {
+                            if (element is VariableExpressionAst varAst && varAst.Splatted)
+                            {
+                                Splatted = varAst;
+                                break;
+                            }
+                        }
+                        if (Splatted != null)
+                        {
+                            NewSplattedModification(Splatted);
+                        }
+                        else
+                        {
+                            // The Target Variable is a Parameter and the commandAst is the Target Function
+                            ShouldRename = true;
+                        }
+                    }
+                    break;
                 case CommandParameterAst commandParameterAst:
 
                     if (commandParameterAst.ParameterName.ToLower() == OldName.ToLower())
@@ -337,6 +363,41 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     break;
             }
             Log.Add($"ShouldRename after proc: {ShouldRename}");
+        }
+
+        internal void NewSplattedModification(Ast Splatted)
+        {
+            // Find the Splats Top Assignment / Definition
+            Ast SplatAssignment = GetVariableTopAssignment(
+                Splatted.Extent.StartLineNumber,
+                Splatted.Extent.StartColumnNumber,
+                ScriptAst);
+            // Look for the Parameter within the Splats HashTable
+            if (SplatAssignment.Parent is AssignmentStatementAst assignmentStatementAst &&
+            assignmentStatementAst.Right is CommandExpressionAst commExpAst &&
+            commExpAst.Expression is HashtableAst hashTableAst)
+            {
+                foreach (Tuple<ExpressionAst, StatementAst> element in hashTableAst.KeyValuePairs)
+                {
+                    if (element.Item1 is StringConstantExpressionAst strConstAst &&
+                    strConstAst.Value.ToLower() == OldName.ToLower())
+                    {
+                        TextChange Change = new()
+                        {
+                            NewText = NewName,
+                            StartLine = strConstAst.Extent.StartLineNumber - 1,
+                            StartColumn = strConstAst.Extent.StartColumnNumber - 1,
+                            EndLine = strConstAst.Extent.StartLineNumber - 1,
+                            EndColumn = strConstAst.Extent.EndColumnNumber - 1,
+                        };
+
+                        Modifications.Add(Change);
+                        break;
+                    }
+
+                }
+
+            }
         }
 
         internal TextChange NewParameterAliasChange(VariableExpressionAst variableExpressionAst, ParameterAst paramAst)
