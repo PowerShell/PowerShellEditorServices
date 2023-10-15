@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 using Microsoft.PowerShell.EditorServices.Handlers;
 
-namespace PowerShellEditorServices.Test.Shared.Refactoring
+namespace PowerShellEditorServices.Test.Shared.Refactoring.Functions
 {
     internal static class RefactorsFunctionData
     {
