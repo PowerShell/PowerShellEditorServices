@@ -58,19 +58,23 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 IEnumerable<Ast> tokens = scriptFile.ScriptAst.FindAll(ast =>
                 {
                     return request.Line+1 == ast.Extent.StartLineNumber &&
-                        request.Column+1 >= ast.Extent.StartColumnNumber && request.Column+1 <= ast.Extent.EndColumnNumber;
-                }, true);
+                           request.Column+1 >= ast.Extent.StartColumnNumber;
+                }, false);
 
-                Ast token = tokens.Last();
+                Ast token = tokens.LastOrDefault();
 
-                if (token == null) { result.message = "Unable to Find Symbol"; return result; }
+                if (token == null)
+                {
+                    result.message = "Unable to find symbol";
+                    return result;
+                }
 
                 if (token is FunctionDefinitionAst funcDef)
                 {
                     try
                     {
 
-                        FunctionRename visitor = new(funcDef.Name,
+                        IterativeFunctionRename visitor = new(funcDef.Name,
                                     request.RenameTo,
                                     funcDef.Extent.StartLineNumber,
                                     funcDef.Extent.StartColumnNumber,
@@ -87,7 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                     try
                     {
-                        VariableRename visitor = new(request.RenameTo,
+                        IterativeVariableRename visitor = new(request.RenameTo,
                                             token.Extent.StartLineNumber,
                                             token.Extent.StartColumnNumber,
                                             scriptFile.ScriptAst);
