@@ -146,7 +146,7 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring.Variables
         {
             FileName = "VarableCommandParameterSplatted.ps1",
             Column = 5,
-            Line = 10,
+            Line = 16,
             RenameTo = "Renamed"
         };
     }
