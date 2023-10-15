@@ -97,7 +97,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             if (symbol is VariableExpressionAst or ParameterAst)
             {
-                VariableRenameIterative visitor = new(request.RenameTo,
+                IterativeVariableRename visitor = new(request.RenameTo,
                                             symbol.Extent.StartLineNumber,
                                             symbol.Extent.StartColumnNumber,
                                             scriptAst);
@@ -122,13 +122,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             return await Task.Run(() =>
             {
+
                 IEnumerable<Ast> tokens = scriptFile.ScriptAst.FindAll(ast =>
                 {
                     return request.Line+1 == ast.Extent.StartLineNumber &&
-                        request.Column+1 >= ast.Extent.StartColumnNumber && request.Column+1 <= ast.Extent.EndColumnNumber;
-                }, true);
+                           request.Column+1 >= ast.Extent.StartColumnNumber;
+                }, false);
 
-                Ast token = tokens.Last();
+                Ast token = tokens.LastOrDefault();
 
                 if (token == null) { return null; }
                 ModifiedFileResponse FileModifications = token is FunctionDefinitionAst
