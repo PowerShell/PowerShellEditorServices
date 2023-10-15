@@ -9,7 +9,7 @@ using System.Linq;
 namespace Microsoft.PowerShell.EditorServices.Refactoring
 {
 
-    internal class VariableRenameIterative
+    internal class IterativeVariableRename
     {
         private readonly string OldName;
         private readonly string NewName;
@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         internal FunctionDefinitionAst TargetFunction;
         internal List<string> Log = new();
 
-        public VariableRenameIterative(string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
+        public IterativeVariableRename(string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
         {
             this.NewName = NewName;
             this.StartLineNumber = StartLineNumber;

@@ -60,7 +60,7 @@ namespace PowerShellEditorServices.Test.Refactoring
         internal static string TestRenaming(ScriptFile scriptFile, RenameSymbolParams request)
         {
 
-            VariableRenameIterative iterative = new(request.RenameTo,
+            IterativeVariableRename iterative = new(request.RenameTo,
                                         request.Line,
                                         request.Column,
                                         scriptFile.ScriptAst);
