@@ -10,40 +10,6 @@ using System.Linq;
 namespace Microsoft.PowerShell.EditorServices.Refactoring
 {
 
-    public class TargetSymbolNotFoundException : Exception
-    {
-        public TargetSymbolNotFoundException()
-        {
-        }
-
-        public TargetSymbolNotFoundException(string message)
-            : base(message)
-        {
-        }
-
-        public TargetSymbolNotFoundException(string message, Exception inner)
-            : base(message, inner)
-        {
-        }
-    }
-
-    public class TargetVariableIsDotSourcedException : Exception
-    {
-        public TargetVariableIsDotSourcedException()
-        {
-        }
-
-        public TargetVariableIsDotSourcedException(string message)
-            : base(message)
-        {
-        }
-
-        public TargetVariableIsDotSourcedException(string message, Exception inner)
-            : base(message, inner)
-        {
-        }
-    }
-
     internal class VariableRename : ICustomAstVisitor2
     {
         private readonly string OldName;
