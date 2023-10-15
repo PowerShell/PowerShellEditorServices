@@ -10,8 +10,7 @@ using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Refactoring;
-using System.Collections.Generic;
-using System.Linq;
+using Microsoft.PowerShell.EditorServices.Services.Symbols;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
@@ -55,16 +54,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     message = ""
                 };
                 // ast is FunctionDefinitionAst or CommandAst or VariableExpressionAst or StringConstantExpressionAst &&
-                Ast token = scriptFile.ScriptAst.Find(ast =>
-                {
-                    return request.Line + 1 == ast.Extent.StartLineNumber &&
-                           request.Column + 1 >= ast.Extent.StartColumnNumber;
-                }, true);
-                IEnumerable<Ast> tokens = token.FindAll(ast =>{
-                    return ast.Extent.StartColumnNumber <= request.Column &&
-                    ast.Extent.EndColumnNumber >= request.Column;
-                },true);
-                token = tokens.LastOrDefault();
+                SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(request.Line + 1, request.Column + 1);
+                Ast token = Utilities.GetAst(request.Line + 1,request.Column + 1,scriptFile.ScriptAst);
+
                 if (token == null)
                 {
                     result.message = "Unable to find symbol";
@@ -93,7 +85,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                             break;
                         }
 
-                    case VariableExpressionAst or CommandAst:
+                    case VariableExpressionAst or CommandAst or CommandParameterAst or ParameterAst or StringConstantExpressionAst:
                         {
 
                             try
