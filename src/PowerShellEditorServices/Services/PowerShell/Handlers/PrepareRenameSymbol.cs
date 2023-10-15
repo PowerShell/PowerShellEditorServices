@@ -57,8 +57,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 IEnumerable<Ast> tokens = scriptFile.ScriptAst.FindAll(ast =>
                 {
-                    return request.Line+1 == ast.Extent.StartLineNumber &&
-                           request.Column+1 >= ast.Extent.StartColumnNumber;
+                    return request.Line + 1 == ast.Extent.StartLineNumber &&
+                           request.Column + 1 >= ast.Extent.StartColumnNumber;
                 }, false);
 
                 Ast token = tokens.LastOrDefault();
@@ -69,43 +69,50 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     return result;
                 }
 
-                if (token is FunctionDefinitionAst funcDef)
+                switch (token)
                 {
-                    try
-                    {
-
-                        IterativeFunctionRename visitor = new(funcDef.Name,
-                                    request.RenameTo,
-                                    funcDef.Extent.StartLineNumber,
-                                    funcDef.Extent.StartColumnNumber,
-                                    scriptFile.ScriptAst);
-                    }
-                    catch (FunctionDefinitionNotFoundException)
-                    {
-
-                        result.message = "Failed to Find function definition within current file";
-                    }
-                }
-                else if (token is VariableExpressionAst or CommandAst)
-                {
-
-                    try
-                    {
-                        IterativeVariableRename visitor = new(request.RenameTo,
-                                            token.Extent.StartLineNumber,
-                                            token.Extent.StartColumnNumber,
-                                            scriptFile.ScriptAst);
-                        if (visitor.TargetVariableAst == null)
+                    case FunctionDefinitionAst funcDef:
                         {
-                            result.message = "Failed to find variable definition within the current file";
+                            try
+                            {
+
+                                IterativeFunctionRename visitor = new(funcDef.Name,
+                                            request.RenameTo,
+                                            funcDef.Extent.StartLineNumber,
+                                            funcDef.Extent.StartColumnNumber,
+                                            scriptFile.ScriptAst);
+                            }
+                            catch (FunctionDefinitionNotFoundException)
+                            {
+
+                                result.message = "Failed to Find function definition within current file";
+                            }
+
+                            break;
                         }
-                    }
-                    catch (TargetVariableIsDotSourcedException)
-                    {
 
-                        result.message = "Variable is dot sourced which is currently not supported unable to perform a rename";
-                    }
+                    case VariableExpressionAst or CommandAst:
+                        {
 
+                            try
+                            {
+                                IterativeVariableRename visitor = new(request.RenameTo,
+                                                    token.Extent.StartLineNumber,
+                                                    token.Extent.StartColumnNumber,
+                                                    scriptFile.ScriptAst);
+                                if (visitor.TargetVariableAst == null)
+                                {
+                                    result.message = "Failed to find variable definition within the current file";
+                                }
+                            }
+                            catch (TargetVariableIsDotSourcedException)
+                            {
+
+                                result.message = "Variable is dot sourced which is currently not supported unable to perform a rename";
+                            }
+
+                            break;
+                        }
                 }
 
                 return result;
