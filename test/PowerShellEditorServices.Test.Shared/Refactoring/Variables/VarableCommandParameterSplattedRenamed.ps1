@@ -4,6 +4,12 @@ function New-User {
         [string]$password
     )
     write-host $Renamed + $password
+
+    $splat= @{
+        Renamed = "JohnDeer"
+        Password = "SomePassword"
+    }
+    New-User @splat
 }
 
 $UserDetailsSplat= @{
