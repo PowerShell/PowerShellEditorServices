@@ -40,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                 }
                 if (Node is CommandAst)
                 {
-                    TargetFunctionAst = FunctionRename.GetFunctionDefByCommandAst(OldName, StartLineNumber, StartColumnNumber, ScriptAst);
+                    TargetFunctionAst = GetFunctionDefByCommandAst(OldName, StartLineNumber, StartColumnNumber, ScriptAst);
                     if (TargetFunctionAst == null)
                     {
                         throw new FunctionDefinitionNotFoundException();
