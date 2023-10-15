@@ -12,7 +12,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Refactoring;
 using System.Linq;
-
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     [Serial, Method("powerShell/renameSymbol")]
@@ -123,13 +122,16 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return await Task.Run(() =>
             {
 
-                IEnumerable<Ast> tokens = scriptFile.ScriptAst.FindAll(ast =>
+                Ast token = scriptFile.ScriptAst.Find(ast =>
                 {
-                    return request.Line+1 == ast.Extent.StartLineNumber &&
-                           request.Column+1 >= ast.Extent.StartColumnNumber;
-                }, false);
-
-                Ast token = tokens.LastOrDefault();
+                    return request.Line + 1 == ast.Extent.StartLineNumber &&
+                           request.Column + 1 >= ast.Extent.StartColumnNumber;
+                }, true);
+                IEnumerable<Ast> tokens = token.FindAll(ast =>{
+                    return ast.Extent.StartColumnNumber <= request.Column &&
+                    ast.Extent.EndColumnNumber >= request.Column;
+                },true);
+                token = tokens.LastOrDefault();
 
                 if (token == null) { return null; }
 
