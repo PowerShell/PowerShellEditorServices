@@ -11,7 +11,6 @@ using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Refactoring;
-using System.Linq;
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     [Serial, Method("powerShell/renameSymbol")]
@@ -94,7 +93,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         }
         internal static ModifiedFileResponse RenameVariable(Ast symbol, Ast scriptAst, RenameSymbolParams request)
         {
-            if (symbol is VariableExpressionAst or ParameterAst)
+            if (symbol is VariableExpressionAst or ParameterAst or CommandParameterAst or StringConstantExpressionAst)
             {
                 IterativeVariableRename visitor = new(request.RenameTo,
                                             symbol.Extent.StartLineNumber,
@@ -122,16 +121,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return await Task.Run(() =>
             {
 
-                Ast token = scriptFile.ScriptAst.Find(ast =>
-                {
-                    return request.Line + 1 == ast.Extent.StartLineNumber &&
-                           request.Column + 1 >= ast.Extent.StartColumnNumber;
-                }, true);
-                IEnumerable<Ast> tokens = token.FindAll(ast =>{
-                    return ast.Extent.StartColumnNumber <= request.Column &&
-                    ast.Extent.EndColumnNumber >= request.Column;
-                },true);
-                token = tokens.LastOrDefault();
+                Ast token = Utilities.GetAst(request.Line + 1,request.Column + 1,scriptFile.ScriptAst);
 
                 if (token == null) { return null; }
 
