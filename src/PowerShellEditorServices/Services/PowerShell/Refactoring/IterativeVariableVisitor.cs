@@ -281,12 +281,14 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                 case VariableExpressionAst variableExpressionAst:
                     if (variableExpressionAst.VariablePath.UserPath.ToLower() == OldName.ToLower())
                     {
+                        // Is this the Target Variable
                         if (variableExpressionAst.Extent.StartColumnNumber == StartColumnNumber &&
                         variableExpressionAst.Extent.StartLineNumber == StartLineNumber)
                         {
                             ShouldRename = true;
                             TargetVariableAst = variableExpressionAst;
                         }
+                        // Is this a Command Ast within scope
                         else if (variableExpressionAst.Parent is CommandAst commandAst)
                         {
                             if (WithinTargetsScope(TargetVariableAst, commandAst))
@@ -294,6 +296,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                                 ShouldRename = true;
                             }
                         }
+                        // Is this a Variable Assignment thats not within scope
                         else if (variableExpressionAst.Parent is AssignmentStatementAst assignment &&
                             assignment.Operator == TokenKind.Equals)
                         {
@@ -304,15 +307,13 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                             }
 
                         }
+                        // Else is the variable within scope
                         else
                         {
                             ShouldRename = WithinTargetsScope(TargetVariableAst, variableExpressionAst);
                         }
                         if (ShouldRename)
                         {
-                            // If the variables parent is a parameterAst Add a modification
-                            //to add an Alias to the parameter so that any other scripts out of context calling it will still work
-
                             // have some modifications to account for the dollar sign prefix powershell uses for variables
                             TextChange Change = new()
                             {
@@ -323,41 +324,9 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                                 EndColumn = variableExpressionAst.Extent.StartColumnNumber + OldName.Length,
                             };
                             // If the variables parent is a parameterAst Add a modification
-                            //to add an Alias to the parameter so that any other scripts out of context calling it will still work
                             if (variableExpressionAst.Parent is ParameterAst paramAst && !AliasSet)
                             {
-                                TextChange aliasChange = new();
-                                foreach (Ast Attr in paramAst.Attributes)
-                                {
-                                    if (Attr is AttributeAst AttrAst)
-                                    {
-                                        // Alias Already Exists
-                                        if (AttrAst.TypeName.FullName == "Alias")
-                                        {
-                                            string existingEntries = AttrAst.Extent.Text
-                                            .Substring("[Alias(".Length);
-                                            existingEntries = existingEntries.Substring(0, existingEntries.Length - ")]".Length);
-                                            string nentries = existingEntries + $", \"{OldName}\"";
-
-                                            aliasChange.NewText = $"[Alias({nentries})]";
-                                            aliasChange.StartLine = Attr.Extent.StartLineNumber - 1;
-                                            aliasChange.StartColumn = Attr.Extent.StartColumnNumber - 1;
-                                            aliasChange.EndLine = Attr.Extent.StartLineNumber - 1;
-                                            aliasChange.EndColumn = Attr.Extent.EndColumnNumber - 1;
-
-                                            break;
-                                        }
-
-                                    }
-                                }
-                                if (aliasChange.NewText == null)
-                                {
-                                    aliasChange.NewText = $"[Alias(\"{OldName}\")]";
-                                    aliasChange.StartLine = variableExpressionAst.Extent.StartLineNumber - 1;
-                                    aliasChange.StartColumn = variableExpressionAst.Extent.StartColumnNumber - 1;
-                                    aliasChange.EndLine = variableExpressionAst.Extent.StartLineNumber - 1;
-                                    aliasChange.EndColumn = variableExpressionAst.Extent.StartColumnNumber - 1;
-                                }
+                                TextChange aliasChange = NewParameterAliasChange(variableExpressionAst, paramAst);
                                 Modifications.Add(aliasChange);
                                 AliasSet = true;
                             }
@@ -368,6 +337,48 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     break;
             }
             Log.Add($"ShouldRename after proc: {ShouldRename}");
+        }
+
+        internal TextChange NewParameterAliasChange(VariableExpressionAst variableExpressionAst, ParameterAst paramAst)
+        {
+            // Check if an Alias AttributeAst already exists and append the new Alias to the existing list
+            // Otherwise Create a new Alias Attribute
+            // Add the modidifcations to the changes
+            // the Attribute will be appended before the variable or in the existing location of the Original Alias
+            TextChange aliasChange = new();
+            foreach (Ast Attr in paramAst.Attributes)
+            {
+                if (Attr is AttributeAst AttrAst)
+                {
+                    // Alias Already Exists
+                    if (AttrAst.TypeName.FullName == "Alias")
+                    {
+                        string existingEntries = AttrAst.Extent.Text
+                        .Substring("[Alias(".Length);
+                        existingEntries = existingEntries.Substring(0, existingEntries.Length - ")]".Length);
+                        string nentries = existingEntries + $", \"{OldName}\"";
+
+                        aliasChange.NewText = $"[Alias({nentries})]";
+                        aliasChange.StartLine = Attr.Extent.StartLineNumber - 1;
+                        aliasChange.StartColumn = Attr.Extent.StartColumnNumber - 1;
+                        aliasChange.EndLine = Attr.Extent.StartLineNumber - 1;
+                        aliasChange.EndColumn = Attr.Extent.EndColumnNumber - 1;
+
+                        break;
+                    }
+
+                }
+            }
+            if (aliasChange.NewText == null)
+            {
+                aliasChange.NewText = $"[Alias(\"{OldName}\")]";
+                aliasChange.StartLine = variableExpressionAst.Extent.StartLineNumber - 1;
+                aliasChange.StartColumn = variableExpressionAst.Extent.StartColumnNumber - 1;
+                aliasChange.EndLine = variableExpressionAst.Extent.StartLineNumber - 1;
+                aliasChange.EndColumn = variableExpressionAst.Extent.StartColumnNumber - 1;
+            }
+
+            return aliasChange;
         }
 
         public static Ast GetAstNodeByLineAndColumn(string OldName, int StartLineNumber, int StartColumnNumber, Ast ScriptFile)
