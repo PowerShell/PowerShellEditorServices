@@ -12,8 +12,8 @@ using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Xunit;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
-using PowerShellEditorServices.Test.Shared.Refactoring;
 using Microsoft.PowerShell.EditorServices.Refactoring;
+using PowerShellEditorServices.Test.Shared.Refactoring.Functions;
 
 namespace PowerShellEditorServices.Test.Refactoring
 {
@@ -30,7 +30,7 @@ namespace PowerShellEditorServices.Test.Refactoring
 #pragma warning restore VSTHRD002
             GC.SuppressFinalize(this);
         }
-        private ScriptFile GetTestScript(string fileName) => workspace.GetFile(TestUtilities.GetSharedPath(Path.Combine("Refactoring", fileName)));
+        private ScriptFile GetTestScript(string fileName) => workspace.GetFile(TestUtilities.GetSharedPath(Path.Combine("Refactoring\\Functions", fileName)));
 
         internal static string GetModifiedScript(string OriginalScript, ModifiedFileResponse Modification)
         {
