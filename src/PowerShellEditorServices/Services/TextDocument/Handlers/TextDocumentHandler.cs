@@ -74,6 +74,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public override Task<Unit> Handle(DidOpenTextDocumentParams notification, CancellationToken token)
         {
+            // We're receiving notifications for special "git" scheme files from VS Code, and we
+            // need to ignore those! Otherwise they're added to our workspace service's opened files
+            // and cause duplicate references.
+            if (notification.TextDocument.Uri.Scheme == "git")
+            {
+                return Unit.Task;
+            }
+
             // We use a fake Uri because we only want to test the LanguageId here and not if the
             // file ends in ps*1.
             TextDocumentAttributes attributes = new(s_fakeUri, notification.TextDocument.LanguageId);
