@@ -301,6 +301,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
             _pipelineThread.Start();
 
+            if (startOptions.InitialWorkingDirectory is not null)
+            {
+                _logger.LogDebug($"Setting InitialWorkingDirectory to {startOptions.InitialWorkingDirectory}...");
+                await SetInitialWorkingDirectoryAsync(startOptions.InitialWorkingDirectory, cancellationToken).ConfigureAwait(false);
+                _logger.LogDebug("InitialWorkingDirectory set!");
+            }
+
             if (startOptions.LoadProfiles)
             {
                 _logger.LogDebug("Loading profiles...");
@@ -318,13 +325,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             else
             {
                 _logger.LogDebug("Shell integration not enabled!");
-            }
-
-            if (startOptions.InitialWorkingDirectory is not null)
-            {
-                _logger.LogDebug($"Setting InitialWorkingDirectory to {startOptions.InitialWorkingDirectory}...");
-                await SetInitialWorkingDirectoryAsync(startOptions.InitialWorkingDirectory, cancellationToken).ConfigureAwait(false);
-                _logger.LogDebug("InitialWorkingDirectory set!");
             }
 
             await _started.Task.ConfigureAwait(false);
