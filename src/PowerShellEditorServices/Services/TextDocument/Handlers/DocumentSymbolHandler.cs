@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -40,63 +41,75 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             DocumentSelector = LspUtils.PowerShellDocumentSelector
         };
 
-        // This turns a flat list of symbols into a hierarchical list.
-        private static async Task<List<HierarchicalSymbol>> SortHierarchicalSymbols(List<HierarchicalSymbol> symbols, CancellationToken cancellationToken)
+        // Modifies a flat list of symbols into a hierarchical list.
+        private static Task SortHierarchicalSymbols(List<HierarchicalSymbol> symbols, CancellationToken cancellationToken)
         {
             // Sort by the start of the symbol definition (they're probably sorted but we need to be
-            // certain otherwise this algorithm won't work).
+            // certain otherwise this algorithm won't work). We only need to sort the list once, and
+            // since the implementation is recursive, it's easiest to use the stack to track that
+            // this is the first call.
             symbols.Sort((x1, x2) => x1.Range.Start.CompareTo(x2.Range.Start));
+            return SortHierarchicalSymbolsImpl(symbols, cancellationToken);
+        }
 
-            List<HierarchicalSymbol> parents = new();
-
-            foreach (HierarchicalSymbol symbol in symbols)
+        private static async Task SortHierarchicalSymbolsImpl(List<HierarchicalSymbol> symbols, CancellationToken cancellationToken)
+        {
+            for (int i = 0; i < symbols.Count; i++)
             {
                 // This async method is pretty dense with synchronous code
                 // so it's helpful to add some yields.
                 await Task.Yield();
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    return parents;
+                    return;
                 }
-                // Base case where we haven't found any parents yet.
-                if (parents.Count == 0)
+
+                HierarchicalSymbol symbol = symbols[i];
+
+                // Base case where we haven't found any parents yet (the first symbol must be a
+                // parent by definition).
+                if (i == 0)
                 {
-                    parents.Add(symbol);
+                    continue;
                 }
                 // If the symbol starts after end of last symbol parsed then it's a new parent.
-                else if (symbol.Range.Start > parents[parents.Count - 1].Range.End)
+                else if (symbol.Range.Start > symbols[i - 1].Range.End)
                 {
-                    parents.Add(symbol);
+                    continue;
                 }
-                // Otherwise it's a child, we just need to figure out whose child it is.
+                // Otherwise it's a child, we just need to figure out whose child it is and move it there (which also means removing it from the current list).
                 else
                 {
-                    foreach (HierarchicalSymbol parent in parents)
+                    for (int j = 0; j <= i; j++)
                     {
+                        // While we should only check up to j < i, we iterate up to j <= i so that
+                        // we can check this assertion that we didn't exhaust the parents.
+                        Debug.Assert(j != i, "We didn't find the child's parent!");
+
+                        HierarchicalSymbol parent = symbols[j];
                         // If the symbol starts after the parent starts and ends before the parent
                         // ends then its a child.
                         if (symbol.Range.Start > parent.Range.Start && symbol.Range.End < parent.Range.End)
                         {
+                            // Add it to the parent's list.
                             parent.Children.Add(symbol);
+                            // Remove it from this "parents" list (because it's a child) and adjust
+                            // our loop counter because it's been removed.
+                            symbols.RemoveAt(i);
+                            i--;
                             break;
                         }
                     }
-                    // TODO: If we somehow exist the list of parents and didn't find a place for the
-                    // child...we have a problem.
                 }
             }
 
             // Now recursively sort the children into nested buckets of children too.
-            foreach (HierarchicalSymbol parent in parents)
+            foreach (HierarchicalSymbol parent in symbols)
             {
-                List<HierarchicalSymbol> sortedChildren = await SortHierarchicalSymbols(parent.Children, cancellationToken).ConfigureAwait(false);
-                // Since this is a foreach we can't just assign to parent.Children and have to do
-                // this instead.
-                parent.Children.Clear();
-                parent.Children.AddRange(sortedChildren);
+                // Since this modifies in place we just recurse, no re-assignment or clearing from
+                // parent.Children necessary.
+                await SortHierarchicalSymbols(parent.Children, cancellationToken).ConfigureAwait(false);
             }
-
-            return parents;
         }
 
         // This struct and the mapping function below exist to allow us to skip a *bunch* of
@@ -174,8 +187,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return s_emptySymbolInformationOrDocumentSymbolContainer;
             }
 
-            // Otherwise slowly sort them into a hierarchy.
-            hierarchicalSymbols = await SortHierarchicalSymbols(hierarchicalSymbols, cancellationToken).ConfigureAwait(false);
+            // Otherwise slowly sort them into a hierarchy (this modifies the list).
+            await SortHierarchicalSymbols(hierarchicalSymbols, cancellationToken).ConfigureAwait(false);
 
             // And finally convert them to the silly SymbolInformationOrDocumentSymbol wrapper.
             List<SymbolInformationOrDocumentSymbol> container = new();
