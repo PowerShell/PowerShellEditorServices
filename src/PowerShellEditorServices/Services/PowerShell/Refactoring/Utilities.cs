@@ -9,6 +9,22 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
 {
     internal class Utilities
     {
+
+        public static Ast LookForParentOfType<T>(Ast ast)
+        {
+            Ast parent = ast.Parent;
+            // walk backwards till we hit a parent of the specified type or return null
+            while (null != parent)
+            {
+                if (typeof(T) == parent.GetType())
+                {
+                    return parent;
+                }
+                parent = parent.Parent;
+            }
+            return null;
+
+        }
         public static Ast GetAst(int StartLineNumber, int StartColumnNumber, Ast Ast)
         {
             Ast token = null;
