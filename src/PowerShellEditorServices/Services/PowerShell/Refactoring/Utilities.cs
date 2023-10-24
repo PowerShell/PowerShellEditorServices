@@ -11,6 +11,22 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
     internal class Utilities
     {
 
+        public static Ast GetAstNodeByLineAndColumn(int StartLineNumber, int StartColumnNumber, Ast ScriptAst,params Type[] type)
+        {
+            Ast result = null;
+            result = ScriptAst.Find(ast =>
+            {
+                return ast.Extent.StartLineNumber == StartLineNumber &&
+                ast.Extent.StartColumnNumber == StartColumnNumber &&
+                type.Contains(ast.GetType());
+            }, true);
+            if (result == null)
+            {
+                throw new TargetSymbolNotFoundException();
+            }
+            return result;
+        }
+
         public static Ast LookForParentOfType(Ast ast, params Type[] type)
         {
             Ast parent = ast;
