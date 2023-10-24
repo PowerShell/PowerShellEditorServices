@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             this.StartColumnNumber = StartColumnNumber;
             this.ScriptAst = ScriptAst;
 
-            Ast Node = FunctionRename.GetAstNodeByLineAndColumn(OldName, StartLineNumber, StartColumnNumber, ScriptAst);
+            Ast Node = GetAstNodeByLineAndColumn(OldName, StartLineNumber, StartColumnNumber, ScriptAst);
             if (Node != null)
             {
                 if (Node is FunctionDefinitionAst FuncDef)
@@ -218,7 +218,6 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     CommDef.GetCommandName().ToLower() == OldName.ToLower();
                 }, true);
             }
-
             return result;
         }
 
@@ -248,12 +247,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             {
                 return FunctionDefinitions[0];
             }
-            // Sort function definitions
-            //FunctionDefinitions.Sort((a, b) =>
-            //{
-            //    return b.Extent.EndColumnNumber + b.Extent.EndLineNumber -
-            //       a.Extent.EndLineNumber + a.Extent.EndColumnNumber;
-            //});
+
             // Determine which function definition is the right one
             FunctionDefinitionAst CorrectDefinition = null;
             for (int i = FunctionDefinitions.Count - 1; i >= 0; i--)
@@ -262,14 +256,8 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
 
                 Ast parent = element.Parent;
                 // walk backwards till we hit a functiondefinition if any
-                while (null != parent)
-                {
-                    if (parent is FunctionDefinitionAst)
-                    {
-                        break;
-                    }
-                    parent = parent.Parent;
-                }
+                parent = Utilities.LookForParentOfType<FunctionDefinitionAst>(parent);
+
                 // we have hit the global scope of the script file
                 if (null == parent)
                 {
