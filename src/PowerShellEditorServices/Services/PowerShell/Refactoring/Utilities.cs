@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
     internal class Utilities
     {
 
-        public static Ast GetAstNodeByLineAndColumn(int StartLineNumber, int StartColumnNumber, Ast ScriptAst, params Type[] type)
+        public static Ast GetAstAtPositionOfType(int StartLineNumber, int StartColumnNumber, Ast ScriptAst, params Type[] type)
         {
             Ast result = null;
             result = ScriptAst.Find(ast =>
@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             return result;
         }
 
-        public static Ast LookForParentOfType(Ast ast, params Type[] type)
+        public static Ast GetAstParentOfType(Ast ast, params Type[] type)
         {
             Ast parent = ast;
             // walk backwards till we hit a parent of the specified type or return null
@@ -46,7 +46,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         public static FunctionDefinitionAst GetFunctionDefByCommandAst(string OldName, int StartLineNumber, int StartColumnNumber, Ast ScriptFile)
         {
             // Look up the targetted object
-            CommandAst TargetCommand = (CommandAst)Utilities.GetAstNodeByLineAndColumn(StartLineNumber, StartColumnNumber, ScriptFile
+            CommandAst TargetCommand = (CommandAst)Utilities.GetAstAtPositionOfType(StartLineNumber, StartColumnNumber, ScriptFile
             , typeof(CommandAst));
 
             if (TargetCommand.GetCommandName().ToLower() != OldName.ToLower())
