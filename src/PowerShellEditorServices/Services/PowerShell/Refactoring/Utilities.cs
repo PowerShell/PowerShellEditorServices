@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation.Language;
@@ -10,13 +11,13 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
     internal class Utilities
     {
 
-        public static Ast LookForParentOfType<T>(Ast ast)
+        public static Ast LookForParentOfType(Ast ast, params Type[] type)
         {
-            Ast parent = ast.Parent;
+            Ast parent = ast;
             // walk backwards till we hit a parent of the specified type or return null
             while (null != parent)
             {
-                if (typeof(T) == parent.GetType())
+                if (type.Contains(parent.GetType()))
                 {
                     return parent;
                 }
