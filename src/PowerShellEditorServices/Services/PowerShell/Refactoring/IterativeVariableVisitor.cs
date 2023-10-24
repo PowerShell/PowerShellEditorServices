@@ -43,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     isParam = true;
                     Ast parent = Node;
                     // Look for a target function that the parameterAst will be within if it exists
-                    parent = Utilities.LookForParentOfType(parent, typeof(FunctionDefinitionAst));
+                    parent = Utilities.GetAstParentOfType(parent, typeof(FunctionDefinitionAst));
                     if (parent != null)
                     {
                         TargetFunction = (FunctionDefinitionAst)parent;
@@ -60,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         {
 
             // Look up the target object
-            Ast node = Utilities.GetAstNodeByLineAndColumn(StartLineNumber, StartColumnNumber,
+            Ast node = Utilities.GetAstAtPositionOfType(StartLineNumber, StartColumnNumber,
             ScriptAst, typeof(VariableExpressionAst), typeof(CommandParameterAst), typeof(StringConstantExpressionAst));
 
             string name = node switch
@@ -77,7 +77,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             if (node is StringConstantExpressionAst)
             {
                 Ast parent = node;
-                parent = Utilities.LookForParentOfType(parent, typeof(AssignmentStatementAst));
+                parent = Utilities.GetAstParentOfType(parent, typeof(AssignmentStatementAst));
                 if (parent is not null and AssignmentStatementAst assignmentStatementAst)
                 {
                     splatAssignment = (VariableExpressionAst)assignmentStatementAst.Left.Find(
@@ -181,7 +181,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         {
             Ast parent = node;
             // Walk backwards up the tree looking for a ScriptBLock of a FunctionDefinition
-            parent = Utilities.LookForParentOfType(parent, typeof(ScriptBlockAst), typeof(FunctionDefinitionAst));
+            parent = Utilities.GetAstParentOfType(parent, typeof(ScriptBlockAst), typeof(FunctionDefinitionAst));
             if (parent is ScriptBlockAst && parent.Parent != null && parent.Parent is FunctionDefinitionAst)
             {
                 parent = parent.Parent;
