@@ -43,14 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     isParam = true;
                     Ast parent = Node;
                     // Look for a target function that the parameterAst will be within if it exists
-                    while (parent != null)
-                    {
-                        if (parent is FunctionDefinitionAst)
-                        {
-                            break;
-                        }
-                        parent = parent.Parent;
-                    }
+                    parent = Utilities.LookForParentOfType(parent,typeof(FunctionDefinitionAst));
                     if (parent != null)
                     {
                         TargetFunction = (FunctionDefinitionAst)parent;
@@ -95,18 +88,15 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             };
 
             VariableExpressionAst splatAssignment = null;
+            // A rename of a parameter has been initiated from a splat
             if (node is StringConstantExpressionAst)
             {
                 Ast parent = node;
-                while (parent != null)
+                parent = Utilities.LookForParentOfType(parent,typeof(AssignmentStatementAst));
+                if (parent is not null and AssignmentStatementAst assignmentStatementAst)
                 {
-                    if (parent is AssignmentStatementAst assignmentStatementAst)
-                    {
-                        splatAssignment = (VariableExpressionAst)assignmentStatementAst.Left.Find(ast => ast is VariableExpressionAst, false);
-
-                        break;
-                    }
-                    parent = parent.Parent;
+                    splatAssignment = (VariableExpressionAst)assignmentStatementAst.Left.Find(
+                        ast => ast is VariableExpressionAst, false);
                 }
             }
 
@@ -205,15 +195,8 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         internal static Ast GetAstParentScope(Ast node)
         {
             Ast parent = node;
-            // Walk backwards up the tree lookinf for a ScriptBLock of a FunctionDefinition
-            while (parent != null)
-            {
-                if (parent is ScriptBlockAst or FunctionDefinitionAst)
-                {
-                    break;
-                }
-                parent = parent.Parent;
-            }
+            // Walk backwards up the tree looking for a ScriptBLock of a FunctionDefinition
+            parent = Utilities.LookForParentOfType(parent,typeof(ScriptBlockAst),typeof(FunctionDefinitionAst));
             if (parent is ScriptBlockAst && parent.Parent != null && parent.Parent is FunctionDefinitionAst)
             {
                 parent = parent.Parent;
