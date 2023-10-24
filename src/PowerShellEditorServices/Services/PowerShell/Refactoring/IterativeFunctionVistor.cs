@@ -196,57 +196,5 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             }
             Log.Add($"ShouldRename after proc: {shouldRename}");
         }
-
-        public static FunctionDefinitionAst GetFunctionDefByCommandAst(string OldName, int StartLineNumber, int StartColumnNumber, Ast ScriptFile)
-        {
-            // Look up the targetted object
-            CommandAst TargetCommand = (CommandAst)ScriptFile.Find(ast =>
-            {
-                return ast is CommandAst CommDef &&
-                CommDef.GetCommandName().ToLower() == OldName.ToLower() &&
-                CommDef.Extent.StartLineNumber == StartLineNumber &&
-                CommDef.Extent.StartColumnNumber == StartColumnNumber;
-            }, true);
-
-            string FunctionName = TargetCommand.GetCommandName();
-
-            List<FunctionDefinitionAst> FunctionDefinitions = ScriptFile.FindAll(ast =>
-            {
-                return ast is FunctionDefinitionAst FuncDef &&
-                FuncDef.Name.ToLower() == OldName.ToLower() &&
-                (FuncDef.Extent.EndLineNumber < TargetCommand.Extent.StartLineNumber ||
-                (FuncDef.Extent.EndColumnNumber <= TargetCommand.Extent.StartColumnNumber &&
-                FuncDef.Extent.EndLineNumber <= TargetCommand.Extent.StartLineNumber));
-            }, true).Cast<FunctionDefinitionAst>().ToList();
-            // return the function def if we only have one match
-            if (FunctionDefinitions.Count == 1)
-            {
-                return FunctionDefinitions[0];
-            }
-
-            // Determine which function definition is the right one
-            FunctionDefinitionAst CorrectDefinition = null;
-            for (int i = FunctionDefinitions.Count - 1; i >= 0; i--)
-            {
-                FunctionDefinitionAst element = FunctionDefinitions[i];
-
-                Ast parent = element.Parent;
-                // walk backwards till we hit a functiondefinition if any
-                parent = Utilities.LookForParentOfType(parent,typeof(FunctionDefinitionAst));
-
-                // we have hit the global scope of the script file
-                if (null == parent)
-                {
-                    CorrectDefinition = element;
-                    break;
-                }
-
-                if (TargetCommand.Parent == parent)
-                {
-                    CorrectDefinition = (FunctionDefinitionAst)parent;
-                }
-            }
-            return CorrectDefinition;
-        }
     }
 }

@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
     internal class Utilities
     {
 
-        public static Ast GetAstNodeByLineAndColumn(int StartLineNumber, int StartColumnNumber, Ast ScriptAst,params Type[] type)
+        public static Ast GetAstNodeByLineAndColumn(int StartLineNumber, int StartColumnNumber, Ast ScriptAst, params Type[] type)
         {
             Ast result = null;
             result = ScriptAst.Find(ast =>
@@ -42,6 +42,70 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             return null;
 
         }
+
+        public static FunctionDefinitionAst GetFunctionDefByCommandAst(string OldName, int StartLineNumber, int StartColumnNumber, Ast ScriptFile)
+        {
+            // Look up the targetted object
+            CommandAst TargetCommand = (CommandAst)Utilities.GetAstNodeByLineAndColumn(StartLineNumber, StartColumnNumber, ScriptFile
+            , typeof(CommandAst));
+
+            if (TargetCommand.GetCommandName().ToLower() != OldName.ToLower())
+            {
+                TargetCommand = null;
+            }
+
+            string FunctionName = TargetCommand.GetCommandName();
+
+            List<FunctionDefinitionAst> FunctionDefinitions = ScriptFile.FindAll(ast =>
+            {
+                return ast is FunctionDefinitionAst FuncDef &&
+                FuncDef.Name.ToLower() == OldName.ToLower() &&
+                (FuncDef.Extent.EndLineNumber < TargetCommand.Extent.StartLineNumber ||
+                (FuncDef.Extent.EndColumnNumber <= TargetCommand.Extent.StartColumnNumber &&
+                FuncDef.Extent.EndLineNumber <= TargetCommand.Extent.StartLineNumber));
+            }, true).Cast<FunctionDefinitionAst>().ToList();
+            // return the function def if we only have one match
+            if (FunctionDefinitions.Count == 1)
+            {
+                return FunctionDefinitions[0];
+            }
+            // Sort function definitions
+            //FunctionDefinitions.Sort((a, b) =>
+            //{
+            //    return b.Extent.EndColumnNumber + b.Extent.EndLineNumber -
+            //       a.Extent.EndLineNumber + a.Extent.EndColumnNumber;
+            //});
+            // Determine which function definition is the right one
+            FunctionDefinitionAst CorrectDefinition = null;
+            for (int i = FunctionDefinitions.Count - 1; i >= 0; i--)
+            {
+                FunctionDefinitionAst element = FunctionDefinitions[i];
+
+                Ast parent = element.Parent;
+                // walk backwards till we hit a functiondefinition if any
+                while (null != parent)
+                {
+                    if (parent is FunctionDefinitionAst)
+                    {
+                        break;
+                    }
+                    parent = parent.Parent;
+                }
+                // we have hit the global scope of the script file
+                if (null == parent)
+                {
+                    CorrectDefinition = element;
+                    break;
+                }
+
+                if (TargetCommand.Parent == parent)
+                {
+                    CorrectDefinition = (FunctionDefinitionAst)parent;
+                }
+            }
+            return CorrectDefinition;
+        }
+
         public static Ast GetAst(int StartLineNumber, int StartColumnNumber, Ast Ast)
         {
             Ast token = null;
