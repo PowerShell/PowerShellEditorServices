@@ -56,27 +56,12 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             }
         }
 
-        public static Ast GetAstNodeByLineAndColumn(int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
-        {
-            Ast result = null;
-            result = ScriptAst.Find(ast =>
-            {
-                return ast.Extent.StartLineNumber == StartLineNumber &&
-                ast.Extent.StartColumnNumber == StartColumnNumber &&
-                ast is VariableExpressionAst or CommandParameterAst or StringConstantExpressionAst;
-            }, true);
-            if (result == null)
-            {
-                throw new TargetSymbolNotFoundException();
-            }
-            return result;
-        }
-
         public static Ast GetVariableTopAssignment(int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
         {
 
             // Look up the target object
-            Ast node = GetAstNodeByLineAndColumn(StartLineNumber, StartColumnNumber, ScriptAst);
+            Ast node = Utilities.GetAstNodeByLineAndColumn(StartLineNumber, StartColumnNumber,
+            ScriptAst,typeof(VariableExpressionAst), typeof(CommandParameterAst), typeof(StringConstantExpressionAst));
 
             string name = node switch
             {
