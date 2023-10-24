@@ -139,7 +139,7 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring.Variables
         {
             FileName = "VarableCommandParameterSplatted.ps1",
             Column = 10,
-            Line = 15,
+            Line = 21,
             RenameTo = "Renamed"
         };
         public static readonly RenameSymbolParams VarableCommandParameterSplattedFromSplat = new()
