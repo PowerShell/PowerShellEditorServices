@@ -256,7 +256,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
 
                 Ast parent = element.Parent;
                 // walk backwards till we hit a functiondefinition if any
-                parent = Utilities.LookForParentOfType<FunctionDefinitionAst>(parent);
+                parent = Utilities.LookForParentOfType(parent,typeof(FunctionDefinitionAst));
 
                 // we have hit the global scope of the script file
                 if (null == parent)
