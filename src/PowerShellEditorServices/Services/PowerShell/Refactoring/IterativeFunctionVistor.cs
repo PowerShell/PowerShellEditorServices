@@ -31,14 +31,15 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             this.StartColumnNumber = StartColumnNumber;
             this.ScriptAst = ScriptAst;
 
-            Ast Node = GetAstNodeByLineAndColumn(OldName, StartLineNumber, StartColumnNumber, ScriptAst);
+            Ast Node = Utilities.GetAstNodeByLineAndColumn(StartLineNumber, StartColumnNumber, ScriptAst, typeof(FunctionDefinitionAst), typeof(CommandAst));
+
             if (Node != null)
             {
-                if (Node is FunctionDefinitionAst FuncDef)
+                if (Node is FunctionDefinitionAst FuncDef && FuncDef.Name.ToLower() == OldName.ToLower())
                 {
                     TargetFunctionAst = FuncDef;
                 }
-                if (Node is CommandAst)
+                if (Node is CommandAst commdef && commdef.GetCommandName().ToLower() == OldName.ToLower())
                 {
                     TargetFunctionAst = GetFunctionDefByCommandAst(OldName, StartLineNumber, StartColumnNumber, ScriptAst);
                     if (TargetFunctionAst == null)
@@ -194,31 +195,6 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     break;
             }
             Log.Add($"ShouldRename after proc: {shouldRename}");
-        }
-
-        public static Ast GetAstNodeByLineAndColumn(string OldName, int StartLineNumber, int StartColumnNumber, Ast ScriptFile)
-        {
-            Ast result = null;
-            // Looking for a function
-            result = ScriptFile.Find(ast =>
-            {
-                return ast.Extent.StartLineNumber == StartLineNumber &&
-                ast.Extent.StartColumnNumber == StartColumnNumber &&
-                ast is FunctionDefinitionAst FuncDef &&
-                FuncDef.Name.ToLower() == OldName.ToLower();
-            }, true);
-            // Looking for a a Command call
-            if (null == result)
-            {
-                result = ScriptFile.Find(ast =>
-                {
-                    return ast.Extent.StartLineNumber == StartLineNumber &&
-                    ast.Extent.StartColumnNumber == StartColumnNumber &&
-                    ast is CommandAst CommDef &&
-                    CommDef.GetCommandName().ToLower() == OldName.ToLower();
-                }, true);
-            }
-            return result;
         }
 
         public static FunctionDefinitionAst GetFunctionDefByCommandAst(string OldName, int StartLineNumber, int StartColumnNumber, Ast ScriptFile)
