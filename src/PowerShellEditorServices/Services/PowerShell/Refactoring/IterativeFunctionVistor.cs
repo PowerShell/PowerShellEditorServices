@@ -4,7 +4,6 @@
 using System.Collections.Generic;
 using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Handlers;
-using System.Linq;
 
 namespace Microsoft.PowerShell.EditorServices.Refactoring
 {
@@ -31,7 +30,8 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             this.StartColumnNumber = StartColumnNumber;
             this.ScriptAst = ScriptAst;
 
-            Ast Node = Utilities.GetAstNodeByLineAndColumn(StartLineNumber, StartColumnNumber, ScriptAst, typeof(FunctionDefinitionAst), typeof(CommandAst));
+            Ast Node = Utilities.GetAstNodeByLineAndColumn(StartLineNumber, StartColumnNumber, ScriptAst,
+            typeof(FunctionDefinitionAst), typeof(CommandAst));
 
             if (Node != null)
             {
@@ -41,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                 }
                 if (Node is CommandAst commdef && commdef.GetCommandName().ToLower() == OldName.ToLower())
                 {
-                    TargetFunctionAst = GetFunctionDefByCommandAst(OldName, StartLineNumber, StartColumnNumber, ScriptAst);
+                    TargetFunctionAst = Utilities.GetFunctionDefByCommandAst(OldName, StartLineNumber, StartColumnNumber, ScriptAst);
                     if (TargetFunctionAst == null)
                     {
                         throw new FunctionDefinitionNotFoundException();
