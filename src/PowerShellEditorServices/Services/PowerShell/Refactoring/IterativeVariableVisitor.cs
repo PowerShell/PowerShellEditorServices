@@ -414,6 +414,9 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
 
         internal void NewSplattedModification(Ast Splatted)
         {
+            // This Function should be passed a Splatted VariableExpressionAst which
+            // is used by a CommandAst that is the TargetFunction.
+
             // Find the Splats Top Assignment / Definition
             Ast SplatAssignment = GetVariableTopAssignment(
                 Splatted.Extent.StartLineNumber,
@@ -443,7 +446,6 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     }
 
                 }
-
             }
         }
 
