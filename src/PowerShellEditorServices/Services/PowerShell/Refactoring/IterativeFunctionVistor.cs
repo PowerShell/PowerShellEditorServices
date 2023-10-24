@@ -30,7 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             this.StartColumnNumber = StartColumnNumber;
             this.ScriptAst = ScriptAst;
 
-            Ast Node = Utilities.GetAstNodeByLineAndColumn(StartLineNumber, StartColumnNumber, ScriptAst,
+            Ast Node = Utilities.GetAstAtPositionOfType(StartLineNumber, StartColumnNumber, ScriptAst,
             typeof(FunctionDefinitionAst), typeof(CommandAst));
 
             if (Node != null)
