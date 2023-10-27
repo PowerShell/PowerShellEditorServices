@@ -108,40 +108,42 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
 
         public static Ast GetAst(int StartLineNumber, int StartColumnNumber, Ast Ast)
         {
-            Ast token = null;
 
-            token = Ast.Find(ast =>
+            // Get all the tokens on the startline so we can look for an appropriate Ast to return
+            IEnumerable<Ast> tokens = Ast.FindAll(ast =>
             {
-                return StartLineNumber == ast.Extent.StartLineNumber &&
-                ast.Extent.EndColumnNumber >= StartColumnNumber &&
-                    StartColumnNumber >= ast.Extent.StartColumnNumber;
+                return StartLineNumber == ast.Extent.StartLineNumber;
             }, true);
-
-            if (token is NamedBlockAst)
+            // Check if the Ast is a FunctionDefinitionAst
+            IEnumerable<FunctionDefinitionAst> Functions = tokens.OfType<FunctionDefinitionAst>();
+            if (Functions.Any())
             {
-                return token.Parent;
-            }
-
-            if (null == token)
-            {
-                IEnumerable<Ast> LineT = Ast.FindAll(ast =>
+                foreach (FunctionDefinitionAst Function in Functions)
                 {
-                    return StartLineNumber == ast.Extent.StartLineNumber &&
-                    StartColumnNumber >= ast.Extent.StartColumnNumber;
-                }, true);
-                return LineT.OfType<FunctionDefinitionAst>()?.LastOrDefault();
+                    if (Function.Extent.StartLineNumber != Function.Extent.EndLineNumber)
+                    {
+                        return Function;
+                    }
+                }
             }
 
-            IEnumerable<Ast> tokens = token.FindAll(ast =>
+            IEnumerable<Ast> token = null;
+            token = Ast.FindAll(ast =>
             {
-                return ast.Extent.EndColumnNumber >= StartColumnNumber
-                && StartColumnNumber >= ast.Extent.StartColumnNumber;
+                return ast.Extent.StartLineNumber == StartLineNumber &&
+                ast.Extent.StartColumnNumber <= StartColumnNumber &&
+                ast.Extent.EndColumnNumber >= StartColumnNumber;
             }, true);
-            if (tokens.Count() > 1)
+            if (token != null)
             {
-                token = tokens.LastOrDefault();
+                if (token.First() is AssignmentStatementAst Assignment)
+                {
+                    return Assignment.Left;
+                }
+                return token.Last();
             }
-            return token;
+
+            return token.First();
         }
     }
 }
