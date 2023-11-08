@@ -192,7 +192,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         }
 
         // NOTE: This name is now outdated since we don't have a way to distinguish one workspace
-        // from another for the extension API.
+        // from another for the extension API. TODO: Should this be an empty string if we have no
+        // workspaces?
         public string GetWorkspacePath() => _workspaceService.InitialWorkingDirectory;
 
         public string[] GetWorkspacePaths() => _workspaceService.WorkspacePaths.ToArray();
