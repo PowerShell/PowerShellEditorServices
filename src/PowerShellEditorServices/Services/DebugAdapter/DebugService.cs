@@ -527,11 +527,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return null;
             }
 
-            // If we didn't write output,
-            // return a VariableDetails instance.
+            // If we didn't write output, return a VariableDetails instance.
             return new VariableDetails(
-                    expressionString,
-                    string.Join(Environment.NewLine, results));
+                expressionString,
+                // If there's only one result, we want its raw value (especially if it's null). For
+                // a collection, since we're displaying these, we want to concatenante them.
+                // However, doing that for one result caused null to be turned into an empty string.
+                results.Count == 1
+                    ? results[0]
+                    : string.Join(Environment.NewLine, results));
         }
 
         /// <summary>
