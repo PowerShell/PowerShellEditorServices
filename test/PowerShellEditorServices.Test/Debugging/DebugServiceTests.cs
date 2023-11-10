@@ -529,7 +529,7 @@ namespace PowerShellEditorServices.Test.Debugging
             AssertDebuggerStopped(testScript.FilePath, 11);
 
             VariableDetails prompt = await debugService.EvaluateExpressionAsync("prompt", false, CancellationToken.None);
-            Assert.Equal("\"True > \"", prompt.ValueString);
+            Assert.Equal("True > ", prompt.ValueString);
         }
 
         [SkippableFact]
