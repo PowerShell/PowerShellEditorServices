@@ -1,4 +1,4 @@
-name: "Emacs"
+name: Emacs End-to-End Tests
 
 on:
   push:

@@ -1,4 +1,4 @@
-name: "Vim"
+name: Vim End-to-End Tests
 
 on:
   push:
