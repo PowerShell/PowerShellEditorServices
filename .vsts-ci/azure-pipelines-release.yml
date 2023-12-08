@@ -1,5 +1,7 @@
 name: Release-$(Build.SourceBranchName)-$(Date:yyyyMMdd)$(Rev:.rr)
 
+pr: none
+
 trigger:
   branches:
     include:

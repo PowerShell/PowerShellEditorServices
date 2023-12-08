@@ -1,11 +1,11 @@
 name: CI-$(Build.SourceBranchName)-$(Date:yyyyMMdd)$(Rev:.rr)
 
+pr: none
+
 trigger:
-  - gh-readonly-queue/main/*
-pr:
-  paths:
-    exclude:
-    - '**/*.md'
+  branches:
+    include:
+      - release
 
 variables:
   # Don't download unneeded packages

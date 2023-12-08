@@ -3,7 +3,6 @@ name: CI Tests
 on:
   push:
     branches: [ main ]
-    tags: [ v* ]
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ main ]
