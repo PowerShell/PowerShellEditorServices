@@ -88,9 +88,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly WorkspaceService _workspaceService;
 
-        private readonly int _analysisDelayMillis;
+        private readonly int _analysisDelayMillis = 750;
 
-        private readonly ConcurrentDictionary<ScriptFile, CorrectionTableEntry> _mostRecentCorrectionsByFile;
+        private readonly ConcurrentDictionary<ScriptFile, CorrectionTableEntry> _mostRecentCorrectionsByFile = new();
 
         private Lazy<PssaCmdletAnalysisEngine> _analysisEngineLazy;
 
@@ -112,11 +112,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _languageServer = languageServer;
             _configurationService = configurationService;
             _workspaceService = workspaceService;
-            _analysisDelayMillis = 750;
-            _mostRecentCorrectionsByFile = new ConcurrentDictionary<ScriptFile, CorrectionTableEntry>();
             _analysisEngineLazy = new Lazy<PssaCmdletAnalysisEngine>(InstantiateAnalysisEngine);
             _pssaModulePath = Path.Combine(hostInfo.BundledModulePath, "PSScriptAnalyzer");
-            _pssaSettingsFilePath = null;
         }
 
         /// <summary>

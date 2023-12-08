@@ -71,19 +71,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                 // RunspacePool takes care of queuing commands for us so we do not
                 // need to worry about executing concurrent commands
                 ILogger logger = _loggerFactory.CreateLogger<PssaCmdletAnalysisEngine>();
-                try
-                {
-                    logger.LogDebug("Creating PSScriptAnalyzer runspace with module at: '{Path}'", pssaModulePath);
-                    RunspacePool pssaRunspacePool = CreatePssaRunspacePool(pssaModulePath);
-                    PssaCmdletAnalysisEngine cmdletAnalysisEngine = new(logger, pssaRunspacePool, _rules, _settingsParameter);
-                    cmdletAnalysisEngine.LogAvailablePssaFeatures();
-                    return cmdletAnalysisEngine;
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Unable to load PSScriptAnalyzer, disabling script analysis!");
-                    return null;
-                }
+
+                logger.LogDebug("Creating PSScriptAnalyzer runspace with module at: '{Path}'", pssaModulePath);
+                RunspacePool pssaRunspacePool = CreatePssaRunspacePool(pssaModulePath);
+                PssaCmdletAnalysisEngine cmdletAnalysisEngine = new(logger, pssaRunspacePool, _rules, _settingsParameter);
+                cmdletAnalysisEngine.LogAvailablePssaFeatures();
+                return cmdletAnalysisEngine;
             }
         }
 
