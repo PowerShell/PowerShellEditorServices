@@ -19,7 +19,7 @@ param(
     [string]$TestFilter = '',
 
     # See: https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-test
-    [string[]]$TestArgs = @("--logger", "console;verbosity=normal", "--logger", "trx")
+    [string[]]$TestArgs = @("--logger", "console;verbosity=minimal", "--logger", "trx")
 )
 
 #Requires -Modules @{ModuleName="InvokeBuild"; ModuleVersion="5.0.0"}
