@@ -1,0 +1,44 @@
+name: CI Tests
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ v* ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ main ]
+    paths-ignore: [ '**/*.md' ]
+  merge_group:
+    types: [ checks_requested ]
+
+jobs:
+  os_matrix:
+    strategy:
+      matrix:
+        os: [ windows-latest, macos-latest, ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      DOTNET_GENERATE_ASPNET_CERTIFICATE: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            6.0.x
+            7.0.x
+      - name: Run setup and build script
+        shell: pwsh
+        run: tools/azurePipelinesBuild.ps1
+      - name: Run tests
+        shell: pwsh
+        run: Invoke-Build Test -Configuration Release
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: ${{ always() }}
+        with:
+          name: ${{ matrix.os }}-test-results
+          path: '**/*.trx'

@@ -179,9 +179,9 @@ Task Test TestServer, TestE2E, TestConstrainedLanguageMode
 
 Task TestServer TestServerWinPS, TestServerPS72, TestServerPS73
 
-# NOTE: While these can run under `pwsh.exe` we only want them to run under
-# `powershell.exe` so that the CI time isn't doubled.
-Task TestServerWinPS -If ($PSVersionTable.PSEdition -eq "Desktop") Build, SetupHelpForTests, {
+Task TestE2E TestE2EPwsh, TestE2EWinPS
+
+Task TestServerWinPS -If (-not $script:IsNix) Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test\
     # TODO: See https://github.com/dotnet/sdk/issues/18353 for x64 test host
     # that is debuggable! If architecture is added, the assembly path gets an
@@ -190,25 +190,30 @@ Task TestServerWinPS -If ($PSVersionTable.PSEdition -eq "Desktop") Build, SetupH
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.Desktop }
 }
 
-Task TestServerPS72 -If ($PSVersionTable.PSEdition -eq "Core") Build, SetupHelpForTests, {
+Task TestServerPS72 Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test\
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS72 }
 }
 
-Task TestServerPS73 -If ($PSVersionTable.PSEdition -eq "Core") Build, SetupHelpForTests, {
+Task TestServerPS73 Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test\
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS73 }
 }
 
-Task TestE2E Build, SetupHelpForTests, {
+Task TestE2EPwsh Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test.E2E\
-    $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
+    $env:PWSH_EXE_NAME = "pwsh"
+    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS73 }
+}
+
+Task TestE2EWinPS -If (-not $script:IsNix) Build, SetupHelpForTests, {
+    Set-Location .\test\PowerShellEditorServices.Test.E2E\
+    $env:PWSH_EXE_NAME = "powershell"
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS73 }
 }
 
 Task TestConstrainedLanguageMode -If (-not $script:IsNix) Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test.E2E\
-    $env:PWSH_EXE_NAME = if ($IsCoreCLR) { "pwsh" } else { "powershell" }
 
     if (-not [Security.Principal.WindowsIdentity]::GetCurrent().Owner.IsWellKnown("BuiltInAdministratorsSid")) {
         Write-Warning "Skipping Constrained Language Mode tests as they must be ran in an elevated process."

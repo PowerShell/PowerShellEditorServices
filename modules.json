@@ -1,11 +1,14 @@
 {
     "PSScriptAnalyzer": {
-        "Version": "1.21.0"
+        "Version": "1.21.0",
+        "AllowPrerelease": false
     },
     "Plaster": {
-        "Version": "1.1.3"
+        "Version": "1.1.3",
+        "AllowPrerelease": false
     },
     "PSReadLine": {
-        "Version": "2.3.4"
+        "Version": "2.3.4",
+        "AllowPrerelease": false
     }
 }
