@@ -1,5 +1,11 @@
 # PowerShell Editor Services Release History
 
+## v3.15.0
+### Thursday, December 07, 2023
+
+- 🐛 🔍 [vscode-powershell #4816](https://github.com/PowerShell/PowerShellEditorServices/pull/2097) - When the built-in `$null` was watched its value was incorrect.
+- 🐛 🚂 [vscode-powershell #4814](https://github.com/PowerShell/PowerShellEditorServices/pull/2096) - Allow `WorkspacePaths` to be empty if we're not in a workspace.
+
 ## v3.14.0
 ### Tuesday, November 07, 2023
 
