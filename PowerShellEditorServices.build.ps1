@@ -157,9 +157,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 }
 
 Task SetupHelpForTests {
-    if (-not (Get-Help Write-Host).Examples) {
+    if (-not (Get-Help Microsoft.PowerShell.Management\Get-Process).Description) {
         Write-Host "Updating help for tests."
-        Update-Help -Module Microsoft.PowerShell.Utility -Force -Scope CurrentUser
+        Update-Help -Module Microsoft.PowerShell.Management,Microsoft.PowerShell.Utility -Force -Scope CurrentUser
     }
 }
 
@@ -177,11 +177,11 @@ Task Build FindDotNet, CreateBuildInfo, {
 
 Task Test TestServer, TestE2E, TestConstrainedLanguageMode
 
-Task TestServer TestServerWinPS, TestServerPS72, TestServerPS73
+Task TestServer SetupHelpForTests, TestServerWinPS, TestServerPS72, TestServerPS73
 
-Task TestE2E TestE2EPwsh, TestE2EWinPS
+Task TestE2E SetupHelpForTests, TestE2EPwsh, TestE2EWinPS
 
-Task TestServerWinPS -If (-not $script:IsNix) Build, SetupHelpForTests, {
+Task TestServerWinPS -If (-not $script:IsNix) Build, {
     Set-Location .\test\PowerShellEditorServices.Test\
     # TODO: See https://github.com/dotnet/sdk/issues/18353 for x64 test host
     # that is debuggable! If architecture is added, the assembly path gets an
@@ -190,29 +190,29 @@ Task TestServerWinPS -If (-not $script:IsNix) Build, SetupHelpForTests, {
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.Desktop }
 }
 
-Task TestServerPS72 Build, SetupHelpForTests, {
+Task TestServerPS72 Build, {
     Set-Location .\test\PowerShellEditorServices.Test\
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS72 }
 }
 
-Task TestServerPS73 Build, SetupHelpForTests, {
+Task TestServerPS73 Build, {
     Set-Location .\test\PowerShellEditorServices.Test\
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS73 }
 }
 
-Task TestE2EPwsh Build, SetupHelpForTests, {
+Task TestE2EPwsh Build, {
     Set-Location .\test\PowerShellEditorServices.Test.E2E\
     $env:PWSH_EXE_NAME = "pwsh"
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS73 }
 }
 
-Task TestE2EWinPS -If (-not $script:IsNix) Build, SetupHelpForTests, {
+Task TestE2EWinPS -If (-not $script:IsNix) Build, {
     Set-Location .\test\PowerShellEditorServices.Test.E2E\
     $env:PWSH_EXE_NAME = "powershell"
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS73 }
 }
 
-Task TestConstrainedLanguageMode -If (-not $script:IsNix) Build, SetupHelpForTests, {
+Task TestConstrainedLanguageMode -If (-not $script:IsNix) Build, {
     Set-Location .\test\PowerShellEditorServices.Test.E2E\
 
     if (-not [Security.Principal.WindowsIdentity]::GetCurrent().Owner.IsWellKnown("BuiltInAdministratorsSid")) {

@@ -424,8 +424,8 @@ CanSendDocumentSymbolRequest
                     Assert.NotNull(symInfoOrDocSym.DocumentSymbol);
                     DocumentSymbol symbol = symInfoOrDocSym.DocumentSymbol;
 
-                    Assert.Equal(symbol.Name, "function CanSendDocumentSymbolRequest ()");
-                    Assert.Equal(symbol.Kind, SymbolKind.Function);
+                    Assert.Equal("function CanSendDocumentSymbolRequest ()", symbol.Name);
+                    Assert.Equal(SymbolKind.Function, symbol.Kind);
 
                     Assert.Equal(1, symbol.Range.Start.Line);
                     Assert.Equal(0, symbol.Range.Start.Character);
@@ -1033,6 +1033,7 @@ enum MyEnum {
         public async Task CanSendCompletionAndCompletionResolveRequestAsync()
         {
             Skip.If(IsLinux, "This depends on the help system, which is flaky on Linux.");
+            Skip.If(PsesStdioProcess.IsWindowsPowerShell, "This help system isn't updated in CI.");
             string filePath = NewTestFile("Write-H");
 
             CompletionList completionItems = await PsesLanguageClient.TextDocument.RequestCompletion(
@@ -1123,6 +1124,7 @@ enum MyEnum {
         public async Task CanSendHoverRequestAsync()
         {
             Skip.If(IsLinux, "This depends on the help system, which is flaky on Linux.");
+            Skip.If(PsesStdioProcess.IsWindowsPowerShell, "This help system isn't updated in CI.");
             string filePath = NewTestFile("Write-Host");
 
             Hover hover = await PsesLanguageClient.TextDocument.RequestHover(

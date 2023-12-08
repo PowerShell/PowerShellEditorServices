@@ -11,6 +11,3 @@ if ($PSVersionTable.PSVersion.Major -lt 6) {
 # TODO: Switch to Install-PSResource when CI uses PowerShell 7.4
 Install-Module -Name InvokeBuild -Scope CurrentUser
 Install-Module -Name platyPS -Scope CurrentUser
-
-# Update help needed for tests.
-Update-Help -Module Microsoft.PowerShell*
