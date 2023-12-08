@@ -25,9 +25,13 @@ jobs:
           cache: true
           cache-dependency-path: '**/packages.lock.json'
 
-      - name: Build PSES
+      - name: Install PSResources
         shell: pwsh
-        run: tools/azurePipelinesBuild.ps1
+        run: tools/installPSResources.ps1
+
+      - name: Build
+        shell: pwsh
+        run: Invoke-Build Build
 
       - name: Install Vim
         uses: rhysd/action-setup-vim@v1

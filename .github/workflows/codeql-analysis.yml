@@ -43,9 +43,13 @@ jobs:
       with:
         languages: ${{ matrix.language }}
 
+    - name: Install PSResources
+      shell: pwsh
+      run: tools/installPSResources.ps1
+
     - name: Build
       shell: pwsh
-      run: tools/azurePipelinesBuild.ps1
+      run: Invoke-Build Build
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2

@@ -21,9 +21,17 @@ steps:
     performMultiLevelLookup: true
 
 - task: PowerShell@2
+  displayName: Install PSResources
+  inputs:
+    pwsh: true
+    filePath: tools/installPSResources.ps1
+
+- task: PowerShell@2
   displayName: Build
   inputs:
-    filePath: tools/azurePipelinesBuild.ps1
+    targetType: inline
+    pwsh: true
+    script: Invoke-Build Build -Configuration Release
 
 - task: PowerShell@2
   displayName: Test

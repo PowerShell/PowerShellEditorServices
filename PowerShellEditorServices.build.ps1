@@ -311,13 +311,6 @@ task RestorePsesModules -After Build {
         $moduleInfos.Add($name, $body)
     }
 
-    if ($moduleInfos.Keys.Count -gt 0) {
-        # `#Requires` doesn't display the version needed in the error message and `using module` doesn't work with InvokeBuild in Windows PowerShell
-        # so we'll just use Import-Module to check that PowerShellGet 1.6.0 or higher is installed.
-        # This is needed in order to use the `-AllowPrerelease` parameter
-        Import-Module -Name PowerShellGet -MinimumVersion 1.6.0 -ErrorAction Stop
-    }
-
     # Save each module in the modules.json file
     foreach ($moduleName in $moduleInfos.Keys) {
         if (Test-Path -Path (Join-Path -Path $submodulePath -ChildPath $moduleName)) {
@@ -330,9 +323,13 @@ task RestorePsesModules -After Build {
         $splatParameters = @{
             Name            = $moduleName
             RequiredVersion = $moduleInstallDetails.Version
-            AllowPrerelease = $moduleInstallDetails.AllowPrerelease
             Repository      = if ($moduleInstallDetails.Repository) { $moduleInstallDetails.Repository } else { $DefaultModuleRepository }
             Path            = $submodulePath
+        }
+
+        # There's a bug in PowerShell get where this argument isn't correctly translated when it's false.
+        if ($moduleInstallDetails.AllowPrerelease) {
+            $splatParameters["AllowPrerelease"] = $moduleInstallDetails.AllowPrerelease
         }
 
         Write-Host "`tInstalling module: ${moduleName} with arguments $(ConvertTo-Json $splatParameters)"
