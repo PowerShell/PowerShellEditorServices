@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 {
@@ -360,6 +361,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             // We intentionally use `CreateDefault2()` as it loads `Microsoft.PowerShell.Core`
             // only, which is a more minimal and therefore safer state.
             InitialSessionState sessionState = InitialSessionState.CreateDefault2();
+
+            // We set the runspace's execution policy `Bypass` so we can always import our bundled
+            // PSScriptAnalyzer module.
+            if (VersionUtils.IsWindows)
+            {
+                sessionState.ExecutionPolicy = ExecutionPolicy.Bypass;
+            }
+
             sessionState.ImportPSModulesFromPath(pssaModulePath);
 
             RunspacePool runspacePool = RunspaceFactory.CreateRunspacePool(sessionState);
