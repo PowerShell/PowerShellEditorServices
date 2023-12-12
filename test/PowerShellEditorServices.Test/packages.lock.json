@@ -39,9 +39,9 @@
       },
       "xunit.runner.visualstudio": {
         "type": "Direct",
-        "requested": "[2.5.4, )",
-        "resolved": "2.5.4",
-        "contentHash": "YUtEOBdArAISyb1cTWcHc6/bilSDB9q5lc8ughPQP1MqlAKSkxKMBqLQ+tiWMFRBd2o22E59nLD/4V5R3jfZxQ==",
+        "requested": "[2.5.5, )",
+        "resolved": "2.5.5",
+        "contentHash": "AJsBBn8S00ZxdXPSIp8s+NcBQMO9tcll1UVCfGNoEi1DUH2z3f4Y1epV9nYbhgG6wFoTKJP6YuLT2MeTPV9gnA==",
         "dependencies": {
           "Microsoft.TestPlatform.ObjectModel": "17.8.0"
         }
@@ -549,7 +549,7 @@
       "Microsoft.PowerShell.EditorServices.Test.Shared": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.PowerShell.EditorServices": "[3.14.0, )"
+          "Microsoft.PowerShell.EditorServices": "[3.15.0, )"
         }
       }
     },
@@ -606,9 +606,9 @@
       },
       "xunit.runner.visualstudio": {
         "type": "Direct",
-        "requested": "[2.5.4, )",
-        "resolved": "2.5.4",
-        "contentHash": "YUtEOBdArAISyb1cTWcHc6/bilSDB9q5lc8ughPQP1MqlAKSkxKMBqLQ+tiWMFRBd2o22E59nLD/4V5R3jfZxQ=="
+        "requested": "[2.5.5, )",
+        "resolved": "2.5.5",
+        "contentHash": "AJsBBn8S00ZxdXPSIp8s+NcBQMO9tcll1UVCfGNoEi1DUH2z3f4Y1epV9nYbhgG6wFoTKJP6YuLT2MeTPV9gnA=="
       },
       "Xunit.SkippableFact": {
         "type": "Direct",
@@ -2547,7 +2547,7 @@
       "Microsoft.PowerShell.EditorServices.Test.Shared": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.PowerShell.EditorServices": "[3.14.0, )"
+          "Microsoft.PowerShell.EditorServices": "[3.15.0, )"
         }
       }
     },
@@ -2608,9 +2608,9 @@
       },
       "xunit.runner.visualstudio": {
         "type": "Direct",
-        "requested": "[2.5.4, )",
-        "resolved": "2.5.4",
-        "contentHash": "YUtEOBdArAISyb1cTWcHc6/bilSDB9q5lc8ughPQP1MqlAKSkxKMBqLQ+tiWMFRBd2o22E59nLD/4V5R3jfZxQ=="
+        "requested": "[2.5.5, )",
+        "resolved": "2.5.5",
+        "contentHash": "AJsBBn8S00ZxdXPSIp8s+NcBQMO9tcll1UVCfGNoEi1DUH2z3f4Y1epV9nYbhgG6wFoTKJP6YuLT2MeTPV9gnA=="
       },
       "Xunit.SkippableFact": {
         "type": "Direct",
@@ -4533,7 +4533,7 @@
       "Microsoft.PowerShell.EditorServices.Test.Shared": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.PowerShell.EditorServices": "[3.14.0, )"
+          "Microsoft.PowerShell.EditorServices": "[3.15.0, )"
         }
       }
     }
