@@ -34,21 +34,18 @@ jobs:
       - name: Install PSResources
         shell: pwsh
         run: tools/installPSResources.ps1
-      - name: Build
+      - name: Build and test
         shell: pwsh
-        run: Invoke-Build Build
+        run: Invoke-Build
       - name: Upload build artifacts
+        if: always()
         uses: actions/upload-artifact@v3
-        if: matrix.os == 'windows-latest'
         with:
-          name: PowerShellEditorServices
+          name: PowerShellEditorServices-module-${{ matrix.os }}
           path: module
-      - name: Run tests
-        shell: pwsh
-        run: Invoke-Build Test
       - name: Upload test results
         uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: ${{ matrix.os }}-test-results
+          name: PowerShellEditorServices-test-results-${{ matrix.os }}
           path: '**/*.trx'

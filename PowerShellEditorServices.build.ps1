@@ -13,7 +13,7 @@ param(
 
     [string]$DefaultModuleRepository = "PSGallery",
 
-    [string]$Verbosity = "quiet",
+    [string]$Verbosity = "minimal",
 
     # See: https://docs.microsoft.com/en-us/dotnet/core/testing/selective-unit-tests
     [string]$TestFilter = '',
