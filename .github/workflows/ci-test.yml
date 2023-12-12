@@ -11,7 +11,8 @@ on:
     types: [ checks_requested ]
 
 jobs:
-  os_matrix:
+  ci:
+    name: dotnet
     strategy:
       matrix:
         os: [ windows-latest, macos-latest, ubuntu-latest ]
@@ -23,6 +24,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Install dotnet
         uses: actions/setup-dotnet@v4
         with:
@@ -31,18 +33,22 @@ jobs:
           dotnet-version: |
             6.0.x
             7.0.x
+
       - name: Install PSResources
         shell: pwsh
         run: tools/installPSResources.ps1
+
       - name: Build and test
         shell: pwsh
         run: Invoke-Build
+
       - name: Upload build artifacts
         if: always()
         uses: actions/upload-artifact@v3
         with:
           name: PowerShellEditorServices-module-${{ matrix.os }}
           path: module
+
       - name: Upload test results
         uses: actions/upload-artifact@v3
         if: always()

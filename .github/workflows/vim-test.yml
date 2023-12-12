@@ -11,9 +11,13 @@ on:
     types: [ checks_requested ]
 
 jobs:
-  test:
-    name: Test via LanguageClient-neovim
+  vim:
+    name: themis
     runs-on: ubuntu-latest
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      DOTNET_GENERATE_ASPNET_CERTIFICATE: false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -34,7 +38,6 @@ jobs:
 
       - name: Install Vim
         uses: rhysd/action-setup-vim@v1
-        id: vim
 
       - name: Checkout vim-ps1
         uses: actions/checkout@v4

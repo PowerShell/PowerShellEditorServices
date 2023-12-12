@@ -1,4 +1,4 @@
-name: Run CodeQL Analysis
+name: CodeQL Analysis
 
 on:
   push:
@@ -12,18 +12,20 @@ on:
 
 jobs:
   analyze:
-    name: Analyze
+    name: analyze
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ csharp ]
     runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
       security-events: write
-
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'csharp' ]
-
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      DOTNET_GENERATE_ASPNET_CERTIFICATE: false
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -34,7 +36,6 @@ jobs:
         cache: true
         cache-dependency-path: '**/packages.lock.json'
 
-    # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v2
       with:
@@ -50,3 +51,5 @@ jobs:
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
+      with:
+        category: '/language:${{matrix.language}}'
