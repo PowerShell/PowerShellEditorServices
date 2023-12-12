@@ -37,12 +37,18 @@ jobs:
       - name: Build
         shell: pwsh
         run: Invoke-Build Build
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        if: matrix.os == 'windows-latest'
+        with:
+          name: PowerShellEditorServices
+          path: module
       - name: Run tests
         shell: pwsh
         run: Invoke-Build Test
       - name: Upload test results
         uses: actions/upload-artifact@v3
-        if: ${{ always() }}
+        if: always()
         with:
           name: ${{ matrix.os }}-test-results
           path: '**/*.trx'
