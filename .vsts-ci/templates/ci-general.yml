@@ -1,15 +1,10 @@
-parameters:
-- name: pwsh
-  type: boolean
-  default: true
-
 steps:
 - task: PowerShell@2
   displayName: PowerShell version
   inputs:
     targetType: inline
+    pwsh: true
     script: $PSVersionTable
-    pwsh: ${{ parameters.pwsh }}
 
 - task: UseDotNet@2
   displayName: Install .NET 7.0.x SDK
@@ -26,17 +21,24 @@ steps:
     performMultiLevelLookup: true
 
 - task: PowerShell@2
+  displayName: Install PSResources
+  inputs:
+    pwsh: true
+    filePath: tools/installPSResources.ps1
+
+- task: PowerShell@2
   displayName: Build
   inputs:
-    filePath: tools/azurePipelinesBuild.ps1
-    pwsh: ${{ parameters.pwsh }}
+    targetType: inline
+    pwsh: true
+    script: Invoke-Build Build -Configuration Release
 
 - task: PowerShell@2
   displayName: Test
   inputs:
     targetType: inline
+    pwsh: true
     script: Invoke-Build Test -Configuration Release
-    pwsh: ${{ parameters.pwsh }}
 
 - task: PublishTestResults@2
   displayName: Publish test results
@@ -49,13 +51,13 @@ steps:
   displayName: Assert PowerShellEditorServices release configuration
   inputs:
     targetType: inline
+    pwsh: true
     script: |
       $assembly = [Reflection.Assembly]::LoadFile("$(Build.SourcesDirectory)/module/PowerShellEditorServices.VSCode/bin/Microsoft.PowerShell.EditorServices.VSCode.dll")
       if ($assembly.GetCustomAttributes([System.Diagnostics.DebuggableAttribute], $true).IsJITOptimizerDisabled) {
         Write-Host "##vso[task.LogIssue type=error;] PowerShell Editor Services bits were not built in release configuration!"
         exit 1
       }
-    pwsh: ${{ parameters.pwsh }}
 
 # NOTE: We zip the artifacts because they're ~20 MB compressed, but ~300 MB raw,
 # and we have limited pipeline artifact storage space.

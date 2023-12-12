@@ -1,4 +1,4 @@
-name: Emacs End-to-End Tests
+name: CI Tests
 
 on:
   push:
@@ -11,9 +11,12 @@ on:
     types: [ checks_requested ]
 
 jobs:
-  emacs:
-    name: ert
-    runs-on: ubuntu-latest
+  ci:
+    name: dotnet
+    strategy:
+      matrix:
+        os: [ windows-latest, macos-latest, ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
     env:
       DOTNET_NOLOGO: true
       DOTNET_CLI_TELEMETRY_OPTOUT: true
@@ -27,21 +30,28 @@ jobs:
         with:
           cache: true
           cache-dependency-path: '**/packages.lock.json'
+          dotnet-version: |
+            6.0.x
+            7.0.x
 
       - name: Install PSResources
         shell: pwsh
         run: tools/installPSResources.ps1
 
-      - name: Build
+      - name: Build and test
         shell: pwsh
-        run: Invoke-Build Build
+        run: Invoke-Build
 
-      - name: Install Emacs
-        uses: purcell/setup-emacs@master
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
         with:
-          version: '28.2'
+          name: PowerShellEditorServices-module-${{ matrix.os }}
+          path: module
 
-      - name: Run ERT
-        run: |
-          emacs -Q --batch -f package-refresh-contents --eval "(package-install 'eglot)"
-          emacs -Q --batch -l test/emacs-test.el -f ert-run-tests-batch-and-exit
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: PowerShellEditorServices-test-results-${{ matrix.os }}
+          path: '**/*.trx'

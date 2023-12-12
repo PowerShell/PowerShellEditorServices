@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Analysis
 {
@@ -71,19 +72,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
                 // RunspacePool takes care of queuing commands for us so we do not
                 // need to worry about executing concurrent commands
                 ILogger logger = _loggerFactory.CreateLogger<PssaCmdletAnalysisEngine>();
-                try
-                {
-                    logger.LogDebug("Creating PSScriptAnalyzer runspace with module at: '{Path}'", pssaModulePath);
-                    RunspacePool pssaRunspacePool = CreatePssaRunspacePool(pssaModulePath);
-                    PssaCmdletAnalysisEngine cmdletAnalysisEngine = new(logger, pssaRunspacePool, _rules, _settingsParameter);
-                    cmdletAnalysisEngine.LogAvailablePssaFeatures();
-                    return cmdletAnalysisEngine;
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Unable to load PSScriptAnalyzer, disabling script analysis!");
-                    return null;
-                }
+
+                logger.LogDebug("Creating PSScriptAnalyzer runspace with module at: '{Path}'", pssaModulePath);
+                RunspacePool pssaRunspacePool = CreatePssaRunspacePool(pssaModulePath);
+                PssaCmdletAnalysisEngine cmdletAnalysisEngine = new(logger, pssaRunspacePool, _rules, _settingsParameter);
+                cmdletAnalysisEngine.LogAvailablePssaFeatures();
+                return cmdletAnalysisEngine;
             }
         }
 
@@ -367,6 +361,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             // We intentionally use `CreateDefault2()` as it loads `Microsoft.PowerShell.Core`
             // only, which is a more minimal and therefore safer state.
             InitialSessionState sessionState = InitialSessionState.CreateDefault2();
+
+            // We set the runspace's execution policy `Bypass` so we can always import our bundled
+            // PSScriptAnalyzer module.
+            if (VersionUtils.IsWindows)
+            {
+                sessionState.ExecutionPolicy = ExecutionPolicy.Bypass;
+            }
+
             sessionState.ImportPSModulesFromPath(pssaModulePath);
 
             RunspacePool runspacePool = RunspaceFactory.CreateRunspacePool(sessionState);
