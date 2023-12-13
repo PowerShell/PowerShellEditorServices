@@ -76,13 +76,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             CancellationToken cancellationToken)
         {
             IScriptPosition cursorPosition = s_clonePositionWithNewOffset(scriptAst.Extent.StartScriptPosition, fileOffset);
-
+            Stopwatch stopwatch = new();
             logger.LogTrace($"Getting completions at offset {fileOffset} (line: {cursorPosition.LineNumber}, column: {cursorPosition.ColumnNumber})");
 
-            Stopwatch stopwatch = new();
-
-            CommandCompletion commandCompletion = null;
-            await executionService.ExecuteDelegateAsync(
+            CommandCompletion commandCompletion = await executionService.ExecuteDelegateAsync(
                 representation: "CompleteInput",
                 new ExecutionOptions { Priority = ExecutionPriority.Next },
                 (pwsh, _) =>
@@ -108,35 +105,41 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 
                         if (completionResults is { Count: > 0 })
                         {
-                            commandCompletion = completionResults[0];
+                            return completionResults[0];
                         }
 
-                        return;
+                        return null;
                     }
 
                     // If the current runspace is out of process, we can't call TabExpansion2
                     // because the output will be serialized.
-                    commandCompletion = CommandCompletion.CompleteInput(
+                    return CommandCompletion.CompleteInput(
                         scriptAst,
                         currentTokens,
                         cursorPosition,
                         options: null,
                         powershell: pwsh);
                 },
-                cancellationToken)
-                .ConfigureAwait(false);
+                cancellationToken).ConfigureAwait(false);
 
             stopwatch.Stop();
-            logger.LogTrace(
-                "IntelliSense completed in {elapsed}ms - WordToComplete: \"{word}\" MatchCount: {count}",
-                stopwatch.ElapsedMilliseconds,
-                commandCompletion.ReplacementLength > 0
-                    ? scriptAst.Extent.StartScriptPosition.GetFullScript()?.Substring(
-                        commandCompletion.ReplacementIndex,
-                        commandCompletion.ReplacementLength)
-                    : null,
-                commandCompletion.CompletionMatches.Count);
 
+            if (commandCompletion is null)
+            {
+                logger.LogError("Error Occurred in TabExpansion2");
+            }
+            else
+            {
+                logger.LogTrace(
+                    "IntelliSense completed in {elapsed}ms - WordToComplete: \"{word}\" MatchCount: {count}",
+                    stopwatch.ElapsedMilliseconds,
+                    commandCompletion.ReplacementLength > 0
+                        ? scriptAst.Extent.StartScriptPosition.GetFullScript()?.Substring(
+                            commandCompletion.ReplacementIndex,
+                            commandCompletion.ReplacementLength)
+                        : null,
+                    commandCompletion.CompletionMatches.Count);
+            }
             return commandCompletion;
         }
 
