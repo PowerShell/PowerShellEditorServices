@@ -158,7 +158,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 Task SetupHelpForTests {
     # TODO: Check if it must be updated in a compatible way!
     Write-Host "Updating help for tests."
-    Update-Help -Module Microsoft.PowerShell.Management,Microsoft.PowerShell.Utility -Force -Scope CurrentUser
+    Update-Help -Module Microsoft.PowerShell.Management,Microsoft.PowerShell.Utility -Force -Scope CurrentUser -UICulture en-US
 }
 
 Task Build FindDotNet, CreateBuildInfo, {
