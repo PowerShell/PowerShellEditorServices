@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 namespace PowerShellEditorServices.Test.E2E
 {
     /// <summary>
-    ///     A <see cref="ServerProcess"/> is responsible for launching or attaching to a language server, providing access to its input and output streams, and tracking its lifetime.
+    /// A <see cref="ServerProcess"/> is responsible for launching or attaching to a language server, providing access to its input and output streams, and tracking its lifetime.
     /// </summary>
     public class PsesStdioProcess : StdioServerProcess
     {
@@ -21,17 +21,14 @@ namespace PowerShellEditorServices.Test.E2E
         #region private static or constants members
 
         private static readonly string s_bundledModulePath = new FileInfo(Path.Combine(
-            s_binDir,
-            "..", "..", "..", "..", "..",
-            "module")).FullName;
+            s_binDir, "..", "..", "..", "..", "..", "module")).FullName;
 
         private static readonly string s_sessionDetailsPath = Path.Combine(
-            s_binDir,
-            $"pses_test_sessiondetails_{Path.GetRandomFileName()}");
+            s_binDir, $"pses_test_sessiondetails_{Path.GetRandomFileName()}");
 
         private static readonly string s_logPath = Path.Combine(
-            Environment.GetEnvironmentVariable("BUILD_ARTIFACTSTAGINGDIRECTORY") ?? s_binDir,
-            $"pses_test_logs_{Path.GetRandomFileName()}");
+            s_binDir, $"pses_test_logs_{Path.GetRandomFileName()}");
+
         private const string s_logLevel = "Diagnostic";
         private static readonly string[] s_featureFlags = { "PSReadLine" };
         private const string s_hostName = "TestHost";

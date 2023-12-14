@@ -106,10 +106,12 @@ namespace PowerShellEditorServices.Test.E2E
             if (PwshExe == "powershell")
             {
                 Assert.Equal("Desktop", details.Edition);
+                Assert.StartsWith("5", details.Version);
             }
             else
             {
                 Assert.Equal("Core", details.Edition);
+                Assert.StartsWith("7", details.Version);
             }
         }
 
@@ -1060,7 +1062,14 @@ enum MyEnum {
         [SkippableFact]
         public async Task CanRequestCompletionsAndHandleExceptions()
         {
-            Skip.If(PsesStdioProcess.IsWindowsPowerShell, "This is a temporary bug in PowerShell 7, the fix is making its way upstream.");
+            PowerShellVersion details
+                = await PsesLanguageClient
+                    .SendRequest("powerShell/getVersion", new GetVersionParams())
+                    .Returning<PowerShellVersion>(CancellationToken.None);
+
+            Skip.IfNot(details.Version.StartsWith("7.2") || details.Version.StartsWith("7.3"),
+                "This is a bug in PowerShell 7.2 and 7.3, fixed in 7.4");
+
             string filePath = NewTestFile(@"
 @() | ForEach-Object {
     if ($false) {
