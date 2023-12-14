@@ -2,7 +2,7 @@
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0;net6.0;net462</TargetFrameworks>
+    <TargetFrameworks>net8.0;net7.0;net6.0;net462</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices.Test</AssemblyName>
     <TargetPlatform>x64</TargetPlatform>
   </PropertyGroup>
@@ -16,14 +16,19 @@
     <ProjectReference Include="..\PowerShellEditorServices.Test.Shared\PowerShellEditorServices.Test.Shared.csproj" />
   </ItemGroup>
 
-  <!-- Latest PowerShell i.e. 7.3.x -->
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net7.0' ">
-      <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.3.5" />
+  <!-- PowerShell 7.4.x -->
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
+      <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.4.0" />
   </ItemGroup>
 
-  <!-- PowerShell LTS i.e. 7.2.x -->
+  <!-- PowerShell 7.3.x -->
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net7.0' ">
+      <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.3.10" />
+  </ItemGroup>
+
+  <!-- PowerShell 7.2.x -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.12" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.17" />
   </ItemGroup>
 
   <!-- Windows PowerShell 5.1 -->
