@@ -48,17 +48,18 @@ $script:IsArm64 = -not $script:IsNix -and @("ARM64") -contains $env:PROCESSOR_AR
 $script:BuildInfoPath = [System.IO.Path]::Combine($PSScriptRoot, "src", "PowerShellEditorServices.Hosting", "BuildInfo.cs")
 $script:PsesCommonProps = [xml](Get-Content -Raw "$PSScriptRoot/PowerShellEditorServices.Common.props")
 
-$script:NetRuntime = @{
+$script:NetFramework = @{
+    PS51     = 'net462'
     PS72     = 'net6.0'
     PS73     = 'net7.0'
-    Desktop  = 'net462'
+    PS74     = 'net8.0'
     Standard = 'netstandard2.0'
 }
 
-$script:HostCoreOutput = "$PSScriptRoot/src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetRuntime.PS72)/publish"
-$script:HostDeskOutput = "$PSScriptRoot/src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetRuntime.Desktop)/publish"
-$script:PsesOutput = "$PSScriptRoot/src/PowerShellEditorServices/bin/$Configuration/$($script:NetRuntime.Standard)/publish"
-$script:VSCodeOutput = "$PSScriptRoot/src/PowerShellEditorServices.VSCode/bin/$Configuration/$($script:NetRuntime.Standard)/publish"
+$script:HostCoreOutput = "$PSScriptRoot/src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetFramework.PS72)/publish"
+$script:HostDeskOutput = "$PSScriptRoot/src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetFramework.PS51)/publish"
+$script:PsesOutput = "$PSScriptRoot/src/PowerShellEditorServices/bin/$Configuration/$($script:NetFramework.Standard)/publish"
+$script:VSCodeOutput = "$PSScriptRoot/src/PowerShellEditorServices.VSCode/bin/$Configuration/$($script:NetFramework.Standard)/publish"
 
 if (Get-Command git -ErrorAction SilentlyContinue) {
     # ignore changes to this file
@@ -157,63 +158,85 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 }
 
 Task SetupHelpForTests {
-    if (-not (Get-Help Microsoft.PowerShell.Management\Get-Process).Description) {
-        Write-Host "Updating help for tests."
-        Update-Help -Module Microsoft.PowerShell.Management,Microsoft.PowerShell.Utility -Force -Scope CurrentUser
-    }
+    # TODO: Check if it must be updated in a compatible way!
+    Write-Host "Updating help for tests."
+    Update-Help -Module Microsoft.PowerShell.Management,Microsoft.PowerShell.Utility -Force -Scope CurrentUser
 }
 
 Task Build FindDotNet, CreateBuildInfo, {
-    Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetRuntime.Standard }
-    Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.PS72 }
+    Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs .\src\PowerShellEditorServices\PowerShellEditorServices.csproj -f $script:NetFramework.Standard }
+    Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetFramework.PS72 }
 
     if (-not $script:IsNix) {
-        Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetRuntime.Desktop }
+        Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetFramework.PS51 }
     }
 
     # Build PowerShellEditorServices.VSCode module
-    Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj -f $script:NetRuntime.Standard }
+    Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj -f $script:NetFramework.Standard }
 }
 
-Task Test TestServer, TestE2E, TestConstrainedLanguageMode
+# The concise set of tests (for pull requests)
+Task Test TestPS74, TestE2EPwsh, TestPS51, TestE2EPowerShell
 
-Task TestServer SetupHelpForTests, TestServerWinPS, TestServerPS72, TestServerPS73
+# Every combination of tests (for main branch)
+Task TestFull Test, TestPS73, TestPS72, TestE2EPwshCLM, TestE2EPowerShellCLM
 
-Task TestE2E SetupHelpForTests, TestE2EPwsh, TestE2EWinPS
+Task TestPS74 Build, SetupHelpForTests, {
+    Set-Location .\test\PowerShellEditorServices.Test\
+    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
+}
 
-Task TestServerWinPS -If (-not $script:IsNix) Build, {
+Task TestPS73 Build, SetupHelpForTests, {
+    Set-Location .\test\PowerShellEditorServices.Test\
+    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS73 }
+}
+
+Task TestPS72 Build, SetupHelpForTests, {
+    Set-Location .\test\PowerShellEditorServices.Test\
+    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS72 }
+}
+
+Task TestPS51 -If (-not $script:IsNix) Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test\
     # TODO: See https://github.com/dotnet/sdk/issues/18353 for x64 test host
     # that is debuggable! If architecture is added, the assembly path gets an
-    # additional folder, necesstiating fixes to find the commands definition
+    # additional folder, necessitating fixes to find the commands definition
     # file and test files.
-    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.Desktop }
+    try {
+        # TODO: See https://github.com/PowerShell/vscode-powershell/issues/3886
+        # Inheriting the module path for powershell.exe breaks things!
+        $originalModulePath = $env:PSModulePath
+        $env:PSModulePath = ""
+        Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS51 }
+    } finally {
+        $env:PSModulePath = $originalModulePath
+    }
 }
 
-Task TestServerPS72 Build, {
-    Set-Location .\test\PowerShellEditorServices.Test\
-    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS72 }
-}
-
-Task TestServerPS73 Build, {
-    Set-Location .\test\PowerShellEditorServices.Test\
-    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS73 }
-}
-
-Task TestE2EPwsh Build, {
+# NOTE: The framework for the E2E tests applies to the mock client, and so
+# should just be the latest supported framework.
+Task TestE2EPwsh Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test.E2E\
     $env:PWSH_EXE_NAME = "pwsh"
-    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS73 }
+    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
 }
 
-Task TestE2EWinPS -If (-not $script:IsNix) Build, {
+Task TestE2EPowerShell -If (-not $script:IsNix) Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test.E2E\
     $env:PWSH_EXE_NAME = "powershell"
-    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS73 }
+    try {
+        # TODO: See https://github.com/PowerShell/vscode-powershell/issues/3886
+        # Inheriting the module path for powershell.exe breaks things!
+        $originalModulePath = $env:PSModulePath
+        Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
+    } finally {
+        $env:PSModulePath = $originalModulePath
+    }
 }
 
-Task TestConstrainedLanguageMode -If (-not $script:IsNix) Build, {
+Task TestE2EPwshCLM -If (-not $script:IsNix) Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test.E2E\
+    $env:PWSH_EXE_NAME = "pwsh"
 
     if (-not [Security.Principal.WindowsIdentity]::GetCurrent().Owner.IsWellKnown("BuiltInAdministratorsSid")) {
         Write-Warning "Skipping Constrained Language Mode tests as they must be ran in an elevated process."
@@ -223,9 +246,31 @@ Task TestConstrainedLanguageMode -If (-not $script:IsNix) Build, {
     try {
         Write-Host "Running end-to-end tests in Constrained Language Mode."
         [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", "0x80000007", [System.EnvironmentVariableTarget]::Machine)
-        Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetRuntime.PS73 }
+        Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
     } finally {
         [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", $null, [System.EnvironmentVariableTarget]::Machine)
+    }
+}
+
+Task TestE2EPowerShellCLM -If (-not $script:IsNix) Build, SetupHelpForTests, {
+    Set-Location .\test\PowerShellEditorServices.Test.E2E\
+    $env:PWSH_EXE_NAME = "powershell"
+
+    if (-not [Security.Principal.WindowsIdentity]::GetCurrent().Owner.IsWellKnown("BuiltInAdministratorsSid")) {
+        Write-Warning "Skipping Constrained Language Mode tests as they must be ran in an elevated process."
+        return
+    }
+
+    try {
+        Write-Host "Running end-to-end tests in Constrained Language Mode."
+        [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", "0x80000007", [System.EnvironmentVariableTarget]::Machine)
+        # TODO: See https://github.com/PowerShell/vscode-powershell/issues/3886
+        # Inheriting the module path for powershell.exe breaks things!
+        $originalModulePath = $env:PSModulePath
+        Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
+    } finally {
+        [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", $null, [System.EnvironmentVariableTarget]::Machine)
+        $env:PSModulePath = $originalModulePath
     }
 }
 
