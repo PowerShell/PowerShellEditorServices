@@ -41,12 +41,7 @@ jobs:
 
       - name: Build and test
         shell: pwsh
-        run: Invoke-Build
-
-      - name: Test all SDKs and CLM
-        shell: pwsh
-        if: github.ref == 'refs/heads/main'
-        run: Invoke-Build TestFull
+        run: Invoke-Build ${{ github.event_name == 'merge_group' && 'TestFull' || 'Test' }}
 
       - name: Upload build artifacts
         if: always()
