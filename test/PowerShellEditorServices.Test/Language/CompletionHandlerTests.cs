@@ -109,9 +109,10 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Equal(CompleteVariableInFile.ExpectedCompletion, actual);
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task CompletesAttributeValue()
         {
+            Skip.If(VersionUtils.IsPS74, "PowerShell 7.4 isn't returning these!");
             (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteAttributeValue.SourceDetails);
             // NOTE: Since the completions come through un-ordered from PowerShell, their SortText
             // (which has an index prepended from the original order) will mis-match our assumed

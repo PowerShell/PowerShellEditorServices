@@ -21,7 +21,9 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
         public static readonly CompletionItem ExpectedCompletion = new()
         {
             Kind = CompletionItemKind.Variable,
-            Detail = "", // Same as label, so not shown.
+            // PowerShell 7.4 now lights up a type for the detail, otherwise it's the same as the
+            // label and therefore hidden.
+            Detail = Utility.VersionUtils.IsPS74 ? "[string]" : "",
             FilterText = "$testVar1",
             InsertText = "$testVar1",
             Label = "testVar1",
