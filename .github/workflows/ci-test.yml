@@ -43,6 +43,11 @@ jobs:
         shell: pwsh
         run: Invoke-Build
 
+      - name: Test all SDKs and CLM
+        shell: pwsh
+        if: github.ref == 'refs/heads/main'
+        run: Invoke-Build TestFull
+
       - name: Upload build artifacts
         if: always()
         uses: actions/upload-artifact@v3
