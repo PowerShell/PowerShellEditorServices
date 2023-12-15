@@ -2,10 +2,6 @@ name: Misc-$(Build.SourceBranchName)-$(Date:yyyyMMdd)$(Rev:.rr)
 
 trigger:
   - gh-readonly-queue/main/*
-pr:
-  paths:
-    exclude:
-    - '**/*.md'
 
 resources:
   repositories:
