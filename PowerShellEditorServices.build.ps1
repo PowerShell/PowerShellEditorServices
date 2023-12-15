@@ -70,8 +70,8 @@ Task FindDotNet {
     Assert (Get-Command dotnet -ErrorAction SilentlyContinue) "dotnet not found, please install it: https://aka.ms/dotnet-cli"
 
     # Strip out semantic version metadata so it can be cast to `Version`
-    $existingVersion, $null = (dotnet --version) -split '-'
-    Assert ([Version]$existingVersion -ge [Version]("6.0")) ".NET SDK 6.0 or higher is required, please update it: https://aka.ms/dotnet-cli"
+    [Version]$existingVersion, $null = (dotnet --version) -split " " -split "-"
+    Assert ($existingVersion -ge [Version]("8.0")) ".NET SDK 8.0 or higher is required, please update it: https://aka.ms/dotnet-cli"
 
     Write-Host "Using dotnet v$(dotnet --version) at path $((Get-Command dotnet).Source)" -ForegroundColor Green
 }
