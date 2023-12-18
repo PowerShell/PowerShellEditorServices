@@ -45,13 +45,13 @@ jobs:
 
       - name: Upload build artifacts
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: PowerShellEditorServices-module-${{ matrix.os }}
           path: module
 
       - name: Upload test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: PowerShellEditorServices-test-results-${{ matrix.os }}
