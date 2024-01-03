@@ -351,6 +351,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 FeatureFlags = FeatureFlags,
                 LogLevel = LogLevel,
                 ConsoleRepl = GetReplKind(),
+                UseNullPSHostUI = Stdio, // If Stdio is used we can't write anything else out
                 AdditionalModules = AdditionalModules,
                 LanguageServiceTransport = GetLanguageServiceTransport(),
                 DebugServiceTransport = GetDebugServiceTransport(),

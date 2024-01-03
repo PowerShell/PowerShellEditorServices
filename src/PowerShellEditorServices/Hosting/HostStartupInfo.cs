@@ -77,6 +77,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public bool ConsoleReplEnabled { get; }
 
         /// <summary>
+        /// True if we want to suppress messages to PSHost (to prevent Stdio clobbering)
+        /// </summary>
+        public bool UseNullPSHostUI { get; }
+
+        /// <summary>
         /// If true, the legacy PSES readline implementation will be used. Otherwise PSReadLine will be used.
         /// If the console REPL is not enabled, this setting will be ignored.
         /// </summary>
@@ -139,6 +144,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <param name="logPath">The path to log to.</param>
         /// <param name="logLevel">The minimum log event level.</param>
         /// <param name="consoleReplEnabled">Enable console if true.</param>
+        /// <param name="useNullPSHostUI">Whether or not to use the Null UI.</param>
         /// <param name="usesLegacyReadLine">Use PSReadLine if false, otherwise use the legacy readline implementation.</param>
         /// <param name="bundledModulePath">A custom path to the expected bundled modules.</param>
         public HostStartupInfo(
@@ -153,6 +159,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             string logPath,
             int logLevel,
             bool consoleReplEnabled,
+            bool useNullPSHostUI,
             bool usesLegacyReadLine,
             string bundledModulePath)
         {
@@ -167,6 +174,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             LogPath = logPath;
             LogLevel = logLevel;
             ConsoleReplEnabled = consoleReplEnabled;
+            UseNullPSHostUI = useNullPSHostUI;
             UsesLegacyReadLine = usesLegacyReadLine;
 
             // Respect a user provided bundled module path.

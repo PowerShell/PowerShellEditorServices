@@ -292,10 +292,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.Analysis
             catch (CmdletInvocationException ex)
             {
                 // We do not want to crash EditorServices for exceptions caused by cmdlet invocation.
-                // Two main reasons that cause the exception are:
+                // The main reasons that cause the exception are:
                 // * PSCmdlet.WriteOutput being called from another thread than Begin/Process
                 // * CompositionContainer.ComposeParts complaining that "...Only one batch can be composed at a time"
-                _logger.LogError(ex.Message);
+                // * PSScriptAnalyzer not being able to find its PSScriptAnalyzer.psd1 because we are hosted by an Assembly other than pwsh.exe
+                string message = ex.Message;
+                if (!string.IsNullOrEmpty(ex.ErrorRecord.FullyQualifiedErrorId))
+                {
+                    // Microsoft.PowerShell.EditorServices.Services.Analysis.PssaCmdletAnalysisEngine: Exception of type 'System.Exception' was thrown. |
+                    message += $" | {ex.ErrorRecord.FullyQualifiedErrorId}";
+                }
+                _logger.LogError(message);
             }
 
             return result;

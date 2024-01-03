@@ -36,6 +36,7 @@ namespace PowerShellEditorServices.Test.Services.Symbols
                 logPath: null,
                 logLevel: 0,
                 consoleReplEnabled: false,
+                useNullPSHostUI: true,
                 usesLegacyReadLine: false,
                 bundledModulePath: PsesHostFactory.BundledModulePath));
 
