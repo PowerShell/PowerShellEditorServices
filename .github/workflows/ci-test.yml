@@ -9,6 +9,9 @@ on:
     paths-ignore: [ '**/*.md' ]
   merge_group:
     types: [ checks_requested ]
+  schedule:
+    # 6am UTC which should be after a new daily build posts
+    - cron: "0 6 * * *"
 
 jobs:
   ci:
@@ -37,11 +40,24 @@ jobs:
 
       - name: Install PSResources
         shell: pwsh
-        run: tools/installPSResources.ps1
+        run: ./tools/installPSResources.ps1
+
+      - name: Download daily install script
+        uses: actions/checkout@v4
+        with:
+          repository: PowerShell/PowerShell
+          path: pwsh
+          sparse-checkout: tools/install-powershell.ps1
+          sparse-checkout-cone-mode: false
 
       - name: Build and test
         shell: pwsh
         run: Invoke-Build ${{ github.event_name == 'merge_group' && 'TestFull' || 'Test' }}
+
+      - name: Test with daily
+        if: ${{ github.event_name == 'schedule' }}
+        shell: pwsh
+        run: ./pwsh/tools/install-powershell.ps1 -Daily && Invoke-Build TestE2EDaily
 
       - name: Upload build artifacts
         if: always()

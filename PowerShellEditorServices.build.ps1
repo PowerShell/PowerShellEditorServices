@@ -221,6 +221,19 @@ Task TestE2EPwsh Build, SetupHelpForTests, {
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
 }
 
+$PwshDaily = if ($script:IsNix) {
+    "$HOME/.powershell-daily/pwsh"
+} else {
+    "$env:LOCALAPPDATA\Microsoft\powershell-daily\pwsh.exe"
+}
+
+Task TestE2EDaily -If (Test-Path $PwshDaily) Build, SetupHelpForTests, {
+    Set-Location .\test\PowerShellEditorServices.Test.E2E\
+    $env:PWSH_EXE_NAME = $PwshDaily
+    Write-Host "Running end-to-end tests with: $(& $PwshDaily --version)"
+    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
+}
+
 Task TestE2EPowerShell -If (-not $script:IsNix) Build, SetupHelpForTests, {
     Set-Location .\test\PowerShellEditorServices.Test.E2E\
     $env:PWSH_EXE_NAME = "powershell"
