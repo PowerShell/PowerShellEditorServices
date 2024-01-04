@@ -241,6 +241,7 @@ Task TestE2EPowerShell -If (-not $script:IsNix) Build, SetupHelpForTests, {
         # TODO: See https://github.com/PowerShell/vscode-powershell/issues/3886
         # Inheriting the module path for powershell.exe breaks things!
         $originalModulePath = $env:PSModulePath
+        $env:PSModulePath = ""
         Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
     } finally {
         $env:PSModulePath = $originalModulePath
@@ -280,6 +281,7 @@ Task TestE2EPowerShellCLM -If (-not $script:IsNix) Build, SetupHelpForTests, {
         # TODO: See https://github.com/PowerShell/vscode-powershell/issues/3886
         # Inheriting the module path for powershell.exe breaks things!
         $originalModulePath = $env:PSModulePath
+        $env:PSModulePath = ""
         Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
     } finally {
         [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", $null, [System.EnvironmentVariableTarget]::Machine)
