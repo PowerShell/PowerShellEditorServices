@@ -41,7 +41,12 @@ jobs:
         with:
           version: '28.2'
 
-      - name: Run ERT
+      - name: Run ERT with full CLI
         run: |
           emacs -Q --batch -f package-refresh-contents --eval "(package-install 'eglot)"
           emacs -Q --batch -l test/emacs-test.el -f ert-run-tests-batch-and-exit
+
+      - name: Run ERT with simple CLI
+        run: |
+          emacs -Q --batch -f package-refresh-contents --eval "(package-install 'eglot)"
+          emacs -Q --batch -l test/emacs-simple-test.el -f ert-run-tests-batch-and-exit

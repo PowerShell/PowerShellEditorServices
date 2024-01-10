@@ -43,11 +43,15 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// constructor? In the end it returns an instance (albeit a "singleton").
         /// </para>
         /// </remarks>
-        /// <param name="logPath">The path of the log file to use.</param>
+        /// <param name="logDirectoryPath">The path of the log file to use.</param>
         /// <param name="minimumLogLevel">The minimum log level to use.</param>
         /// <param name="hostLogger">The host logger?</param>
-        public static EditorServicesServerFactory Create(string logPath, int minimumLogLevel, IObservable<(int logLevel, string message)> hostLogger)
+        public static EditorServicesServerFactory Create(string logDirectoryPath, int minimumLogLevel, IObservable<(int logLevel, string message)> hostLogger)
         {
+            // NOTE: Ignore the suggestion to use Environment.ProcessId as it doesn't work for
+            // .NET 4.6.2 (for Windows PowerShell), and this won't be caught in CI.
+            int currentPID = Process.GetCurrentProcess().Id;
+            string logPath = Path.Combine(logDirectoryPath, $"PowerShellEditorServices-{currentPID}.log");
             Log.Logger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
                 .WriteTo.Async(config => config.File(logPath))

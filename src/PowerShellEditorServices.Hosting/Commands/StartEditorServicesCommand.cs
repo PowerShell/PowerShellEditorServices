@@ -33,6 +33,10 @@ namespace Microsoft.PowerShell.EditorServices.Commands
 
         private HostLogger _logger;
 
+        // NOTE: Ignore the suggestion to use Environment.ProcessId as it doesn't work for
+        // .NET 4.6.2 (for Windows PowerShell), and this won't be caught in CI.
+        private static readonly int s_currentPID = Process.GetCurrentProcess().Id;
+
         public StartEditorServicesCommand()
         {
             // Sets the distribution channel to "PSES" so starts can be distinguished in PS7+ telemetry
@@ -44,30 +48,30 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         /// <summary>
         /// The name of the EditorServices host to report.
         /// </summary>
-        [Parameter(Mandatory = true)]
+        [Parameter]
         [ValidateNotNullOrEmpty]
-        public string HostName { get; set; }
+        public string HostName { get; set; } = "PSES";
 
         /// <summary>
         /// The ID to give to the host's profile.
         /// </summary>
-        [Parameter(Mandatory = true)]
+        [Parameter]
         [ValidateNotNullOrEmpty]
-        public string HostProfileId { get; set; }
+        public string HostProfileId { get; set; } = "PSES";
 
         /// <summary>
         /// The version to report for the host.
         /// </summary>
-        [Parameter(Mandatory = true)]
+        [Parameter]
         [ValidateNotNullOrEmpty]
-        public Version HostVersion { get; set; }
+        public Version HostVersion { get; set; } = new Version(0, 0, 0);
 
         /// <summary>
         /// Path to the session file to create on startup or startup failure.
         /// </summary>
-        [Parameter(Mandatory = true)]
+        [Parameter]
         [ValidateNotNullOrEmpty]
-        public string SessionDetailsPath { get; set; }
+        public string SessionDetailsPath { get; set; } = "PowerShellEditorServices.json";
 
         /// <summary>
         /// The name of the named pipe to use for the LSP transport.
@@ -120,14 +124,16 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         /// </summary>
         [Parameter]
         [ValidateNotNullOrEmpty]
-        public string BundledModulesPath { get; set; }
+        public string BundledModulesPath { get; set; } = Path.GetFullPath(Path.Combine(
+            Path.GetDirectoryName(typeof(StartEditorServicesCommand).Assembly.Location),
+            "..", "..", ".."));
 
         /// <summary>
-        /// The absolute path to the where the editor services log file should be created and logged to.
+        /// The absolute path to the folder where logs will be saved.
         /// </summary>
         [Parameter]
         [ValidateNotNullOrEmpty]
-        public string LogPath { get; set; }
+        public string LogPath { get; set; } = Path.Combine(Path.GetTempPath(), "PowerShellEditorServices");
 
         /// <summary>
         /// The minimum log level that should be emitted.
@@ -266,14 +272,12 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             }
 
             string logDirPath = GetLogDirPath();
-            string logPath = Path.Combine(logDirPath, "StartEditorServices.log");
+            string logPath = Path.Combine(logDirPath, $"StartEditorServices-{s_currentPID}.log");
 
-            // Temp debugging sessions may try to reuse this same path,
-            // so we ensure they have a unique path
             if (File.Exists(logPath))
             {
                 int randomInt = new Random().Next();
-                logPath = Path.Combine(logDirPath, $"StartEditorServices-temp{randomInt.ToString("X", CultureInfo.InvariantCulture.NumberFormat)}.log");
+                logPath = Path.Combine(logDirPath, $"StartEditorServices-{s_currentPID}-{randomInt.ToString("X", CultureInfo.InvariantCulture.NumberFormat)}.log");
             }
 
             StreamLogger fileLogger = StreamLogger.CreateWithNewFile(logPath);
@@ -281,19 +285,19 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             IDisposable fileLoggerUnsubscriber = _logger.Subscribe(fileLogger);
             fileLogger.AddUnsubscriber(fileLoggerUnsubscriber);
             _loggerUnsubscribers.Add(fileLoggerUnsubscriber);
-
             _logger.Log(PsesLogLevel.Diagnostic, "Logging started");
         }
 
+        // Sanitizes user input and ensures the directory is created.
         private string GetLogDirPath()
         {
-            string logDir = !string.IsNullOrEmpty(LogPath)
-                ? Path.GetDirectoryName(LogPath)
-                : Path.GetDirectoryName(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+            string logDir = LogPath;
+            if (string.IsNullOrEmpty(logDir))
+            {
+                logDir = Path.Combine(Path.GetTempPath(), "PowerShellEditorServices");
+            }
 
-            // Ensure logDir exists
             Directory.CreateDirectory(logDir);
-
             return logDir;
         }
 

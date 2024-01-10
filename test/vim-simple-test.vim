@@ -5,11 +5,7 @@ function s:suite.before()
   let l:pses_path = g:repo_root . '/module'
   let g:LanguageClient_serverCommands = {
     \ 'ps1': [ 'pwsh', '-NoLogo', '-NoProfile', '-Command',
-    \   l:pses_path . '/PowerShellEditorServices/Start-EditorServices.ps1',
-    \   '-HostName', 'vim', '-HostProfileId', 'vim', '-HostVersion', '1.0.0',
-    \   '-BundledModulesPath', l:pses_path, '-Stdio',
-    \   '-LogPath', g:repo_root . '/pses.log', '-LogLevel', 'Diagnostic',
-    \   '-SessionDetailsPath', g:repo_root . '/pses_session.json' ]
+    \   l:pses_path . '/PowerShellEditorServices/Start-EditorServices.ps1', '-Stdio' ]
     \ }
   let g:LanguageClient_serverStderr = 'DEBUG'
   let g:LanguageClient_loggingFile = g:repo_root . '/LanguageClient.log'
