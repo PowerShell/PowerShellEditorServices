@@ -61,7 +61,12 @@ jobs:
           repository: thinca/vim-themis
           path: vim-themis
 
-      - name: Run Themis
+      - name: Run Themis with full CLI
         env:
           THEMIS_VIM: ${{ steps.vim.outputs.executable }}
         run: ./vim-themis/bin/themis ./test/vim-test.vim
+
+      - name: Run Themis with simple CLI
+        env:
+          THEMIS_VIM: ${{ steps.vim.outputs.executable }}
+        run: ./vim-themis/bin/themis ./test/vim-simple-test.vim
