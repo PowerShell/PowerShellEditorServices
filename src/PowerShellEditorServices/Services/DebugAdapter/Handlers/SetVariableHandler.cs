@@ -38,20 +38,20 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 return new SetVariableResponse { Value = updatedValue };
             }
-            catch (Exception ex) when (ex is ArgumentTransformationMetadataException or
+            catch (Exception e) when (e is ArgumentTransformationMetadataException or
                                        InvalidPowerShellExpressionException or
                                        SessionStateUnauthorizedAccessException)
             {
                 // Catch common, innocuous errors caused by the user supplying a value that can't be converted or the variable is not settable.
-                _logger.LogTrace($"Failed to set variable: {ex.Message}");
-                throw new RpcErrorException(0, ex.Message);
+                string msg = $"Failed to set variable: {e.Message}";
+                _logger.LogTrace(msg);
+                throw new RpcErrorException(0, null, msg);
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                _logger.LogError($"Unexpected error setting variable: {ex.Message}");
-                string msg =
-                    $"Unexpected error: {ex.GetType().Name} - {ex.Message}  Please report this error to the PowerShellEditorServices project on GitHub.";
-                throw new RpcErrorException(0, msg);
+                string msg = $"Unexpected error setting variable: {e.Message}";
+                _logger.LogError(msg);
+                throw new RpcErrorException(0, null, msg);
             }
         }
     }

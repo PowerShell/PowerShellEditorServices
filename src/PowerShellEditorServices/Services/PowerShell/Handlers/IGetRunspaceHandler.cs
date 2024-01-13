@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
     internal class GetRunspaceParams : IRequest<RunspaceResponse[]>
     {
-        public string ProcessId { get; set; }
+        public int ProcessId { get; set; }
     }
 
     internal class RunspaceResponse
