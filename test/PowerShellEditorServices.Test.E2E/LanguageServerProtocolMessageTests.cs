@@ -601,7 +601,7 @@ Write-Host 'Goodbye'
                             "powerShell/getRunspace",
                             new GetRunspaceParams
                             {
-                                ProcessId = $"{process.Id}"
+                                ProcessId = process.Id
                             })
                         .Returning<RunspaceResponse[]>(CancellationToken.None);
             }

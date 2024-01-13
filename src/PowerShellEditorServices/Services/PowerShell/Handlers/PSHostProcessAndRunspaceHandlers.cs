@@ -11,92 +11,90 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     using System.Management.Automation;
     using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+    using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
+    using OmniSharp.Extensions.JsonRpc;
 
     internal class PSHostProcessAndRunspaceHandlers : IGetPSHostProcessesHandler, IGetRunspaceHandler
     {
         private readonly ILogger<PSHostProcessAndRunspaceHandlers> _logger;
         private readonly IInternalPowerShellExecutionService _executionService;
+        private readonly IRunspaceContext _runspaceContext;
+        private static readonly int currentProcessId = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-        public PSHostProcessAndRunspaceHandlers(ILoggerFactory factory, IInternalPowerShellExecutionService executionService)
+        public PSHostProcessAndRunspaceHandlers(
+            ILoggerFactory factory,
+            IInternalPowerShellExecutionService executionService,
+            IRunspaceContext runspaceContext)
         {
             _logger = factory.CreateLogger<PSHostProcessAndRunspaceHandlers>();
             _executionService = executionService;
+            _runspaceContext = runspaceContext;
         }
 
-        public Task<PSHostProcessResponse[]> Handle(GetPSHostProcessesParams request, CancellationToken cancellationToken)
+        public async Task<PSHostProcessResponse[]> Handle(GetPSHostProcessesParams request, CancellationToken cancellationToken)
         {
-            List<PSHostProcessResponse> psHostProcesses = new();
+            PSCommand psCommand = new PSCommand().AddCommand(@"Microsoft.PowerShell.Core\Get-PSHostProcessInfo");
+            IReadOnlyList<PSObject> processes = await _executionService.ExecutePSCommandAsync<PSObject>(
+                psCommand, cancellationToken).ConfigureAwait(false);
 
-            int processId = System.Diagnostics.Process.GetCurrentProcess().Id;
-
-            using (PowerShell pwsh = PowerShell.Create())
+            List<PSHostProcessResponse> psHostProcesses = [];
+            foreach (dynamic p in processes)
             {
-                pwsh.AddCommand("Get-PSHostProcessInfo")
-                    .AddCommand("Where-Object")
-                        .AddParameter("Property", "ProcessId")
-                        .AddParameter("NE")
-                        .AddParameter("Value", processId.ToString());
-
-                System.Collections.ObjectModel.Collection<PSObject> processes = pwsh.Invoke<PSObject>();
-
-                if (processes != null)
+                PSHostProcessResponse response = new()
                 {
-                    foreach (dynamic p in processes)
-                    {
-                        psHostProcesses.Add(
-                            new PSHostProcessResponse
-                            {
-                                ProcessName = p.ProcessName,
-                                ProcessId = p.ProcessId,
-                                AppDomainName = p.AppDomainName,
-                                MainWindowTitle = p.MainWindowTitle
-                            });
-                    }
+                    ProcessName = p.ProcessName,
+                    ProcessId = p.ProcessId,
+                    AppDomainName = p.AppDomainName,
+                    MainWindowTitle = p.MainWindowTitle
+                };
+
+                // NOTE: We do not currently support attaching to ourself in this manner, so we
+                // exclude our process. When we maybe eventually do, we should name it.
+                if (response.ProcessId == currentProcessId)
+                {
+                    continue;
                 }
+
+                psHostProcesses.Add(response);
             }
 
-            return Task.FromResult(psHostProcesses.ToArray());
+            return psHostProcesses.ToArray();
         }
 
         public async Task<RunspaceResponse[]> Handle(GetRunspaceParams request, CancellationToken cancellationToken)
         {
-            IEnumerable<PSObject> runspaces = null;
-
-            request.ProcessId ??= "current";
-
-            // If the processId is a valid int, we need to run Get-Runspace within that process
-            // otherwise just use the current runspace.
-            if (int.TryParse(request.ProcessId, out int pid))
+            if (request.ProcessId == currentProcessId)
             {
-                // Create a remote runspace that we will invoke Get-Runspace in.
-                using Runspace rs = RunspaceFactory.CreateRunspace(new NamedPipeConnectionInfo(pid));
-                using PowerShell ps = PowerShell.Create();
-                rs.Open();
-                ps.Runspace = rs;
+                throw new RpcErrorException(0, null, $"Attaching to the Extension Terminal is not supported!");
+            }
+
+            // Create a remote runspace that we will invoke Get-Runspace in.
+            IReadOnlyList<PSObject> runspaces = [];
+            using (Runspace runspace = RunspaceFactory.CreateRunspace(new NamedPipeConnectionInfo(request.ProcessId)))
+            {
+                using PowerShell pwsh = PowerShell.Create();
+                runspace.Open();
+                pwsh.Runspace = runspace;
                 // Returns deserialized Runspaces. For simpler code, we use PSObject and rely on dynamic later.
-                runspaces = ps.AddCommand(@"Microsoft.PowerShell.Utility\Get-Runspace").Invoke<PSObject>();
-            }
-            else
-            {
-                PSCommand psCommand = new PSCommand().AddCommand(@"Microsoft.PowerShell.Utility\Get-Runspace");
-                // returns (not deserialized) Runspaces. For simpler code, we use PSObject and rely on dynamic later.
-                runspaces = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, cancellationToken).ConfigureAwait(false);
+                runspaces = pwsh.AddCommand(@"Microsoft.PowerShell.Utility\Get-Runspace").Invoke<PSObject>();
             }
 
-            List<RunspaceResponse> runspaceResponses = new();
-
-            if (runspaces != null)
+            List<RunspaceResponse> runspaceResponses = [];
+            foreach (dynamic runspace in runspaces)
             {
-                foreach (dynamic runspace in runspaces)
+                // This is the special runspace used for debugging, we can't attach to it.
+                if (runspace.Name == "PSAttachRunspace")
                 {
-                    runspaceResponses.Add(
-                        new RunspaceResponse
-                        {
-                            Id = runspace.Id,
-                            Name = runspace.Name,
-                            Availability = runspace.RunspaceAvailability.ToString()
-                        });
+                    continue;
                 }
+
+                runspaceResponses.Add(
+                    new RunspaceResponse
+                    {
+                        Id = runspace.Id,
+                        Name = runspace.Name,
+                        Availability = runspace.RunspaceAvailability.ToString()
+                    });
             }
 
             return runspaceResponses.ToArray();
