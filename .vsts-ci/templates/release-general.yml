@@ -27,10 +27,6 @@ steps:
       PowerShellEditorServices/Commands/**/*.{ps1,psd1,psm1,ps1xml}
       # PowerShellEditorServices Binaries
       PowerShellEditorServices/**/Microsoft.PowerShell.EditorServices*.dll
-      # PowerShellEditorServices.VSCode Script
-      PowerShellEditorServices.VSCode/PowerShellEditorServices.VSCode.psd1
-      # PowerShellEditorServices.VSCode Binary
-      PowerShellEditorServices.VSCode/bin/Microsoft.PowerShell.EditorServices.VSCode.dll
 
 - template: EsrpSign.yml@ComplianceRepo
   parameters:
