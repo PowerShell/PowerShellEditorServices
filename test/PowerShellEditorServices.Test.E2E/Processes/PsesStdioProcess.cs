@@ -34,7 +34,6 @@ namespace PowerShellEditorServices.Test.E2E
         private const string s_hostName = "TestHost";
         private const string s_hostProfileId = "TestHost";
         private const string s_hostVersion = "1.0.0";
-        private static readonly string[] s_additionalModules = { "PowerShellEditorServices.VSCode" };
 
         #endregion
 
@@ -93,8 +92,6 @@ namespace PowerShellEditorServices.Test.E2E
                 s_hostProfileId,
                 "-HostVersion",
                 s_hostVersion,
-                "-AdditionalModules",
-                string.Join(',', s_additionalModules),
                 "-BundledModulesPath",
                 SingleQuoteEscape(s_bundledModulePath),
                 "-Stdio"
