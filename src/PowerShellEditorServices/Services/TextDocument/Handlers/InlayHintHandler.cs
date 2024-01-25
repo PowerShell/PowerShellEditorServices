@@ -68,7 +68,7 @@ internal class PsesInlayHandler(
                 Position = new Position(
                     s.ScriptRegion.StartLineNumber - 1,
                     s.ScriptRegion.StartColumnNumber - 1),
-                Label = s.Type.ToString()
+                Label = "TypeGoesHere:" //Fixme: Get the type of the symbol
             };
 
         return new InlayHintContainer(inlayHints);
