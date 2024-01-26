@@ -1,5 +1,11 @@
 # PowerShell Editor Services Release History
 
+## v3.17.0
+### Thursday, January 25, 2024
+
+- ✨ 🚂 [PowerShellEditorServices #2132](https://github.com/PowerShell/PowerShellEditorServices/pull/2132) - Remove `PowerShellEditorServices.VSCode` module / `ContentViews` feature.
+- 🐛 🔍 [PowerShellEditorServices #2130](https://github.com/PowerShell/PowerShellEditorServices/pull/2130) - Fix up debugger attach handlers.
+
 ## v3.16.0
 ### Wednesday, January 03, 2024
 
