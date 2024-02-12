@@ -1091,8 +1091,9 @@ enum MyEnum {
                 });
 
             Assert.Empty(completionItems);
-            LogMessageParams message = Assert.Single(Messages);
-            Assert.Contains("Exception occurred while running handling completion request", message.Message);
+            Assert.Collection(Messages,
+                (message) => Assert.Contains("Error Occurred in TabExpansion2", message.Message),
+                (message) => Assert.Contains("Exception occurred while running handling completion request", message.Message));
         }
 
         [SkippableFact(Skip = "Completion for Expand-SlowArchive is flaky.")]
