@@ -19,6 +19,7 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Test;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Utility;
+using OmniSharp.Extensions.LanguageServer.Protocol;
 using Xunit;
 
 namespace PowerShellEditorServices.Test.Debugging
@@ -42,6 +43,7 @@ namespace PowerShellEditorServices.Test.Debugging
         private readonly WorkspaceService workspace;
         private readonly ScriptFile debugScriptFile;
         private readonly ScriptFile oddPathScriptFile;
+        private readonly ScriptFile psProviderPathScriptFile;
         private readonly ScriptFile variableScriptFile;
         private readonly TestReadLine testReadLine = new();
 
@@ -74,6 +76,12 @@ namespace PowerShellEditorServices.Test.Debugging
             debugScriptFile = GetDebugScript("DebugTest.ps1");
             oddPathScriptFile = GetDebugScript("Debug' W&ith $Params [Test].ps1");
             variableScriptFile = GetDebugScript("VariableTest.ps1");
+            string variableScriptFilePath = TestUtilities.GetSharedPath(Path.Combine("Debugging", "VariableTest.ps1"));
+            dynamic psitem = psesHost.ExecutePSCommandAsync<dynamic>(new PSCommand().AddCommand("Get-Item").AddParameter("LiteralPath", variableScriptFilePath), CancellationToken.None).GetAwaiter().GetResult().FirstOrDefault();
+            Uri fileUri = new Uri(psitem.FullName);
+            string pspathUriString = new DocumentUri(scheme: "pspath", authority: $"{psitem.PSProvider.ToString().Replace("\\", "-")}", path: $"/{fileUri.AbsolutePath}", query: string.Empty, fragment: string.Empty).ToString();
+            // pspath://microsoft.powershell.core-filesystem/c:/Users/dkattan/source/repos/immybot-ref/submodules/PowerShellEditorServices/test/PowerShellEditorServices.Test.Shared/Debugging/VariableTest.ps1
+            psProviderPathScriptFile = workspace.GetFile(pspathUriString);
         }
 
         public void Dispose()
@@ -612,6 +620,22 @@ namespace PowerShellEditorServices.Test.Debugging
             ConfigurationDoneHandler configurationDoneHandler = new(
                 NullLoggerFactory.Instance, null, debugService, null, null, psesHost, workspace, null, psesHost);
             await configurationDoneHandler.LaunchScriptAsync(oddPathScriptFile.FilePath);
+
+            IReadOnlyList<string> historyResult = await psesHost.ExecutePSCommandAsync<string>(
+                new PSCommand().AddScript("(Get-History).CommandLine"),
+                CancellationToken.None);
+
+            // Check the PowerShell history
+            Assert.Equal(". " + PSCommandHelpers.EscapeScriptFilePath(oddPathScriptFile.FilePath), Assert.Single(historyResult));
+        }
+
+
+        [Fact]
+        public async Task PSProviderPathsLaunchCorrectly()
+        {
+            ConfigurationDoneHandler configurationDoneHandler = new(
+                NullLoggerFactory.Instance, null, debugService, null, null, psesHost, workspace, null, psesHost);
+            await configurationDoneHandler.LaunchScriptAsync(psProviderPathScriptFile.FilePath);
 
             IReadOnlyList<string> historyResult = await psesHost.ExecutePSCommandAsync<string>(
                 new PSCommand().AddScript("(Get-History).CommandLine"),

@@ -8,7 +8,6 @@ using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Security;
-using System.Text;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
@@ -186,20 +185,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="scriptFile">The out parameter that will contain the ScriptFile object.</param>
         public bool TryGetFile(DocumentUri documentUri, out ScriptFile scriptFile)
         {
-            switch (documentUri.Scheme)
-            {
-                // List supported schemes here
-                case "file":
-                case "inmemory":
-                case "untitled":
-                case "vscode-notebook-cell":
-                    break;
-
-                default:
-                    scriptFile = null;
-                    return false;
-            }
-
             try
             {
                 scriptFile = GetFile(documentUri);
@@ -375,31 +360,23 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         #region Private Methods
 
-        internal static StreamReader OpenStreamReader(DocumentUri uri)
-        {
-            FileStream fileStream = new(uri.GetFileSystemPath(), FileMode.Open, FileAccess.Read);
-            // Default to UTF8 no BOM if a BOM is not present. Note that `Encoding.UTF8` is *with*
-            // BOM, so we call the ctor here to get the BOM-less version.
-            //
-            // TODO: Honor workspace encoding settings for the fallback.
-            return new StreamReader(fileStream, new UTF8Encoding(), detectEncodingFromByteOrderMarks: true);
-        }
-
         internal string ReadFileContents(DocumentUri uri)
         {
             PSCommand psCommand = new();
             string pspath;
             if (uri.Scheme == Uri.UriSchemeFile)
             {
+                // uri - "file:///c:/Users/me/test.ps1"
+
                 pspath = uri.ToUri().LocalPath;
             }
             else
             {
                 string PSProvider = uri.Authority;
-                string path = uri.Path;
-                pspath = $"{PSProvider}::{path}";
+                string path = uri.Path.TrimStart('/');
+                pspath = $"{PSProvider.Replace("-", "\\")}::{path}";
             }
-            /* uri - "file:///c:/Users/dkattan/source/repos/immybot-ref/submodules/PowerShellEditorServices/test/PowerShellEditorServices.Test.Shared/Completion/CompletionExamples.psm1"
+            /* 
              *  Authority = ""
              *  Fragment = ""
              *  Path = "/C:/Users/dkattan/source/repos/immybot-ref/submodules/PowerShellEditorServices/test/PowerShellEditorServices.Test.Shared/Completion/CompletionExamples.psm1"

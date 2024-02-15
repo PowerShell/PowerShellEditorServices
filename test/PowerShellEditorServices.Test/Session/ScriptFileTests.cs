@@ -669,6 +669,7 @@ First line
         [InlineData("Untitled:Untitled-1", true)]
         [InlineData(@"'a log statement' > 'c:\Users\me\Documents\test.txt'
 ", false)]
+        [InlineData(@"PSPath://FileSystem/C:/Users/me/Documents/test.ps1", false)]
         public void IsUntitledFileIsCorrect(string path, bool expected) => Assert.Equal(expected, ScriptFile.IsUntitledPath(path));
     }
 }

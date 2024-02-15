@@ -184,12 +184,32 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <returns>True if the path is an untitled file, false otherwise.</returns>
         internal static bool IsUntitledPath(string path)
         {
-            Validate.IsNotNull(nameof(path), path);
-            // This may not have been given a URI, so return false instead of throwing.
-            return Uri.IsWellFormedUriString(path, UriKind.RelativeOrAbsolute) &&
-                !string.Equals(DocumentUri.From(path).Scheme, Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase);
+            if (!Uri.IsWellFormedUriString(path, UriKind.RelativeOrAbsolute))
+            {
+                return false;
+            }
+            DocumentUri documentUri = DocumentUri.From(path);
+            if (!IsSupportedScheme(documentUri.Scheme))
+            {
+                return false;
+            }
+            return documentUri.Scheme switch
+            {
+                // List supported schemes here
+                "inmemory" or "untitled" or "vscode-notebook-cell" => true,
+                _ => false,
+            };
         }
 
+        internal static bool IsSupportedScheme(string? scheme)
+        {
+            return scheme switch
+            {
+                // List supported schemes here
+                "file" or "inmemory" or "untitled" or "vscode-notebook-cell" or "pspath" => true,
+                _ => false,
+            };
+        }
         /// <summary>
         /// Gets a line from the file's contents.
         /// </summary>
