@@ -275,7 +275,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (!workspaceFiles.TryGetValue(keyName, out ScriptFile scriptFile) && initialBuffer != null)
             {
                 scriptFile =
-                    new ScriptFile(
+                    ScriptFile.Create(
                         documentUri,
                         initialBuffer,
                         powerShellVersion);
