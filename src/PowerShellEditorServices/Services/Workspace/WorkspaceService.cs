@@ -6,12 +6,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Management.Automation;
 using System.Security;
 using System.Text;
-using Microsoft.Extensions.FileSystemGlobbing;
+using System.Threading;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Services.Workspace;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -84,6 +85,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public bool FollowSymlinks { get; set; }
 
+        private readonly IInternalPowerShellExecutionService executionService;
+
         #endregion
 
         #region Constructors
@@ -91,13 +94,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         /// Creates a new instance of the Workspace class.
         /// </summary>
-        public WorkspaceService(ILoggerFactory factory)
+        public WorkspaceService(ILoggerFactory factory, IInternalPowerShellExecutionService executionService)
         {
             powerShellVersion = VersionUtils.PSVersion;
             logger = factory.CreateLogger<WorkspaceService>();
             WorkspaceFolders = new List<WorkspaceFolder>();
             ExcludeFilesGlob = new List<string>();
             FollowSymlinks = true;
+            this.executionService = executionService;
         }
 
         #endregion
@@ -139,19 +143,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // Make sure the file isn't already loaded into the workspace
             if (!workspaceFiles.TryGetValue(keyName, out ScriptFile scriptFile))
             {
-                // This method allows FileNotFoundException to bubble up
-                // if the file isn't found.
-                using (StreamReader streamReader = OpenStreamReader(documentUri))
-                {
-                    scriptFile =
-                        new ScriptFile(
-                            documentUri,
-                            streamReader,
-                            powerShellVersion);
-
-                    workspaceFiles[keyName] = scriptFile;
-                }
-
+                string fileContent = ReadFileContents(documentUri);
+                scriptFile = new ScriptFile(documentUri, fileContent, powerShellVersion);
+                workspaceFiles[keyName] = scriptFile;
                 logger.LogDebug("Opened file on disk: " + documentUri.ToString());
             }
 
@@ -348,7 +342,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 ignoreReparsePoints: !FollowSymlinks
             );
         }
-
         /// <summary>
         /// Enumerate all the PowerShell (ps1, psm1, psd1) files in the workspace folders in a
         /// recursive manner. Falls back to initial working directory if there are no workspace folders.
@@ -360,33 +353,22 @@ namespace Microsoft.PowerShell.EditorServices.Services
             int maxDepth,
             bool ignoreReparsePoints)
         {
-            Matcher matcher = new();
-            foreach (string pattern in includeGlobs) { matcher.AddInclude(pattern); }
-            foreach (string pattern in excludeGlobs) { matcher.AddExclude(pattern); }
+            PSCommand psCommand = new();
+            psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Get-ChildItem")
+                .AddParameter("Path", WorkspacePaths)
+                .AddParameter("File")
+                .AddParameter("Recurse")
+                .AddParameter("ErrorAction", "SilentlyContinue")
+                .AddParameter("Force")
+                .AddParameter("Include", includeGlobs.Concat(VersionUtils.IsNetCore ? s_psFileExtensionsCoreFramework : s_psFileExtensionsFullFramework))
+                .AddParameter("Exclude", excludeGlobs)
+                .AddParameter("Depth", maxDepth)
+                .AddParameter("FollowSymlink", !ignoreReparsePoints)
+                .AddCommand("Select-Object")
+                .AddParameter("ExpandObject", "FullName");
+            IEnumerable<string> results = executionService.ExecutePSCommandAsync<string>(psCommand, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
+            return results;
 
-            foreach (string rootPath in WorkspacePaths)
-            {
-                if (!Directory.Exists(rootPath))
-                {
-                    continue;
-                }
-
-                WorkspaceFileSystemWrapperFactory fsFactory = new(
-                    rootPath,
-                    maxDepth,
-                    VersionUtils.IsNetCore ? s_psFileExtensionsCoreFramework : s_psFileExtensionsFullFramework,
-                    ignoreReparsePoints,
-                    logger);
-
-                PatternMatchingResult fileMatchResult = matcher.Execute(fsFactory.RootDirectory);
-                foreach (FilePatternMatch item in fileMatchResult.Files)
-                {
-                    // item.Path always contains forward slashes in paths when it should be backslashes on Windows.
-                    // Since we're returning strings here, it's important to use the correct directory separator.
-                    string path = VersionUtils.IsWindows ? item.Path.Replace('/', Path.DirectorySeparatorChar) : item.Path;
-                    yield return Path.Combine(rootPath, path);
-                }
-            }
         }
 
         #endregion
@@ -403,10 +385,57 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return new StreamReader(fileStream, new UTF8Encoding(), detectEncodingFromByteOrderMarks: true);
         }
 
-        internal static string ReadFileContents(DocumentUri uri)
+        internal string ReadFileContents(DocumentUri uri)
         {
-            using StreamReader reader = OpenStreamReader(uri);
-            return reader.ReadToEnd();
+            PSCommand psCommand = new();
+            string pspath;
+            if (uri.Scheme == Uri.UriSchemeFile)
+            {
+                pspath = uri.ToUri().LocalPath;
+            }
+            else
+            {
+                string PSProvider = uri.Authority;
+                string path = uri.Path;
+                pspath = $"{PSProvider}::{path}";
+            }
+            /* uri - "file:///c:/Users/dkattan/source/repos/immybot-ref/submodules/PowerShellEditorServices/test/PowerShellEditorServices.Test.Shared/Completion/CompletionExamples.psm1"
+             *  Authority = ""
+             *  Fragment = ""
+             *  Path = "/C:/Users/dkattan/source/repos/immybot-ref/submodules/PowerShellEditorServices/test/PowerShellEditorServices.Test.Shared/Completion/CompletionExamples.psm1"
+             *  Query = ""
+             *  Scheme = "file"
+             * PSPath - "Microsoft.PowerShell.Core\FileSystem::C:\Users\dkattan\source\repos\immybot-ref\submodules\PowerShellEditorServices\test\PowerShellEditorServices.Test.Shared\Completion\CompletionExamples.psm1"
+             * 
+             * Suggested Format:
+             * Authority = "Microsoft.PowerShell.Core\FileSystem"
+             * Scheme = "PSProvider"
+             * Path = "/C:/Users/dkattan/source/repos/immybot-ref/submodules/PowerShellEditorServices/test/PowerShellEditorServices.Test.Shared/Completion/CompletionExamples.psm1"
+             * Result -> "PSProvider://Microsoft.PowerShell.Core/FileSystem::C:/Users/dkattan/source/repos/immybot-ref/submodules/PowerShellEditorServices/test/PowerShellEditorServices.Test.Shared/Completion/CompletionExamples.psm1"
+             * 
+             * Suggested Format 2:
+             * Authority = ""
+             * Scheme = "FileSystem"
+             * Path = "/C:/Users/dkattan/source/repos/immybot-ref/submodules/PowerShellEditorServices/test/PowerShellEditorServices.Test.Shared/Completion/CompletionExamples.psm1"              
+             * Result "FileSystem://c:/Users/dkattan/source/repos/immybot-ref/submodules/PowerShellEditorServices/test/PowerShellEditorServices.Test.Shared/Completion/CompletionExamples.psm1"
+
+             */
+            psCommand.AddCommand("Get-Content")
+                .AddParameter("LiteralPath", pspath)
+                .AddParameter("Raw", true)
+                .AddParameter("ErrorAction", ActionPreference.Stop);
+            try
+            {
+                IEnumerable<string> result = executionService.ExecutePSCommandAsync<string>(psCommand, CancellationToken.None, new PowerShell.Execution.PowerShellExecutionOptions()
+                {
+                    ThrowOnError = true
+                }).ConfigureAwait(false).GetAwaiter().GetResult();
+                return result.FirstOrDefault();
+            }
+            catch (ActionPreferenceStopException ex) when (ex.ErrorRecord.CategoryInfo.Category == ErrorCategory.ObjectNotFound && ex.ErrorRecord.TargetObject is string[] missingFiles && missingFiles.Count() == 1)
+            {
+                throw new FileNotFoundException(ex.ErrorRecord.ToString(), missingFiles.First(), ex.ErrorRecord.Exception);
+            }
         }
 
         internal string ResolveWorkspacePath(string path) => ResolveRelativeScriptPath(InitialWorkingDirectory, path);
@@ -429,10 +458,18 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // Get the directory of the original script file, combine it
                 // with the given path and then resolve the absolute file path.
                 combinedPath =
-                    Path.GetFullPath(
-                        Path.Combine(
-                            baseFilePath,
-                            relativePath));
+                Path.GetFullPath(
+                    Path.Combine(
+                        baseFilePath,
+                        relativePath));
+
+                PSCommand psCommand = new();
+                psCommand.AddCommand("Resolve-Path")
+                    .AddParameter("Relative", true)
+                    .AddParameter("Path", relativePath)
+                    .AddParameter("RelativeBasePath", baseFilePath);
+                IEnumerable<string> result = executionService.ExecutePSCommandAsync<string>(psCommand, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
+                combinedPath = result.FirstOrDefault();
             }
             catch (NotSupportedException e)
             {

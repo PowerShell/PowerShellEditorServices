@@ -40,7 +40,7 @@ namespace PowerShellEditorServices.Test.Language
         public SymbolsServiceTests()
         {
             psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
-            workspace = new WorkspaceService(NullLoggerFactory.Instance);
+            workspace = new WorkspaceService(NullLoggerFactory.Instance, psesHost);
             workspace.WorkspaceFolders.Add(new WorkspaceFolder
             {
                 Uri = DocumentUri.FromFileSystemPath(TestUtilities.GetSharedPath("References"))

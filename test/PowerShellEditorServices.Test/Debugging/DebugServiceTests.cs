@@ -70,7 +70,7 @@ namespace PowerShellEditorServices.Test.Debugging
             debugService.DebuggerStopped += OnDebuggerStopped;
 
             // Load the test debug files.
-            workspace = new WorkspaceService(NullLoggerFactory.Instance);
+            workspace = new WorkspaceService(NullLoggerFactory.Instance, PsesHostFactory.Create(NullLoggerFactory.Instance));
             debugScriptFile = GetDebugScript("DebugTest.ps1");
             oddPathScriptFile = GetDebugScript("Debug' W&ith $Params [Test].ps1");
             variableScriptFile = GetDebugScript("VariableTest.ps1");

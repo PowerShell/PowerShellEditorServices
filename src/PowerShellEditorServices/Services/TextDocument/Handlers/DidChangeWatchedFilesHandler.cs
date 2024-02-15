@@ -100,7 +100,7 @@ internal class DidChangeWatchedFilesHandler : IDidChangeWatchedFilesHandler
                 string fileContents;
                 try
                 {
-                    fileContents = WorkspaceService.ReadFileContents(change.Uri);
+                    fileContents = _workspaceService.ReadFileContents(change.Uri);
                 }
                 catch
                 {

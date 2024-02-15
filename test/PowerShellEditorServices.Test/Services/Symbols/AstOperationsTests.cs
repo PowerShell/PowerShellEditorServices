@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Test;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
@@ -20,7 +21,7 @@ namespace PowerShellEditorServices.Test.Services.Symbols
 
         public AstOperationsTests()
         {
-            WorkspaceService workspace = new(NullLoggerFactory.Instance);
+            WorkspaceService workspace = new(NullLoggerFactory.Instance, PsesHostFactory.Create(NullLoggerFactory.Instance));
             scriptFile = workspace.GetFile(TestUtilities.GetSharedPath("References/FunctionReference.ps1"));
         }
 
