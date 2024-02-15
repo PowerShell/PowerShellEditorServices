@@ -24,7 +24,7 @@ function Get-Sum {
     return $a + $b
 }
 ";
-            ScriptFile scriptFile = new(
+            ScriptFile scriptFile = ScriptFile.Create(
                 // Use any absolute path. Even if it doesn't exist.
                 DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                 text,
@@ -61,7 +61,7 @@ function Get-Sum {
         public void TokenizesStringExpansion()
         {
             const string text = "Write-Host \"$(Test-Property Get-Whatever) $(Get-Whatever)\"";
-            ScriptFile scriptFile = new(
+            ScriptFile scriptFile = ScriptFile.Create(
                 // Use any absolute path. Even if it doesn't exist.
                 DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                 text,
@@ -88,7 +88,7 @@ function Get-A*A {
 }
 Get-A*A
 ";
-            ScriptFile scriptFile = new(
+            ScriptFile scriptFile = ScriptFile.Create(
                 // Use any absolute path. Even if it doesn't exist.
                 DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                 text,
@@ -113,7 +113,7 @@ Get-A*A
         public void RecognizesArrayPropertyInExpandableString()
         {
             const string text = "\"$(@($Array).Count) OtherText\"";
-            ScriptFile scriptFile = new(
+            ScriptFile scriptFile = ScriptFile.Create(
                 // Use any absolute path. Even if it doesn't exist.
                 DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                 text,
@@ -138,7 +138,7 @@ Get-A*A
         public void RecognizesCurlyQuotedString()
         {
             const string text = "“^[-'a-z]*”";
-            ScriptFile scriptFile = new(
+            ScriptFile scriptFile = ScriptFile.Create(
                 // Use any absolute path. Even if it doesn't exist.
                 DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                 text,
@@ -158,7 +158,7 @@ enum MyEnum{
     three
 }
 ";
-            ScriptFile scriptFile = new(
+            ScriptFile scriptFile = ScriptFile.Create(
                 // Use any absolute path. Even if it doesn't exist.
                 DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                 text,
