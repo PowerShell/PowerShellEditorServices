@@ -78,10 +78,30 @@ namespace PowerShellEditorServices.Test.Debugging
             variableScriptFile = GetDebugScript("VariableTest.ps1");
             string variableScriptFilePath = TestUtilities.GetSharedPath(Path.Combine("Debugging", "VariableTest.ps1"));
             dynamic psitem = psesHost.ExecutePSCommandAsync<dynamic>(new PSCommand().AddCommand("Get-Item").AddParameter("LiteralPath", variableScriptFilePath), CancellationToken.None).GetAwaiter().GetResult().FirstOrDefault();
+            string psPath = psitem.PSPath.ToString();
+
+
+
+
             Uri fileUri = new Uri(psitem.FullName);
             string pspathUriString = new DocumentUri(scheme: "pspath", authority: $"{psitem.PSProvider.ToString().Replace("\\", "-")}", path: $"/{fileUri.AbsolutePath}", query: string.Empty, fragment: string.Empty).ToString();
             // pspath://microsoft.powershell.core-filesystem/c:/Users/dkattan/source/repos/immybot-ref/submodules/PowerShellEditorServices/test/PowerShellEditorServices.Test.Shared/Debugging/VariableTest.ps1
             psProviderPathScriptFile = workspace.GetFile(pspathUriString);
+        }
+
+        // the following function converts Microsoft.PowerShell.Core\FileSystem::C:\Users\dkattan\source\repos\immybot-ref\submodules\PowerShellEditorServices\test\PowerShellEditorServices.Test.Shared\Debugging\VariableTest.ps1 to filesystem://c:/Users/dkattan/source/repos/immybot-ref/submodules/PowerShellEditorServices/test/PowerShellEditorServices.Test.Shared/Debugging/VariableTest.ps1
+        private string ConvertPSPathToUri(string pspath)
+        {
+            string[] pspathParts = pspath.Split("::");
+            string[] provider = pspathParts[0];
+            if (provider.Contains("\\"))
+            {
+                provider = provider.Split("\\")[1];
+            }
+            string[] driveAndPath = pspathParts[1].Split("\\");
+            string drive = driveAndPath[0];
+            string path = driveAndPath[1];
+            return new DocumentUri(scheme: "filesystem", authority: string.Empty, path: $"/{drive}:{path}", query: string.Empty, fragment: string.Empty).ToString();
         }
 
         public void Dispose()
