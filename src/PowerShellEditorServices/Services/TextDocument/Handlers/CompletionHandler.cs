@@ -215,7 +215,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 _logger,
                 cancellationToken).ConfigureAwait(false);
 
-            if (result.CompletionMatches.Count == 0)
+            if (result is not { CompletionMatches.Count: > 0 })
             {
                 return new CompletionResults(IsIncomplete: true, Array.Empty<CompletionItem>());
             }

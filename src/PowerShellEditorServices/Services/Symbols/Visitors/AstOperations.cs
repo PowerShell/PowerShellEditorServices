@@ -78,58 +78,66 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
             IScriptPosition cursorPosition = s_clonePositionWithNewOffset(scriptAst.Extent.StartScriptPosition, fileOffset);
             Stopwatch stopwatch = new();
             logger.LogTrace($"Getting completions at offset {fileOffset} (line: {cursorPosition.LineNumber}, column: {cursorPosition.ColumnNumber})");
-
-            CommandCompletion commandCompletion = await executionService.ExecuteDelegateAsync(
-                representation: "CompleteInput",
-                new ExecutionOptions { Priority = ExecutionPriority.Next },
-                (pwsh, _) =>
-                {
-                    stopwatch.Start();
-
-                    // If the current runspace is not out of process, then we call TabExpansion2 so
-                    // that we have the ability to issue pipeline stop requests on cancellation.
-                    if (executionService is PsesInternalHost psesInternalHost
-                        && !psesInternalHost.Runspace.RunspaceIsRemote)
-                    {
-                        IReadOnlyList<CommandCompletion> completionResults = new SynchronousPowerShellTask<CommandCompletion>(
-                            logger,
-                            psesInternalHost,
-                            new PSCommand()
-                                .AddCommand("TabExpansion2")
-                                    .AddParameter("ast", scriptAst)
-                                    .AddParameter("tokens", currentTokens)
-                                    .AddParameter("positionOfCursor", cursorPosition),
-                            executionOptions: null,
-                            cancellationToken)
-                            .ExecuteAndGetResult(cancellationToken);
-
-                        if (completionResults is { Count: > 0 })
+            CommandCompletion commandCompletion = null;
+            try
+            {
+                commandCompletion = await executionService.ExecuteDelegateAsync(
+                        representation: "CompleteInput",
+                        new ExecutionOptions { Priority = ExecutionPriority.Next },
+                        (pwsh, _) =>
                         {
-                            return completionResults[0];
-                        }
+                            stopwatch.Start();
 
-                        return null;
-                    }
+                            // If the current runspace is not out of process, then we call TabExpansion2 so
+                            // that we have the ability to issue pipeline stop requests on cancellation.
+                            if (executionService is PsesInternalHost psesInternalHost
+                                && !psesInternalHost.Runspace.RunspaceIsRemote)
+                            {
+                                IReadOnlyList<CommandCompletion> completionResults = new SynchronousPowerShellTask<CommandCompletion>(
+                                logger,
+                                psesInternalHost,
+                                new PSCommand()
+                                    .AddCommand("TabExpansion2")
+                                        .AddParameter("ast", scriptAst)
+                                        .AddParameter("tokens", currentTokens)
+                                        .AddParameter("positionOfCursor", cursorPosition),
+                                executionOptions: new PowerShellExecutionOptions()
+                                {
+                                    ThrowOnError = true
+                                },
+                                cancellationToken)
+                                .ExecuteAndGetResult(cancellationToken);
 
-                    // If the current runspace is out of process, we can't call TabExpansion2
-                    // because the output will be serialized.
-                    return CommandCompletion.CompleteInput(
-                        scriptAst,
-                        currentTokens,
-                        cursorPosition,
-                        options: null,
-                        powershell: pwsh);
-                },
-                cancellationToken).ConfigureAwait(false);
+                                if (completionResults is { Count: > 0 })
+                                {
+                                    return completionResults[0];
+                                }
+                            }
+                            return null;
 
-            stopwatch.Stop();
+                            // If the current runspace is out of process, we can't call TabExpansion2
+                            // because the output will be serialized.
+                            return CommandCompletion.CompleteInput(
+                                scriptAst,
+                                currentTokens,
+                                cursorPosition,
+                                options: null,
+                                powershell: pwsh);
+                        },
+                        cancellationToken).ConfigureAwait(false);
 
-            if (commandCompletion is null)
-            {
-                logger.LogError("Error Occurred in TabExpansion2");
             }
-            else
+            catch (WildcardPatternException)
             {
+                // This hits when you press Ctrl+Space inside empty square brackets []
+            }
+            catch (RuntimeException ex)
+            {
+                logger.LogError($"Error Occurred in TabExpansion2: {ex.ErrorRecord}", ex.ErrorRecord.Exception);
+            }
+            finally
+            {
+                stopwatch.Stop();
                 logger.LogTrace(
                     "IntelliSense completed in {elapsed}ms - WordToComplete: \"{word}\" MatchCount: {count}",
                     stopwatch.ElapsedMilliseconds,
