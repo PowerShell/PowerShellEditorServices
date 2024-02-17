@@ -1,27 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Management.Automation;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.PowerShell.EditorServices.Handlers;
-using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
-using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Test;
-using Microsoft.PowerShell.EditorServices.Test.Shared;
-using Microsoft.PowerShell.EditorServices.Utility;
-using OmniSharp.Extensions.LanguageServer.Protocol;
-using Xunit;
-
 namespace PowerShellEditorServices.Test.Debugging
 {
     internal class TestReadLine : IReadLine
@@ -101,7 +80,7 @@ namespace PowerShellEditorServices.Test.Debugging
             string[] driveAndPath = pspathParts[1].Split("\\");
             string drive = driveAndPath[0];
             string path = driveAndPath[1];
-            return new DocumentUri(scheme: "filesystem", authority: string.Empty, path: $"/{drive}:{path}", query: string.Empty, fragment: string.Empty).ToString();
+            return new DocumentUri(scheme: provider, authority: string.Empty, path: $"/{drive}:{path}", query: string.Empty, fragment: string.Empty).ToString();
         }
 
         public void Dispose()
