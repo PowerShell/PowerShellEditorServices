@@ -17,7 +17,7 @@ namespace PowerShellEditorServices.Test.Language
         /// </summary>
         private static FoldingReference[] GetRegions(string text)
         {
-            ScriptFile scriptFile = new(
+            ScriptFile scriptFile = ScriptFile.Create(
                 // Use any absolute path. Even if it doesn't exist.
                 DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                 text,
