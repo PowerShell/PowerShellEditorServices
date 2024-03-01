@@ -87,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
     internal class LaunchAndAttachHandler : ILaunchHandler<PsesLaunchRequestArguments>, IAttachHandler<PsesAttachRequestArguments>, IOnDebugAdapterServerStarted
     {
-        private static readonly int currentProcessId = System.Diagnostics.Process.GetCurrentProcess().Id;
+        private static readonly int s_currentPID = System.Diagnostics.Process.GetCurrentProcess().Id;
         private static readonly Version s_minVersionForCustomPipeName = new(6, 2);
         private readonly ILogger<LaunchAndAttachHandler> _logger;
         private readonly BreakpointService _breakpointService;
@@ -275,7 +275,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (processIdIsSet)
             {
-                if (request.ProcessId == currentProcessId)
+                if (request.ProcessId == s_currentPID)
                 {
                     throw new RpcErrorException(0, null, $"Attaching to the Extension Terminal is not supported!");
                 }

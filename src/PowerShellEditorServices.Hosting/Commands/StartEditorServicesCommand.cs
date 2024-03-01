@@ -204,7 +204,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             {
                 // NOTE: Ignore the suggestion to use Environment.ProcessId as it doesn't work for
                 // .NET 4.6.2 (for Windows PowerShell), and this won't be caught in CI.
-                Console.WriteLine($"Waiting for debugger to attach, PID: {Process.GetCurrentProcess().Id}");
+                Console.WriteLine($"Waiting for debugger to attach, PID: {s_currentPID}");
                 while (!Debugger.IsAttached)
                 {
                     Thread.Sleep(1000);

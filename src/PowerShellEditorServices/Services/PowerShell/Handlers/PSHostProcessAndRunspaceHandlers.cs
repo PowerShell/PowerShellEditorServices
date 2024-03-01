@@ -19,7 +19,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly ILogger<PSHostProcessAndRunspaceHandlers> _logger;
         private readonly IInternalPowerShellExecutionService _executionService;
         private readonly IRunspaceContext _runspaceContext;
-        private static readonly int currentProcessId = System.Diagnostics.Process.GetCurrentProcess().Id;
+        private static readonly int s_currentPID = System.Diagnostics.Process.GetCurrentProcess().Id;
 
         public PSHostProcessAndRunspaceHandlers(
             ILoggerFactory factory,
@@ -50,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                 // NOTE: We do not currently support attaching to ourself in this manner, so we
                 // exclude our process. When we maybe eventually do, we should name it.
-                if (response.ProcessId == currentProcessId)
+                if (response.ProcessId == s_currentPID)
                 {
                     continue;
                 }
@@ -63,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<RunspaceResponse[]> Handle(GetRunspaceParams request, CancellationToken cancellationToken)
         {
-            if (request.ProcessId == currentProcessId)
+            if (request.ProcessId == s_currentPID)
             {
                 throw new RpcErrorException(0, null, $"Attaching to the Extension Terminal is not supported!");
             }
