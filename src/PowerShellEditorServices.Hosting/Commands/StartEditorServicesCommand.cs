@@ -10,10 +10,10 @@ using System.Reflection;
 using SMA = System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using Microsoft.PowerShell.EditorServices.Hosting;
+using System.Diagnostics;
 using System.Globalization;
 
 #if DEBUG
-using System.Diagnostics;
 using System.Threading;
 using Debugger = System.Diagnostics.Debugger;
 #endif
@@ -23,7 +23,6 @@ namespace Microsoft.PowerShell.EditorServices.Commands
     /// <summary>
     /// The Start-EditorServices command, the conventional entrypoint for PowerShell Editor Services.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays", Justification = "Cmdlet parameters can be arrays")]
     [Cmdlet(VerbsLifecycle.Start, "EditorServices", DefaultParameterSetName = "NamedPipe")]
     public sealed class StartEditorServicesCommand : PSCmdlet
     {
@@ -204,7 +203,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             {
                 // NOTE: Ignore the suggestion to use Environment.ProcessId as it doesn't work for
                 // .NET 4.6.2 (for Windows PowerShell), and this won't be caught in CI.
-                Console.WriteLine($"Waiting for debugger to attach, PID: {Process.GetCurrentProcess().Id}");
+                Console.WriteLine($"Waiting for debugger to attach, PID: {s_currentPID}");
                 while (!Debugger.IsAttached)
                 {
                     Thread.Sleep(1000);
