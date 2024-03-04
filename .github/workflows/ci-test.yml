@@ -52,12 +52,12 @@ jobs:
 
       - name: Build and test
         shell: pwsh
-        run: Invoke-Build ${{ github.event_name == 'merge_group' && 'TestFull' || 'Test' }}
+        run: Invoke-Build -Configuration Release ${{ github.event_name == 'merge_group' && 'TestFull' || 'Test' }}
 
       - name: Test with daily
         if: ${{ github.event_name == 'schedule' }}
         shell: pwsh
-        run: ./pwsh/tools/install-powershell.ps1 -Daily && Invoke-Build TestE2EDaily
+        run: ./pwsh/tools/install-powershell.ps1 -Daily && Invoke-Build -Configuration Release TestE2EDaily
 
       - name: Upload build artifacts
         if: always()
