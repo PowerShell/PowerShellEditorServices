@@ -40,48 +40,53 @@ They give you all the benefits of the Language Server Protocol with extra capabi
 - The PowerShell Extension Terminal
 - Debugging using the [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/)
 
-The typical command to start PowerShell Editor Services using named pipes is as follows:
+The typical command to start PowerShell Editor Services using `stdio` is as follows:
 
 ```powershell
-pwsh -NoLogo -NoProfile -Command "$PSES_BUNDLE_PATH/PowerShellEditorServices/Start-EditorServices.ps1 -BundledModulesPath $PSES_BUNDLE_PATH -LogPath $SESSION_TEMP_PATH/logs.log -SessionDetailsPath $SESSION_TEMP_PATH/session.json -FeatureFlags @() -AdditionalModules @() -HostName 'My Client' -HostProfileId 'myclient' -HostVersion 1.0.0 -LogLevel Normal"
+pwsh -NoLogo -NoProfile -Command "./PowerShellEditorServices/Start-EditorServices.ps1 -Stdio"
 ```
 
-> NOTE: In the example above,
->
-> - `$PSES_BUNDLE_PATH` is the root of the PowerShellEditorServices.zip downloaded from the GitHub releases.
-> - `$SESSION_TEMP_PATH` is the folder path that you'll use for this specific editor session.
+The start script, `Start-EditorServices.ps1` is found in the `PowerShellEditorServices` folder instead the `PowerShellEditorServices.zip` downloaded from the GitHub releases.
 
-If you are trying to automate the service in PowerShell, You can also run it under `Start-Process` to prevent hanging your script. It also gives you access to Process/PID automation features like `$process.Close()` or `$process.Kill()`
+Alternatively, the `-Stdio` argument can be removed and the argument `-SessionDetailsPath ./session.json` added to produce a JSON file the client needs to point to in order to connect over a named pipe / socket.
+The use stdio is the simplest way to connect with most LSP clients,
+but may limit some features (such as the debugger and Extension Terminal).
+
+Please see the [emacs-simple-test.el](test\emacs-simple-test.el),
+[emacs-test.el](test\emacs-test.el),
+[vim-simple-test.el](test\vim-simple-test.vim) and [vim-test.vim](test\vim-test.vim) for examples of end-to-end tested configurations.
+
+If you are trying to automate the service in PowerShell, you can also run it under `Start-Process` to prevent hanging your script.
+It also gives you access to Process/PID automation features like `$process.Close()` or `$process.Kill()`.
+The script takes many more optional arguments, but they no longer _need_ to be specified.
 
 ```powershell
 $command = @(
     "$PSES_BUNDLE_PATH/PowerShellEditorServices/Start-EditorServices.ps1",
         "-BundledModulesPath $PSES_BUNDLE_PATH",
-        "-LogPath $SESSION_TEMP_PATH/logs.log",
+        "-LogPath $SESSION_LOGS_PATH",
         "-SessionDetailsPath $SESSION_TEMP_PATH/session.json",
         "-FeatureFlags @()",
         "-AdditionalModules @()",
         "-HostName 'My Client'",
         "-HostProfileId 'myclient'",
         "-HostVersion 1.0.0",
-        "-LogLevel Normal"
+        "-LogLevel Diagnostic"
 )-join " "
 
 $pwsh_arguments = "-NoLogo -NoProfile -Command $command"
 $process = Start-Process pwsh -ArgumentList $arguments -PassThru
-
 ...
-
 $process.Close(); #$process.Kill();
 ```
 
 Once the command is run,
-PowerShell Editor Services will wait until the client connects to the Named Pipe.
-The `session.json` will contain the paths of the Named Pipes that you will connect to.
+PowerShell Editor Services will wait until the client connects to the named pipe.
+The `session.json` will contain the paths of the named pipes that you will connect to.
 There will be one you immediately connect to for Language Server Protocol messages,
 and once you connect to when you launch the debugger for Debug Adapter Protocol messages.
 
-The Visual Studio Code, Vim, and IntelliJ extensions currently use Named Pipes.
+The Visual Studio Code, Vim, and IntelliJ extensions currently can use named pipes.
 
 #### PowerShell Extension Terminal
 

@@ -1,4 +1,4 @@
-;;; emacs-test.el --- Integration testing script          -*- lexical-binding: t; -*-
+;;; emacs-simple-test.el --- Integration testing script          -*- lexical-binding: t; -*-
 
 ;; Copyright (c) Microsoft Corporation.
 ;; Licensed under the MIT License.
