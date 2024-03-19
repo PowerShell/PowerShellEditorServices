@@ -32,23 +32,46 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly DebugStateService _debugStateService;
         private readonly WorkspaceService _workspaceService;
         private readonly IRunspaceContext _runspaceContext;
+        private readonly BreakpointSyncService _breakpointSyncService;
 
         public BreakpointHandlers(
             ILoggerFactory loggerFactory,
             DebugService debugService,
             DebugStateService debugStateService,
             WorkspaceService workspaceService,
-            IRunspaceContext runspaceContext)
+            IRunspaceContext runspaceContext,
+            BreakpointSyncService breakpointSyncService)
         {
             _logger = loggerFactory.CreateLogger<BreakpointHandlers>();
             _debugService = debugService;
             _debugStateService = debugStateService;
             _workspaceService = workspaceService;
             _runspaceContext = runspaceContext;
+            _breakpointSyncService = breakpointSyncService;
         }
 
         public async Task<SetBreakpointsResponse> Handle(SetBreakpointsArguments request, CancellationToken cancellationToken)
         {
+            if (_breakpointSyncService.IsSupported)
+            {
+                // TODO: Find some way to actually verify these. Unfortunately the sync event comes
+                // through *after* the `SetBreakpoints` event so we can't just look at what synced
+                // breakpoints were successfully set.
+                return new SetBreakpointsResponse()
+                {
+                    Breakpoints = new Container<Breakpoint>(
+                        request.Breakpoints
+                            .Select(sbp => new Breakpoint()
+                            {
+                                Line = sbp.Line,
+                                Column = sbp.Column,
+                                Verified = true,
+                                Source = request.Source,
+                                Id = 0,
+                            })),
+                };
+            }
+
             if (!_workspaceService.TryGetFile(request.Source.Path, out ScriptFile scriptFile))
             {
                 string message = _debugStateService.NoDebug ? string.Empty : "Source file could not be accessed, breakpoint not set.";
@@ -125,6 +148,21 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<SetFunctionBreakpointsResponse> Handle(SetFunctionBreakpointsArguments request, CancellationToken cancellationToken)
         {
+            if (_breakpointSyncService.IsSupported)
+            {
+                return new SetFunctionBreakpointsResponse()
+                {
+                    Breakpoints = new Container<Breakpoint>(
+                        _breakpointSyncService.GetSyncedBreakpoints()
+                            .Where(sbp => sbp.Client.FunctionName is not null and not "")
+                            .Select(sbp => new Breakpoint()
+                            {
+                                Verified = true,
+                                Message = sbp.Client.FunctionName,
+                            })),
+                };
+            }
+
             IReadOnlyList<CommandBreakpointDetails> breakpointDetails = request.Breakpoints
                 .Select((funcBreakpoint) => CommandBreakpointDetails.Create(
                     funcBreakpoint.Name,

@@ -89,6 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         .AddLanguageProtocolLogging()
                         .SetMinimumLevel(_minimumLogLevel))
                     // TODO: Consider replacing all WithHandler with AddSingleton
+                    .WithHandler<ClientBreakpointHandler>()
                     .WithHandler<PsesWorkspaceSymbolsHandler>()
                     .WithHandler<PsesTextDocumentHandler>()
                     .WithHandler<GetVersionHandler>()
@@ -153,9 +154,15 @@ namespace Microsoft.PowerShell.EditorServices.Server
                                 InitialWorkingDirectory = initializationOptions?.GetValue("initialWorkingDirectory")?.Value<string>()
                                     ?? workspaceService.WorkspaceFolders.FirstOrDefault()?.Uri.GetFileSystemPath()
                                     ?? Directory.GetCurrentDirectory(),
+
+                                SupportsBreakpointSync = initializationOptions?.GetValue("supportsBreakpointSync")?.Value<bool>()
+                                    ?? false,
+                              
                                 ShellIntegrationEnabled = initializationOptions?.GetValue("shellIntegrationEnabled")?.Value<bool>()
-                                    ?? false
+                                    ?? false,
                             };
+
+                            languageServer.Services.GetService<BreakpointSyncService>().IsSupported = hostStartOptions.SupportsBreakpointSync;
 
                             workspaceService.InitialWorkingDirectory = hostStartOptions.InitialWorkingDirectory;
 

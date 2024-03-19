@@ -62,5 +62,36 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             }
             return wildcardEscapedPath;
         }
+
+        internal static bool HasPowerShellScriptExtension(string fileNameOrPath)
+        {
+            if (fileNameOrPath is null or "")
+            {
+                return false;
+            }
+
+            ReadOnlySpan<char> pathSeparators = stackalloc char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
+            ReadOnlySpan<char> asSpan = fileNameOrPath.AsSpan().TrimEnd(pathSeparators);
+            int separatorIndex = asSpan.LastIndexOfAny(pathSeparators);
+            if (separatorIndex is not -1)
+            {
+                asSpan = asSpan[(separatorIndex + 1)..];
+            }
+
+            int dotIndex = asSpan.LastIndexOf('.');
+            if (dotIndex is -1)
+            {
+                return false;
+            }
+
+            ReadOnlySpan<char> extension = asSpan[(dotIndex + 1)..];
+            if (extension.IsEmpty)
+            {
+                return false;
+            }
+
+            return extension.Equals("psm1".AsSpan(), StringComparison.OrdinalIgnoreCase)
+                || extension.Equals("ps1".AsSpan(), StringComparison.OrdinalIgnoreCase);
+        }
     }
 }
