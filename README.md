@@ -159,7 +159,20 @@ Install-Module InvokeBuild -Scope CurrentUser
 Install-Module platyPS -Scope CurrentUser
 ```
 
-Now you're ready to build the code.  You can do so in one of two ways:
+### 4. Delete `NuGet.Config`
+
+Our NuGet configuration points to a private feed necessary for secure builds,
+and it must be committed to the repo as it is.
+The easiest way to build without access to that private feed is to delete the file:
+
+```powershell
+Remove-Item NuGet.Config
+```
+
+Please be careful not to commit this change in a PR.
+
+Now you're ready to build the code.
+You can do so in one of two ways:
 
 ### Building the code from PowerShell
 
