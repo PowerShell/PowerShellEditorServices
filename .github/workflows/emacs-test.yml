@@ -27,6 +27,9 @@ jobs:
         with:
           cache: true
           cache-dependency-path: '**/packages.lock.json'
+          source-url: https://pkgs.dev.azure.com/mscodehub/PowerShellCore/_packaging/PowerShellCore_PublicPackages/nuget/v3/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.AZURE_NUGET_TOKEN }}
 
       - name: Install PSResources
         shell: pwsh
