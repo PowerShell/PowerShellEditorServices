@@ -1,5 +1,10 @@
 # PowerShell Editor Services Release History
 
+## v3.18.1
+### Tuesday, March 19, 2024
+
+Servicing release with updated pipeline!
+
 ## v3.18.0
 ### Tuesday, March 5, 2024
 
