@@ -108,42 +108,26 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
 
         public static Ast GetAst(int StartLineNumber, int StartColumnNumber, Ast Ast)
         {
+            Ast token = null;
 
-            // Get all the tokens on the startline so we can look for an appropriate Ast to return
-            IEnumerable<Ast> tokens = Ast.FindAll(ast =>
+            token = Ast.Find(ast =>
             {
-                return StartLineNumber == ast.Extent.StartLineNumber;
+                return StartLineNumber == ast.Extent.StartLineNumber &&
+                ast.Extent.EndColumnNumber >= StartColumnNumber &&
+                    StartColumnNumber >= ast.Extent.StartColumnNumber;
             }, true);
-            // Check if the Ast is a FunctionDefinitionAst
-            IEnumerable<FunctionDefinitionAst> Functions = tokens.OfType<FunctionDefinitionAst>();
-            if (Functions.Any())
-            {
-                foreach (FunctionDefinitionAst Function in Functions)
-                {
-                    if (Function.Extent.StartLineNumber != Function.Extent.EndLineNumber)
-                    {
-                        return Function;
-                    }
-                }
-            }
 
             IEnumerable<Ast> token = null;
             token = Ast.FindAll(ast =>
             {
-                return ast.Extent.StartLineNumber == StartLineNumber &&
-                ast.Extent.StartColumnNumber <= StartColumnNumber &&
-                ast.Extent.EndColumnNumber >= StartColumnNumber;
+                return ast.Extent.EndColumnNumber >= StartColumnNumber
+                && StartColumnNumber >= ast.Extent.StartColumnNumber;
             }, true);
-            if (token != null)
+            if (tokens.Count() > 1)
             {
-                if (token.First() is AssignmentStatementAst Assignment)
-                {
-                    return Assignment.Left;
-                }
-                return token.Last();
+                token = tokens.LastOrDefault();
             }
-
-            return token.First();
+            return token;
         }
     }
 }
