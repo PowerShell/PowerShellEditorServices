@@ -11,8 +11,8 @@ using Microsoft.PowerShell.EditorServices.Test;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Xunit;
-using Microsoft.PowerShell.EditorServices.Refactoring;
 using System.Management.Automation.Language;
+using Microsoft.PowerShell.EditorServices.Refactoring;
 
 namespace PowerShellEditorServices.Test.Refactoring
 {
@@ -131,6 +131,22 @@ namespace PowerShellEditorServices.Test.Refactoring
             Ast symbol = Utilities.GetAst(request.Line,request.Column,scriptFile.ScriptAst);
             Assert.Equal(21,symbol.Extent.StartLineNumber);
             Assert.Equal(10,symbol.Extent.StartColumnNumber);
+
+        }
+        [Fact]
+        public void GetFunctionDefinitionAst()
+        {
+            RenameSymbolParams request = new(){
+                Column=12,
+                Line=1,
+                RenameTo="Renamed",
+                FileName="TestDetection.ps1"
+            };
+            ScriptFile scriptFile = GetTestScript(request.FileName);
+
+            Ast symbol = Utilities.GetAst(request.Line,request.Column,scriptFile.ScriptAst);
+            Assert.Equal(1,symbol.Extent.StartLineNumber);
+            Assert.Equal(1,symbol.Extent.StartColumnNumber);
 
         }
     }
