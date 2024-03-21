@@ -117,6 +117,21 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     StartColumnNumber >= ast.Extent.StartColumnNumber;
             }, true);
 
+            if (token is NamedBlockAst)
+            {
+                return token.Parent;
+            }
+
+            if (null == token)
+            {
+                IEnumerable<Ast> LineT = Ast.FindAll(ast =>
+                {
+                    return StartLineNumber == ast.Extent.StartLineNumber &&
+                    StartColumnNumber >= ast.Extent.StartColumnNumber;
+                }, true);
+                return LineT.OfType<FunctionDefinitionAst>()?.LastOrDefault();
+            }
+
             IEnumerable<Ast> tokens = token.FindAll(ast =>
             {
                 return ast.Extent.EndColumnNumber >= StartColumnNumber
