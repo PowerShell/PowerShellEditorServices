@@ -14,19 +14,16 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
     {
         private readonly string OldName;
         private readonly string NewName;
-        internal Stack<Ast> ScopeStack = new();
         internal bool ShouldRename;
         public List<TextChange> Modifications = new();
         internal int StartLineNumber;
         internal int StartColumnNumber;
         internal VariableExpressionAst TargetVariableAst;
-        internal VariableExpressionAst DuplicateVariableAst;
         internal List<string> dotSourcedScripts = new();
         internal readonly Ast ScriptAst;
         internal bool isParam;
         internal bool AliasSet;
         internal FunctionDefinitionAst TargetFunction;
-        internal List<string> Log = new();
 
         public IterativeVariableRename(string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
         {
@@ -255,9 +252,6 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
 
         public void ProcessNode(Ast node)
         {
-            Log.Add($"Proc node: {node.GetType().Name}, " +
-            $"SL: {node.Extent.StartLineNumber}, " +
-            $"SC: {node.Extent.StartColumnNumber}");
 
             switch (node)
             {
@@ -343,7 +337,6 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                         {
                             if (!WithinTargetsScope(TargetVariableAst, variableExpressionAst))
                             {
-                                DuplicateVariableAst = variableExpressionAst;
                                 ShouldRename = false;
                             }
 
@@ -377,15 +370,14 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     }
                     break;
             }
-            Log.Add($"ShouldRename after proc: {ShouldRename}");
         }
 
         internal void NewSplattedModification(Ast Splatted)
         {
-            // This Function should be passed a Splatted VariableExpressionAst which
+            // This Function should be passed a splatted VariableExpressionAst which
             // is used by a CommandAst that is the TargetFunction.
 
-            // Find the Splats Top Assignment / Definition
+            // Find the splats top assignment / definition
             Ast SplatAssignment = GetVariableTopAssignment(
                 Splatted.Extent.StartLineNumber,
                 Splatted.Extent.StartColumnNumber,
@@ -421,8 +413,8 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         {
             // Check if an Alias AttributeAst already exists and append the new Alias to the existing list
             // Otherwise Create a new Alias Attribute
-            // Add the modidifcations to the changes
-            // the Attribute will be appended before the variable or in the existing location of the Original Alias
+            // Add the modifications to the changes
+            // The Attribute will be appended before the variable or in the existing location of the original alias
             TextChange aliasChange = new();
             foreach (Ast Attr in paramAst.Attributes)
             {
