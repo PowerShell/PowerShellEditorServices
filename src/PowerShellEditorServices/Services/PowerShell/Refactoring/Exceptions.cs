@@ -38,4 +38,21 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         {
         }
     }
+
+    public class FunctionDefinitionNotFoundException : Exception
+    {
+        public FunctionDefinitionNotFoundException()
+        {
+        }
+
+        public FunctionDefinitionNotFoundException(string message)
+            : base(message)
+        {
+        }
+
+        public FunctionDefinitionNotFoundException(string message, Exception inner)
+            : base(message, inner)
+        {
+        }
+    }
 }
