@@ -1,15 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
-using System.Runtime.InteropServices;
 
 #if !CoreCLR
 using System.Security.Principal;
 using System.Security.AccessControl;
+#else
+using System.Runtime.InteropServices;
 #endif
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
@@ -39,10 +39,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             // In .NET Framework, we must manually ACL the named pipes we create
 
-            var pipeSecurity = new PipeSecurity();
+            PipeSecurity pipeSecurity = new();
 
             WindowsIdentity identity = WindowsIdentity.GetCurrent();
-            WindowsPrincipal principal = new WindowsPrincipal(identity);
+            WindowsPrincipal principal = new(identity);
 
             if (principal.IsInRole(WindowsBuiltInRole.Administrator))
             {
@@ -79,8 +79,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <returns>A named pipe name or name suffix that is safe to you.</returns>
         public static string GenerateValidNamedPipeName(IReadOnlyCollection<string> prefixes = null)
         {
-            int tries = 0;
-            do
+            for (int i = 0; i < 10; i++)
             {
                 string pipeName = $"PSES_{Path.GetRandomFileName()}";
 
@@ -111,8 +110,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 {
                     return pipeName;
                 }
-
-            } while (tries < 10);
+            }
 
             throw new IOException("Unable to create named pipe; no available names");
         }
@@ -137,6 +135,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// </summary>
         /// <param name="pipeName">The simple name of the named pipe.</param>
         /// <returns>The full path of the named pipe.</returns>
+#pragma warning disable IDE0022
         public static string GetNamedPipePath(string pipeName)
         {
 #if CoreCLR
@@ -145,8 +144,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 return Path.Combine(Path.GetTempPath(), $"CoreFxPipe_{pipeName}");
             }
 #endif
-
             return $@"\\.\pipe\{pipeName}";
         }
     }
+#pragma warning restore IDE0022
 }

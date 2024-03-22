@@ -26,7 +26,7 @@ function Out-CurrentFile {
 
         try {
             # If there is no file open
-            $psEditor.GetEditorContext()
+            $null = $psEditor.GetEditorContext()
         }
         catch {
             # create a new one

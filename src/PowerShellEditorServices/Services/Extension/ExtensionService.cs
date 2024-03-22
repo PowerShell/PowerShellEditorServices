@@ -104,10 +104,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             // This is constant so Remove-Variable cannot remove it.
             PSVariable psEditor = new(PSEditorVariableName, EditorObject, ScopedItemOptions.Constant);
 
-            // Register the editor object in the runspace
+            // NOTE: This is a special task run on startup! Register the editor object in the
+            // runspace. It has priority next so it goes before LoadProfiles.
             return ExecutionService.ExecuteDelegateAsync(
                 $"Create ${PSEditorVariableName} object",
-                ExecutionOptions.Default,
+                new ExecutionOptions { Priority = ExecutionPriority.Next },
                 (pwsh, _) => pwsh.Runspace.SessionStateProxy.PSVariable.Set(psEditor),
                 CancellationToken.None);
         }
@@ -117,9 +118,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         /// </summary>
         /// <param name="commandName">The unique name of the command to be invoked.</param>
         /// <param name="editorContext">The context in which the command is being invoked.</param>
+        /// <param name="cancellationToken">The token used to cancel this.</param>
         /// <returns>A Task that can be awaited for completion.</returns>
         /// <exception cref="KeyNotFoundException">The command being invoked was not registered.</exception>
-        public async Task InvokeCommandAsync(string commandName, EditorContext editorContext)
+        public Task InvokeCommandAsync(string commandName, EditorContext editorContext, CancellationToken cancellationToken)
         {
             if (editorCommands.TryGetValue(commandName, out EditorCommand editorCommand))
             {
@@ -128,20 +130,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
                     .AddParameter("ScriptBlock", editorCommand.ScriptBlock)
                     .AddParameter("ArgumentList", new object[] { editorContext });
 
-                await ExecutionService.ExecutePSCommandAsync(
+                // This API is used for editor command execution so it requires the foreground.
+                return ExecutionService.ExecutePSCommandAsync(
                     executeCommand,
-                    CancellationToken.None,
+                    cancellationToken,
                     new PowerShellExecutionOptions
                     {
+                        RequiresForeground = true,
                         WriteOutputToHost = !editorCommand.SuppressOutput,
+                        AddToHistory = !editorCommand.SuppressOutput,
                         ThrowOnError = false,
-                        AddToHistory = !editorCommand.SuppressOutput
-                    }).ConfigureAwait(false);
+                    });
             }
-            else
-            {
-                throw new KeyNotFoundException($"Editor command not found: '{commandName}'");
-            }
+
+            throw new KeyNotFoundException($"Editor command not found: '{commandName}'");
         }
 
         /// <summary>
@@ -209,34 +211,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         /// </summary>
         public event EventHandler<EditorCommand> CommandAdded;
 
-        private void OnCommandAdded(EditorCommand command)
-        {
-            CommandAdded?.Invoke(this, command);
-        }
+        private void OnCommandAdded(EditorCommand command) => CommandAdded?.Invoke(this, command);
 
         /// <summary>
         /// Raised when an existing editor command is updated.
         /// </summary>
         public event EventHandler<EditorCommand> CommandUpdated;
 
-        private void OnCommandUpdated(EditorCommand command)
-        {
-            CommandUpdated?.Invoke(this, command);
-        }
+        private void OnCommandUpdated(EditorCommand command) => CommandUpdated?.Invoke(this, command);
 
         /// <summary>
         /// Raised when an existing editor command is removed.
         /// </summary>
         public event EventHandler<EditorCommand> CommandRemoved;
 
-        private void OnCommandRemoved(EditorCommand command)
-        {
-            CommandRemoved?.Invoke(this, command);
-        }
+        private void OnCommandRemoved(EditorCommand command) => CommandRemoved?.Invoke(this, command);
 
         private void ExtensionService_ExtensionAdded(object sender, EditorCommand e)
         {
-            _languageServer?.SendNotification<ExtensionCommandAddedNotification>(
+            _languageServer?.SendNotification(
                 "powerShell/extensionCommandAdded",
                 new ExtensionCommandAddedNotification
                 { Name = e.Name, DisplayName = e.DisplayName });
@@ -244,7 +237,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 
         private void ExtensionService_ExtensionUpdated(object sender, EditorCommand e)
         {
-            _languageServer?.SendNotification<ExtensionCommandUpdatedNotification>(
+            _languageServer?.SendNotification(
                 "powerShell/extensionCommandUpdated",
                 new ExtensionCommandUpdatedNotification
                 { Name = e.Name, });
@@ -252,7 +245,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 
         private void ExtensionService_ExtensionRemoved(object sender, EditorCommand e)
         {
-            _languageServer?.SendNotification<ExtensionCommandRemovedNotification>(
+            _languageServer?.SendNotification(
                 "powerShell/extensionCommandRemoved",
                 new ExtensionCommandRemovedNotification
                 { Name = e.Name, });

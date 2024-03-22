@@ -8,21 +8,22 @@ using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
 
-namespace Microsoft.PowerShell.EditorServices.Test.Language
+namespace PowerShellEditorServices.Test.Language
 {
     public class TokenOperationsTests
     {
         /// <summary>
         /// Helper method to create a stub script file and then call FoldableRegions
         /// </summary>
-        private static FoldingReference[] GetRegions(string text) {
-            ScriptFile scriptFile = new ScriptFile(
+        private static FoldingReference[] GetRegions(string text)
+        {
+            ScriptFile scriptFile = ScriptFile.Create(
                 // Use any absolute path. Even if it doesn't exist.
                 DocumentUri.FromFileSystemPath(Path.Combine(Path.GetTempPath(), "TestFile.ps1")),
                 text,
                 Version.Parse("5.0"));
 
-            var result = TokenOperations.FoldableReferences(scriptFile.ScriptTokens).ToArray();
+            FoldingReference[] result = TokenOperations.FoldableReferences(scriptFile.ScriptTokens).ToArray();
             // The foldable regions need to be deterministic for testing so sort the array.
             Array.Sort(result);
             return result;
@@ -31,13 +32,15 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
         /// <summary>
         /// Helper method to create FoldingReference objects with less typing
         /// </summary>
-        private static FoldingReference CreateFoldingReference(int startLine, int startCharacter, int endLine, int endCharacter, FoldingRangeKind? matchKind) {
-            return new FoldingReference {
-                StartLine      = startLine,
+        private static FoldingReference CreateFoldingReference(int startLine, int startCharacter, int endLine, int endCharacter, FoldingRangeKind? matchKind)
+        {
+            return new FoldingReference
+            {
+                StartLine = startLine,
                 StartCharacter = startCharacter,
-                EndLine        = endLine,
-                EndCharacter   = endCharacter,
-                Kind           = matchKind
+                EndLine = endLine,
+                EndCharacter = endCharacter,
+                Kind = matchKind
             };
         }
 
@@ -131,7 +134,7 @@ valid} = 5
 $foo = 'bar'
 #EnDReGion
 ";
-        private FoldingReference[] expectedAllInOneScriptFolds = {
+        private readonly FoldingReference[] expectedAllInOneScriptFolds = {
             CreateFoldingReference(0,   0,  4, 10, FoldingRangeKind.Region),
             CreateFoldingReference(1,   0,  3,  2, FoldingRangeKind.Comment),
             CreateFoldingReference(10,  0, 15,  2, FoldingRangeKind.Comment),
@@ -166,22 +169,25 @@ $foo = 'bar'
 
         [Trait("Category", "Folding")]
         [Fact]
-        public void LaguageServiceFindsFoldablRegionsWithLF() {
+        public void LanguageServiceFindsFoldablRegionsWithLF()
+        {
             // Remove and CR characters
             string testString = allInOneScript.Replace("\r", "");
             // Ensure that there are no CR characters in the string
-            Assert.True(testString.IndexOf("\r\n") == -1, "CRLF should not be present in the test string");
+            Assert.False(testString.Contains("\r\n"), "CRLF should not be present in the test string");
             FoldingReference[] result = GetRegions(testString);
             AssertFoldingReferenceArrays(expectedAllInOneScriptFolds, result);
         }
 
         [Trait("Category", "Folding")]
         [Fact]
-        public void LaguageServiceFindsFoldablRegionsWithCRLF() {
+        public void LanguageServiceFindsFoldablRegionsWithCRLF()
+        {
             // The Foldable regions should be the same regardless of line ending type
             // Enforce CRLF line endings, if none exist
             string testString = allInOneScript;
-            if (testString.IndexOf("\r\n") == -1) {
+            if (!testString.Contains("\r\n"))
+            {
                 testString = testString.Replace("\n", "\r\n");
             }
             // Ensure that there are CRLF characters in the string
@@ -192,8 +198,9 @@ $foo = 'bar'
 
         [Trait("Category", "Folding")]
         [Fact]
-        public void LaguageServiceFindsFoldablRegionsWithMismatchedRegions() {
-            string testString =
+        public void LanguageServiceFindsFoldablRegionsWithMismatchedRegions()
+        {
+            const string testString =
 @"#endregion should not fold - mismatched
 
 #region This should fold
@@ -212,8 +219,9 @@ $something = 'foldable'
 
         [Trait("Category", "Folding")]
         [Fact]
-        public void LaguageServiceFindsFoldablRegionsWithDuplicateRegions() {
-            string testString =
+        public void LanguageServiceFindsFoldablRegionsWithDuplicateRegions()
+        {
+            const string testString =
 @"# This script causes duplicate/overlapping ranges due to the `(` and `{` characters
 $AnArray = @(Get-ChildItem -Path C:\ -Include *.ps1 -File).Where({
     $_.FullName -ne 'foo'}).ForEach({
@@ -233,8 +241,9 @@ $AnArray = @(Get-ChildItem -Path C:\ -Include *.ps1 -File).Where({
         // ( -> ), @( -> ) and $( -> ) does not confuse the folder
         [Trait("Category", "Folding")]
         [Fact]
-        public void LaguageServiceFindsFoldablRegionsWithSameEndToken() {
-            string testString =
+        public void LanguageServiceFindsFoldablRegionsWithSameEndToken()
+        {
+            const string testString =
 @"foreach ($1 in $2) {
 
     $x = @{
@@ -260,8 +269,9 @@ $y = $(
         // A simple PowerShell Classes test
         [Trait("Category", "Folding")]
         [Fact]
-        public void LaguageServiceFindsFoldablRegionsWithClasses() {
-            string testString =
+        public void LanguageServiceFindsFoldablRegionsWithClasses()
+        {
+            const string testString =
 @"class TestClass {
     [string[]] $TestProperty = @(
         'first',
@@ -287,8 +297,9 @@ $y = $(
         // This tests DSC style keywords and param blocks
         [Trait("Category", "Folding")]
         [Fact]
-        public void LaguageServiceFindsFoldablRegionsWithDSC() {
-            string testString =
+        public void LanguageServiceFindsFoldablRegionsWithDSC()
+        {
+            const string testString =
 @"Configuration Example
 {
     param
@@ -298,7 +309,7 @@ $y = $(
         $NodeName = 'localhost',
 
         [Parameter(Mandatory = $true)]
-        [ValidateNotNullorEmpty()]
+        [ValidateNotNullOrEmpty()]
         [System.Management.Automation.PSCredential]
         $Credential
     )

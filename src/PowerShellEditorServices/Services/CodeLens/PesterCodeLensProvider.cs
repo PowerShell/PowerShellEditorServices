@@ -1,12 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Utility;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Serialization;
@@ -46,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         private static CodeLens[] GetPesterLens(PesterSymbolReference pesterSymbol, ScriptFile scriptFile)
         {
             string word = pesterSymbol.Command == PesterCommandType.It ? "test" : "tests";
-            var codeLensResults = new CodeLens[]
+            return new CodeLens[]
             {
                 new CodeLens()
                 {
@@ -91,8 +90,6 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     }
                 }
             };
-
-            return codeLensResults;
         }
 
         /// <summary>
@@ -100,18 +97,23 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// </summary>
         /// <param name="scriptFile">The script file to get Pester CodeLenses for.</param>
         /// <returns>All Pester CodeLenses for the given script file.</returns>
-        public CodeLens[] ProvideCodeLenses(ScriptFile scriptFile)
+        public IEnumerable<CodeLens> ProvideCodeLenses(ScriptFile scriptFile)
         {
             // Don't return anything if codelens setting is disabled
-            if (!this._configurationService.CurrentSettings.Pester.CodeLens)
+            if (!_configurationService.CurrentSettings.Pester.CodeLens)
             {
-                return Array.Empty<CodeLens>();
+                yield break;
             }
 
-            var lenses = new List<CodeLens>();
             foreach (SymbolReference symbol in _symbolProvider.ProvideDocumentSymbols(scriptFile))
             {
-                if (!(symbol is PesterSymbolReference pesterSymbol))
+                if (symbol is not PesterSymbolReference pesterSymbol)
+                {
+                    continue;
+                }
+
+                // Skip CodeLens for setup/teardown block
+                if (!PesterSymbolReference.IsPesterTestCommand(pesterSymbol.Command))
                 {
                     continue;
                 }
@@ -122,10 +124,11 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
                     continue;
                 }
 
-                lenses.AddRange(GetPesterLens(pesterSymbol, scriptFile));
+                foreach (CodeLens codeLens in GetPesterLens(pesterSymbol, scriptFile))
+                {
+                    yield return codeLens;
+                }
             }
-
-            return lenses.ToArray();
         }
 
         /// <summary>
@@ -133,12 +136,11 @@ namespace Microsoft.PowerShell.EditorServices.CodeLenses
         /// </summary>
         /// <param name="codeLens">The code lens to resolve.</param>
         /// <param name="scriptFile">The script file.</param>
+        /// <param name="cancellationToken"></param>
         /// <returns>The given CodeLens, wrapped in a task.</returns>
-        public Task<CodeLens> ResolveCodeLens(CodeLens codeLens, ScriptFile scriptFile)
-        {
+        public Task<CodeLens> ResolveCodeLens(CodeLens codeLens, ScriptFile scriptFile, CancellationToken cancellationToken) =>
             // This provider has no specific behavior for
             // resolving CodeLenses.
-            return Task.FromResult(codeLens);
-        }
+            Task.FromResult(codeLens);
     }
 }

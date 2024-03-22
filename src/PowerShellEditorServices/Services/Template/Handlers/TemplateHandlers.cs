@@ -28,10 +28,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.Template
 
             if (plasterInstalled)
             {
-                var availableTemplates =
+                TemplateDetails[] availableTemplates =
                     await _templateService.GetAvailableTemplatesAsync(
                         request.IncludeInstalledModules).ConfigureAwait(false);
-
 
                 return new GetProjectTemplatesResponse
                 {

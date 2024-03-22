@@ -60,7 +60,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             StackFrameDetails stackFrame,
             long id)
         {
-            var sourcePresentationHint =
+            SourcePresentationHint sourcePresentationHint =
                 stackFrame.IsExternalCode ? SourcePresentationHint.Deemphasize : SourcePresentationHint.Normal;
 
             // When debugging an interactive session, the ScriptPath is <No File> which is not a valid source file.
@@ -95,8 +95,8 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 Name = scope.Name,
                 VariablesReference = scope.Id,
                 // Temporary fix for #95 to get debug hover tips to work well at least for the local scope.
-                Expensive = ((scope.Name != VariableContainerDetails.LocalScopeName) &&
-                             (scope.Name != VariableContainerDetails.AutoVariablesName))
+                Expensive = scope.Name is not VariableContainerDetails.LocalScopeName and
+                             not VariableContainerDetails.AutoVariablesName
             };
         }
 

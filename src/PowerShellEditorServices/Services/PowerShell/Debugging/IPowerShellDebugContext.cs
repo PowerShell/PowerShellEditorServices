@@ -3,7 +3,6 @@
 
 using System;
 using System.Management.Automation;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
@@ -13,6 +12,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
         bool IsStopped { get; }
 
         DebuggerStopEventArgs LastStopEventArgs { get; }
+
+        public bool IsDebuggingRemoteRunspace { get; set; }
 
         public event Action<object, DebuggerStopEventArgs> DebuggerStopped;
 
@@ -32,6 +33,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         void Abort();
 
-        Task<DscBreakpointCapability> GetDscBreakpointCapabilityAsync(CancellationToken cancellationToken);
+        Task<DscBreakpointCapability> GetDscBreakpointCapabilityAsync();
     }
 }

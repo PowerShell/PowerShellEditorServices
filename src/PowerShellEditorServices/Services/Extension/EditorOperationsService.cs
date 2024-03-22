@@ -2,11 +2,11 @@
 // Licensed under the MIT License.
 
 using Microsoft.PowerShell.EditorServices.Extensions;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,24 +14,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 {
     internal class EditorOperationsService : IEditorOperations
     {
-        private const bool DefaultPreviewSetting = true;
-
         private readonly PsesInternalHost _psesHost;
         private readonly WorkspaceService _workspaceService;
-
         private readonly ILanguageServerFacade _languageServer;
-
-        private readonly IInternalPowerShellExecutionService _executionService;
 
         public EditorOperationsService(
             PsesInternalHost psesHost,
             WorkspaceService workspaceService,
-            IInternalPowerShellExecutionService executionService,
             ILanguageServerFacade languageServer)
         {
             _psesHost = psesHost;
             _workspaceService = workspaceService;
-            _executionService = executionService;
             _languageServer = languageServer;
         }
 
@@ -40,16 +33,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer())
             {
                 return null;
-            };
+            }
 
             ClientEditorContext clientContext =
-                await _languageServer.SendRequest<GetEditorContextRequest>(
+                await _languageServer.SendRequest(
                     "editor/getEditorContext",
                     new GetEditorContextRequest())
                 .Returning<ClientEditorContext>(CancellationToken.None)
                 .ConfigureAwait(false);
 
-            return this.ConvertClientEditorContext(clientContext);
+            return ConvertClientEditorContext(clientContext);
         }
 
         public async Task InsertTextAsync(string filePath, string text, BufferRange insertRange)
@@ -57,7 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest("editor/insertText", new InsertTextRequest
             {
@@ -77,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
                             Character = insertRange.End.Column - 1
                         }
                     }
-            }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
+            }).Returning<EditorOperationResponse>(CancellationToken.None).ConfigureAwait(false);
         }
 
         public async Task SetSelectionAsync(BufferRange selectionRange)
@@ -85,7 +78,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest("editor/setSelection", new SetSelectionRequest
             {
@@ -103,7 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
                             Character = selectionRange.End.Column - 1
                         }
                     }
-            }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
+            }).Returning<EditorOperationResponse>(CancellationToken.None).ConfigureAwait(false);
         }
 
         public EditorContext ConvertClientEditorContext(
@@ -128,15 +121,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
                     clientContext.CurrentFileLanguage);
         }
 
-        public async Task NewFileAsync()
+        public async Task NewFileAsync() => await NewFileAsync(string.Empty).ConfigureAwait(false);
+
+        public async Task NewFileAsync(string content)
         {
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
-            await _languageServer.SendRequest<string>("editor/newFile", null)
-                .ReturningVoid(CancellationToken.None)
+            await _languageServer.SendRequest("editor/newFile", content)
+                .Returning<EditorOperationResponse>(CancellationToken.None)
                 .ConfigureAwait(false);
         }
 
@@ -145,13 +140,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest("editor/openFile", new OpenFileDetails
             {
                 FilePath = filePath,
-                Preview = DefaultPreviewSetting
-            }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
+                Preview = true
+            }).Returning<EditorOperationResponse>(CancellationToken.None).ConfigureAwait(false);
         }
 
         public async Task OpenFileAsync(string filePath, bool preview)
@@ -159,13 +154,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest("editor/openFile", new OpenFileDetails
             {
                 FilePath = filePath,
                 Preview = preview
-            }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
+            }).Returning<EditorOperationResponse>(CancellationToken.None).ConfigureAwait(false);
         }
 
         public async Task CloseFileAsync(string filePath)
@@ -173,51 +168,47 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest("editor/closeFile", filePath)
-                .ReturningVoid(CancellationToken.None)
+                .Returning<EditorOperationResponse>(CancellationToken.None)
                 .ConfigureAwait(false);
         }
 
-        public Task SaveFileAsync(string filePath)
-        {
-            return SaveFileAsync(filePath, null);
-        }
+        public Task SaveFileAsync(string filePath) => SaveFileAsync(filePath, null);
 
         public async Task SaveFileAsync(string currentPath, string newSavePath)
         {
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest("editor/saveFile", new SaveFileDetails
             {
                 FilePath = currentPath,
                 NewPath = newSavePath
-            }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
+            }).Returning<EditorOperationResponse>(CancellationToken.None).ConfigureAwait(false);
         }
 
-        public string GetWorkspacePath()
-        {
-            return _workspaceService.WorkspacePath;
-        }
+        // NOTE: This name is now outdated since we don't have a way to distinguish one workspace
+        // from another for the extension API. TODO: Should this be an empty string if we have no
+        // workspaces?
+        public string GetWorkspacePath() => _workspaceService.InitialWorkingDirectory;
 
-        public string GetWorkspaceRelativePath(string filePath)
-        {
-            return _workspaceService.GetRelativePath(filePath);
-        }
+        public string[] GetWorkspacePaths() => _workspaceService.WorkspacePaths.ToArray();
+
+        public string GetWorkspaceRelativePath(ScriptFile scriptFile) => _workspaceService.GetRelativePath(scriptFile);
 
         public async Task ShowInformationMessageAsync(string message)
         {
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest("editor/showInformationMessage", message)
-                .ReturningVoid(CancellationToken.None)
+                .Returning<EditorOperationResponse>(CancellationToken.None)
                 .ConfigureAwait(false);
         }
 
@@ -226,10 +217,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest("editor/showErrorMessage", message)
-                .ReturningVoid(CancellationToken.None)
+                .Returning<EditorOperationResponse>(CancellationToken.None)
                 .ConfigureAwait(false);
         }
 
@@ -238,10 +229,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (!TestHasLanguageServer())
             {
                 return;
-            };
+            }
 
             await _languageServer.SendRequest("editor/showWarningMessage", message)
-                .ReturningVoid(CancellationToken.None)
+                .Returning<EditorOperationResponse>(CancellationToken.None)
                 .ConfigureAwait(false);
         }
 
@@ -256,7 +247,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             {
                 Message = message,
                 Timeout = timeout
-            }).ReturningVoid(CancellationToken.None).ConfigureAwait(false);
+            }).Returning<EditorOperationResponse>(CancellationToken.None).ConfigureAwait(false);
         }
 
         public void ClearTerminal()
@@ -279,7 +270,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
             if (warnUser)
             {
                 _psesHost.UI.WriteWarningLine(
-                    "Editor operations are not supported in temporary consoles. Re-run the command in the main PowerShell Intergrated Console.");
+                    "Editor operations are not supported in temporary consoles. Re-run the command in the main Extension Terminal.");
             }
 
             return false;

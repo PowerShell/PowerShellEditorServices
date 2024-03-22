@@ -58,10 +58,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         #region Public methods
 
-        internal void TriggerDebuggerStopped(DebuggerStoppedEventArgs e)
-        {
-            OnDebuggerStopped(null, e);
-        }
+        internal void TriggerDebuggerStopped(DebuggerStoppedEventArgs e) => OnDebuggerStopped(null, e);
 
         #endregion
 
@@ -104,7 +101,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         // Sends the InitializedEvent so that the debugger will continue
                         // sending configuration requests
                         _debugStateService.WaitingForAttach = false;
-                        _debugStateService.ServerStarted.SetResult(true);
+                        _debugStateService.ServerStarted.TrySetResult(true);
                     }
                     return;
 
@@ -147,11 +144,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (e.Breakpoint is LineBreakpoint)
             {
-                var breakpoint = LspDebugUtils.CreateBreakpoint(
+                OmniSharp.Extensions.DebugAdapter.Protocol.Models.Breakpoint breakpoint = LspDebugUtils.CreateBreakpoint(
                     BreakpointDetails.Create(e.Breakpoint, e.UpdateType)
                 );
 
-                string reason = e.UpdateType switch {
+                string reason = e.UpdateType switch
+                {
                     BreakpointUpdateType.Set => BreakpointEventReason.New,
                     BreakpointUpdateType.Removed => BreakpointEventReason.Removed,
                     BreakpointUpdateType.Enabled => BreakpointEventReason.Changed,

@@ -8,7 +8,7 @@ using System.Management.Automation.Runspaces;
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
     /// <summary>
-    /// Describes the desired console REPL for the integrated console.
+    /// Describes the desired console REPL for the Extension Terminal.
     /// </summary>
     public enum ConsoleReplKind
     {
@@ -76,18 +76,23 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <summary>
         /// Names of or paths to any additional modules to load on startup.
         /// </summary>
-        public IReadOnlyList<string> AdditionalModules { get; set; } = null;
+        public IReadOnlyList<string> AdditionalModules { get; set; }
 
         /// <summary>
         /// Flags of features to enable on startup.
         /// </summary>
-        public IReadOnlyList<string> FeatureFlags { get; set; } = null;
+        public IReadOnlyList<string> FeatureFlags { get; set; }
 
         /// <summary>
-        /// The console REPL experience to use in the integrated console
-        /// (including none to disable the integrated console).
+        /// The console REPL experience to use in the Extension Terminal
+        /// (including none to disable the Extension Terminal).
         /// </summary>
         public ConsoleReplKind ConsoleRepl { get; set; } = ConsoleReplKind.None;
+
+        /// <summary>
+        /// Will suppress messages to PSHost (to prevent Stdio clobbering)        
+        /// </summary>
+        public bool UseNullPSHostUI { get; set; }
 
         /// <summary>
         /// The minimum log level to log events with.
@@ -97,12 +102,12 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <summary>
         /// Configuration for the language server protocol transport to use.
         /// </summary>
-        public ITransportConfig LanguageServiceTransport { get; set; } = null;
+        public ITransportConfig LanguageServiceTransport { get; set; }
 
         /// <summary>
         /// Configuration for the debug adapter protocol transport to use.
         /// </summary>
-        public ITransportConfig DebugServiceTransport { get; set; } = null;
+        public ITransportConfig DebugServiceTransport { get; set; }
 
         /// <summary>
         /// PowerShell profile locations for Editor Services to use for its profiles.
@@ -117,7 +122,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public string StartupBanner { get; set; } = @"
 
-                  =====> PowerShell Integrated Console <=====
+                  =====> PowerShell Editor Services <=====
 
 ";
     }

@@ -14,12 +14,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
     {
         private readonly ILogger _logger;
 
-        public ReadLineProvider(ILoggerFactory loggerFactory)
-        {
-            _logger = loggerFactory.CreateLogger<ReadLineProvider>();
-        }
+        public ReadLineProvider(ILoggerFactory loggerFactory) => _logger = loggerFactory.CreateLogger<ReadLineProvider>();
 
-        public IReadLine ReadLine { get; private set; }
+        public IReadLine ReadLine { get; internal set; }
 
         public void OverrideReadLine(IReadLine readLine)
         {

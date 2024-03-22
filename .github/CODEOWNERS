@@ -1,16 +1,14 @@
 # https://help.github.com/articles/about-codeowners/
 
-# Global reviewers
-* @andschwa
+# Global pattern
+* @PowerShell/extension
 
-# Area: Analysis & Formatting
-src/PowerShellEditorServices/Analysis/                 @rjmholt
-
-# Area: Debugging
-src/PowerShellEditorServices/Debugging/                @rkeithhill
-src/PowerShellEditorServices.Protocol/DebugAdapter/    @rkeithhill
-
-# Area: Integrated Console / Host
-src/PowerShellEditorServices/Console/                  @SeeminglyScience
-src/PowerShellEditorServices/Session/*ReadLine*.cs     @SeeminglyScience
-src/PowerShellEditorServices.Host/                     @SeeminglyScience
+# Developer files
+src/ @PowerShell/extension-dev
+test/ @PowerShell/extension-dev
+tools/ @PowerShell/extension-dev
+.editorconfig @PowerShell/extension-dev
+.gitattributes @PowerShell/extension-dev
+.gitignore @PowerShell/extension-dev
+PowerShellEditorServices.build.ps1 @PowerShell/extension-dev
+PowerShellEditorServices.sln @PowerShell/extension-dev

@@ -1,11 +1,11 @@
 function My-Function ($myInput)
 {
-	My-Function $myInput
+    My-Function $myInput
 }
 
 $things = 4
 
-$things
+$things = 3
 
 My-Function $things
 
@@ -18,3 +18,8 @@ Write-Host
 Get-ChildItem
 
 My-Alias
+
+Invoke-Command -ScriptBlock ${Function:My-Function}
+
+[string]$hello = "test"
+Write-Host $hello

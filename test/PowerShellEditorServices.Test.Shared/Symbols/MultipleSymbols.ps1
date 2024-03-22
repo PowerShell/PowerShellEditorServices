@@ -4,7 +4,7 @@ $Script:ScriptVar2 = 2
 
 "`$Script:ScriptVar2 is $Script:ScriptVar2"
 
-function AFunction {}
+function script:AFunction {}
 
 filter AFilter {$_}
 
@@ -22,10 +22,35 @@ function AnAdvancedFunction {
 
 workflow AWorkflow {}
 
-Configuration AConfiguration {
-    Node "TEST-PC" {}
+class AClass {
+    [string]$AProperty
+
+    AClass([string]$AParameter) {
+
+    }
+
+    [void]AMethod([string]$param1, [int]$param2, $param3) {
+
+    }
+}
+
+enum AEnum {
+    AValue = 0
 }
 
 AFunction
 1..3 | AFilter
 AnAdvancedFunction
+
+<#
+#region don't find me inside comment block
+abc
+#endregion
+#>
+
+#region find me outer
+#region find me inner
+
+#endregion
+#endregion
+#region ignore this unclosed region

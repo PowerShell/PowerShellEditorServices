@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
             HostStartupInfo hostStartupInfo)
         {
             return collection
-                .AddSingleton<HostStartupInfo>(hostStartupInfo)
+                .AddSingleton(hostStartupInfo)
                 .AddSingleton<WorkspaceService>()
                 .AddSingleton<SymbolsService>()
                 .AddSingleton<PsesInternalHost>()
@@ -36,21 +36,21 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<RemoteFileManagerService>()
-                .AddSingleton<ExtensionService>((provider) =>
+                .AddSingleton((provider) =>
                     {
-                        var extensionService = new ExtensionService(
+                        ExtensionService extensionService = new(
                             provider.GetService<ILanguageServerFacade>(),
                             provider,
                             provider.GetService<EditorOperationsService>(),
                             provider.GetService<IInternalPowerShellExecutionService>());
 
-                        // This is where we create the $psEditor variable
-                        // so that when the console is ready, it will be available
-                        // TODO: Improve the sequencing here so that:
-                        //  - The variable is guaranteed to be initialized when the console first appears
-                        //  - Any errors that occur are handled rather than lost by the unawaited task
+                        // This is where we create the $psEditor variable so that when the console
+                        // is ready, it will be available. NOTE: We cannot await this because it
+                        // uses a lazy initialization to avoid a race with the dependency injection
+                        // framework, see the EditorObject class for that!
+#pragma warning disable VSTHRD110
                         extensionService.InitializeAsync();
-
+#pragma warning restore VSTHRD110
                         return extensionService;
                     })
                 .AddSingleton<AnalysisService>();
@@ -59,25 +59,21 @@ namespace Microsoft.PowerShell.EditorServices.Server
         public static IServiceCollection AddPsesDebugServices(
             this IServiceCollection collection,
             IServiceProvider languageServiceProvider,
-            PsesDebugServer psesDebugServer,
-            bool useTempSession)
+            PsesDebugServer psesDebugServer)
         {
             PsesInternalHost internalHost = languageServiceProvider.GetService<PsesInternalHost>();
 
             return collection
-                .AddSingleton<PsesInternalHost>(internalHost)
+                .AddSingleton(internalHost)
                 .AddSingleton<IRunspaceContext>(internalHost)
                 .AddSingleton<IPowerShellDebugContext>(internalHost.DebugContext)
                 .AddSingleton(languageServiceProvider.GetService<IInternalPowerShellExecutionService>())
                 .AddSingleton(languageServiceProvider.GetService<WorkspaceService>())
                 .AddSingleton(languageServiceProvider.GetService<RemoteFileManagerService>())
-                .AddSingleton<PsesDebugServer>(psesDebugServer)
+                .AddSingleton(psesDebugServer)
                 .AddSingleton<DebugService>()
                 .AddSingleton<BreakpointService>()
-                .AddSingleton<DebugStateService>(new DebugStateService
-                {
-                     OwnsEditorSession = useTempSession
-                })
+                .AddSingleton<DebugStateService>()
                 .AddSingleton<DebugEventHandlerService>();
         }
     }

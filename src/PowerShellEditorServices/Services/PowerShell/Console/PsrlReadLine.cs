@@ -1,5 +1,5 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
@@ -18,8 +18,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
         private readonly EngineIntrinsics _engineIntrinsics;
 
-        #region Constructors
-
         public PsrlReadLine(
             PSReadLineProxy psrlProxy,
             PsesInternalHost psesHost,
@@ -34,30 +32,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             _psrlProxy.OverrideIdleHandler(onIdleAction);
         }
 
-        #endregion
+        public override string ReadLine(CancellationToken cancellationToken) => _psesHost.InvokeDelegate(
+            representation: "ReadLine",
+            new ExecutionOptions { RequiresForeground = true },
+            InvokePSReadLine,
+            cancellationToken);
 
-        #region Public Methods
+        public override void AddToHistory(string historyEntry) => _psrlProxy.AddToHistory(historyEntry);
 
-        public override string ReadLine(CancellationToken cancellationToken)
-        {
-            return _psesHost.InvokeDelegate<string>(representation: "ReadLine", new ExecutionOptions { MustRunInForeground = true }, InvokePSReadLine, cancellationToken);
-        }
-
-        protected override ConsoleKeyInfo ReadKey(CancellationToken cancellationToken)
-        {
-            return ConsoleProxy.ReadKey(intercept: true, cancellationToken);
-        }
-
-        #endregion
-
-        #region Private Methods
+        protected override ConsoleKeyInfo ReadKey(CancellationToken cancellationToken) => _psesHost.ReadKey(intercept: true, cancellationToken);
 
         private string InvokePSReadLine(CancellationToken cancellationToken)
         {
             EngineIntrinsics engineIntrinsics = _psesHost.IsRunspacePushed ? null : _engineIntrinsics;
             return _psrlProxy.ReadLine(_psesHost.Runspace, engineIntrinsics, cancellationToken, /* lastExecutionStatus */ null);
         }
-
-        #endregion
     }
 }

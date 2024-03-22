@@ -5,7 +5,7 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Shared.Definition
 {
-    public static class FindsFunctionDefinitionInDotSourceReferenceData
+    public static class FindsFunctionDefinitionInWorkspaceData
     {
         public static readonly ScriptRegion SourceDetails = new(
             file: TestUtilities.NormalizePath("References/FileWithReferences.ps1"),

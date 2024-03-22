@@ -8,33 +8,31 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 {
-
     /// <summary>
     /// Provides common operations for the tokens of a parsed script.
     /// </summary>
     internal static class TokenOperations
     {
-        private static readonly FoldingRangeKind? RegionKindNone = null;
-
         // These regular expressions are used to match lines which mark the start and end of region comment in a PowerShell
         // script. They are based on the defaults in the VS Code Language Configuration at;
         // https://github.com/Microsoft/vscode/blob/64186b0a26/extensions/powershell/language-configuration.json#L26-L31
         // https://github.com/Microsoft/vscode/issues/49070
-        static private readonly Regex s_startRegionTextRegex = new Regex(
+        internal static readonly Regex s_startRegionTextRegex = new(
            @"^\s*#[rR]egion\b", RegexOptions.Compiled);
-        static private readonly Regex s_endRegionTextRegex = new Regex(
+        internal static readonly Regex s_endRegionTextRegex = new(
            @"^\s*#[eE]nd[rR]egion\b", RegexOptions.Compiled);
 
         /// <summary>
         /// Extracts all of the unique foldable regions in a script given the list tokens
         /// </summary>
-        internal static FoldingReferenceList FoldableReferences(
-            Token[] tokens)
+#pragma warning disable CA1502 // Cyclomatic complexity we don't care about
+        internal static FoldingReferenceList FoldableReferences(Token[] tokens)
+#pragma warning restore CA1502
         {
-            var refList = new FoldingReferenceList();
+            FoldingReferenceList refList = new();
 
-            Stack<Token> tokenCurlyStack = new Stack<Token>();
-            Stack<Token> tokenParenStack = new Stack<Token>();
+            Stack<Token> tokenCurlyStack = new();
+            Stack<Token> tokenParenStack = new();
             foreach (Token token in tokens)
             {
                 switch (token.Kind)
@@ -49,7 +47,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                     case TokenKind.RCurly:
                         if (tokenCurlyStack.Count > 0)
                         {
-                            refList.SafeAdd(CreateFoldingReference(tokenCurlyStack.Pop(), token, RegionKindNone));
+                            refList.SafeAdd(CreateFoldingReference(tokenCurlyStack.Pop(), token, default));
                         }
                         break;
 
@@ -65,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                     case TokenKind.RParen:
                         if (tokenParenStack.Count > 0)
                         {
-                            refList.SafeAdd(CreateFoldingReference(tokenParenStack.Pop(), token, RegionKindNone));
+                            refList.SafeAdd(CreateFoldingReference(tokenParenStack.Pop(), token, default));
                         }
                         break;
 
@@ -77,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                     case TokenKind.HereStringExpandable:
                         if (token.Extent.StartLineNumber != token.Extent.EndLineNumber)
                         {
-                            refList.SafeAdd(CreateFoldingReference(token, token, RegionKindNone));
+                            refList.SafeAdd(CreateFoldingReference(token, token, default));
                         }
                         break;
                 }
@@ -90,12 +88,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             //
             // Find blocks of line comments # comment1\n# comment2\n...
             // Finding blocks of comment tokens is more complicated as the newline characters are not
-            // classed as comments.  To workaround this we search for valid block comments (See IsBlockCmment)
+            // classed as comments.  To workaround this we search for valid block comments (See IsBlockComment)
             // and then determine contiguous line numbers from there
             //
             // Find comments regions <# -> #>
             // Match the token start and end of kind TokenKind.Comment
-            var tokenCommentRegionStack = new Stack<Token>();
+            Stack<Token> tokenCommentRegionStack = new();
             Token blockStartToken = null;
             int blockNextLine = -1;
 
@@ -138,7 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                     refList.SafeAdd(CreateFoldingReference(blockStartToken, blockNextLine - 1, FoldingRangeKind.Comment));
                     blockStartToken = token;
                 }
-                if (blockStartToken == null) { blockStartToken = token; }
+                blockStartToken ??= token;
                 blockNextLine = thisLine + 1;
             }
 
@@ -156,19 +154,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// Creates an instance of a FoldingReference object from a start and end langauge Token
         /// Returns null if the line range is invalid
         /// </summary>
-        static private FoldingReference CreateFoldingReference(
+        private static FoldingReference CreateFoldingReference(
             Token startToken,
             Token endToken,
             FoldingRangeKind? matchKind)
         {
             if (endToken.Extent.EndLineNumber == startToken.Extent.StartLineNumber) { return null; }
             // Extents are base 1, but LSP is base 0, so minus 1 off all lines and character positions
-            return new FoldingReference {
-                StartLine      = startToken.Extent.StartLineNumber - 1,
+            return new FoldingReference
+            {
+                StartLine = startToken.Extent.StartLineNumber - 1,
                 StartCharacter = startToken.Extent.StartColumnNumber - 1,
-                EndLine        = endToken.Extent.EndLineNumber - 1,
-                EndCharacter   = endToken.Extent.EndColumnNumber - 1,
-                Kind           = matchKind
+                EndLine = endToken.Extent.EndLineNumber - 1,
+                EndCharacter = endToken.Extent.EndColumnNumber - 1,
+                Kind = matchKind
             };
         }
 
@@ -176,30 +175,32 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// Creates an instance of a FoldingReference object from a start token and an end line
         /// Returns null if the line range is invalid
         /// </summary>
-        static private FoldingReference CreateFoldingReference(
+        private static FoldingReference CreateFoldingReference(
             Token startToken,
             int endLine,
             FoldingRangeKind? matchKind)
         {
             if (endLine == (startToken.Extent.StartLineNumber - 1)) { return null; }
             // Extents are base 1, but LSP is base 0, so minus 1 off all lines and character positions
-            return new FoldingReference {
-                StartLine      = startToken.Extent.StartLineNumber - 1,
+            return new FoldingReference
+            {
+                StartLine = startToken.Extent.StartLineNumber - 1,
                 StartCharacter = startToken.Extent.StartColumnNumber - 1,
-                EndLine        = endLine,
-                EndCharacter   = 0,
-                Kind           = matchKind
+                EndLine = endLine,
+                EndCharacter = 0,
+                Kind = matchKind
             };
         }
 
         /// <summary>
         /// Returns true if a Token is a block comment;
         /// - Must be a TokenKind.comment
-        /// - Must be preceeded by TokenKind.NewLine
+        /// - Must be preceded by TokenKind.NewLine
         /// - Token text must start with a '#'.false  This is because comment regions
         ///   start with '&lt;#' but have the same TokenKind
         /// </summary>
-        static private bool IsBlockComment(int index, Token[] tokens) {
+        internal static bool IsBlockComment(int index, Token[] tokens)
+        {
             Token thisToken = tokens[index];
             if (thisToken.Kind != TokenKind.Comment) { return false; }
             if (index == 0) { return true; }

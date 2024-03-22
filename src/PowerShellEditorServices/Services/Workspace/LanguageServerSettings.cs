@@ -15,28 +15,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
 {
     internal class LanguageServerSettings
     {
-        private readonly object updateLock = new object();
-
-        public bool EnableProfileLoading { get; set; } = false;
-
-        public bool PromptToUpdatePackageManagement { get; set; } = true;
-
+        private readonly object updateLock = new();
+        public bool EnableProfileLoading { get; set; }
         public ScriptAnalysisSettings ScriptAnalysis { get; set; }
-
         public CodeFormattingSettings CodeFormatting { get; set; }
-
         public CodeFoldingSettings CodeFolding { get; set; }
-
         public PesterSettings Pester { get; set; }
-
         public string Cwd { get; set; }
+        public bool EnableReferencesCodeLens { get; set; } = true;
+        public bool AnalyzeOpenDocumentsOnly { get; set; }
 
         public LanguageServerSettings()
         {
-            this.ScriptAnalysis = new ScriptAnalysisSettings();
-            this.CodeFormatting = new CodeFormattingSettings();
-            this.CodeFolding = new CodeFoldingSettings();
-            this.Pester = new PesterSettings();
+            ScriptAnalysis = new ScriptAnalysisSettings();
+            CodeFormatting = new CodeFormattingSettings();
+            CodeFolding = new CodeFoldingSettings();
+            Pester = new PesterSettings();
         }
 
         public void Update(
@@ -44,20 +38,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
             string workspaceRootPath,
             ILogger logger)
         {
-            if (settings != null)
+            if (settings is not null)
             {
                 lock (updateLock)
                 {
-                    this.EnableProfileLoading = settings.EnableProfileLoading;
-                    this.PromptToUpdatePackageManagement = settings.PromptToUpdatePackageManagement;
-                    this.ScriptAnalysis.Update(
-                        settings.ScriptAnalysis,
-                        workspaceRootPath,
-                        logger);
-                    this.CodeFormatting = new CodeFormattingSettings(settings.CodeFormatting);
-                    this.CodeFolding.Update(settings.CodeFolding, logger);
-                    this.Pester.Update(settings.Pester, logger);
-                    this.Cwd = settings.Cwd;
+                    EnableProfileLoading = settings.EnableProfileLoading;
+                    ScriptAnalysis.Update(settings.ScriptAnalysis, workspaceRootPath, logger);
+                    CodeFormatting = new CodeFormattingSettings(settings.CodeFormatting);
+                    CodeFolding.Update(settings.CodeFolding, logger);
+                    Pester.Update(settings.Pester, logger);
+                    Cwd = settings.Cwd;
+                    EnableReferencesCodeLens = settings.EnableReferencesCodeLens;
+                    AnalyzeOpenDocumentsOnly = settings.AnalyzeOpenDocumentsOnly;
                 }
             }
         }
@@ -65,28 +57,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
 
     internal class ScriptAnalysisSettings
     {
-        private readonly object updateLock = new object();
-
-        public bool? Enable { get; set; }
-
+        private readonly object updateLock = new();
+        public bool Enable { get; set; }
         public string SettingsPath { get; set; }
-
-        public ScriptAnalysisSettings()
-        {
-            this.Enable = true;
-        }
+        public ScriptAnalysisSettings() => Enable = true;
 
         public void Update(
             ScriptAnalysisSettings settings,
             string workspaceRootPath,
             ILogger logger)
         {
-            if (settings != null)
+            if (settings is not null)
             {
-                lock(updateLock)
+                lock (updateLock)
                 {
-                    this.Enable = settings.Enable;
-
+                    Enable = settings.Enable;
                     string settingsPath = settings.SettingsPath;
 
                     try
@@ -105,8 +90,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                                 // In this case we should just log an error and let
                                 // the specified settings path go through even though
                                 // it will fail to load.
-                                logger.LogError(
-                                    "Could not resolve Script Analyzer settings path due to null or empty workspaceRootPath.");
+                                logger.LogError("Could not resolve Script Analyzer settings path due to null or empty workspaceRootPath.");
                             }
                             else
                             {
@@ -114,20 +98,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                             }
                         }
 
-                        this.SettingsPath = settingsPath;
+                        SettingsPath = settingsPath;
                         logger.LogTrace($"Using Script Analyzer settings path - '{settingsPath ?? ""}'.");
                     }
-                    catch (Exception ex) when (
-                        ex is NotSupportedException ||
-                        ex is PathTooLongException ||
-                        ex is SecurityException)
+                    catch (Exception ex) when (ex is NotSupportedException or PathTooLongException or SecurityException)
                     {
                         // Invalid chars in path like ${env:HOME} can cause Path.GetFullPath() to throw, catch such errors here
-                        logger.LogException(
-                            $"Invalid Script Analyzer settings path - '{settingsPath}'.",
-                            ex);
-
-                        this.SettingsPath = null;
+                        logger.LogException($"Invalid Script Analyzer settings path - '{settingsPath}'.", ex);
+                        SettingsPath = null;
                     }
                 }
             }
@@ -192,9 +170,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         /// <summary>
         /// Default constructor.
         /// </summary>>
-        public CodeFormattingSettings()
-        {
-        }
+        public CodeFormattingSettings() { }
 
         /// <summary>
         /// Copy constructor.
@@ -202,12 +178,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         /// <param name="codeFormattingSettings">An instance of type CodeFormattingSettings.</param>
         public CodeFormattingSettings(CodeFormattingSettings codeFormattingSettings)
         {
-            if (codeFormattingSettings == null)
+            if (codeFormattingSettings is null)
             {
                 throw new ArgumentNullException(nameof(codeFormattingSettings));
             }
 
-            foreach (var prop in this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            foreach (PropertyInfo prop in GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
                 prop.SetValue(this, prop.GetValue(codeFormattingSettings));
             }
@@ -215,6 +191,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
 
         public bool AddWhitespaceAroundPipe { get; set; }
         public bool AutoCorrectAliases { get; set; }
+        public bool AvoidSemicolonsAsLineTerminators { get; set; }
         public bool UseConstantStrings { get; set; }
         public CodeFormattingPreset Preset { get; set; }
         public bool OpenBraceOnSameLine { get; set; }
@@ -226,29 +203,29 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         public bool WhitespaceBeforeOpenParen { get; set; }
         public bool WhitespaceAroundOperator { get; set; }
         public bool WhitespaceAfterSeparator { get; set; }
-        public bool WhitespaceBetweenParameters  { get; set; }
+        public bool WhitespaceBetweenParameters { get; set; }
         public bool WhitespaceInsideBrace { get; set; }
         public bool IgnoreOneLineBlock { get; set; }
         public bool AlignPropertyValuePairs { get; set; }
         public bool UseCorrectCasing { get; set; }
-
 
         /// <summary>
         /// Get the settings hashtable that will be consumed by PSScriptAnalyzer.
         /// </summary>
         /// <param name="tabSize">The tab size in the number spaces.</param>
         /// <param name="insertSpaces">If true, insert spaces otherwise insert tabs for indentation.</param>
-        /// <returns></returns>
+        /// <param name="logger">The logger instance.</param>
         public Hashtable GetPSSASettingsHashtable(
             int tabSize,
             bool insertSpaces,
             ILogger logger)
         {
-            var settings = GetCustomPSSASettingsHashtable(tabSize, insertSpaces);
-            var ruleSettings = (Hashtable)(settings["Rules"]);
-            var closeBraceSettings = (Hashtable)ruleSettings["PSPlaceCloseBrace"];
-            var openBraceSettings = (Hashtable)ruleSettings["PSPlaceOpenBrace"];
-            switch(Preset)
+            Hashtable settings = GetCustomPSSASettingsHashtable(tabSize, insertSpaces);
+            Hashtable ruleSettings = settings["Rules"] as Hashtable;
+            Hashtable closeBraceSettings = ruleSettings["PSPlaceCloseBrace"] as Hashtable;
+            Hashtable openBraceSettings = ruleSettings["PSPlaceOpenBrace"] as Hashtable;
+
+            switch (Preset)
             {
                 case CodeFormattingPreset.Allman:
                     openBraceSettings["OnSameLine"] = false;
@@ -267,37 +244,45 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     openBraceSettings["NewLineAfter"] = true;
                     closeBraceSettings["NewLineAfter"] = true;
                     break;
-
-                default:
-                    break;
             }
 
-            logger.LogDebug("Created formatting hashtable: {0}", JsonConvert.SerializeObject(settings));
+            logger.LogDebug("Created formatting hashtable: {Settings}", JsonConvert.SerializeObject(settings));
             return settings;
         }
 
         private Hashtable GetCustomPSSASettingsHashtable(int tabSize, bool insertSpaces)
         {
-            var ruleConfigurations = new Hashtable
+            Hashtable ruleConfigurations = new()
             {
-                { "PSPlaceOpenBrace", new Hashtable {
+                {
+                    "PSPlaceOpenBrace",
+                    new Hashtable {
                     { "Enable", true },
                     { "OnSameLine", OpenBraceOnSameLine },
                     { "NewLineAfter", NewLineAfterOpenBrace },
                     { "IgnoreOneLineBlock", IgnoreOneLineBlock }
-                }},
-                { "PSPlaceCloseBrace", new Hashtable {
+                }
+                },
+                {
+                    "PSPlaceCloseBrace",
+                    new Hashtable {
                     { "Enable", true },
                     { "NewLineAfter", NewLineAfterCloseBrace },
                     { "IgnoreOneLineBlock", IgnoreOneLineBlock }
-                }},
-                { "PSUseConsistentIndentation", new Hashtable {
+                }
+                },
+                {
+                    "PSUseConsistentIndentation",
+                    new Hashtable {
                     { "Enable", true },
                     { "IndentationSize", tabSize },
                     { "PipelineIndentation", PipelineIndentationStyle },
                     { "Kind", insertSpaces ? "space" : "tab" }
-                }},
-                { "PSUseConsistentWhitespace", new Hashtable {
+                }
+                },
+                {
+                    "PSUseConsistentWhitespace",
+                    new Hashtable {
                     { "Enable", true },
                     { "CheckOpenBrace", WhitespaceBeforeOpenBrace },
                     { "CheckOpenParen", WhitespaceBeforeOpenParen },
@@ -307,17 +292,33 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     { "CheckParameter", WhitespaceBetweenParameters },
                     { "CheckPipe", AddWhitespaceAroundPipe },
                     { "CheckPipeForRedundantWhitespace", TrimWhitespaceAroundPipe },
-                }},
-                { "PSAlignAssignmentStatement", new Hashtable {
+                }
+                },
+                {
+                    "PSAlignAssignmentStatement",
+                    new Hashtable {
                     { "Enable", true },
                     { "CheckHashtable", AlignPropertyValuePairs }
-                }},
-                { "PSUseCorrectCasing", new Hashtable {
+                }
+                },
+                {
+                    "PSUseCorrectCasing",
+                    new Hashtable {
                     { "Enable", UseCorrectCasing }
-                }},
-                { "PSAvoidUsingDoubleQuotesForConstantString", new Hashtable {
+                }
+                },
+                {
+                    "PSAvoidUsingDoubleQuotesForConstantString",
+                    new Hashtable {
                     { "Enable", UseConstantStrings }
-                }},
+                }
+                },
+                {
+                    "PSAvoidSemicolonsAsLineTerminators",
+                    new Hashtable {
+                    { "Enable", AvoidSemicolonsAsLineTerminators }
+                    }
+                },
             };
 
             if (AutoCorrectAliases)
@@ -337,8 +338,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                         "PSAlignAssignmentStatement",
                         "PSAvoidUsingDoubleQuotesForConstantString",
                 }},
-                {
-                    "Rules", ruleConfigurations
+                { "Rules", ruleConfigurations
                 }
             };
         }
@@ -366,14 +366,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
             CodeFoldingSettings settings,
             ILogger logger)
         {
-            if (settings != null) {
-                if (this.Enable != settings.Enable) {
-                    this.Enable = settings.Enable;
-                    logger.LogTrace(string.Format("Using Code Folding Enabled - {0}", this.Enable));
+            if (settings is not null)
+            {
+                if (Enable != settings.Enable)
+                {
+                    Enable = settings.Enable;
+                    logger.LogTrace(string.Format("Using Code Folding Enabled - {0}", Enable));
                 }
-                if (this.ShowLastLine != settings.ShowLastLine) {
-                    this.ShowLastLine = settings.ShowLastLine;
-                    logger.LogTrace(string.Format("Using Code Folding ShowLastLine - {0}", this.ShowLastLine));
+                if (ShowLastLine != settings.ShowLastLine)
+                {
+                    ShowLastLine = settings.ShowLastLine;
+                    logger.LogTrace(string.Format("Using Code Folding ShowLastLine - {0}", ShowLastLine));
                 }
             }
         }
@@ -392,7 +395,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         /// <summary>
         /// Whether integration features specific to Pester v5 are enabled
         /// </summary>
-        public bool UseLegacyCodeLens { get; set; } = false;
+        public bool UseLegacyCodeLens { get; set; }
 
         /// <summary>
         /// Update these settings from another settings object
@@ -401,20 +404,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
             PesterSettings settings,
             ILogger logger)
         {
-            if (settings is null) {
+            if (settings is null)
+            {
                 return;
             }
 
-            if (this.CodeLens != settings.CodeLens)
+            if (CodeLens != settings.CodeLens)
             {
-                this.CodeLens = settings.CodeLens;
-                logger.LogTrace(string.Format("Using Pester Code Lens - {0}", this.CodeLens));
+                CodeLens = settings.CodeLens;
+                logger.LogTrace(string.Format("Using Pester Code Lens - {0}", CodeLens));
             }
 
-            if (this.UseLegacyCodeLens != settings.UseLegacyCodeLens)
+            if (UseLegacyCodeLens != settings.UseLegacyCodeLens)
             {
-                this.UseLegacyCodeLens = settings.UseLegacyCodeLens;
-                logger.LogTrace(string.Format("Using Pester Legacy Code Lens - {0}", this.UseLegacyCodeLens));
+                UseLegacyCodeLens = settings.UseLegacyCodeLens;
+                logger.LogTrace(string.Format("Using Pester Legacy Code Lens - {0}", UseLegacyCodeLens));
             }
         }
     }
@@ -426,10 +430,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
     internal class EditorFileSettings
     {
         /// <summary>
-        /// Exclude files globs consists of hashtable with the key as the glob and a boolean value to indicate if the
-        /// the glob is in effect.
+        /// Exclude files globs consists of hashtable with the key as the glob and a boolean value
+        /// OR object with a predicate clause to indicate if the glob is in effect.
         /// </summary>
-        public Dictionary<string, bool> Exclude { get; set; }
+        public Dictionary<string, object> Exclude { get; set; }
     }
 
     /// <summary>
@@ -439,10 +443,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
     internal class EditorSearchSettings
     {
         /// <summary>
-        /// Exclude files globs consists of hashtable with the key as the glob and a boolean value to indicate if the
-        /// the glob is in effect.
+        /// Exclude files globs consists of hashtable with the key as the glob and a boolean value
+        /// OR object with a predicate clause to indicate if the glob is in effect.
         /// </summary>
-        public Dictionary<string, bool> Exclude { get; set; }
+        public Dictionary<string, object> Exclude { get; set; }
+
         /// <summary>
         /// Whether to follow symlinks when searching
         /// </summary>

@@ -11,7 +11,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
     {
         #region Private Fields
 
-        private ScriptFile scriptFile;
+        private readonly ScriptFile scriptFile;
 
         #endregion
 
@@ -28,10 +28,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             ScriptFile scriptFile,
             int line,
             int column)
-                : base(line, column)
-        {
-            this.scriptFile = scriptFile;
-        }
+                : base(line, column) => this.scriptFile = scriptFile;
 
         /// <summary>
         /// Creates a new FilePosition instance for the specified file by
@@ -42,10 +39,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         public FilePosition(
             ScriptFile scriptFile,
             BufferPosition copiedPosition)
-                 : this(scriptFile, copiedPosition.Line, copiedPosition.Column)
-        {
-            scriptFile.ValidatePosition(copiedPosition);
-        }
+                 : this(scriptFile, copiedPosition.Line, copiedPosition.Column) => scriptFile.ValidatePosition(copiedPosition);
 
         #endregion
 
@@ -61,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <returns>A new FilePosition instance for the calculated position.</returns>
         public FilePosition AddOffset(int lineOffset, int columnOffset)
         {
-            return this.scriptFile.CalculatePosition(
+            return scriptFile.CalculatePosition(
                 this,
                 lineOffset,
                 columnOffset);
@@ -75,7 +69,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <returns>A new FilePosition instance for the calculated position.</returns>
         public FilePosition GetLineStart()
         {
-            string scriptLine = scriptFile.FileLines[this.Line - 1];
+            string scriptLine = scriptFile.FileLines[Line - 1];
 
             int lineStartColumn = 1;
             for (int i = 0; i < scriptLine.Length; i++)
@@ -87,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                 }
             }
 
-            return new FilePosition(this.scriptFile, this.Line, lineStartColumn);
+            return new FilePosition(scriptFile, Line, lineStartColumn);
         }
 
         /// <summary>
@@ -97,11 +91,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <returns>A new FilePosition instance for the calculated position.</returns>
         public FilePosition GetLineEnd()
         {
-            string scriptLine = scriptFile.FileLines[this.Line - 1];
-            return new FilePosition(this.scriptFile, this.Line, scriptLine.Length + 1);
+            string scriptLine = scriptFile.FileLines[Line - 1];
+            return new FilePosition(scriptFile, Line, scriptLine.Length + 1);
         }
 
         #endregion
     }
 }
-

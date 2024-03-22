@@ -8,10 +8,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\PowerShellEditorServices\PowerShellEditorServices.csproj" />
   </ItemGroup>
-  <PropertyGroup>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
-  </PropertyGroup>
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>Microsoft.PowerShell.EditorServices.Test</_Parameter1>

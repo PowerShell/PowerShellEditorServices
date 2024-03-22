@@ -14,7 +14,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared
     /// </summary>
     public static class TestUtilities
     {
-        private static readonly char[] s_unixNewlines = new [] { '\n' };
+        private static readonly char[] s_unixNewlines = new[] { '\n' };
 
         /// <summary>
         /// Takes a UNIX-style path and converts it to the path appropriate to the platform.
@@ -44,7 +44,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared
         /// <returns>The normalized and resolved path to it.</returns>
         public static string GetSharedPath(string path)
         {
-            // TODO: When testing net461 with x64 host, another .. is needed!
+            // TODO: When testing net462 with x64 host, another .. is needed!
             return NormalizePath(Path.Combine(
                 Path.GetDirectoryName(typeof(TestUtilities).Assembly.Location),
                 "../../../../PowerShellEditorServices.Test.Shared",
@@ -65,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                return String.Join(Environment.NewLine, unixString.Split(s_unixNewlines));
+                return string.Join(Environment.NewLine, unixString.Split(s_unixNewlines));
             }
 
             return unixString;
@@ -76,15 +76,12 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared
         /// </summary>
         /// <param name="unixString">The string to normalize for the platform, given with UNIX-specific separators.</param>
         /// <returns>The same string but separated by platform-appropriate directory and newline separators.</returns>
-        public static string PlatformNormalize(string unixString)
-        {
-            return NormalizeNewlines(NormalizePath(unixString));
-        }
+        public static string PlatformNormalize(string unixString) => NormalizeNewlines(NormalizePath(unixString));
 
         /// <summary>
         /// Not for use in production -- convenience code for debugging tests.
         /// </summary>
-        public static void AWAIT_DEBUGGER_HERE(
+        public static void AwaitDebuggerHere(
             [CallerMemberName] string callerName = null,
             [CallerFilePath] string callerPath = null,
             [CallerLineNumber] int callerLine = -1)

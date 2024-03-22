@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
     public interface IWorkspaceService
     {
         /// <summary>
-        /// The root path of the workspace.
+        /// The root path of the workspace for the current editor.
         /// </summary>
         string WorkspacePath { get; }
 
@@ -116,7 +116,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             ExcludedFileGlobs = _workspaceService.ExcludeFilesGlob.AsReadOnly();
         }
 
-        public string WorkspacePath => _workspaceService.WorkspacePath;
+        // TODO: This needs to use the associated EditorContext to get the workspace for the current
+        // editor instead of the initial working directory.
+        public string WorkspacePath => _workspaceService.InitialWorkingDirectory;
 
         public bool FollowSymlinks => _workspaceService.FollowSymlinks;
 
@@ -138,7 +140,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
 
         public IReadOnlyList<IEditorScriptFile> GetOpenedFiles()
         {
-            var files = new List<IEditorScriptFile>();
+            List<IEditorScriptFile> files = new();
             foreach (ScriptFile openedFile in _workspaceService.GetOpenedFiles())
             {
                 files.Add(GetEditorFileFromScriptFile(openedFile));
@@ -146,9 +148,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             return files.AsReadOnly();
         }
 
-        private static IEditorScriptFile GetEditorFileFromScriptFile(ScriptFile file)
-        {
-            return new EditorScriptFile(file);
-        }
+        private static IEditorScriptFile GetEditorFileFromScriptFile(ScriptFile file) => new EditorScriptFile(file);
     }
 }

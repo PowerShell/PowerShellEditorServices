@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 {
     internal static class ErrorRecordExtensions
     {
-        private static Action<PSObject> s_setWriteStreamProperty = null;
+        private static readonly Action<PSObject> s_setWriteStreamProperty;
 
         [SuppressMessage("Performance", "CA1810:Initialize reference type static fields inline", Justification = "cctor needed for version specific initialization")]
         static ErrorRecordExtensions()
@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 Type writeStreamType = typeof(PSObject).Assembly.GetType("System.Management.Automation.WriteStreamType");
                 object errorStreamType = Enum.Parse(writeStreamType, "Error");
 
-                var errorObjectParameter = Expression.Parameter(typeof(PSObject));
+                ParameterExpression errorObjectParameter = Expression.Parameter(typeof(PSObject));
 
                 // Generates a call like:
                 //  $errorPSObject.WriteStream = [System.Management.Automation.WriteStreamType]::Error
@@ -43,7 +43,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 
         public static PSObject AsPSObject(this ErrorRecord errorRecord)
         {
-            var errorObject = PSObject.AsPSObject(errorRecord);
+            PSObject errorObject = PSObject.AsPSObject(errorRecord);
 
             // Used to write ErrorRecords to the Error stream so they are rendered in the console correctly.
             if (s_setWriteStreamProperty != null)
@@ -52,7 +52,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             }
             else
             {
-                var note = new PSNoteProperty("writeErrorStream", true);
+                PSNoteProperty note = new("writeErrorStream", true);
                 errorObject.Properties.Add(note);
             }
 

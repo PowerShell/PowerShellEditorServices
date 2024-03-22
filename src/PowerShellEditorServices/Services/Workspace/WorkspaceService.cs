@@ -1,19 +1,20 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
+using System.Linq;
 using System.Security;
 using System.Text;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Utility;
-using Microsoft.PowerShell.EditorServices.Services.Workspace;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using System.Collections.Concurrent;
+using Microsoft.PowerShell.EditorServices.Services.Workspace;
+using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Services
 {
@@ -45,23 +46,33 @@ namespace Microsoft.PowerShell.EditorServices.Services
         };
 
         // An array of globs which includes everything.
-        private static readonly string[] s_psIncludeAllGlob = new []
+        private static readonly string[] s_psIncludeAllGlob = new[]
         {
             "**/*"
         };
 
         private readonly ILogger logger;
         private readonly Version powerShellVersion;
-        private readonly ConcurrentDictionary<string, ScriptFile> workspaceFiles = new ConcurrentDictionary<string, ScriptFile>();
+        private readonly ConcurrentDictionary<string, ScriptFile> workspaceFiles = new();
 
         #endregion
 
         #region Properties
 
         /// <summary>
-        /// Gets or sets the root path of the workspace.
+        /// <para>Gets or sets the initial working directory.</para>
+        /// <para>
+        /// This is settable by the same key in the initialization options, and likely corresponds
+        /// to the root of the workspace if only one workspace folder is being used. However, in
+        /// multi-root workspaces this may be any workspace folder's root (or none if overridden).
+        /// </para>
         /// </summary>
-        public string WorkspacePath { get; set; }
+        public string InitialWorkingDirectory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the folders of the workspace.
+        /// </summary>
+        public List<WorkspaceFolder> WorkspaceFolders { get; set; }
 
         /// <summary>
         /// Gets or sets the default list of file globs to exclude during workspace searches.
@@ -80,24 +91,25 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         /// Creates a new instance of the Workspace class.
         /// </summary>
-        /// <param name="powerShellVersion">The version of PowerShell for which scripts will be parsed.</param>
-        /// <param name="logger">An ILogger implementation used for writing log messages.</param>
         public WorkspaceService(ILoggerFactory factory)
         {
-            this.powerShellVersion = VersionUtils.PSVersion;
-            this.logger = factory.CreateLogger<WorkspaceService>();
-            this.ExcludeFilesGlob = new List<string>();
-            this.FollowSymlinks = true;
+            powerShellVersion = VersionUtils.PSVersion;
+            logger = factory.CreateLogger<WorkspaceService>();
+            WorkspaceFolders = new List<WorkspaceFolder>();
+            ExcludeFilesGlob = new List<string>();
+            FollowSymlinks = true;
         }
 
         #endregion
 
         #region Public Methods
 
+        public IEnumerable<string> WorkspacePaths => WorkspaceFolders.Select(i => i.Uri.GetFileSystemPath());
+
         /// <summary>
         /// Gets an open file in the workspace. If the file isn't open but exists on the filesystem, load and return it.
         /// <para>IMPORTANT: Not all documents have a backing file e.g. untitled: scheme documents.  Consider using
-        /// <see cref="WorkspaceService.TryGetFile(string, out ScriptFile)"/> instead.</para>
+        /// <see cref="TryGetFile(string, out ScriptFile)"/> instead.</para>
         /// </summary>
         /// <param name="filePath">The file path at which the script resides.</param>
         /// <exception cref="FileNotFoundException">
@@ -108,58 +120,39 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </exception>
         public ScriptFile GetFile(string filePath) => GetFile(new Uri(filePath));
 
-        /// <summary>
-        /// Gets an open file in the workspace. If the file isn't open but exists on the filesystem, load and return it.
-        /// <para>IMPORTANT: Not all documents have a backing file e.g. untitled: scheme documents.  Consider using
-        /// <see cref="WorkspaceService.TryGetFile(string, out ScriptFile)"/> instead.</para>
-        /// </summary>
-        /// <param name="fileUri">The file URI at which the script resides.</param>
-        /// <exception cref="FileNotFoundException">
-        /// <paramref name="filePath"/> is not found.
-        /// </exception>
-        /// <exception cref="ArgumentException">
-        /// <paramref name="filePath"/> contains a null or empty string.
-        /// </exception>
         public ScriptFile GetFile(Uri fileUri) => GetFile(DocumentUri.From(fileUri));
 
         /// <summary>
         /// Gets an open file in the workspace. If the file isn't open but exists on the filesystem, load and return it.
         /// <para>IMPORTANT: Not all documents have a backing file e.g. untitled: scheme documents.  Consider using
-        /// <see cref="WorkspaceService.TryGetFile(string, out ScriptFile)"/> instead.</para>
+        /// <see cref="TryGetFile(string, out ScriptFile)"/> instead.</para>
         /// </summary>
         /// <param name="documentUri">The document URI at which the script resides.</param>
-        /// <exception cref="FileNotFoundException">
-        /// <paramref name="filePath"/> is not found.
-        /// </exception>
-        /// <exception cref="ArgumentException">
-        /// <paramref name="filePath"/> contains a null or empty string.
-        /// </exception>
+        /// <exception cref="FileNotFoundException"></exception>
+        /// <exception cref="ArgumentException"></exception>
         public ScriptFile GetFile(DocumentUri documentUri)
         {
             Validate.IsNotNull(nameof(documentUri), documentUri);
 
-            string keyName = VersionUtils.IsLinux
-                ? documentUri.ToString()
-                : documentUri.ToString().ToLower();
+            string keyName = GetFileKey(documentUri);
 
             // Make sure the file isn't already loaded into the workspace
-            if (!this.workspaceFiles.TryGetValue(keyName, out ScriptFile scriptFile))
+            if (!workspaceFiles.TryGetValue(keyName, out ScriptFile scriptFile))
             {
                 // This method allows FileNotFoundException to bubble up
                 // if the file isn't found.
-                using (FileStream fileStream = new FileStream(documentUri.GetFileSystemPath(), FileMode.Open, FileAccess.Read))
-                using (StreamReader streamReader = new StreamReader(fileStream, Encoding.UTF8))
+                using (StreamReader streamReader = OpenStreamReader(documentUri))
                 {
                     scriptFile =
                         new ScriptFile(
                             documentUri,
                             streamReader,
-                            this.powerShellVersion);
+                            powerShellVersion);
 
-                    this.workspaceFiles[keyName] = scriptFile;
+                    workspaceFiles[keyName] = scriptFile;
                 }
 
-                this.logger.LogDebug("Opened file on disk: " + documentUri.ToString());
+                logger.LogDebug("Opened file on disk: " + documentUri.ToString());
             }
 
             return scriptFile;
@@ -170,8 +163,19 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="filePath">The file path at which the script resides.</param>
         /// <param name="scriptFile">The out parameter that will contain the ScriptFile object.</param>
-        public bool TryGetFile(string filePath, out ScriptFile scriptFile) =>
-            TryGetFile(new Uri(filePath), out scriptFile);
+        public bool TryGetFile(string filePath, out ScriptFile scriptFile)
+        {
+            // This might not have been given a file path, in which case the Uri constructor barfs.
+            try
+            {
+                return TryGetFile(new Uri(filePath), out scriptFile);
+            }
+            catch (UriFormatException)
+            {
+                scriptFile = null;
+                return false;
+            }
+        }
 
         /// <summary>
         /// Tries to get an open file in the workspace. Returns true if it succeeds, false otherwise.
@@ -208,15 +212,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return true;
             }
             catch (Exception e) when (
-                e is NotSupportedException ||
-                e is FileNotFoundException ||
-                e is DirectoryNotFoundException ||
-                e is PathTooLongException ||
-                e is IOException ||
-                e is SecurityException ||
-                e is UnauthorizedAccessException)
+                e is NotSupportedException or
+                FileNotFoundException or
+                DirectoryNotFoundException or
+                PathTooLongException or
+                IOException or
+                SecurityException or
+                UnauthorizedAccessException)
             {
-                this.logger.LogWarning($"Failed to get file for fileUri: '{documentUri.ToString()}'", e);
+                logger.LogWarning($"Failed to get file for fileUri: '{documentUri}'", e);
                 scriptFile = null;
                 return false;
             }
@@ -265,35 +269,29 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             Validate.IsNotNull(nameof(documentUri), documentUri);
 
-            string keyName = VersionUtils.IsLinux
-                ? documentUri.ToString()
-                : documentUri.ToString().ToLower();
+            string keyName = GetFileKey(documentUri);
 
             // Make sure the file isn't already loaded into the workspace
-            if (!this.workspaceFiles.TryGetValue(keyName, out ScriptFile scriptFile) && initialBuffer != null)
+            if (!workspaceFiles.TryGetValue(keyName, out ScriptFile scriptFile) && initialBuffer != null)
             {
                 scriptFile =
-                    new ScriptFile(
+                    ScriptFile.Create(
                         documentUri,
                         initialBuffer,
-                        this.powerShellVersion);
+                        powerShellVersion);
 
-                this.workspaceFiles[keyName] = scriptFile;
+                workspaceFiles[keyName] = scriptFile;
 
-                this.logger.LogDebug("Opened file as in-memory buffer: " + documentUri.ToString());
+                logger.LogDebug("Opened file as in-memory buffer: " + documentUri.ToString());
             }
 
             return scriptFile;
         }
 
         /// <summary>
-        /// Gets an array of all opened ScriptFiles in the workspace.
+        /// Gets an IEnumerable of all opened ScriptFiles in the workspace.
         /// </summary>
-        /// <returns>An array of all opened ScriptFiles in the workspace.</returns>
-        public ScriptFile[] GetOpenedFiles()
-        {
-            return workspaceFiles.Values.ToArray();
-        }
+        public IEnumerable<ScriptFile> GetOpenedFiles() => workspaceFiles.Values;
 
         /// <summary>
         /// Closes a currently open script file with the given file path.
@@ -301,64 +299,40 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="scriptFile">The file path at which the script resides.</param>
         public void CloseFile(ScriptFile scriptFile)
         {
-            Validate.IsNotNull("scriptFile", scriptFile);
+            Validate.IsNotNull(nameof(scriptFile), scriptFile);
 
-            this.workspaceFiles.TryRemove(scriptFile.Id, out ScriptFile _);
-        }
-
-        /// <summary>
-        /// Gets all file references by recursively searching
-        /// through referenced files in a scriptfile
-        /// </summary>
-        /// <param name="scriptFile">Contains the details and contents of an open script file</param>
-        /// <returns>A scriptfile array where the first file
-        /// in the array is the "root file" of the search</returns>
-        public ScriptFile[] ExpandScriptReferences(ScriptFile scriptFile)
-        {
-            Dictionary<string, ScriptFile> referencedScriptFiles = new Dictionary<string, ScriptFile>();
-            List<ScriptFile> expandedReferences = new List<ScriptFile>();
-
-            // add original file so it's not searched for, then find all file references
-            referencedScriptFiles.Add(scriptFile.Id, scriptFile);
-            RecursivelyFindReferences(scriptFile, referencedScriptFiles);
-
-            // remove original file from referened file and add it as the first element of the
-            // expanded referenced list to maintain order so the original file is always first in the list
-            referencedScriptFiles.Remove(scriptFile.Id);
-            expandedReferences.Add(scriptFile);
-
-            if (referencedScriptFiles.Count > 0)
-            {
-                expandedReferences.AddRange(referencedScriptFiles.Values);
-            }
-
-            return expandedReferences.ToArray();
+            string keyName = GetFileKey(scriptFile.DocumentUri);
+            workspaceFiles.TryRemove(keyName, out ScriptFile _);
         }
 
         /// <summary>
         /// Gets the workspace-relative path of the given file path.
         /// </summary>
-        /// <param name="filePath">The original full file path.</param>
         /// <returns>A relative file path</returns>
-        public string GetRelativePath(string filePath)
+        public string GetRelativePath(ScriptFile scriptFile)
         {
-            string resolvedPath = filePath;
-
-            if (!IsPathInMemory(filePath) && !string.IsNullOrEmpty(this.WorkspacePath))
+            Uri fileUri = scriptFile.DocumentUri.ToUri();
+            if (!scriptFile.IsInMemory)
             {
-                Uri workspaceUri = new Uri(this.WorkspacePath);
-                Uri fileUri = new Uri(filePath);
-
-                resolvedPath = workspaceUri.MakeRelativeUri(fileUri).ToString();
-
-                // Convert the directory separators if necessary
-                if (System.IO.Path.DirectorySeparatorChar == '\\')
+                // Support calculating out-of-workspace relative paths in the common case of a
+                // single workspace folder. Otherwise try to get the matching folder.
+                foreach (WorkspaceFolder workspaceFolder in WorkspaceFolders)
                 {
-                    resolvedPath = resolvedPath.Replace('/', '\\');
+                    Uri workspaceUri = workspaceFolder.Uri.ToUri();
+                    if (WorkspaceFolders.Count == 1 || workspaceUri.IsBaseOf(fileUri))
+                    {
+                        return workspaceUri.MakeRelativeUri(fileUri).ToString();
+                    }
                 }
             }
 
-            return resolvedPath;
+            // Default to the absolute file path if possible, otherwise just return the URI. This
+            // removes the scheme and initial slash when possible.
+            if (fileUri.IsAbsoluteUri)
+            {
+                return fileUri.AbsolutePath;
+            }
+            return fileUri.ToString();
         }
 
         /// <summary>
@@ -376,137 +350,70 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
 
         /// <summary>
-        /// Enumerate all the PowerShell (ps1, psm1, psd1) files in the workspace in a recursive manner.
+        /// Enumerate all the PowerShell (ps1, psm1, psd1) files in the workspace folders in a
+        /// recursive manner. Falls back to initial working directory if there are no workspace folders.
         /// </summary>
         /// <returns>An enumerator over the PowerShell files found in the workspace.</returns>
         public IEnumerable<string> EnumeratePSFiles(
             string[] excludeGlobs,
             string[] includeGlobs,
             int maxDepth,
-            bool ignoreReparsePoints
-        )
+            bool ignoreReparsePoints)
         {
-            if (WorkspacePath == null || !Directory.Exists(WorkspacePath))
-            {
-                yield break;
-            }
-
-            var matcher = new Matcher();
+            Matcher matcher = new();
             foreach (string pattern in includeGlobs) { matcher.AddInclude(pattern); }
             foreach (string pattern in excludeGlobs) { matcher.AddExclude(pattern); }
 
-            var fsFactory = new WorkspaceFileSystemWrapperFactory(
-                WorkspacePath,
-                maxDepth,
-                VersionUtils.IsNetCore ? s_psFileExtensionsCoreFramework : s_psFileExtensionsFullFramework,
-                ignoreReparsePoints,
-                logger
-            );
-            var fileMatchResult = matcher.Execute(fsFactory.RootDirectory);
-            foreach (FilePatternMatch item in fileMatchResult.Files)
+            foreach (string rootPath in WorkspacePaths)
             {
-                // item.Path always contains forward slashes in paths when it should be backslashes on Windows.
-                // Since we're returning strings here, it's important to use the correct directory separator.
-                var path = VersionUtils.IsWindows ? item.Path.Replace('/', Path.DirectorySeparatorChar) : item.Path;
-                yield return Path.Combine(WorkspacePath, path);
+                if (!Directory.Exists(rootPath))
+                {
+                    continue;
+                }
+
+                WorkspaceFileSystemWrapperFactory fsFactory = new(
+                    rootPath,
+                    maxDepth,
+                    VersionUtils.IsNetCore ? s_psFileExtensionsCoreFramework : s_psFileExtensionsFullFramework,
+                    ignoreReparsePoints,
+                    logger);
+
+                PatternMatchingResult fileMatchResult = matcher.Execute(fsFactory.RootDirectory);
+                foreach (FilePatternMatch item in fileMatchResult.Files)
+                {
+                    // item.Path always contains forward slashes in paths when it should be backslashes on Windows.
+                    // Since we're returning strings here, it's important to use the correct directory separator.
+                    string path = VersionUtils.IsWindows ? item.Path.Replace('/', Path.DirectorySeparatorChar) : item.Path;
+                    yield return Path.Combine(rootPath, path);
+                }
             }
         }
 
         #endregion
 
         #region Private Methods
-        /// <summary>
-        /// Recursively searches through referencedFiles in scriptFiles
-        /// and builds a Dictionary of the file references
-        /// </summary>
-        /// <param name="scriptFile">Details an contents of "root" script file</param>
-        /// <param name="referencedScriptFiles">A Dictionary of referenced script files</param>
-        private void RecursivelyFindReferences(
-            ScriptFile scriptFile,
-            Dictionary<string, ScriptFile> referencedScriptFiles)
+
+        internal static StreamReader OpenStreamReader(DocumentUri uri)
         {
-            // Get the base path of the current script for use in resolving relative paths
-            string baseFilePath = scriptFile.IsInMemory
-                ? WorkspacePath
-                : Path.GetDirectoryName(scriptFile.FilePath);
-
-            foreach (string referencedFileName in scriptFile.ReferencedFiles)
-            {
-                string resolvedScriptPath =
-                    this.ResolveRelativeScriptPath(
-                        baseFilePath,
-                        referencedFileName);
-
-                // If there was an error resolving the string, skip this reference
-                if (resolvedScriptPath == null)
-                {
-                    continue;
-                }
-
-                this.logger.LogDebug(
-                    string.Format(
-                        "Resolved relative path '{0}' to '{1}'",
-                        referencedFileName,
-                        resolvedScriptPath));
-
-                // Get the referenced file if it's not already in referencedScriptFiles
-                if (TryGetFile(resolvedScriptPath, out ScriptFile referencedFile))
-                {
-                    // Normalize the resolved script path and add it to the
-                    // referenced files list if it isn't there already
-                    resolvedScriptPath = resolvedScriptPath.ToLower();
-                    if (!referencedScriptFiles.ContainsKey(resolvedScriptPath))
-                    {
-                        referencedScriptFiles.Add(resolvedScriptPath, referencedFile);
-                        RecursivelyFindReferences(referencedFile, referencedScriptFiles);
-                    }
-                }
-            }
+            FileStream fileStream = new(uri.GetFileSystemPath(), FileMode.Open, FileAccess.Read);
+            // Default to UTF8 no BOM if a BOM is not present. Note that `Encoding.UTF8` is *with*
+            // BOM, so we call the ctor here to get the BOM-less version.
+            //
+            // TODO: Honor workspace encoding settings for the fallback.
+            return new StreamReader(fileStream, new UTF8Encoding(), detectEncodingFromByteOrderMarks: true);
         }
 
-        internal static bool IsPathInMemory(string filePath)
+        internal static string ReadFileContents(DocumentUri uri)
         {
-            bool isInMemory = false;
-
-            // In cases where a "virtual" file is displayed in the editor,
-            // we need to treat the file differently than one that exists
-            // on disk.  A virtual file could be something like a diff
-            // view of the current file or an untitled file.
-            try
-            {
-                // File system absolute paths will have a URI scheme of file:.
-                // Other schemes like "untitled:" and "gitlens-git:" will return false for IsFile.
-                var uri = new Uri(filePath);
-                isInMemory = !uri.IsFile;
-            }
-            catch (UriFormatException)
-            {
-                // Relative file paths cause a UriFormatException.
-                // In this case, fallback to using Path.GetFullPath().
-                try
-                {
-                    Path.GetFullPath(filePath);
-                }
-                catch (Exception ex) when (ex is ArgumentException || ex is NotSupportedException)
-                {
-                    isInMemory = true;
-                }
-                catch (PathTooLongException)
-                {
-                    // If we ever get here, it should be an actual file so, not in memory
-                }
-            }
-
-            return isInMemory;
+            using StreamReader reader = OpenStreamReader(uri);
+            return reader.ReadToEnd();
         }
 
-        internal string ResolveWorkspacePath(string path)
-        {
-            return ResolveRelativeScriptPath(WorkspacePath, path);
-        }
+        internal string ResolveWorkspacePath(string path) => ResolveRelativeScriptPath(InitialWorkingDirectory, path);
 
         internal string ResolveRelativeScriptPath(string baseFilePath, string relativePath)
         {
+            // TODO: Sometimes the `baseFilePath` (even when its `WorkspacePath`) is null.
             string combinedPath = null;
             Exception resolveException = null;
 
@@ -543,15 +450,23 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             if (resolveException != null)
             {
-                this.logger.LogError(
-                    $"Could not resolve relative script path\r\n" +
+                logger.LogError(
+                    "Could not resolve relative script path\r\n" +
                     $"    baseFilePath = {baseFilePath}\r\n    " +
                     $"    relativePath = {relativePath}\r\n\r\n" +
-                    $"{resolveException.ToString()}");
+                    $"{resolveException}");
             }
 
             return combinedPath;
         }
+
+        /// <summary>
+        /// Returns a normalized string for a given documentUri to be used as key name.
+        /// Case-sensitive uri on Linux and lowercase for other platforms.
+        /// </summary>
+        /// <param name="documentUri">A DocumentUri object to get a normalized key name from</param>
+        private static string GetFileKey(DocumentUri documentUri)
+            => VersionUtils.IsLinux ? documentUri.ToString() : documentUri.ToString().ToLower();
 
         #endregion
     }

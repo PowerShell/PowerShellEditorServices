@@ -16,6 +16,7 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 
@@ -29,7 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     {
         #region Fields
 
-        private const string PsesGlobalVariableNamePrefix = "__psEditorServices_";
+        internal const string PsesGlobalVariableNamePrefix = "__psEditorServices_";
         private const string TemporaryScriptFileName = "Script Listing.ps1";
 
         private readonly ILogger _logger;
@@ -73,6 +74,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// is stopped.
         /// </summary>
         public DebuggerStoppedEventArgs CurrentDebuggerStoppedEventArgs { get; private set; }
+
+        /// <summary>
+        /// Tracks whether we are running <c>Debug-Runspace</c> in an out-of-process runspace.
+        /// </summary>
+        public bool IsDebuggingRemoteRunspace
+        {
+            get => _debugContext.IsDebuggingRemoteRunspace;
+            set => _debugContext.IsDebuggingRemoteRunspace = value;
+        }
 
         #endregion
 
@@ -120,14 +130,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="breakpoints">BreakpointDetails for each breakpoint that will be set.</param>
         /// <param name="clearExisting">If true, causes all existing breakpoints to be cleared before setting new ones.</param>
         /// <returns>An awaitable Task that will provide details about the breakpoints that were set.</returns>
-        public async Task<BreakpointDetails[]> SetLineBreakpointsAsync(
+        public async Task<IReadOnlyList<BreakpointDetails>> SetLineBreakpointsAsync(
             ScriptFile scriptFile,
-            BreakpointDetails[] breakpoints,
+            IReadOnlyList<BreakpointDetails> breakpoints,
             bool clearExisting = true)
         {
-            DscBreakpointCapability dscBreakpoints = await _debugContext.GetDscBreakpointCapabilityAsync(CancellationToken.None).ConfigureAwait(false);
+            DscBreakpointCapability dscBreakpoints = await _debugContext.GetDscBreakpointCapabilityAsync().ConfigureAwait(false);
 
             string scriptPath = scriptFile.FilePath;
+
+            _psesHost.Runspace.ThrowCancelledIfUnusable();
             // Make sure we're using the remote script path
             if (_psesHost.CurrentRunspace.IsOnRemoteMachine && _remoteFileManager is not null)
             {
@@ -156,7 +168,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     await _breakpointService.RemoveAllBreakpointsAsync(scriptFile.FilePath).ConfigureAwait(false);
                 }
 
-                return (await _breakpointService.SetBreakpointsAsync(escapedScriptPath, breakpoints).ConfigureAwait(false)).ToArray();
+                return await _breakpointService.SetBreakpointsAsync(escapedScriptPath, breakpoints).ConfigureAwait(false);
             }
 
             return await dscBreakpoints
@@ -170,88 +182,66 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="breakpoints">CommandBreakpointDetails for each command breakpoint that will be set.</param>
         /// <param name="clearExisting">If true, causes all existing function breakpoints to be cleared before setting new ones.</param>
         /// <returns>An awaitable Task that will provide details about the breakpoints that were set.</returns>
-        public async Task<CommandBreakpointDetails[]> SetCommandBreakpointsAsync(
-            CommandBreakpointDetails[] breakpoints,
+        public async Task<IReadOnlyList<CommandBreakpointDetails>> SetCommandBreakpointsAsync(
+            IReadOnlyList<CommandBreakpointDetails> breakpoints,
             bool clearExisting = true)
         {
-            CommandBreakpointDetails[] resultBreakpointDetails = null;
-
             if (clearExisting)
             {
                 // Flatten dictionary values into one list and remove them all.
-                IEnumerable<Breakpoint> existingBreakpoints = await _breakpointService.GetBreakpointsAsync().ConfigureAwait(false);
+                IReadOnlyList<Breakpoint> existingBreakpoints = await _breakpointService.GetBreakpointsAsync().ConfigureAwait(false);
                 await _breakpointService.RemoveBreakpointsAsync(existingBreakpoints.OfType<CommandBreakpoint>()).ConfigureAwait(false);
             }
 
-            if (breakpoints.Length > 0)
-            {
-                resultBreakpointDetails = (await _breakpointService.SetCommandBreakpoints(breakpoints).ConfigureAwait(false)).ToArray();
-            }
-
-            return resultBreakpointDetails ?? Array.Empty<CommandBreakpointDetails>();
+            return breakpoints.Count > 0
+                ? await _breakpointService.SetCommandBreakpointsAsync(breakpoints).ConfigureAwait(false)
+                : Array.Empty<CommandBreakpointDetails>();
         }
 
         /// <summary>
         /// Sends a "continue" action to the debugger when stopped.
         /// </summary>
-        public void Continue()
-        {
-            _debugContext.Continue();
-        }
+        public void Continue() => _debugContext.Continue();
 
         /// <summary>
         /// Sends a "step over" action to the debugger when stopped.
         /// </summary>
-        public void StepOver()
-        {
-            _debugContext.StepOver();
-        }
+        public void StepOver() => _debugContext.StepOver();
 
         /// <summary>
         /// Sends a "step in" action to the debugger when stopped.
         /// </summary>
-        public void StepIn()
-        {
-            _debugContext.StepInto();
-        }
+        public void StepIn() => _debugContext.StepInto();
 
         /// <summary>
         /// Sends a "step out" action to the debugger when stopped.
         /// </summary>
-        public void StepOut()
-        {
-            _debugContext.StepOut();
-        }
+        public void StepOut() => _debugContext.StepOut();
 
         /// <summary>
         /// Causes the debugger to break execution wherever it currently
         /// is at the time. This is equivalent to clicking "Pause" in a
         /// debugger UI.
         /// </summary>
-        public void Break()
-        {
-            _debugContext.BreakExecution();
-        }
+        public void Break() => _debugContext.BreakExecution();
 
         /// <summary>
         /// Aborts execution of the debugger while it is running, even while
         /// it is stopped.  Equivalent to calling PowerShellContext.AbortExecution.
         /// </summary>
-        public void Abort()
-        {
-            _debugContext.Abort();
-        }
+        public void Abort() => _debugContext.Abort();
 
         /// <summary>
         /// Gets the list of variables that are children of the scope or variable
         /// that is identified by the given referenced ID.
         /// </summary>
         /// <param name="variableReferenceId"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns>An array of VariableDetails instances which describe the requested variables.</returns>
-        public VariableDetailsBase[] GetVariables(int variableReferenceId)
+        public async Task<VariableDetailsBase[]> GetVariables(int variableReferenceId, CancellationToken cancellationToken)
         {
             VariableDetailsBase[] childVariables;
-            debugInfoHandle.Wait();
+            await debugInfoHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 if ((variableReferenceId < 0) || (variableReferenceId >= variables.Count))
@@ -263,8 +253,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 VariableDetailsBase parentVariable = variables[variableReferenceId];
                 if (parentVariable.IsExpandable)
                 {
-                    childVariables = parentVariable.GetChildren(_logger);
-                    foreach (var child in childVariables)
+                    // We execute this on the pipeline thread so the expansion of child variables works.
+                    childVariables = await _executionService.ExecuteDelegateAsync(
+                        $"Getting children of variable ${parentVariable.Name}",
+                        new ExecutionOptions { Priority = ExecutionPriority.Next },
+                        (_, _) => parentVariable.GetChildren(_logger), cancellationToken).ConfigureAwait(false);
+
+                    foreach (VariableDetailsBase child in childVariables)
                     {
                         // Only add child if it hasn't already been added.
                         if (child.Id < 0)
@@ -293,8 +288,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// walk the cached variable data for the specified stack frame.
         /// </summary>
         /// <param name="variableExpression">The variable expression string to evaluate.</param>
+        /// <param name="cancellationToken"></param>
         /// <returns>A VariableDetailsBase object containing the result.</returns>
-        public VariableDetailsBase GetVariableFromExpression(string variableExpression)
+        public async Task<VariableDetailsBase> GetVariableFromExpression(string variableExpression, CancellationToken cancellationToken)
         {
             // NOTE: From a watch we will get passed expressions that are not naked variables references.
             // Probably the right way to do this would be to examine the AST of the expr before calling
@@ -308,7 +304,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             IEnumerable<VariableDetailsBase> variableList;
 
             // Ensure debug info isn't currently being built.
-            debugInfoHandle.Wait();
+            await debugInfoHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 variableList = variables;
@@ -318,7 +314,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 debugInfoHandle.Release();
             }
 
-            foreach (var variableName in variablePathParts)
+            foreach (string variableName in variablePathParts)
             {
                 if (variableList is null)
                 {
@@ -337,7 +333,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 if (resolvedVariable?.IsExpandable == true)
                 {
                     // Continue by searching in this variable's children.
-                    variableList = GetVariables(resolvedVariable.Id);
+                    variableList = await GetVariables(resolvedVariable.Id, cancellationToken).ConfigureAwait(false);
                 }
             }
 
@@ -371,7 +367,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // Evaluate the expression to get back a PowerShell object from the expression string.
             // This may throw, in which case the exception is propagated to the caller
-            PSCommand evaluateExpressionCommand = new PSCommand().AddScript(value);
+            PSCommand evaluateExpressionCommand = new PSCommand().AddScript($"[System.Diagnostics.DebuggerHidden()]param() {value}");
             IReadOnlyList<object> expressionResults = await _executionService.ExecutePSCommandAsync<object>(evaluateExpressionCommand, CancellationToken.None).ConfigureAwait(false);
             if (expressionResults.Count == 0)
             {
@@ -386,20 +382,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 throw new InvalidPowerShellExpressionException(errorRecord.ToString());
             }
 
-            // OK, now we have a PS object from the supplied value string (expression) to assign to a variable.
-            // Get the variable referenced by variableContainerReferenceId and variable name.
-            VariableContainerDetails variableContainer = null;
             await debugInfoHandle.WaitAsync().ConfigureAwait(false);
             try
             {
-                variableContainer = (VariableContainerDetails)variables[variableContainerReferenceId];
+                // OK, now we have a PS object from the supplied value string (expression) to assign to a variable.
+                // Get the variable referenced by variableContainerReferenceId and variable name.
+                VariableContainerDetails variableContainer = (VariableContainerDetails)variables[variableContainerReferenceId];
             }
             finally
             {
                 debugInfoHandle.Release();
             }
-
-            VariableDetailsBase variable = variableContainer.Children[name];
 
             // Determine scope in which the variable lives so we can pass it to `Get-Variable
             // -Scope`. The default is scope 0 which is safe because if a user is able to see a
@@ -422,7 +415,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             // Now that we have the scope, get the associated PSVariable object for the variable to be set.
-            var getVariableCommand = new PSCommand()
+            PSCommand getVariableCommand = new PSCommand()
                 .AddCommand(@"Microsoft.PowerShell.Utility\Get-Variable")
                 .AddParameter("Name", name.TrimStart('$'))
                 .AddParameter("Scope", scope);
@@ -486,7 +479,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             // Use the VariableDetails.ValueString functionality to get the string representation for client debugger.
             // This makes the returned string consistent with the strings normally displayed for variables in the debugger.
-            var tempVariable = new VariableDetails(psVariable);
+            VariableDetails tempVariable = new(psVariable);
             _logger.LogTrace($"Set variable '{name}' to: {tempVariable.ValueString ?? "<null>"}");
             return tempVariable.ValueString;
         }
@@ -500,16 +493,30 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="writeResultAsOutput">
         /// If true, writes the expression result as host output rather than returning the results.
         /// In this case, the return value of this function will be null.</param>
+        /// <param name="cancellationToken"></param>
         /// <returns>A VariableDetails object containing the result.</returns>
         public async Task<VariableDetails> EvaluateExpressionAsync(
             string expressionString,
-            bool writeResultAsOutput)
+            bool writeResultAsOutput,
+            CancellationToken cancellationToken)
         {
-            var command = new PSCommand().AddScript(expressionString);
-            IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(
-                command,
-                CancellationToken.None,
-                new PowerShellExecutionOptions { WriteOutputToHost = writeResultAsOutput, ThrowOnError = !writeResultAsOutput }).ConfigureAwait(false);
+            PSCommand command = new PSCommand().AddScript($"[System.Diagnostics.DebuggerHidden()]param() {expressionString}");
+            IReadOnlyList<PSObject> results;
+            try
+            {
+                results = await _executionService.ExecutePSCommandAsync<PSObject>(
+                    command,
+                    cancellationToken,
+                    new PowerShellExecutionOptions { WriteOutputToHost = writeResultAsOutput, ThrowOnError = !writeResultAsOutput }).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                // If a watch expression throws we want to show the exception.
+                // TODO: Show the exception as an expandable object.
+                return new VariableDetails(
+                    expressionString,
+                    $"{e.GetType().Name}: {e.Message}");
+            }
 
             // Since this method should only be getting invoked in the debugger,
             // we can assume that Out-String will be getting used to format results
@@ -520,11 +527,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return null;
             }
 
-            // If we didn't write output,
-            // return a VariableDetails instance.
+            // If we didn't write output, return a VariableDetails instance.
             return new VariableDetails(
-                    expressionString,
-                    string.Join(Environment.NewLine, results));
+                expressionString,
+                // If there's only one result, we want its raw value (especially if it's null). For
+                // a collection, since we're displaying these, we want to concatenante them.
+                // However, doing that for one result caused null to be turned into an empty string.
+                results.Count == 1
+                    ? results[0]
+                    : string.Join(Environment.NewLine, results));
         }
 
         /// <summary>
@@ -537,19 +548,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public StackFrameDetails[] GetStackFrames()
         {
             debugInfoHandle.Wait();
-            try
-            {
-                return stackFrameDetails;
-            }
-            finally
-            {
-                debugInfoHandle.Release();
-            }
-        }
-
-        internal StackFrameDetails[] GetStackFrames(CancellationToken cancellationToken)
-        {
-            debugInfoHandle.Wait(cancellationToken);
             try
             {
                 return stackFrameDetails;
@@ -594,7 +592,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns>The list of VariableScope instances which describe the available variable scopes.</returns>
         public VariableScope[] GetVariableScopes(int stackFrameId)
         {
-            var stackFrames = GetStackFrames();
+            StackFrameDetails[] stackFrames = GetStackFrames();
             int autoVariablesId = stackFrames[stackFrameId].AutoVariables.Id;
             int commandVariablesId = stackFrames[stackFrameId].CommandVariables.Id;
 
@@ -638,16 +636,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        private Task<VariableContainerDetails> FetchVariableContainerAsync(string scope)
-        {
-            return FetchVariableContainerAsync(scope, autoVarsOnly: false);
-        }
+        private Task<VariableContainerDetails> FetchVariableContainerAsync(string scope) => FetchVariableContainerAsync(scope, autoVarsOnly: false);
 
         private async Task<VariableContainerDetails> FetchVariableContainerAsync(string scope, bool autoVarsOnly)
         {
             PSCommand psCommand = new PSCommand().AddCommand(@"Microsoft.PowerShell.Utility\Get-Variable").AddParameter("Scope", scope);
 
-            var scopeVariableContainer = new VariableContainerDetails(nextVariableId++, "Scope: " + scope);
+            VariableContainerDetails scopeVariableContainer = new(nextVariableId++, "Scope: " + scope);
             variables.Add(scopeVariableContainer);
 
             IReadOnlyList<PSObject> results;
@@ -675,7 +670,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     {
                         continue;
                     }
-                    var variableInfo = TryVariableInfo(psVariableObject);
+                    VariableInfo variableInfo = TryVariableInfo(psVariableObject);
                     if (variableInfo is null || !ShouldAddAsVariable(variableInfo))
                     {
                         continue;
@@ -685,7 +680,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         continue;
                     }
 
-                    var variableDetails = new VariableDetails(variableInfo.Variable) { Id = nextVariableId++ };
+                    VariableDetails variableDetails = new(variableInfo.Variable) { Id = nextVariableId++ };
                     variables.Add(variableDetails);
                     scopeVariableContainer.Children.Add(variableDetails.Name, variableDetails);
                 }
@@ -748,7 +743,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         // provided as a convenience.
         private bool ShouldAddToAutoVariables(VariableInfo variableInfo)
         {
-            var variableToAdd = variableInfo.Variable;
+            PSVariable variableToAdd = variableInfo.Variable;
             if (!ShouldAddAsVariable(variableInfo))
             {
                 return false;
@@ -795,43 +790,44 @@ namespace Microsoft.PowerShell.EditorServices.Services
             const string callStackVarName = $"$global:{PsesGlobalVariableNamePrefix}CallStack";
             const string getPSCallStack = $"Get-PSCallStack | ForEach-Object {{ [void]{callStackVarName}.Add(@($PSItem, $PSItem.GetFrameVariables())) }}";
 
+            _psesHost.Runspace.ThrowCancelledIfUnusable();
             // If we're attached to a remote runspace, we need to serialize the list prior to
             // transport because the default depth is too shallow. From testing, we determined the
-            // correct depth is 3. The script always calls `Get-PSCallStack`. On a local machine, we
-            // just return its results. On a remote machine we serialize it first and then later
+            // correct depth is 3. The script always calls `Get-PSCallStack`. In a local runspace, we
+            // just return its results. In a remote runspace we serialize it first and then later
             // deserialize it.
-            bool isOnRemoteMachine = _psesHost.CurrentRunspace.IsOnRemoteMachine;
-            string returnSerializedIfOnRemoteMachine = isOnRemoteMachine
+            bool isRemoteRunspace = _psesHost.CurrentRunspace.Runspace.RunspaceIsRemote;
+            string returnSerializedIfInRemoteRunspace = isRemoteRunspace
                 ? $"[Management.Automation.PSSerializer]::Serialize({callStackVarName}, 3)"
                 : callStackVarName;
 
             // PSObject is used here instead of the specific type because we get deserialized
             // objects from remote sessions and want a common interface.
-            var psCommand = new PSCommand().AddScript($"[Collections.ArrayList]{callStackVarName} = @(); {getPSCallStack}; {returnSerializedIfOnRemoteMachine}");
+            PSCommand psCommand = new PSCommand().AddScript($"[System.Diagnostics.DebuggerHidden()]param() [Collections.ArrayList]{callStackVarName} = @(); {getPSCallStack}; {returnSerializedIfInRemoteRunspace}");
             IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(psCommand, CancellationToken.None).ConfigureAwait(false);
 
-            IEnumerable callStack = isOnRemoteMachine
-                ? (PSSerializer.Deserialize(results[0].BaseObject as string) as PSObject).BaseObject as IList
+            IEnumerable callStack = isRemoteRunspace
+                ? (PSSerializer.Deserialize(results[0].BaseObject as string) as PSObject)?.BaseObject as IList
                 : results;
 
-            var stackFrameDetailList = new List<StackFrameDetails>();
+            List<StackFrameDetails> stackFrameDetailList = new();
             bool isTopStackFrame = true;
-            foreach (var callStackFrameItem in callStack)
+            foreach (object callStackFrameItem in callStack)
             {
                 // We have to use reflection to get the variable dictionary.
-                var callStackFrameComponents = (callStackFrameItem as PSObject).BaseObject as IList;
-                var callStackFrame = callStackFrameComponents[0] as PSObject;
-                IDictionary callStackVariables = isOnRemoteMachine
-                    ? (callStackFrameComponents[1] as PSObject).BaseObject as IDictionary
+                IList callStackFrameComponents = (callStackFrameItem as PSObject)?.BaseObject as IList;
+                PSObject callStackFrame = callStackFrameComponents[0] as PSObject;
+                IDictionary callStackVariables = isRemoteRunspace
+                    ? (callStackFrameComponents[1] as PSObject)?.BaseObject as IDictionary
                     : callStackFrameComponents[1] as IDictionary;
 
-                var autoVariables = new VariableContainerDetails(
+                VariableContainerDetails autoVariables = new(
                     nextVariableId++,
                     VariableContainerDetails.AutoVariablesName);
 
                 variables.Add(autoVariables);
 
-                var commandVariables = new VariableContainerDetails(
+                VariableContainerDetails commandVariables = new(
                     nextVariableId++,
                     VariableContainerDetails.CommandVariablesName);
 
@@ -842,11 +838,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     VariableInfo psVarInfo = TryVariableInfo(new PSObject(entry.Value));
                     if (psVarInfo is null)
                     {
-                        _logger.LogError($"A object was received that is not a PSVariable object");
+                        _logger.LogError("A object was received that is not a PSVariable object");
                         continue;
                     }
 
-                    var variableDetails = new VariableDetails(psVarInfo.Variable) { Id = nextVariableId++ };
+                    VariableDetails variableDetails = new(psVarInfo.Variable) { Id = nextVariableId++ };
                     variables.Add(variableDetails);
 
                     commandVariables.Children.Add(variableDetails.Name, variableDetails);
@@ -861,11 +857,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // the "Auto" container (not to be confused with Automatic PowerShell variables).
                 //
                 // TODO: We can potentially use `Get-Variable -Scope x` to add relevant local
-                // variables to other frames but frames and scopes are not perfectly analagous and
+                // variables to other frames but frames and scopes are not perfectly analogous and
                 // we'd need a way to detect things such as module borders and dot-sourced files.
                 if (isTopStackFrame)
                 {
-                    var localScopeAutoVariables = await FetchVariableContainerAsync(VariableContainerDetails.LocalScopeName, autoVarsOnly: true).ConfigureAwait(false);
+                    VariableContainerDetails localScopeAutoVariables = await FetchVariableContainerAsync(VariableContainerDetails.LocalScopeName, autoVarsOnly: true).ConfigureAwait(false);
                     foreach (KeyValuePair<string, VariableDetailsBase> entry in localScopeAutoVariables.Children)
                     {
                         // NOTE: `TryAdd` doesn't work on `IDictionary`.
@@ -877,7 +873,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     isTopStackFrame = false;
                 }
 
-                var stackFrameDetailsEntry = StackFrameDetails.Create(callStackFrame, autoVariables, commandVariables);
+                StackFrameDetails stackFrameDetailsEntry = StackFrameDetails.Create(callStackFrame, autoVariables, commandVariables);
                 string stackFrameScriptPath = stackFrameDetailsEntry.ScriptPath;
 
                 if (scriptNameOverride is not null
@@ -885,7 +881,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 {
                     stackFrameDetailsEntry.ScriptPath = scriptNameOverride;
                 }
-                else if (isOnRemoteMachine
+                else if (_psesHost.CurrentRunspace.IsOnRemoteMachine
                     && _remoteFileManager is not null
                     && !string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
                 {
@@ -929,89 +925,147 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal async void OnDebuggerStopAsync(object sender, DebuggerStopEventArgs e)
         {
-            bool noScriptName = false;
-            string localScriptPath = e.InvocationInfo.ScriptName;
-
-            // If there's no ScriptName, get the "list" of the current source
-            if (_remoteFileManager is not null && string.IsNullOrEmpty(localScriptPath))
+            try
             {
-                // Get the current script listing and create the buffer
-                PSCommand command = new PSCommand().AddScript($"list 1 {int.MaxValue}");
+                bool noScriptName = false;
+                string localScriptPath = e.InvocationInfo.ScriptName;
 
-                IReadOnlyList<PSObject> scriptListingLines =
-                    await _executionService.ExecutePSCommandAsync<PSObject>(
-                        command, CancellationToken.None).ConfigureAwait(false);
-
-                if (scriptListingLines is not null)
+                // If there's no ScriptName, get the "list" of the current source
+                if (_remoteFileManager is not null && string.IsNullOrEmpty(localScriptPath))
                 {
-                    int linePrefixLength = 0;
+                    // Get the current script listing and create the buffer
+                    IReadOnlyList<PSObject> scriptListingLines;
+                    await debugInfoHandle.WaitAsync().ConfigureAwait(false);
+                    try
+                    {
+                        // This command must be run through `ExecuteInDebugger`!
+                        PSCommand psCommand = new PSCommand().AddScript($"list 1 {int.MaxValue}");
 
-                    string scriptListing =
-                        string.Join(
-                            Environment.NewLine,
-                            scriptListingLines
-                                .Select(o => TrimScriptListingLine(o, ref linePrefixLength))
-                                .Where(s => s is not null));
+                        scriptListingLines =
+                            await _executionService.ExecutePSCommandAsync<PSObject>(
+                                psCommand,
+                                CancellationToken.None).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        debugInfoHandle.Release();
+                    }
 
-                    temporaryScriptListingPath =
-                        _remoteFileManager.CreateTemporaryFile(
-                            $"[{_psesHost.CurrentRunspace.SessionDetails.ComputerName}] {TemporaryScriptFileName}",
-                            scriptListing,
-                            _psesHost.CurrentRunspace);
+                    if (scriptListingLines.Count > 0)
+                    {
+                        int linePrefixLength = 0;
 
+                        string scriptListing =
+                            string.Join(
+                                Environment.NewLine,
+                                scriptListingLines
+                                    .Select(o => TrimScriptListingLine(o, ref linePrefixLength))
+                                    .Where(s => s is not null));
+
+                        temporaryScriptListingPath =
+                            _remoteFileManager.CreateTemporaryFile(
+                                $"[{_psesHost.CurrentRunspace.SessionDetails.ComputerName}] {TemporaryScriptFileName}",
+                                scriptListing,
+                                _psesHost.CurrentRunspace);
+
+                        localScriptPath =
+                            temporaryScriptListingPath
+                            ?? StackFrameDetails.NoFileScriptPath;
+
+                        noScriptName = localScriptPath is not null;
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Could not load script context");
+                    }
+                }
+
+                // Get call stack and variables.
+                await FetchStackFramesAndVariablesAsync(noScriptName ? localScriptPath : null).ConfigureAwait(false);
+
+                // If this is a remote connection and the debugger stopped at a line
+                // in a script file, get the file contents
+                if (_psesHost.CurrentRunspace.IsOnRemoteMachine
+                    && _remoteFileManager is not null
+                    && !noScriptName)
+                {
                     localScriptPath =
-                        temporaryScriptListingPath
-                        ?? StackFrameDetails.NoFileScriptPath;
-
-                    noScriptName = localScriptPath is not null;
+                        await _remoteFileManager.FetchRemoteFileAsync(
+                            e.InvocationInfo.ScriptName,
+                            _psesHost.CurrentRunspace).ConfigureAwait(false);
                 }
-                else
+
+                if (stackFrameDetails.Length > 0)
                 {
-                    _logger.LogWarning("Could not load script context");
+                    // Augment the top stack frame with details from the stop event
+                    if (invocationTypeScriptPositionProperty.GetValue(e.InvocationInfo) is IScriptExtent scriptExtent)
+                    {
+                        StackFrameDetails targetFrame = stackFrameDetails[0];
+
+                        // Certain context changes (like stepping into the default value expression
+                        // of a parameter) do not create a call stack frame. In order to represent
+                        // this context change we create a fake call stack frame.
+                        if (!string.IsNullOrEmpty(scriptExtent.File)
+                            && !PathUtils.IsPathEqual(scriptExtent.File, targetFrame.ScriptPath))
+                        {
+                            await debugInfoHandle.WaitAsync().ConfigureAwait(false);
+                            try
+                            {
+                                targetFrame = new StackFrameDetails
+                                {
+                                    ScriptPath = scriptExtent.File,
+                                    // Just use the last frame's variables since we don't have a
+                                    // good way to get real values.
+                                    AutoVariables = targetFrame.AutoVariables,
+                                    CommandVariables = targetFrame.CommandVariables,
+                                    // Ideally we'd get a real value here but since there's no real
+                                    // call stack frame for this, we'd need to replicate a lot of
+                                    // engine code.
+                                    FunctionName = "<ScriptBlock>",
+                                };
+
+                                StackFrameDetails[] newFrames = new StackFrameDetails[stackFrameDetails.Length + 1];
+                                newFrames[0] = targetFrame;
+                                stackFrameDetails.CopyTo(newFrames, 1);
+                                stackFrameDetails = newFrames;
+                            }
+                            finally
+                            {
+                                debugInfoHandle.Release();
+                            }
+                        }
+
+                        targetFrame.StartLineNumber = scriptExtent.StartLineNumber;
+                        targetFrame.EndLineNumber = scriptExtent.EndLineNumber;
+                        targetFrame.StartColumnNumber = scriptExtent.StartColumnNumber;
+                        targetFrame.EndColumnNumber = scriptExtent.EndColumnNumber;
+                    }
                 }
+
+                CurrentDebuggerStoppedEventArgs =
+                    new DebuggerStoppedEventArgs(
+                        e,
+                        _psesHost.CurrentRunspace,
+                        localScriptPath);
+
+                // Notify the host that the debugger is stopped.
+                DebuggerStopped?.Invoke(sender, CurrentDebuggerStoppedEventArgs);
             }
-
-            // Get call stack and variables.
-            await FetchStackFramesAndVariablesAsync(noScriptName ? localScriptPath : null).ConfigureAwait(false);
-
-            // If this is a remote connection and the debugger stopped at a line
-            // in a script file, get the file contents
-            if (_psesHost.CurrentRunspace.IsOnRemoteMachine
-                && _remoteFileManager is not null
-                && !noScriptName)
+            catch (OperationCanceledException)
             {
-                localScriptPath =
-                    await _remoteFileManager.FetchRemoteFileAsync(
-                        e.InvocationInfo.ScriptName,
-                        _psesHost.CurrentRunspace).ConfigureAwait(false);
+                // Ignore, likely means that a remote runspace has closed.
             }
-
-            if (stackFrameDetails.Length > 0)
+            catch (Exception exception)
             {
-                // Augment the top stack frame with details from the stop event
-                if (invocationTypeScriptPositionProperty.GetValue(e.InvocationInfo) is IScriptExtent scriptExtent)
-                {
-                    stackFrameDetails[0].StartLineNumber = scriptExtent.StartLineNumber;
-                    stackFrameDetails[0].EndLineNumber = scriptExtent.EndLineNumber;
-                    stackFrameDetails[0].StartColumnNumber = scriptExtent.StartColumnNumber;
-                    stackFrameDetails[0].EndColumnNumber = scriptExtent.EndColumnNumber;
-                }
+                // Log in a catch all so we don't crash the process.
+                _logger.LogError(
+                    exception,
+                    "Error occurred while obtaining debug info. Message: {message}",
+                    exception.Message);
             }
-
-            CurrentDebuggerStoppedEventArgs =
-                new DebuggerStoppedEventArgs(
-                    e,
-                    _psesHost.CurrentRunspace,
-                    localScriptPath);
-
-            // Notify the host that the debugger is stopped.
-            DebuggerStopped?.Invoke(sender, CurrentDebuggerStoppedEventArgs);
         }
 
-        private void OnDebuggerResuming(object sender, DebuggerResumingEventArgs debuggerResumingEventArgs)
-        {
-            CurrentDebuggerStoppedEventArgs = null;
-        }
+        private void OnDebuggerResuming(object sender, DebuggerResumingEventArgs debuggerResumingEventArgs) => CurrentDebuggerStoppedEventArgs = null;
 
         /// <summary>
         /// Raised when a breakpoint is added/removed/updated in the debugger.

@@ -41,15 +41,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public bool IsEmpty => _queues[0].Count == 0 && _queues[1].Count == 0;
 
-        public void Prepend(T item)
-        {
-            _queues[0].Add(item);
-        }
+        public void Prepend(T item) => _queues[0].Add(item);
 
-        public void Append(T item)
-        {
-            _queues[1].Add(item);
-        }
+        public void Append(T item) => _queues[1].Add(item);
 
         public T Take(CancellationToken cancellationToken)
         {
@@ -71,10 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         public IDisposable BlockConsumers() => PriorityQueueBlockLifetime.StartBlocking(_blockConsumersEvent);
 
-        public void Dispose()
-        {
-            ((IDisposable)_blockConsumersEvent).Dispose();
-        }
+        public void Dispose() => _blockConsumersEvent.Dispose();
 
         private class PriorityQueueBlockLifetime : IDisposable
         {
@@ -86,16 +77,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
             private readonly ManualResetEventSlim _blockEvent;
 
-            private PriorityQueueBlockLifetime(ManualResetEventSlim blockEvent)
-            {
-                _blockEvent = blockEvent;
-            }
+            private PriorityQueueBlockLifetime(ManualResetEventSlim blockEvent) => _blockEvent = blockEvent;
 
-            public void Dispose()
-            {
-                _blockEvent.Set();
-            }
+            public void Dispose() => _blockEvent.Set();
         }
     }
 }
-

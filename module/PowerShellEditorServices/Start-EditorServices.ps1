@@ -23,21 +23,18 @@
     If editor integration authors make modifications to this script, please
     consider contributing changes back to the canonical version of this script
     at the PowerShell Editor Services GitHub repository:
-    https://github.com/PowerShell/PowerShellEditorServices/blob/master/module/PowerShellEditorServices/Start-EditorServices.ps1'
+    https://github.com/PowerShell/PowerShellEditorServices/blob/main/module/PowerShellEditorServices/Start-EditorServices.ps1'
 #>
 [CmdletBinding(DefaultParameterSetName="NamedPipe")]
 param(
-    [Parameter(Mandatory=$true)]
     [ValidateNotNullOrEmpty()]
     [string]
     $HostName,
 
-    [Parameter(Mandatory=$true)]
     [ValidateNotNullOrEmpty()]
     [string]
     $HostProfileId,
 
-    [Parameter(Mandatory=$true)]
     [ValidateNotNullOrEmpty()]
     [string]
     $HostVersion,
@@ -52,7 +49,6 @@ param(
     [ValidateSet("Diagnostic", "Verbose", "Normal", "Warning", "Error")]
     $LogLevel,
 
-	[Parameter(Mandatory=$true)]
 	[ValidateNotNullOrEmpty()]
 	[string]
 	$SessionDetailsPath,
@@ -78,20 +74,17 @@ param(
     [switch]
     $WaitForDebugger,
 
-    [switch]
-    $ConfirmInstall,
-
-    [Parameter(ParameterSetName="Stdio", Mandatory=$true)]
+    [Parameter(ParameterSetName="Stdio", Mandatory)]
     [switch]
     $Stdio,
 
     [Parameter(ParameterSetName="NamedPipe")]
     [string]
-    $LanguageServicePipeName = $null,
+    $LanguageServicePipeName,
 
     [Parameter(ParameterSetName="NamedPipe")]
     [string]
-    $DebugServicePipeName = $null,
+    $DebugServicePipeName,
 
     [Parameter(ParameterSetName="NamedPipeSimplex")]
     [switch]
@@ -107,11 +100,11 @@ param(
 
     [Parameter(ParameterSetName="NamedPipeSimplex")]
     [string]
-    $DebugServiceInPipeName = $null,
+    $DebugServiceInPipeName,
 
     [Parameter(ParameterSetName="NamedPipeSimplex")]
     [string]
-    $DebugServiceOutPipeName = $null
+    $DebugServiceOutPipeName
 )
 
 Import-Module -Name "$PSScriptRoot/PowerShellEditorServices.psd1"

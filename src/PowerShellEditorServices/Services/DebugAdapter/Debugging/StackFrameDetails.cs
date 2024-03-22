@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <summary>
         /// Gets the name of the function where the stack frame occurred.
         /// </summary>
-        public string FunctionName { get; private set; }
+        public string FunctionName { get; internal init; }
 
         /// <summary>
         /// Gets the start line number of the script where the stack frame occurred.
@@ -62,12 +62,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <summary>
         /// Gets or sets the VariableContainerDetails that contains the auto variables.
         /// </summary>
-        public VariableContainerDetails AutoVariables { get; private set; }
+        public VariableContainerDetails AutoVariables { get; internal init; }
 
         /// <summary>
         /// Gets or sets the VariableContainerDetails that contains the call stack frame variables.
         /// </summary>
-        public VariableContainerDetails CommandVariables { get; private set; }
+        public VariableContainerDetails CommandVariables { get; internal init; }
 
         #endregion
 
@@ -83,8 +83,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <param name="autoVariables">
         /// A variable container with all the filtered, auto variables for this stack frame.
         /// </param>
+        /// <param name="commandVariables">
+        /// A variable container with all the command variables for this stack frame.
+        /// </param>
         /// <returns>A new instance of the StackFrameDetails class.</returns>
-        static internal StackFrameDetails Create(
+        internal static StackFrameDetails Create(
             PSObject callStackFrameObject,
             VariableContainerDetails autoVariables,
             VariableContainerDetails commandVariables)

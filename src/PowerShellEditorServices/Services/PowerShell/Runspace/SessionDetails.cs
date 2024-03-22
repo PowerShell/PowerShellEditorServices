@@ -27,7 +27,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
         {
             Hashtable detailsObject = pwsh
                 .AddScript(
-                    $"@{{ '{Property_ComputerName}' = if ([Environment]::MachineName) {{[Environment]::MachineName}}  else {{'localhost'}}; '{Property_ProcessId}' = $PID; '{Property_InstanceId}' = $host.InstanceId }}",
+                    $"[System.Diagnostics.DebuggerHidden()]param() @{{ '{Property_ComputerName}' = if ([Environment]::MachineName) {{[Environment]::MachineName}} else {{'localhost'}}; '{Property_ProcessId}' = $PID; '{Property_InstanceId}' = $host.InstanceId }}",
                     useLocalScope: true)
                 .InvokeAndClear<Hashtable>()
                 .FirstOrDefault();
@@ -43,7 +43,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
         /// contained in the PSObject which was obtained using the
         /// PSCommand returned by GetDetailsCommand.
         /// </summary>
-        /// <param name="detailsObject"></param>
         public SessionDetails(
             int processId,
             string computerName,

@@ -3,9 +3,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Management.Automation;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -14,6 +14,7 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Test;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Definition;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Occurrences;
@@ -21,21 +22,29 @@ using Microsoft.PowerShell.EditorServices.Test.Shared.ParameterHint;
 using Microsoft.PowerShell.EditorServices.Test.Shared.References;
 using Microsoft.PowerShell.EditorServices.Test.Shared.SymbolDetails;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Symbols;
+using Microsoft.PowerShell.EditorServices.Utility;
+using OmniSharp.Extensions.LanguageServer.Protocol;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
 
-namespace Microsoft.PowerShell.EditorServices.Test.Language
+namespace PowerShellEditorServices.Test.Language
 {
     [Trait("Category", "Symbols")]
-    public class SymbolsServiceTests: IDisposable
+    public class SymbolsServiceTests : IDisposable
     {
         private readonly PsesInternalHost psesHost;
         private readonly WorkspaceService workspace;
         private readonly SymbolsService symbolsService;
+        private static readonly bool s_isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
         public SymbolsServiceTests()
         {
             psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
             workspace = new WorkspaceService(NullLoggerFactory.Instance);
+            workspace.WorkspaceFolders.Add(new WorkspaceFolder
+            {
+                Uri = DocumentUri.FromFileSystemPath(TestUtilities.GetSharedPath("References"))
+            });
             symbolsService = new SymbolsService(
                 NullLoggerFactory.Instance,
                 psesHost,
@@ -46,10 +55,25 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
 
         public void Dispose()
         {
+#pragma warning disable VSTHRD002
             psesHost.StopAsync().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
             CommandHelpers.s_cmdletToAliasCache.Clear();
             CommandHelpers.s_aliasToCmdletCache.Clear();
             GC.SuppressFinalize(this);
+        }
+
+        private static void AssertIsRegion(
+            ScriptRegion region,
+            int startLineNumber,
+            int startColumnNumber,
+            int endLineNumber,
+            int endColumnNumber)
+        {
+            Assert.Equal(startLineNumber, region.StartLineNumber);
+            Assert.Equal(startColumnNumber, region.StartColumnNumber);
+            Assert.Equal(endLineNumber, region.EndLineNumber);
+            Assert.Equal(endColumnNumber, region.EndColumnNumber);
         }
 
         private ScriptFile GetScriptFile(ScriptRegion scriptRegion) => workspace.GetFile(TestUtilities.GetSharedPath(scriptRegion.File));
@@ -62,96 +86,171 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
                 scriptRegion.StartColumnNumber);
         }
 
-        private Task<SymbolReference> GetDefinition(ScriptRegion scriptRegion)
+        private async Task<IEnumerable<SymbolReference>> GetDefinitions(ScriptRegion scriptRegion)
         {
             ScriptFile scriptFile = GetScriptFile(scriptRegion);
 
-            SymbolReference symbolReference = SymbolsService.FindSymbolAtLocation(
+            // TODO: We should just use the name to find it.
+            SymbolReference symbol = SymbolsService.FindSymbolAtLocation(
                 scriptFile,
                 scriptRegion.StartLineNumber,
                 scriptRegion.StartColumnNumber);
 
-            Assert.NotNull(symbolReference);
+            Assert.NotNull(symbol);
 
-            return symbolsService.GetDefinitionOfSymbolAsync(scriptFile, symbolReference);
+            IEnumerable<SymbolReference> symbols =
+                await symbolsService.GetDefinitionOfSymbolAsync(scriptFile, symbol);
+
+            return symbols.OrderBy((i) => i.ScriptRegion.ToRange().Start);
         }
 
-        private Task<List<SymbolReference>> GetReferences(ScriptRegion scriptRegion)
+        private async Task<SymbolReference> GetDefinition(ScriptRegion scriptRegion)
+        {
+            IEnumerable<SymbolReference> definitions = await GetDefinitions(scriptRegion);
+            return definitions.FirstOrDefault();
+        }
+
+        private async Task<IEnumerable<SymbolReference>> GetReferences(ScriptRegion scriptRegion)
         {
             ScriptFile scriptFile = GetScriptFile(scriptRegion);
 
-            SymbolReference symbolReference = SymbolsService.FindSymbolAtLocation(
+            SymbolReference symbol = SymbolsService.FindSymbolAtLocation(
                 scriptFile,
                 scriptRegion.StartLineNumber,
                 scriptRegion.StartColumnNumber);
 
-            Assert.NotNull(symbolReference);
+            Assert.NotNull(symbol);
 
-            return symbolsService.FindReferencesOfSymbol(
-                symbolReference,
-                workspace.ExpandScriptReferences(scriptFile),
-                workspace);
+            IEnumerable<SymbolReference> symbols =
+                await symbolsService.ScanForReferencesOfSymbolAsync(symbol);
+
+            return symbols.OrderBy((i) => i.ScriptRegion.ToRange().Start);
         }
 
-        private IReadOnlyList<SymbolReference> GetOccurrences(ScriptRegion scriptRegion)
+        private IEnumerable<SymbolReference> GetOccurrences(ScriptRegion scriptRegion)
         {
-            return SymbolsService.FindOccurrencesInFile(
-                GetScriptFile(scriptRegion),
-                scriptRegion.StartLineNumber,
-                scriptRegion.StartColumnNumber);
+            return SymbolsService
+                .FindOccurrencesInFile(
+                    GetScriptFile(scriptRegion),
+                    scriptRegion.StartLineNumber,
+                    scriptRegion.StartColumnNumber)
+                .OrderBy(symbol => symbol.ScriptRegion.ToRange().Start)
+                .ToArray();
         }
 
-        private List<SymbolReference> FindSymbolsInFile(ScriptRegion scriptRegion) => symbolsService.FindSymbolsInFile(GetScriptFile(scriptRegion));
+        private IEnumerable<SymbolReference> FindSymbolsInFile(ScriptRegion scriptRegion)
+        {
+            return symbolsService
+                .FindSymbolsInFile(GetScriptFile(scriptRegion))
+                .OrderBy(symbol => symbol.ScriptRegion.ToRange().Start);
+        }
 
         [Fact]
         public async Task FindsParameterHintsOnCommand()
         {
-            ParameterSetSignatures paramSignatures = await GetParamSetSignatures(FindsParameterSetsOnCommandData.SourceDetails).ConfigureAwait(true);
-            Assert.NotNull(paramSignatures);
-            Assert.Equal("Get-Process", paramSignatures.CommandName);
-            Assert.Equal(6, paramSignatures.Signatures.Length);
+            // TODO: Fix signatures to use parameters, not sets.
+            ParameterSetSignatures signatures = await GetParamSetSignatures(FindsParameterSetsOnCommandData.SourceDetails);
+            Assert.NotNull(signatures);
+            Assert.Equal("Get-Process", signatures.CommandName);
+            Assert.Equal(6, signatures.Signatures.Length);
         }
 
         [Fact]
         public async Task FindsCommandForParamHintsWithSpaces()
         {
-            ParameterSetSignatures paramSignatures = await GetParamSetSignatures(FindsParameterSetsOnCommandWithSpacesData.SourceDetails).ConfigureAwait(true);
-            Assert.NotNull(paramSignatures);
-            Assert.Equal("Write-Host", paramSignatures.CommandName);
-            Assert.Single(paramSignatures.Signatures);
+            ParameterSetSignatures signatures = await GetParamSetSignatures(FindsParameterSetsOnCommandWithSpacesData.SourceDetails);
+            Assert.NotNull(signatures);
+            Assert.Equal("Write-Host", signatures.CommandName);
+            Assert.Single(signatures.Signatures);
         }
 
         [Fact]
         public async Task FindsFunctionDefinition()
         {
-            SymbolReference definitionResult = await GetDefinition(FindsFunctionDefinitionData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(1, definitionResult.ScriptRegion.StartLineNumber);
-            Assert.Equal(10, definitionResult.ScriptRegion.StartColumnNumber);
-            Assert.Equal("My-Function", definitionResult.SymbolName);
+            SymbolReference symbol = await GetDefinition(FindsFunctionDefinitionData.SourceDetails);
+            Assert.Equal("fn My-Function", symbol.Id);
+            Assert.Equal("function My-Function ($myInput)", symbol.Name);
+            Assert.Equal(SymbolType.Function, symbol.Type);
+            AssertIsRegion(symbol.NameRegion, 1, 10, 1, 21);
+            AssertIsRegion(symbol.ScriptRegion, 1, 1, 4, 2);
+            Assert.True(symbol.IsDeclaration);
         }
 
         [Fact]
         public async Task FindsFunctionDefinitionForAlias()
         {
-            // TODO: Eventually we should get the alises through the AST instead of relying on them
+            // TODO: Eventually we should get the aliases through the AST instead of relying on them
             // being defined in the runspace.
             await psesHost.ExecutePSCommandAsync(
                 new PSCommand().AddScript("Set-Alias -Name My-Alias -Value My-Function"),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
-            SymbolReference definitionResult = await GetDefinition(FindsFunctionDefinitionOfAliasData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(1, definitionResult.ScriptRegion.StartLineNumber);
-            Assert.Equal(10, definitionResult.ScriptRegion.StartColumnNumber);
-            Assert.Equal("My-Function", definitionResult.SymbolName);
+            SymbolReference symbol = await GetDefinition(FindsFunctionDefinitionOfAliasData.SourceDetails);
+            Assert.Equal("function My-Function ($myInput)", symbol.Name);
+            Assert.Equal(SymbolType.Function, symbol.Type);
+            AssertIsRegion(symbol.NameRegion, 1, 10, 1, 21);
+            AssertIsRegion(symbol.ScriptRegion, 1, 1, 4, 2);
+            Assert.True(symbol.IsDeclaration);
         }
 
         [Fact]
         public async Task FindsReferencesOnFunction()
         {
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(3, referencesResult.Count);
-            Assert.Equal(1, referencesResult[0].ScriptRegion.StartLineNumber);
-            Assert.Equal(10, referencesResult[0].ScriptRegion.StartColumnNumber);
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnFunctionData.SourceDetails);
+            Assert.Collection(symbols,
+            (i) =>
+            {
+                Assert.Equal("fn My-Function", i.Id);
+                Assert.Equal("function My-Function ($myInput)", i.Name);
+                Assert.Equal(SymbolType.Function, i.Type);
+                Assert.True(i.IsDeclaration);
+            },
+            (i) =>
+            {
+                Assert.Equal("fn My-Function", i.Id);
+                Assert.Equal("My-Function", i.Name);
+                Assert.Equal(SymbolType.Function, i.Type);
+                Assert.EndsWith(FindsFunctionDefinitionInWorkspaceData.SourceDetails.File, i.FilePath);
+                Assert.False(i.IsDeclaration);
+            },
+            (i) =>
+            {
+                Assert.Equal("fn My-Function", i.Id);
+                Assert.Equal("My-Function", i.Name);
+                Assert.Equal(SymbolType.Function, i.Type);
+                Assert.False(i.IsDeclaration);
+            },
+            (i) =>
+            {
+                Assert.Equal("fn My-Function", i.Id);
+                Assert.Equal("My-Function", i.Name);
+                Assert.Equal(SymbolType.Function, i.Type);
+                Assert.False(i.IsDeclaration);
+            },
+            (i) =>
+            {
+                Assert.Equal("fn My-Function", i.Id);
+                Assert.Equal("$Function:My-Function", i.Name);
+                Assert.Equal(SymbolType.Function, i.Type);
+                Assert.False(i.IsDeclaration);
+            });
+        }
+
+        [Fact]
+        public async Task FindsReferenceAcrossMultiRootWorkspace()
+        {
+            workspace.WorkspaceFolders = new[] { "Debugging", "ParameterHints", "SymbolDetails" }
+                .Select(i => new WorkspaceFolder
+                {
+                    Uri = DocumentUri.FromFileSystemPath(TestUtilities.GetSharedPath(i))
+                }).ToList();
+
+            SymbolReference symbol = new("fn Get-Process", SymbolType.Function);
+            IEnumerable<SymbolReference> symbols = await symbolsService.ScanForReferencesOfSymbolAsync(symbol);
+            Assert.Collection(symbols.OrderBy(i => i.FilePath),
+                i => Assert.EndsWith("VariableTest.ps1", i.FilePath),
+                i => Assert.EndsWith("ParamHints.ps1", i.FilePath),
+                i => Assert.EndsWith("SymbolDetails.ps1", i.FilePath));
         }
 
         [Fact]
@@ -160,171 +259,739 @@ namespace Microsoft.PowerShell.EditorServices.Test.Language
             // TODO: Same as in FindsFunctionDefinitionForAlias.
             await psesHost.ExecutePSCommandAsync(
                 new PSCommand().AddScript("Set-Alias -Name My-Alias -Value My-Function"),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(4, referencesResult.Count);
-            Assert.Equal(1, referencesResult[0].ScriptRegion.StartLineNumber);
-            Assert.Equal(10, referencesResult[0].ScriptRegion.StartColumnNumber);
-        }
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnFunctionData.SourceDetails);
 
-        [Fact]
-        public async Task FindsFunctionDefinitionInDotSourceReference()
-        {
-            SymbolReference definitionResult = await GetDefinition(FindsFunctionDefinitionInDotSourceReferenceData.SourceDetails).ConfigureAwait(true);
-            Assert.True(
-                definitionResult.FilePath.EndsWith(FindsFunctionDefinitionData.SourceDetails.File),
-                "Unexpected reference file: " + definitionResult.FilePath);
-            Assert.Equal(1, definitionResult.ScriptRegion.StartLineNumber);
-            Assert.Equal(10, definitionResult.ScriptRegion.StartColumnNumber);
-            Assert.Equal("My-Function", definitionResult.SymbolName);
-        }
-
-        [Fact]
-        public async Task FindsDotSourcedFile()
-        {
-            SymbolReference definitionResult = await GetDefinition(FindsDotSourcedFileData.SourceDetails).ConfigureAwait(true);
-            Assert.True(
-                definitionResult.FilePath.EndsWith(Path.Combine("References", "ReferenceFileE.ps1")),
-                "Unexpected reference file: " + definitionResult.FilePath);
-            Assert.Equal(1, definitionResult.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, definitionResult.ScriptRegion.StartColumnNumber);
-            Assert.Equal("./ReferenceFileE.ps1", definitionResult.SymbolName);
+            Assert.Collection(symbols,
+                (i) => AssertIsRegion(i.NameRegion, 1, 10, 1, 21),
+                (i) => AssertIsRegion(i.NameRegion, 3, 1, 3, 12),
+                (i) => AssertIsRegion(i.NameRegion, 3, 5, 3, 16),
+                (i) => AssertIsRegion(i.NameRegion, 10, 1, 10, 12),
+                // The alias.
+                (i) =>
+                {
+                    AssertIsRegion(i.NameRegion, 20, 1, 20, 9);
+                    Assert.Equal("fn My-Alias", i.Id);
+                },
+                (i) => AssertIsRegion(i.NameRegion, 22, 29, 22, 52));
         }
 
         [Fact]
         public async Task FindsFunctionDefinitionInWorkspace()
         {
-            workspace.WorkspacePath = TestUtilities.GetSharedPath("References");
-            SymbolReference definitionResult = await GetDefinition(FindsFunctionDefinitionInWorkspaceData.SourceDetails).ConfigureAwait(true);
-            Assert.EndsWith("ReferenceFileE.ps1", definitionResult.FilePath);
-            Assert.Equal("My-FunctionInFileE", definitionResult.SymbolName);
+            IEnumerable<SymbolReference> symbols = await GetDefinitions(FindsFunctionDefinitionInWorkspaceData.SourceDetails);
+            SymbolReference symbol = Assert.Single(symbols);
+            Assert.Equal("fn My-Function", symbol.Id);
+            Assert.Equal("function My-Function ($myInput)", symbol.Name);
+            Assert.True(symbol.IsDeclaration);
+            Assert.EndsWith(FindsFunctionDefinitionData.SourceDetails.File, symbol.FilePath);
         }
 
         [Fact]
         public async Task FindsVariableDefinition()
         {
-            SymbolReference definitionResult = await GetDefinition(FindsVariableDefinitionData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(6, definitionResult.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, definitionResult.ScriptRegion.StartColumnNumber);
-            Assert.Equal("$things", definitionResult.SymbolName);
+            IEnumerable<SymbolReference> definitions = await GetDefinitions(FindsVariableDefinitionData.SourceDetails);
+            SymbolReference symbol = Assert.Single(definitions); // Even though it's re-assigned
+            Assert.Equal("var things", symbol.Id);
+            Assert.Equal("$things", symbol.Name);
+            Assert.Equal(SymbolType.Variable, symbol.Type);
+            Assert.True(symbol.IsDeclaration);
+            AssertIsRegion(symbol.NameRegion, 6, 1, 6, 8);
+        }
+
+        [Fact]
+        public async Task FindsTypedVariableDefinition()
+        {
+            IEnumerable<SymbolReference> definitions = await GetDefinitions(FindsTypedVariableDefinitionData.SourceDetails);
+            SymbolReference symbol = Assert.Single(definitions);
+            Assert.Equal("var hello", symbol.Id);
+            Assert.Equal("$hello", symbol.Name);
+            Assert.Equal(SymbolType.Variable, symbol.Type);
+            Assert.True(symbol.IsDeclaration);
+            AssertIsRegion(symbol.NameRegion, 24, 9, 24, 15);
         }
 
         [Fact]
         public async Task FindsReferencesOnVariable()
         {
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnVariableData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(3, referencesResult.Count);
-            Assert.Equal(10, referencesResult[referencesResult.Count - 1].ScriptRegion.StartLineNumber);
-            Assert.Equal(13, referencesResult[referencesResult.Count - 1].ScriptRegion.StartColumnNumber);
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnVariableData.SourceDetails);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("var things", i.Id);
+                    Assert.Equal("$things", i.Name);
+                    Assert.Equal(SymbolType.Variable, i.Type);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("var things", i.Id);
+                    Assert.Equal("$things", i.Name);
+                    Assert.Equal(SymbolType.Variable, i.Type);
+                    Assert.False(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("var things", i.Id);
+                    Assert.Equal("$things", i.Name);
+                    Assert.Equal(SymbolType.Variable, i.Type);
+                    Assert.False(i.IsDeclaration);
+                });
+
+            Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnVariableData.SourceDetails));
         }
 
         [Fact]
         public void FindsOccurrencesOnFunction()
         {
-            IReadOnlyList<SymbolReference> occurrencesResult = GetOccurrences(FindsOccurrencesOnFunctionData.SourceDetails);
-            Assert.Equal(3, occurrencesResult.Count);
-            Assert.Equal(10, occurrencesResult[occurrencesResult.Count - 1].ScriptRegion.StartLineNumber);
-            Assert.Equal(1, occurrencesResult[occurrencesResult.Count - 1].ScriptRegion.StartColumnNumber);
+            IEnumerable<SymbolReference> symbols = GetOccurrences(FindsOccurrencesOnFunctionData.SourceDetails);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("fn My-Function", i.Id);
+                    Assert.Equal(SymbolType.Function, i.Type);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("fn My-Function", i.Id);
+                    Assert.Equal(SymbolType.Function, i.Type);
+                    Assert.False(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("fn My-Function", i.Id);
+                    Assert.Equal(SymbolType.Function, i.Type);
+                    Assert.False(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("fn My-Function", i.Id);
+                    Assert.Equal("$Function:My-Function", i.Name);
+                    Assert.Equal(SymbolType.Function, i.Type);
+                    Assert.False(i.IsDeclaration);
+                });
         }
 
         [Fact]
         public void FindsOccurrencesOnParameter()
         {
-            IReadOnlyList<SymbolReference> occurrencesResult = GetOccurrences(FindOccurrencesOnParameterData.SourceDetails);
-            Assert.Equal(2, occurrencesResult.Count);
-            Assert.Equal("$myInput", occurrencesResult[occurrencesResult.Count - 1].SymbolName);
-            Assert.Equal(3, occurrencesResult[occurrencesResult.Count - 1].ScriptRegion.StartLineNumber);
+            IEnumerable<SymbolReference> symbols = GetOccurrences(FindOccurrencesOnParameterData.SourceDetails);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("var myInput", i.Id);
+                    // TODO: Parameter names need work.
+                    Assert.Equal("(parameter) [System.Object]$myInput", i.Name);
+                    Assert.Equal(SymbolType.Parameter, i.Type);
+                    AssertIsRegion(i.NameRegion, 1, 23, 1, 31);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("var myInput", i.Id);
+                    Assert.Equal("$myInput", i.Name);
+                    Assert.Equal(SymbolType.Variable, i.Type);
+                    AssertIsRegion(i.NameRegion, 3, 17, 3, 25);
+                    Assert.False(i.IsDeclaration);
+                });
         }
 
         [Fact]
         public async Task FindsReferencesOnCommandWithAlias()
         {
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnBuiltInCommandWithAliasData.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(4, referencesResult.Count);
-            Assert.Equal("gci", referencesResult[1].SymbolName);
-            Assert.Equal("dir", referencesResult[2].SymbolName);
-            Assert.Equal("Get-ChildItem", referencesResult[referencesResult.Count - 1].SymbolName);
+            // NOTE: This doesn't use GetOccurrences as it's testing for aliases.
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnBuiltInCommandWithAliasData.SourceDetails);
+            Assert.Collection(symbols.Where(
+                (i) => i.FilePath
+                        .EndsWith(FindsReferencesOnBuiltInCommandWithAliasData.SourceDetails.File)),
+                (i) => Assert.Equal("fn Get-ChildItem", i.Id),
+                (i) => Assert.Equal("fn gci", i.Id),
+                (i) => Assert.Equal("fn dir", i.Id),
+                (i) => Assert.Equal("fn Get-ChildItem", i.Id));
         }
 
         [Fact]
-        public async Task FindsReferencesOnFileWithReferencesFileB()
+        public async Task FindsClassDefinition()
         {
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionMultiFileDotSourceFileB.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(4, referencesResult.Count);
+            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.ClassSourceDetails);
+            Assert.Equal("type SuperClass", symbol.Id);
+            Assert.Equal("class SuperClass { }", symbol.Name);
+            Assert.Equal(SymbolType.Class, symbol.Type);
+            Assert.True(symbol.IsDeclaration);
+            AssertIsRegion(symbol.NameRegion, 8, 7, 8, 17);
         }
 
         [Fact]
-        public async Task FindsReferencesOnFileWithReferencesFileC()
+        public async Task FindsReferencesOnClass()
         {
-            List<SymbolReference> referencesResult = await GetReferences(FindsReferencesOnFunctionMultiFileDotSourceFileC.SourceDetails).ConfigureAwait(true);
-            Assert.Equal(4, referencesResult.Count);
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.ClassSourceDetails);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("type SuperClass", i.Id);
+                    Assert.Equal("class SuperClass { }", i.Name);
+                    Assert.Equal(SymbolType.Class, i.Type);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("type SuperClass", i.Id);
+                    Assert.Equal("(type) SuperClass", i.Name);
+                    Assert.Equal(SymbolType.Type, i.Type);
+                    Assert.False(i.IsDeclaration);
+                });
+
+            Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.ClassSourceDetails));
         }
 
         [Fact]
+        public async Task FindsEnumDefinition()
+        {
+            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.EnumSourceDetails);
+            Assert.Equal("type MyEnum", symbol.Id);
+            Assert.Equal("enum MyEnum { }", symbol.Name);
+            Assert.Equal(SymbolType.Enum, symbol.Type);
+            Assert.True(symbol.IsDeclaration);
+            AssertIsRegion(symbol.NameRegion, 39, 6, 39, 12);
+        }
+
+        [Fact]
+        public async Task FindsReferencesOnEnum()
+        {
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.EnumSourceDetails);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("type MyEnum", i.Id);
+                    Assert.Equal("(type) MyEnum", i.Name);
+                    Assert.Equal(SymbolType.Type, i.Type);
+                    Assert.False(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("type MyEnum", i.Id);
+                    Assert.Equal("enum MyEnum { }", i.Name);
+                    Assert.Equal(SymbolType.Enum, i.Type);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("type MyEnum", i.Id);
+                    Assert.Equal("(type) MyEnum", i.Name);
+                    Assert.Equal(SymbolType.Type, i.Type);
+                    Assert.False(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("type MyEnum", i.Id);
+                    Assert.Equal("(type) MyEnum", i.Name);
+                    Assert.Equal(SymbolType.Type, i.Type);
+                    Assert.False(i.IsDeclaration);
+                });
+
+            Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.EnumSourceDetails));
+        }
+
+        [Fact]
+        public async Task FindsTypeExpressionDefinition()
+        {
+            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.TypeExpressionSourceDetails);
+            AssertIsRegion(symbol.NameRegion, 39, 6, 39, 12);
+            Assert.Equal("type MyEnum", symbol.Id);
+            Assert.Equal("enum MyEnum { }", symbol.Name);
+            Assert.True(symbol.IsDeclaration);
+        }
+
+        [Fact]
+        public async Task FindsReferencesOnTypeExpression()
+        {
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.TypeExpressionSourceDetails);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("type SuperClass", i.Id);
+                    Assert.Equal("class SuperClass { }", i.Name);
+                    Assert.Equal(SymbolType.Class, i.Type);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("type SuperClass", i.Id);
+                    Assert.Equal("(type) SuperClass", i.Name);
+                    Assert.Equal(SymbolType.Type, i.Type);
+                    Assert.False(i.IsDeclaration);
+                });
+
+            Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.TypeExpressionSourceDetails));
+        }
+
+        [Fact]
+        public async Task FindsTypeConstraintDefinition()
+        {
+            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.TypeConstraintSourceDetails);
+            AssertIsRegion(symbol.NameRegion, 39, 6, 39, 12);
+            Assert.Equal("type MyEnum", symbol.Id);
+            Assert.Equal("enum MyEnum { }", symbol.Name);
+            Assert.True(symbol.IsDeclaration);
+        }
+
+        [Fact]
+        public async Task FindsReferencesOnTypeConstraint()
+        {
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.TypeConstraintSourceDetails);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("type MyEnum", i.Id);
+                    Assert.Equal("(type) MyEnum", i.Name);
+                    Assert.Equal(SymbolType.Type, i.Type);
+                    Assert.False(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("type MyEnum", i.Id);
+                    Assert.Equal("enum MyEnum { }", i.Name);
+                    Assert.Equal(SymbolType.Enum, i.Type);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("type MyEnum", i.Id);
+                    Assert.Equal("(type) MyEnum", i.Name);
+                    Assert.Equal(SymbolType.Type, i.Type);
+                    Assert.False(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("type MyEnum", i.Id);
+                    Assert.Equal("(type) MyEnum", i.Name);
+                    Assert.Equal(SymbolType.Type, i.Type);
+                    Assert.False(i.IsDeclaration);
+                });
+        }
+
+        [Fact]
+        public void FindsOccurrencesOnTypeConstraint()
+        {
+            IEnumerable<SymbolReference> symbols = GetOccurrences(FindsOccurrencesOnTypeSymbolsData.TypeConstraintSourceDetails);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("type BaseClass", i.Id);
+                    Assert.Equal("class BaseClass { }", i.Name);
+                    Assert.Equal(SymbolType.Class, i.Type);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("type BaseClass", i.Id);
+                    Assert.Equal("(type) BaseClass", i.Name);
+                    Assert.Equal(SymbolType.Type, i.Type);
+                    Assert.False(i.IsDeclaration);
+                });
+        }
+
+        [Fact]
+        public async Task FindsConstructorDefinition()
+        {
+            IEnumerable<SymbolReference> symbols = await GetDefinitions(FindsTypeSymbolsDefinitionData.ConstructorSourceDetails);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("mtd SuperClass", i.Id);
+                    Assert.Equal("SuperClass([string]$name)", i.Name);
+                    Assert.Equal(SymbolType.Constructor, i.Type);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("mtd SuperClass", i.Id);
+                    Assert.Equal("SuperClass()", i.Name);
+                    Assert.Equal(SymbolType.Constructor, i.Type);
+                    Assert.True(i.IsDeclaration);
+                });
+
+            Assert.Equal(symbols, await GetReferences(FindsReferencesOnTypeSymbolsData.ConstructorSourceDetails));
+            Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.ConstructorSourceDetails));
+        }
+
+        [Fact]
+        public async Task FindsMethodDefinition()
+        {
+            IEnumerable<SymbolReference> symbols = await GetDefinitions(FindsTypeSymbolsDefinitionData.MethodSourceDetails);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("mtd MyClassMethod", i.Id);
+                    Assert.Equal("string MyClassMethod([string]$param1, $param2, [int]$param3)", i.Name);
+                    Assert.Equal(SymbolType.Method, i.Type);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("mtd MyClassMethod", i.Id);
+                    Assert.Equal("string MyClassMethod([MyEnum]$param1)", i.Name);
+                    Assert.Equal(SymbolType.Method, i.Type);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("mtd MyClassMethod", i.Id);
+                    Assert.Equal("string MyClassMethod()", i.Name);
+                    Assert.Equal(SymbolType.Method, i.Type);
+                    Assert.True(i.IsDeclaration);
+                });
+        }
+
+        [Fact]
+        public async Task FindsReferencesOnMethod()
+        {
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.MethodSourceDetails);
+            Assert.Collection(symbols,
+                (i) => Assert.Equal("string MyClassMethod([string]$param1, $param2, [int]$param3)", i.Name),
+                (i) => Assert.Equal("string MyClassMethod([MyEnum]$param1)", i.Name),
+                (i) => Assert.Equal("string MyClassMethod()", i.Name),
+                (i) => // The invocation!
+                {
+                    Assert.Equal("mtd MyClassMethod", i.Id);
+                    Assert.Equal("(method) MyClassMethod", i.Name);
+                    Assert.Equal("$o.MyClassMethod()", i.SourceLine);
+                    Assert.Equal(SymbolType.Method, i.Type);
+                    Assert.False(i.IsDeclaration);
+                });
+
+            Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.MethodSourceDetails));
+        }
+
+        [Fact]
+        public async Task FindsPropertyDefinition()
+        {
+            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.PropertySourceDetails);
+            Assert.Equal("prop SomePropWithDefault", symbol.Id);
+            Assert.Equal("[string] $SomePropWithDefault", symbol.Name);
+            Assert.Equal(SymbolType.Property, symbol.Type);
+            Assert.True(symbol.IsDeclaration);
+        }
+
+        [Fact]
+        public async Task FindsReferencesOnProperty()
+        {
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.PropertySourceDetails);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("prop SomeProp", i.Id);
+                    Assert.Equal("[int] $SomeProp", i.Name);
+                    Assert.Equal(SymbolType.Property, i.Type);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("prop SomeProp", i.Id);
+                    Assert.Equal("(property) SomeProp", i.Name);
+                    Assert.Equal(SymbolType.Property, i.Type);
+                    Assert.False(i.IsDeclaration);
+                });
+        }
+
+        [Fact]
+        public void FindsOccurrencesOnProperty()
+        {
+            IEnumerable<SymbolReference> symbols = GetOccurrences(FindsOccurrencesOnTypeSymbolsData.PropertySourceDetails);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("prop SomePropWithDefault", i.Id);
+                    Assert.Equal("[string] $SomePropWithDefault", i.Name);
+                    Assert.Equal(SymbolType.Property, i.Type);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("prop SomePropWithDefault", i.Id);
+                    Assert.Equal("(property) SomePropWithDefault", i.Name);
+                    Assert.Equal(SymbolType.Property, i.Type);
+                    Assert.False(i.IsDeclaration);
+                });
+        }
+
+        [Fact]
+        public async Task FindsEnumMemberDefinition()
+        {
+            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.EnumMemberSourceDetails);
+            Assert.Equal("prop Second", symbol.Id);
+            // Doesn't include [MyEnum]:: because that'd be redundant in the outline.
+            Assert.Equal("Second", symbol.Name);
+            Assert.Equal(SymbolType.EnumMember, symbol.Type);
+            Assert.True(symbol.IsDeclaration);
+            AssertIsRegion(symbol.NameRegion, 41, 5, 41, 11);
+
+            symbol = await GetDefinition(FindsReferencesOnTypeSymbolsData.EnumMemberSourceDetails);
+            Assert.Equal("prop First", symbol.Id);
+            Assert.Equal("First", symbol.Name);
+            Assert.Equal(SymbolType.EnumMember, symbol.Type);
+            Assert.True(symbol.IsDeclaration);
+            AssertIsRegion(symbol.NameRegion, 40, 5, 40, 10);
+        }
+
+        [Fact]
+        public async Task FindsReferencesOnEnumMember()
+        {
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.EnumMemberSourceDetails);
+            Assert.Collection(symbols,
+                (i) =>
+                {
+                    Assert.Equal("prop First", i.Id);
+                    Assert.Equal("First", i.Name);
+                    Assert.Equal(SymbolType.EnumMember, i.Type);
+                    Assert.True(i.IsDeclaration);
+                },
+                (i) =>
+                {
+                    Assert.Equal("prop First", i.Id);
+                    // The reference is just a member invocation, and so indistinguishable from a property.
+                    Assert.Equal("(property) First", i.Name);
+                    Assert.Equal(SymbolType.Property, i.Type);
+                    Assert.False(i.IsDeclaration);
+                });
+
+            Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.EnumMemberSourceDetails));
+        }
+
+        [SkippableFact]
         public async Task FindsDetailsForBuiltInCommand()
         {
+            Skip.IfNot(VersionUtils.IsMacOS, "macOS gets the right synopsis but others don't.");
             SymbolDetails symbolDetails = await symbolsService.FindSymbolDetailsAtLocationAsync(
                 GetScriptFile(FindsDetailsForBuiltInCommandData.SourceDetails),
                 FindsDetailsForBuiltInCommandData.SourceDetails.StartLineNumber,
-                FindsDetailsForBuiltInCommandData.SourceDetails.StartColumnNumber).ConfigureAwait(true);
+                FindsDetailsForBuiltInCommandData.SourceDetails.StartColumnNumber,
+                CancellationToken.None);
 
-            Assert.NotNull(symbolDetails.Documentation);
-            Assert.NotEqual("", symbolDetails.Documentation);
+            Assert.Equal("Gets the processes that are running on the local computer.", symbolDetails.Documentation);
         }
 
         [Fact]
         public void FindsSymbolsInFile()
         {
-            List<SymbolReference> symbolsResult =
-                FindSymbolsInFile(
-                    FindSymbolsInMultiSymbolFile.SourceDetails);
+            IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInMultiSymbolFile.SourceDetails);
 
-            Assert.Equal(4, symbolsResult.Count(symbolReference => symbolReference.SymbolType == SymbolType.Function));
-            Assert.Equal(3, symbolsResult.Count(symbolReference => symbolReference.SymbolType == SymbolType.Variable));
-            Assert.Single(symbolsResult.Where(symbolReference => symbolReference.SymbolType == SymbolType.Workflow));
+            Assert.Equal(7, symbols.Count(i => i.Type == SymbolType.Function));
+            Assert.Equal(8, symbols.Count(i => i.Type == SymbolType.Variable));
+            Assert.Equal(4, symbols.Count(i => i.Type == SymbolType.Parameter));
+            Assert.Equal(12, symbols.Count(i => i.Id.StartsWith("var ")));
+            Assert.Equal(2, symbols.Count(i => i.Id.StartsWith("prop ")));
 
-            SymbolReference firstFunctionSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Function);
-            Assert.Equal("AFunction", firstFunctionSymbol.SymbolName);
-            Assert.Equal(7, firstFunctionSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, firstFunctionSymbol.ScriptRegion.StartColumnNumber);
+            SymbolReference symbol = symbols.First(i => i.Type == SymbolType.Function);
+            Assert.Equal("fn AFunction", symbol.Id);
+            Assert.Equal("function script:AFunction ()", symbol.Name);
+            Assert.True(symbol.IsDeclaration);
+            Assert.Equal(2, GetOccurrences(symbol.NameRegion).Count());
 
-            SymbolReference lastVariableSymbol = symbolsResult.Last(r => r.SymbolType == SymbolType.Variable);
-            Assert.Equal("$Script:ScriptVar2", lastVariableSymbol.SymbolName);
-            Assert.Equal(3, lastVariableSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, lastVariableSymbol.ScriptRegion.StartColumnNumber);
+            symbol = symbols.First(i => i.Id == "fn AFilter");
+            Assert.Equal("filter AFilter ()", symbol.Name);
+            Assert.True(symbol.IsDeclaration);
 
-            SymbolReference firstWorkflowSymbol = symbolsResult.First(r => r.SymbolType == SymbolType.Workflow);
-            Assert.Equal("AWorkflow", firstWorkflowSymbol.SymbolName);
-            Assert.Equal(23, firstWorkflowSymbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(1, firstWorkflowSymbol.ScriptRegion.StartColumnNumber);
+            symbol = symbols.Last(i => i.Type == SymbolType.Variable);
+            Assert.Equal("var nestedVar", symbol.Id);
+            Assert.Equal("$nestedVar", symbol.Name);
+            Assert.False(symbol.IsDeclaration);
+            AssertIsRegion(symbol.NameRegion, 16, 29, 16, 39);
 
-            // TODO: Bring this back when we can use AstVisitor2 again (#276)
-            //Assert.Equal(1, symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Configuration).Count());
-            //SymbolReference firstConfigurationSymbol = symbolsResult.FoundOccurrences.Where(r => r.SymbolType == SymbolType.Configuration).First();
-            //Assert.Equal("AConfiguration", firstConfigurationSymbol.SymbolName);
-            //Assert.Equal(25, firstConfigurationSymbol.ScriptRegion.StartLineNumber);
-            //Assert.Equal(1, firstConfigurationSymbol.ScriptRegion.StartColumnNumber);
+            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Workflow));
+            Assert.Equal("fn AWorkflow", symbol.Id);
+            Assert.Equal("workflow AWorkflow ()", symbol.Name);
+            Assert.True(symbol.IsDeclaration);
+
+            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Class));
+            Assert.Equal("type AClass", symbol.Id);
+            Assert.Equal("class AClass { }", symbol.Name);
+            Assert.True(symbol.IsDeclaration);
+
+            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Property));
+            Assert.Equal("prop AProperty", symbol.Id);
+            Assert.Equal("[string] $AProperty", symbol.Name);
+            Assert.True(symbol.IsDeclaration);
+
+            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Constructor));
+            Assert.Equal("mtd AClass", symbol.Id);
+            Assert.Equal("AClass([string]$AParameter)", symbol.Name);
+            Assert.True(symbol.IsDeclaration);
+
+            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Method));
+            Assert.Equal("mtd AMethod", symbol.Id);
+            Assert.Equal("void AMethod([string]$param1, [int]$param2, $param3)", symbol.Name);
+            Assert.True(symbol.IsDeclaration);
+
+            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Enum));
+            Assert.Equal("type AEnum", symbol.Id);
+            Assert.Equal("enum AEnum { }", symbol.Name);
+            Assert.True(symbol.IsDeclaration);
+
+            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.EnumMember));
+            Assert.Equal("prop AValue", symbol.Id);
+            Assert.Equal("AValue", symbol.Name);
+            Assert.True(symbol.IsDeclaration);
+
+            // There should be no region symbols unless the provider has been registered.
+            Assert.Empty(symbols.Where(i => i.Type == SymbolType.Region));
+        }
+
+        [Fact]
+        public void FindsRegionsInFile()
+        {
+            symbolsService.TryRegisterDocumentSymbolProvider(new RegionDocumentSymbolProvider());
+            IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInMultiSymbolFile.SourceDetails);
+            Assert.Collection(symbols.Where(i => i.Type == SymbolType.Region),
+                 (i) =>
+                 {
+                     Assert.Equal("region find me outer", i.Id);
+                     Assert.Equal("#region find me outer", i.Name);
+                     Assert.Equal(SymbolType.Region, i.Type);
+                     Assert.True(i.IsDeclaration);
+                     AssertIsRegion(i.NameRegion, 51, 1, 51, 22);
+                     AssertIsRegion(i.ScriptRegion, 51, 1, 55, 11);
+                 },
+                 (i) =>
+                 {
+                     Assert.Equal("region find me inner", i.Id);
+                     Assert.Equal("#region find me inner", i.Name);
+                     Assert.Equal(SymbolType.Region, i.Type);
+                     Assert.True(i.IsDeclaration);
+                     AssertIsRegion(i.NameRegion, 52, 1, 52, 22);
+                     AssertIsRegion(i.ScriptRegion, 52, 1, 54, 11);
+                 });
+        }
+
+        [Fact]
+        public void FindsSymbolsWithNewLineInFile()
+        {
+            IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInNewLineSymbolFile.SourceDetails);
+
+            SymbolReference symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Function));
+            Assert.Equal("fn returnTrue", symbol.Id);
+            AssertIsRegion(symbol.NameRegion, 2, 1, 2, 11);
+            AssertIsRegion(symbol.ScriptRegion, 1, 1, 4, 2);
+
+            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Class));
+            Assert.Equal("type NewLineClass", symbol.Id);
+            AssertIsRegion(symbol.NameRegion, 7, 1, 7, 13);
+            AssertIsRegion(symbol.ScriptRegion, 6, 1, 23, 2);
+
+            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Constructor));
+            Assert.Equal("mtd NewLineClass", symbol.Id);
+            AssertIsRegion(symbol.NameRegion, 8, 5, 8, 17);
+            AssertIsRegion(symbol.ScriptRegion, 8, 5, 10, 6);
+
+            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Property));
+            Assert.Equal("prop SomePropWithDefault", symbol.Id);
+            AssertIsRegion(symbol.NameRegion, 15, 5, 15, 25);
+            AssertIsRegion(symbol.ScriptRegion, 12, 5, 15, 40);
+
+            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Method));
+            Assert.Equal("mtd MyClassMethod", symbol.Id);
+            Assert.Equal("string MyClassMethod([MyNewLineEnum]$param1)", symbol.Name);
+            AssertIsRegion(symbol.NameRegion, 20, 5, 20, 18);
+            AssertIsRegion(symbol.ScriptRegion, 17, 5, 22, 6);
+
+            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Enum));
+            Assert.Equal("type MyNewLineEnum", symbol.Id);
+            AssertIsRegion(symbol.NameRegion, 26, 1, 26, 14);
+            AssertIsRegion(symbol.ScriptRegion, 25, 1, 28, 2);
+
+            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.EnumMember));
+            Assert.Equal("prop First", symbol.Id);
+            AssertIsRegion(symbol.NameRegion, 27, 5, 27, 10);
+            AssertIsRegion(symbol.ScriptRegion, 27, 5, 27, 10);
+        }
+
+        [Fact(Skip = "DSC symbols don't work yet.")]
+        public void FindsSymbolsInDSCFile()
+        {
+            Skip.If(!s_isWindows, "DSC only works properly on Windows.");
+
+            IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInDSCFile.SourceDetails);
+            SymbolReference symbol = Assert.Single(symbols, i => i.Type == SymbolType.Configuration);
+            Assert.Equal("AConfiguration", symbol.Id);
+            Assert.Equal(2, symbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(15, symbol.ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
         public void FindsSymbolsInPesterFile()
         {
-            List<SymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInPesterFile.SourceDetails);
-            Assert.Equal(5, symbolsResult.Count);
+            IEnumerable<PesterSymbolReference> symbols = FindSymbolsInFile(FindSymbolsInPesterFile.SourceDetails).OfType<PesterSymbolReference>();
+            Assert.Equal(12, symbols.Count(i => i.Type == SymbolType.Function));
+
+            SymbolReference symbol = Assert.Single(symbols, i => i.Command == PesterCommandType.Describe);
+            Assert.Equal("Describe \"Testing Pester symbols\"", symbol.Id);
+            Assert.Equal(9, symbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(1, symbol.ScriptRegion.StartColumnNumber);
+
+            symbol = Assert.Single(symbols, i => i.Command == PesterCommandType.Context);
+            Assert.Equal("Context \"When a Pester file is given\"", symbol.Id);
+            Assert.Equal(10, symbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(5, symbol.ScriptRegion.StartColumnNumber);
+
+            Assert.Equal(4, symbols.Count(i => i.Command == PesterCommandType.It));
+            symbol = symbols.Last(i => i.Command == PesterCommandType.It);
+            Assert.Equal("It \"Should return setup and teardown symbols\"", symbol.Id);
+            Assert.Equal(31, symbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(9, symbol.ScriptRegion.StartColumnNumber);
+
+            symbol = Assert.Single(symbols, i => i.Command == PesterCommandType.BeforeDiscovery);
+            Assert.Equal("BeforeDiscovery", symbol.Id);
+            Assert.Equal(1, symbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(1, symbol.ScriptRegion.StartColumnNumber);
+
+            Assert.Equal(2, symbols.Count(i => i.Command == PesterCommandType.BeforeAll));
+            symbol = symbols.Last(i => i.Command == PesterCommandType.BeforeAll);
+            Assert.Equal("BeforeAll", symbol.Id);
+            Assert.Equal(11, symbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(9, symbol.ScriptRegion.StartColumnNumber);
+
+            symbol = Assert.Single(symbols, i => i.Command == PesterCommandType.BeforeEach);
+            Assert.Equal("BeforeEach", symbol.Id);
+            Assert.Equal(15, symbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(9, symbol.ScriptRegion.StartColumnNumber);
+
+            symbol = Assert.Single(symbols, i => i.Command == PesterCommandType.AfterEach);
+            Assert.Equal("AfterEach", symbol.Id);
+            Assert.Equal(35, symbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(9, symbol.ScriptRegion.StartColumnNumber);
+
+            symbol = Assert.Single(symbols, i => i.Command == PesterCommandType.AfterAll);
+            Assert.Equal("AfterAll", symbol.Id);
+            Assert.Equal(40, symbol.ScriptRegion.StartLineNumber);
+            Assert.Equal(5, symbol.ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
-        public void LangServerFindsSymbolsInPSDFile()
+        public void FindsSymbolsInPSKoansFile()
         {
-            List<SymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInPSDFile.SourceDetails);
-            Assert.Equal(3, symbolsResult.Count);
+            IEnumerable<PesterSymbolReference> symbols = FindSymbolsInFile(FindSymbolsInPSKoansFile.SourceDetails).OfType<PesterSymbolReference>();
+
+            // Pester symbols are properly tested in FindsSymbolsInPesterFile so only counting to make sure they appear
+            Assert.Equal(7, symbols.Count(i => i.Type == SymbolType.Function));
+        }
+
+        [Fact]
+        public void FindsSymbolsInPSDFile()
+        {
+            IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInPSDFile.SourceDetails);
+            Assert.All(symbols, i => Assert.Equal(SymbolType.HashtableKey, i.Type));
+            Assert.Collection(symbols,
+                i => Assert.Equal("property1", i.Id),
+                i => Assert.Equal("property2", i.Id),
+                i => Assert.Equal("property3", i.Id));
         }
 
         [Fact]
         public void FindsSymbolsInNoSymbolsFile()
         {
-            List<SymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInNoSymbolsFile.SourceDetails);
+            IEnumerable<SymbolReference> symbolsResult = FindSymbolsInFile(FindSymbolsInNoSymbolsFile.SourceDetails);
             Assert.Empty(symbolsResult);
         }
     }

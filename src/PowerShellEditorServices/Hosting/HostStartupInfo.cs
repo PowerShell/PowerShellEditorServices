@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Management.Automation.Host;
 using System.Management.Automation.Runspaces;
 
@@ -36,7 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// no version is specified by the host application, we use 0.0.0
         /// to indicate a lack of version.
         /// </summary>
-        private static readonly Version s_defaultHostVersion = new Version(0, 0, 0);
+        private static readonly Version s_defaultHostVersion = new(0, 0, 0);
 
         #endregion
 
@@ -71,9 +72,14 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public IReadOnlyList<string> AdditionalModules { get; }
 
         /// <summary>
-        /// True if the integrated console is to be enabled.
+        /// True if the Extension Terminal is to be enabled.
         /// </summary>
         public bool ConsoleReplEnabled { get; }
+
+        /// <summary>
+        /// True if we want to suppress messages to PSHost (to prevent Stdio clobbering)
+        /// </summary>
+        public bool UseNullPSHostUI { get; }
 
         /// <summary>
         /// If true, the legacy PSES readline implementation will be used. Otherwise PSReadLine will be used.
@@ -92,7 +98,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public string LogPath { get; }
 
         /// <summary>
-        /// The InitialSessionState will be inherited from the orginal PowerShell process. This will
+        /// The InitialSessionState will be inherited from the original PowerShell process. This will
         /// be used when creating runspaces so that we honor the same InitialSessionState.
         /// </summary>
         public InitialSessionState InitialSessionState { get; }
@@ -101,7 +107,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// The minimum log level of log events to be logged.
         /// </summary>
         /// <remarks>
-        /// This is cast to all of <see cref="PsesLogLevel"/>, <see
+        /// This is cast to all of <see cref="Hosting.PsesLogLevel"/>, <see
         /// cref="Microsoft.Extensions.Logging.LogLevel"/>, and <see
         /// cref="Serilog.Events.LogEventLevel"/>, hence it is an <c>int</c>.
         /// </remarks>
@@ -131,14 +137,14 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// </param>
         /// <param name="version">The host application's version.</param>
         /// <param name="psHost">The PowerShell host to use.</param>
-        /// <param name="allUsersProfilePath">The path to the shared profile.</param>
-        /// <param name="currentUsersProfilePath">The path to the user specific profile.</param>
+        /// <param name="profilePaths">The set of profile paths.</param>
         /// <param name="featureFlags">Flags of features to enable.</param>
         /// <param name="additionalModules">Names or paths of additional modules to import.</param>
         /// <param name="initialSessionState">The language mode inherited from the orginal PowerShell process. This will be used when creating runspaces so that we honor the same initialSessionState including allowed modules, cmdlets and language mode.</param>
         /// <param name="logPath">The path to log to.</param>
         /// <param name="logLevel">The minimum log event level.</param>
         /// <param name="consoleReplEnabled">Enable console if true.</param>
+        /// <param name="useNullPSHostUI">Whether or not to use the Null UI.</param>
         /// <param name="usesLegacyReadLine">Use PSReadLine if false, otherwise use the legacy readline implementation.</param>
         /// <param name="bundledModulePath">A custom path to the expected bundled modules.</param>
         public HostStartupInfo(
@@ -153,6 +159,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             string logPath,
             int logLevel,
             bool consoleReplEnabled,
+            bool useNullPSHostUI,
             bool usesLegacyReadLine,
             string bundledModulePath)
         {
@@ -167,8 +174,17 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             LogPath = logPath;
             LogLevel = logLevel;
             ConsoleReplEnabled = consoleReplEnabled;
+            UseNullPSHostUI = useNullPSHostUI;
             UsesLegacyReadLine = usesLegacyReadLine;
-            BundledModulePath = bundledModulePath;
+
+            // Respect a user provided bundled module path.
+            BundledModulePath = Directory.Exists(bundledModulePath)
+                ? bundledModulePath
+                : Path.GetFullPath(Path.Combine(
+                    Path.GetDirectoryName(typeof(HostStartupInfo).Assembly.Location),
+                    "..",
+                    "..",
+                    ".."));
         }
 
         #endregion

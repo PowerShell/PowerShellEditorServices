@@ -11,7 +11,6 @@ using Microsoft.PowerShell.EditorServices.Logging;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Workspace
 {
-
     /// <summary>
     /// A FileSystem wrapper class which only returns files and directories that the consumer is interested in,
     /// with a maximum recursion depth and silently ignores most file system errors. Typically this is used by the
@@ -19,7 +18,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
     /// </summary>
     internal class WorkspaceFileSystemWrapperFactory
     {
-        private readonly DirectoryInfoBase _rootDirectory;
         private readonly string[] _allowedExtensions;
         private readonly bool _ignoreReparsePoints;
 
@@ -37,10 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
         /// Gets the directory where the factory is rooted. Only files and directories at this level, or deeper, will be visible
         /// by the wrapper
         /// </summary>
-        public DirectoryInfoBase RootDirectory
-        {
-            get { return _rootDirectory; }
-        }
+        public DirectoryInfoBase RootDirectory { get; }
 
         /// <summary>
         /// Creates a new FileWrapper Factory
@@ -50,23 +45,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
         /// <param name="allowedExtensions">An array of file extensions that will be visible from the factory. For example [".ps1", ".psm1"]</param>
         /// <param name="ignoreReparsePoints">Whether objects which are Reparse Points should be ignored. https://docs.microsoft.com/en-us/windows/desktop/fileio/reparse-points</param>
         /// <param name="logger">An ILogger implementation used for writing log messages.</param>
-        public WorkspaceFileSystemWrapperFactory(String rootPath, int recursionDepthLimit, string[] allowedExtensions, bool ignoreReparsePoints, ILogger logger)
+        public WorkspaceFileSystemWrapperFactory(string rootPath, int recursionDepthLimit, string[] allowedExtensions, bool ignoreReparsePoints, ILogger logger)
         {
             MaxRecursionDepth = recursionDepthLimit;
-            _rootDirectory = new WorkspaceFileSystemDirectoryWrapper(this, new DirectoryInfo(rootPath), 0);
+            RootDirectory = new WorkspaceFileSystemDirectoryWrapper(this, new DirectoryInfo(rootPath), 0);
             _allowedExtensions = allowedExtensions;
             _ignoreReparsePoints = ignoreReparsePoints;
             Logger = logger;
         }
 
         /// <summary>
-        /// Creates a wrapped <see cref="DirectoryInfoBase" /> object from <see cref="System.IO.DirectoryInfo" />.
+        /// Creates a wrapped <see cref="DirectoryInfoBase" /> object from <see cref="DirectoryInfo" />.
         /// </summary>
         internal DirectoryInfoBase CreateDirectoryInfoWrapper(DirectoryInfo dirInfo, int depth) =>
             new WorkspaceFileSystemDirectoryWrapper(this, dirInfo, depth >= 0 ? depth : 0);
 
         /// <summary>
-        /// Creates a wrapped <see cref="FileInfoBase" /> object from <see cref="System.IO.FileInfo" />.
+        /// Creates a wrapped <see cref="FileInfoBase" /> object from <see cref="FileInfo" />.
         /// </summary>
         internal FileInfoBase CreateFileInfoWrapper(FileInfo fileInfo, int depth) =>
             new WorkspaceFileSystemFileInfoWrapper(this, fileInfo, depth >= 0 ? depth : 0);
@@ -98,7 +93,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
 
                 yield break;
             }
-            catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
+            catch (Exception e) when (e is SecurityException or UnauthorizedAccessException)
             {
                 Logger.LogHandledException(
                     $"Could not enumerate directories in the path '{dirInfo.FullName}' due to the path not being accessible",
@@ -116,7 +111,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
             }
             foreach (string dirPath in subDirs)
             {
-                var subDirInfo = new DirectoryInfo(dirPath);
+                DirectoryInfo subDirInfo = new(dirPath);
                 if (_ignoreReparsePoints && (subDirInfo.Attributes & FileAttributes.ReparsePoint) != 0) { continue; }
                 yield return subDirInfo;
             }
@@ -143,7 +138,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
 
                 yield break;
             }
-            catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
+            catch (Exception e) when (e is SecurityException or UnauthorizedAccessException)
             {
                 Logger.LogHandledException(
                     $"Could not enumerate files in the path '{dirInfo.FullName}' due to the path not being accessible",
@@ -161,7 +156,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
             }
             foreach (string filePath in filePaths)
             {
-                var fileInfo = new FileInfo(filePath);
+                FileInfo fileInfo = new(filePath);
                 if (_allowedExtensions == null || _allowedExtensions.Length == 0) { yield return fileInfo; continue; }
                 if (_ignoreReparsePoints && (fileInfo.Attributes & FileAttributes.ReparsePoint) != 0) { continue; }
                 foreach (string extension in _allowedExtensions)
@@ -173,8 +168,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
     }
 
     /// <summary>
-    /// Wraps an instance of <see cref="System.IO.DirectoryInfo" /> and provides implementation of
-    /// <see cref="Microsoft.Extensions.FileSystemGlobbing.Abstractions.DirectoryInfoBase" />.
+    /// Wraps an instance of <see cref="DirectoryInfo" /> and provides implementation of
+    /// <see cref="DirectoryInfoBase" />.
     /// Based on https://github.com/aspnet/Extensions/blob/c087cadf1dfdbd2b8785ef764e5ef58a1a7e5ed0/src/FileSystemGlobbing/src/Abstractions/DirectoryInfoWrapper.cs
     /// </summary>
     internal class WorkspaceFileSystemDirectoryWrapper : DirectoryInfoBase
@@ -190,7 +185,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
         public WorkspaceFileSystemDirectoryWrapper(WorkspaceFileSystemWrapperFactory factory, DirectoryInfo directoryInfo, int depth)
         {
             _concreteDirectoryInfo = directoryInfo;
-            _isParentPath = (depth == 0);
+            _isParentPath = depth == 0;
             _fsWrapperFactory = factory;
             _depth = depth;
         }
@@ -230,7 +225,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
 
             if (isParentPath) { return ParentDirectory; }
 
-            var dirs = _concreteDirectoryInfo.GetDirectories(name);
+            DirectoryInfo[] dirs = _concreteDirectoryInfo.GetDirectories(name);
 
             if (dirs.Length == 1) { return _fsWrapperFactory.CreateDirectoryInfoWrapper(dirs[0], _depth + 1); }
             if (dirs.Length == 0) { return null; }
@@ -274,7 +269,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
                     $"Could not get parent of '{_concreteDirectoryInfo.FullName}' due to the path being too long",
                     e);
             }
-            catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
+            catch (Exception e) when (e is SecurityException or UnauthorizedAccessException)
             {
                 _fsWrapperFactory.Logger.LogHandledException(
                     $"Could not get parent of '{_concreteDirectoryInfo.FullName}' due to the path not being accessible",
@@ -290,19 +285,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
         }
 
         /// <summary>
-        /// Returns the parent directory. (Overrides <see cref="Microsoft.Extensions.FileSystemGlobbing.Abstractions.FileSystemInfoBase.ParentDirectory" />).
+        /// Returns the parent directory. (Overrides <see cref="FileSystemInfoBase.ParentDirectory" />).
         /// </summary>
-        public override DirectoryInfoBase ParentDirectory
-        {
-            get
-            {
-                return SafeParentDirectory();
-            }
-        }
+        public override DirectoryInfoBase ParentDirectory => SafeParentDirectory();
     }
 
     /// <summary>
-    /// Wraps an instance of <see cref="System.IO.FileInfo" /> to provide implementation of <see cref="Microsoft.Extensions.FileSystemGlobbing.Abstractions.FileInfoBase" />.
+    /// Wraps an instance of <see cref="FileInfo" /> to provide implementation of <see cref="FileInfoBase" />.
     /// </summary>
     internal class WorkspaceFileSystemFileInfoWrapper : FileInfoBase
     {
@@ -311,7 +300,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
         private readonly int _depth;
 
         /// <summary>
-        /// Initializes instance of <see cref="FileInfoWrapper" /> to wrap the specified object <see cref="System.IO.FileInfo" />.
+        /// Initializes instance of <see cref="FileInfoWrapper" /> to wrap the specified object <see cref="FileInfo" />.
         /// </summary>
         public WorkspaceFileSystemFileInfoWrapper(WorkspaceFileSystemWrapperFactory factory, FileInfo fileInfo, int depth)
         {
@@ -321,12 +310,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
         }
 
         /// <summary>
-        /// The file name. (Overrides <see cref="Microsoft.Extensions.FileSystemGlobbing.Abstractions.FileSystemInfoBase.Name" />).
+        /// The file name. (Overrides <see cref="FileSystemInfoBase.Name" />).
         /// </summary>
         public override string Name => _concreteFileInfo.Name;
 
         /// <summary>
-        /// The full path of the file. (Overrides <see cref="Microsoft.Extensions.FileSystemGlobbing.Abstractions.FileSystemInfoBase.FullName" />).
+        /// The full path of the file. (Overrides <see cref="FileSystemInfoBase.FullName" />).
         /// </summary>
         public override string FullName => _concreteFileInfo.FullName;
 
@@ -351,7 +340,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
                     $"Could not get parent of '{_concreteFileInfo.FullName}' due to the path being too long",
                     e);
             }
-            catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
+            catch (Exception e) when (e is SecurityException or UnauthorizedAccessException)
             {
                 _fsWrapperFactory.Logger.LogHandledException(
                     $"Could not get parent of '{_concreteFileInfo.FullName}' due to the path not being accessible",
@@ -367,14 +356,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Workspace
         }
 
         /// <summary>
-        /// The directory containing the file. (Overrides <see cref="Microsoft.Extensions.FileSystemGlobbing.Abstractions.FileSystemInfoBase.ParentDirectory" />).
+        /// The directory containing the file. (Overrides <see cref="FileSystemInfoBase.ParentDirectory" />).
         /// </summary>
-        public override DirectoryInfoBase ParentDirectory
-        {
-            get
-            {
-                return SafeParentDirectory();
-            }
-        }
+        public override DirectoryInfoBase ParentDirectory => SafeParentDirectory();
     }
 }

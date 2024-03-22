@@ -9,10 +9,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     {
         private int _signaled;
 
-        public IdempotentLatch()
-        {
-            _signaled = 0;
-        }
+        public IdempotentLatch() => _signaled = 0;
 
         public bool IsSignaled => _signaled != 0;
 

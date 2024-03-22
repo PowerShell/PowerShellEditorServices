@@ -85,15 +85,12 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         private readonly ILanguageServerFacade _languageServer;
 
         internal EditorContextService(
-            ILanguageServerFacade languageServer)
-        {
-            _languageServer = languageServer;
-        }
+            ILanguageServerFacade languageServer) => _languageServer = languageServer;
 
         public async Task<ILspCurrentFileContext> GetCurrentLspFileContextAsync()
         {
             ClientEditorContext clientContext =
-                await _languageServer.SendRequest<GetEditorContextRequest>(
+                await _languageServer.SendRequest(
                     "editor/getEditorContext",
                     new GetEditorContextRequest())
                 .Returning<ClientEditorContext>(CancellationToken.None)
@@ -102,10 +99,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             return new LspCurrentFileContext(clientContext);
         }
 
-        public Task OpenNewUntitledFileAsync()
-        {
-            return _languageServer.SendRequest<string>("editor/newFile", null).ReturningVoid(CancellationToken.None);
-        }
+        public Task OpenNewUntitledFileAsync() => _languageServer.SendRequest<string>("editor/newFile", null).ReturningVoid(CancellationToken.None);
 
         public Task OpenFileAsync(Uri fileUri) => OpenFileAsync(fileUri, preview: false);
 
@@ -118,10 +112,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             }).ReturningVoid(CancellationToken.None);
         }
 
-        public Task CloseFileAsync(Uri fileUri)
-        {
-            return _languageServer.SendRequest("editor/closeFile", fileUri.LocalPath).ReturningVoid(CancellationToken.None);
-        }
+        public Task CloseFileAsync(Uri fileUri) => _languageServer.SendRequest("editor/closeFile", fileUri.LocalPath).ReturningVoid(CancellationToken.None);
 
         public Task SaveFileAsync(Uri fileUri) => SaveFileAsync(fileUri, null);
 

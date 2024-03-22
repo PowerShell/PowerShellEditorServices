@@ -5,10 +5,10 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
 namespace Microsoft.PowerShell.EditorServices.Test.Shared.Symbols
 {
-    public class FindSymbolsInPSDFile
+    public static class FindSymbolsInPSDFile
     {
         public static readonly ScriptRegion SourceDetails =
-            new ScriptRegion(
+            new(
                 file: TestUtilities.NormalizePath("Symbols/PowerShellDataFile.psd1"),
                 text: string.Empty,
                 startLineNumber: 0,

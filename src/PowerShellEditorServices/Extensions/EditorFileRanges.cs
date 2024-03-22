@@ -15,12 +15,23 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         public static FileScriptPosition FromPosition(FileContext file, int lineNumber, int columnNumber)
         {
+            if (file is null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
+
             int offset = 0;
             int currLine = 1;
             string fileText = file.Ast.Extent.Text;
             while (offset < fileText.Length && currLine < lineNumber)
             {
-                offset = fileText.IndexOf('\n', offset);
+                offset = fileText.IndexOf('\n', offset) + 1;
+                if (offset is 0)
+                {
+                    // Line and column passed were not valid and the offset can not be determined.
+                    return new FileScriptPosition(file, lineNumber, columnNumber, offset);
+                }
+
                 currLine++;
             }
 
@@ -31,13 +42,17 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         public static FileScriptPosition FromOffset(FileContext file, int offset)
         {
+            if (file is null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
 
             int line = 1;
             string fileText = file.Ast.Extent.Text;
 
             if (offset >= fileText.Length)
             {
-                throw new ArgumentException(nameof(offset), "Offset greater than file length");
+                throw new ArgumentException("Offset greater than file length", nameof(offset));
             }
 
             int lastLineOffset = -1;
@@ -60,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         internal FileScriptPosition(FileContext file, int lineNumber, int columnNumber, int offset)
         {
             _file = file;
-            Line = file.GetTextLines()[lineNumber - 1];
+            Line = file?.GetTextLines()?[lineNumber - 1] ?? string.Empty;
             ColumnNumber = columnNumber;
             LineNumber = lineNumber;
             Offset = offset;
@@ -80,7 +95,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         int IFilePosition.Line => LineNumber;
 
-        public string GetFullScript() => _file.GetText();
+        public string GetFullScript() => _file?.GetText() ?? string.Empty;
     }
 
     public class FileScriptExtent : IScriptExtent, IFileRange
@@ -95,6 +110,11 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         public static FileScriptExtent FromOffsets(FileContext file, int startOffset, int endOffset)
         {
+            if (file is null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
+
             return new FileScriptExtent(
                 file,
                 FileScriptPosition.FromOffset(file, startOffset),
@@ -103,6 +123,11 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         public static FileScriptExtent FromPositions(FileContext file, int startLine, int startColumn, int endLine, int endColumn)
         {
+            if (file is null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
+
             return new FileScriptExtent(
                 file,
                 FileScriptPosition.FromPosition(file, startLine, startColumn),
@@ -128,7 +153,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         public IScriptPosition EndScriptPosition => _end;
 
-        public string File => _file.Path;
+        public string File => _file?.Path ?? string.Empty;
 
         public int StartColumnNumber => _start.ColumnNumber;
 
@@ -138,7 +163,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
         public IScriptPosition StartScriptPosition => _start;
 
-        public string Text => _file.GetText().Substring(_start.Offset, _end.Offset - _start.Offset);
+        public string Text => _file?.GetText()?.Substring(_start.Offset, _end.Offset - _start.Offset) ?? string.Empty;
 
         IFilePosition IFileRange.Start => _start;
 
@@ -249,52 +274,37 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         ILspFileRange SelectionRange { get; }
     }
 
-    internal struct OmnisharpLspPosition : ILspFilePosition, IEquatable<OmnisharpLspPosition>
+    internal readonly struct OmnisharpLspPosition : ILspFilePosition, IEquatable<OmnisharpLspPosition>
     {
         private readonly Position _position;
 
-        public OmnisharpLspPosition(Position position)
-        {
-            _position = position;
-        }
+        public OmnisharpLspPosition(Position position) => _position = position;
 
         public int Line => _position.Line;
 
         public int Character => _position.Character;
 
-        public bool Equals(OmnisharpLspPosition other)
-        {
-            return _position == other._position;
-        }
+        public bool Equals(OmnisharpLspPosition other) => _position == other._position;
     }
 
-    internal struct OmnisharpLspRange : ILspFileRange, IEquatable<OmnisharpLspRange>
+    internal readonly struct OmnisharpLspRange : ILspFileRange, IEquatable<OmnisharpLspRange>
     {
         private readonly Range _range;
 
-        public OmnisharpLspRange(Range range)
-        {
-            _range = range;
-        }
+        public OmnisharpLspRange(Range range) => _range = range;
 
         public ILspFilePosition Start => new OmnisharpLspPosition(_range.Start);
 
         public ILspFilePosition End => new OmnisharpLspPosition(_range.End);
 
-        public bool Equals(OmnisharpLspRange other)
-        {
-            return _range == other._range;
-        }
+        public bool Equals(OmnisharpLspRange other) => _range == other._range;
     }
 
-    internal struct BufferFilePosition : IFilePosition, IEquatable<BufferFilePosition>
+    internal readonly struct BufferFilePosition : IFilePosition, IEquatable<BufferFilePosition>
     {
         private readonly BufferPosition _position;
 
-        public BufferFilePosition(BufferPosition position)
-        {
-            _position = position;
-        }
+        public BufferFilePosition(BufferPosition position) => _position = position;
 
         public int Line => _position.Line;
 
@@ -307,14 +317,11 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         }
     }
 
-    internal struct BufferFileRange : IFileRange, IEquatable<BufferFileRange>
+    internal readonly struct BufferFileRange : IFileRange, IEquatable<BufferFileRange>
     {
         private readonly BufferRange _range;
 
-        public BufferFileRange(BufferRange range)
-        {
-            _range = range;
-        }
+        public BufferFileRange(BufferRange range) => _range = range;
 
         public IFilePosition Start => new BufferFilePosition(_range.Start);
 
@@ -425,46 +432,33 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
     /// </summary>
     public static class FileObjectExtensionMethods
     {
-
         /// <summary>
         /// Convert a 1-based file position to a 0-based file position.
         /// </summary>
         /// <param name="position">The 1-based file position to convert.</param>
         /// <returns>An equivalent 0-based file position.</returns>
-        public static ILspFilePosition ToLspPosition(this IFilePosition position)
-        {
-            return new LspFilePosition(position.Line - 1, position.Column - 1);
-        }
+        public static ILspFilePosition ToLspPosition(this IFilePosition position) => new LspFilePosition(position.Line - 1, position.Column - 1);
 
         /// <summary>
         /// Convert a 1-based file range to a 0-based file range.
         /// </summary>
         /// <param name="range">The 1-based file range to convert.</param>
         /// <returns>An equivalent 0-based file range.</returns>
-        public static ILspFileRange ToLspRange(this IFileRange range)
-        {
-            return new LspFileRange(range.Start.ToLspPosition(), range.End.ToLspPosition());
-        }
+        public static ILspFileRange ToLspRange(this IFileRange range) => new LspFileRange(range.Start.ToLspPosition(), range.End.ToLspPosition());
 
         /// <summary>
         /// Convert a 0-based file position to a 1-based file position.
         /// </summary>
         /// <param name="position">The 0-based file position to convert.</param>
         /// <returns>An equivalent 1-based file position.</returns>
-        public static IFilePosition ToFilePosition(this ILspFilePosition position)
-        {
-            return new FilePosition(position.Line + 1, position.Character + 1);
-        }
+        public static IFilePosition ToFilePosition(this ILspFilePosition position) => new FilePosition(position.Line + 1, position.Character + 1);
 
         /// <summary>
         /// Convert a 0-based file range to a 1-based file range.
         /// </summary>
         /// <param name="range">The 0-based file range to convert.</param>
         /// <returns>An equivalent 1-based file range.</returns>
-        public static IFileRange ToFileRange(this ILspFileRange range)
-        {
-            return new FileRange(range.Start.ToFilePosition(), range.End.ToFilePosition());
-        }
+        public static IFileRange ToFileRange(this ILspFileRange range) => new FileRange(range.Start.ToFilePosition(), range.End.ToFilePosition());
 
         internal static bool HasRange(this IFileRange range)
         {
@@ -473,34 +467,16 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
                 && range.End.Line != 0
                 && range.End.Column != 0;
         }
-        internal static ILspFilePosition ToLspPosition(this Position position)
-        {
-            return new OmnisharpLspPosition(position);
-        }
+        internal static ILspFilePosition ToLspPosition(this Position position) => new OmnisharpLspPosition(position);
 
-        internal static ILspFileRange ToLspRange(this Range range)
-        {
-            return new OmnisharpLspRange(range);
-        }
+        internal static ILspFileRange ToLspRange(this Range range) => new OmnisharpLspRange(range);
 
-        internal static Position ToOmnisharpPosition(this ILspFilePosition position)
-        {
-            return new Position(position.Line, position.Character);
-        }
+        internal static Position ToOmnisharpPosition(this ILspFilePosition position) => new(position.Line, position.Character);
 
-        internal static Range ToOmnisharpRange(this ILspFileRange range)
-        {
-            return new Range(range.Start.ToOmnisharpPosition(), range.End.ToOmnisharpPosition());
-        }
+        internal static Range ToOmnisharpRange(this ILspFileRange range) => new(range.Start.ToOmnisharpPosition(), range.End.ToOmnisharpPosition());
 
-        internal static BufferPosition ToBufferPosition(this IFilePosition position)
-        {
-            return new BufferPosition(position.Line, position.Column);
-        }
+        internal static BufferPosition ToBufferPosition(this IFilePosition position) => new(position.Line, position.Column);
 
-        internal static BufferRange ToBufferRange(this IFileRange range)
-        {
-            return new BufferRange(range.Start.ToBufferPosition(), range.End.ToBufferPosition());
-        }
+        internal static BufferRange ToBufferRange(this IFileRange range) => new(range.Start.ToBufferPosition(), range.End.ToBufferPosition());
     }
 }

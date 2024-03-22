@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
     {
         #region Private Fields
 
-        private IEditorOperations editorOperations;
+        private readonly IEditorOperations editorOperations;
 
         #endregion
 
@@ -21,17 +21,17 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Gets the FileContext for the active file.
         /// </summary>
-        public FileContext CurrentFile { get; private set; }
+        public FileContext CurrentFile { get; }
 
         /// <summary>
         /// Gets the BufferRange representing the current selection in the file.
         /// </summary>
-        public IFileRange SelectedRange { get; private set; }
+        public IFileRange SelectedRange { get; }
 
         /// <summary>
         /// Gets the FilePosition representing the current cursor position.
         /// </summary>
-        public IFilePosition CursorPosition { get; private set; }
+        public IFilePosition CursorPosition { get; }
 
         #endregion
 
@@ -53,9 +53,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             string language = "Unknown")
         {
             this.editorOperations = editorOperations;
-            this.CurrentFile = new FileContext(currentFile, this, editorOperations, language);
-            this.SelectedRange = new BufferFileRange(selectedRange);
-            this.CursorPosition = new BufferFilePosition(cursorPosition);
+            CurrentFile = new FileContext(currentFile, this, editorOperations, language);
+            SelectedRange = new BufferFileRange(selectedRange);
+            CursorPosition = new BufferFilePosition(cursorPosition);
         }
 
         #endregion
@@ -75,7 +75,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             int endLine,
             int endColumn)
         {
-            this.SetSelection(
+            SetSelection(
                 new FileRange(
                     new FilePosition(startLine, startColumn),
                     new FilePosition(endLine, endColumn)));
@@ -86,26 +86,15 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         /// <param name="startPosition">The starting position of the selection.</param>
         /// <param name="endPosition">The ending position of the selection.</param>
-        public void SetSelection(
-            FilePosition startPosition,
-            FilePosition endPosition)
-        {
-            this.SetSelection(
-                new FileRange(
-                    startPosition,
-                    endPosition));
-        }
+        public void SetSelection(FilePosition startPosition, FilePosition endPosition) => SetSelection(new FileRange(startPosition, endPosition));
 
         /// <summary>
         /// Sets a selection in the host editor's active buffer.
         /// </summary>
         /// <param name="selectionRange">The range of the selection.</param>
-        public void SetSelection(FileRange selectionRange)
-        {
-            this.editorOperations
-                .SetSelectionAsync(selectionRange.ToBufferRange())
-                .Wait();
-        }
+        #pragma warning disable VSTHRD002
+        public void SetSelection(FileRange selectionRange) => editorOperations.SetSelectionAsync(selectionRange.ToBufferRange()).Wait();
+        #pragma warning restore VSTHRD002
 
         #endregion
     }

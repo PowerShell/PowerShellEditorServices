@@ -11,6 +11,7 @@ App_Data
 *.sln.cache
 *.suo
 TestResults
+test/emacs-session.json
 [Tt]humbs.db
 buildd.*
 release/
@@ -67,7 +68,6 @@ PowerShellEditorServices.sln.ide/storage.ide
 
 # Don't include PlatyPS generated MAML
 module/PowerShellEditorServices/Commands/en-US/*-help.xml
-module/PowerShellEditorServices.VSCode/en-US/*-help.xml
 
 # Don't include Third Party Notices in module folder
 module/PowerShellEditorServices/Third\ Party\ Notices.txt

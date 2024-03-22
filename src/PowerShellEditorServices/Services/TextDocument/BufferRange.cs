@@ -18,29 +18,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// Provides an instance that represents a range that has not been set.
         /// </summary>
-        public static readonly BufferRange None = new BufferRange(0, 0, 0, 0);
+        public static readonly BufferRange None = new(0, 0, 0, 0);
 
         /// <summary>
         /// Gets the start position of the range in the buffer.
         /// </summary>
-        public BufferPosition Start { get; private set; }
+        public BufferPosition Start { get; }
 
         /// <summary>
         /// Gets the end position of the range in the buffer.
         /// </summary>
-        public BufferPosition End { get; private set; }
+        public BufferPosition End { get; }
 
         /// <summary>
         /// Returns true if the current range is non-zero, i.e.
         /// contains valid start and end positions.
         /// </summary>
-        public bool HasRange
-        {
-            get
-            {
-                return this.Equals(BufferRange.None);
-            }
-        }
+        public bool HasRange => Equals(BufferRange.None);
 
         #endregion
 
@@ -62,8 +56,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
                         end.Line, end.Column));
             }
 
-            this.Start = start;
-            this.End = end;
+            Start = start;
+            End = end;
         }
 
         /// <summary>
@@ -79,8 +73,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             int endLine,
             int endColumn)
         {
-            this.Start = new BufferPosition(startLine, startColumn);
-            this.End = new BufferPosition(endLine, endColumn);
+            Start = new BufferPosition(startLine, startColumn);
+            End = new BufferPosition(endLine, endColumn);
         }
 
         #endregion
@@ -94,7 +88,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <returns>True if the ranges are equal, false otherwise.</returns>
         public override bool Equals(object obj)
         {
-            if (!(obj is BufferRange))
+            if (obj is not BufferRange)
             {
                 return false;
             }
@@ -102,20 +96,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             BufferRange other = (BufferRange)obj;
 
             return
-                this.Start.Equals(other.Start) &&
-                this.End.Equals(other.End);
+                Start.Equals(other.Start) &&
+                End.Equals(other.End);
         }
 
         /// <summary>
         /// Calculates a unique hash code that represents this instance.
         /// </summary>
         /// <returns>A hash code representing this instance.</returns>
-        public override int GetHashCode()
-        {
-            return this.Start.GetHashCode() ^ this.End.GetHashCode();
-        }
+        public override int GetHashCode() => Start.GetHashCode() ^ End.GetHashCode();
 
         #endregion
     }
 }
-

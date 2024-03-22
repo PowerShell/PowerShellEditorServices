@@ -1,20 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
-using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -23,11 +18,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class PsesDocumentSymbolHandler : DocumentSymbolHandlerBase
     {
+        private static readonly SymbolInformationOrDocumentSymbolContainer s_emptySymbolInformationOrDocumentSymbolContainer = new();
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
         private readonly IDocumentSymbolProvider[] _providers;
 
-        public PsesDocumentSymbolHandler(ILoggerFactory factory, ConfigurationService configurationService, WorkspaceService workspaceService)
+        public PsesDocumentSymbolHandler(ILoggerFactory factory, WorkspaceService workspaceService)
         {
             _logger = factory.CreateLogger<PsesDocumentSymbolHandler>();
             _workspaceService = workspaceService;
@@ -35,145 +31,183 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 new ScriptDocumentSymbolProvider(),
                 new PsdDocumentSymbolProvider(),
-                new PesterDocumentSymbolProvider()
+                new PesterDocumentSymbolProvider(),
+                new RegionDocumentSymbolProvider()
             };
         }
 
-        protected override DocumentSymbolRegistrationOptions CreateRegistrationOptions(DocumentSymbolCapability capability, ClientCapabilities clientCapabilities) => new DocumentSymbolRegistrationOptions
+        protected override DocumentSymbolRegistrationOptions CreateRegistrationOptions(DocumentSymbolCapability capability, ClientCapabilities clientCapabilities) => new()
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector
         };
 
-        public override Task<SymbolInformationOrDocumentSymbolContainer> Handle(DocumentSymbolParams request, CancellationToken cancellationToken)
+        // Modifies a flat list of symbols into a hierarchical list.
+        private static Task SortHierarchicalSymbols(List<HierarchicalSymbol> symbols, CancellationToken cancellationToken)
         {
+            // Sort by the start of the symbol definition (they're probably sorted but we need to be
+            // certain otherwise this algorithm won't work). We only need to sort the list once, and
+            // since the implementation is recursive, it's easiest to use the stack to track that
+            // this is the first call.
+            symbols.Sort((x1, x2) => x1.Range.Start.CompareTo(x2.Range.Start));
+            return SortHierarchicalSymbolsImpl(symbols, cancellationToken);
+        }
+
+        private static async Task SortHierarchicalSymbolsImpl(List<HierarchicalSymbol> symbols, CancellationToken cancellationToken)
+        {
+            for (int i = 0; i < symbols.Count; i++)
+            {
+                // This async method is pretty dense with synchronous code
+                // so it's helpful to add some yields.
+                await Task.Yield();
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                HierarchicalSymbol symbol = symbols[i];
+
+                // Base case where we haven't found any parents yet (the first symbol must be a
+                // parent by definition).
+                if (i == 0)
+                {
+                    continue;
+                }
+                // If the symbol starts after end of last symbol parsed then it's a new parent.
+                else if (symbol.Range.Start > symbols[i - 1].Range.End)
+                {
+                    continue;
+                }
+                // Otherwise it's a child, we just need to figure out whose child it is and move it there (which also means removing it from the current list).
+                else
+                {
+                    for (int j = 0; j <= i; j++)
+                    {
+                        // While we should only check up to j < i, we iterate up to j <= i so that
+                        // we can check this assertion that we didn't exhaust the parents.
+                        Debug.Assert(j != i, "We didn't find the child's parent!");
+
+                        HierarchicalSymbol parent = symbols[j];
+                        // If the symbol starts after the parent starts and ends before the parent
+                        // ends then its a child.
+                        if (symbol.Range.Start > parent.Range.Start && symbol.Range.End < parent.Range.End)
+                        {
+                            // Add it to the parent's list.
+                            parent.Children.Add(symbol);
+                            // Remove it from this "parents" list (because it's a child) and adjust
+                            // our loop counter because it's been removed.
+                            symbols.RemoveAt(i);
+                            i--;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Now recursively sort the children into nested buckets of children too.
+            foreach (HierarchicalSymbol parent in symbols)
+            {
+                // Since this modifies in place we just recurse, no re-assignment or clearing from
+                // parent.Children necessary.
+                await SortHierarchicalSymbols(parent.Children, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        // This struct and the mapping function below exist to allow us to skip a *bunch* of
+        // unnecessary allocations when sorting the symbols since DocumentSymbol (which this is
+        // pretty much a mirror of) is an immutable record...but we need to constantly modify the
+        // list of children when sorting.
+        private struct HierarchicalSymbol
+        {
+            public SymbolKind Kind;
+            public Range Range;
+            public Range SelectionRange;
+            public string Name;
+            public List<HierarchicalSymbol> Children;
+        }
+
+        // Recursively turn our HierarchicalSymbol struct into OmniSharp's DocumentSymbol record.
+        private static List<DocumentSymbol> GetDocumentSymbolsFromHierarchicalSymbols(IEnumerable<HierarchicalSymbol> hierarchicalSymbols)
+        {
+            List<DocumentSymbol> documentSymbols = new();
+            foreach (HierarchicalSymbol symbol in hierarchicalSymbols)
+            {
+                documentSymbols.Add(new DocumentSymbol
+                {
+                    Kind = symbol.Kind,
+                    Range = symbol.Range,
+                    SelectionRange = symbol.SelectionRange,
+                    Name = symbol.Name,
+                    Children = GetDocumentSymbolsFromHierarchicalSymbols(symbol.Children)
+                });
+            }
+            return documentSymbols;
+        }
+
+        // AKA the outline feature!
+        public override async Task<SymbolInformationOrDocumentSymbolContainer> Handle(DocumentSymbolParams request, CancellationToken cancellationToken)
+        {
+            _logger.LogDebug($"Handling document symbols for {request.TextDocument.Uri}");
+
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
-            IEnumerable<ISymbolReference> foundSymbols =
-                this.ProvideDocumentSymbols(scriptFile);
+            List<HierarchicalSymbol> hierarchicalSymbols = new();
 
-            SymbolInformationOrDocumentSymbol[] symbols = null;
-
-            string containerName = Path.GetFileNameWithoutExtension(scriptFile.FilePath);
-
-            if (foundSymbols != null)
+            foreach (SymbolReference symbolReference in ProvideDocumentSymbols(scriptFile))
             {
-                symbols =
-                    foundSymbols
-                        .Select(r =>
-                        {
-                            return new SymbolInformationOrDocumentSymbol(new SymbolInformation
-                            {
-                                ContainerName = containerName,
-                                Kind = GetSymbolKind(r.SymbolType),
-                                Location = new Location
-                                {
-                                    Uri = DocumentUri.From(r.FilePath),
-                                    Range = GetRangeFromScriptRegion(r.ScriptRegion)
-                                },
-                                Name = GetDecoratedSymbolName(r)
-                            });
-                        })
-                        .ToArray();
-            }
-            else
-            {
-                symbols = Array.Empty<SymbolInformationOrDocumentSymbol>();
-            }
-
-
-            return Task.FromResult(new SymbolInformationOrDocumentSymbolContainer(symbols));
-        }
-
-        private IEnumerable<ISymbolReference> ProvideDocumentSymbols(
-            ScriptFile scriptFile)
-        {
-            return
-                this.InvokeProviders(p => p.ProvideDocumentSymbols(scriptFile))
-                    .SelectMany(r => r);
-        }
-
-        /// <summary>
-        /// Invokes the given function synchronously against all
-        /// registered providers.
-        /// </summary>
-        /// <param name="invokeFunc">The function to be invoked.</param>
-        /// <returns>
-        /// An IEnumerable containing the results of all providers
-        /// that were invoked successfully.
-        /// </returns>
-        protected IEnumerable<TResult> InvokeProviders<TResult>(
-            Func<IDocumentSymbolProvider, TResult> invokeFunc)
-        {
-            Stopwatch invokeTimer = new Stopwatch();
-            List<TResult> providerResults = new List<TResult>();
-
-            foreach (var provider in this._providers)
-            {
-                try
+                // This async method is pretty dense with synchronous code
+                // so it's helpful to add some yields.
+                await Task.Yield();
+                if (cancellationToken.IsCancellationRequested)
                 {
-                    invokeTimer.Restart();
-
-                    providerResults.Add(invokeFunc(provider));
-
-                    invokeTimer.Stop();
-
-                    this._logger.LogTrace(
-                        $"Invocation of provider '{provider.GetType().Name}' completed in {invokeTimer.ElapsedMilliseconds}ms.");
+                    break;
                 }
-                catch (Exception e)
+
+                // Outline view should only include declarations.
+                //
+                // TODO: We should also include function invocations that are part of DSLs (like
+                // Invoke-Build etc.).
+                if (!symbolReference.IsDeclaration || symbolReference.Type is SymbolType.Parameter)
                 {
-                    this._logger.LogException(
-                        $"Exception caught while invoking provider {provider.GetType().Name}:",
-                        e);
+                    continue;
+                }
+
+                hierarchicalSymbols.Add(new HierarchicalSymbol
+                {
+                    Kind = SymbolTypeUtils.GetSymbolKind(symbolReference.Type),
+                    Range = symbolReference.ScriptRegion.ToRange(),
+                    SelectionRange = symbolReference.NameRegion.ToRange(),
+                    Name = symbolReference.Name,
+                    Children = new List<HierarchicalSymbol>()
+                });
+            }
+
+            // Short-circuit if we have no symbols.
+            if (hierarchicalSymbols.Count == 0)
+            {
+                return s_emptySymbolInformationOrDocumentSymbolContainer;
+            }
+
+            // Otherwise slowly sort them into a hierarchy (this modifies the list).
+            await SortHierarchicalSymbols(hierarchicalSymbols, cancellationToken).ConfigureAwait(false);
+
+            // And finally convert them to the silly SymbolInformationOrDocumentSymbol wrapper.
+            List<SymbolInformationOrDocumentSymbol> container = new();
+            foreach (DocumentSymbol symbol in GetDocumentSymbolsFromHierarchicalSymbols(hierarchicalSymbols))
+            {
+                container.Add(new SymbolInformationOrDocumentSymbol(symbol));
+            }
+            return container;
+        }
+
+        private IEnumerable<SymbolReference> ProvideDocumentSymbols(ScriptFile scriptFile)
+        {
+            foreach (IDocumentSymbolProvider provider in _providers)
+            {
+                foreach (SymbolReference symbol in provider.ProvideDocumentSymbols(scriptFile))
+                {
+                    yield return symbol;
                 }
             }
-
-            return providerResults;
-        }
-
-        private static SymbolKind GetSymbolKind(SymbolType symbolType)
-        {
-            switch (symbolType)
-            {
-                case SymbolType.Configuration:
-                case SymbolType.Function:
-                case SymbolType.Workflow:
-                    return SymbolKind.Function;
-
-                default:
-                    return SymbolKind.Variable;
-            }
-        }
-
-        private static string GetDecoratedSymbolName(ISymbolReference symbolReference)
-        {
-            string name = symbolReference.SymbolName;
-
-            if (symbolReference.SymbolType == SymbolType.Configuration ||
-                symbolReference.SymbolType == SymbolType.Function ||
-                symbolReference.SymbolType == SymbolType.Workflow)
-            {
-                name += " { }";
-            }
-
-            return name;
-        }
-
-        private static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)
-        {
-            return new Range
-            {
-                Start = new Position
-                {
-                    Line = scriptRegion.StartLineNumber - 1,
-                    Character = scriptRegion.StartColumnNumber - 1
-                },
-                End = new Position
-                {
-                    Line = scriptRegion.EndLineNumber - 1,
-                    Character = scriptRegion.EndColumnNumber - 1
-                }
-            };
         }
     }
 }

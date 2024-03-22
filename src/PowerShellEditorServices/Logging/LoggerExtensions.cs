@@ -9,16 +9,14 @@ namespace Microsoft.PowerShell.EditorServices.Logging
 {
     internal static class LoggerExtensions
     {
+        // TODO: These need to be fixed (and used consistently).
         public static void LogException(
             this ILogger logger,
             string message,
             Exception exception,
             [CallerMemberName] string callerName = null,
             [CallerFilePath] string callerSourceFile = null,
-            [CallerLineNumber] int callerLineNumber = -1)
-        {
-            logger.LogError(message, exception);
-        }
+            [CallerLineNumber] int callerLineNumber = -1) => logger.LogError(message, exception);
 
         public static void LogHandledException(
             this ILogger logger,
@@ -26,9 +24,6 @@ namespace Microsoft.PowerShell.EditorServices.Logging
             Exception exception,
             [CallerMemberName] string callerName = null,
             [CallerFilePath] string callerSourceFile = null,
-            [CallerLineNumber] int callerLineNumber = -1)
-        {
-            logger.LogWarning(message, exception);
-        }
+            [CallerLineNumber] int callerLineNumber = -1) => logger.LogWarning(message, exception);
     }
 }

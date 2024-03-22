@@ -20,8 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// Write a session file describing a failed startup.
         /// </summary>
         /// <param name="reason">The reason for the startup failure.</param>
-        /// <param name="details">Any details to accompany the reason.</param>
-        void WriteSessionFailure(string reason, object details);
+        void WriteSessionFailure(string reason);
 
         /// <summary>
         /// Write a session file describing a successful startup.
@@ -43,36 +42,34 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private readonly string _sessionFilePath;
 
+        private readonly Version _powerShellVersion;
+
         /// <summary>
         /// Construct a new session file writer for the given session file path.
         /// </summary>
         /// <param name="logger">The logger to log actions with.</param>
         /// <param name="sessionFilePath">The path to write the session file path to.</param>
-        public SessionFileWriter(HostLogger logger, string sessionFilePath)
+        /// <param name="powerShellVersion">The process's PowerShell version object.</param>
+        public SessionFileWriter(HostLogger logger, string sessionFilePath, Version powerShellVersion)
         {
             _logger = logger;
             _sessionFilePath = sessionFilePath;
+            _powerShellVersion = powerShellVersion;
         }
 
         /// <summary>
         /// Write a startup failure to the session file.
         /// </summary>
         /// <param name="reason">The reason for the startup failure.</param>
-        /// <param name="details">Any extra details, which will be serialized as JSON.</param>
-        public void WriteSessionFailure(string reason, object details)
+        public void WriteSessionFailure(string reason)
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Writing session failure");
 
-            var sessionObject = new Dictionary<string, object>
+            Dictionary<string, object> sessionObject = new()
             {
                 { "status", "failed" },
                 { "reason", reason },
             };
-
-            if (details != null)
-            {
-                sessionObject["details"] = details;
-            }
 
             WriteSessionObject(sessionObject);
         }
@@ -86,16 +83,16 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Writing session started");
 
-            var sessionObject = new Dictionary<string, object>
+            Dictionary<string, object> sessionObject = new()
             {
                 { "status", "started" },
             };
 
-            if (languageServiceTransport != null)
+            if (languageServiceTransport is not null)
             {
                 sessionObject["languageServiceTransport"] = languageServiceTransport.SessionFileTransportName;
 
-                if (languageServiceTransport.SessionFileEntries != null)
+                if (languageServiceTransport.SessionFileEntries is not null)
                 {
                     foreach (KeyValuePair<string, object> sessionEntry in languageServiceTransport.SessionFileEntries)
                     {
@@ -104,7 +101,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 }
             }
 
-            if (debugAdapterTransport != null)
+            if (debugAdapterTransport is not null)
             {
                 sessionObject["debugServiceTransport"] = debugAdapterTransport.SessionFileTransportName;
 
@@ -126,9 +123,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <param name="sessionObject">The dictionary representing the session file.</param>
         private void WriteSessionObject(Dictionary<string, object> sessionObject)
         {
+            sessionObject["powerShellVersion"] = _powerShellVersion.ToString();
+
             string psModulePath = Environment.GetEnvironmentVariable("PSModulePath");
             string content = null;
-            using (var pwsh = SMA.PowerShell.Create(RunspaceMode.NewRunspace))
+            using (SMA.PowerShell pwsh = SMA.PowerShell.Create(RunspaceMode.NewRunspace))
             {
                 content = pwsh.AddCommand("ConvertTo-Json")
                     .AddParameter("InputObject", sessionObject)

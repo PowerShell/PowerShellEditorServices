@@ -22,14 +22,13 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public string Name { get; set; }
     }
 
-
     internal class GetEditorContextRequest
-    {}
+    { }
 
-    internal enum EditorCommandResponse
+    internal enum EditorOperationResponse
     {
-        Unsupported,
-        OK
+        Completed,
+        Failed
     }
 
     internal class InsertTextRequest
@@ -72,4 +71,3 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public int? Timeout { get; set; }
     }
 }
-

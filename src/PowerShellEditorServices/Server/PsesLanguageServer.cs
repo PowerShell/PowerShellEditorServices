@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -12,6 +12,8 @@ using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Extension;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.Template;
+using Newtonsoft.Json.Linq;
+using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Server;
 using Serilog;
@@ -23,16 +25,13 @@ namespace Microsoft.PowerShell.EditorServices.Server
     /// </summary>
     internal class PsesLanguageServer
     {
-        internal ILoggerFactory LoggerFactory { get; private set; }
-
+        internal ILoggerFactory LoggerFactory { get; }
         internal ILanguageServer LanguageServer { get; private set; }
-
         private readonly LogLevel _minimumLogLevel;
         private readonly Stream _inputStream;
         private readonly Stream _outputStream;
         private readonly HostStartupInfo _hostDetails;
         private readonly TaskCompletionSource<bool> _serverStart;
-
         private PsesInternalHost _psesHost;
 
         /// <summary>
@@ -71,7 +70,9 @@ namespace Microsoft.PowerShell.EditorServices.Server
         /// cref="PsesServiceCollectionExtensions.AddPsesLanguageServices"/>.
         /// </remarks>
         /// <returns>A task that completes when the server is ready and listening.</returns>
+#pragma warning disable CA1506 // Coupling complexity we don't care about
         public async Task StartAsync()
+#pragma warning restore CA1506
         {
             LanguageServer = await OmniSharp.Extensions.LanguageServer.Server.LanguageServer.From(options =>
             {
@@ -80,7 +81,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithOutput(_outputStream)
                     .WithServices(serviceCollection =>
                     {
-
                         // NOTE: This adds a lot of services!
                         serviceCollection.AddPsesLanguageServices(_hostDetails);
                     })
@@ -94,7 +94,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<GetVersionHandler>()
                     .WithHandler<PsesConfigurationHandler>()
                     .WithHandler<PsesFoldingRangeHandler>()
-                    .WithHandler<PsesDocumentFormattingHandlers>()
+                    .WithHandler<PsesDocumentFormattingHandler>()
+                    .WithHandler<PsesDocumentRangeFormattingHandler>()
                     .WithHandler<PsesReferencesHandler>()
                     .WithHandler<PsesDocumentSymbolHandler>()
                     .WithHandler<PsesDocumentHighlightHandler>()
@@ -102,7 +103,14 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<PsesCodeLensHandlers>()
                     .WithHandler<PsesCodeActionHandler>()
                     .WithHandler<InvokeExtensionCommandHandler>()
-                    .WithHandler<PsesCompletionHandler>()
+                    // If PsesCompletionHandler is not marked as serial, then DidChangeTextDocument
+                    // notifications will end up cancelling completion. So quickly typing `Get-`
+                    // would result in no completions.
+                    //
+                    // This also lets completion requests interrupt time consuming background tasks
+                    // like the references code lens.
+                    .WithHandler<PsesCompletionHandler>(
+                        new JsonRpcHandlerOptions() { RequestProcessType = RequestProcessType.Serial })
                     .WithHandler<PsesHoverHandler>()
                     .WithHandler<PsesSignatureHelpHandler>()
                     .WithHandler<PsesDefinitionHandler>()
@@ -113,37 +121,46 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<ShowHelpHandler>()
                     .WithHandler<ExpandAliasHandler>()
                     .WithHandler<PsesSemanticTokensHandler>()
+                    .WithHandler<DidChangeWatchedFilesHandler>()
                     // NOTE: The OnInitialize delegate gets run when we first receive the
                     // _Initialize_ request:
                     // https://microsoft.github.io/language-server-protocol/specifications/specification-current/#initialize
                     .OnInitialize(
-                        (languageServer, request, cancellationToken) =>
+                        (languageServer, initializeParams, cancellationToken) =>
                         {
-                            Log.Logger.Debug("Initializing OmniSharp Language Server");
-
-                            IServiceProvider serviceProvider = languageServer.Services;
-
-                            _psesHost = serviceProvider.GetService<PsesInternalHost>();
-
-                            var workspaceService = serviceProvider.GetService<WorkspaceService>();
-
-                            // Grab the workspace path from the parameters
-                            if (request.RootUri != null)
+                            // Set the workspace path from the parameters.
+                            WorkspaceService workspaceService = languageServer.Services.GetService<WorkspaceService>();
+                            if (initializeParams.WorkspaceFolders is not null)
                             {
-                                workspaceService.WorkspacePath = request.RootUri.GetFileSystemPath();
-                            }
-                            else if (request.WorkspaceFolders != null)
-                            {
-                                // If RootUri isn't set, try to use the first WorkspaceFolder.
-                                // TODO: Support multi-workspace.
-                                foreach (var workspaceFolder in request.WorkspaceFolders)
-                                {
-                                    workspaceService.WorkspacePath = workspaceFolder.Uri.GetFileSystemPath();
-                                    break;
-                                }
+                                workspaceService.WorkspaceFolders.AddRange(initializeParams.WorkspaceFolders);
                             }
 
-                            return Task.CompletedTask;
+                            // Parse initialization options.
+                            JObject initializationOptions = initializeParams.InitializationOptions as JObject;
+                            HostStartOptions hostStartOptions = new()
+                            {
+                                // TODO: We need to synchronize our "default" settings as specified
+                                // in the VS Code extension's package.json with the actual default
+                                // values in this project. For now, this is going to be the most
+                                // annoying setting, so we're defaulting this to true.
+                                //
+                                // NOTE: The keys start with a lowercase because OmniSharp's client
+                                // (used for testing) forces it to be that way.
+                                LoadProfiles = initializationOptions?.GetValue("enableProfileLoading")?.Value<bool>()
+                                    ?? true,
+                                // First check the setting, then use the first workspace folder,
+                                // finally fall back to CWD.
+                                InitialWorkingDirectory = initializationOptions?.GetValue("initialWorkingDirectory")?.Value<string>()
+                                    ?? workspaceService.WorkspaceFolders.FirstOrDefault()?.Uri.GetFileSystemPath()
+                                    ?? Directory.GetCurrentDirectory(),
+                                ShellIntegrationEnabled = initializationOptions?.GetValue("shellIntegrationEnabled")?.Value<bool>()
+                                    ?? false
+                            };
+
+                            workspaceService.InitialWorkingDirectory = hostStartOptions.InitialWorkingDirectory;
+
+                            _psesHost = languageServer.Services.GetService<PsesInternalHost>();
+                            return _psesHost.TryStartAsync(hostStartOptions, cancellationToken);
                         });
             }).ConfigureAwait(false);
 
@@ -156,7 +173,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
         /// <returns>A task that completes when the server is shut down.</returns>
         public async Task WaitForShutdown()
         {
-            Log.Logger.Debug("Shutting down OmniSharp Language Server");
             await _serverStart.Task.ConfigureAwait(false);
             await LanguageServer.WaitForExit.ConfigureAwait(false);
 

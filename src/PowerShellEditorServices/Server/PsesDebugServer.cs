@@ -1,15 +1,13 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using OmniSharp.Extensions.DebugAdapter.Server;
 using OmniSharp.Extensions.LanguageServer.Server;
@@ -23,16 +21,11 @@ namespace Microsoft.PowerShell.EditorServices.Server
     {
         private readonly Stream _inputStream;
         private readonly Stream _outputStream;
-        private readonly bool _useTempSession;
-        private readonly bool _usePSReadLine;
         private readonly TaskCompletionSource<bool> _serverStopped;
-
         private DebugAdapterServer _debugAdapterServer;
-
         private PsesInternalHost _psesHost;
-
         private bool _startedPses;
-
+        private readonly bool _isTemp;
         protected readonly ILoggerFactory _loggerFactory;
 
         public PsesDebugServer(
@@ -40,16 +33,14 @@ namespace Microsoft.PowerShell.EditorServices.Server
             Stream inputStream,
             Stream outputStream,
             IServiceProvider serviceProvider,
-            bool useTempSession,
-            bool usePSReadLine)
+            bool isTemp = false)
         {
             _loggerFactory = factory;
             _inputStream = inputStream;
             _outputStream = outputStream;
             ServiceProvider = serviceProvider;
-            _useTempSession = useTempSession;
+            _isTemp = isTemp;
             _serverStopped = new TaskCompletionSource<bool>();
-            _usePSReadLine = usePSReadLine;
         }
 
         internal IServiceProvider ServiceProvider { get; }
@@ -74,7 +65,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         serviceCollection
                             .AddLogging()
                             .AddOptions()
-                            .AddPsesDebugServices(ServiceProvider, this, _useTempSession))
+                            .AddPsesDebugServices(ServiceProvider, this))
                     // TODO: Consider replacing all WithHandler with AddSingleton
                     .WithHandler<LaunchAndAttachHandler>()
                     .WithHandler<DisconnectHandler>()
@@ -84,26 +75,40 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<StackTraceHandler>()
                     .WithHandler<ScopesHandler>()
                     .WithHandler<VariablesHandler>()
-                    .WithHandler<DebuggerActionHandlers>()
+                    .WithHandler<ContinueHandler>()
+                    .WithHandler<NextHandler>()
+                    .WithHandler<PauseHandler>()
+                    .WithHandler<StepInHandler>()
+                    .WithHandler<StepOutHandler>()
                     .WithHandler<SourceHandler>()
                     .WithHandler<SetVariableHandler>()
                     .WithHandler<DebugEvaluateHandler>()
                     // The OnInitialize delegate gets run when we first receive the _Initialize_ request:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
-                    .OnInitialize(async (server, request, cancellationToken) => {
-                        // We need to make sure the host has been started
-                        _startedPses = !(await _psesHost.TryStartAsync(new HostStartOptions(), CancellationToken.None).ConfigureAwait(false));
-
-                        // Ensure the debugger mode is set correctly - this is required for remote debugging to work
+                    .OnInitialize(async (server, _, cancellationToken) =>
+                    {
+                        // Start the host if not already started, and enable debug mode (required
+                        // for remote debugging).
+                        //
+                        // TODO: We might need to fill in HostStartOptions here.
+                        _startedPses = !await _psesHost.TryStartAsync(new HostStartOptions(), cancellationToken).ConfigureAwait(false);
                         _psesHost.DebugContext.EnableDebugMode();
 
-                        var breakpointService = server.GetService<BreakpointService>();
-                        // Clear any existing breakpoints before proceeding
+                        // We need to give the host a handle to the DAP so it can register
+                        // notifications (specifically for sendKeyPress).
+                        if (_isTemp)
+                        {
+                            _psesHost.DebugServer = server;
+                        }
+
+                        // Clear any existing breakpoints before proceeding.
+                        BreakpointService breakpointService = server.GetService<BreakpointService>();
                         await breakpointService.RemoveAllBreakpointsAsync().ConfigureAwait(false);
                     })
                     // The OnInitialized delegate gets run right before the server responds to the _Initialize_ request:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
-                    .OnInitialized((server, request, response, cancellationToken) => {
+                    .OnInitialized((_, _, response, _) =>
+                    {
                         response.SupportsConditionalBreakpoints = true;
                         response.SupportsConfigurationDoneRequest = true;
                         response.SupportsFunctionBreakpoints = true;
@@ -122,9 +127,10 @@ namespace Microsoft.PowerShell.EditorServices.Server
             // It represents the debugger on the PowerShell process we're in,
             // while a new debug server is spun up for every debugging session
             _psesHost.DebugContext.IsDebugServerActive = false;
-            _debugAdapterServer.Dispose();
+            _debugAdapterServer?.Dispose();
             _inputStream.Dispose();
             _outputStream.Dispose();
+            _loggerFactory.Dispose();
             _serverStopped.SetResult(true);
             // TODO: If the debugger has stopped, should we clear the breakpoints?
         }
@@ -145,10 +151,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
         public event EventHandler SessionEnded;
 
-        internal void OnSessionEnded()
-        {
-            SessionEnded?.Invoke(this, null);
-        }
+        internal void OnSessionEnded() => SessionEnded?.Invoke(this, null);
 
         #endregion
     }

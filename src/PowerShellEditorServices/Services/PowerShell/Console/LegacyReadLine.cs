@@ -1,15 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 {
@@ -36,7 +35,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             _onIdleAction = onIdleAction;
         }
 
+#pragma warning disable CA1502 // Cyclomatic complexity we don't care about
         public override string ReadLine(CancellationToken cancellationToken)
+#pragma warning restore CA1502
         {
             string inputBeforeCompletion = null;
             string inputAfterCompletion = null;
@@ -45,10 +46,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             int historyIndex = -1;
             IReadOnlyList<PSObject> currentHistory = null;
 
-            StringBuilder inputLine = new StringBuilder();
+            StringBuilder inputLine = new();
 
-            int initialCursorCol = ConsoleProxy.GetCursorLeft(cancellationToken);
-            int initialCursorRow = ConsoleProxy.GetCursorTop(cancellationToken);
+            int initialCursorCol = Console.CursorLeft;
+            int initialCursorRow = Console.CursorTop;
 
             int currentCursorIndex = 0;
 
@@ -69,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                     switch (keyInfo.Key)
                     {
                         case ConsoleKey.Tab:
-                            if (currentCompletion == null)
+                            if (currentCompletion is null)
                             {
                                 inputBeforeCompletion = inputLine.ToString();
                                 inputAfterCompletion = null;
@@ -84,14 +85,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                                         .AddParameter("CursorColumn", currentCursorIndex)
                                         .AddParameter("Options", null);
 
-                                    currentCompletion = _psesHost.InvokePSCommand<CommandCompletion>(command, PowerShellExecutionOptions.Default, cancellationToken).FirstOrDefault();
+                                    currentCompletion = _psesHost.InvokePSCommand<CommandCompletion>(command, executionOptions: null, cancellationToken).FirstOrDefault();
                                 }
                                 else
                                 {
                                     currentCompletion = _psesHost.InvokePSDelegate(
                                         "Legacy readline inline command completion",
-                                        ExecutionOptions.Default,
-                                        (pwsh, cancellationToken) => CommandCompletion.CompleteInput(inputAfterCompletion, currentCursorIndex, options: null, pwsh),
+                                        executionOptions: null,
+                                        (pwsh, _) => CommandCompletion.CompleteInput(inputAfterCompletion, currentCursorIndex, options: null, pwsh),
                                         cancellationToken);
 
                                     if (currentCompletion.CompletionMatches.Count > 0)
@@ -116,14 +117,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                                 currentCompletion?.GetNextResult(
                                     !keyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift));
 
-                            if (completion != null)
+                            if (completion is not null)
                             {
                                 currentCursorIndex =
                                     InsertInput(
                                         inputLine,
                                         promptStartCol,
                                         promptStartRow,
-                                        $"{completion.CompletionText}{inputAfterCompletion}",
+                                        completion.CompletionText + inputAfterCompletion,
                                         currentCursorIndex,
                                         insertIndex: currentCompletion.ReplacementIndex,
                                         replaceLength: inputLine.Length - currentCompletion.ReplacementIndex,
@@ -190,23 +191,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                             currentCompletion = null;
 
                             // TODO: Ctrl+Up should allow navigation in multi-line input
-
-                            if (currentHistory == null)
+                            if (currentHistory is null)
                             {
                                 historyIndex = -1;
 
                                 PSCommand command = new PSCommand()
                                     .AddCommand("Get-History");
 
-                                currentHistory = _psesHost.InvokePSCommand<PSObject>(command, PowerShellExecutionOptions.Default, cancellationToken);
+                                currentHistory = _psesHost.InvokePSCommand<PSObject>(command, executionOptions: null, cancellationToken);
 
-                                if (currentHistory != null)
+                                if (currentHistory is not null)
                                 {
                                     historyIndex = currentHistory.Count;
                                 }
                             }
 
-                            if (currentHistory != null && currentHistory.Count > 0 && historyIndex > 0)
+                            if (currentHistory?.Count > 0 && historyIndex > 0)
                             {
                                 historyIndex--;
 
@@ -228,9 +228,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
                             // The down arrow shouldn't cause history to be loaded,
                             // it's only for navigating an active history array
-
                             if (historyIndex > -1 && historyIndex < currentHistory.Count &&
-                                currentHistory != null && currentHistory.Count > 0)
+                                currentHistory?.Count > 0)
                             {
                                 historyIndex++;
 
@@ -420,11 +419,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             }
         }
 
-        private ConsoleKeyInfo InvokeReadKeyFunc()
-        {
-            // intercept = false means we display the key in the console
-            return _readKeyFunc(/* intercept */ false);
-        }
+        private ConsoleKeyInfo InvokeReadKeyFunc() => _readKeyFunc(/* intercept */ false);
 
         private static int InsertInput(
             StringBuilder inputLine,
@@ -499,10 +494,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
                     consoleWidth,
                     finalCursorIndex);
             }
-            else
-            {
-                return inputLine.Length;
-            }
+
+            return inputLine.Length;
         }
 
         private static int MoveCursorToIndex(
@@ -523,6 +516,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
 
             return newCursorIndex;
         }
+
         private static void CalculateCursorFromIndex(
             int promptStartCol,
             int promptStartRow,
@@ -532,8 +526,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             out int cursorRow)
         {
             cursorCol = promptStartCol + inputIndex;
-            cursorRow = promptStartRow + cursorCol / consoleWidth;
-            cursorCol = cursorCol % consoleWidth;
+            cursorRow = promptStartRow + (cursorCol / consoleWidth);
+            cursorCol %= consoleWidth;
         }
     }
 }

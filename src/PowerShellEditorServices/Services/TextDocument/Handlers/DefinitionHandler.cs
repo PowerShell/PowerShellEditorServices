@@ -4,7 +4,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -18,21 +17,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class PsesDefinitionHandler : DefinitionHandlerBase
     {
-        private readonly ILogger _logger;
+        private static readonly LocationOrLocationLinks s_emptyLocationOrLocationLinks = new();
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
 
         public PsesDefinitionHandler(
-            ILoggerFactory factory,
             SymbolsService symbolsService,
             WorkspaceService workspaceService)
         {
-            _logger = factory.CreateLogger<PsesDefinitionHandler>();
             _symbolsService = symbolsService;
             _workspaceService = workspaceService;
         }
 
-        protected override DefinitionRegistrationOptions CreateRegistrationOptions(DefinitionCapability capability, ClientCapabilities clientCapabilities) => new DefinitionRegistrationOptions
+        protected override DefinitionRegistrationOptions CreateRegistrationOptions(DefinitionCapability capability, ClientCapabilities clientCapabilities) => new()
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector
         };
@@ -47,43 +44,39 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     request.Position.Line + 1,
                     request.Position.Character + 1);
 
-            List<LocationOrLocationLink> definitionLocations = new List<LocationOrLocationLink>();
-            if (foundSymbol != null)
+            if (foundSymbol is null)
             {
-                SymbolReference foundDefinition = await _symbolsService.GetDefinitionOfSymbolAsync(
-                        scriptFile,
-                        foundSymbol).ConfigureAwait(false);
-
-                if (foundDefinition != null)
-                {
-                    definitionLocations.Add(
-                        new LocationOrLocationLink(
-                            new Location
-                            {
-                                Uri = DocumentUri.From(foundDefinition.FilePath),
-                                Range = GetRangeFromScriptRegion(foundDefinition.ScriptRegion)
-                            }));
-                }
+                return s_emptyLocationOrLocationLinks;
             }
 
-            return new LocationOrLocationLinks(definitionLocations);
-        }
-
-        private static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)
-        {
-            return new Range
+            // Short-circuit if we're already on the definition.
+            if (foundSymbol.IsDeclaration)
             {
-                Start = new Position
-                {
-                    Line = scriptRegion.StartLineNumber - 1,
-                    Character = scriptRegion.StartColumnNumber - 1
-                },
-                End = new Position
-                {
-                    Line = scriptRegion.EndLineNumber - 1,
-                    Character = scriptRegion.EndColumnNumber - 1
-                }
-            };
+                return new LocationOrLocationLink[] {
+                    new LocationOrLocationLink(
+                        new Location
+                        {
+                            Uri = DocumentUri.From(foundSymbol.FilePath),
+                            Range = foundSymbol.NameRegion.ToRange()
+                        })};
+            }
+
+            List<LocationOrLocationLink> definitionLocations = new();
+            foreach (SymbolReference foundDefinition in await _symbolsService.GetDefinitionOfSymbolAsync(
+                scriptFile, foundSymbol, cancellationToken).ConfigureAwait(false))
+            {
+                definitionLocations.Add(
+                    new LocationOrLocationLink(
+                        new Location
+                        {
+                            Uri = DocumentUri.From(foundDefinition.FilePath),
+                            Range = foundDefinition.NameRegion.ToRange()
+                        }));
+            }
+
+            return definitionLocations.Count == 0
+                ? s_emptyLocationOrLocationLinks
+                : definitionLocations;
         }
     }
 }

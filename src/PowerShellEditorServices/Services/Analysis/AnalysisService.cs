@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services.Analysis;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -37,30 +38,29 @@ namespace Microsoft.PowerShell.EditorServices.Services
             Position start = diagnostic.Range.Start;
             Position end = diagnostic.Range.End;
 
-            var sb = new StringBuilder(256)
-            .Append(diagnostic.Source ?? "?")
-            .Append("_")
-            .Append(diagnostic.Code?.IsString ?? true ? diagnostic.Code?.String : diagnostic.Code?.Long.ToString())
-            .Append("_")
-            .Append(diagnostic.Severity?.ToString() ?? "?")
-            .Append("_")
-            .Append(start.Line)
-            .Append(":")
-            .Append(start.Character)
-            .Append("-")
-            .Append(end.Line)
-            .Append(":")
-            .Append(end.Character);
+            StringBuilder sb = new StringBuilder(256)
+                .Append(diagnostic.Source ?? "?")
+                .Append('_')
+                .Append(diagnostic.Code?.IsString ?? true ? diagnostic.Code?.String : diagnostic.Code?.Long.ToString())
+                .Append('_')
+                .Append(diagnostic.Severity?.ToString() ?? "?")
+                .Append('_')
+                .Append(start.Line)
+                .Append(':')
+                .Append(start.Character)
+                .Append('-')
+                .Append(end.Line)
+                .Append(':')
+                .Append(end.Character);
 
-            var id = sb.ToString();
-            return id;
+            return sb.ToString();
         }
 
         /// <summary>
         /// Defines the list of Script Analyzer rules to include by default if
         /// no settings file is specified.
         /// </summary>
-        private static readonly string[] s_defaultRules = {
+        internal static readonly string[] s_defaultRules = {
             "PSAvoidAssignmentToAutomaticVariable",
             "PSUseToExportFieldsInManifest",
             "PSMisleadingBacktick",
@@ -88,55 +88,47 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private readonly WorkspaceService _workspaceService;
 
-        private readonly int _analysisDelayMillis;
+        private readonly int _analysisDelayMillis = 750;
 
-        private readonly ConcurrentDictionary<ScriptFile, CorrectionTableEntry> _mostRecentCorrectionsByFile;
+        private readonly ConcurrentDictionary<ScriptFile, CorrectionTableEntry> _mostRecentCorrectionsByFile = new();
 
         private Lazy<PssaCmdletAnalysisEngine> _analysisEngineLazy;
 
         private CancellationTokenSource _diagnosticsCancellationTokenSource;
 
+        private readonly string _pssaModulePath;
+
         private string _pssaSettingsFilePath;
 
-        /// <summary>
-        /// Construct a new AnalysisService.
-        /// </summary>
-        /// <param name="loggerFactory">Logger factory to create logger instances with.</param>
-        /// <param name="languageServer">The LSP language server for notifications.</param>
-        /// <param name="configurationService">The configuration service to query for configurations.</param>
-        /// <param name="workspaceService">The workspace service for file handling within a workspace.</param>
         public AnalysisService(
             ILoggerFactory loggerFactory,
             ILanguageServerFacade languageServer,
             ConfigurationService configurationService,
-            WorkspaceService workspaceService)
+            WorkspaceService workspaceService,
+            HostStartupInfo hostInfo)
         {
             _loggerFactory = loggerFactory;
             _logger = loggerFactory.CreateLogger<AnalysisService>();
             _languageServer = languageServer;
             _configurationService = configurationService;
             _workspaceService = workspaceService;
-            _analysisDelayMillis = 750;
-            _mostRecentCorrectionsByFile = new ConcurrentDictionary<ScriptFile, CorrectionTableEntry>();
             _analysisEngineLazy = new Lazy<PssaCmdletAnalysisEngine>(InstantiateAnalysisEngine);
-            _pssaSettingsFilePath = null;
+            _pssaModulePath = Path.Combine(hostInfo.BundledModulePath, "PSScriptAnalyzer");
         }
 
         /// <summary>
         /// The analysis engine to use for running script analysis.
         /// </summary>
-        private PssaCmdletAnalysisEngine AnalysisEngine => _analysisEngineLazy?.Value;
+        internal PssaCmdletAnalysisEngine AnalysisEngine => _analysisEngineLazy?.Value;
 
         /// <summary>
         /// Sets up a script analysis run, eventually returning the result.
         /// </summary>
         /// <param name="filesToAnalyze">The files to run script analysis on.</param>
-        /// <param name="cancellationToken">A cancellation token to cancel this call with.</param>
         /// <returns>A task that finishes when script diagnostics have been published.</returns>
-        public void StartScriptDiagnostics(
-            ScriptFile[] filesToAnalyze)
+        public void StartScriptDiagnostics(ScriptFile[] filesToAnalyze)
         {
-            if (_configurationService.CurrentSettings.ScriptAnalysis.Enable == false)
+            if (!_configurationService.CurrentSettings.ScriptAnalysis.Enable)
             {
                 return;
             }
@@ -144,9 +136,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             EnsureEngineSettingsCurrent();
 
             // If there's an existing task, we want to cancel it here;
-            var cancellationSource = new CancellationTokenSource();
+            CancellationTokenSource cancellationSource = new();
             CancellationTokenSource oldTaskCancellation = Interlocked.Exchange(ref _diagnosticsCancellationTokenSource, cancellationSource);
-            if (oldTaskCancellation != null)
+            if (oldTaskCancellation is not null)
             {
                 try
                 {
@@ -164,7 +156,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return;
             }
 
-            var analysisTask = Task.Run(() => DelayThenInvokeDiagnosticsAsync(filesToAnalyze, _diagnosticsCancellationTokenSource.Token), _diagnosticsCancellationTokenSource.Token);
+            Task analysisTask = Task.Run(() => DelayThenInvokeDiagnosticsAsync(filesToAnalyze, _diagnosticsCancellationTokenSource.Token), _diagnosticsCancellationTokenSource.Token);
 
             // Ensure that any next corrections request will wait for this diagnostics publication
             foreach (ScriptFile file in filesToAnalyze)
@@ -199,31 +191,29 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <returns></returns>
         public async Task<string> GetCommentHelpText(string functionText, string helpLocation, bool forBlockComment)
         {
-            if (AnalysisEngine == null)
+            if (AnalysisEngine is null)
             {
                 return null;
             }
 
-            Hashtable commentHelpSettings = AnalysisService.GetCommentHelpRuleSettings(helpLocation, forBlockComment);
+            Hashtable commentHelpSettings = GetCommentHelpRuleSettings(helpLocation, forBlockComment);
 
             ScriptFileMarker[] analysisResults = await AnalysisEngine.AnalyzeScriptAsync(functionText, commentHelpSettings).ConfigureAwait(false);
 
-            if (analysisResults.Length == 0
-                || analysisResults[0]?.Correction?.Edits == null
-                || analysisResults[0].Correction.Edits.Count() == 0)
+            if (analysisResults.Length == 0 || !analysisResults[0].Corrections.Any())
             {
                 return null;
             }
 
-            return analysisResults[0].Correction.Edits[0].Text;
+            return analysisResults[0].Corrections.First().Edit.Text;
         }
 
         /// <summary>
         /// Get the most recent corrections computed for a given script file.
         /// </summary>
-        /// <param name="documentUri">The URI string of the file to get code actions for.</param>
-        /// <returns>A threadsafe readonly dictionary of the code actions of the particular file.</returns>
-        public async Task<IReadOnlyDictionary<string, MarkerCorrection>> GetMostRecentCodeActionsForFileAsync(DocumentUri uri)
+        /// <param name="uri">The URI string of the file to get code actions for.</param>
+        /// <returns>A thread-safe readonly dictionary of the code actions of the particular file.</returns>
+        public async Task<IReadOnlyDictionary<string, IEnumerable<MarkerCorrection>>> GetMostRecentCodeActionsForFileAsync(DocumentUri uri)
         {
             if (!_workspaceService.TryGetFile(uri, out ScriptFile file)
                 || !_mostRecentCorrectionsByFile.TryGetValue(file, out CorrectionTableEntry corrections))
@@ -242,19 +232,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         /// <param name="file">The file to clear markers in.</param>
         /// <returns>A task that ends when all markers in the file have been cleared.</returns>
-        public void ClearMarkers(ScriptFile file)
-        {
-            PublishScriptDiagnostics(file, Array.Empty<ScriptFileMarker>());
-        }
+        public void ClearMarkers(ScriptFile file) => PublishScriptDiagnostics(file, new List<ScriptFileMarker>());
 
         /// <summary>
         /// Event subscription method to be run when PSES configuration has been updated.
         /// </summary>
-        /// <param name="sender">The sender of the configuration update event.</param>
+        /// <param name="_">The sender of the configuration update event.</param>
         /// <param name="settings">The new language server settings.</param>
-        public void OnConfigurationUpdated(object sender, LanguageServerSettings settings)
+        public void OnConfigurationUpdated(object _, LanguageServerSettings settings)
         {
-            if (settings.ScriptAnalysis.Enable ?? true)
+            if (settings.ScriptAnalysis.Enable)
             {
                 InitializeAnalysisEngineToCurrentSettings();
             }
@@ -262,8 +249,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void EnsureEngineSettingsCurrent()
         {
-            if (_analysisEngineLazy == null
-                    || (_pssaSettingsFilePath != null
+            if (_analysisEngineLazy is null
+                    || (_pssaSettingsFilePath is not null
                         && !File.Exists(_pssaSettingsFilePath)))
             {
                 InitializeAnalysisEngineToCurrentSettings();
@@ -274,7 +261,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             // We may be triggered after the lazy factory is set,
             // but before it's been able to instantiate
-            if (_analysisEngineLazy == null)
+            if (_analysisEngineLazy is null)
             {
                 _analysisEngineLazy = new Lazy<PssaCmdletAnalysisEngine>(InstantiateAnalysisEngine);
                 return;
@@ -292,9 +279,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _analysisEngineLazy = new Lazy<PssaCmdletAnalysisEngine>(() => RecreateAnalysisEngine(currentAnalysisEngine));
         }
 
-        private PssaCmdletAnalysisEngine InstantiateAnalysisEngine()
+        internal PssaCmdletAnalysisEngine InstantiateAnalysisEngine()
         {
-            var pssaCmdletEngineBuilder = new PssaCmdletAnalysisEngine.Builder(_loggerFactory);
+            PssaCmdletAnalysisEngine.Builder pssaCmdletEngineBuilder = new(_loggerFactory);
 
             // If there's a settings file use that
             if (TryFindSettingsFile(out string settingsFilePath))
@@ -309,7 +296,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 pssaCmdletEngineBuilder.WithIncludedRules(s_defaultRules);
             }
 
-            return pssaCmdletEngineBuilder.Build();
+            return pssaCmdletEngineBuilder.Build(_pssaModulePath);
         }
 
         private PssaCmdletAnalysisEngine RecreateAnalysisEngine(PssaCmdletAnalysisEngine oldAnalysisEngine)
@@ -327,7 +314,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private bool TryFindSettingsFile(out string settingsFilePath)
         {
-            string configuredPath = _configurationService.CurrentSettings.ScriptAnalysis.SettingsPath;
+            string configuredPath = _configurationService?.CurrentSettings.ScriptAnalysis.SettingsPath;
 
             if (string.IsNullOrEmpty(configuredPath))
             {
@@ -335,9 +322,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return false;
             }
 
-            settingsFilePath = _workspaceService.ResolveWorkspacePath(configuredPath);
+            settingsFilePath = _workspaceService?.ResolveWorkspacePath(configuredPath);
 
-            if (settingsFilePath == null
+            if (settingsFilePath is null
                 || !File.Exists(settingsFilePath))
             {
                 _logger.LogInformation($"Unable to find PSSA settings file at '{configuredPath}'. Loading default rules.");
@@ -356,7 +343,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        private async Task DelayThenInvokeDiagnosticsAsync(ScriptFile[] filesToAnalyze, CancellationToken cancellationToken)
+        internal async Task DelayThenInvokeDiagnosticsAsync(ScriptFile[] filesToAnalyze, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -383,6 +370,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 ScriptFileMarker[] semanticMarkers = await AnalysisEngine.AnalyzeScriptAsync(scriptFile.Contents).ConfigureAwait(false);
 
+                // Clear existing PSScriptAnalyzer markers (but keep parser errors where the source is "PowerShell")
+                // so that they are not duplicated when re-opening files.
+                scriptFile.DiagnosticMarkers.RemoveAll(m => m.Source == "PSScriptAnalyzer");
                 scriptFile.DiagnosticMarkers.AddRange(semanticMarkers);
 
                 PublishScriptDiagnostics(scriptFile);
@@ -391,9 +381,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private void PublishScriptDiagnostics(ScriptFile scriptFile) => PublishScriptDiagnostics(scriptFile, scriptFile.DiagnosticMarkers);
 
-        private void PublishScriptDiagnostics(ScriptFile scriptFile, IReadOnlyList<ScriptFileMarker> markers)
+        private void PublishScriptDiagnostics(ScriptFile scriptFile, List<ScriptFileMarker> markers)
         {
-            var diagnostics = new Diagnostic[markers.Count];
+            // NOTE: Sometimes we have null markers for reasons we don't yet know, but we need to
+            // remove them.
+            _ = markers.RemoveAll(m => m is null);
+            Diagnostic[] diagnostics = new Diagnostic[markers.Count];
 
             CorrectionTableEntry fileCorrections = _mostRecentCorrectionsByFile.GetOrAdd(
                 scriptFile,
@@ -407,25 +400,20 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 Diagnostic diagnostic = GetDiagnosticFromMarker(marker);
 
-                if (marker.Correction != null)
+                if (marker.Corrections is not null)
                 {
                     string diagnosticId = GetUniqueIdFromDiagnostic(diagnostic);
-                    fileCorrections.Corrections[diagnosticId] = marker.Correction;
+                    fileCorrections.Corrections[diagnosticId] = marker.Corrections;
                 }
 
                 diagnostics[i] = diagnostic;
             }
 
-            _languageServer.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams
+            _languageServer?.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams
             {
                 Uri = scriptFile.DocumentUri,
                 Diagnostics = new Container<Diagnostic>(diagnostics)
             });
-        }
-
-        private static ConcurrentDictionary<string, MarkerCorrection> CreateFileCorrectionsEntry(string fileUri)
-        {
-            return new ConcurrentDictionary<string, MarkerCorrection>();
         }
 
         private static Diagnostic GetDiagnosticFromMarker(ScriptFileMarker scriptFileMarker)
@@ -454,12 +442,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private static DiagnosticSeverity MapDiagnosticSeverity(ScriptFileMarkerLevel markerLevel)
         {
-            switch (markerLevel)
+            return markerLevel switch
             {
-                case ScriptFileMarkerLevel.Error:       return DiagnosticSeverity.Error;
-                case ScriptFileMarkerLevel.Warning:     return DiagnosticSeverity.Warning;
-                case ScriptFileMarkerLevel.Information: return DiagnosticSeverity.Information;
-                default:                                return DiagnosticSeverity.Error;
+                ScriptFileMarkerLevel.Error => DiagnosticSeverity.Error,
+                ScriptFileMarkerLevel.Warning => DiagnosticSeverity.Warning,
+                ScriptFileMarkerLevel.Information => DiagnosticSeverity.Information,
+                _ => DiagnosticSeverity.Error,
             };
         }
 
@@ -478,7 +466,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
 
         #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
+        private bool disposedValue; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
         {
@@ -486,8 +474,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 if (disposing)
                 {
-                    if (_analysisEngineLazy != null
-                        && _analysisEngineLazy.IsValueCreated)
+                    if (_analysisEngineLazy?.IsValueCreated == true)
                     {
                         _analysisEngineLazy.Value.Dispose();
                     }
@@ -500,11 +487,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
 
         // This code added to correctly implement the disposable pattern.
-        public void Dispose()
-        {
+        public void Dispose() =>
             // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
             Dispose(true);
-        }
         #endregion
 
         /// <summary>
@@ -516,18 +501,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         private class CorrectionTableEntry
         {
-            public static CorrectionTableEntry CreateForFile(ScriptFile file)
-            {
-                return new CorrectionTableEntry();
-            }
+            public static CorrectionTableEntry CreateForFile(ScriptFile _) => new();
 
             public CorrectionTableEntry()
             {
-                Corrections = new ConcurrentDictionary<string, MarkerCorrection>();
+                Corrections = new ConcurrentDictionary<string, IEnumerable<MarkerCorrection>>();
                 DiagnosticPublish = Task.CompletedTask;
             }
 
-            public ConcurrentDictionary<string, MarkerCorrection> Corrections { get; }
+            public ConcurrentDictionary<string, IEnumerable<MarkerCorrection>> Corrections { get; }
 
             public Task DiagnosticPublish { get; set; }
         }

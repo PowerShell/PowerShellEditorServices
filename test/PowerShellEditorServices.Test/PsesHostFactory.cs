@@ -28,11 +28,11 @@ namespace Microsoft.PowerShell.EditorServices.Test
 
         public static readonly string BundledModulePath = Path.GetFullPath(TestUtilities.NormalizePath("../../../../../module"));
 
-        public static PsesInternalHost Create(ILoggerFactory loggerFactory)
+        public static PsesInternalHost Create(ILoggerFactory loggerFactory, bool loadProfiles = false)
         {
             // We intentionally use `CreateDefault2()` as it loads `Microsoft.PowerShell.Core` only,
             // which is a more minimal and therefore safer state.
-            var initialSessionState = InitialSessionState.CreateDefault2();
+            InitialSessionState initialSessionState = InitialSessionState.CreateDefault2();
 
             // We set the process scope's execution policy (which is really the runspace's scope) to
             // `Bypass` so we can import our bundled modules. This is equivalent in scope to the CLI
@@ -57,12 +57,14 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 logLevel: (int)LogLevel.None,
                 consoleReplEnabled: false,
                 usesLegacyReadLine: false,
+                useNullPSHostUI: true,
                 bundledModulePath: BundledModulePath);
 
-            var psesHost = new PsesInternalHost(loggerFactory, null, testHostDetails);
+            PsesInternalHost psesHost = new(loggerFactory, null, testHostDetails);
 
-            // NOTE: Because this is used by constructors it can't use await.
-            if (psesHost.TryStartAsync(new HostStartOptions { LoadProfiles = false }, CancellationToken.None).GetAwaiter().GetResult())
+            #pragma warning disable VSTHRD002 // Because this is used by constructors it can't use await.
+            if (psesHost.TryStartAsync(new HostStartOptions { LoadProfiles = loadProfiles }, CancellationToken.None).GetAwaiter().GetResult())
+            #pragma warning restore VSTHRD002
             {
                 return psesHost;
             }

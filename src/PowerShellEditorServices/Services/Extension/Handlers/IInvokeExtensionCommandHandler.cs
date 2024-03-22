@@ -28,6 +28,5 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         public Position CursorPosition { get; set; }
 
         public Range SelectionRange { get; set; }
-
     }
 }

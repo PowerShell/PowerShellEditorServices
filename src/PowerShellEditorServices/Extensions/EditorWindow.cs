@@ -20,7 +20,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Gets the terminal interface for the editor API.
         /// </summary>
-        public EditorTerminal Terminal { get; private set; }
+        public EditorTerminal Terminal { get; }
 
         #endregion
 
@@ -33,58 +33,42 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         internal EditorWindow(IEditorOperations editorOperations)
         {
             this.editorOperations = editorOperations;
-            this.Terminal = new EditorTerminal(editorOperations);
+            Terminal = new EditorTerminal(editorOperations);
         }
 
         #endregion
 
         #region Public Methods
-
         /// <summary>
         /// Shows an informational message to the user.
         /// </summary>
         /// <param name="message">The message to be shown.</param>
-        public void ShowInformationMessage(string message)
-        {
-            this.editorOperations.ShowInformationMessageAsync(message).Wait();
-        }
+        public void ShowInformationMessage(string message) => editorOperations.ShowInformationMessageAsync(message).Wait();
 
         /// <summary>
         /// Shows an error message to the user.
         /// </summary>
         /// <param name="message">The message to be shown.</param>
-        public void ShowErrorMessage(string message)
-        {
-            this.editorOperations.ShowErrorMessageAsync(message).Wait();
-        }
+        public void ShowErrorMessage(string message) => editorOperations.ShowErrorMessageAsync(message).Wait();
 
         /// <summary>
         /// Shows a warning message to the user.
         /// </summary>
         /// <param name="message">The message to be shown.</param>
-        public void ShowWarningMessage(string message)
-        {
-            this.editorOperations.ShowWarningMessageAsync(message).Wait();
-        }
+        public void ShowWarningMessage(string message) => editorOperations.ShowWarningMessageAsync(message).Wait();
 
         /// <summary>
         /// Sets the status bar message in the editor UI (if applicable).
         /// </summary>
         /// <param name="message">The message to be shown.</param>
-        public void SetStatusBarMessage(string message)
-        {
-            this.editorOperations.SetStatusBarMessageAsync(message, null).Wait();
-        }
+        public void SetStatusBarMessage(string message) => editorOperations.SetStatusBarMessageAsync(message, null).Wait();
 
         /// <summary>
         /// Sets the status bar message in the editor UI (if applicable).
         /// </summary>
         /// <param name="message">The message to be shown.</param>
         /// <param name="timeout">A timeout in milliseconds for how long the message should remain visible.</param>
-        public void SetStatusBarMessage(string message, int timeout)
-        {
-            this.editorOperations.SetStatusBarMessageAsync(message, timeout).Wait();
-        }
+        public void SetStatusBarMessage(string message, int timeout) => editorOperations.SetStatusBarMessageAsync(message, timeout).Wait();
 
         #endregion
     }

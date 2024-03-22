@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Management.Automation.Language;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
@@ -14,26 +13,20 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class GetCommentHelpHandler : IGetCommentHelpHandler
     {
-        private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
         private readonly AnalysisService _analysisService;
-        private readonly SymbolsService _symbolsService;
 
         public GetCommentHelpHandler(
-            ILoggerFactory factory,
             WorkspaceService workspaceService,
-            AnalysisService analysisService,
-            SymbolsService symbolsService)
+            AnalysisService analysisService)
         {
-            _logger = factory.CreateLogger<GetCommentHelpHandler>();
             _workspaceService = workspaceService;
             _analysisService = analysisService;
-            _symbolsService = symbolsService;
         }
 
         public async Task<CommentHelpRequestResult> Handle(CommentHelpRequestParams request, CancellationToken cancellationToken)
         {
-            var result = new CommentHelpRequestResult();
+            CommentHelpRequestResult result = new();
 
             if (!_workspaceService.TryGetFile(request.DocumentUri, out ScriptFile scriptFile))
             {
@@ -58,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 // check if the previous character is `<` because it invalidates
                 // the param block the follows it.
-                IList<string> lines = ScriptFile.GetLinesInternal(funcText);
+                IList<string> lines = ScriptFile.GetLines(funcText);
                 int relativeTriggerLine0b = triggerLine - funcExtent.StartLineNumber;
                 if (relativeTriggerLine0b > 0 && lines[relativeTriggerLine0b].IndexOf("<", StringComparison.OrdinalIgnoreCase) > -1)
                 {
@@ -75,10 +68,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return result;
             }
 
-            List<string> helpLines = ScriptFile.GetLinesInternal(helpText);
+            List<string> helpLines = ScriptFile.GetLines(helpText);
 
-            if (helpLocation != null &&
-                !helpLocation.Equals("before", StringComparison.OrdinalIgnoreCase))
+            if (helpLocation?.Equals("before", StringComparison.OrdinalIgnoreCase) == false)
             {
                 // we need to trim the leading `{` and newline when helpLocation=="begin"
                 helpLines.RemoveAt(helpLines.Count - 1);

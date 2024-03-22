@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using System;
 using System.Threading;
+using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using SMA = System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
@@ -23,7 +23,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             CancellationToken cancellationToken)
             : base(logger, cancellationToken)
         {
-            ExecutionOptions = executionOptions;
+            ExecutionOptions = executionOptions ?? s_defaultExecutionOptions;
             _representation = representation;
             _action = action;
         }
@@ -36,10 +36,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             return null;
         }
 
-        public override string ToString()
-        {
-            return _representation;
-        }
+        public override string ToString() => _representation;
     }
 
     internal class SynchronousDelegateTask<TResult> : SynchronousTask<TResult>
@@ -58,20 +55,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         {
             _func = func;
             _representation = representation;
-            ExecutionOptions = executionOptions;
+            ExecutionOptions = executionOptions ?? s_defaultExecutionOptions;
         }
 
         public override ExecutionOptions ExecutionOptions { get; }
 
-        public override TResult Run(CancellationToken cancellationToken)
-        {
-            return _func(cancellationToken);
-        }
+        public override TResult Run(CancellationToken cancellationToken) => _func(cancellationToken);
 
-        public override string ToString()
-        {
-            return _representation;
-        }
+        public override string ToString() => _representation;
     }
 
     internal class SynchronousPSDelegateTask : SynchronousTask<object>
@@ -94,7 +85,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             _psesHost = psesHost;
             _action = action;
             _representation = representation;
-            ExecutionOptions = executionOptions;
+            ExecutionOptions = executionOptions ?? s_defaultExecutionOptions;
         }
 
         public override ExecutionOptions ExecutionOptions { get; }
@@ -105,10 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             return null;
         }
 
-        public override string ToString()
-        {
-            return _representation;
-        }
+        public override string ToString() => _representation;
     }
 
     internal class SynchronousPSDelegateTask<TResult> : SynchronousTask<TResult>
@@ -131,19 +119,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
             _psesHost = psesHost;
             _func = func;
             _representation = representation;
-            ExecutionOptions = executionOptions;
+            ExecutionOptions = executionOptions ?? s_defaultExecutionOptions;
         }
 
         public override ExecutionOptions ExecutionOptions { get; }
 
-        public override TResult Run(CancellationToken cancellationToken)
-        {
-            return _func(_psesHost.CurrentPowerShell, cancellationToken);
-        }
+        public override TResult Run(CancellationToken cancellationToken) => _func(_psesHost.CurrentPowerShell, cancellationToken);
 
-        public override string ToString()
-        {
-            return _representation;
-        }
+        public override string ToString() => _representation;
     }
 }

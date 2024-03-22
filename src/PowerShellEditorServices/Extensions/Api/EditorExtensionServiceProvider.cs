@@ -20,13 +20,13 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
     {
         private static readonly Assembly s_psesAsm = typeof(EditorExtensionServiceProvider).Assembly;
 
-        private static readonly Lazy<object> s_psesAsmLoadContextLazy = new Lazy<object>(GetPsesAsmLoadContext);
+        private static readonly Lazy<object> s_psesAsmLoadContextLazy = new(GetPsesAsmLoadContext);
 
-        private static readonly Lazy<Type> s_asmLoadContextType = new Lazy<Type>(() => Type.GetType("System.Runtime.Loader.AssemblyLoadContext"));
+        private static readonly Lazy<Type> s_asmLoadContextType = new(() => Type.GetType("System.Runtime.Loader.AssemblyLoadContext"));
 
-        private static readonly Lazy<Func<IDisposable>> s_enterPsesReflectionContextLazy = new Lazy<Func<IDisposable>>(GetPsesAlcReflectionContextEntryFunc);
+        private static readonly Lazy<Func<IDisposable>> s_enterPsesReflectionContextLazy = new(GetPsesAlcReflectionContextEntryFunc);
 
-        private static readonly Lazy<Func<string, Assembly>> s_loadAssemblyInPsesAlc = new Lazy<Func<string, Assembly>>(GetPsesAlcLoadAsmFunc);
+        private static readonly Lazy<Func<string, Assembly>> s_loadAssemblyInPsesAlc = new(GetPsesAlcLoadAsmFunc);
 
         private static Type AsmLoadContextType => s_asmLoadContextType.Value;
 
@@ -42,7 +42,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         {
             _serviceProvider = serviceProvider;
             LanguageServer = new LanguageServerService(_serviceProvider.GetService<ILanguageServerFacade>());
-            //DocumentSymbols = new DocumentSymbolService(_serviceProvider.GetService<SymbolsService>());
             ExtensionCommands = new ExtensionCommandService(_serviceProvider.GetService<ExtensionService>());
             Workspace = new WorkspaceService(_serviceProvider.GetService<InternalServices.WorkspaceService>());
             EditorContext = new EditorContextService(_serviceProvider.GetService<ILanguageServerFacade>());
@@ -53,11 +52,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// A service wrapper around the language server allowing sending notifications and requests to the LSP client.
         /// </summary>
         public ILanguageServerService LanguageServer { get; }
-
-        /// <summary>
-        /// Service providing document symbol provider registration.
-        /// </summary>
-        // public IDocumentSymbolService DocumentSymbols { get; }
 
         /// <summary>
         /// Service providing extension command registration and functionality.
@@ -93,7 +87,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <summary>
         /// Get an underlying service object from PSES by type name.
         /// </summary>
-        /// <param name="psesServiceFullTypeName">The full type name of the service to get.</param>
+        /// <param name="fullTypeName">The full type name of the service to get.</param>
         /// <param name="assemblyName">The assembly name from which the service comes.</param>
         /// <returns>The service object requested, or null if no service of that type name exists.</returns>
         /// <remarks>
@@ -141,15 +135,11 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// <remarks>
         /// This method is intended as a trapdoor and should not be used in the first instance.
         /// Consider using the public extension services if possible.
-        ///
         /// Also note that services in PSES may live in a separate assembly load context,
         /// meaning that a type of the seemingly correct name may fail to fetch to a service
         /// that is known under a type of the same name but loaded in a different context.
         /// </remarks>
-        public object GetService(Type serviceType)
-        {
-            return _serviceProvider.GetService(serviceType);
-        }
+        public object GetService(Type serviceType) => _serviceProvider.GetService(serviceType);
 
         /// <summary>
         /// Get the assembly load context the PSES loads its dependencies into.

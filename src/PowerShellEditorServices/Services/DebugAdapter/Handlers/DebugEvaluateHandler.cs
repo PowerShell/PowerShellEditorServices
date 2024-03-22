@@ -22,6 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly IInternalPowerShellExecutionService _executionService;
         private readonly DebugService _debugService;
 
+        // AKA Watch Variables
         public DebugEvaluateHandler(
             ILoggerFactory factory,
             IPowerShellDebugContext debugContext,
@@ -48,8 +49,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (isFromRepl)
             {
                 await _executionService.ExecutePSCommandAsync(
-                    new PSCommand().AddScript(request.Expression),
-                    CancellationToken.None,
+                    new PSCommand().AddScript($"[System.Diagnostics.DebuggerHidden()]param() {request.Expression}"),
+                    cancellationToken,
                     new PowerShellExecutionOptions { WriteOutputToHost = true, ThrowOnError = false, AddToHistory = true }).HandleErrorsAsync(_logger).ConfigureAwait(false);
             }
             else
@@ -61,24 +62,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 if (_debugContext.IsStopped)
                 {
                     // First check to see if the watch expression refers to a naked variable reference.
-                    result = _debugService.GetVariableFromExpression(request.Expression);
+                    result = await _debugService.GetVariableFromExpression(request.Expression, cancellationToken).ConfigureAwait(false);
 
                     // If the expression is not a naked variable reference, then evaluate the expression.
-                    if (result == null)
-                    {
-                        result =
-                            await _debugService.EvaluateExpressionAsync(
-                                request.Expression,
-                                isFromRepl).ConfigureAwait(false);
-                    }
+                    result ??= await _debugService.EvaluateExpressionAsync(
+                        request.Expression,
+                        isFromRepl,
+                        cancellationToken).ConfigureAwait(false);
                 }
 
                 if (result != null)
                 {
                     valueString = result.ValueString;
-                    variableId =
-                        result.IsExpandable ?
-                            result.Id : 0;
+                    variableId = result.IsExpandable ? result.Id : 0;
                 }
             }
 

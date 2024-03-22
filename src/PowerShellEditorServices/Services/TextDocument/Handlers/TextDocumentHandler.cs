@@ -17,14 +17,16 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    class PsesTextDocumentHandler : TextDocumentSyncHandlerBase
+    internal class PsesTextDocumentHandler : TextDocumentSyncHandlerBase
     {
-        private static readonly Uri s_fakeUri = new Uri("Untitled:fake");
+        private static readonly Uri s_fakeUri = new("Untitled:fake");
 
         private readonly ILogger _logger;
         private readonly AnalysisService _analysisService;
         private readonly WorkspaceService _workspaceService;
         private readonly RemoteFileManagerService _remoteFileManagerService;
+
+        private bool _isFileWatcherSupported;
 
         public static TextDocumentSyncKind Change => TextDocumentSyncKind.Incremental;
 
@@ -59,30 +61,42 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return Unit.Task;
         }
 
-        protected override TextDocumentSyncRegistrationOptions CreateRegistrationOptions(SynchronizationCapability capability, ClientCapabilities clientCapabilities) => new TextDocumentSyncRegistrationOptions()
+        protected override TextDocumentSyncRegistrationOptions CreateRegistrationOptions(TextSynchronizationCapability capability, ClientCapabilities clientCapabilities)
         {
-            DocumentSelector = LspUtils.PowerShellDocumentSelector,
-            Change = Change,
-            Save = new SaveOptions { IncludeText = true }
-        };
+            _isFileWatcherSupported = clientCapabilities.Workspace.DidChangeWatchedFiles.IsSupported;
+            return new TextDocumentSyncRegistrationOptions()
+            {
+                DocumentSelector = LspUtils.PowerShellDocumentSelector,
+                Change = Change,
+                Save = new SaveOptions { IncludeText = true }
+            };
+        }
 
         public override Task<Unit> Handle(DidOpenTextDocumentParams notification, CancellationToken token)
         {
+            // We're receiving notifications for special "git" scheme files from VS Code, and we
+            // need to ignore those! Otherwise they're added to our workspace service's opened files
+            // and cause duplicate references.
+            if (notification.TextDocument.Uri.Scheme == "git")
+            {
+                return Unit.Task;
+            }
+
+            // We use a fake Uri because we only want to test the LanguageId here and not if the
+            // file ends in ps*1.
+            TextDocumentAttributes attributes = new(s_fakeUri, notification.TextDocument.LanguageId);
+            if (!LspUtils.PowerShellDocumentSelector.IsMatch(attributes))
+            {
+                return Unit.Task;
+            }
+
             ScriptFile openedFile =
                 _workspaceService.GetFileBuffer(
                     notification.TextDocument.Uri,
                     notification.TextDocument.Text);
 
-            if (LspUtils.PowerShellDocumentSelector.IsMatch(new TextDocumentAttributes(
-                // We use a fake Uri because we only want to test the LanguageId here and not if the
-                // file ends in ps*1.
-                s_fakeUri,
-                notification.TextDocument.LanguageId)))
-            {
-                // Kick off script diagnostics if we got a PowerShell file without blocking the response
-                // TODO: Get all recently edited files in the workspace
-                _analysisService.StartScriptDiagnostics(new ScriptFile[] { openedFile });
-            }
+            openedFile.IsOpen = true;
+            _analysisService.StartScriptDiagnostics(new ScriptFile[] { openedFile });
 
             _logger.LogTrace("Finished opening document.");
             return Unit.Task;
@@ -91,11 +105,20 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public override Task<Unit> Handle(DidCloseTextDocumentParams notification, CancellationToken token)
         {
             // Find and close the file in the current session
-            var fileToClose = _workspaceService.GetFile(notification.TextDocument.Uri);
+            ScriptFile fileToClose = _workspaceService.GetFile(notification.TextDocument.Uri);
 
             if (fileToClose != null)
             {
-                _workspaceService.CloseFile(fileToClose);
+                fileToClose.IsOpen = false;
+
+                // If the file watcher is supported, only close in-memory files when this
+                // notification is triggered. This lets us keep workspace files open so we can scan
+                // for references. When a file is deleted, the file watcher will close the file.
+                if (!_isFileWatcherSupported || fileToClose.IsInMemory)
+                {
+                    _workspaceService.CloseFile(fileToClose);
+                }
+
                 _analysisService.ClearMarkers(fileToClose);
             }
 
@@ -117,13 +140,16 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return Unit.Value;
         }
 
-        public override TextDocumentAttributes GetTextDocumentAttributes(DocumentUri uri) => new TextDocumentAttributes(uri, "powershell");
+        public override TextDocumentAttributes GetTextDocumentAttributes(DocumentUri uri) => new(uri, "powershell");
 
         private static FileChange GetFileChangeDetails(Range changeRange, string insertString)
         {
             // The protocol's positions are zero-based so add 1 to all offsets
 
-            if (changeRange == null) return new FileChange { InsertString = insertString, IsReload = true };
+            if (changeRange == null)
+            {
+                return new FileChange { InsertString = insertString, IsReload = true };
+            }
 
             return new FileChange
             {

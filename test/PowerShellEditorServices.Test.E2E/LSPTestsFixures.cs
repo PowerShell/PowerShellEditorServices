@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -28,14 +27,15 @@ namespace PowerShellEditorServices.Test.E2E
 {
     public class LSPTestsFixture : IAsyncLifetime
     {
-        protected readonly static string s_binDir =
+        protected static readonly string s_binDir =
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
         private const bool IsDebugAdapterTests = false;
 
         public ILanguageClient PsesLanguageClient { get; private set; }
-        public List<Diagnostic> Diagnostics { get; set; }
-        internal List<PsesTelemetryEvent> TelemetryEvents { get; set; }
+        public List<LogMessageParams> Messages = new();
+        public List<Diagnostic> Diagnostics = new();
+        internal List<PsesTelemetryEvent> TelemetryEvents = new();
         public ITestOutputHelper Output { get; set; }
 
         protected PsesStdioProcess _psesProcess;
@@ -43,13 +43,11 @@ namespace PowerShellEditorServices.Test.E2E
 
         public async Task InitializeAsync()
         {
-            var factory = new LoggerFactory();
+            LoggerFactory factory = new();
             _psesProcess = new PsesStdioProcess(factory, IsDebugAdapterTests);
-            await _psesProcess.Start().ConfigureAwait(false);
+            await _psesProcess.Start();
 
-            Diagnostics = new List<Diagnostic>();
-            TelemetryEvents = new List<PsesTelemetryEvent>();
-            DirectoryInfo testdir =
+            DirectoryInfo testDir =
                 Directory.CreateDirectory(Path.Combine(s_binDir, Path.GetRandomFileName()));
 
             PsesLanguageClient = LanguageClient.PreInit(options =>
@@ -57,9 +55,13 @@ namespace PowerShellEditorServices.Test.E2E
                 options
                     .WithInput(_psesProcess.OutputStream)
                     .WithOutput(_psesProcess.InputStream)
-                    .WithRootUri(DocumentUri.FromFileSystemPath(testdir.FullName))
+                    .WithWorkspaceFolder(DocumentUri.FromFileSystemPath(testDir.FullName), "testdir")
+                    .WithInitializationOptions(new { EnableProfileLoading = false })
                     .OnPublishDiagnostics(diagnosticParams => Diagnostics.AddRange(diagnosticParams.Diagnostics.Where(d => d != null)))
-                    .OnLogMessage(logMessageParams => Output?.WriteLine($"{logMessageParams.Type.ToString()}: {logMessageParams.Message}"))
+                    .OnLogMessage(logMessageParams => {
+                        Output?.WriteLine($"{logMessageParams.Type}: {logMessageParams.Message}");
+                        Messages.Add(logMessageParams);
+                    })
                     .OnTelemetryEvent(telemetryEventParams => TelemetryEvents.Add(
                         new PsesTelemetryEvent
                         {
@@ -69,7 +71,7 @@ namespace PowerShellEditorServices.Test.E2E
 
                 // Enable all capabilities this this is for testing.
                 // This will be a built in feature of the Omnisharp client at some point.
-                var capabilityTypes = typeof(ICapability).Assembly.GetExportedTypes()
+                IEnumerable<Type> capabilityTypes = typeof(ICapability).Assembly.GetExportedTypes()
                     .Where(z => typeof(ICapability).IsAssignableFrom(z) && z.IsClass && !z.IsAbstract);
                 foreach (Type capabilityType in capabilityTypes)
                 {
@@ -77,7 +79,7 @@ namespace PowerShellEditorServices.Test.E2E
                 }
             });
 
-            await PsesLanguageClient.Initialize(CancellationToken.None).ConfigureAwait(false);
+            await PsesLanguageClient.Initialize(CancellationToken.None);
 
             // Make sure Script Analysis is enabled because we'll need it in the tests.
             // This also makes sure the configuration is set to default values.
@@ -95,16 +97,9 @@ namespace PowerShellEditorServices.Test.E2E
 
         public async Task DisposeAsync()
         {
-            try
-            {
-                await PsesLanguageClient.Shutdown().ConfigureAwait(false);
-                await _psesProcess.Stop().ConfigureAwait(false);
-                PsesLanguageClient?.Dispose();
-            }
-            catch (ObjectDisposedException)
-            {
-                // Language client has a disposal bug in it
-            }
+            await PsesLanguageClient.Shutdown();
+            await _psesProcess.Stop();
+            PsesLanguageClient?.Dispose();
         }
     }
 }

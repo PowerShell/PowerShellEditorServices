@@ -5,24 +5,16 @@ using Microsoft.PowerShell.Commands;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Management.Automation;
 using System.Reflection;
 using SMA = System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using Microsoft.PowerShell.EditorServices.Hosting;
+using System.Diagnostics;
 using System.Globalization;
-using System.Collections;
-
-// TODO: Remove this when we drop support for PS6.
-#if CoreCLR
-using System.Runtime.InteropServices;
-#endif
 
 #if DEBUG
-using System.Diagnostics;
 using System.Threading;
-
 using Debugger = System.Diagnostics.Debugger;
 #endif
 
@@ -31,27 +23,22 @@ namespace Microsoft.PowerShell.EditorServices.Commands
     /// <summary>
     /// The Start-EditorServices command, the conventional entrypoint for PowerShell Editor Services.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays", Justification = "Cmdlet parameters can be arrays")]
     [Cmdlet(VerbsLifecycle.Start, "EditorServices", DefaultParameterSetName = "NamedPipe")]
     public sealed class StartEditorServicesCommand : PSCmdlet
     {
-        // TODO: Remove this when we drop support for PS6.
-        private readonly static bool s_isWindows =
-#if CoreCLR
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-#else
-        true;
-#endif
-
         private readonly List<IDisposable> _disposableResources;
 
         private readonly List<IDisposable> _loggerUnsubscribers;
 
         private HostLogger _logger;
 
+        // NOTE: Ignore the suggestion to use Environment.ProcessId as it doesn't work for
+        // .NET 4.6.2 (for Windows PowerShell), and this won't be caught in CI.
+        private static readonly int s_currentPID = Process.GetCurrentProcess().Id;
+
         public StartEditorServicesCommand()
         {
-            //Sets the distribution channel to "PSES" so starts can be distinguished in PS7+ telemetry
+            // Sets the distribution channel to "PSES" so starts can be distinguished in PS7+ telemetry
             Environment.SetEnvironmentVariable("POWERSHELL_DISTRIBUTION_CHANNEL", "PSES");
             _disposableResources = new List<IDisposable>();
             _loggerUnsubscribers = new List<IDisposable>();
@@ -60,30 +47,30 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         /// <summary>
         /// The name of the EditorServices host to report.
         /// </summary>
-        [Parameter(Mandatory = true)]
+        [Parameter]
         [ValidateNotNullOrEmpty]
-        public string HostName { get; set; }
+        public string HostName { get; set; } = "PSES";
 
         /// <summary>
         /// The ID to give to the host's profile.
         /// </summary>
-        [Parameter(Mandatory = true)]
+        [Parameter]
         [ValidateNotNullOrEmpty]
-        public string HostProfileId { get; set; }
+        public string HostProfileId { get; set; } = "PSES";
 
         /// <summary>
         /// The version to report for the host.
         /// </summary>
-        [Parameter(Mandatory = true)]
+        [Parameter]
         [ValidateNotNullOrEmpty]
-        public Version HostVersion { get; set; }
+        public Version HostVersion { get; set; } = new Version(0, 0, 0);
 
         /// <summary>
         /// Path to the session file to create on startup or startup failure.
         /// </summary>
-        [Parameter(Mandatory = true)]
+        [Parameter]
         [ValidateNotNullOrEmpty]
-        public string SessionDetailsPath { get; set; }
+        public string SessionDetailsPath { get; set; } = "PowerShellEditorServices.json";
 
         /// <summary>
         /// The name of the named pipe to use for the LSP transport.
@@ -136,14 +123,16 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         /// </summary>
         [Parameter]
         [ValidateNotNullOrEmpty]
-        public string BundledModulesPath { get; set; }
+        public string BundledModulesPath { get; set; } = Path.GetFullPath(Path.Combine(
+            Path.GetDirectoryName(typeof(StartEditorServicesCommand).Assembly.Location),
+            "..", "..", ".."));
 
         /// <summary>
-        /// The absolute path to the where the editor services log file should be created and logged to.
+        /// The absolute path to the folder where logs will be saved.
         /// </summary>
         [Parameter]
         [ValidateNotNullOrEmpty]
-        public string LogPath { get; set; }
+        public string LogPath { get; set; } = Path.Combine(Path.GetTempPath(), "PowerShellEditorServices");
 
         /// <summary>
         /// The minimum log level that should be emitted.
@@ -164,7 +153,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         public string[] FeatureFlags { get; set; }
 
         /// <summary>
-        /// When set, enables the integrated console.
+        /// When set, enables the Extension Terminal.
         /// </summary>
         [Parameter]
         public SwitchParameter EnableConsoleRepl { get; set; }
@@ -201,27 +190,30 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         public SwitchParameter SplitInOutPipes { get; set; }
 
         /// <summary>
-        /// The banner/logo to display when the Integrated Console is first started.
+        /// The banner/logo to display when the extension terminal is first started.
         /// </summary>
         [Parameter]
         public string StartupBanner { get; set; }
 
+#pragma warning disable IDE0022
         protected override void BeginProcessing()
         {
 #if DEBUG
             if (WaitForDebugger)
             {
+                // NOTE: Ignore the suggestion to use Environment.ProcessId as it doesn't work for
+                // .NET 4.6.2 (for Windows PowerShell), and this won't be caught in CI.
+                Console.WriteLine($"Waiting for debugger to attach, PID: {s_currentPID}");
                 while (!Debugger.IsAttached)
                 {
-                    Console.WriteLine($"PID: {Process.GetCurrentProcess().Id}");
                     Thread.Sleep(1000);
                 }
             }
 #endif
-
             // Set up logging now for use throughout startup
             StartLogging();
         }
+#pragma warning restore IDE0022
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Uses ThrowTerminatingError() instead")]
         protected override void EndProcessing()
@@ -237,15 +229,12 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 // Create the configuration from parameters
                 EditorServicesConfig editorServicesConfig = CreateConfigObject();
 
-                var sessionFileWriter = new SessionFileWriter(_logger, SessionDetailsPath);
-                _logger.Log(PsesLogLevel.Diagnostic, "Session file writer created");
-
-                using (var psesLoader = EditorServicesLoader.Create(_logger, editorServicesConfig, sessionFileWriter, _loggerUnsubscribers))
-                {
-                    _logger.Log(PsesLogLevel.Verbose, "Loading EditorServices");
-                    // Start editor services and wait here until it shuts down
-                    psesLoader.LoadAndRunEditorServicesAsync().GetAwaiter().GetResult();
-                }
+                using EditorServicesLoader psesLoader = EditorServicesLoader.Create(_logger, editorServicesConfig, SessionDetailsPath, _loggerUnsubscribers);
+                _logger.Log(PsesLogLevel.Verbose, "Loading EditorServices");
+                // Synchronously start editor services and wait here until it shuts down.
+#pragma warning disable VSTHRD002
+                psesLoader.LoadAndRunEditorServicesAsync().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
             }
             catch (Exception e)
             {
@@ -277,62 +266,58 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             // if it's being used as a protocol transport
             if (!Stdio)
             {
-                var hostLogger = new PSHostLogger(Host.UI);
+                PSHostLogger hostLogger = new(Host.UI);
                 _loggerUnsubscribers.Add(_logger.Subscribe(hostLogger));
             }
 
             string logDirPath = GetLogDirPath();
-            string logPath = Path.Combine(logDirPath, "StartEditorServices.log");
+            string logPath = Path.Combine(logDirPath, $"StartEditorServices-{s_currentPID}.log");
 
-            // Temp debugging sessions may try to reuse this same path,
-            // so we ensure they have a unique path
             if (File.Exists(logPath))
             {
                 int randomInt = new Random().Next();
-                logPath = Path.Combine(logDirPath, $"StartEditorServices-temp{randomInt.ToString("X", CultureInfo.InvariantCulture.NumberFormat)}.log");
+                logPath = Path.Combine(logDirPath, $"StartEditorServices-{s_currentPID}-{randomInt.ToString("X", CultureInfo.InvariantCulture.NumberFormat)}.log");
             }
 
-            var fileLogger = StreamLogger.CreateWithNewFile(logPath);
+            StreamLogger fileLogger = StreamLogger.CreateWithNewFile(logPath);
             _disposableResources.Add(fileLogger);
             IDisposable fileLoggerUnsubscriber = _logger.Subscribe(fileLogger);
             fileLogger.AddUnsubscriber(fileLoggerUnsubscriber);
             _loggerUnsubscribers.Add(fileLoggerUnsubscriber);
-
             _logger.Log(PsesLogLevel.Diagnostic, "Logging started");
         }
 
+        // Sanitizes user input and ensures the directory is created.
         private string GetLogDirPath()
         {
-            string logDir = !string.IsNullOrEmpty(LogPath)
-                ? Path.GetDirectoryName(LogPath)
-                : Path.GetDirectoryName(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+            string logDir = LogPath;
+            if (string.IsNullOrEmpty(logDir))
+            {
+                logDir = Path.Combine(Path.GetTempPath(), "PowerShellEditorServices");
+            }
 
-            // Ensure logDir exists
             Directory.CreateDirectory(logDir);
-
             return logDir;
         }
 
         private void RemovePSReadLineForStartup()
         {
             _logger.Log(PsesLogLevel.Verbose, "Removing PSReadLine");
-            using (var pwsh = SMA.PowerShell.Create(RunspaceMode.CurrentRunspace))
+            using SMA.PowerShell pwsh = SMA.PowerShell.Create(RunspaceMode.CurrentRunspace);
+            bool hasPSReadLine = pwsh.AddCommand(new CmdletInfo(@"Microsoft.PowerShell.Core\Get-Module", typeof(GetModuleCommand)))
+                .AddParameter("Name", "PSReadLine")
+                .Invoke()
+                .Count > 0;
+
+            if (hasPSReadLine)
             {
-                bool hasPSReadLine = pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Get-Module", typeof(GetModuleCommand)))
+                pwsh.Commands.Clear();
+
+                pwsh.AddCommand(new CmdletInfo(@"Microsoft.PowerShell.Core\Remove-Module", typeof(RemoveModuleCommand)))
                     .AddParameter("Name", "PSReadLine")
-                    .Invoke()
-                    .Any();
+                    .AddParameter("ErrorAction", "SilentlyContinue");
 
-                if (hasPSReadLine)
-                {
-                    pwsh.Commands.Clear();
-
-                    pwsh.AddCommand(new CmdletInfo("Microsoft.PowerShell.Core\\Remove-Module", typeof(RemoveModuleCommand)))
-                        .AddParameter("Name", "PSReadLine")
-                        .AddParameter("ErrorAction", "SilentlyContinue");
-
-                    _logger.Log(PsesLogLevel.Verbose, "Removed PSReadLine");
-                }
+                _logger.Log(PsesLogLevel.Verbose, "Removed PSReadLine");
             }
         }
 
@@ -352,14 +337,14 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                         bundledModulesPath));
             }
 
-            var profile = (PSObject)GetVariableValue("profile");
+            PSObject profile = (PSObject)GetVariableValue("profile");
 
-            var hostInfo = new HostInfo(HostName, HostProfileId, HostVersion);
+            HostInfo hostInfo = new(HostName, HostProfileId, HostVersion);
 
-            var initialSessionState = Runspace.DefaultRunspace.InitialSessionState;
+            InitialSessionState initialSessionState = Runspace.DefaultRunspace.InitialSessionState;
             initialSessionState.LanguageMode = Runspace.DefaultRunspace.SessionStateProxy.LanguageMode;
 
-            var editorServicesConfig = new EditorServicesConfig(
+            EditorServicesConfig editorServicesConfig = new(
                 hostInfo,
                 Host,
                 SessionDetailsPath,
@@ -369,6 +354,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 FeatureFlags = FeatureFlags,
                 LogLevel = LogLevel,
                 ConsoleRepl = GetReplKind(),
+                UseNullPSHostUI = Stdio, // If Stdio is used we can't write anything else out
                 AdditionalModules = AdditionalModules,
                 LanguageServiceTransport = GetLanguageServiceTransport(),
                 DebugServiceTransport = GetDebugServiceTransport(),
@@ -409,7 +395,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 $"{HostProfileId}_profile.ps1");
         }
 
-        // We should only use PSReadLine if we specificied that we want a console repl
+        // We should only use PSReadLine if we specified that we want a console repl
         // and we have not explicitly said to use the legacy ReadLine.
         // We also want it if we are either:
         // * On Windows on any version OR
@@ -424,12 +410,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 return ConsoleReplKind.None;
             }
 
-            // TODO: Remove this when we drop support for PS6.
-            var psVersionTable = (Hashtable) this.SessionState.PSVariable.GetValue("PSVersionTable");
-            dynamic version = psVersionTable["PSVersion"];
-            var majorVersion = (int) version.Major;
-
-            if (UseLegacyReadLine || (!s_isWindows && majorVersion == 6))
+            if (UseLegacyReadLine)
             {
                 _logger.Log(PsesLogLevel.Diagnostic, "REPL configured as Legacy");
                 return ConsoleReplKind.LegacyReadLine;

@@ -1,0 +1,75 @@
+name: Vim End-to-End Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ main ]
+    paths-ignore: [ '**/*.md' ]
+  merge_group:
+    types: [ checks_requested ]
+
+jobs:
+  vim:
+    name: themis
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      DOTNET_GENERATE_ASPNET_CERTIFICATE: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
+          source-url: https://pkgs.dev.azure.com/mscodehub/PowerShellCore/_packaging/PowerShellCore_PublicPackages/nuget/v3/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.AZURE_NUGET_TOKEN }}
+
+      - name: Install PSResources
+        shell: pwsh
+        run: tools/installPSResources.ps1
+
+      - name: Build
+        shell: pwsh
+        run: Invoke-Build Build
+
+      - name: Install Vim
+        uses: rhysd/action-setup-vim@v1
+
+      - name: Checkout vim-ps1
+        uses: actions/checkout@v4
+        with:
+          repository: PProvost/vim-ps1
+          path: vim-ps1
+
+      - name: Checkout LanguageClient-neovim
+        uses: actions/checkout@v4
+        with:
+          repository: autozimu/LanguageClient-neovim
+          path: LanguageClient-neovim
+
+      - name: Install LanguageClient-neovim
+        run: ./install.sh
+        working-directory: LanguageClient-neovim
+
+      - name: Checkout Themis
+        uses: actions/checkout@v4
+        with:
+          repository: thinca/vim-themis
+          path: vim-themis
+
+      - name: Run Themis with full CLI
+        env:
+          THEMIS_VIM: ${{ steps.vim.outputs.executable }}
+        run: ./vim-themis/bin/themis ./test/vim-test.vim
+
+      - name: Run Themis with simple CLI
+        env:
+          THEMIS_VIM: ${{ steps.vim.outputs.executable }}
+        run: ./vim-themis/bin/themis ./test/vim-simple-test.vim

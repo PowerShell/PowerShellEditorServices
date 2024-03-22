@@ -18,8 +18,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
     {
         #region Private Static Fields
 
-        private const string s_psesGlobalVariableNamePrefix = "__psEditorServices_";
-
         private static readonly Lazy<Func<Debugger, string, int, int, ScriptBlock, int?, LineBreakpoint>> s_setLineBreakpointLazy;
 
         private static readonly Lazy<Func<Debugger, string, ScriptBlock, string, int?, CommandBreakpoint>> s_setCommandBreakpointLazy;
@@ -134,28 +132,29 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 }
             }
 
-            switch (breakpoint)
+            return breakpoint switch
             {
-                case BreakpointDetails lineBreakpoint:
-                    return SetLineBreakpointDelegate(debugger, lineBreakpoint.Source, lineBreakpoint.LineNumber, lineBreakpoint.ColumnNumber ?? 0, actionScriptBlock, runspaceId);
+                BreakpointDetails lineBreakpoint => SetLineBreakpointDelegate(
+                    debugger,
+                    lineBreakpoint.Source,
+                    lineBreakpoint.LineNumber,
+                    lineBreakpoint.ColumnNumber ?? 0,
+                    actionScriptBlock,
+                    runspaceId),
 
-                case CommandBreakpointDetails commandBreakpoint:
-                    return SetCommandBreakpointDelegate(debugger, commandBreakpoint.Name, null, null, runspaceId);
+                CommandBreakpointDetails commandBreakpoint => SetCommandBreakpointDelegate(debugger,
+                    commandBreakpoint.Name,
+                    null,
+                    null,
+                    runspaceId),
 
-                default:
-                    throw new NotImplementedException("Other breakpoints not supported yet");
-            }
+                _ => throw new NotImplementedException("Other breakpoints not supported yet"),
+            };
         }
 
-        public static List<Breakpoint> GetBreakpoints(Debugger debugger, int? runspaceId = null)
-        {
-            return GetBreakpointsDelegate(debugger, runspaceId);
-        }
+        public static List<Breakpoint> GetBreakpoints(Debugger debugger, int? runspaceId = null) => GetBreakpointsDelegate(debugger, runspaceId);
 
-        public static bool RemoveBreakpoint(Debugger debugger, Breakpoint breakpoint, int? runspaceId = null)
-        {
-            return RemoveBreakpointDelegate(debugger, breakpoint, runspaceId);
-        }
+        public static bool RemoveBreakpoint(Debugger debugger, Breakpoint breakpoint, int? runspaceId = null) => RemoveBreakpointDelegate(debugger, breakpoint, runspaceId);
 
         /// <summary>
         /// Inspects the condition, putting in the appropriate scriptblock template
@@ -166,6 +165,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <param name="condition">The expression that needs to be true for the breakpoint to be triggered.</param>
         /// <param name="hitCondition">The amount of times this line should be hit til the breakpoint is triggered.</param>
         /// <param name="logMessage">The log message to write instead of calling 'break'. In VS Code, this is called a 'logPoint'.</param>
+        /// <param name="errorMessage">The error message we might return.</param>
         /// <returns>ScriptBlock</returns>
         public static ScriptBlock GetBreakpointActionScriptBlock(string condition, string hitCondition, string logMessage, out string errorMessage)
         {
@@ -173,20 +173,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
             try
             {
-                StringBuilder builder = new StringBuilder(
+                StringBuilder builder = new(
                     string.IsNullOrEmpty(logMessage)
                         ? "break"
-                        : $"Microsoft.PowerShell.Utility\\Write-Host \"{logMessage.Replace("\"","`\"")}\"");
+                        : $"Microsoft.PowerShell.Utility\\Write-Host \"{logMessage.Replace("\"", "`\"")}\"");
 
                 // If HitCondition specified, parse and verify it.
-                if (!(string.IsNullOrWhiteSpace(hitCondition)))
+                if (!string.IsNullOrWhiteSpace(hitCondition))
                 {
                     if (!int.TryParse(hitCondition, out int parsedHitCount))
                     {
                         throw new InvalidOperationException("Hit Count was not a valid integer.");
                     }
 
-                    if(string.IsNullOrWhiteSpace(condition))
+                    if (string.IsNullOrWhiteSpace(condition))
                     {
                         // In the HitCount only case, this is simple as we can just use the HitCount
                         // property on the breakpoint object which is represented by $_.
@@ -197,7 +197,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                     int incrementResult = Interlocked.Increment(ref breakpointHitCounter);
 
                     string globalHitCountVarName =
-                        $"$global:{s_psesGlobalVariableNamePrefix}BreakHitCounter_{incrementResult}";
+                        $"$global:{DebugService.PsesGlobalVariableNamePrefix}BreakHitCounter_{incrementResult}";
 
                     builder.Insert(0, $"if (++{globalHitCountVarName} -eq {parsedHitCount}) {{ ")
                         .Append(" }");
@@ -217,8 +217,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                     // Check for "advanced" condition syntax i.e. if the user has specified
                     // a "break" or  "continue" statement anywhere in their scriptblock,
                     // pass their scriptblock through to the Action parameter as-is.
-                    if (parsed.Ast.Find(ast =>
-                        (ast is BreakStatementAst || ast is ContinueStatementAst), true) != null)
+                    if (parsed.Ast.Find(ast => ast is BreakStatementAst or ContinueStatementAst, true) is not null)
                     {
                         return parsed;
                     }
@@ -247,10 +246,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
             // We are only inspecting a few simple scenarios in the EndBlock only.
             if (conditionAst is ScriptBlockAst scriptBlockAst &&
-                scriptBlockAst.BeginBlock == null &&
-                scriptBlockAst.ProcessBlock == null &&
-                scriptBlockAst.EndBlock != null &&
-                scriptBlockAst.EndBlock.Statements.Count == 1)
+                scriptBlockAst.BeginBlock is null &&
+                scriptBlockAst.ProcessBlock is null &&
+                scriptBlockAst.EndBlock?.Statements.Count == 1)
             {
                 StatementAst statementAst = scriptBlockAst.EndBlock.Statements[0];
                 string condition = statementAst.Extent.Text;
@@ -314,10 +312,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             return FormatInvalidBreakpointConditionMessage(condition, parseException.Message);
         }
 
-        private static string FormatInvalidBreakpointConditionMessage(string condition, string message)
-        {
-            return $"'{condition}' is not a valid PowerShell expression. {message}";
-        }
+        private static string FormatInvalidBreakpointConditionMessage(string condition, string message) => $"'{condition}' is not a valid PowerShell expression. {message}";
 
         #endregion
     }

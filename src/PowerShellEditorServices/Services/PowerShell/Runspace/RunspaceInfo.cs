@@ -5,7 +5,6 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
-using System.Threading;
 using System;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 
@@ -20,8 +19,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
             ILogger logger,
             PowerShell pwsh)
         {
-            var psVersionDetails = PowerShellVersionDetails.GetVersionDetails(logger, pwsh);
-            var sessionDetails = SessionDetails.GetFromPowerShell(pwsh);
+            PowerShellVersionDetails psVersionDetails = PowerShellVersionDetails.GetVersionDetails(logger, pwsh);
+            SessionDetails sessionDetails = SessionDetails.GetFromPowerShell(pwsh);
 
             return new RunspaceInfo(
                 pwsh.Runspace,
@@ -36,8 +35,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
             PowerShell pwsh,
             string localComputerName)
         {
-            var psVersionDetails = PowerShellVersionDetails.GetVersionDetails(logger, pwsh);
-            var sessionDetails = SessionDetails.GetFromPowerShell(pwsh);
+            PowerShellVersionDetails psVersionDetails = PowerShellVersionDetails.GetVersionDetails(logger, pwsh);
+            SessionDetails sessionDetails = SessionDetails.GetFromPowerShell(pwsh);
 
             bool isOnLocalMachine = string.Equals(sessionDetails.ComputerName, localComputerName, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(sessionDetails.ComputerName, "localhost", StringComparison.OrdinalIgnoreCase);
@@ -86,20 +85,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace
 
         public async Task<DscBreakpointCapability> GetDscBreakpointCapabilityAsync(
             ILogger logger,
-            PsesInternalHost psesHost,
-            CancellationToken cancellationToken)
+            PsesInternalHost psesHost)
         {
-            if (_dscBreakpointCapability is not null)
-            {
-                _dscBreakpointCapability = await DscBreakpointCapability.GetDscCapabilityAsync(
+            return _dscBreakpointCapability ??= await DscBreakpointCapability.GetDscCapabilityAsync(
                     logger,
                     this,
-                    psesHost,
-                    cancellationToken)
+                    psesHost)
                     .ConfigureAwait(false);
-            }
-
-            return _dscBreakpointCapability;
         }
     }
 }

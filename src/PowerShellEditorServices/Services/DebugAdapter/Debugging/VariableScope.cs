@@ -13,12 +13,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// Gets a numeric ID that can be used in future operations
         /// relating to this scope.
         /// </summary>
-        public int Id { get; private set; }
+        public int Id { get; }
 
         /// <summary>
         /// Gets a name that describes the variable scope.
         /// </summary>
-        public string Name { get; private set; }
+        public string Name { get; }
 
         /// <summary>
         /// Initializes a new instance of the VariableScope class with
@@ -28,8 +28,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <param name="name">The variable scope's name.</param>
         public VariableScope(int id, string name)
         {
-            this.Id = id;
-            this.Name = name;
+            Id = id;
+            Name = name;
         }
     }
 }

@@ -61,10 +61,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                     "_name",
                     BindingFlags.NonPublic | BindingFlags.Instance);
 
-                if (nameBackingField != null)
-                {
-                    nameBackingField.SetValue(this, name);
-                }
+                nameBackingField?.SetValue(this, name);
             }
             catch
             {

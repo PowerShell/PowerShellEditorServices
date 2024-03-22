@@ -18,17 +18,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <summary>
         /// Provides an instance that represents a position that has not been set.
         /// </summary>
-        public static readonly BufferPosition None = new BufferPosition(-1, -1);
+        public static readonly BufferPosition None = new(-1, -1);
 
         /// <summary>
         /// Gets the line number of the position in the buffer.
         /// </summary>
-        public int Line { get; private set; }
+        public int Line { get; }
 
         /// <summary>
         /// Gets the column number of the position in the buffer.
         /// </summary>
-        public int Column { get; private set; }
+        public int Column { get; }
 
         #endregion
 
@@ -41,8 +41,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <param name="column">The column number of the position.</param>
         public BufferPosition(int line, int column)
         {
-            this.Line = line;
-            this.Column = column;
+            Line = line;
+            Column = column;
         }
 
         #endregion
@@ -56,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <returns>True if the positions are equal, false otherwise.</returns>
         public override bool Equals(object obj)
         {
-            if (!(obj is BufferPosition))
+            if (obj is not BufferPosition)
             {
                 return false;
             }
@@ -64,18 +64,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             BufferPosition other = (BufferPosition)obj;
 
             return
-                this.Line == other.Line &&
-                this.Column == other.Column;
+                Line == other.Line &&
+                Column == other.Column;
         }
 
         /// <summary>
         /// Calculates a unique hash code that represents this instance.
         /// </summary>
         /// <returns>A hash code representing this instance.</returns>
-        public override int GetHashCode()
-        {
-            return this.Line.GetHashCode() ^ this.Column.GetHashCode();
-        }
+        public override int GetHashCode() => Line.GetHashCode() ^ Column.GetHashCode();
 
         /// <summary>
         /// Compares two positions to check if one is greater than the other.
@@ -98,12 +95,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <param name="positionOne">The first position to compare.</param>
         /// <param name="positionTwo">The second position to compare.</param>
         /// <returns>True if positionOne is less than positionTwo.</returns>
-        public static bool operator <(BufferPosition positionOne, BufferPosition positionTwo)
-        {
-            return positionTwo > positionOne;
-        }
+        public static bool operator <(BufferPosition positionOne, BufferPosition positionTwo) => positionTwo > positionOne;
 
         #endregion
     }
 }
-

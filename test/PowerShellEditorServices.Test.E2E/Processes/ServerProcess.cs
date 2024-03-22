@@ -28,12 +28,7 @@ namespace PowerShellEditorServices.Test.E2E
         /// </param>
         protected ServerProcess(ILoggerFactory loggerFactory)
         {
-            if (loggerFactory == null)
-            {
-                throw new ArgumentNullException(nameof(loggerFactory));
-            }
-
-            LoggerFactory = loggerFactory;
+            LoggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
             Log = LoggerFactory.CreateLogger(categoryName: GetType().FullName);
 
             ServerStartCompletion = new TaskCompletionSource<object>();
@@ -48,7 +43,7 @@ namespace PowerShellEditorServices.Test.E2E
         }
 
         /// <summary>
-        ///     Finaliser for <see cref="ServerProcess"/>.
+        ///     Finalizer for <see cref="ServerProcess"/>.
         /// </summary>
         ~ServerProcess()
         {
@@ -61,6 +56,7 @@ namespace PowerShellEditorServices.Test.E2E
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>

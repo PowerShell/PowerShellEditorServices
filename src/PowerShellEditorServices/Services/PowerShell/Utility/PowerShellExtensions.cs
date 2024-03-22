@@ -2,13 +2,13 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Utility;
-using System.Collections.Generic;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 {
@@ -35,6 +35,38 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             s_resumeIncomingData = (Action<PowerShell>)Delegate.CreateDelegate(
                 typeof(Action<PowerShell>),
                 typeof(PowerShell).GetMethod("ResumeIncomingData", BindingFlags.Instance | BindingFlags.NonPublic));
+        }
+
+        public static PowerShell CloneForNewFrame(this PowerShell pwsh)
+        {
+            if (pwsh.IsNested)
+            {
+                return PowerShell.Create(RunspaceMode.CurrentRunspace);
+            }
+
+            PowerShell newPwsh = PowerShell.Create();
+            newPwsh.Runspace = pwsh.Runspace;
+            return newPwsh;
+        }
+
+        public static void DisposeWhenCompleted(this PowerShell pwsh)
+        {
+            static void handler(object self, PSInvocationStateChangedEventArgs e)
+            {
+                if (e.InvocationStateInfo.State is
+                    not PSInvocationState.Completed
+                    and not PSInvocationState.Failed
+                    and not PSInvocationState.Stopped)
+                {
+                    return;
+                }
+
+                PowerShell pwsh = (PowerShell)self;
+                pwsh.InvocationStateChanged -= handler;
+                pwsh.Dispose();
+            }
+
+            pwsh.InvocationStateChanged += handler;
         }
 
         public static Collection<TResult> InvokeAndClear<TResult>(this PowerShell pwsh, PSInvocationSettings invocationSettings = null)
@@ -107,8 +139,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             // We want to get the list hierarchy of execution policies
             // Calling the cmdlet is the simplest way to do that
             IReadOnlyList<PSObject> policies = pwsh
-                .AddCommand("Microsoft.PowerShell.Security\\Get-ExecutionPolicy")
-                    .AddParameter("-List")
+                .AddCommand(@"Microsoft.PowerShell.Security\Get-ExecutionPolicy")
+                .AddParameter("List")
                 .InvokeAndClear<PSObject>();
 
             // The policies come out in the following order:
@@ -124,14 +156,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             // set to expected values, so we must sift through those.
 
             ExecutionPolicy policyToSet = ExecutionPolicy.Bypass;
-            var currentUserPolicy = (ExecutionPolicy)policies[policies.Count - 2].Members["ExecutionPolicy"].Value;
+            ExecutionPolicy currentUserPolicy = (ExecutionPolicy)policies[policies.Count - 2].Members["ExecutionPolicy"].Value;
             if (currentUserPolicy != ExecutionPolicy.Undefined)
             {
                 policyToSet = currentUserPolicy;
             }
             else
             {
-                var localMachinePolicy = (ExecutionPolicy)policies[policies.Count - 1].Members["ExecutionPolicy"].Value;
+                ExecutionPolicy localMachinePolicy = (ExecutionPolicy)policies[policies.Count - 1].Members["ExecutionPolicy"].Value;
                 if (localMachinePolicy != ExecutionPolicy.Undefined)
                 {
                     policyToSet = localMachinePolicy;
@@ -149,7 +181,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             logger.LogTrace("Setting execution policy to {Policy}", policyToSet);
             try
             {
-                pwsh.AddCommand("Microsoft.PowerShell.Security\\Set-ExecutionPolicy")
+                pwsh.AddCommand(@"Microsoft.PowerShell.Security\Set-ExecutionPolicy")
                     .AddParameter("Scope", ExecutionPolicyScope.Process)
                     .AddParameter("ExecutionPolicy", policyToSet)
                     .AddParameter("Force")
@@ -168,9 +200,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             // `$PROFILE` variable. Its type is `String`.
             //
             // https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_profiles?view=powershell-7.1#the-profile-variable
-            var profileVariable = PSObject.AsPSObject(profilePaths.CurrentUserCurrentHost);
+            PSObject profileVariable = PSObject.AsPSObject(profilePaths.CurrentUserCurrentHost);
 
-            var psCommand = new PSCommand()
+            PSCommand psCommand = new PSCommand()
                 .AddProfileLoadIfExists(profileVariable, nameof(profilePaths.AllUsersAllHosts), profilePaths.AllUsersAllHosts)
                 .AddProfileLoadIfExists(profileVariable, nameof(profilePaths.AllUsersCurrentHost), profilePaths.AllUsersCurrentHost)
                 .AddProfileLoadIfExists(profileVariable, nameof(profilePaths.CurrentUserAllHosts), profilePaths.CurrentUserAllHosts)
@@ -179,21 +211,26 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             // NOTE: This must be set before the profiles are loaded.
             pwsh.Runspace.SessionStateProxy.SetVariable("PROFILE", profileVariable);
 
-            pwsh.InvokeCommand(psCommand);
+            // NOTE: Because it's possible there are no profiles defined, we might have an empty
+            // command. Since this is being executed directly, we can't rely on `ThrowOnError =
+            // false` to avoid an exception here. Instead, we must just not execute it.
+            if (psCommand.Commands.Count > 0)
+            {
+                pwsh.InvokeCommand(psCommand);
+            }
         }
 
         public static void ImportModule(this PowerShell pwsh, string moduleNameOrPath)
         {
-            pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
-                .AddParameter("-Name", moduleNameOrPath)
+            pwsh.AddCommand(@"Microsoft.PowerShell.Core\Import-Module")
+                .AddParameter("Name", moduleNameOrPath)
                 .InvokeAndClear();
         }
 
         public static string GetErrorString(this PowerShell pwsh)
         {
-            var sb = new StringBuilder(capacity: 1024)
-                .Append("Execution of the following command(s) completed with errors:")
-                .AppendLine()
+            StringBuilder sb = new StringBuilder(capacity: 1024)
+                .AppendLine("Execution of the following command(s) completed with errors:")
                 .AppendLine()
                 .Append(pwsh.Commands.GetInvocationText());
 
@@ -211,15 +248,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         {
             sb.Append("Error #").Append(errorIndex).Append(':').AppendLine()
                 .Append(error).AppendLine()
-                .Append("ScriptStackTrace:").AppendLine()
-                .Append(error.ScriptStackTrace ?? "<null>").AppendLine()
-                .Append("Exception:").AppendLine()
+                .AppendLine("ScriptStackTrace:")
+                .AppendLine(error.ScriptStackTrace ?? "<null>")
+                .AppendLine("Exception:")
                 .Append("    ").Append(error.Exception.ToString() ?? "<null>");
 
             Exception innerException = error.Exception?.InnerException;
             while (innerException != null)
             {
-                sb.Append("InnerException:").AppendLine()
+                sb.AppendLine("InnerException:")
                     .Append("    ").Append(innerException);
                 innerException = innerException.InnerException;
             }

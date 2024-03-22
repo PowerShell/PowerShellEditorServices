@@ -4,7 +4,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -16,26 +15,30 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    class PsesReferencesHandler : ReferencesHandlerBase
+    internal class PsesReferencesHandler : ReferencesHandlerBase
     {
-        private readonly ILogger _logger;
+        private static readonly LocationContainer s_emptyLocationContainer = new();
         private readonly SymbolsService _symbolsService;
         private readonly WorkspaceService _workspaceService;
 
-        public PsesReferencesHandler(ILoggerFactory factory, SymbolsService symbolsService, WorkspaceService workspaceService)
+        public PsesReferencesHandler(SymbolsService symbolsService, WorkspaceService workspaceService)
         {
-            _logger = factory.CreateLogger<PsesReferencesHandler>();
             _symbolsService = symbolsService;
             _workspaceService = workspaceService;
         }
 
-        protected override ReferenceRegistrationOptions CreateRegistrationOptions(ReferenceCapability capability, ClientCapabilities clientCapabilities) => new ReferenceRegistrationOptions
+        protected override ReferenceRegistrationOptions CreateRegistrationOptions(ReferenceCapability capability, ClientCapabilities clientCapabilities) => new()
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector
         };
 
-        public async override Task<LocationContainer> Handle(ReferenceParams request, CancellationToken cancellationToken)
+        public override async Task<LocationContainer> Handle(ReferenceParams request, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return s_emptyLocationContainer;
+            }
+
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
 
             SymbolReference foundSymbol =
@@ -44,44 +47,31 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     request.Position.Line + 1,
                     request.Position.Character + 1);
 
-            List<SymbolReference> referencesResult =
-                await _symbolsService.FindReferencesOfSymbol(
-                    foundSymbol,
-                    _workspaceService.ExpandScriptReferences(scriptFile),
-                    _workspaceService).ConfigureAwait(false);
-
-            var locations = new List<Location>();
-
-            if (referencesResult != null)
+            List<Location> locations = new();
+            foreach (SymbolReference foundReference in await _symbolsService.ScanForReferencesOfSymbolAsync(
+                    foundSymbol, cancellationToken).ConfigureAwait(false))
             {
-                foreach (SymbolReference foundReference in referencesResult)
+                if (cancellationToken.IsCancellationRequested)
                 {
-                    locations.Add(new Location
-                    {
-                        Uri = DocumentUri.From(foundReference.FilePath),
-                        Range = GetRangeFromScriptRegion(foundReference.ScriptRegion)
-                    });
+                    break;
                 }
+
+                // Respect the request's setting to include declarations.
+                if (!request.Context.IncludeDeclaration && foundReference.IsDeclaration)
+                {
+                    continue;
+                }
+
+                locations.Add(new Location
+                {
+                    Uri = DocumentUri.From(foundReference.FilePath),
+                    Range = foundReference.NameRegion.ToRange()
+                });
             }
 
-            return new LocationContainer(locations);
-        }
-
-        private static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)
-        {
-            return new Range
-            {
-                Start = new Position
-                {
-                    Line = scriptRegion.StartLineNumber - 1,
-                    Character = scriptRegion.StartColumnNumber - 1
-                },
-                End = new Position
-                {
-                    Line = scriptRegion.EndLineNumber - 1,
-                    Character = scriptRegion.EndColumnNumber - 1
-                }
-            };
+            return locations.Count == 0
+                ? s_emptyLocationContainer
+                : locations;
         }
     }
 }

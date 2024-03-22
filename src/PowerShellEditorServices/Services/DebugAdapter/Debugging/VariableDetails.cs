@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -55,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// </param>
         public VariableDetails(PSObject psVariableObject)
             : this(
-                  DollarPrefix + psVariableObject.Properties["Name"].Value as string,
+                  DollarPrefix + psVariableObject.Properties["Name"].Value,
                   psVariableObject.Properties["Value"].Value)
         {
         }
@@ -68,7 +68,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// The PSPropertyInfo instance from which variable details will be obtained.
         /// </param>
         public VariableDetails(PSPropertyInfo psProperty)
-            : this(psProperty.Name, psProperty.Value)
+            : this(psProperty.Name, SafeGetValue(psProperty))
         {
         }
 
@@ -80,15 +80,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <param name="value">The variable's value.</param>
         public VariableDetails(string name, object value)
         {
-            this.ValueObject = value;
+            ValueObject = value;
 
-            this.Id = -1; // Not been assigned a variable reference id yet
-            this.Name = name;
-            this.IsExpandable = GetIsExpandable(value);
+            Id = -1; // Not been assigned a variable reference id yet
+            Name = name;
+            IsExpandable = GetIsExpandable(value);
 
-            string typeName;
-            this.ValueString = GetValueStringAndType(value, this.IsExpandable, out typeName);
-            this.Type = typeName;
+            ValueString = GetValueStringAndType(value, IsExpandable, out string typeName);
+            Type = typeName;
         }
 
         #endregion
@@ -99,31 +98,34 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// If this variable instance is expandable, this method returns the
         /// details of its children.  Otherwise it returns an empty array.
         /// </summary>
-        /// <returns></returns>
         public override VariableDetailsBase[] GetChildren(ILogger logger)
         {
-            VariableDetails[] childVariables = null;
-
-            if (this.IsExpandable)
+            if (IsExpandable)
             {
-                if (this.cachedChildren == null)
-                {
-                    this.cachedChildren = GetChildren(this.ValueObject, logger);
-                }
-
-                return this.cachedChildren;
-            }
-            else
-            {
-                childVariables = Array.Empty<VariableDetails>();
+                cachedChildren ??= GetChildren(ValueObject, logger);
+                return cachedChildren;
             }
 
-            return childVariables;
+            return Array.Empty<VariableDetails>();
         }
 
         #endregion
 
         #region Private Methods
+
+        private static object SafeGetValue(PSPropertyInfo psProperty)
+        {
+            try
+            {
+                return psProperty.Value;
+            }
+            catch (GetValueInvocationException ex)
+            {
+                // Sometimes we can't get the value, like ExitCode, for reasons beyond our control,
+                // so just return the message from the exception that arises.
+                return new UnableToRetrievePropertyMessage { Name = psProperty.Name, Message = ex.Message };
+            }
+        }
 
         private static bool GetIsExpandable(object valueObject)
         {
@@ -133,31 +135,25 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             }
 
             // If a PSObject, unwrap it
-            var psobject = valueObject as PSObject;
-            if (psobject != null)
+            if (valueObject is PSObject psobject)
             {
                 valueObject = psobject.BaseObject;
             }
 
-            Type valueType =
-                valueObject != null ?
-                    valueObject.GetType() :
-                    null;
-
+            Type valueType = valueObject?.GetType();
             TypeInfo valueTypeInfo = valueType.GetTypeInfo();
 
             return
                 valueObject != null &&
                 !valueTypeInfo.IsPrimitive &&
                 !valueTypeInfo.IsEnum && // Enums don't have any properties
-                !(valueObject is string) && // Strings get treated as IEnumerables
-                !(valueObject is decimal) &&
-                !(valueObject is UnableToRetrievePropertyMessage);
+                valueObject is not string && // Strings get treated as IEnumerables
+                valueObject is not decimal &&
+                valueObject is not UnableToRetrievePropertyMessage;
         }
 
         private static string GetValueStringAndType(object value, bool isExpandable, out string typeName)
         {
-            string valueString = null;
             typeName = null;
 
             if (value == null)
@@ -171,13 +167,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             // This is the type format PowerShell users expect and will appear when you hover a variable name
             typeName = '[' + objType.FullName + ']';
 
-            if (value is bool)
+            string valueString;
+            if (value is bool x)
             {
                 // Set to identifier recognized by PowerShell to make setVariable from the debug UI more natural.
-                valueString = (bool)value ? "$true" : "$false";
+                valueString = x ? "$true" : "$false";
 
                 // We need to use this "magic value" to highlight in vscode properly
-                // These "magic values" are analagous to TypeScript and are visible in VSCode here:
+                // These "magic values" are analogous to TypeScript and are visible in VSCode here:
                 // https://github.com/microsoft/vscode/blob/57ca9b99d5b6a59f2d2e0f082ae186559f45f1d8/src/vs/workbench/contrib/debug/browser/baseDebugView.ts#L68-L78
                 // NOTE: we don't do numbers and strings since they (so far) seem to get detected properly by
                 // serialization, and the original .NET type can be preserved so it shows up in the variable name
@@ -186,17 +183,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             }
             else if (isExpandable)
             {
+                // For DictionaryEntry - display the key/value as the value.
                 // Get the "value" for an expandable object.
-                if (value is DictionaryEntry)
+                if (value is DictionaryEntry entry)
                 {
-                    // For DictionaryEntry - display the key/value as the value.
-                    var entry = (DictionaryEntry)value;
                     valueString = GetValueStringAndType(entry.Value, GetIsExpandable(entry.Value), out typeName);
                 }
                 else
                 {
                     string valueToString = value.SafeToString();
-                    if (valueToString == null || valueToString.Equals(objType.ToString()))
+                    if (valueToString?.Equals(objType.ToString()) != false)
                     {
                         // If the ToString() matches the type name or is null, then display the type
                         // name in PowerShell format.
@@ -205,15 +201,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                         // For arrays and ICollection, display the number of contained items.
                         if (value is Array)
                         {
-                            var arr = value as Array;
+                            Array arr = value as Array;
                             if (arr.Rank == 1)
                             {
                                 shortTypeName = InsertDimensionSize(shortTypeName, arr.Length);
                             }
                         }
-                        else if (value is ICollection)
+                        else if (value is ICollection collection)
                         {
-                            var collection = (ICollection)value;
                             shortTypeName = InsertDimensionSize(shortTypeName, collection.Count);
                         }
 
@@ -228,14 +223,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             else
             {
                 // Value is a scalar (not expandable). If it's a string, display it directly otherwise use SafeToString()
-                if (value is string)
-                {
-                    valueString = "\"" + value + "\"";
-                }
-                else
-                {
-                    valueString = value.SafeToString();
-                }
+                valueString = value is string ? "\"" + value + "\"" : value.SafeToString();
             }
 
             return valueString;
@@ -243,118 +231,103 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
         private static string InsertDimensionSize(string value, int dimensionSize)
         {
-            string result = value;
-
             int indexLastRBracket = value.LastIndexOf("]");
             if (indexLastRBracket > 0)
             {
-                result =
-                    value.Substring(0, indexLastRBracket) +
+                return value.Substring(0, indexLastRBracket) +
                     dimensionSize +
                     value.Substring(indexLastRBracket);
             }
-            else
-            {
-                // Types like ArrayList don't use [] in type name so
-                // display value like so -  [ArrayList: 5]
-                result = value + ": " + dimensionSize;
-            }
-
-            return result;
+            // Types like ArrayList don't use [] in type name so
+            // display value like so -  [ArrayList: 5]
+            return value + ": " + dimensionSize;
         }
 
-        private VariableDetails[] GetChildren(object obj, ILogger logger)
+        private static VariableDetails[] GetChildren(object obj, ILogger logger)
         {
-            List<VariableDetails> childVariables = new List<VariableDetails>();
+            List<VariableDetails> childVariables = new();
 
             if (obj == null)
             {
                 return childVariables.ToArray();
             }
 
-            try
-            {
-                PSObject psObject = obj as PSObject;
+            // NOTE: Variable expansion now takes place on the pipeline thread as an async delegate,
+            // so expansion of children that cause PowerShell script code to execute should
+            // generally work. However, we might need more error handling.
+            PSObject psObject = obj as PSObject;
 
-                if ((psObject != null) &&
-                    (psObject.TypeNames[0] == typeof(PSCustomObject).ToString()))
+            if ((psObject != null) &&
+                (psObject.TypeNames[0] == typeof(PSCustomObject).ToString()))
+            {
+                // PowerShell PSCustomObject's properties are completely defined by the ETS type system.
+                logger.LogDebug("PSObject was a PSCustomObject");
+                childVariables.AddRange(
+                    psObject
+                        .Properties
+                        .Select(p => new VariableDetails(p)));
+            }
+            else
+            {
+                // If a PSObject other than a PSCustomObject, unwrap it.
+                if (psObject != null)
                 {
-                    // PowerShell PSCustomObject's properties are completely defined by the ETS type system.
+                    // First add the PSObject's ETS properties
+                    logger.LogDebug("PSObject was something else, first getting ETS properties");
                     childVariables.AddRange(
                         psObject
                             .Properties
+                            // Here we check the object's MemberType against the `Properties`
+                            // bit-mask to determine if this is a property. Hence the selection
+                            // will only include properties.
+                            .Where(p => (PSMemberTypes.Properties & p.MemberType) is not 0)
                             .Select(p => new VariableDetails(p)));
+
+                    obj = psObject.BaseObject;
                 }
-                else
+
+                // We're in the realm of regular, unwrapped .NET objects
+                if (obj is IDictionary dictionary)
                 {
-                    // If a PSObject other than a PSCustomObject, unwrap it.
-                    if (psObject != null)
+                    logger.LogDebug("PSObject was an IDictionary");
+                    // Buckle up kids, this is a bit weird.  We could not use the LINQ
+                    // operator OfType<DictionaryEntry>.  Even though R# will squiggle the
+                    // "foreach" keyword below and offer to convert to a LINQ-expression - DON'T DO IT!
+                    // The reason is that LINQ extension methods work with objects of type
+                    // IEnumerable.  Objects of type Dictionary<,>, respond to iteration via
+                    // IEnumerable by returning KeyValuePair<,> objects.  Unfortunately non-generic
+                    // dictionaries like HashTable return DictionaryEntry objects.
+                    // It turns out that iteration via C#'s foreach loop, operates on the variable's
+                    // type which in this case is IDictionary.  IDictionary was designed to always
+                    // return DictionaryEntry objects upon iteration and the Dictionary<,> implementation
+                    // honors that when the object is reinterpreted as an IDictionary object.
+                    // FYI, a test case for this is to open $PSBoundParameters when debugging a
+                    // function that defines parameters and has been passed parameters.
+                    // If you open the $PSBoundParameters variable node in this scenario and see nothing,
+                    // this code is broken.
+                    foreach (DictionaryEntry entry in dictionary)
                     {
-                        // First add the PSObject's ETS propeties
-                        childVariables.AddRange(
-                            psObject
-                                .Properties
-                                // Here we check the object's MemberType against the `Properties`
-                                // bit-mask to determine if this is a property. Hence the selection
-                                // will only include properties.
-                                .Where(p => (PSMemberTypes.Properties & p.MemberType) is not 0)
-                                .Select(p => new VariableDetails(p)));
-
-                        obj = psObject.BaseObject;
+                        childVariables.Add(
+                            new VariableDetails(
+                                "[" + entry.Key + "]",
+                                entry));
                     }
-
-                    IDictionary dictionary = obj as IDictionary;
-                    IEnumerable enumerable = obj as IEnumerable;
-
-                    // We're in the realm of regular, unwrapped .NET objects
-                    if (dictionary != null)
-                    {
-                        // Buckle up kids, this is a bit weird.  We could not use the LINQ
-                        // operator OfType<DictionaryEntry>.  Even though R# will squiggle the
-                        // "foreach" keyword below and offer to convert to a LINQ-expression - DON'T DO IT!
-                        // The reason is that LINQ extension methods work with objects of type
-                        // IEnumerable.  Objects of type Dictionary<,>, respond to iteration via
-                        // IEnumerable by returning KeyValuePair<,> objects.  Unfortunately non-generic
-                        // dictionaries like HashTable return DictionaryEntry objects.
-                        // It turns out that iteration via C#'s foreach loop, operates on the variable's
-                        // type which in this case is IDictionary.  IDictionary was designed to always
-                        // return DictionaryEntry objects upon iteration and the Dictionary<,> implementation
-                        // honors that when the object is reintepreted as an IDictionary object.
-                        // FYI, a test case for this is to open $PSBoundParameters when debugging a
-                        // function that defines parameters and has been passed parameters.
-                        // If you open the $PSBoundParameters variable node in this scenario and see nothing,
-                        // this code is broken.
-                        foreach (DictionaryEntry entry in dictionary)
-                        {
-                            childVariables.Add(
-                                new VariableDetails(
-                                    "[" + entry.Key + "]",
-                                    entry));
-                        }
-                    }
-                    else if (enumerable != null && !(obj is string))
-                    {
-                        int i = 0;
-                        foreach (var item in enumerable)
-                        {
-                            childVariables.Add(
-                                new VariableDetails(
-                                    "[" + i++ + "]",
-                                    item));
-                        }
-                    }
-
-                    AddDotNetProperties(obj, childVariables);
                 }
-            }
-            catch (GetValueInvocationException ex)
-            {
-                // This exception occurs when accessing the value of a
-                // variable causes a script to be executed.  Right now
-                // we aren't loading children on the pipeline thread so
-                // this causes an exception to be raised.  In this case,
-                // just return an empty list of children.
-                logger.LogWarning($"Failed to get properties of variable {this.Name}, value invocation was attempted: {ex.Message}");
+                else if (obj is IEnumerable enumerable and not string)
+                {
+                    logger.LogDebug("PSObject was an IEnumerable");
+                    int i = 0;
+                    foreach (object item in enumerable)
+                    {
+                        childVariables.Add(
+                            new VariableDetails(
+                                "[" + i++ + "]",
+                                item));
+                    }
+                }
+
+                logger.LogDebug("Adding .NET properties to PSObject");
+                AddDotNetProperties(obj, childVariables);
             }
 
             return childVariables.ToArray();
@@ -372,9 +345,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 return;
             }
 
-            var properties = objectType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-            foreach (var property in properties)
+            // Search all the public instance properties and add those missing.
+            foreach (PropertyInfo property in objectType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
                 // Don't display indexer properties, it causes an exception anyway.
                 if (property.GetIndexParameters().Length > 0)
@@ -384,10 +356,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
                 try
                 {
-                    childVariables.Add(
-                        new VariableDetails(
-                            property.Name,
-                            property.GetValue(obj)));
+                    // Only add unique properties because we may have already added some.
+                    if (!childVariables.Exists(p => p.Name == property.Name))
+                    {
+                        childVariables.Add(new VariableDetails(property.Name, property.GetValue(obj)));
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -401,27 +374,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                     childVariables.Add(
                         new VariableDetails(
                             property.Name,
-                            new UnableToRetrievePropertyMessage(
-                                "Error retrieving property - " + ex.GetType().Name)));
+                            new UnableToRetrievePropertyMessage { Name = property.Name, Message = ex.Message }));
                 }
             }
         }
 
         #endregion
 
-        private struct UnableToRetrievePropertyMessage
+        private record UnableToRetrievePropertyMessage
         {
-            public UnableToRetrievePropertyMessage(string message)
-            {
-                this.Message = message;
-            }
+            public string Name { get; init; }
+            public string Message { get; init; }
 
-            public string Message { get; }
-
-            public override string ToString()
-            {
-                return "<" + Message + ">";
-            }
+            public override string ToString() => $"Error retrieving property '${Name}': ${Message}";
         }
     }
 
@@ -434,8 +399,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
         public VariableDetailsRawView(object value) : base(RawViewName, value)
         {
-            this.ValueString = "";
-            this.Type = "";
+            ValueString = "";
+            Type = "";
         }
 
         public override VariableDetailsBase[] GetChildren(ILogger logger)

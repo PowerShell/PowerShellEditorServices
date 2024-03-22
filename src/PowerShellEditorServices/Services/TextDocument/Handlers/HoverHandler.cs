@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspaceService;
         }
 
-        protected override HoverRegistrationOptions CreateRegistrationOptions(HoverCapability capability, ClientCapabilities clientCapabilities) => new HoverRegistrationOptions
+        protected override HoverRegistrationOptions CreateRegistrationOptions(HoverCapability capability, ClientCapabilities clientCapabilities) => new()
         {
             DocumentSelector = LspUtils.PowerShellDocumentSelector
         };
@@ -40,7 +40,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                _logger.LogDebug("Hover request canceled for file: {0}", request.TextDocument.Uri);
+                _logger.LogDebug("Hover request canceled for file: {Uri}", request.TextDocument.Uri);
                 return null;
             }
 
@@ -50,44 +50,28 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 await _symbolsService.FindSymbolDetailsAtLocationAsync(
                         scriptFile,
                         request.Position.Line + 1,
-                        request.Position.Character + 1).ConfigureAwait(false);
+                        request.Position.Character + 1,
+                        cancellationToken).ConfigureAwait(false);
 
-            if (symbolDetails == null)
+            if (symbolDetails is null)
             {
                 return null;
             }
 
-            List<MarkedString> symbolInfo = new List<MarkedString>();
-            symbolInfo.Add(new MarkedString("PowerShell", symbolDetails.DisplayString));
+            List<MarkedString> symbolInfo = new()
+            {
+                new MarkedString("PowerShell", symbolDetails.SymbolReference.Name)
+            };
 
             if (!string.IsNullOrEmpty(symbolDetails.Documentation))
             {
                 symbolInfo.Add(new MarkedString("markdown", symbolDetails.Documentation));
             }
 
-            Range symbolRange = GetRangeFromScriptRegion(symbolDetails.SymbolReference.ScriptRegion);
-
             return new Hover
             {
                 Contents = new MarkedStringsOrMarkupContent(symbolInfo),
-                Range = symbolRange
-            };
-        }
-
-        private static Range GetRangeFromScriptRegion(ScriptRegion scriptRegion)
-        {
-            return new Range
-            {
-                Start = new Position
-                {
-                    Line = scriptRegion.StartLineNumber - 1,
-                    Character = scriptRegion.StartColumnNumber - 1
-                },
-                End = new Position
-                {
-                    Line = scriptRegion.EndLineNumber - 1,
-                    Character = scriptRegion.EndColumnNumber - 1
-                }
+                Range = symbolDetails.SymbolReference.NameRegion.ToRange()
             };
         }
     }

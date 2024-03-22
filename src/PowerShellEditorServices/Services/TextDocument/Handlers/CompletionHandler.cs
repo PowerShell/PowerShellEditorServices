@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Management.Automation;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -21,21 +23,15 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
-    // TODO: Use ABCs.
-    internal class PsesCompletionHandler : ICompletionHandler, ICompletionResolveHandler
+    internal record CompletionResults(bool IsIncomplete, IReadOnlyList<CompletionItem> Matches);
+
+    internal class PsesCompletionHandler : CompletionHandlerBase
     {
-        const int DefaultWaitTimeoutMilliseconds = 5000;
         private readonly ILogger _logger;
         private readonly IRunspaceContext _runspaceContext;
         private readonly IInternalPowerShellExecutionService _executionService;
         private readonly WorkspaceService _workspaceService;
-        private CompletionResults _mostRecentCompletions;
-        private int _mostRecentRequestLine;
-        private int _mostRecentRequestOffest;
-        private string _mostRecentRequestFile;
-        private CompletionCapability _capability;
-        private readonly Guid _id = Guid.NewGuid();
-        Guid ICanBeIdentifiedHandler.Id => _id;
+        private CompletionCapability _completionCapability;
 
         public PsesCompletionHandler(
             ILoggerFactory factory,
@@ -49,88 +45,141 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _workspaceService = workspaceService;
         }
 
-        public CompletionRegistrationOptions GetRegistrationOptions(CompletionCapability capability, ClientCapabilities clientCapabilities) => new CompletionRegistrationOptions
+        protected override CompletionRegistrationOptions CreateRegistrationOptions(CompletionCapability capability, ClientCapabilities clientCapabilities)
         {
-            DocumentSelector = LspUtils.PowerShellDocumentSelector,
-            ResolveProvider = true,
-            TriggerCharacters = new[] { ".", "-", ":", "\\", "$" }
-        };
+            _completionCapability = capability;
+            return new CompletionRegistrationOptions()
+            {
+                // TODO: What do we do with the arguments?
+                DocumentSelector = LspUtils.PowerShellDocumentSelector,
+                ResolveProvider = true,
+                TriggerCharacters = new[] { ".", "-", ":", "\\", "$", " " },
+            };
+        }
 
-        public async Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
+        public bool SupportsSnippets => _completionCapability?.CompletionItem?.SnippetSupport is true;
+
+        public bool SupportsCommitCharacters => _completionCapability?.CompletionItem?.CommitCharactersSupport is true;
+
+        public bool SupportsMarkdown => _completionCapability?.CompletionItem?.DocumentationFormat?.Contains(MarkupKind.Markdown) is true;
+
+        public override async Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
         {
             int cursorLine = request.Position.Line + 1;
             int cursorColumn = request.Position.Character + 1;
 
             ScriptFile scriptFile = _workspaceService.GetFile(request.TextDocument.Uri);
-
-            if (cancellationToken.IsCancellationRequested)
+            try
             {
-                _logger.LogDebug("Completion request canceled for file: {0}", request.TextDocument.Uri);
-                return Array.Empty<CompletionItem>();
-            }
-
-            CompletionResults completionResults =
-                await GetCompletionsInFileAsync(
+                (bool isIncomplete, IReadOnlyList<CompletionItem> completionResults) = await GetCompletionsInFileAsync(
                     scriptFile,
                     cursorLine,
-                    cursorColumn).ConfigureAwait(false);
+                    cursorColumn,
+                    cancellationToken).ConfigureAwait(false);
 
-            if (completionResults == null)
-            {
-                return Array.Empty<CompletionItem>();
+                // Treat completions triggered by space as incomplete so that `gci `
+                // and then typing `-` doesn't just filter the list of parameter values
+                // (typically files) returned by the space completion
+                return new CompletionList(completionResults, isIncomplete || request?.Context?.TriggerCharacter is " ");
             }
-
-            CompletionItem[] completionItems = new CompletionItem[completionResults.Completions.Length];
-            for (int i = 0; i < completionItems.Length; i++)
+            // Ignore canceled requests (logging will pollute the output).
+            catch (TaskCanceledException)
             {
-                completionItems[i] = CreateCompletionItem(completionResults.Completions[i], completionResults.ReplacedRange, i + 1);
+                return new CompletionList(isIncomplete: true);
             }
-
-            return completionItems;
-        }
-
-        public static bool CanResolve(CompletionItem value)
-        {
-            return value.Kind == CompletionItemKind.Function;
+            // We can't do anything about completions failing.
+            catch (Exception e)
+            {
+                _logger.LogWarning(e, "Exception occurred while running handling completion request");
+                return new CompletionList(isIncomplete: true);
+            }
         }
 
         // Handler for "completionItem/resolve". In VSCode this is fired when a completion item is highlighted in the completion list.
-        public async Task<CompletionItem> Handle(CompletionItem request, CancellationToken cancellationToken)
+        public override async Task<CompletionItem> Handle(CompletionItem request, CancellationToken cancellationToken)
         {
-            // We currently only support this request for anything that returns a CommandInfo: functions, cmdlets, aliases.
-            if (request.Kind != CompletionItemKind.Function)
+            if (SupportsMarkdown)
             {
-                return request;
+                if (request.Kind is CompletionItemKind.Method)
+                {
+                    string documentation = FormatUtils.GetMethodDocumentation(
+                        _logger,
+                        request.Data.ToString(),
+                        out MarkupKind kind);
+
+                    return request with
+                    {
+                        Documentation = new MarkupContent()
+                        {
+                            Kind = kind,
+                            Value = documentation,
+                        },
+                    };
+                }
+
+                if (request.Kind is CompletionItemKind.Class or CompletionItemKind.TypeParameter or CompletionItemKind.Enum)
+                {
+                    string documentation = FormatUtils.GetTypeDocumentation(
+                        _logger,
+                        request.Detail,
+                        out MarkupKind kind);
+
+                    return request with
+                    {
+                        Detail = null,
+                        Documentation = new MarkupContent()
+                        {
+                            Kind = kind,
+                            Value = documentation,
+                        },
+                    };
+                }
+
+                if (request.Kind is CompletionItemKind.EnumMember or CompletionItemKind.Property or CompletionItemKind.Field)
+                {
+                    string documentation = FormatUtils.GetPropertyDocumentation(
+                        _logger,
+                        request.Data.ToString(),
+                        out MarkupKind kind);
+
+                    return request with
+                    {
+                        Documentation = new MarkupContent()
+                        {
+                            Kind = kind,
+                            Value = documentation,
+                        },
+                    };
+                }
             }
 
-            // No details means the module hasn't been imported yet and Intellisense shouldn't import the module to get this info.
-            if (request.Detail is null)
+            // We currently only support this request for anything that returns a CommandInfo:
+            // functions, cmdlets, aliases. No detail means the module hasn't been imported yet and
+            // IntelliSense shouldn't import the module to get this info.
+            if (request.Kind is not CompletionItemKind.Function || request.Detail is null)
             {
                 return request;
             }
 
             // Get the documentation for the function
-            CommandInfo commandInfo =
-                await CommandHelpers.GetCommandInfoAsync(
-                    request.Label,
-                    _runspaceContext.CurrentRunspace,
-                    _executionService).ConfigureAwait(false);
+            CommandInfo commandInfo = await CommandHelpers.GetCommandInfoAsync(
+                request.Label,
+                _runspaceContext.CurrentRunspace,
+                _executionService,
+                cancellationToken).ConfigureAwait(false);
 
-            if (commandInfo != null)
+            if (commandInfo is not null)
             {
-                request = request with
+                return request with
                 {
-                    Documentation = await CommandHelpers.GetCommandSynopsisAsync(commandInfo, _executionService).ConfigureAwait(false)
+                    Documentation = await CommandHelpers.GetCommandSynopsisAsync(
+                        commandInfo,
+                        _executionService,
+                        cancellationToken).ConfigureAwait(false)
                 };
             }
 
-            // Send back the updated CompletionItem
             return request;
-        }
-
-        public void SetCapability(CompletionCapability capability, ClientCapabilities clientCapabilities)
-        {
-            _capability = capability;
         }
 
         /// <summary>
@@ -146,220 +195,304 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         /// <param name="columnNumber">
         /// The 1-based column number at which completions will be gathered.
         /// </param>
+        /// <param name="cancellationToken">The token used to cancel this.</param>
         /// <returns>
         /// A CommandCompletion instance completions for the identified statement.
         /// </returns>
-        public async Task<CompletionResults> GetCompletionsInFileAsync(
+        internal async Task<CompletionResults> GetCompletionsInFileAsync(
             ScriptFile scriptFile,
             int lineNumber,
-            int columnNumber)
+            int columnNumber,
+            CancellationToken cancellationToken)
         {
             Validate.IsNotNull(nameof(scriptFile), scriptFile);
 
-            // Get the offset at the specified position.  This method
-            // will also validate the given position.
-            int fileOffset =
-                scriptFile.GetOffsetAtPosition(
-                    lineNumber,
-                    columnNumber);
+            CommandCompletion result = await AstOperations.GetCompletionsAsync(
+                scriptFile.ScriptAst,
+                scriptFile.ScriptTokens,
+                scriptFile.GetOffsetAtPosition(lineNumber, columnNumber),
+                _executionService,
+                _logger,
+                cancellationToken).ConfigureAwait(false);
 
-            CommandCompletion commandCompletion = null;
-            using (var cts = new CancellationTokenSource(DefaultWaitTimeoutMilliseconds))
+            if (result.CompletionMatches.Count == 0)
             {
-                commandCompletion =
-                    await AstOperations.GetCompletionsAsync(
-                        scriptFile.ScriptAst,
-                        scriptFile.ScriptTokens,
-                        fileOffset,
-                        _executionService,
-                        _logger,
-                        cts.Token).ConfigureAwait(false);
+                return new CompletionResults(IsIncomplete: true, Array.Empty<CompletionItem>());
             }
 
-            if (commandCompletion == null)
+            BufferRange replacedRange = scriptFile.GetRangeBetweenOffsets(
+                result.ReplacementIndex,
+                result.ReplacementIndex + result.ReplacementLength);
+
+            string textToBeReplaced = string.Empty;
+            if (result.ReplacementLength is not 0)
             {
-                return new CompletionResults();
+                textToBeReplaced = scriptFile.Contents.Substring(
+                    result.ReplacementIndex,
+                    result.ReplacementLength);
             }
 
-            try
+            bool isIncomplete = false;
+            // Create OmniSharp CompletionItems from PowerShell CompletionResults. We use a for loop
+            // because the index is used for sorting.
+            CompletionItem[] completionItems = new CompletionItem[result.CompletionMatches.Count];
+            for (int i = 0; i < result.CompletionMatches.Count; i++)
             {
-                CompletionResults completionResults =
-                    CompletionResults.Create(
-                        scriptFile,
-                        commandCompletion);
+                CompletionResult completionMatch = result.CompletionMatches[i];
 
-                // save state of most recent completion
-                _mostRecentCompletions = completionResults;
-                _mostRecentRequestFile = scriptFile.Id;
-                _mostRecentRequestLine = lineNumber;
-                _mostRecentRequestOffest = columnNumber;
+                // If a completion result is a variable scope like `$script:` we want to
+                // mark as incomplete so on typing `:` completion changes.
+                if (completionMatch.ResultType is CompletionResultType.Variable
+                    && completionMatch.CompletionText.EndsWith(":"))
+                {
+                    isIncomplete = true;
+                }
 
-                return completionResults;
+                completionItems[i] = CreateCompletionItem(
+                    result.CompletionMatches[i],
+                    replacedRange,
+                    i + 1,
+                    textToBeReplaced,
+                    scriptFile);
+
+                _logger.LogTrace("Created completion item: " + completionItems[i] + " with " + completionItems[i].TextEdit);
             }
-            catch (ArgumentException e)
-            {
-                // Bad completion results could return an invalid
-                // replacement range, catch that here
-                _logger.LogError(
-                    $"Caught exception while trying to create CompletionResults:\n\n{e.ToString()}");
 
-                return new CompletionResults();
-            }
+            return new CompletionResults(isIncomplete, completionItems);
         }
 
-        private static CompletionItem CreateCompletionItem(
-            CompletionDetails completionDetails,
+        internal CompletionItem CreateCompletionItem(
+            CompletionResult result,
             BufferRange completionRange,
-            int sortIndex)
+            int sortIndex,
+            string textToBeReplaced,
+            ScriptFile scriptFile)
         {
-            string detailString = null;
-            string documentationString = null;
-            string completionText = completionDetails.CompletionText;
-            InsertTextFormat insertTextFormat = InsertTextFormat.PlainText;
+            Validate.IsNotNull(nameof(result), result);
 
-            switch (completionDetails.CompletionType)
+            TextEdit textEdit = new()
             {
-                case CompletionType.Type:
-                case CompletionType.Namespace:
-                case CompletionType.ParameterValue:
-                case CompletionType.Method:
-                case CompletionType.Property:
-                    detailString = completionDetails.ToolTipText;
-                    break;
-                case CompletionType.Variable:
-                case CompletionType.ParameterName:
-                    // Look for type encoded in the tooltip for parameters and variables.
-                    // Display PowerShell type names in [] to be consistent with PowerShell syntax
-                    // and how the debugger displays type names.
-                    var matches = Regex.Matches(completionDetails.ToolTipText, @"^(\[.+\])");
-                    if ((matches.Count > 0) && (matches[0].Groups.Count > 1))
-                    {
-                        detailString = matches[0].Groups[1].Value;
-                    }
-                    // The comparison operators (-eq, -not, -gt, etc) are unfortunately fall into ParameterName
-                    // but they don't have a type associated to them. This allows those tooltips to show up.
-                    else if (!string.IsNullOrEmpty(completionDetails.ToolTipText))
-                    {
-                        detailString = completionDetails.ToolTipText;
-                    }
-                    break;
-                case CompletionType.Command:
-                    // For Commands, let's extract the resolved command or the path for an exe
-                    // from the ToolTipText - if there is any ToolTipText.
-                    if (completionDetails.ToolTipText != null)
-                    {
-                        // Fix for #240 - notepad++.exe in tooltip text caused regex parser to throw.
-                        string escapedToolTipText = Regex.Escape(completionDetails.ToolTipText);
-
-                        // Don't display ToolTipText if it is the same as the ListItemText.
-                        // Reject command syntax ToolTipText - it's too much to display as a detailString.
-                        if (!completionDetails.ListItemText.Equals(
-                                completionDetails.ToolTipText,
-                                StringComparison.OrdinalIgnoreCase) &&
-                            !Regex.IsMatch(completionDetails.ToolTipText,
-                                @"^\s*" + escapedToolTipText + @"\s+\["))
-                        {
-                            detailString = completionDetails.ToolTipText;
-                        }
-                    }
-
-                    break;
-                case CompletionType.Folder:
-                    // Insert a final "tab stop" as identified by $0 in the snippet provided for completion.
-                    // For folder paths, we take the path returned by PowerShell e.g. 'C:\Program Files' and insert
-                    // the tab stop marker before the closing quote char e.g. 'C:\Program Files$0'.
-                    // This causes the editing cursor to be placed *before* the final quote after completion,
-                    // which makes subsequent path completions work. See this part of the LSP spec for details:
-                    // https://microsoft.github.io/language-server-protocol/specification#textDocument_completion
-
-                    // Since we want to use a "tab stop" we need to escape a few things for Textmate to render properly.
-                    if (EndsWithQuote(completionText))
-                    {
-                        var sb = new StringBuilder(completionDetails.CompletionText)
-                            .Replace(@"\", @"\\")
-                            .Replace(@"}", @"\}")
-                            .Replace(@"$", @"\$");
-                        completionText = sb.Insert(sb.Length - 1, "$0").ToString();
-                        insertTextFormat = InsertTextFormat.Snippet;
-                    }
-
-                    break;
-            }
-
-            // Force the client to maintain the sort order in which the
-            // original completion results were returned. We just need to
-            // make sure the default order also be the lexicographical order
-            // which we do by prefixing the ListItemText with a leading 0's
-            // four digit index.
-            var sortText = $"{sortIndex:D4}{completionDetails.ListItemText}";
-
-            return new CompletionItem
-            {
-                InsertText = completionText,
-                InsertTextFormat = insertTextFormat,
-                Label = completionDetails.ListItemText,
-                Kind = MapCompletionKind(completionDetails.CompletionType),
-                Detail = detailString,
-                Documentation = documentationString,
-                SortText = sortText,
-                FilterText = completionDetails.CompletionText,
-                TextEdit = new TextEdit
+                NewText = result.CompletionText,
+                Range = new Range
                 {
-                    NewText = completionText,
-                    Range = new Range
+                    Start = new Position
                     {
-                        Start = new Position
-                        {
-                            Line = completionRange.Start.Line - 1,
-                            Character = completionRange.Start.Column - 1
-                        },
-                        End = new Position
-                        {
-                            Line = completionRange.End.Line - 1,
-                            Character = completionRange.End.Column - 1
-                        }
+                        Line = completionRange.Start.Line - 1,
+                        Character = completionRange.Start.Column - 1
+                    },
+                    End = new Position
+                    {
+                        Line = completionRange.End.Line - 1,
+                        Character = completionRange.End.Column - 1
                     }
                 }
             };
+
+            // Some tooltips may have newlines or whitespace for unknown reasons.
+            string detail = result.ToolTip?.Trim();
+
+            CompletionItem item = new()
+            {
+                Label = result.ListItemText,
+                Detail = result.ListItemText.Equals(detail, StringComparison.CurrentCulture)
+                    ? string.Empty : detail, // Don't repeat label.
+                // Retain PowerShell's sort order with the given index.
+                SortText = $"{sortIndex:D4}{result.ListItemText}",
+                FilterText = result.ResultType is CompletionResultType.Type
+                    ? GetTypeFilterText(textToBeReplaced, result.CompletionText)
+                    : result.CompletionText,
+                // Used instead of Label when TextEdit is unsupported
+                InsertText = result.CompletionText,
+                // Used instead of InsertText when possible
+                TextEdit = textEdit
+            };
+
+            return result.ResultType switch
+            {
+                CompletionResultType.Text => item with { Kind = CompletionItemKind.Text },
+                CompletionResultType.History => item with { Kind = CompletionItemKind.Reference },
+                CompletionResultType.Command => item with { Kind = CompletionItemKind.Function },
+                CompletionResultType.ProviderItem or CompletionResultType.ProviderContainer
+                    => CreateProviderItemCompletion(item, result, scriptFile, textToBeReplaced),
+                CompletionResultType.Property => item with
+                {
+                    Kind = CompletionItemKind.Property,
+                    Detail = SupportsMarkdown ? null : detail,
+                    Data = SupportsMarkdown ? detail : null,
+                    CommitCharacters = MaybeAddCommitCharacters("."),
+                },
+                CompletionResultType.Method => item with
+                {
+                    Kind = CompletionItemKind.Method,
+                    Data = item.Detail,
+                    Detail = SupportsMarkdown ? null : item.Detail,
+                },
+                CompletionResultType.ParameterName => TryExtractType(detail, out string type)
+                    ? item with { Kind = CompletionItemKind.Variable, Detail = type }
+                    // The comparison operators (-eq, -not, -gt, etc) unfortunately come across as
+                    // ParameterName types but they don't have a type associated to them, so we can
+                    // deduce it is an operator.
+                    : item with { Kind = CompletionItemKind.Operator },
+                CompletionResultType.ParameterValue => item with { Kind = CompletionItemKind.Value },
+                CompletionResultType.Variable => TryExtractType(detail, out string type)
+                    ? item with { Kind = CompletionItemKind.Variable, Detail = type }
+                    : item with { Kind = CompletionItemKind.Variable },
+                CompletionResultType.Namespace => item with { Kind = CompletionItemKind.Module },
+                CompletionResultType.Type => detail.StartsWith("Class ", StringComparison.CurrentCulture)
+                    // Custom classes come through as types but the PowerShell completion tooltip
+                    // will start with "Class ", so we can more accurately display its icon.
+                    ? item with { Kind = CompletionItemKind.Class, Detail = detail.Substring("Class ".Length) }
+                    : detail.StartsWith("Enum ", StringComparison.CurrentCulture)
+                        ? item with { Kind = CompletionItemKind.Enum, Detail = detail.Substring("Enum ".Length) }
+                        : item with { Kind = CompletionItemKind.TypeParameter },
+                CompletionResultType.Keyword or CompletionResultType.DynamicKeyword =>
+                    item with { Kind = CompletionItemKind.Keyword },
+                _ => throw new ArgumentOutOfRangeException(nameof(result))
+            };
         }
 
-        private static CompletionItemKind MapCompletionKind(CompletionType completionType)
+        private CompletionItem CreateProviderItemCompletion(
+            CompletionItem item,
+            CompletionResult result,
+            ScriptFile scriptFile,
+            string textToBeReplaced)
         {
-            switch (completionType)
+            // TODO: Work out a way to do this generally instead of special casing PSScriptRoot.
+            //
+            // This code relies on PowerShell/PowerShell#17376. Until that makes it into a release
+            // no matches will be returned anyway.
+            const string PSScriptRootVariable = "$PSScriptRoot";
+            string completionText = result.CompletionText;
+            if (textToBeReplaced.IndexOf(PSScriptRootVariable, StringComparison.OrdinalIgnoreCase) is int variableIndex and not -1
+                && System.IO.Path.GetDirectoryName(scriptFile.FilePath) is string scriptFolder and not ""
+                && completionText.IndexOf(scriptFolder, StringComparison.OrdinalIgnoreCase) is int pathIndex and not -1
+                && !scriptFile.IsInMemory)
             {
-                case CompletionType.Command:
-                    return CompletionItemKind.Function;
-
-                case CompletionType.Property:
-                    return CompletionItemKind.Property;
-
-                case CompletionType.Method:
-                    return CompletionItemKind.Method;
-
-                case CompletionType.Variable:
-                case CompletionType.ParameterName:
-                    return CompletionItemKind.Variable;
-
-                case CompletionType.File:
-                    return CompletionItemKind.File;
-
-                case CompletionType.Folder:
-                    return CompletionItemKind.Folder;
-
-                default:
-                    return CompletionItemKind.Text;
+                completionText = completionText
+                    .Remove(pathIndex, scriptFolder.Length)
+                    .Insert(variableIndex, textToBeReplaced.Substring(variableIndex, PSScriptRootVariable.Length));
             }
+
+            InsertTextFormat insertFormat;
+            TextEdit edit;
+            CompletionItemKind itemKind;
+            if (result.ResultType is CompletionResultType.ProviderContainer
+                && SupportsSnippets
+                && TryBuildSnippet(completionText, out string snippet))
+            {
+                edit = item.TextEdit.TextEdit with { NewText = snippet };
+                insertFormat = InsertTextFormat.Snippet;
+                itemKind = CompletionItemKind.Folder;
+            }
+            else
+            {
+                edit = item.TextEdit.TextEdit with { NewText = completionText };
+                insertFormat = default;
+                itemKind = CompletionItemKind.File;
+            }
+
+            return item with
+            {
+                Kind = itemKind,
+                TextEdit = edit,
+                InsertText = completionText,
+                FilterText = completionText,
+                InsertTextFormat = insertFormat,
+            };
         }
 
-        private static bool EndsWithQuote(string text)
+        private Container<string> MaybeAddCommitCharacters(params string[] characters)
+            => SupportsCommitCharacters ? new Container<string>(characters) : null;
+
+        private static string GetTypeFilterText(string textToBeReplaced, string completionText)
         {
-            if (string.IsNullOrEmpty(text))
+            // FilterText for a type name with using statements gets a little complicated. Consider
+            // this script:
+            //
+            // using namespace System.Management.Automation
+            // [System.Management.Automation.Tracing.]
+            //
+            // Since we're emitting an edit that replaces `System.Management.Automation.Tracing.` with
+            // `Tracing.NullWriter` (for example), we can't use CompletionText as the filter. If we
+            // do, we won't find any matches because it's trying to filter `Tracing.NullWriter` with
+            // `System.Management.Automation.Tracing.` which is too different. So we prepend each
+            // namespace that exists in our original text but does not in our completion text.
+            if (!textToBeReplaced.Contains('.'))
             {
-                return false;
+                return completionText;
             }
 
-            char lastChar = text[text.Length - 1];
-            return lastChar == '"' || lastChar == '\'';
+            string[] oldTypeParts = textToBeReplaced.Split('.');
+            string[] newTypeParts = completionText.Split('.');
+
+            StringBuilder newFilterText = new(completionText);
+
+            int newPartsIndex = newTypeParts.Length - 2;
+            for (int i = oldTypeParts.Length - 2; i >= 0; i--)
+            {
+                if (newPartsIndex is >= 0
+                    && newTypeParts[newPartsIndex].Equals(oldTypeParts[i], StringComparison.OrdinalIgnoreCase))
+                {
+                    newPartsIndex--;
+                    continue;
+                }
+
+                newFilterText.Insert(0, '.').Insert(0, oldTypeParts[i]);
+            }
+
+            return newFilterText.ToString();
+        }
+
+        private static readonly Regex s_typeRegex = new(@"^(\[.+\])", RegexOptions.Compiled);
+
+        /// <summary>
+        /// Look for type encoded in the tooltip for parameters and variables. Display PowerShell
+        /// type names in [] to be consistent with PowerShell syntax and how the debugger displays
+        /// type names.
+        /// </summary>
+        /// <param name="toolTipText"></param>
+        /// <param name="type"></param>
+        /// <returns>Whether or not the type was found.</returns>
+        private static bool TryExtractType(string toolTipText, out string type)
+        {
+            MatchCollection matches = s_typeRegex.Matches(toolTipText);
+            type = string.Empty;
+            if ((matches.Count > 0) && (matches[0].Groups.Count > 1))
+            {
+                type = matches[0].Groups[1].Value;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Insert a final "tab stop" as identified by $0 in the snippet provided for completion.
+        /// For folder paths, we take the path returned by PowerShell e.g. 'C:\Program Files' and
+        /// insert the tab stop marker before the closing quote char e.g. 'C:\Program Files$0'. This
+        /// causes the editing cursor to be placed *before* the final quote after completion, which
+        /// makes subsequent path completions work. See this part of the LSP spec for details:
+        /// https://microsoft.github.io/language-server-protocol/specification#textDocument_completion
+        /// </summary>
+        /// <param name="completionText"></param>
+        /// <param name="snippet"></param>
+        /// <returns>
+        /// Whether or not the completion ended with a quote and so was a snippet.
+        /// </returns>
+        private static bool TryBuildSnippet(string completionText, out string snippet)
+        {
+            snippet = string.Empty;
+            if (!string.IsNullOrEmpty(completionText)
+                && completionText[completionText.Length - 1] is '"' or '\'')
+            {
+                // Since we want to use a "tab stop" we need to escape a few things.
+                StringBuilder sb = new StringBuilder(completionText)
+                    .Replace(@"\", @"\\")
+                    .Replace("}", @"\}")
+                    .Replace("$", @"\$");
+                snippet = sb.Insert(sb.Length - 1, "$0").ToString();
+                return true;
+            }
+            return false;
         }
     }
 }
