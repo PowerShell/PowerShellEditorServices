@@ -256,115 +256,129 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             switch (node)
             {
                 case CommandAst commandAst:
-                    // Is the Target Variable a Parameter and is this commandAst the target function
-                    if (isParam && commandAst.GetCommandName()?.ToLower() == TargetFunction?.Name.ToLower())
-                    {
-                        // Check to see if this is a splatted call to the target function.
-                        Ast Splatted = null;
-                        foreach (Ast element in commandAst.CommandElements)
-                        {
-                            if (element is VariableExpressionAst varAst && varAst.Splatted)
-                            {
-                                Splatted = varAst;
-                                break;
-                            }
-                        }
-                        if (Splatted != null)
-                        {
-                            NewSplattedModification(Splatted);
-                        }
-                        else
-                        {
-                            // The Target Variable is a Parameter and the commandAst is the Target Function
-                            ShouldRename = true;
-                        }
-                    }
+                    ProcessCommandAst(commandAst);
                     break;
                 case CommandParameterAst commandParameterAst:
-
-                    if (commandParameterAst.ParameterName.ToLower() == OldName.ToLower())
-                    {
-                        if (commandParameterAst.Extent.StartLineNumber == StartLineNumber &&
-                            commandParameterAst.Extent.StartColumnNumber == StartColumnNumber)
-                        {
-                            ShouldRename = true;
-                        }
-
-                        if (TargetFunction != null && commandParameterAst.Parent is CommandAst commandAst &&
-                            commandAst.GetCommandName().ToLower() == TargetFunction.Name.ToLower() && isParam && ShouldRename)
-                        {
-                                TextChange Change = new()
-                                {
-                                    NewText = NewName.Contains("-") ? NewName : "-" + NewName,
-                                    StartLine = commandParameterAst.Extent.StartLineNumber - 1,
-                                    StartColumn = commandParameterAst.Extent.StartColumnNumber - 1,
-                                    EndLine = commandParameterAst.Extent.StartLineNumber - 1,
-                                    EndColumn = commandParameterAst.Extent.StartColumnNumber + OldName.Length,
-                                };
-                                Modifications.Add(Change);
-                        }
-                        else
-                        {
-                            ShouldRename = false;
-                        }
-                    }
+                    ProcessCommandParameterAst(commandParameterAst);
                     break;
                 case VariableExpressionAst variableExpressionAst:
-                    if (variableExpressionAst.VariablePath.UserPath.ToLower() == OldName.ToLower())
-                    {
-                        // Is this the Target Variable
-                        if (variableExpressionAst.Extent.StartColumnNumber == StartColumnNumber &&
-                        variableExpressionAst.Extent.StartLineNumber == StartLineNumber)
-                        {
-                            ShouldRename = true;
-                            TargetVariableAst = variableExpressionAst;
-                        }
-                        // Is this a Command Ast within scope
-                        else if (variableExpressionAst.Parent is CommandAst commandAst)
-                        {
-                            if (WithinTargetsScope(TargetVariableAst, commandAst))
-                            {
-                                ShouldRename = true;
-                            }
-                        }
-                        // Is this a Variable Assignment thats not within scope
-                        else if (variableExpressionAst.Parent is AssignmentStatementAst assignment &&
-                            assignment.Operator == TokenKind.Equals)
-                        {
-                            if (!WithinTargetsScope(TargetVariableAst, variableExpressionAst))
-                            {
-                                ShouldRename = false;
-                            }
-
-                        }
-                        // Else is the variable within scope
-                        else
-                        {
-                            ShouldRename = WithinTargetsScope(TargetVariableAst, variableExpressionAst);
-                        }
-                        if (ShouldRename)
-                        {
-                            // have some modifications to account for the dollar sign prefix powershell uses for variables
-                            TextChange Change = new()
-                            {
-                                NewText = NewName.Contains("$") ? NewName : "$" + NewName,
-                                StartLine = variableExpressionAst.Extent.StartLineNumber - 1,
-                                StartColumn = variableExpressionAst.Extent.StartColumnNumber - 1,
-                                EndLine = variableExpressionAst.Extent.StartLineNumber - 1,
-                                EndColumn = variableExpressionAst.Extent.StartColumnNumber + OldName.Length,
-                            };
-                            // If the variables parent is a parameterAst Add a modification
-                            if (variableExpressionAst.Parent is ParameterAst paramAst && !AliasSet)
-                            {
-                                TextChange aliasChange = NewParameterAliasChange(variableExpressionAst, paramAst);
-                                Modifications.Add(aliasChange);
-                                AliasSet = true;
-                            }
-                            Modifications.Add(Change);
-
-                        }
-                    }
+                    ProcessVariableExpressionAst(variableExpressionAst);
                     break;
+            }
+        }
+
+        private void ProcessCommandAst(CommandAst commandAst)
+        {
+            // Is the Target Variable a Parameter and is this commandAst the target function
+            if (isParam && commandAst.GetCommandName()?.ToLower() == TargetFunction?.Name.ToLower())
+            {
+                // Check to see if this is a splatted call to the target function.
+                Ast Splatted = null;
+                foreach (Ast element in commandAst.CommandElements)
+                {
+                    if (element is VariableExpressionAst varAst && varAst.Splatted)
+                    {
+                        Splatted = varAst;
+                        break;
+                    }
+                }
+                if (Splatted != null)
+                {
+                    NewSplattedModification(Splatted);
+                }
+                else
+                {
+                    // The Target Variable is a Parameter and the commandAst is the Target Function
+                    ShouldRename = true;
+                }
+            }
+        }
+
+        private void ProcessVariableExpressionAst(VariableExpressionAst variableExpressionAst)
+        {
+            if (variableExpressionAst.VariablePath.UserPath.ToLower() == OldName.ToLower())
+            {
+                // Is this the Target Variable
+                if (variableExpressionAst.Extent.StartColumnNumber == StartColumnNumber &&
+                variableExpressionAst.Extent.StartLineNumber == StartLineNumber)
+                {
+                    ShouldRename = true;
+                    TargetVariableAst = variableExpressionAst;
+                }
+                // Is this a Command Ast within scope
+                else if (variableExpressionAst.Parent is CommandAst commandAst)
+                {
+                    if (WithinTargetsScope(TargetVariableAst, commandAst))
+                    {
+                        ShouldRename = true;
+                    }
+                }
+                // Is this a Variable Assignment thats not within scope
+                else if (variableExpressionAst.Parent is AssignmentStatementAst assignment &&
+                    assignment.Operator == TokenKind.Equals)
+                {
+                    if (!WithinTargetsScope(TargetVariableAst, variableExpressionAst))
+                    {
+                        ShouldRename = false;
+                    }
+
+                }
+                // Else is the variable within scope
+                else
+                {
+                    ShouldRename = WithinTargetsScope(TargetVariableAst, variableExpressionAst);
+                }
+                if (ShouldRename)
+                {
+                    // have some modifications to account for the dollar sign prefix powershell uses for variables
+                    TextChange Change = new()
+                    {
+                        NewText = NewName.Contains("$") ? NewName : "$" + NewName,
+                        StartLine = variableExpressionAst.Extent.StartLineNumber - 1,
+                        StartColumn = variableExpressionAst.Extent.StartColumnNumber - 1,
+                        EndLine = variableExpressionAst.Extent.StartLineNumber - 1,
+                        EndColumn = variableExpressionAst.Extent.StartColumnNumber + OldName.Length,
+                    };
+                    // If the variables parent is a parameterAst Add a modification
+                    if (variableExpressionAst.Parent is ParameterAst paramAst && !AliasSet)
+                    {
+                        TextChange aliasChange = NewParameterAliasChange(variableExpressionAst, paramAst);
+                        Modifications.Add(aliasChange);
+                        AliasSet = true;
+                    }
+                    Modifications.Add(Change);
+
+                }
+            }
+        }
+
+        private void ProcessCommandParameterAst(CommandParameterAst commandParameterAst)
+        {
+            if (commandParameterAst.ParameterName.ToLower() == OldName.ToLower())
+            {
+                if (commandParameterAst.Extent.StartLineNumber == StartLineNumber &&
+                    commandParameterAst.Extent.StartColumnNumber == StartColumnNumber)
+                {
+                    ShouldRename = true;
+                }
+
+                if (TargetFunction != null && commandParameterAst.Parent is CommandAst commandAst &&
+                    commandAst.GetCommandName().ToLower() == TargetFunction.Name.ToLower() && isParam && ShouldRename)
+                {
+                    TextChange Change = new()
+                    {
+                        NewText = NewName.Contains("-") ? NewName : "-" + NewName,
+                        StartLine = commandParameterAst.Extent.StartLineNumber - 1,
+                        StartColumn = commandParameterAst.Extent.StartColumnNumber - 1,
+                        EndLine = commandParameterAst.Extent.StartLineNumber - 1,
+                        EndColumn = commandParameterAst.Extent.StartColumnNumber + OldName.Length,
+                    };
+                    Modifications.Add(Change);
+                }
+                else
+                {
+                    ShouldRename = false;
+                }
             }
         }
 
