@@ -15,7 +15,6 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         internal Queue<Ast> queue = new();
         internal bool ShouldRename;
         public List<TextChange> Modifications = new();
-        public List<string> Log = new();
         internal int StartLineNumber;
         internal int StartColumnNumber;
         internal FunctionDefinitionAst TargetFunctionAst;
@@ -143,9 +142,6 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
 
         public void ProcessNode(Ast node, bool shouldRename)
         {
-            Log.Add($"Proc node: {node.GetType().Name}, " +
-            $"SL: {node.Extent.StartLineNumber}, " +
-            $"SC: {node.Extent.StartColumnNumber}");
 
             switch (node)
             {
@@ -194,7 +190,6 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     }
                     break;
             }
-            Log.Add($"ShouldRename after proc: {shouldRename}");
         }
     }
 }
