@@ -83,7 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             }
 
             Ast TargetParent = GetAstParentScope(node);
-            // Find All Variables and Parameter Assignments with the same name before
+            // Find all variables and parameter assignments with the same name before
             // The node found above
             List<VariableExpressionAst> VariableAssignments = ScriptAst.FindAll(ast =>
             {
@@ -152,7 +152,6 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                             }
                         }
 
-
                         if (node.Parent is CommandAst commDef)
                         {
                             if (funcDef.Name == commDef.GetCommandName()
@@ -168,8 +167,6 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                         CorrectDefinition = element;
                     }
                 }
-
-
             }
             return CorrectDefinition ?? node;
         }
