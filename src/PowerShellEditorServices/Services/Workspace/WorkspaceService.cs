@@ -8,10 +8,8 @@ using System.IO;
 using System.Linq;
 using System.Security;
 using System.Text;
-using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Services.Workspace;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -25,25 +23,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
     internal class WorkspaceService
     {
         #region Private Fields
-
-        // List of all file extensions considered PowerShell files in the .Net Core Framework.
-        private static readonly string[] s_psFileExtensionsCoreFramework =
-        {
-            ".ps1",
-            ".psm1",
-            ".psd1"
-        };
-
-        // .Net Core doesn't appear to use the same three letter pattern matching rule although the docs
-        // suggest it should be find the '.ps1xml' files because we search for the pattern '*.ps1'.
-        // ref https://docs.microsoft.com/en-us/dotnet/api/system.io.directory.getfiles?view=netcore-2.1#System_IO_Directory_GetFiles_System_String_System_String_System_IO_EnumerationOptions_
-        private static readonly string[] s_psFileExtensionsFullFramework =
-        {
-            ".ps1",
-            ".psm1",
-            ".psd1",
-            ".ps1xml"
-        };
 
         // An array of globs which includes everything.
         private static readonly string[] s_psIncludeAllGlob = new[]
@@ -358,36 +337,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             string[] excludeGlobs,
             string[] includeGlobs,
             int maxDepth,
-            bool ignoreReparsePoints)
-        {
-            Matcher matcher = new();
-            foreach (string pattern in includeGlobs) { matcher.AddInclude(pattern); }
-            foreach (string pattern in excludeGlobs) { matcher.AddExclude(pattern); }
-
-            foreach (string rootPath in WorkspacePaths)
-            {
-                if (!Directory.Exists(rootPath))
-                {
-                    continue;
-                }
-
-                WorkspaceFileSystemWrapperFactory fsFactory = new(
-                    rootPath,
-                    maxDepth,
-                    VersionUtils.IsNetCore ? s_psFileExtensionsCoreFramework : s_psFileExtensionsFullFramework,
-                    ignoreReparsePoints,
-                    logger);
-
-                PatternMatchingResult fileMatchResult = matcher.Execute(fsFactory.RootDirectory);
-                foreach (FilePatternMatch item in fileMatchResult.Files)
-                {
-                    // item.Path always contains forward slashes in paths when it should be backslashes on Windows.
-                    // Since we're returning strings here, it's important to use the correct directory separator.
-                    string path = VersionUtils.IsWindows ? item.Path.Replace('/', Path.DirectorySeparatorChar) : item.Path;
-                    yield return Path.Combine(rootPath, path);
-                }
-            }
-        }
+            bool ignoreReparsePoints) => [];
 
         #endregion
 
