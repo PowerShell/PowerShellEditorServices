@@ -12,8 +12,6 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
     {
         private readonly string OldName;
         private readonly string NewName;
-        internal Queue<Ast> queue = new();
-        internal bool ShouldRename;
         public List<TextChange> Modifications = new();
         internal int StartLineNumber;
         internal int StartColumnNumber;
