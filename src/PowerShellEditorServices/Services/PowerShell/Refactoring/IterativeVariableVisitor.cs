@@ -291,10 +291,8 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                         }
 
                         if (TargetFunction != null && commandParameterAst.Parent is CommandAst commandAst &&
-                            commandAst.GetCommandName().ToLower() == TargetFunction.Name.ToLower() && isParam)
+                            commandAst.GetCommandName().ToLower() == TargetFunction.Name.ToLower() && isParam && ShouldRename)
                         {
-                            if (ShouldRename)
-                            {
                                 TextChange Change = new()
                                 {
                                     NewText = NewName.Contains("-") ? NewName : "-" + NewName,
@@ -303,9 +301,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                                     EndLine = commandParameterAst.Extent.StartLineNumber - 1,
                                     EndColumn = commandParameterAst.Extent.StartColumnNumber + OldName.Length,
                                 };
-
                                 Modifications.Add(Change);
-                            }
                         }
                         else
                         {
