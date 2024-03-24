@@ -106,6 +106,16 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             return CorrectDefinition;
         }
 
+        public static bool AssertContainsDotSourced(Ast ScriptAst){
+            Ast dotsourced = ScriptAst.Find(ast =>{
+                return ast is CommandAst commandAst && commandAst.InvocationOperator == TokenKind.Dot;
+            },true);
+            if (dotsourced != null)
+            {
+                return true;
+            }
+            return false;
+        }
         public static Ast GetAst(int StartLineNumber, int StartColumnNumber, Ast Ast)
         {
             Ast token = null;
