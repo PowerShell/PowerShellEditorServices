@@ -22,23 +22,6 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         }
     }
 
-    public class TargetVariableIsDotSourcedException : Exception
-    {
-        public TargetVariableIsDotSourcedException()
-        {
-        }
-
-        public TargetVariableIsDotSourcedException(string message)
-            : base(message)
-        {
-        }
-
-        public TargetVariableIsDotSourcedException(string message, Exception inner)
-            : base(message, inner)
-        {
-        }
-    }
-
     public class FunctionDefinitionNotFoundException : Exception
     {
         public FunctionDefinitionNotFoundException()
