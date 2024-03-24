@@ -135,16 +135,16 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring.Variables
             Line = 9,
             RenameTo = "Renamed"
         };
-        public static readonly RenameSymbolParams VarableCommandParameterSplattedFromCommandAst = new()
+        public static readonly RenameSymbolParams VariableCommandParameterSplattedFromCommandAst = new()
         {
-            FileName = "VarableCommandParameterSplatted.ps1",
+            FileName = "VariableCommandParameterSplatted.ps1",
             Column = 10,
             Line = 21,
             RenameTo = "Renamed"
         };
-        public static readonly RenameSymbolParams VarableCommandParameterSplattedFromSplat = new()
+        public static readonly RenameSymbolParams VariableCommandParameterSplattedFromSplat = new()
         {
-            FileName = "VarableCommandParameterSplatted.ps1",
+            FileName = "VariableCommandParameterSplatted.ps1",
             Column = 5,
             Line = 16,
             RenameTo = "Renamed"

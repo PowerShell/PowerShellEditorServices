@@ -258,7 +258,7 @@ namespace PowerShellEditorServices.Test.Refactoring
         [Fact]
         public void VarableCommandParameterSplattedFromCommandAst()
         {
-            RenameSymbolParams request = RenameVariableData.VarableCommandParameterSplattedFromCommandAst;
+            RenameSymbolParams request = RenameVariableData.VariableCommandParameterSplattedFromCommandAst;
             ScriptFile scriptFile = GetTestScript(request.FileName);
             ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
 
@@ -269,7 +269,7 @@ namespace PowerShellEditorServices.Test.Refactoring
         [Fact]
         public void VarableCommandParameterSplattedFromSplat()
         {
-            RenameSymbolParams request = RenameVariableData.VarableCommandParameterSplattedFromSplat;
+            RenameSymbolParams request = RenameVariableData.VariableCommandParameterSplattedFromSplat;
             ScriptFile scriptFile = GetTestScript(request.FileName);
             ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
 
