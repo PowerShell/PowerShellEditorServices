@@ -19,7 +19,6 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         internal int StartLineNumber;
         internal int StartColumnNumber;
         internal VariableExpressionAst TargetVariableAst;
-        internal List<string> dotSourcedScripts = new();
         internal readonly Ast ScriptAst;
         internal bool isParam;
         internal bool AliasSet;

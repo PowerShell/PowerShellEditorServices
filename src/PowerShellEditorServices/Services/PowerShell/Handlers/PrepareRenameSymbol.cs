@@ -55,14 +55,18 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 };
                 // ast is FunctionDefinitionAst or CommandAst or VariableExpressionAst or StringConstantExpressionAst &&
                 SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(request.Line + 1, request.Column + 1);
-                Ast token = Utilities.GetAst(request.Line + 1,request.Column + 1,scriptFile.ScriptAst);
+                Ast token = Utilities.GetAst(request.Line + 1, request.Column + 1, scriptFile.ScriptAst);
 
                 if (token == null)
                 {
                     result.message = "Unable to find symbol";
                     return result;
                 }
-
+                if (Utilities.AssertContainsDotSourced(scriptFile.ScriptAst))
+                {
+                    result.message = "Dot Source detected, this is currently not supported operation aborted";
+                    return result;
+                }
                 switch (token)
                 {
                     case FunctionDefinitionAst funcDef:
@@ -87,28 +91,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
                     case VariableExpressionAst or CommandAst or CommandParameterAst or ParameterAst or StringConstantExpressionAst:
                         {
-
-                            try
+                            IterativeVariableRename visitor = new(request.RenameTo,
+                                                token.Extent.StartLineNumber,
+                                                token.Extent.StartColumnNumber,
+                                                scriptFile.ScriptAst);
+                            if (visitor.TargetVariableAst == null)
                             {
-                                IterativeVariableRename visitor = new(request.RenameTo,
-                                                    token.Extent.StartLineNumber,
-                                                    token.Extent.StartColumnNumber,
-                                                    scriptFile.ScriptAst);
-                                if (visitor.TargetVariableAst == null)
-                                {
-                                    result.message = "Failed to find variable definition within the current file";
-                                }
+                                result.message = "Failed to find variable definition within the current file";
                             }
-                            catch (TargetVariableIsDotSourcedException)
-                            {
-
-                                result.message = "Variable is dot sourced which is currently not supported unable to perform a rename";
-                            }
-
                             break;
                         }
                 }
-
                 return result;
             }).ConfigureAwait(false);
         }
