@@ -45,7 +45,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
 
         public static FunctionDefinitionAst GetFunctionDefByCommandAst(string OldName, int StartLineNumber, int StartColumnNumber, Ast ScriptFile)
         {
-            // Look up the targetted object
+            // Look up the targeted object
             CommandAst TargetCommand = (CommandAst)Utilities.GetAstAtPositionOfType(StartLineNumber, StartColumnNumber, ScriptFile
             , typeof(CommandAst));
 
@@ -69,12 +69,6 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             {
                 return FunctionDefinitions[0];
             }
-            // Sort function definitions
-            //FunctionDefinitions.Sort((a, b) =>
-            //{
-            //    return b.Extent.EndColumnNumber + b.Extent.EndLineNumber -
-            //       a.Extent.EndLineNumber + a.Extent.EndColumnNumber;
-            //});
             // Determine which function definition is the right one
             FunctionDefinitionAst CorrectDefinition = null;
             for (int i = FunctionDefinitions.Count - 1; i >= 0; i--)
