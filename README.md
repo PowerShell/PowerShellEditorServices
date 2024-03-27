@@ -126,7 +126,10 @@ If you want to take advantage of debugging,
 your client must support the [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/).
 Your client should use the path to the debug named pipe found in the `session.json` file talked about above.
 
-Currently, only the Visual Studio Code extension supports debugging.
+The debugging functionality in PowerShell Editor Services is available in the following editor extensions:
+
+- [PowerShell for Visual Studio Code](https://github.com/PowerShell/vscode-powershell)
+- [nvim-dap-powershell for Neovim](https://github.com/Willem-J-an/nvim-dap-powershell)
 
 ## API Usage
 
