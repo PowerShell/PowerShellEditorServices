@@ -15,7 +15,7 @@ namespace PowerShellEditorServices.Test.Services.Symbols
     [Trait("Category", "PSScriptAnalyzer")]
     public class PSScriptAnalyzerTests
     {
-        private readonly WorkspaceService workspaceService = new(NullLoggerFactory.Instance);
+        private readonly WorkspaceService workspaceService = new(NullLoggerFactory.Instance, PsesHostFactory.Create(NullLoggerFactory.Instance));
         private readonly AnalysisService analysisService;
         private const string script = "function Do-Work {}";
 

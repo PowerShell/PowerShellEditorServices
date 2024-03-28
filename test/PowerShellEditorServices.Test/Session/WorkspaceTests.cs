@@ -12,6 +12,7 @@ using Xunit;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol;
+using Microsoft.PowerShell.EditorServices.Test;
 
 namespace PowerShellEditorServices.Test.Session
 {
@@ -39,7 +40,7 @@ namespace PowerShellEditorServices.Test.Session
             ScriptFile testPathOutside = CreateScriptFile("c:/Test/PeerPath/FilePath.ps1");
             ScriptFile testPathAnotherDrive = CreateScriptFile("z:/TryAndFindMe/FilePath.ps1");
 
-            WorkspaceService workspace = new(NullLoggerFactory.Instance);
+            WorkspaceService workspace = new(NullLoggerFactory.Instance, PsesHostFactory.Create(NullLoggerFactory.Instance));
 
             // Test with zero workspace folders
             Assert.Equal(
@@ -77,7 +78,7 @@ namespace PowerShellEditorServices.Test.Session
 
         internal static WorkspaceService FixturesWorkspace()
         {
-            return new WorkspaceService(NullLoggerFactory.Instance)
+            return new WorkspaceService(NullLoggerFactory.Instance, PsesHostFactory.Create(NullLoggerFactory.Instance))
             {
                 WorkspaceFolders =
                 {

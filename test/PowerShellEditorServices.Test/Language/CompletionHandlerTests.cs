@@ -30,7 +30,7 @@ namespace PowerShellEditorServices.Test.Language
         public CompletionHandlerTests()
         {
             psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
-            workspace = new WorkspaceService(NullLoggerFactory.Instance);
+            workspace = new WorkspaceService(NullLoggerFactory.Instance, psesHost);
             completionHandler = new PsesCompletionHandler(NullLoggerFactory.Instance, psesHost, psesHost, workspace);
         }
 
@@ -42,12 +42,12 @@ namespace PowerShellEditorServices.Test.Language
             GC.SuppressFinalize(this);
         }
 
-        private ScriptFile GetScriptFile(ScriptRegion scriptRegion) => workspace.GetFile(TestUtilities.GetSharedPath(scriptRegion.File));
+        private async Task<ScriptFile> GetScriptFile(ScriptRegion scriptRegion) => workspace.GetFile(TestUtilities.GetSharedPath(scriptRegion.File));
 
-        private Task<CompletionResults> GetCompletionResultsAsync(ScriptRegion scriptRegion)
+        private async Task<CompletionResults> GetCompletionResultsAsync(ScriptRegion scriptRegion)
         {
-            return completionHandler.GetCompletionsInFileAsync(
-                GetScriptFile(scriptRegion),
+            return await completionHandler.GetCompletionsInFileAsync(
+                await GetScriptFile(scriptRegion),
                 scriptRegion.StartLineNumber,
                 scriptRegion.StartColumnNumber,
                 CancellationToken.None);

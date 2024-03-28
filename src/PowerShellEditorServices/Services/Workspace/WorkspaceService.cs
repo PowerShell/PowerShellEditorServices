@@ -6,12 +6,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Management.Automation;
 using System.Security;
-using System.Text;
-using Microsoft.Extensions.FileSystemGlobbing;
+using System.Threading;
 using Microsoft.Extensions.Logging;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Services.Workspace;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -84,6 +85,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public bool FollowSymlinks { get; set; }
 
+        private readonly PsesInternalHost psesInternalHost;
+
         #endregion
 
         #region Constructors
@@ -91,13 +94,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         /// Creates a new instance of the Workspace class.
         /// </summary>
-        public WorkspaceService(ILoggerFactory factory)
+        public WorkspaceService(ILoggerFactory factory, PsesInternalHost executionService)
         {
             powerShellVersion = VersionUtils.PSVersion;
             logger = factory.CreateLogger<WorkspaceService>();
             WorkspaceFolders = new List<WorkspaceFolder>();
             ExcludeFilesGlob = new List<string>();
             FollowSymlinks = true;
+            this.psesInternalHost = executionService;
         }
 
         #endregion
@@ -139,19 +143,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // Make sure the file isn't already loaded into the workspace
             if (!workspaceFiles.TryGetValue(keyName, out ScriptFile scriptFile))
             {
-                // This method allows FileNotFoundException to bubble up
-                // if the file isn't found.
-                using (StreamReader streamReader = OpenStreamReader(documentUri))
-                {
-                    scriptFile =
-                        new ScriptFile(
-                            documentUri,
-                            streamReader,
-                            powerShellVersion);
-
-                    workspaceFiles[keyName] = scriptFile;
-                }
-
+                string fileContent = ReadFileContents(documentUri);
+                scriptFile = new ScriptFile(documentUri, fileContent, powerShellVersion);
+                workspaceFiles[keyName] = scriptFile;
                 logger.LogDebug("Opened file on disk: " + documentUri.ToString());
             }
 
@@ -192,20 +186,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="scriptFile">The out parameter that will contain the ScriptFile object.</param>
         public bool TryGetFile(DocumentUri documentUri, out ScriptFile scriptFile)
         {
-            switch (documentUri.Scheme)
+            if (ScriptFile.IsUntitledPath(documentUri.ToString()))
             {
-                // List supported schemes here
-                case "file":
-                case "inmemory":
-                case "untitled":
-                case "vscode-notebook-cell":
-                    break;
-
-                default:
-                    scriptFile = null;
-                    return false;
+                scriptFile = null;
+                return false;
             }
-
             try
             {
                 scriptFile = GetFile(documentUri);
@@ -348,7 +333,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 ignoreReparsePoints: !FollowSymlinks
             );
         }
-
         /// <summary>
         /// Enumerate all the PowerShell (ps1, psm1, psd1) files in the workspace folders in a
         /// recursive manner. Falls back to initial working directory if there are no workspace folders.
@@ -360,53 +344,91 @@ namespace Microsoft.PowerShell.EditorServices.Services
             int maxDepth,
             bool ignoreReparsePoints)
         {
-            Matcher matcher = new();
-            foreach (string pattern in includeGlobs) { matcher.AddInclude(pattern); }
-            foreach (string pattern in excludeGlobs) { matcher.AddExclude(pattern); }
-
-            foreach (string rootPath in WorkspacePaths)
-            {
-                if (!Directory.Exists(rootPath))
-                {
-                    continue;
-                }
-
-                WorkspaceFileSystemWrapperFactory fsFactory = new(
-                    rootPath,
-                    maxDepth,
-                    VersionUtils.IsNetCore ? s_psFileExtensionsCoreFramework : s_psFileExtensionsFullFramework,
-                    ignoreReparsePoints,
-                    logger);
-
-                PatternMatchingResult fileMatchResult = matcher.Execute(fsFactory.RootDirectory);
-                foreach (FilePatternMatch item in fileMatchResult.Files)
-                {
-                    // item.Path always contains forward slashes in paths when it should be backslashes on Windows.
-                    // Since we're returning strings here, it's important to use the correct directory separator.
-                    string path = VersionUtils.IsWindows ? item.Path.Replace('/', Path.DirectorySeparatorChar) : item.Path;
-                    yield return Path.Combine(rootPath, path);
-                }
-            }
+            IEnumerable<string> results = new SynchronousPowerShellTask<string>(
+                logger,
+                psesInternalHost,
+                new PSCommand()
+                .AddCommand(@"Microsoft.PowerShell.Management\Get-ChildItem")
+                    .AddParameter("LiteralPath", WorkspacePaths)
+                    .AddParameter("Recurse")
+                    .AddParameter("ErrorAction", "SilentlyContinue")
+                    .AddParameter("Force")
+                    .AddParameter("Include", includeGlobs.Concat(VersionUtils.IsNetCore ? s_psFileExtensionsCoreFramework : s_psFileExtensionsFullFramework))
+                    .AddParameter("Exclude", excludeGlobs)
+                    .AddParameter("Depth", maxDepth)
+                    .AddParameter("FollowSymlink", !ignoreReparsePoints)
+                .AddCommand("Where-Object")
+                    .AddParameter("Property", "PSIsContainer")
+                    .AddParameter("EQ")
+                    .AddParameter("Value", false)
+                .AddCommand("Select-Object")
+                    .AddParameter("ExpandObject", "FullName"),
+                null,
+            CancellationToken.None)
+            .ExecuteAndGetResult(CancellationToken.None);
+            return results;
         }
 
         #endregion
 
         #region Private Methods
 
-        internal static StreamReader OpenStreamReader(DocumentUri uri)
+        internal string ReadFileContents(DocumentUri uri)
         {
-            FileStream fileStream = new(uri.GetFileSystemPath(), FileMode.Open, FileAccess.Read);
-            // Default to UTF8 no BOM if a BOM is not present. Note that `Encoding.UTF8` is *with*
-            // BOM, so we call the ctor here to get the BOM-less version.
-            //
-            // TODO: Honor workspace encoding settings for the fallback.
-            return new StreamReader(fileStream, new UTF8Encoding(), detectEncodingFromByteOrderMarks: true);
-        }
+            PSCommand psCommand = new();
+            string pspath;
+            if (uri.Scheme == Uri.UriSchemeFile)
+            {
+                // uri - "file:///c:/Users/me/test.ps1"
 
-        internal static string ReadFileContents(DocumentUri uri)
-        {
-            using StreamReader reader = OpenStreamReader(uri);
-            return reader.ReadToEnd();
+                pspath = uri.ToUri().LocalPath;
+            }
+            else
+            {
+                string PSProvider = uri.Authority;
+                string path = uri.Path.TrimStart('/');
+                pspath = $"{PSProvider}::{path}";
+            }
+            /* 
+             *  Authority = ""
+             *  Fragment = ""
+             *  Path = "/C:/Users/dkattan/source/repos/immybot-ref/submodules/PowerShellEditorServices/test/PowerShellEditorServices.Test.Shared/Completion/CompletionExamples.psm1"
+             *  Query = ""
+             *  Scheme = "file"
+             * PSPath - "Microsoft.PowerShell.Core\FileSystem::C:\Users\dkattan\source\repos\immybot-ref\submodules\PowerShellEditorServices\test\PowerShellEditorServices.Test.Shared\Completion\CompletionExamples.psm1"
+             * 
+             * Suggested Format:
+             * Authority = "Microsoft.PowerShell.Core\FileSystem"
+             * Scheme = "PSProvider"
+             * Path = "/C:/Users/dkattan/source/repos/immybot-ref/submodules/PowerShellEditorServices/test/PowerShellEditorServices.Test.Shared/Completion/CompletionExamples.psm1"
+             * Result -> "PSProvider://Microsoft.PowerShell.Core/FileSystem::C:/Users/dkattan/source/repos/immybot-ref/submodules/PowerShellEditorServices/test/PowerShellEditorServices.Test.Shared/Completion/CompletionExamples.psm1"
+             * 
+             * Suggested Format 2:
+             * Authority = ""
+             * Scheme = "FileSystem"
+             * Path = "/C:/Users/dkattan/source/repos/immybot-ref/submodules/PowerShellEditorServices/test/PowerShellEditorServices.Test.Shared/Completion/CompletionExamples.psm1"              
+             * Result "FileSystem://c:/Users/dkattan/source/repos/immybot-ref/submodules/PowerShellEditorServices/test/PowerShellEditorServices.Test.Shared/Completion/CompletionExamples.psm1"
+
+             */
+            IEnumerable<string> result;
+            try
+            {
+                result = new SynchronousPowerShellTask<string>(
+                logger,
+                psesInternalHost,
+                psCommand.AddCommand("Get-Content")
+                .AddParameter("LiteralPath", pspath)
+                .AddParameter("ErrorAction", ActionPreference.Stop),
+            new PowerShellExecutionOptions()
+            {
+                ThrowOnError = true
+            }, CancellationToken.None).ExecuteAndGetResult(CancellationToken.None);
+            }
+            catch (ActionPreferenceStopException ex) when (ex.ErrorRecord.CategoryInfo.Category == ErrorCategory.ObjectNotFound && ex.ErrorRecord.TargetObject is string[] missingFiles && missingFiles.Count() == 1)
+            {
+                throw new FileNotFoundException(ex.ErrorRecord.ToString(), missingFiles.First(), ex.ErrorRecord.Exception);
+            }
+            return string.Join(Environment.NewLine, result);
         }
 
         internal string ResolveWorkspacePath(string path) => ResolveRelativeScriptPath(InitialWorkingDirectory, path);
@@ -429,10 +451,23 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // Get the directory of the original script file, combine it
                 // with the given path and then resolve the absolute file path.
                 combinedPath =
-                    Path.GetFullPath(
-                        Path.Combine(
-                            baseFilePath,
-                            relativePath));
+                Path.GetFullPath(
+                    Path.Combine(
+                        baseFilePath,
+                        relativePath));
+                IEnumerable<string> result;
+                result = new SynchronousPowerShellTask<string>(
+                    logger,
+                    psesInternalHost,
+                    new PSCommand()
+                        .AddCommand("Resolve-Path")
+                            .AddParameter("Relative", true)
+                            .AddParameter("Path", relativePath)
+                            .AddParameter("RelativeBasePath", baseFilePath),
+                    new(),
+                    CancellationToken.None)
+                .ExecuteAndGetResult(CancellationToken.None);
+                combinedPath = result.FirstOrDefault();
             }
             catch (NotSupportedException e)
             {
