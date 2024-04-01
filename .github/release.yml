@@ -3,7 +3,7 @@ changelog:
     labels:
       - Ignore
     authors:
-      - dependabot[bot]
+      - dependabot
   categories:
     - title: Enhancements & Features ✨
       labels:

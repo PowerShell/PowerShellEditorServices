@@ -52,7 +52,10 @@ extends:
           - pwsh: |
               [xml]$xml = Get-Content PowerShellEditorServices.Common.props
               $version = $xml.Project.PropertyGroup.VersionPrefix
+              $prerelease = $xml.Project.PropertyGroup.VersionSuffix
+              if ($prerelease) { $version += "-$prerelease" }
               Write-Output "##vso[task.setvariable variable=version;isOutput=true]$version"
+              Write-Output "##vso[task.setvariable variable=prerelease;isOutput=true]$(-not [string]::IsNullOrEmpty($prerelease))"
             name: package
             displayName: Get version from project properties
           - task: onebranch.pipeline.version@1
@@ -61,17 +64,17 @@ extends:
               system: Custom
               customVersion: $(package.version)
           - task: UseDotNet@2
-            displayName: Install .NET 8.x SDK
+            displayName: Use .NET 8.x SDK
             inputs:
               packageType: sdk
               version: 8.x
           - task: UseDotNet@2
-            displayName: Install .NET 7.x runtime
+            displayName: Use .NET 7.x runtime (for tests)
             inputs:
               packageType: runtime
               version: 7.x
           - task: UseDotNet@2
-            displayName: Install .NET 6.x runtime
+            displayName: Use .NET 6.x runtime (for tests)
             inputs:
               packageType: runtime
               version: 6.x
@@ -80,29 +83,22 @@ extends:
             inputs:
               pwsh: true
               filePath: tools/installPSResources.ps1
-          - task: PowerShell@2
+          - pwsh: Invoke-Build TestFull -Configuration $(BuildConfiguration)
             displayName: Build and test
-            inputs:
-              targetType: inline
-              pwsh: true
-              script: Invoke-Build TestFull -Configuration $(BuildConfiguration)
           - task: PublishTestResults@2
             displayName: Publish test results
             inputs:
               testRunner: VSTest
               testResultsFiles: '**/*.trx'
               failTaskOnFailedTests: true
-          - task: PowerShell@2
+          - pwsh: |
+              $assembly = [Reflection.Assembly]::LoadFile("$(Build.SourcesDirectory)/module/PowerShellEditorServices/bin/Core/Microsoft.PowerShell.EditorServices.Hosting.dll")
+              if ($assembly.GetCustomAttributes([System.Diagnostics.DebuggableAttribute], $true).IsJITOptimizerDisabled) {
+                Write-Host "##vso[task.LogIssue type=error;]Was not built in release configuration!"
+                exit 1
+              }
             displayName: Assert release configuration
-            inputs:
-              targetType: inline
-              pwsh: true
-              script: |
-                $assembly = [Reflection.Assembly]::LoadFile("$(Build.SourcesDirectory)/module/PowerShellEditorServices/bin/Core/Microsoft.PowerShell.EditorServices.Hosting.dll")
-                if ($assembly.GetCustomAttributes([System.Diagnostics.DebuggableAttribute], $true).IsJITOptimizerDisabled) {
-                  Write-Host "##vso[task.LogIssue type=error;]Was not built in release configuration!"
-                  exit 1
-                }
+            continueOnError: true
           - task: onebranch.pipeline.signing@1
             displayName: Sign 1st-party files
             inputs:
@@ -136,22 +132,10 @@ extends:
       dependsOn: build
       variables:
         version: $[ stageDependencies.build.main.outputs['package.version'] ]
+        prerelease: $[ stageDependencies.build.main.outputs['package.prerelease'] ]
         drop: $(Pipeline.Workspace)/drop_build_main
       jobs:
-      - job: validation
-        displayName: Manual validation
-        pool:
-          type: agentless
-        timeoutInMinutes: 1440
-        steps:
-        - task: ManualValidation@0
-          displayName: Wait 24 hours for validation
-          inputs:
-            notifyUsers: $(Build.RequestedForEmail)
-            instructions: Please validate the release
-            timeoutInMinutes: 1440
       - job: github
-        dependsOn: validation
         displayName: Publish draft to GitHub
         pool:
           type: windows
@@ -176,7 +160,7 @@ extends:
             tagSource: userSpecifiedTag
             tag: v$(version)
             isDraft: true
+            isPreRelease: $(prerelease)
             addChangeLog: false
             releaseNotesSource: inline
-            releaseNotesInline: |
-              # TODO: Generate release notes on GitHub!
+            releaseNotesInline: "<!-- TODO: Generate release notes on GitHub! -->"
