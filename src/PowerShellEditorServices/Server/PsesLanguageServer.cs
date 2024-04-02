@@ -153,8 +153,9 @@ namespace Microsoft.PowerShell.EditorServices.Server
                                 InitialWorkingDirectory = initializationOptions?.GetValue("initialWorkingDirectory")?.Value<string>()
                                     ?? workspaceService.WorkspaceFolders.FirstOrDefault()?.Uri.GetFileSystemPath()
                                     ?? Directory.GetCurrentDirectory(),
-                                ShellIntegrationEnabled = initializationOptions?.GetValue("shellIntegrationEnabled")?.Value<bool>()
-                                    ?? false
+                                // If a shell integration script path is provided, that implies the feature is enabled.
+                                ShellIntegrationScript = initializationOptions?.GetValue("shellIntegrationScript")?.Value<string>()
+                                    ?? "",
                             };
 
                             workspaceService.InitialWorkingDirectory = hostStartOptions.InitialWorkingDirectory;
