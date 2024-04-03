@@ -1,5 +1,12 @@
 # PowerShell Editor Services Release History
 
+## v3.19.0
+### Wednesday, April 03, 2024
+
+See more details at the GitHub Release for [v3.19.0](https://github.com/PowerShell/PowerShellEditorServices/releases/tag/v3.19.0).
+
+Overhauled Terminal Shell Integration!
+
 ## v3.18.1
 ### Tuesday, March 19, 2024
 
