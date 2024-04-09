@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
@@ -30,7 +29,7 @@ using Xunit;
 namespace PowerShellEditorServices.Test.Language
 {
     [Trait("Category", "Symbols")]
-    public class SymbolsServiceTests : IDisposable
+    public class SymbolsServiceTests : IAsyncLifetime
     {
         private readonly PsesInternalHost psesHost;
         private readonly WorkspaceService workspace;
@@ -53,14 +52,13 @@ namespace PowerShellEditorServices.Test.Language
                 new ConfigurationService());
         }
 
-        public void Dispose()
+        public Task InitializeAsync() => Task.CompletedTask;
+
+        public async Task DisposeAsync()
         {
-#pragma warning disable VSTHRD002
-            psesHost.StopAsync().GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002
+            psesHost.StopAsync();
             CommandHelpers.s_cmdletToAliasCache.Clear();
             CommandHelpers.s_aliasToCmdletCache.Clear();
-            GC.SuppressFinalize(this);
         }
 
         private static void AssertIsRegion(

@@ -33,7 +33,7 @@ namespace PowerShellEditorServices.Test.Debugging
     }
 
     [Trait("Category", "DebugService")]
-    public class DebugServiceTests : IDisposable
+    public class DebugServiceTests : IAsyncLifetime
     {
         private readonly PsesInternalHost psesHost;
         private readonly BreakpointService breakpointService;
@@ -76,14 +76,13 @@ namespace PowerShellEditorServices.Test.Debugging
             variableScriptFile = GetDebugScript("VariableTest.ps1");
         }
 
-        public void Dispose()
+        public Task InitializeAsync() => Task.CompletedTask;
+
+        public async Task DisposeAsync()
         {
             debugService.Abort();
             debuggerStoppedQueue.Dispose();
-#pragma warning disable VSTHRD002
-            psesHost.StopAsync().Wait();
-#pragma warning restore VSTHRD002
-            GC.SuppressFinalize(this);
+            await Task.Run(psesHost.StopAsync);
         }
 
         /// <summary>

@@ -20,19 +20,15 @@ namespace PowerShellEditorServices.Test.Session
     using System.Management.Automation.Runspaces;
 
     [Trait("Category", "PsesInternalHost")]
-    public class PsesInternalHostTests : IDisposable
+    public class PsesInternalHostTests : IAsyncLifetime
     {
         private readonly PsesInternalHost psesHost;
 
         public PsesInternalHostTests() => psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
 
-        public void Dispose()
-        {
-#pragma warning disable VSTHRD002
-            psesHost.StopAsync().Wait();
-#pragma warning restore VSTHRD002
-            GC.SuppressFinalize(this);
-        }
+        public Task InitializeAsync() => Task.CompletedTask;
+
+        public async Task DisposeAsync() => await psesHost.StopAsync();
 
         [Fact]
         public async Task CanExecutePSCommand()
@@ -238,19 +234,15 @@ namespace PowerShellEditorServices.Test.Session
     }
 
     [Trait("Category", "PsesInternalHost")]
-    public class PsesInternalHostWithProfileTests : IDisposable
+    public class PsesInternalHostWithProfileTests : IAsyncLifetime
     {
         private readonly PsesInternalHost psesHost;
 
         public PsesInternalHostWithProfileTests() => psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance, loadProfiles: true);
 
-        public void Dispose()
-        {
-#pragma warning disable VSTHRD002
-            psesHost.StopAsync().Wait();
-#pragma warning restore VSTHRD002
-            GC.SuppressFinalize(this);
-        }
+        public Task InitializeAsync() => Task.CompletedTask;
+
+        public async Task DisposeAsync() => await psesHost.StopAsync();
 
         [Fact]
         public async Task CanResolveAndLoadProfilesForHostId()
