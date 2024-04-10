@@ -57,6 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 logLevel: (int)LogLevel.None,
                 consoleReplEnabled: false,
                 usesLegacyReadLine: false,
+                useNullPSHostUI: true,
                 bundledModulePath: BundledModulePath);
 
             PsesInternalHost psesHost = new(loggerFactory, null, testHostDetails);

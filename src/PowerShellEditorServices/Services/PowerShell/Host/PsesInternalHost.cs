@@ -193,9 +193,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             Version = hostInfo.Version;
 
             DebugContext = new PowerShellDebugContext(loggerFactory, this);
-            UI = hostInfo.ConsoleReplEnabled
-                ? new EditorServicesConsolePSHostUserInterface(loggerFactory, hostInfo.PSHost.UI)
-                : new NullPSHostUI();
+            UI = hostInfo.UseNullPSHostUI
+                ? new NullPSHostUI()
+                : new EditorServicesConsolePSHostUserInterface(loggerFactory, hostInfo.PSHost.UI);
         }
 
         public override CultureInfo CurrentCulture => _hostInfo.PSHost.CurrentCulture;
@@ -1105,6 +1105,7 @@ if (Get-Module -Name PSReadLine) {
                     _shouldExit = false;
                     PopPowerShell();
                 }
+                Thread.Sleep(100);
             }
         }
 

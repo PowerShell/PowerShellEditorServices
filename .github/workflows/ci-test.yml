@@ -37,6 +37,9 @@ jobs:
             6.0.x
             7.0.x
             8.0.x
+          source-url: https://pkgs.dev.azure.com/mscodehub/PowerShellCore/_packaging/PowerShellCore_PublicPackages/nuget/v3/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.AZURE_NUGET_TOKEN }}
 
       - name: Install PSResources
         shell: pwsh
@@ -52,12 +55,12 @@ jobs:
 
       - name: Build and test
         shell: pwsh
-        run: Invoke-Build ${{ github.event_name == 'merge_group' && 'TestFull' || 'Test' }}
+        run: Invoke-Build -Configuration Release ${{ github.event_name == 'merge_group' && 'TestFull' || 'Test' }}
 
       - name: Test with daily
         if: ${{ github.event_name == 'schedule' }}
         shell: pwsh
-        run: ./pwsh/tools/install-powershell.ps1 -Daily && Invoke-Build TestE2EDaily
+        run: ./pwsh/tools/install-powershell.ps1 -Daily && Invoke-Build -Configuration Release TestE2EDaily
 
       - name: Upload build artifacts
         if: always()

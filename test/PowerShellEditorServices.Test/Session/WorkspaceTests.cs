@@ -24,7 +24,7 @@ namespace PowerShellEditorServices.Test.Session
             ? s_lazyDriveLetter.Value
             : string.Empty;
 
-        internal static ScriptFile CreateScriptFile(string path) => new(path, "", VersionUtils.PSVersion);
+        internal static ScriptFile CreateScriptFile(string path) => ScriptFile.Create(path, "", VersionUtils.PSVersion);
 
         // Remember that LSP does weird stuff to the drive letter, so we have to convert it to a URI
         // and back to ensure that drive letter gets lower cased and everything matches up.

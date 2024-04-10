@@ -59,7 +59,6 @@ $script:NetFramework = @{
 $script:HostCoreOutput = "$PSScriptRoot/src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetFramework.PS72)/publish"
 $script:HostDeskOutput = "$PSScriptRoot/src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetFramework.PS51)/publish"
 $script:PsesOutput = "$PSScriptRoot/src/PowerShellEditorServices/bin/$Configuration/$($script:NetFramework.Standard)/publish"
-$script:VSCodeOutput = "$PSScriptRoot/src/PowerShellEditorServices.VSCode/bin/$Configuration/$($script:NetFramework.Standard)/publish"
 
 if (Get-Command git -ErrorAction SilentlyContinue) {
     # ignore changes to this file
@@ -79,7 +78,6 @@ Task FindDotNet {
 Task BinClean {
     Remove-BuildItem $PSScriptRoot\.tmp
     Remove-BuildItem $PSScriptRoot\module\PowerShellEditorServices\bin
-    Remove-BuildItem $PSScriptRoot\module\PowerShellEditorServices.VSCode\bin
 }
 
 Task Clean FindDotNet, BinClean, {
@@ -160,7 +158,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 Task SetupHelpForTests {
     # TODO: Check if it must be updated in a compatible way!
     Write-Host "Updating help for tests."
-    Update-Help -Module Microsoft.PowerShell.Management,Microsoft.PowerShell.Utility -Force -Scope CurrentUser
+    Update-Help -Module Microsoft.PowerShell.Management,Microsoft.PowerShell.Utility -Force -Scope CurrentUser -UICulture en-US
 }
 
 Task Build FindDotNet, CreateBuildInfo, {
@@ -170,9 +168,6 @@ Task Build FindDotNet, CreateBuildInfo, {
     if (-not $script:IsNix) {
         Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs .\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj -f $script:NetFramework.PS51 }
     }
-
-    # Build PowerShellEditorServices.VSCode module
-    Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs .\src\PowerShellEditorServices.VSCode\PowerShellEditorServices.VSCode.csproj -f $script:NetFramework.Standard }
 }
 
 # The concise set of tests (for pull requests)
@@ -291,14 +286,13 @@ Task TestE2EPowerShellCLM -If (-not $script:IsNix) Build, SetupHelpForTests, {
 
 Task LayoutModule -After Build {
     $modulesDir = "$PSScriptRoot/module"
-    $psesVSCodeBinOutputPath = "$modulesDir/PowerShellEditorServices.VSCode/bin"
     $psesOutputPath = "$modulesDir/PowerShellEditorServices"
     $psesBinOutputPath = "$PSScriptRoot/module/PowerShellEditorServices/bin"
     $psesDepsPath = "$psesBinOutputPath/Common"
     $psesCoreHostPath = "$psesBinOutputPath/Core"
     $psesDeskHostPath = "$psesBinOutputPath/Desktop"
 
-    foreach ($dir in $psesDepsPath, $psesCoreHostPath, $psesDeskHostPath, $psesVSCodeBinOutputPath) {
+    foreach ($dir in $psesDepsPath, $psesCoreHostPath, $psesDeskHostPath) {
         New-Item -Force -Path $dir -ItemType Directory | Out-Null
     }
 
@@ -336,13 +330,6 @@ Task LayoutModule -After Build {
             if (-not $includedDlls.Contains($hostComponent.Name)) {
                 Copy-Item -Path $hostComponent.FullName -Destination $psesDeskHostPath -Force
             }
-        }
-    }
-
-    # Assemble the PowerShellEditorServices.VSCode module
-    foreach ($vscodeComponent in Get-ChildItem $script:VSCodeOutput) {
-        if (-not $includedDlls.Contains($vscodeComponent.Name)) {
-            Copy-Item -Path $vscodeComponent.FullName -Destination $psesVSCodeBinOutputPath -Force
         }
     }
 }
@@ -400,7 +387,6 @@ task RestorePsesModules -After Build {
 
 Task BuildCmdletHelp -After LayoutModule {
     New-ExternalHelp -Path $PSScriptRoot\module\docs -OutputPath $PSScriptRoot\module\PowerShellEditorServices\Commands\en-US -Force | Out-Null
-    New-ExternalHelp -Path $PSScriptRoot\module\PowerShellEditorServices.VSCode\docs -OutputPath $PSScriptRoot\module\PowerShellEditorServices.VSCode\en-US -Force | Out-Null
 }
 
 # The default task is to run the entire CI build

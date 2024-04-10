@@ -1,6 +1,6 @@
 {
     "PSScriptAnalyzer": {
-        "Version": "1.21.0",
+        "Version": "1.22.0",
         "AllowPrerelease": false
     },
     "Plaster": {
@@ -8,7 +8,7 @@
         "AllowPrerelease": false
     },
     "PSReadLine": {
-        "Version": "2.3.4",
-        "AllowPrerelease": false
+        "Version": "2.4.0-beta0",
+        "AllowPrerelease": true
     }
 }

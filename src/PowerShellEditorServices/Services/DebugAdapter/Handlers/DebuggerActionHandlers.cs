@@ -51,7 +51,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
             catch (NotSupportedException e)
             {
-                throw new RpcErrorException(0, e.Message);
+                throw new RpcErrorException(0, null, e.Message);
             }
         }
     }

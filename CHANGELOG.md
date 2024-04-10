@@ -1,5 +1,28 @@
 # PowerShell Editor Services Release History
 
+## v3.18.1
+### Tuesday, March 19, 2024
+
+Servicing release with updated pipeline!
+
+## v3.18.0
+### Tuesday, March 5, 2024
+
+- ✨ 📟 [PowerShellEditorServices #2148](https://github.com/PowerShell/PowerShellEditorServices/pull/2148) - Update to PSReadLine v2.4.0-beta0.
+- ✨ 📟 [PowerShellEditorServices #2141](https://github.com/PowerShell/PowerShellEditorServices/pull/2141) - Update to PSScriptAnalyzer v1.22.0.
+- ✨ 👷 [PowerShellEditorServices #2138](https://github.com/PowerShell/PowerShellEditorServices/pull/2138) - Fixed sln file. (Thanks @dkattan!)
+- #️⃣ 🙏 [PowerShellEditorServices #2137](https://github.com/PowerShell/PowerShellEditorServices/pull/2137) - Fixed TextReader disposal. (Thanks @dkattan!)
+- 🐛#️⃣ 🙏 [PowerShellEditorServices #2135](https://github.com/PowerShell/PowerShellEditorServices/pull/2135) - Fix PowerShell 7.2 E2E unit test for last change.
+- ✨ 🛫 [PowerShellEditorServices #1855](https://github.com/PowerShell/PowerShellEditorServices/pull/2129) - Add sane defaults to `Start-EditorServices`.
+- ✨#️⃣ 🙏 [PowerShellEditorServices #2122](https://github.com/PowerShell/PowerShellEditorServices/pull/2122) - Add `UseNullPSHostUI` config so apps hosting PSES can disable it. (Thanks @dkattan!)
+- 🐛 🧠 [PowerShellEditorServices #2115](https://github.com/PowerShell/PowerShellEditorServices/pull/2115) - Added null check to `GetCompletionsAsync`. (Thanks @dkattan!)
+
+## v3.17.0
+### Thursday, January 25, 2024
+
+- ✨ 🚂 [PowerShellEditorServices #2132](https://github.com/PowerShell/PowerShellEditorServices/pull/2132) - Remove `PowerShellEditorServices.VSCode` module / `ContentViews` feature.
+- 🐛 🔍 [PowerShellEditorServices #2130](https://github.com/PowerShell/PowerShellEditorServices/pull/2130) - Fix up debugger attach handlers.
+
 ## v3.16.0
 ### Wednesday, January 03, 2024
 

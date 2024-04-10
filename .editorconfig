@@ -70,7 +70,7 @@ dotnet_diagnostic.CA1805.severity = error
 # CA1820: Test for empty strings using string length
 dotnet_diagnostic.CA1820.severity = error
 # CA1822: Mark members as static
-dotnet_diagnostic.CA1822.severity = error
+dotnet_diagnostic.CA1822.severity = suggestion
 # CA1823: Avoid unused private fields
 dotnet_diagnostic.CA1823.severity = error
 # CA2007: Do not directly await a Task
