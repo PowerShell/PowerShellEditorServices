@@ -92,9 +92,8 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// Sets a selection in the host editor's active buffer.
         /// </summary>
         /// <param name="selectionRange">The range of the selection.</param>
-        #pragma warning disable VSTHRD002
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Supporting synchronous API.")]
         public void SetSelection(FileRange selectionRange) => editorOperations.SetSelectionAsync(selectionRange.ToBufferRange()).Wait();
-        #pragma warning restore VSTHRD002
 
         #endregion
     }

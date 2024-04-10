@@ -115,13 +115,12 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// at the time this method is invoked.
         /// </summary>
         /// <returns>A instance of the EditorContext class.</returns>
-        #pragma warning disable VSTHRD002, VSTHRD104
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Supporting synchronous API.")]
         public EditorContext GetEditorContext() => _editorOperations.GetEditorContextAsync().Result;
-        #pragma warning restore VSTHRD002, VSTHRD104
 
         internal void SetAsStaticInstance()
         {
-            EditorObject.Instance = this;
+            Instance = this;
             s_editorObjectReady.TrySetResult(true);
         }
     }
