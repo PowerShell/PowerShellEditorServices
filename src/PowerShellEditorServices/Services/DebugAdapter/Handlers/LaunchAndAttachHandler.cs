@@ -440,6 +440,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // be sent to the client.
             await _debugStateService.ServerStarted.Task.ConfigureAwait(false);
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD003:Avoid awaiting foreign Tasks", Justification = "It's a wrapper.")]
         private async Task OnExecutionCompletedAsync(Task executeTask)
         {
             bool isRunspaceClosed = false;

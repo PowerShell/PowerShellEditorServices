@@ -43,24 +43,28 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// Shows an informational message to the user.
         /// </summary>
         /// <param name="message">The message to be shown.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Supporting synchronous API.")]
         public void ShowInformationMessage(string message) => editorOperations.ShowInformationMessageAsync(message).Wait();
 
         /// <summary>
         /// Shows an error message to the user.
         /// </summary>
         /// <param name="message">The message to be shown.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Supporting synchronous API.")]
         public void ShowErrorMessage(string message) => editorOperations.ShowErrorMessageAsync(message).Wait();
 
         /// <summary>
         /// Shows a warning message to the user.
         /// </summary>
         /// <param name="message">The message to be shown.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Supporting synchronous API.")]
         public void ShowWarningMessage(string message) => editorOperations.ShowWarningMessageAsync(message).Wait();
 
         /// <summary>
         /// Sets the status bar message in the editor UI (if applicable).
         /// </summary>
         /// <param name="message">The message to be shown.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Supporting synchronous API.")]
         public void SetStatusBarMessage(string message) => editorOperations.SetStatusBarMessageAsync(message, null).Wait();
 
         /// <summary>
@@ -68,6 +72,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         /// <param name="message">The message to be shown.</param>
         /// <param name="timeout">A timeout in milliseconds for how long the message should remain visible.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Supporting synchronous API.")]
         public void SetStatusBarMessage(string message, int timeout) => editorOperations.SetStatusBarMessageAsync(message, timeout).Wait();
 
         #endregion

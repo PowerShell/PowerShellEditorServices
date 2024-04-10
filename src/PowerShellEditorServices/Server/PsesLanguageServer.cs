@@ -70,9 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
         /// cref="PsesServiceCollectionExtensions.AddPsesLanguageServices"/>.
         /// </remarks>
         /// <returns>A task that completes when the server is ready and listening.</returns>
-#pragma warning disable CA1506 // Coupling complexity we don't care about
         public async Task StartAsync()
-#pragma warning restore CA1506
         {
             LanguageServer = await OmniSharp.Extensions.LanguageServer.Server.LanguageServer.From(options =>
             {

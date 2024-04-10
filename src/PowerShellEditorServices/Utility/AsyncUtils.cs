@@ -33,6 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Utility
                 : LogTaskErrors(task, logger, callerName, callerSourceFile, callerLineNumber);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD003:Avoid awaiting foreign Tasks", Justification = "It's a wrapper.")]
         private static async Task LogTaskErrors(Task task, ILogger logger, string callerName, string callerSourceFile, int callerLineNumber)
         {
             try

@@ -29,9 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
     using Microsoft.PowerShell.EditorServices.Server;
     using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
 
-#pragma warning disable CA1506 // Coupling complexity we don't care about
     internal class PsesInternalHost : PSHost, IHostSupportsInteractiveSession, IRunspaceContext, IInternalPowerShellExecutionService
-#pragma warning restore CA1506
     {
         internal const string DefaultPrompt = "> ";
 

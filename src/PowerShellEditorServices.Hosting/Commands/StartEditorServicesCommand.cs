@@ -215,7 +215,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         }
 #pragma warning restore IDE0022
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Uses ThrowTerminatingError() instead")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "We have to wait here, it's the whole program.")]
         protected override void EndProcessing()
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Beginning EndProcessing block");
@@ -232,9 +232,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 using EditorServicesLoader psesLoader = EditorServicesLoader.Create(_logger, editorServicesConfig, SessionDetailsPath, _loggerUnsubscribers);
                 _logger.Log(PsesLogLevel.Verbose, "Loading EditorServices");
                 // Synchronously start editor services and wait here until it shuts down.
-#pragma warning disable VSTHRD002
                 psesLoader.LoadAndRunEditorServicesAsync().GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002
             }
             catch (Exception e)
             {

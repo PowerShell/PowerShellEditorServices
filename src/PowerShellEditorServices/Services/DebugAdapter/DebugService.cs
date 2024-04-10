@@ -923,6 +923,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public event EventHandler<DebuggerStoppedEventArgs> DebuggerStopped;
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "It has to be async.")]
         internal async void OnDebuggerStopAsync(object sender, DebuggerStopEventArgs e)
         {
             try
