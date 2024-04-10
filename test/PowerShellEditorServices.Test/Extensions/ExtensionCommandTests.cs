@@ -28,7 +28,7 @@ namespace PowerShellEditorServices.Test.Extensions
 
         public async Task InitializeAsync()
         {
-            psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
+            psesHost = await PsesHostFactory.Create(NullLoggerFactory.Instance);
             ExtensionService extensionService = new(
                 languageServer: null,
                 serviceProvider: null,
