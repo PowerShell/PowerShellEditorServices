@@ -31,14 +31,14 @@ namespace PowerShellEditorServices.Test.Language
     [Trait("Category", "Symbols")]
     public class SymbolsServiceTests : IAsyncLifetime
     {
-        private readonly PsesInternalHost psesHost;
-        private readonly WorkspaceService workspace;
-        private readonly SymbolsService symbolsService;
+        private PsesInternalHost psesHost;
+        private WorkspaceService workspace;
+        private SymbolsService symbolsService;
         private static readonly bool s_isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
-        public SymbolsServiceTests()
+        public async Task InitializeAsync()
         {
-            psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
+            psesHost = await PsesHostFactory.Create(NullLoggerFactory.Instance);
             workspace = new WorkspaceService(NullLoggerFactory.Instance);
             workspace.WorkspaceFolders.Add(new WorkspaceFolder
             {
@@ -51,8 +51,6 @@ namespace PowerShellEditorServices.Test.Language
                 workspace,
                 new ConfigurationService());
         }
-
-        public Task InitializeAsync() => Task.CompletedTask;
 
         public async Task DisposeAsync()
         {

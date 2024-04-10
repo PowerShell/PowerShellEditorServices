@@ -35,19 +35,19 @@ namespace PowerShellEditorServices.Test.Debugging
     [Trait("Category", "DebugService")]
     public class DebugServiceTests : IAsyncLifetime
     {
-        private readonly PsesInternalHost psesHost;
-        private readonly BreakpointService breakpointService;
-        private readonly DebugService debugService;
+        private PsesInternalHost psesHost;
+        private BreakpointService breakpointService;
+        private DebugService debugService;
         private readonly BlockingCollection<DebuggerStoppedEventArgs> debuggerStoppedQueue = new();
-        private readonly WorkspaceService workspace;
-        private readonly ScriptFile debugScriptFile;
-        private readonly ScriptFile oddPathScriptFile;
-        private readonly ScriptFile variableScriptFile;
+        private WorkspaceService workspace;
+        private ScriptFile debugScriptFile;
+        private ScriptFile oddPathScriptFile;
+        private ScriptFile variableScriptFile;
         private readonly TestReadLine testReadLine = new();
 
-        public DebugServiceTests()
+        public async Task InitializeAsync()
         {
-            psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
+            psesHost = await PsesHostFactory.Create(NullLoggerFactory.Instance);
             // This is required for remote debugging, but we call it here to end up in the same
             // state as the usual startup path.
             psesHost.DebugContext.EnableDebugMode();
@@ -76,7 +76,6 @@ namespace PowerShellEditorServices.Test.Debugging
             variableScriptFile = GetDebugScript("VariableTest.ps1");
         }
 
-        public Task InitializeAsync() => Task.CompletedTask;
 
         public async Task DisposeAsync()
         {
