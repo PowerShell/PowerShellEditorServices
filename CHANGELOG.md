@@ -1,5 +1,14 @@
 # PowerShell Editor Services Release History
 
+## v3.20.0
+### Tuesday, April 16, 2024
+
+See more details at the GitHub Release for [v3.20.0](https://github.com/PowerShell/PowerShellEditorServices/releases/tag/v3.20.0).
+
+Hotfix for incorrect signing certificate, sorry about that!
+
+Also removed Plaster integration as we were unable to correctly sign it since we no longer own it.
+
 ## v3.19.0
 ### Wednesday, April 03, 2024
 
