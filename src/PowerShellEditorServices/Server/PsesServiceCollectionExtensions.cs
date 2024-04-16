@@ -10,7 +10,6 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
-using Microsoft.PowerShell.EditorServices.Services.Template;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Server
@@ -34,7 +33,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 .AddSingleton<ConfigurationService>()
                 .AddSingleton<IPowerShellDebugContext>(
                     (provider) => provider.GetService<PsesInternalHost>().DebugContext)
-                .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<RemoteFileManagerService>()
                 .AddSingleton((provider) =>

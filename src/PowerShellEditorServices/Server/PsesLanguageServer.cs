@@ -11,7 +11,6 @@ using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Extension;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
-using Microsoft.PowerShell.EditorServices.Services.Template;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -112,7 +111,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<PsesHoverHandler>()
                     .WithHandler<PsesSignatureHelpHandler>()
                     .WithHandler<PsesDefinitionHandler>()
-                    .WithHandler<TemplateHandlers>()
                     .WithHandler<GetCommentHelpHandler>()
                     .WithHandler<EvaluateHandler>()
                     .WithHandler<GetCommandHandler>()

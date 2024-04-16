@@ -111,7 +111,6 @@ extends:
                 **/*.psm1;
                 **/*.ps1xml;
                 **/Microsoft.PowerShell.EditorServices*.dll;
-                !Plaster/**;
           - task: onebranch.pipeline.signing@1
             displayName: Sign 3rd-party files
             inputs:
@@ -125,9 +124,6 @@ extends:
                 **/OmniSharp.Extensions*.dll;
                 **/Serilog*.dll;
                 **/System.Reactive.dll;
-                Plaster/**/*.ps1;
-                Plaster/**/*.psd1;
-                Plaster/**/*.psm1;
     - stage: release
       dependsOn: build
       variables:

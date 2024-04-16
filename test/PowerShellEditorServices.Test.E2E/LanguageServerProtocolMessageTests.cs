@@ -14,7 +14,6 @@ using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
-using Microsoft.PowerShell.EditorServices.Services.Template;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client;
@@ -1211,26 +1210,6 @@ CanSendDefinitionRequest
             Assert.Equal(9, locationOrLocationLink.Location.Range.Start.Character);
             Assert.Equal(1, locationOrLocationLink.Location.Range.End.Line);
             Assert.Equal(33, locationOrLocationLink.Location.Range.End.Character);
-        }
-
-        [SkippableFact]
-        public async Task CanSendGetProjectTemplatesRequestAsync()
-        {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode,
-                "Plaster doesn't work in Constrained Language Mode.");
-
-            GetProjectTemplatesResponse getProjectTemplatesResponse =
-                await PsesLanguageClient
-                    .SendRequest(
-                        "powerShell/getProjectTemplates",
-                        new GetProjectTemplatesRequest
-                        {
-                            IncludeInstalledModules = true
-                        })
-                    .Returning<GetProjectTemplatesResponse>(CancellationToken.None);
-
-            Assert.Contains(getProjectTemplatesResponse.Templates, t => t.Title is "AddPSScriptAnalyzerSettings");
-            Assert.Contains(getProjectTemplatesResponse.Templates, t => t.Title is "New PowerShell Manifest Module");
         }
 
         [SkippableFact]
