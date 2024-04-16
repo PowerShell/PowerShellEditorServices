@@ -103,7 +103,7 @@ extends:
             displayName: Sign 1st-party files
             inputs:
               command: sign
-              signing_environment: external_distribution
+              signing_profile: external_distribution
               search_root: $(Build.SourcesDirectory)/module
               files_to_sign: |
                 **/*.ps1;
@@ -111,12 +111,12 @@ extends:
                 **/*.psm1;
                 **/*.ps1xml;
                 **/Microsoft.PowerShell.EditorServices*.dll;
-                !Plaster/*;
+                !Plaster/**;
           - task: onebranch.pipeline.signing@1
             displayName: Sign 3rd-party files
             inputs:
               command: sign
-              signing_environment: 135020002
+              signing_profile: 135020002
               search_root: $(Build.SourcesDirectory)/module
               files_to_sign: |
                 **/MediatR.dll;
