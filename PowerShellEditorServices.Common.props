@@ -11,8 +11,6 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/PowerShell/PowerShellEditorServices</RepositoryUrl>
     <DebugType>portable</DebugType>
-    <!-- See https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files#locking-dependencies -->
-    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <!-- See: https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/overview -->
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>

@@ -34,11 +34,7 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         cache: true
-        cache-dependency-path: '**/packages.lock.json'
-
-    - name: Remove Azure Artifact Feed configurations
-      shell: pwsh
-      run: Remove-Item ./NuGet.Config
+        cache-dependency-path: '**/*.csproj'
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v3

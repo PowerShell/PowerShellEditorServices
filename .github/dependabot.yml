@@ -1,15 +1,7 @@
 version: 2
-registries:
-  nuget-azure:
-    type: nuget-feed
-    url: https://pkgs.dev.azure.com/mscodehub/PowerShellCore/_packaging/PowerShellCore_PublicPackages/nuget/v3/index.json
-    username: powershell
-    password: ${{ secrets.AZURE_NUGET_TOKEN }}
 updates:
 - package-ecosystem: nuget
   directory: "/"
-  registries:
-    - nuget-azure
   labels: [ ]
   schedule:
     interval: weekly
