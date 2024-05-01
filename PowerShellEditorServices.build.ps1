@@ -296,8 +296,8 @@ Task LayoutModule -After Build {
         New-Item -Force -Path $dir -ItemType Directory | Out-Null
     }
 
-    # Copy Third Party Notices.txt to module folder
-    Copy-Item -Force -Path "$PSScriptRoot\Third Party Notices.txt" -Destination $psesOutputPath
+    # Copy third party notices to module folder
+    Copy-Item -Force -Path "$PSScriptRoot\NOTICE.txt" -Destination $psesOutputPath
 
     # Assemble PSES module
 
