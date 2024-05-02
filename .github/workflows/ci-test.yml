@@ -4,9 +4,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    # The branches below must be a subset of the branches above
     branches: [ main ]
-    paths-ignore: [ '**/*.md' ]
   merge_group:
     types: [ checks_requested ]
   schedule:
@@ -22,7 +20,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       DOTNET_NOLOGO: true
-      DOTNET_CLI_TELEMETRY_OPTOUT: true
       DOTNET_GENERATE_ASPNET_CERTIFICATE: false
     steps:
       - name: Checkout repository

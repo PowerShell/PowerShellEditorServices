@@ -16,7 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DOTNET_NOLOGO: true
-      DOTNET_CLI_TELEMETRY_OPTOUT: true
       DOTNET_GENERATE_ASPNET_CERTIFICATE: false
     steps:
       - name: Checkout repository
