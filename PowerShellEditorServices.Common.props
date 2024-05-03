@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <VersionPrefix>3.20.0</VersionPrefix>
+    <VersionPrefix>3.20.1</VersionPrefix>
     <VersionSuffix></VersionSuffix>
     <Company>Microsoft</Company>
     <Copyright>© Microsoft Corporation.</Copyright>
