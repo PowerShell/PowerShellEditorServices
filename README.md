@@ -16,6 +16,7 @@ The functionality in PowerShell Editor Services is available in the following ed
 - [lsp-pwsh](https://github.com/emacs-lsp/lsp-mode/blob/master/clients/lsp-pwsh.el), an Emacs PowerShell plugin
 - [intellij-powershell](https://github.com/ant-druha/intellij-powershell), adds PowerShell language support to IntelliJ-based IDEs
 - [coc-powershell](https://github.com/yatli/coc-powershell), a Vim and Neovim plugin
+- [powershell.nvim](https://github.com/TheLeoP/powershell.nvim) a Neovim plugin
 
 Please note that other than PowerShell for Visual Studio Code, these clients are community maintained and may be very out of date.
 It is recommended that you simply use an LSP plugin for your editor and configure it as demonstrated [below](#Usage).
@@ -55,7 +56,7 @@ The start script, `Start-EditorServices.ps1`, is found in the `PowerShellEditorS
 The session details (which named pipes were created) will be written to the given session details path,
 and the client needs to point to these in order to connect.
 
-The Visual Studio Code, Vim, and IntelliJ extensions use named pipes.
+The Visual Studio Code, Vim, Neovim, and IntelliJ extensions use named pipes.
 
 ### Standard Input and Output
 
@@ -130,6 +131,7 @@ The debugging functionality in PowerShell Editor Services is available in the fo
 
 - [PowerShell for Visual Studio Code](https://github.com/PowerShell/vscode-powershell)
 - [nvim-dap-powershell for Neovim](https://github.com/Willem-J-an/nvim-dap-powershell)
+- [powershell.nvim for Neovim](https://github.com/TheLeoP/powershell.nvim)
 
 ## API Usage
 
@@ -190,7 +192,7 @@ Open the PowerShellEditorServices folder that you cloned locally and press <kbd>
 
 ## Contributions Welcome
 
-We would love to incorporate community contributions into this project.  If you would like to
+We would love to incorporate community contributions into this project. If you would like to
 contribute code, documentation, tests, or bug reports, please read our [Contribution Guide](https://github.com/PowerShell/PowerShellEditorServices/blob/main/CONTRIBUTING.md) to learn more.
 
 ## Maintainers
