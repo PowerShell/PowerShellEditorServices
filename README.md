@@ -67,7 +67,7 @@ This is because because these two features require their own IO streams and stdi
 
 Please see the [emacs-simple-test.el](test/emacs-simple-test.el),
 [emacs-test.el](test/emacs-test.el),
-[vim-simple-test.el](test/vim-simple-test.vim) and [vim-test.vim](test/vim-test.vim) for examples of end-to-end tested configurations.
+[vim-simple-test.vim](test/vim-simple-test.vim) and [vim-test.vim](test/vim-test.vim) for examples of end-to-end tested configurations.
 They use [eglot for Emacs](https://github.com/joaotavora/eglot) and [LanguageClient-neovim](https://github.com/autozimu/LanguageClient-neovim).
 
 ### Advanced Usage
