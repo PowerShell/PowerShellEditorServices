@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.IO;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
@@ -20,24 +20,18 @@ using System.Linq;
 namespace PowerShellEditorServices.Test.Refactoring
 {
     [Trait("Category", "RefactorUtilities")]
-    public class RefactorUtilitiesTests : IDisposable
+    public class RefactorUtilitiesTests : IAsyncLifetime
     {
-        private readonly PsesInternalHost psesHost;
-        private readonly WorkspaceService workspace;
+        private PsesInternalHost psesHost;
+        private WorkspaceService workspace;
 
-        public RefactorUtilitiesTests()
+        public async Task InitializeAsync()
         {
-            psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
+            psesHost = await PsesHostFactory.Create(NullLoggerFactory.Instance);
             workspace = new WorkspaceService(NullLoggerFactory.Instance);
         }
 
-        public void Dispose()
-        {
-#pragma warning disable VSTHRD002
-            psesHost.StopAsync().Wait();
-#pragma warning restore VSTHRD002
-            GC.SuppressFinalize(this);
-        }
+        public async Task DisposeAsync() => await Task.Run(psesHost.StopAsync);
         private ScriptFile GetTestScript(string fileName) => workspace.GetFile(TestUtilities.GetSharedPath(Path.Combine("Refactoring\\Utilities", fileName)));
 
         [Fact]
