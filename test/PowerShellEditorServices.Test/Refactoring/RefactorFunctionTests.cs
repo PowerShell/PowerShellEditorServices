@@ -3,6 +3,7 @@
 
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
@@ -18,18 +19,18 @@ using PowerShellEditorServices.Test.Shared.Refactoring.Functions;
 namespace PowerShellEditorServices.Test.Refactoring
 {
     [Trait("Category", "RefactorFunction")]
-    public class RefactorFunctionTests : IDisposable
+    public class RefactorFunctionTests : IAsyncLifetime
 
     {
-        private readonly PsesInternalHost psesHost;
-        private readonly WorkspaceService workspace;
-        public void Dispose()
+        private PsesInternalHost psesHost;
+        private WorkspaceService workspace;
+        public async Task InitializeAsync()
         {
-#pragma warning disable VSTHRD002
-            psesHost.StopAsync().Wait();
-#pragma warning restore VSTHRD002
-            GC.SuppressFinalize(this);
+            psesHost = await PsesHostFactory.Create(NullLoggerFactory.Instance);
+            workspace = new WorkspaceService(NullLoggerFactory.Instance);
         }
+
+        public async Task DisposeAsync() => await Task.Run(psesHost.StopAsync);
         private ScriptFile GetTestScript(string fileName) => workspace.GetFile(TestUtilities.GetSharedPath(Path.Combine("Refactoring\\Functions", fileName)));
 
         internal static string GetModifiedScript(string OriginalScript, ModifiedFileResponse Modification)
@@ -72,11 +73,7 @@ namespace PowerShellEditorServices.Test.Refactoring
             };
             return GetModifiedScript(scriptFile.Contents, changes);
         }
-        public RefactorFunctionTests()
-        {
-            psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
-            workspace = new WorkspaceService(NullLoggerFactory.Instance);
-        }
+
         [Fact]
         public void RefactorFunctionSingle()
         {
