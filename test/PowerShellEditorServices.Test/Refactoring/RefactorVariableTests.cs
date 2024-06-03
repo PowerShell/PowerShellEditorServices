@@ -29,7 +29,7 @@ namespace PowerShellEditorServices.Test.Refactoring
             workspace = new WorkspaceService(NullLoggerFactory.Instance);
         }
         public async Task DisposeAsync() => await Task.Run(psesHost.StopAsync);
-        private ScriptFile GetTestScript(string fileName) => workspace.GetFile(TestUtilities.GetSharedPath(Path.Combine("Refactoring\\Variables", fileName)));
+        private ScriptFile GetTestScript(string fileName) => workspace.GetFile(TestUtilities.GetSharedPath(Path.Combine("Refactoring", "Variables", fileName)));
 
         internal static string GetModifiedScript(string OriginalScript, ModifiedFileResponse Modification)
         {
