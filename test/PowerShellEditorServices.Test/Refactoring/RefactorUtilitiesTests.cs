@@ -32,7 +32,7 @@ namespace PowerShellEditorServices.Test.Refactoring
         }
 
         public async Task DisposeAsync() => await Task.Run(psesHost.StopAsync);
-        private ScriptFile GetTestScript(string fileName) => workspace.GetFile(TestUtilities.GetSharedPath(Path.Combine("Refactoring\\Utilities", fileName)));
+        private ScriptFile GetTestScript(string fileName) => workspace.GetFile(TestUtilities.GetSharedPath(Path.Combine("Refactoring", "Utilities", fileName)));
 
         [Fact]
         public void GetVariableExpressionAst()

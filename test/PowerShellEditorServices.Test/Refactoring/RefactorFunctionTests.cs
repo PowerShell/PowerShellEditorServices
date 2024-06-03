@@ -31,7 +31,7 @@ namespace PowerShellEditorServices.Test.Refactoring
         }
 
         public async Task DisposeAsync() => await Task.Run(psesHost.StopAsync);
-        private ScriptFile GetTestScript(string fileName) => workspace.GetFile(TestUtilities.GetSharedPath(Path.Combine("Refactoring\\Functions", fileName)));
+        private ScriptFile GetTestScript(string fileName) => workspace.GetFile(TestUtilities.GetSharedPath(Path.Combine("Refactoring", "Functions", fileName)));
 
         internal static string GetModifiedScript(string OriginalScript, ModifiedFileResponse Modification)
         {
