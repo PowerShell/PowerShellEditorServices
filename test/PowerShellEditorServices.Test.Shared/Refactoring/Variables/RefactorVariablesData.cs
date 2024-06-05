@@ -160,7 +160,7 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring.Variables
         {
             FileName = "VariableInForloopDuplicateAssignment.ps1",
             Column = 14,
-            Line = 7,
+            Line = 8,
             RenameTo = "Renamed"
         };
         public static readonly RenameSymbolParams VariableInWhileDuplicateAssignment = new()
