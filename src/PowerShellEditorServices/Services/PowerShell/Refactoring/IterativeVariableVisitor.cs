@@ -174,11 +174,25 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         {
             Ast parent = node;
             // Walk backwards up the tree looking for a ScriptBLock of a FunctionDefinition
-            parent = Utilities.GetAstParentOfType(parent, typeof(ScriptBlockAst), typeof(FunctionDefinitionAst));
+            parent = Utilities.GetAstParentOfType(parent, typeof(ScriptBlockAst), typeof(FunctionDefinitionAst), typeof(ForEachStatementAst),typeof(ForStatementAst));
             if (parent is ScriptBlockAst && parent.Parent != null && parent.Parent is FunctionDefinitionAst)
             {
                 parent = parent.Parent;
             }
+            // Check if the parent of the VariableExpressionAst is a ForEachStatementAst then check if the variable names match
+            // if so this is probably a variable defined within a foreach loop
+            else if(parent is ForEachStatementAst ForEachStmnt && node is VariableExpressionAst VarExp &&
+                     ForEachStmnt.Variable.VariablePath.UserPath == VarExp.VariablePath.UserPath) {
+                parent = ForEachStmnt;
+            }
+            // Check if the parent of the VariableExpressionAst is a ForStatementAst then check if the variable names match
+            // if so this is probably a variable defined within a foreach loop
+            else if(parent is ForStatementAst ForStmnt && node is VariableExpressionAst ForVarExp &&
+                    ForStmnt.Initializer is AssignmentStatementAst AssignStmnt && AssignStmnt.Left is VariableExpressionAst VarExpStmnt &&
+                    VarExpStmnt.VariablePath.UserPath == ForVarExp.VariablePath.UserPath){
+                parent = ForStmnt;
+            }
+
             return parent;
         }
 
