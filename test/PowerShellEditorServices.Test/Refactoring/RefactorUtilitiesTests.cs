@@ -154,6 +154,23 @@ namespace PowerShellEditorServices.Test.Refactoring
 
         }
         [Fact]
+        public void GetVariableUnderFunctionDef()
+        {
+            RenameSymbolParams request = new(){
+                Column=5,
+                Line=2,
+                RenameTo="Renamed",
+                FileName="TestDetectionUnderFunctionDef.ps1"
+            };
+            ScriptFile scriptFile = GetTestScript(request.FileName);
+
+            Ast symbol = Utilities.GetAst(request.Line,request.Column,scriptFile.ScriptAst);
+            Assert.IsType<VariableExpressionAst>(symbol);
+            Assert.Equal(2,symbol.Extent.StartLineNumber);
+            Assert.Equal(5,symbol.Extent.StartColumnNumber);
+
+        }
+        [Fact]
         public void AssertContainsDotSourcingTrue()
         {
             ScriptFile scriptFile = GetTestScript("TestDotSourcingTrue.ps1");
