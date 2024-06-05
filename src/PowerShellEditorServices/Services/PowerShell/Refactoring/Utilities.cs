@@ -100,10 +100,12 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             return CorrectDefinition;
         }
 
-        public static bool AssertContainsDotSourced(Ast ScriptAst){
-            Ast dotsourced = ScriptAst.Find(ast =>{
+        public static bool AssertContainsDotSourced(Ast ScriptAst)
+        {
+            Ast dotsourced = ScriptAst.Find(ast =>
+            {
                 return ast is CommandAst commandAst && commandAst.InvocationOperator == TokenKind.Dot;
-            },true);
+            }, true);
             if (dotsourced != null)
             {
                 return true;
@@ -121,8 +123,36 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     StartColumnNumber >= ast.Extent.StartColumnNumber;
             }, true);
 
-            IEnumerable<Ast> token = null;
-            token = Ast.FindAll(ast =>
+            if (token is NamedBlockAst)
+            {
+                // NamedBlockAST starts on the same line as potentially another AST,
+                // its likley a user is not after the NamedBlockAst but what it contains
+                IEnumerable<Ast> stacked_tokens = token.FindAll(ast =>
+                {
+                    return StartLineNumber == ast.Extent.StartLineNumber &&
+                    ast.Extent.EndColumnNumber >= StartColumnNumber
+                    && StartColumnNumber >= ast.Extent.StartColumnNumber;
+                }, true);
+
+                if (stacked_tokens.Count() > 1)
+                {
+                    return stacked_tokens.LastOrDefault();
+                }
+
+                return token.Parent;
+            }
+
+            if (null == token)
+            {
+                IEnumerable<Ast> LineT = Ast.FindAll(ast =>
+                {
+                    return StartLineNumber == ast.Extent.StartLineNumber &&
+                    StartColumnNumber >= ast.Extent.StartColumnNumber;
+                }, true);
+                return LineT.OfType<FunctionDefinitionAst>()?.LastOrDefault();
+            }
+
+            IEnumerable<Ast> tokens = token.FindAll(ast =>
             {
                 return ast.Extent.EndColumnNumber >= StartColumnNumber
                 && StartColumnNumber >= ast.Extent.StartColumnNumber;
