@@ -149,5 +149,26 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring.Variables
             Line = 16,
             RenameTo = "Renamed"
         };
+        public static readonly RenameSymbolParams VariableInForeachDuplicateAssignment = new()
+        {
+            FileName = "VariableInForeachDuplicateAssignment.ps1",
+            Column = 18,
+            Line = 6,
+            RenameTo = "Renamed"
+        };
+        public static readonly RenameSymbolParams VariableInForloopDuplicateAssignment = new()
+        {
+            FileName = "VariableInForloopDuplicateAssignment.ps1",
+            Column = 14,
+            Line = 7,
+            RenameTo = "Renamed"
+        };
+        public static readonly RenameSymbolParams VariableInWhileDuplicateAssignment = new()
+        {
+            FileName = "VariableInWhileDuplicateAssignment.ps1",
+            Column = 13,
+            Line = 7,
+            RenameTo = "Renamed"
+        };
     }
 }

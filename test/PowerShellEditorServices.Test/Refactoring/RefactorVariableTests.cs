@@ -273,5 +273,27 @@ namespace PowerShellEditorServices.Test.Refactoring
 
             Assert.Equal(expectedContent.Contents, modifiedcontent);
         }
+        [Fact]
+        public void VariableInForeachDuplicateAssignment()
+        {
+            RenameSymbolParams request = RenameVariableData.VariableInForeachDuplicateAssignment;
+            ScriptFile scriptFile = GetTestScript(request.FileName);
+            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
+
+            string modifiedcontent = TestRenaming(scriptFile, request);
+
+            Assert.Equal(expectedContent.Contents, modifiedcontent);
+        }
+        [Fact]
+        public void VariableInForloopDuplicateAssignment()
+        {
+            RenameSymbolParams request = RenameVariableData.VariableInForloopDuplicateAssignment;
+            ScriptFile scriptFile = GetTestScript(request.FileName);
+            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
+
+            string modifiedcontent = TestRenaming(scriptFile, request);
+
+            Assert.Equal(expectedContent.Contents, modifiedcontent);
+        }
     }
 }
