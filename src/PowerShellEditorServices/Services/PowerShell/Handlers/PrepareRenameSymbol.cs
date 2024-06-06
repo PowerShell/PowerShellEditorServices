@@ -67,40 +67,60 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     result.message = "Dot Source detected, this is currently not supported operation aborted";
                     return result;
                 }
+
+                bool IsFunction = false;
+                string tokenName = "";
+
                 switch (token)
                 {
-                    case FunctionDefinitionAst funcDef:
+
+                    case FunctionDefinitionAst FuncAst:
+                        IsFunction = true;
+                        tokenName = FuncAst.Name;
+                        break;
+                    case VariableExpressionAst or CommandParameterAst or ParameterAst:
+                        IsFunction = false;
+                        tokenName = request.RenameTo;
+                        break;
+                    case StringConstantExpressionAst:
+
+                        if (token.Parent is CommandAst CommAst)
                         {
-                            try
-                            {
-
-                                IterativeFunctionRename visitor = new(funcDef.Name,
-                                            request.RenameTo,
-                                            funcDef.Extent.StartLineNumber,
-                                            funcDef.Extent.StartColumnNumber,
-                                            scriptFile.ScriptAst);
-                            }
-                            catch (FunctionDefinitionNotFoundException)
-                            {
-
-                                result.message = "Failed to Find function definition within current file";
-                            }
-
-                            break;
+                            IsFunction = true;
+                            tokenName = CommAst.GetCommandName();
                         }
-
-                    case VariableExpressionAst or CommandAst or CommandParameterAst or ParameterAst or StringConstantExpressionAst:
+                        else
                         {
-                            IterativeVariableRename visitor = new(request.RenameTo,
-                                                token.Extent.StartLineNumber,
-                                                token.Extent.StartColumnNumber,
-                                                scriptFile.ScriptAst);
-                            if (visitor.TargetVariableAst == null)
-                            {
-                                result.message = "Failed to find variable definition within the current file";
-                            }
-                            break;
+                            IsFunction = false;
                         }
+                        break;
+                }
+
+                if (IsFunction)
+                {
+                    try
+                    {
+                        IterativeFunctionRename visitor = new(tokenName,
+                            request.RenameTo,
+                            token.Extent.StartLineNumber,
+                            token.Extent.StartColumnNumber,
+                            scriptFile.ScriptAst);
+                    }
+                    catch (FunctionDefinitionNotFoundException)
+                    {
+                        result.message = "Failed to Find function definition within current file";
+                    }
+                }
+                else
+                {
+                    IterativeVariableRename visitor = new(tokenName,
+                                        token.Extent.StartLineNumber,
+                                        token.Extent.StartColumnNumber,
+                                        scriptFile.ScriptAst);
+                    if (visitor.TargetVariableAst == null)
+                    {
+                        result.message = "Failed to find variable definition within the current file";
+                    }
                 }
                 return result;
             }).ConfigureAwait(false);

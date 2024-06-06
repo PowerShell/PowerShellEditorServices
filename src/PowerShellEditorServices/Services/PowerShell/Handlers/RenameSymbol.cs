@@ -73,22 +73,28 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         }
         internal static ModifiedFileResponse RenameFunction(Ast token, Ast scriptAst, RenameSymbolParams request)
         {
+            string tokenName = "";
             if (token is FunctionDefinitionAst funcDef)
             {
-                IterativeFunctionRename visitor = new(funcDef.Name,
-                            request.RenameTo,
-                            funcDef.Extent.StartLineNumber,
-                            funcDef.Extent.StartColumnNumber,
-                            scriptAst);
-                visitor.Visit(scriptAst);
-                ModifiedFileResponse FileModifications = new(request.FileName)
-                {
-                    Changes = visitor.Modifications
-                };
-                return FileModifications;
-
+                tokenName = funcDef.Name;
             }
-            return null;
+            else if (token.Parent is CommandAst CommAst)
+            {
+                tokenName = CommAst.GetCommandName();
+            }
+            IterativeFunctionRename visitor = new(tokenName,
+                        request.RenameTo,
+                        token.Extent.StartLineNumber,
+                        token.Extent.StartColumnNumber,
+                        scriptAst);
+            visitor.Visit(scriptAst);
+            ModifiedFileResponse FileModifications = new(request.FileName)
+            {
+                Changes = visitor.Modifications
+            };
+            return FileModifications;
+
+
 
         }
         internal static ModifiedFileResponse RenameVariable(Ast symbol, Ast scriptAst, RenameSymbolParams request)
@@ -121,11 +127,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return await Task.Run(() =>
             {
 
-                Ast token = Utilities.GetAst(request.Line + 1,request.Column + 1,scriptFile.ScriptAst);
+                Ast token = Utilities.GetAst(request.Line + 1, request.Column + 1, scriptFile.ScriptAst);
 
                 if (token == null) { return null; }
 
-                ModifiedFileResponse FileModifications = token is FunctionDefinitionAst
+                ModifiedFileResponse FileModifications = (token is FunctionDefinitionAst || token.Parent is CommandAst)
                     ? RenameFunction(token, scriptFile.ScriptAst, request)
                     : RenameVariable(token, scriptFile.ScriptAst, request);
 
