@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -182,7 +182,7 @@ namespace PowerShellEditorServices.Test.Refactoring
             Assert.Equal(expectedContent.Contents, modifiedcontent);
         }
         [Fact]
-        public void RenameFunctionInSscriptblock()
+        public void RenameFunctionInScriptblock()
         {
             RenameSymbolParams request = RefactorsFunctionData.FunctionScriptblock;
             ScriptFile scriptFile = GetTestScript(request.FileName);
