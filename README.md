@@ -190,33 +190,34 @@ PS C:\path\to\PowerShellEditorServices> Invoke-Build Build
 Open the PowerShellEditorServices folder that you cloned locally and press <kbd>Ctrl+Shift+B</kbd>
 (or <kbd>Cmd+Shift+B</kbd> on macOS).
 
+## Code of Conduct
+
+Please see our [Code of Conduct](CODE_OF_CONDUCT.md) before participating in this project.
+
 ## Contributions Welcome
 
 We would love to incorporate community contributions into this project. If you would like to
-contribute code, documentation, tests, or bug reports, please read our [Contribution Guide](https://github.com/PowerShell/PowerShellEditorServices/blob/main/CONTRIBUTING.md) to learn more.
+contribute code, documentation, tests, or bug reports, please read our [Contribution Guide](CONTRIBUTING.md) to learn more.
+
+## Security Note
+
+For any security issues, please see [here](SECURITY.md).
 
 ## Maintainers
 
-- [Justin Grote](https://github.com/JustinGrote) - [@JustinWGrote](https://twitter.com/justinwgrote)
-- [Patrick Meinecke](https://github.com/SeeminglyScience) - [@SeeminglyScienc](http://twitter.com/SeeminglyScienc)
-- [Andy Jordan](https://github.com/andschwa) - [andyleejordan.com](https://andyleejordan.com/)
+- Andy Jordan - [@andyleejordan](https://github.com/andyleejordan)
+- Patrick Meinecke - [@SeeminglyScience](https://github.com/SeeminglyScience)
+- Sydney Smith - [@SydneyhSmith](https://github.com/SydneyhSmith)
+- Justin Grote - [@JustinGrote](https://github.com/JustinGrote)
 
 ### Emeriti
 
-- [Rob Holt](https://github.com/rjmholt) - [@rjmholt](https://twitter.com/rjmholt)
-- [Tyler Leonhardt](https://github.com/TylerLeonhardt) - [tylerleonhardt.com](https://tylerleonhardt.com)
-- [David Wilson](https://github.com/daviwil) - [@daviwil](https://twitter.com/daviwil)
+- Rob Holt - [@rjmholt](https://github.com/rjmholt)
+- Tyler Leonhardt - [@TylerLeonhardt](https://github.com/TylerLeonhardt)
+- David Wilson - [@daviwil](https://github.com/daviwil)
 
 ## License
 
-This project is [licensed under the MIT License](LICENSE).
-
-## [Code of Conduct][conduct-md]
-
-This project has adopted the [Microsoft Open Source Code of Conduct][conduct-code].
-For more information, see the [Code of Conduct FAQ][conduct-FAQ] or contact [opencode@microsoft.com][conduct-email] with any additional questions or comments.
-
-[conduct-code]: http://opensource.microsoft.com/codeofconduct/
-[conduct-FAQ]: http://opensource.microsoft.com/codeofconduct/faq/
-[conduct-email]: mailto:opencode@microsoft.com
-[conduct-md]: https://github.com/PowerShell/PowerShellEditorServices/blob/main/CODE_OF_CONDUCT.md
+This project is [licensed under the MIT License](LICENSE). Please see the
+[third-party notices](NOTICE.txt) file for details on the third-party
+binaries that we include with releases of this project.
