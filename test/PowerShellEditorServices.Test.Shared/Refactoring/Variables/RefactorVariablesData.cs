@@ -177,5 +177,19 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring.Variables
             Line = 6,
             RenameTo = "Renamed"
         };
+        public static readonly RenameSymbolParams VariableDotNotationFromInnerFunction = new()
+        {
+            FileName = "VariableDotNotationFromInnerFunction.ps1",
+            Column = 26,
+            Line = 11,
+            RenameTo = "Renamed"
+        };
+        public static readonly RenameSymbolParams VariableDotNotationFromOuterVar = new()
+        {
+            FileName = "VariableDotNotationFromInnerFunction.ps1",
+            Column = 1,
+            Line = 1,
+            RenameTo = "Renamed"
+        };
     }
 }

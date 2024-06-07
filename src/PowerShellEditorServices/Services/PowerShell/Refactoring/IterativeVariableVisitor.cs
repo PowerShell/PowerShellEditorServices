@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         internal FunctionDefinitionAst TargetFunction;
         internal RenameSymbolOptions options;
 
-        public IterativeVariableRename(string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst,RenameSymbolOptions options = null)
+        public IterativeVariableRename(string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst, RenameSymbolOptions options = null)
         {
             this.NewName = NewName;
             this.StartLineNumber = StartLineNumber;
@@ -185,26 +185,58 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         {
             Ast parent = node;
             // Walk backwards up the tree looking for a ScriptBLock of a FunctionDefinition
-            parent = Utilities.GetAstParentOfType(parent, typeof(ScriptBlockAst), typeof(FunctionDefinitionAst), typeof(ForEachStatementAst),typeof(ForStatementAst));
+            parent = Utilities.GetAstParentOfType(parent, typeof(ScriptBlockAst), typeof(FunctionDefinitionAst), typeof(ForEachStatementAst), typeof(ForStatementAst));
             if (parent is ScriptBlockAst && parent.Parent != null && parent.Parent is FunctionDefinitionAst)
             {
                 parent = parent.Parent;
             }
             // Check if the parent of the VariableExpressionAst is a ForEachStatementAst then check if the variable names match
             // if so this is probably a variable defined within a foreach loop
-            else if(parent is ForEachStatementAst ForEachStmnt && node is VariableExpressionAst VarExp &&
-                     ForEachStmnt.Variable.VariablePath.UserPath == VarExp.VariablePath.UserPath) {
+            else if (parent is ForEachStatementAst ForEachStmnt && node is VariableExpressionAst VarExp &&
+                     ForEachStmnt.Variable.VariablePath.UserPath == VarExp.VariablePath.UserPath)
+            {
                 parent = ForEachStmnt;
             }
             // Check if the parent of the VariableExpressionAst is a ForStatementAst then check if the variable names match
             // if so this is probably a variable defined within a foreach loop
-            else if(parent is ForStatementAst ForStmnt && node is VariableExpressionAst ForVarExp &&
+            else if (parent is ForStatementAst ForStmnt && node is VariableExpressionAst ForVarExp &&
                     ForStmnt.Initializer is AssignmentStatementAst AssignStmnt && AssignStmnt.Left is VariableExpressionAst VarExpStmnt &&
-                    VarExpStmnt.VariablePath.UserPath == ForVarExp.VariablePath.UserPath){
+                    VarExpStmnt.VariablePath.UserPath == ForVarExp.VariablePath.UserPath)
+            {
                 parent = ForStmnt;
             }
 
             return parent;
+        }
+
+        internal static bool IsVariableExpressionAssignedInTargetScope(VariableExpressionAst node, Ast scope)
+        {
+            bool r = false;
+
+            List<VariableExpressionAst> VariableAssignments = node.FindAll(ast =>
+            {
+                return ast is VariableExpressionAst VarDef &&
+                VarDef.Parent is AssignmentStatementAst or ParameterAst &&
+                VarDef.VariablePath.UserPath.ToLower() == node.VariablePath.UserPath.ToLower() &&
+                // Look Backwards from the node above
+                (VarDef.Extent.EndLineNumber < node.Extent.StartLineNumber ||
+                (VarDef.Extent.EndColumnNumber <= node.Extent.StartColumnNumber &&
+                VarDef.Extent.EndLineNumber <= node.Extent.StartLineNumber)) &&
+                // Must be within the the designated scope
+                VarDef.Extent.StartLineNumber >= scope.Extent.StartLineNumber;
+            }, true).Cast<VariableExpressionAst>().ToList();
+
+            if (VariableAssignments.Count > 0)
+            {
+                r = true;
+            }
+            // Node is probably the first Assignment Statement within scope
+            if (node.Parent is AssignmentStatementAst && node.Extent.StartLineNumber >= scope.Extent.StartLineNumber)
+            {
+                r = true;
+            }
+
+            return r;
         }
 
         internal static bool WithinTargetsScope(Ast Target, Ast Child)
@@ -214,9 +246,14 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             Ast TargetScope = GetAstParentScope(Target);
             while (childParent != null)
             {
-                if (childParent is FunctionDefinitionAst)
+                if (childParent is FunctionDefinitionAst FuncDefAst)
                 {
-                    break;
+                    if (Child is VariableExpressionAst VarExpAst && !IsVariableExpressionAssignedInTargetScope(VarExpAst, FuncDefAst))
+                    {
+
+                    }else{
+                        break;
+                    }
                 }
                 if (childParent == TargetScope)
                 {
