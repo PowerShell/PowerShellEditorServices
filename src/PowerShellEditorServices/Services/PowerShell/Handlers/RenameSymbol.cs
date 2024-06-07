@@ -16,14 +16,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     [Serial, Method("powerShell/renameSymbol")]
     internal interface IRenameSymbolHandler : IJsonRpcRequestHandler<RenameSymbolParams, RenameSymbolResult> { }
 
-    internal class RenameSymbolParams : IRequest<RenameSymbolResult>
+    public class RenameSymbolParams : IRequest<RenameSymbolResult>
     {
         public string FileName { get; set; }
         public int Line { get; set; }
         public int Column { get; set; }
         public string RenameTo { get; set; }
     }
-    internal class TextChange
+    public class TextChange
     {
         public string NewText { get; set; }
         public int StartLine { get; set; }
@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public int EndLine { get; set; }
         public int EndColumn { get; set; }
     }
-    internal class ModifiedFileResponse
+    public class ModifiedFileResponse
     {
         public string FileName { get; set; }
         public List<TextChange> Changes { get; set; }
@@ -55,7 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             );
         }
     }
-    internal class RenameSymbolResult
+    public class RenameSymbolResult
     {
         public RenameSymbolResult() => Changes = new List<ModifiedFileResponse>();
         public List<ModifiedFileResponse> Changes { get; set; }
