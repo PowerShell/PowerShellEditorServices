@@ -107,110 +107,35 @@ namespace PowerShellEditorServices.Test.Refactoring
             public override string ToString() => $"{FileName}";
         }
 
-
-        public class SimpleData : TheoryData<RenameSymbolParamsSerialized>
+        public class FunctionRenameTestData : TheoryData<RenameSymbolParamsSerialized>
         {
-            public SimpleData()
+            public FunctionRenameTestData()
             {
 
+                // Simple
                 Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionsSingle));
                 Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionWithInternalCalls));
                 Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionCmdlet));
                 Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionScriptblock));
                 Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionCallWIthinStringExpression));
-            }
-
-        }
-
-        [Theory]
-        [ClassData(typeof(SimpleData))]
-        public void Simple(RenameSymbolParamsSerialized s)
-        {
-            // Arrange
-            RenameSymbolParamsSerialized request = s;
-            ScriptFile scriptFile = GetTestScript(request.FileName);
-            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
-            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-             request.Line,
-             request.Column);
-            // Act
-            string modifiedcontent = TestRenaming(scriptFile, request, symbol);
-
-            // Assert
-            Assert.Equal(expectedContent.Contents, modifiedcontent);
-        }
-
-        public class MultiOccurrenceData : TheoryData<RenameSymbolParamsSerialized>
-        {
-            public MultiOccurrenceData()
-            {
+                // Loops
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionLoop));
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionForeach));
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionForeachObject));
+                // Nested
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionInnerIsNested));
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionOuterHasNestedFunction));
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionInnerIsNested));
+                // Multi Occurance
                 Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionMultipleOccurrences));
                 Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionSameName));
                 Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionNestedRedefinition));
             }
-
         }
 
         [Theory]
-        [ClassData(typeof(MultiOccurrenceData))]
-        public void MultiOccurrence(RenameSymbolParamsSerialized s)
-        {
-            // Arrange
-            RenameSymbolParamsSerialized request = s;
-            ScriptFile scriptFile = GetTestScript(request.FileName);
-            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
-            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-             request.Line,
-             request.Column);
-            // Act
-            string modifiedcontent = TestRenaming(scriptFile, request, symbol);
-
-            // Assert
-            Assert.Equal(expectedContent.Contents, modifiedcontent);
-        }
-
-        public class NestedData : TheoryData<RenameSymbolParamsSerialized>
-        {
-            public NestedData()
-            {
-                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionInnerIsNested));
-                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionOuterHasNestedFunction));
-                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionInnerIsNested));
-            }
-
-        }
-
-        [Theory]
-        [ClassData(typeof(NestedData))]
-        public void Nested(RenameSymbolParamsSerialized s)
-        {
-            // Arrange
-            RenameSymbolParamsSerialized request = s;
-            ScriptFile scriptFile = GetTestScript(request.FileName);
-            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
-            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-             request.Line,
-             request.Column);
-            // Act
-            string modifiedcontent = TestRenaming(scriptFile, request, symbol);
-
-            // Assert
-            Assert.Equal(expectedContent.Contents, modifiedcontent);
-        }
-        public class LoopsData : TheoryData<RenameSymbolParamsSerialized>
-        {
-            public LoopsData()
-            {
-                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionLoop));
-                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionForeach));
-                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionForeachObject));
-            }
-
-        }
-
-        [Theory]
-        [ClassData(typeof(LoopsData))]
-        public void Loops(RenameSymbolParamsSerialized s)
+        [ClassData(typeof(FunctionRenameTestData))]
+        public void Rename(RenameSymbolParamsSerialized s)
         {
             // Arrange
             RenameSymbolParamsSerialized request = s;
