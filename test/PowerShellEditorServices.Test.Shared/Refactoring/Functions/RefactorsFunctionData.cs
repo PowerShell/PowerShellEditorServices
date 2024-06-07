@@ -4,89 +4,89 @@ using Microsoft.PowerShell.EditorServices.Handlers;
 
 namespace PowerShellEditorServices.Test.Shared.Refactoring.Functions
 {
-    internal static class RefactorsFunctionData
+    internal class RefactorsFunctionData
     {
 
         public static readonly RenameSymbolParams FunctionsSingle = new()
         {
-            FileName = "BasicFunction.ps1",
+            FileName = "FunctionsSingle.ps1",
             Column = 1,
             Line = 5,
             RenameTo = "Renamed"
         };
         public static readonly RenameSymbolParams FunctionMultipleOccurrences = new()
         {
-            FileName = "MultipleOccurrences.ps1",
+            FileName = "FunctionMultipleOccurrences.ps1",
             Column = 1,
             Line = 5,
             RenameTo = "Renamed"
         };
         public static readonly RenameSymbolParams FunctionInnerIsNested = new()
         {
-            FileName = "NestedFunctions.ps1",
+            FileName = "FunctionInnerIsNested.ps1",
             Column = 5,
             Line = 5,
             RenameTo = "bar"
         };
         public static readonly RenameSymbolParams FunctionOuterHasNestedFunction = new()
         {
-            FileName = "OuterFunction.ps1",
+            FileName = "FunctionOuterHasNestedFunction.ps1",
             Column = 10,
             Line = 1,
-            RenameTo = "RenamedOuterFunction"
+            RenameTo = "Renamed"
         };
         public static readonly RenameSymbolParams FunctionWithInnerFunction = new()
         {
-            FileName = "InnerFunction.ps1",
+            FileName = "FunctionWithInnerFunction.ps1",
             Column = 5,
             Line = 5,
             RenameTo = "RenamedInnerFunction"
         };
         public static readonly RenameSymbolParams FunctionWithInternalCalls = new()
         {
-            FileName = "InternalCalls.ps1",
+            FileName = "FunctionWithInternalCalls.ps1",
             Column = 1,
             Line = 5,
             RenameTo = "Renamed"
         };
         public static readonly RenameSymbolParams FunctionCmdlet = new()
         {
-            FileName = "CmdletFunction.ps1",
+            FileName = "FunctionCmdlet.ps1",
             Column = 10,
             Line = 1,
             RenameTo = "Renamed"
         };
         public static readonly RenameSymbolParams FunctionSameName = new()
         {
-            FileName = "SamenameFunctions.ps1",
+            FileName = "FunctionSameName.ps1",
             Column = 14,
             Line = 3,
             RenameTo = "RenamedSameNameFunction"
         };
         public static readonly RenameSymbolParams FunctionScriptblock = new()
         {
-            FileName = "ScriptblockFunction.ps1",
+            FileName = "FunctionScriptblock.ps1",
             Column = 5,
             Line = 5,
             RenameTo = "Renamed"
         };
         public static readonly RenameSymbolParams FunctionLoop = new()
         {
-            FileName = "LoopFunction.ps1",
+            FileName = "FunctionLoop.ps1",
             Column = 5,
             Line = 5,
             RenameTo = "Renamed"
         };
         public static readonly RenameSymbolParams FunctionForeach = new()
         {
-            FileName = "ForeachFunction.ps1",
+            FileName = "FunctionForeach.ps1",
             Column = 5,
             Line = 11,
             RenameTo = "Renamed"
         };
         public static readonly RenameSymbolParams FunctionForeachObject = new()
         {
-            FileName = "ForeachObjectFunction.ps1",
+            FileName = "FunctionForeachObject.ps1",
             Column = 5,
             Line = 11,
             RenameTo = "Renamed"
@@ -96,6 +96,13 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring.Functions
             FileName = "FunctionCallWIthinStringExpression.ps1",
             Column = 10,
             Line = 1,
+            RenameTo = "Renamed"
+        };
+        public static readonly RenameSymbolParams FunctionNestedRedefinition = new()
+        {
+            FileName = "FunctionNestedRedefinition.ps1",
+            Column = 15,
+            Line = 13,
             RenameTo = "Renamed"
         };
     }
