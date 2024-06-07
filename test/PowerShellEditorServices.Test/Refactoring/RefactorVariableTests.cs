@@ -71,6 +71,7 @@ namespace PowerShellEditorServices.Test.Refactoring
                 Add(new RenameSymbolParamsSerialized(RenameVariableData.VariableCommandParameterSplattedFromSplat));
                 Add(new RenameSymbolParamsSerialized(RenameVariableData.VariableInForeachDuplicateAssignment));
                 Add(new RenameSymbolParamsSerialized(RenameVariableData.VariableInForloopDuplicateAssignment));
+                Add(new RenameSymbolParamsSerialized(RenameVariableData.VariableNestedScopeFunctionRefactorInner));
             }
         }
 

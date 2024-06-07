@@ -322,6 +322,13 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     {
                         ShouldRename = true;
                     }
+                    // The TargetVariable is defined within a function
+                    // This commandAst is not within that function's scope so we should not rename
+                    if (GetAstParentScope(TargetVariableAst) is FunctionDefinitionAst && !WithinTargetsScope(TargetVariableAst, commandAst))
+                    {
+                        ShouldRename = false;
+                    }
+
                 }
                 // Is this a Variable Assignment thats not within scope
                 else if (variableExpressionAst.Parent is AssignmentStatementAst assignment &&

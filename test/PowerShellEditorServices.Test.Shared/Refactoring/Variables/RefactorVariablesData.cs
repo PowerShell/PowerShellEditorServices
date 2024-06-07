@@ -163,5 +163,12 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring.Variables
             Line = 9,
             RenameTo = "Renamed"
         };
+        public static readonly RenameSymbolParams VariableNestedScopeFunctionRefactorInner = new()
+        {
+            FileName = "VariableNestedScopeFunctionRefactorInner.ps1",
+            Column = 5,
+            Line = 3,
+            RenameTo = "Renamed"
+        };
     }
 }
