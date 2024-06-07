@@ -171,7 +171,8 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     }
                     break;
                 case CommandAst ast:
-                    if (ast.GetCommandName()?.ToLower() == OldName.ToLower())
+                    if (ast.GetCommandName()?.ToLower() == OldName.ToLower() &&
+                        TargetFunctionAst.Extent.StartLineNumber <= ast.Extent.StartLineNumber)
                     {
                         if (shouldRename)
                         {
