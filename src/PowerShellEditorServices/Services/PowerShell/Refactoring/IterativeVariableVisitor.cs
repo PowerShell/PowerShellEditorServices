@@ -82,6 +82,15 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             }
 
             Ast TargetParent = GetAstParentScope(node);
+
+            // Is the Variable sitting within a ParameterBlockAst that is within a Function Definition
+            // If so we don't need to look further as this is most likley the AssignmentStatement we are looking for
+            Ast paramParent = Utilities.GetAstParentOfType(node, typeof(ParamBlockAst));
+            if (TargetParent is FunctionDefinitionAst && null != paramParent)
+            {
+                return node;
+            }
+
             // Find all variables and parameter assignments with the same name before
             // The node found above
             List<VariableExpressionAst> VariableAssignments = ScriptAst.FindAll(ast =>

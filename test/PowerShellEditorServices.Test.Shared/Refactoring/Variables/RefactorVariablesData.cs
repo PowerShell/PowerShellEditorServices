@@ -170,5 +170,12 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring.Variables
             Line = 3,
             RenameTo = "Renamed"
         };
+        public static readonly RenameSymbolParams VariableSimpleFunctionParameter = new()
+        {
+            FileName = "VariableSimpleFunctionParameter.ps1",
+            Column = 9,
+            Line = 6,
+            RenameTo = "Renamed"
+        };
     }
 }
