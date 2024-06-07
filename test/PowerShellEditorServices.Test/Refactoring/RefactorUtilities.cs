@@ -12,7 +12,15 @@ namespace PowerShellEditorServices.Test.Refactoring
 
         internal static string GetModifiedScript(string OriginalScript, ModifiedFileResponse Modification)
         {
+            Modification.Changes.Sort((a, b) =>
+            {
+                if (b.StartLine == a.StartLine)
+                {
+                    return b.EndColumn - a.EndColumn;
+                }
+                return b.StartLine - a.StartLine;
 
+            });
             string[] Lines = OriginalScript.Split(
                             new string[] { Environment.NewLine },
                             StringSplitOptions.None);
