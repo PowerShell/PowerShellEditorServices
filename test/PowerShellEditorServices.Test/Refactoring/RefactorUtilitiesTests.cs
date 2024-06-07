@@ -12,10 +12,9 @@ using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Xunit;
 using System.Management.Automation.Language;
+using static PowerShellEditorServices.Test.Refactoring.RefactorUtilities;
 using Microsoft.PowerShell.EditorServices.Refactoring;
-using System.Management.Automation.Language;
-using System.Collections.Generic;
-using System.Linq;
+using PowerShellEditorServices.Test.Shared.Refactoring.Utilities;
 
 namespace PowerShellEditorServices.Test.Refactoring
 {
@@ -34,140 +33,48 @@ namespace PowerShellEditorServices.Test.Refactoring
         public async Task DisposeAsync() => await Task.Run(psesHost.StopAsync);
         private ScriptFile GetTestScript(string fileName) => workspace.GetFile(TestUtilities.GetSharedPath(Path.Combine("Refactoring", "Utilities", fileName)));
 
-        [Fact]
-        public void GetVariableExpressionAst()
+
+        public class GetAstShouldDetectTestData : TheoryData<RenameSymbolParamsSerialized, int, int>
         {
-            RenameSymbolParams request = new()
+            public GetAstShouldDetectTestData()
             {
-                Column = 11,
-                Line = 15,
-                RenameTo = "Renamed",
-                FileName = "TestDetection.ps1"
-            };
-            ScriptFile scriptFile = GetTestScript(request.FileName);
-
-            Ast symbol = Utilities.GetAst(request.Line, request.Column, scriptFile.ScriptAst);
-            Assert.Equal(15, symbol.Extent.StartLineNumber);
-            Assert.Equal(1, symbol.Extent.StartColumnNumber);
-
+                Add(new RenameSymbolParamsSerialized(RenameUtilitiesData.GetVariableExpressionAst), 15, 1);
+                Add(new RenameSymbolParamsSerialized(RenameUtilitiesData.GetVariableExpressionStartAst), 15, 1);
+                Add(new RenameSymbolParamsSerialized(RenameUtilitiesData.GetVariableWithinParameterAst), 3, 17);
+                Add(new RenameSymbolParamsSerialized(RenameUtilitiesData.GetHashTableKey), 16, 5);
+                Add(new RenameSymbolParamsSerialized(RenameUtilitiesData.GetVariableWithinCommandAst), 6, 28);
+                Add(new RenameSymbolParamsSerialized(RenameUtilitiesData.GetCommandParameterAst), 21, 10);
+                Add(new RenameSymbolParamsSerialized(RenameUtilitiesData.GetFunctionDefinitionAst), 1, 1);
+            }
         }
-        [Fact]
-        public void GetVariableExpressionStartAst()
+
+        [Theory]
+        [ClassData(typeof(GetAstShouldDetectTestData))]
+        public void GetAstShouldDetect(RenameSymbolParamsSerialized s, int l, int c)
         {
-            RenameSymbolParams request = new()
-            {
-                Column = 1,
-                Line = 15,
-                RenameTo = "Renamed",
-                FileName = "TestDetection.ps1"
-            };
-            ScriptFile scriptFile = GetTestScript(request.FileName);
-
-            Ast symbol = Utilities.GetAst(request.Line, request.Column, scriptFile.ScriptAst);
-            Assert.Equal(15, symbol.Extent.StartLineNumber);
-            Assert.Equal(1, symbol.Extent.StartColumnNumber);
-
+            ScriptFile scriptFile = GetTestScript(s.FileName);
+            Ast symbol = Utilities.GetAst(s.Line, s.Column, scriptFile.ScriptAst);
+            // Assert the Line and Column is what is expected
+            Assert.Equal(l, symbol.Extent.StartLineNumber);
+            Assert.Equal(c, symbol.Extent.StartColumnNumber);
         }
-        [Fact]
-        public void GetVariableWithinParameterAst()
-        {
-            RenameSymbolParams request = new()
-            {
-                Column = 21,
-                Line = 3,
-                RenameTo = "Renamed",
-                FileName = "TestDetection.ps1"
-            };
-            ScriptFile scriptFile = GetTestScript(request.FileName);
 
-            Ast symbol = Utilities.GetAst(request.Line, request.Column, scriptFile.ScriptAst);
-            Assert.Equal(3, symbol.Extent.StartLineNumber);
-            Assert.Equal(17, symbol.Extent.StartColumnNumber);
-
-        }
-        [Fact]
-        public void GetHashTableKey()
-        {
-            RenameSymbolParams request = new()
-            {
-                Column = 9,
-                Line = 16,
-                RenameTo = "Renamed",
-                FileName = "TestDetection.ps1"
-            };
-            ScriptFile scriptFile = GetTestScript(request.FileName);
-
-            Ast symbol = Utilities.GetAst(request.Line, request.Column, scriptFile.ScriptAst);
-            Assert.Equal(16, symbol.Extent.StartLineNumber);
-            Assert.Equal(5, symbol.Extent.StartColumnNumber);
-
-        }
-        [Fact]
-        public void GetVariableWithinCommandAst()
-        {
-            RenameSymbolParams request = new()
-            {
-                Column = 29,
-                Line = 6,
-                RenameTo = "Renamed",
-                FileName = "TestDetection.ps1"
-            };
-            ScriptFile scriptFile = GetTestScript(request.FileName);
-
-            Ast symbol = Utilities.GetAst(request.Line, request.Column, scriptFile.ScriptAst);
-            Assert.Equal(6, symbol.Extent.StartLineNumber);
-            Assert.Equal(28, symbol.Extent.StartColumnNumber);
-
-        }
-        [Fact]
-        public void GetCommandParameterAst()
-        {
-            RenameSymbolParams request = new()
-            {
-                Column = 12,
-                Line = 21,
-                RenameTo = "Renamed",
-                FileName = "TestDetection.ps1"
-            };
-            ScriptFile scriptFile = GetTestScript(request.FileName);
-
-            Ast symbol = Utilities.GetAst(request.Line, request.Column, scriptFile.ScriptAst);
-            Assert.Equal(21, symbol.Extent.StartLineNumber);
-            Assert.Equal(10, symbol.Extent.StartColumnNumber);
-
-        }
-        [Fact]
-        public void GetFunctionDefinitionAst()
-        {
-            RenameSymbolParams request = new()
-            {
-                Column = 12,
-                Line = 1,
-                RenameTo = "Renamed",
-                FileName = "TestDetection.ps1"
-            };
-            ScriptFile scriptFile = GetTestScript(request.FileName);
-
-            Ast symbol = Utilities.GetAst(request.Line, request.Column, scriptFile.ScriptAst);
-            Assert.Equal(1, symbol.Extent.StartLineNumber);
-            Assert.Equal(1, symbol.Extent.StartColumnNumber);
-
-        }
         [Fact]
         public void GetVariableUnderFunctionDef()
         {
-            RenameSymbolParams request = new(){
-                Column=5,
-                Line=2,
-                RenameTo="Renamed",
-                FileName="TestDetectionUnderFunctionDef.ps1"
+            RenameSymbolParams request = new()
+            {
+                Column = 5,
+                Line = 2,
+                RenameTo = "Renamed",
+                FileName = "TestDetectionUnderFunctionDef.ps1"
             };
             ScriptFile scriptFile = GetTestScript(request.FileName);
 
-            Ast symbol = Utilities.GetAst(request.Line,request.Column,scriptFile.ScriptAst);
+            Ast symbol = Utilities.GetAst(request.Line, request.Column, scriptFile.ScriptAst);
             Assert.IsType<VariableExpressionAst>(symbol);
-            Assert.Equal(2,symbol.Extent.StartLineNumber);
-            Assert.Equal(5,symbol.Extent.StartColumnNumber);
+            Assert.Equal(2, symbol.Extent.StartLineNumber);
+            Assert.Equal(5, symbol.Extent.StartColumnNumber);
 
         }
         [Fact]
