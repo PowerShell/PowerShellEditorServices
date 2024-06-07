@@ -163,12 +163,5 @@ namespace PowerShellEditorServices.Test.Shared.Refactoring.Variables
             Line = 9,
             RenameTo = "Renamed"
         };
-        public static readonly RenameSymbolParams VariableInWhileDuplicateAssignment = new()
-        {
-            FileName = "VariableInWhileDuplicateAssignment.ps1",
-            Column = 13,
-            Line = 7,
-            RenameTo = "Renamed"
-        };
     }
 }
