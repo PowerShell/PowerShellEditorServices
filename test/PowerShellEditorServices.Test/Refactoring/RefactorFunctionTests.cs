@@ -15,9 +15,12 @@ using Xunit;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Refactoring;
 using PowerShellEditorServices.Test.Shared.Refactoring.Functions;
+using Xunit.Abstractions;
+using MediatR;
 
 namespace PowerShellEditorServices.Test.Refactoring
 {
+
     [Trait("Category", "RefactorFunction")]
     public class RefactorFunctionTests : IAsyncLifetime
 
@@ -51,22 +54,14 @@ namespace PowerShellEditorServices.Test.Refactoring
             return string.Join(Environment.NewLine, Lines);
         }
 
-        internal static string TestRenaming(ScriptFile scriptFile, RenameSymbolParams request, SymbolReference symbol)
+        internal static string TestRenaming(ScriptFile scriptFile, RenameSymbolParamsSerialized request, SymbolReference symbol)
         {
-
-            //FunctionRename visitor = new(symbol.NameRegion.Text,
-            //                            request.RenameTo,
-            //                            symbol.ScriptRegion.StartLineNumber,
-            //                            symbol.ScriptRegion.StartColumnNumber,
-            //                            scriptFile.ScriptAst);
-            //                            scriptFile.ScriptAst.Visit(visitor);
             IterativeFunctionRename iterative = new(symbol.NameRegion.Text,
                                         request.RenameTo,
                                         symbol.ScriptRegion.StartLineNumber,
                                         symbol.ScriptRegion.StartColumnNumber,
                                         scriptFile.ScriptAst);
             iterative.Visit(scriptFile.ScriptAst);
-            //scriptFile.ScriptAst.Visit(visitor);
             ModifiedFileResponse changes = new(request.FileName)
             {
                 Changes = iterative.Modifications
@@ -74,176 +69,160 @@ namespace PowerShellEditorServices.Test.Refactoring
             return GetModifiedScript(scriptFile.Contents, changes);
         }
 
-        [Fact]
-        public void RefactorFunctionSingle()
+        public class RenameSymbolParamsSerialized : IRequest<RenameSymbolResult>, IXunitSerializable
         {
-            RenameSymbolParams request = RefactorsFunctionData.FunctionsSingle;
-            ScriptFile scriptFile = GetTestScript(request.FileName);
-            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
-            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-                    request.Line,
-                    request.Column);
-            string modifiedcontent = TestRenaming(scriptFile, request, symbol);
+            public string FileName { get; set; }
+            public int Line { get; set; }
+            public int Column { get; set; }
+            public string RenameTo { get; set; }
 
-            Assert.Equal(expectedContent.Contents, modifiedcontent);
+            // Default constructor needed for deserialization
+            public RenameSymbolParamsSerialized() { }
+
+            // Parameterized constructor for convenience
+            public RenameSymbolParamsSerialized(RenameSymbolParams RenameSymbolParams)
+            {
+                FileName = RenameSymbolParams.FileName;
+                Line = RenameSymbolParams.Line;
+                Column = RenameSymbolParams.Column;
+                RenameTo = RenameSymbolParams.RenameTo;
+            }
+
+            public void Deserialize(IXunitSerializationInfo info)
+            {
+                FileName = info.GetValue<string>("FileName");
+                Line = info.GetValue<int>("Line");
+                Column = info.GetValue<int>("Column");
+                RenameTo = info.GetValue<string>("RenameTo");
+            }
+
+            public void Serialize(IXunitSerializationInfo info)
+            {
+                info.AddValue("FileName", FileName);
+                info.AddValue("Line", Line);
+                info.AddValue("Column", Column);
+                info.AddValue("RenameTo", RenameTo);
+            }
+
+            public override string ToString() => $"{FileName}";
+        }
+
+
+        public class SimpleData : TheoryData<RenameSymbolParamsSerialized>
+        {
+            public SimpleData()
+            {
+
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionsSingle));
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionWithInternalCalls));
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionCmdlet));
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionScriptblock));
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionCallWIthinStringExpression));
+            }
 
         }
-        [Fact]
-        public void RenameFunctionMultipleOccurrences()
+
+        [Theory]
+        [ClassData(typeof(SimpleData))]
+        public void Simple(RenameSymbolParamsSerialized s)
         {
-            RenameSymbolParams request = RefactorsFunctionData.FunctionMultipleOccurrences;
+            // Arrange
+            RenameSymbolParamsSerialized request = s;
             ScriptFile scriptFile = GetTestScript(request.FileName);
             ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
             SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-                    request.Line,
-                    request.Column);
+             request.Line,
+             request.Column);
+            // Act
             string modifiedcontent = TestRenaming(scriptFile, request, symbol);
 
-            Assert.Equal(expectedContent.Contents, modifiedcontent);
-
-        }
-        [Fact]
-        public void RenameFunctionNested()
-        {
-            RenameSymbolParams request = RefactorsFunctionData.FunctionInnerIsNested;
-            ScriptFile scriptFile = GetTestScript(request.FileName);
-            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
-            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-                    request.Line,
-                    request.Column);
-            string modifiedcontent = TestRenaming(scriptFile, request, symbol);
-
+            // Assert
             Assert.Equal(expectedContent.Contents, modifiedcontent);
         }
-        [Fact]
-        public void RenameFunctionOuterHasNestedFunction()
-        {
-            RenameSymbolParams request = RefactorsFunctionData.FunctionOuterHasNestedFunction;
-            ScriptFile scriptFile = GetTestScript(request.FileName);
-            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
-            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-                    request.Line,
-                    request.Column);
-            string modifiedcontent = TestRenaming(scriptFile, request, symbol);
 
-            Assert.Equal(expectedContent.Contents, modifiedcontent);
+        public class MultiOccurrenceData : TheoryData<RenameSymbolParamsSerialized>
+        {
+            public MultiOccurrenceData()
+            {
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionMultipleOccurrences));
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionSameName));
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionNestedRedefinition));
+            }
 
         }
-        [Fact]
-        public void RenameFunctionInnerIsNested()
+
+        [Theory]
+        [ClassData(typeof(MultiOccurrenceData))]
+        public void MultiOccurrence(RenameSymbolParamsSerialized s)
         {
-            RenameSymbolParams request = RefactorsFunctionData.FunctionInnerIsNested;
+            // Arrange
+            RenameSymbolParamsSerialized request = s;
             ScriptFile scriptFile = GetTestScript(request.FileName);
             ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
             SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-                    request.Line,
-                    request.Column);
+             request.Line,
+             request.Column);
+            // Act
             string modifiedcontent = TestRenaming(scriptFile, request, symbol);
 
+            // Assert
             Assert.Equal(expectedContent.Contents, modifiedcontent);
         }
-        [Fact]
-        public void RenameFunctionWithInternalCalls()
+
+        public class NestedData : TheoryData<RenameSymbolParamsSerialized>
         {
-            RenameSymbolParams request = RefactorsFunctionData.FunctionWithInternalCalls;
+            public NestedData()
+            {
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionInnerIsNested));
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionOuterHasNestedFunction));
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionInnerIsNested));
+            }
+
+        }
+
+        [Theory]
+        [ClassData(typeof(NestedData))]
+        public void Nested(RenameSymbolParamsSerialized s)
+        {
+            // Arrange
+            RenameSymbolParamsSerialized request = s;
             ScriptFile scriptFile = GetTestScript(request.FileName);
             ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
             SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-                    request.Line,
-                    request.Column);
+             request.Line,
+             request.Column);
+            // Act
             string modifiedcontent = TestRenaming(scriptFile, request, symbol);
 
+            // Assert
             Assert.Equal(expectedContent.Contents, modifiedcontent);
         }
-        [Fact]
-        public void RenameFunctionCmdlet()
+        public class LoopsData : TheoryData<RenameSymbolParamsSerialized>
         {
-            RenameSymbolParams request = RefactorsFunctionData.FunctionCmdlet;
-            ScriptFile scriptFile = GetTestScript(request.FileName);
-            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
-            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-                    request.Line,
-                    request.Column);
-            string modifiedcontent = TestRenaming(scriptFile, request, symbol);
+            public LoopsData()
+            {
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionLoop));
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionForeach));
+                Add(new RenameSymbolParamsSerialized(RefactorsFunctionData.FunctionForeachObject));
+            }
 
-            Assert.Equal(expectedContent.Contents, modifiedcontent);
         }
-        [Fact]
-        public void RenameFunctionSameName()
+
+        [Theory]
+        [ClassData(typeof(LoopsData))]
+        public void Loops(RenameSymbolParamsSerialized s)
         {
-            RenameSymbolParams request = RefactorsFunctionData.FunctionSameName;
+            // Arrange
+            RenameSymbolParamsSerialized request = s;
             ScriptFile scriptFile = GetTestScript(request.FileName);
             ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
             SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-                    request.Line,
-                    request.Column);
+             request.Line,
+             request.Column);
+            // Act
             string modifiedcontent = TestRenaming(scriptFile, request, symbol);
 
-            Assert.Equal(expectedContent.Contents, modifiedcontent);
-        }
-        [Fact]
-        public void RenameFunctionInScriptblock()
-        {
-            RenameSymbolParams request = RefactorsFunctionData.FunctionScriptblock;
-            ScriptFile scriptFile = GetTestScript(request.FileName);
-            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
-            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-                    request.Line,
-                    request.Column);
-            string modifiedcontent = TestRenaming(scriptFile, request, symbol);
-
-            Assert.Equal(expectedContent.Contents, modifiedcontent);
-        }
-        [Fact]
-        public void RenameFunctionInLoop()
-        {
-            RenameSymbolParams request = RefactorsFunctionData.FunctionLoop;
-            ScriptFile scriptFile = GetTestScript(request.FileName);
-            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
-            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-                    request.Line,
-                    request.Column);
-            string modifiedcontent = TestRenaming(scriptFile, request, symbol);
-
-            Assert.Equal(expectedContent.Contents, modifiedcontent);
-        }
-        [Fact]
-        public void RenameFunctionInForeach()
-        {
-            RenameSymbolParams request = RefactorsFunctionData.FunctionForeach;
-            ScriptFile scriptFile = GetTestScript(request.FileName);
-            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
-            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-                    request.Line,
-                    request.Column);
-            string modifiedcontent = TestRenaming(scriptFile, request, symbol);
-
-            Assert.Equal(expectedContent.Contents, modifiedcontent);
-        }
-        [Fact]
-        public void RenameFunctionInForeachObject()
-        {
-            RenameSymbolParams request = RefactorsFunctionData.FunctionForeachObject;
-            ScriptFile scriptFile = GetTestScript(request.FileName);
-            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
-            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-                    request.Line,
-                    request.Column);
-            string modifiedcontent = TestRenaming(scriptFile, request, symbol);
-
-            Assert.Equal(expectedContent.Contents, modifiedcontent);
-        }
-        [Fact]
-        public void RenameFunctionCallWIthinStringExpression()
-        {
-            RenameSymbolParams request = RefactorsFunctionData.FunctionCallWIthinStringExpression;
-            ScriptFile scriptFile = GetTestScript(request.FileName);
-            ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
-            SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-                    request.Line,
-                    request.Column);
-            string modifiedcontent = TestRenaming(scriptFile, request, symbol);
-
+            // Assert
             Assert.Equal(expectedContent.Contents, modifiedcontent);
         }
     }
