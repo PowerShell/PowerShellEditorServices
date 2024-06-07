@@ -106,10 +106,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             if (symbol is VariableExpressionAst or ParameterAst or CommandParameterAst or StringConstantExpressionAst)
             {
+
                 IterativeVariableRename visitor = new(request.RenameTo,
                                             symbol.Extent.StartLineNumber,
                                             symbol.Extent.StartColumnNumber,
-                                            scriptAst);
+                                            scriptAst,
+                                            request.Options ?? null);
                 visitor.Visit(scriptAst);
                 ModifiedFileResponse FileModifications = new(request.FileName)
                 {

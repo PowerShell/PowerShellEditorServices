@@ -23,13 +23,15 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         internal bool isParam;
         internal bool AliasSet;
         internal FunctionDefinitionAst TargetFunction;
+        internal RenameSymbolOptions options;
 
-        public IterativeVariableRename(string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
+        public IterativeVariableRename(string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst,RenameSymbolOptions options = null)
         {
             this.NewName = NewName;
             this.StartLineNumber = StartLineNumber;
             this.StartColumnNumber = StartColumnNumber;
             this.ScriptAst = ScriptAst;
+            this.options = options ?? new RenameSymbolOptions { ShouldGenerateAlias = true };
 
             VariableExpressionAst Node = (VariableExpressionAst)GetVariableTopAssignment(StartLineNumber, StartColumnNumber, ScriptAst);
             if (Node != null)
@@ -366,7 +368,8 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                         EndColumn = variableExpressionAst.Extent.StartColumnNumber + OldName.Length,
                     };
                     // If the variables parent is a parameterAst Add a modification
-                    if (variableExpressionAst.Parent is ParameterAst paramAst && !AliasSet)
+                    if (variableExpressionAst.Parent is ParameterAst paramAst && !AliasSet &&
+                        options.ShouldGenerateAlias)
                     {
                         TextChange aliasChange = NewParameterAliasChange(variableExpressionAst, paramAst);
                         Modifications.Add(aliasChange);
