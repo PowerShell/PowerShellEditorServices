@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             this.StartLineNumber = StartLineNumber;
             this.StartColumnNumber = StartColumnNumber;
             this.ScriptAst = ScriptAst;
-            this.options = options ?? new RenameSymbolOptions { ShouldGenerateAlias = true };
+            this.options = options ?? new RenameSymbolOptions { CreateAlias = true };
 
             VariableExpressionAst Node = (VariableExpressionAst)GetVariableTopAssignment(StartLineNumber, StartColumnNumber, ScriptAst);
             if (Node != null)
@@ -406,7 +406,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     };
                     // If the variables parent is a parameterAst Add a modification
                     if (variableExpressionAst.Parent is ParameterAst paramAst && !AliasSet &&
-                        options.ShouldGenerateAlias)
+                        options.CreateAlias)
                     {
                         TextChange aliasChange = NewParameterAliasChange(variableExpressionAst, paramAst);
                         Modifications.Add(aliasChange);

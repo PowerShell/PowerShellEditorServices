@@ -17,7 +17,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
     internal interface IRenameSymbolHandler : IJsonRpcRequestHandler<RenameSymbolParams, RenameSymbolResult> { }
 
     public class RenameSymbolOptions {
-        public bool ShouldGenerateAlias { get; set; }
+        public bool CreateAlias { get; set; }
     }
 
     public class RenameSymbolParams : IRequest<RenameSymbolResult>
