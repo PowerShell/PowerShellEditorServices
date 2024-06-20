@@ -10,6 +10,14 @@
 
 trigger: none
 
+schedules:
+- cron: '35 13 * * 4'
+  displayName: Weekly CodeQL
+  branches:
+    include:
+    - main
+  always: true
+
 parameters:
 - name: debug
   displayName: Enable debug output
@@ -125,6 +133,7 @@ extends:
                 **/System.Reactive.dll;
     - stage: release
       dependsOn: build
+      condition: ne(variables['Build.Reason'], 'Schedule')
       variables:
         version: $[ stageDependencies.build.main.outputs['package.version'] ]
         prerelease: $[ stageDependencies.build.main.outputs['package.prerelease'] ]
