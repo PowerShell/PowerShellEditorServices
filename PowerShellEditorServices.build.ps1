@@ -97,36 +97,24 @@ Task Clean FindDotNet, BinClean, {
 }
 
 Task CreateBuildInfo {
-    $buildVersion = "<development-build>"
     $buildOrigin = "Development"
     $buildCommit = git rev-parse HEAD
 
+    [xml]$xml = Get-Content "$PSScriptRoot/PowerShellEditorServices.Common.props"
+    $buildVersion = $xml.Project.PropertyGroup.VersionPrefix
+    $prerelease = $xml.Project.PropertyGroup.VersionSuffix
+    if ($prerelease) { $buildVersion += "-$prerelease" }
+
+
     # Set build info fields on build platforms
-    if ($env:TF_BUILD) {
-        if ($env:BUILD_BUILDNUMBER -like "PR-*") {
-            $buildOrigin = "PR"
-        } elseif ($env:BUILD_DEFINITIONNAME -like "*-CI") {
-            $buildOrigin = "CI"
-        } else {
+    if ($env:TF_BUILD) { # Azure DevOps AKA OneBranch
+        if ($env:BUILD_REASON -like "Manual") {
             $buildOrigin = "Release"
+        } else {
+            $buildOrigin = "AzureDevOps-CI"
         }
-
-        $propsXml = [xml](Get-Content -Raw -LiteralPath "$PSScriptRoot/PowerShellEditorServices.Common.props")
-        $propsBody = $propsXml.Project.PropertyGroup
-        $buildVersion = $propsBody.VersionPrefix
-
-        if ($propsBody.VersionSuffix) {
-            $buildVersion += '-' + $propsBody.VersionSuffix
-        }
-    }
-
-    # Allow override of build info fields (except date)
-    if ($env:PSES_BUILD_VERSION) {
-        $buildVersion = $env:PSES_BUILD_VERSION
-    }
-
-    if ($env:PSES_BUILD_ORIGIN) {
-        $buildOrigin = $env:PSES_BUILD_ORIGIN
+    } elseif ($env:GITHUB_ACTIONS) {
+        $buildOrigin = "GitHub-CI"
     }
 
     [string]$buildTime = [datetime]::Today.ToString("s", [System.Globalization.CultureInfo]::InvariantCulture)
