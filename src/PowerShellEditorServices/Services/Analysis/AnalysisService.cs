@@ -322,7 +322,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return false;
             }
 
-            settingsFilePath = _workspaceService?.ResolveWorkspacePath(configuredPath);
+            settingsFilePath = _workspaceService?.FindFileInWorkspace(configuredPath);
 
             if (settingsFilePath is null
                 || !File.Exists(settingsFilePath))
@@ -331,6 +331,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 settingsFilePath = null;
                 return false;
             }
+
+            _logger.LogInformation($"Found PSSA settings file at '{settingsFilePath}'");
 
             return true;
         }
