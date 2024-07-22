@@ -108,6 +108,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return SemanticTokenType.Operator;
             }
 
+            if ((token.TokenFlags & TokenFlags.AttributeName) != 0)
+            {
+                return SemanticTokenType.Decorator;
+            }
+
             if ((token.TokenFlags & TokenFlags.TypeName) != 0)
             {
                 return SemanticTokenType.Type;
@@ -142,8 +147,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 case TokenKind.Number:
                     return SemanticTokenType.Number;
 
-                case TokenKind.Generic:
-                    return SemanticTokenType.Function;
+                case TokenKind.Label:
+                    return SemanticTokenType.Label;
             }
 
             return null;
