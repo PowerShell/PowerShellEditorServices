@@ -2,7 +2,6 @@ bin/
 obj/
 module/PowerShellEditorServices/NOTICE.txt
 module/PowerShellEditorServices/Commands/en-US/
-module/Plaster/
 module/PSReadLine/
 module/PSScriptAnalyzer/
 TestResults/
