@@ -27,7 +27,7 @@ parameters:
 variables:
   system.debug: ${{ parameters.debug }}
   BuildConfiguration: Release
-  WindowsContainerImage: onebranch.azurecr.io/windows/ltsc2019/vse2022:latest
+  WindowsContainerImage: onebranch.azurecr.io/windows/ltsc2022/vse2022:latest
   DOTNET_NOLOGO: true
   DOTNET_GENERATE_ASPNET_CERTIFICATE: false
 
@@ -46,6 +46,10 @@ extends:
       asyncSdl:
         enabled: true
         forStages: [build]
+    featureFlags:
+      WindowsHostVersion:
+        Version: 2022
+        Network: Netlock
     stages:
     - stage: build
       jobs:
@@ -76,21 +80,15 @@ extends:
               packageType: sdk
               version: 8.x
           - task: UseDotNet@2
-            displayName: Use .NET 7.x runtime (for tests)
-            inputs:
-              packageType: runtime
-              version: 7.x
-          - task: UseDotNet@2
             displayName: Use .NET 6.x runtime (for tests)
             inputs:
               packageType: runtime
               version: 6.x
-          - task: PowerShell@2
-            displayName: Install PSResources
-            inputs:
-              pwsh: true
-              filePath: tools/installPSResources.ps1
-          - pwsh: Invoke-Build TestFull -Configuration $(BuildConfiguration)
+          - pwsh: |
+              Register-PSRepository -Name CFS -SourceLocation "https://pkgs.dev.azure.com/powershell/PowerShell/_packaging/powershell/nuget/v2" -InstallationPolicy Trusted
+              Install-Module -Repository CFS -Name InvokeBuild -RequiredVersion 5.11.3
+              Install-Module -Repository CFS -Name platyPS -RequiredVersion 0.14.2
+              Invoke-Build TestFull -Configuration $(BuildConfiguration) -PSRepository CFS
             displayName: Build and test
           - task: PublishTestResults@2
             displayName: Publish test results

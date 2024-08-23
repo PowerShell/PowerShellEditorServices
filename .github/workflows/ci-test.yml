@@ -47,14 +47,19 @@ jobs:
           sparse-checkout: tools/install-powershell.ps1
           sparse-checkout-cone-mode: false
 
+      - name: Install daily
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'merge_group' }}
+        shell: pwsh
+        run: ./pwsh/tools/install-powershell.ps1 -Daily
+
       - name: Build and test
         shell: pwsh
         run: Invoke-Build -Configuration Release ${{ github.event_name == 'merge_group' && 'TestFull' || 'Test' }}
 
-      - name: Test with daily
+      - name: Test daily
         if: ${{ github.event_name == 'schedule' }}
         shell: pwsh
-        run: ./pwsh/tools/install-powershell.ps1 -Daily && Invoke-Build -Configuration Release TestE2EDaily
+        run: Invoke-Build -Configuration Release TestE2EDaily
 
       - name: Upload build artifacts
         if: always()
