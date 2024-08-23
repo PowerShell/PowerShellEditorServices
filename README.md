@@ -132,6 +132,7 @@ The debugging functionality in PowerShell Editor Services is available in the fo
 - [PowerShell for Visual Studio Code](https://github.com/PowerShell/vscode-powershell)
 - [nvim-dap-powershell for Neovim](https://github.com/Willem-J-an/nvim-dap-powershell)
 - [powershell.nvim for Neovim](https://github.com/TheLeoP/powershell.nvim)
+- [intellij-powershell](https://github.com/ant-druha/intellij-powershell)
 
 ## API Usage
 
