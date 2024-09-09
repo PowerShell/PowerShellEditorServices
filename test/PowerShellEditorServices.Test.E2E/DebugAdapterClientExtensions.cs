@@ -11,21 +11,17 @@ namespace PowerShellEditorServices.Test.E2E
 {
     public static class DebugAdapterClientExtensions
     {
-        public static async Task LaunchScript(this DebugAdapterClient debugAdapterClient, string script, TaskCompletionSource<object> started)
+        public static async Task LaunchScript(this DebugAdapterClient debugAdapterClient, string script, TaskCompletionSource<object> started, string executeMode = "DotSource")
         {
-            LaunchResponse launchResponse = await debugAdapterClient.Launch(
+            _ = await debugAdapterClient.Launch(
                 new PsesLaunchRequestArguments
                 {
                     NoDebug = false,
                     Script = script,
                     Cwd = "",
-                    CreateTemporaryIntegratedConsole = false
-                });
-
-            if (launchResponse is null)
-            {
-                throw new Exception("Launch response was null.");
-            }
+                    CreateTemporaryIntegratedConsole = false,
+                    ExecuteMode = executeMode,
+                }) ?? throw new Exception("Launch response was null.");
 
             // This will check to see if we received the Initialized event from the server.
             await started.Task;

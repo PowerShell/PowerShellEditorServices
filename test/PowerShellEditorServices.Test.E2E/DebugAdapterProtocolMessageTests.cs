@@ -190,6 +190,17 @@ namespace PowerShellEditorServices.Test.E2E
         }
 
         [Fact]
+        public async Task UsesCallOperatorWithSettingAsync()
+        {
+            string filePath = NewTestFile(GenerateScriptFromLoggingStatements("$($MyInvocation.Line)"));
+            await PsesDebugAdapterClient.LaunchScript(filePath, Started, executeMode: "Call");
+            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments());
+            Assert.NotNull(configDoneResponse);
+            Assert.Collection(await GetLog(),
+                (i) => Assert.StartsWith("& '", i));
+        }
+
+        [Fact]
         public async Task CanLaunchScriptWithNoBreakpointsAsync()
         {
             string filePath = NewTestFile(GenerateScriptFromLoggingStatements("works"));
