@@ -66,6 +66,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public string[] RuntimeArgs { get; set; }
 
         /// <summary>
+        /// Gets or sets the script execution mode, either "DotSource" or "Call".
+        /// </summary>
+        public string ExecuteMode { get; set; }
+
+        /// <summary>
         /// Gets or sets optional environment variables to pass to the debuggee. The string valued
         /// properties of the 'environmentVariables' are used as key/value pairs.
         /// </summary>
@@ -186,6 +191,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _debugStateService.ScriptToLaunch = request.Script;
             _debugStateService.Arguments = request.Args;
             _debugStateService.IsUsingTempIntegratedConsole = request.CreateTemporaryIntegratedConsole;
+            _debugStateService.ExecuteMode = request.ExecuteMode;
 
             if (request.CreateTemporaryIntegratedConsole
                 && !string.IsNullOrEmpty(request.Script)
