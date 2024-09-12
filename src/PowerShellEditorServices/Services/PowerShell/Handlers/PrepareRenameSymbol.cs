@@ -7,7 +7,6 @@ using MediatR;
 using System.Management.Automation.Language;
 using OmniSharp.Extensions.JsonRpc;
 using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Refactoring;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
@@ -31,21 +30,16 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
     internal class PrepareRenameSymbolHandler : IPrepareRenameSymbolHandler
     {
-        private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
 
-        public PrepareRenameSymbolHandler(ILoggerFactory loggerFactory, WorkspaceService workspaceService)
-        {
-            _logger = loggerFactory.CreateLogger<RenameSymbolHandler>();
-            _workspaceService = workspaceService;
-        }
+        public PrepareRenameSymbolHandler(WorkspaceService workspaceService) => _workspaceService = workspaceService;
 
         public async Task<PrepareRenameSymbolResult> Handle(PrepareRenameSymbolParams request, CancellationToken cancellationToken)
         {
             if (!_workspaceService.TryGetFile(request.FileName, out ScriptFile scriptFile))
             {
-                _logger.LogDebug("Failed to open file!");
-                return await Task.FromResult<PrepareRenameSymbolResult>(null).ConfigureAwait(false);
+                // TODO: Unsaved file support. We need to find the unsaved file in the text documents synced to the LSP and use that as our Ast Base.
+                throw new HandlerErrorException($"File {request.FileName} not found in workspace. Unsaved files currently do not support the rename symbol feature.");
             }
             return await Task.Run(() =>
             {

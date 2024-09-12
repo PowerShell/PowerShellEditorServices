@@ -8,15 +8,16 @@ using MediatR;
 using System.Management.Automation.Language;
 using OmniSharp.Extensions.JsonRpc;
 using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Refactoring;
+using System;
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     [Serial, Method("powerShell/renameSymbol")]
     internal interface IRenameSymbolHandler : IJsonRpcRequestHandler<RenameSymbolParams, RenameSymbolResult> { }
 
-    public class RenameSymbolOptions {
+    public class RenameSymbolOptions
+    {
         public bool CreateAlias { get; set; }
     }
 
@@ -68,14 +69,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
     internal class RenameSymbolHandler : IRenameSymbolHandler
     {
-        private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
 
-        public RenameSymbolHandler(ILoggerFactory loggerFactory, WorkspaceService workspaceService)
-        {
-            _logger = loggerFactory.CreateLogger<RenameSymbolHandler>();
-            _workspaceService = workspaceService;
-        }
+        public RenameSymbolHandler(WorkspaceService workspaceService) => _workspaceService = workspaceService;
+
         internal static ModifiedFileResponse RenameFunction(Ast token, Ast scriptAst, RenameSymbolParams request)
         {
             string tokenName = "";
@@ -98,20 +95,20 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 Changes = visitor.Modifications
             };
             return FileModifications;
-
-
-
         }
+
         internal static ModifiedFileResponse RenameVariable(Ast symbol, Ast scriptAst, RenameSymbolParams request)
         {
             if (symbol is VariableExpressionAst or ParameterAst or CommandParameterAst or StringConstantExpressionAst)
             {
 
-                IterativeVariableRename visitor = new(request.RenameTo,
-                                            symbol.Extent.StartLineNumber,
-                                            symbol.Extent.StartColumnNumber,
-                                            scriptAst,
-                                            request.Options ?? null);
+                IterativeVariableRename visitor = new(
+                    request.RenameTo,
+                    symbol.Extent.StartLineNumber,
+                    symbol.Extent.StartColumnNumber,
+                    scriptAst,
+                    request.Options ?? null
+                );
                 visitor.Visit(scriptAst);
                 ModifiedFileResponse FileModifications = new(request.FileName)
                 {
@@ -121,21 +118,18 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             }
             return null;
-
         }
+
         public async Task<RenameSymbolResult> Handle(RenameSymbolParams request, CancellationToken cancellationToken)
         {
             if (!_workspaceService.TryGetFile(request.FileName, out ScriptFile scriptFile))
             {
-                _logger.LogDebug("Failed to open file!");
-                return await Task.FromResult<RenameSymbolResult>(null).ConfigureAwait(false);
+                throw new InvalidOperationException("This should not happen as PrepareRename should have already checked for viability. File an issue if you see this.");
             }
 
             return await Task.Run(() =>
             {
-
                 Ast token = Utilities.GetAst(request.Line + 1, request.Column + 1, scriptFile.ScriptAst);
-
                 if (token == null) { return null; }
 
                 ModifiedFileResponse FileModifications = (token is FunctionDefinitionAst || token.Parent is CommandAst)
