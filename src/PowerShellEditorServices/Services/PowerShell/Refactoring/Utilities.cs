@@ -112,6 +112,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             }
             return false;
         }
+
         public static Ast GetAst(int StartLineNumber, int StartColumnNumber, Ast Ast)
         {
             Ast token = null;
