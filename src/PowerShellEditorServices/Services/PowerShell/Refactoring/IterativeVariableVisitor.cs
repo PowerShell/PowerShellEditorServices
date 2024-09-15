@@ -32,7 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             this.StartLineNumber = StartLineNumber;
             this.StartColumnNumber = StartColumnNumber;
             this.ScriptAst = ScriptAst;
-            this.options = options ?? new RenameSymbolOptions { CreateAlias = true };
+            this.options = options ?? new RenameSymbolOptions { CreateAlias = false };
 
             VariableExpressionAst Node = (VariableExpressionAst)GetVariableTopAssignment(StartLineNumber, StartColumnNumber, ScriptAst);
             if (Node != null)
