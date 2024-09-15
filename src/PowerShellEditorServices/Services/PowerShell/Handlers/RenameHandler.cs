@@ -12,7 +12,6 @@ using Microsoft.PowerShell.EditorServices.Refactoring;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
-using System.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers;
@@ -41,6 +40,23 @@ internal class PrepareRenameHandler(WorkspaceService workspaceService) : IPrepar
 
         // FIXME: Refactor out to utility when working
 
+        Ast token = FindRenamableSymbol(scriptFile, line, column);
+
+        if (token is null) { return null; }
+
+        // TODO: Really should have a class with implicit convertors handing these conversions to avoid off-by-one mistakes.
+        return Utilities.ToRange(token.Extent); ;
+    }
+
+    /// <summary>
+    /// Finds a renamable symbol at a given position in a script file.
+    /// </summary>
+    /// <param name="scriptFile"/>
+    /// <param name="line">1-based line number</param>
+    /// <param name="column">1-based column number</param>
+    /// <returns>Ast of the token or null if no renamable symbol was found</returns>
+    internal static Ast FindRenamableSymbol(ScriptFile scriptFile, ScriptPosition position)
+    {
         // Cannot use generic here as our desired ASTs do not share a common parent
         Ast token = scriptFile.ScriptAst.Find(ast =>
         {
@@ -57,16 +73,15 @@ internal class PrepareRenameHandler(WorkspaceService workspaceService) : IPrepar
                 return false;
             }
 
-            // Skip all statements that end before our target line or start after our target line
+            // Skip all statements that end before our target line or start after our target line. This is a performance optimization.
             if (ast.Extent.EndLineNumber < line || ast.Extent.StartLineNumber > line) { return false; }
 
             // Special detection for Function calls that dont follow verb-noun syntax e.g. DoThing
-            // It's not foolproof but should work in most cases
+            // It's not foolproof but should work in most cases where it is explicit (e.g. not & $x)
             if (ast is StringConstantExpressionAst stringAst)
             {
                 if (stringAst.Parent is not CommandAst parent) { return false; }
-                // It will always be the first item in a defined command AST
-                if (parent.CommandElements[0] != stringAst) { return false; }
+                if (parent.GetCommandName() != stringAst.Value) { return false; }
             }
 
             Range astRange = new(
@@ -75,19 +90,9 @@ internal class PrepareRenameHandler(WorkspaceService workspaceService) : IPrepar
                 ast.Extent.EndLineNumber,
                 ast.Extent.EndColumnNumber
             );
-            return astRange.Contains(new Position(line, column));
+            return astRange.Contains(position);
         }, true);
-
-        if (token is null) { return null; }
-
-        Range astRange = new(
-            token.Extent.StartLineNumber - 1,
-            token.Extent.StartColumnNumber - 1,
-            token.Extent.EndLineNumber - 1,
-            token.Extent.EndColumnNumber - 1
-        );
-
-        return astRange;
+        return token;
     }
 }
 
@@ -102,14 +107,13 @@ internal class RenameHandler(WorkspaceService workspaceService) : IRenameHandler
 
     public async Task<WorkspaceEdit> Handle(RenameParams request, CancellationToken cancellationToken)
     {
-
-
         ScriptFile scriptFile = workspaceService.GetFile(request.TextDocument.Uri);
         ScriptPosition scriptPosition = request.Position;
 
-        Ast tokenToRename = Utilities.GetAst(scriptPosition.Line, scriptPosition.Column, scriptFile.ScriptAst);
+        Ast tokenToRename = PrepareRenameHandler.FindRenamableSymbol(scriptFile, scriptPosition.Line, scriptPosition.Column);
 
-        ModifiedFileResponse changes = tokenToRename switch
+        // TODO: Potentially future cross-file support
+        TextEdit[] changes = tokenToRename switch
         {
             FunctionDefinitionAst or CommandAst => RenameFunction(tokenToRename, scriptFile.ScriptAst, request),
             VariableExpressionAst => RenameVariable(tokenToRename, scriptFile.ScriptAst, request),
@@ -117,27 +121,18 @@ internal class RenameHandler(WorkspaceService workspaceService) : IRenameHandler
             _ => throw new HandlerErrorException("This should not happen as PrepareRename should have already checked for viability. File an issue if you see this.")
         };
 
-        // TODO: Update changes to work directly and not require this adapter
-        TextEdit[] textEdits = changes.Changes.Select(change => new TextEdit
-        {
-            Range = new Range
-            {
-                Start = new Position { Line = change.StartLine, Character = change.StartColumn },
-                End = new Position { Line = change.EndLine, Character = change.EndColumn }
-            },
-            NewText = change.NewText
-        }).ToArray();
-
         return new WorkspaceEdit
         {
             Changes = new Dictionary<DocumentUri, IEnumerable<TextEdit>>
             {
-                [request.TextDocument.Uri] = textEdits
+                [request.TextDocument.Uri] = changes
             }
         };
     }
 
-    internal static ModifiedFileResponse RenameFunction(Ast token, Ast scriptAst, RenameParams requestParams)
+    // TODO: We can probably merge these two methods with Generic Type constraints since they are factored into overloading
+
+    internal static TextEdit[] RenameFunction(Ast token, Ast scriptAst, RenameParams requestParams)
     {
         RenameSymbolParams request = new()
         {
@@ -162,14 +157,10 @@ internal class RenameHandler(WorkspaceService workspaceService) : IRenameHandler
                     token.Extent.StartColumnNumber,
                     scriptAst);
         visitor.Visit(scriptAst);
-        ModifiedFileResponse FileModifications = new(request.FileName)
-        {
-            Changes = visitor.Modifications
-        };
-        return FileModifications;
+        return visitor.Modifications.ToArray();
     }
 
-    internal static ModifiedFileResponse RenameVariable(Ast symbol, Ast scriptAst, RenameParams requestParams)
+    internal static TextEdit[] RenameVariable(Ast symbol, Ast scriptAst, RenameParams requestParams)
     {
         RenameSymbolParams request = new()
         {
@@ -189,20 +180,12 @@ internal class RenameHandler(WorkspaceService workspaceService) : IRenameHandler
                 request.Options ?? null
             );
             visitor.Visit(scriptAst);
-            ModifiedFileResponse FileModifications = new(request.FileName)
-            {
-                Changes = visitor.Modifications
-            };
-            return FileModifications;
+            return visitor.Modifications.ToArray();
 
         }
         return null;
     }
 }
-
-// {
-//     [Serial, Method("powerShell/renameSymbol")]
-//     internal interface IRenameSymbolHandler : IJsonRpcRequestHandler<RenameSymbolParams, RenameSymbolResult> { }
 
 public class RenameSymbolOptions
 {
@@ -210,12 +193,24 @@ public class RenameSymbolOptions
 }
 
 /// <summary>
-/// Represents a position in a script file. PowerShell script lines/columns start at 1, but LSP textdocument lines/columns start at 0.
+/// Represents a position in a script file that adapts and implicitly converts based on context. PowerShell script lines/columns start at 1, but LSP textdocument lines/columns start at 0. The default constructor is 1-based.
 /// </summary>
-public record ScriptPosition(int Line, int Column)
+internal record ScriptPosition(int Line, int Column)
 {
     public static implicit operator ScriptPosition(Position position) => new(position.Line + 1, position.Character + 1);
     public static implicit operator Position(ScriptPosition position) => new() { Line = position.Line - 1, Character = position.Column - 1 };
+
+    internal ScriptPosition Delta(int LineAdjust, int ColumnAdjust) => new(
+        Line + LineAdjust,
+        Column + ColumnAdjust
+    );
+}
+
+internal record ScriptRange(ScriptPosition Start, ScriptPosition End)
+{
+    // Positions will adjust per ScriptPosition
+    public static implicit operator ScriptRange(Range range) => new(range.Start, range.End);
+    public static implicit operator Range(ScriptRange range) => new() { Start = range.Start, End = range.End };
 }
 
 public class RenameSymbolParams : IRequest<RenameSymbolResult>
@@ -227,72 +222,8 @@ public class RenameSymbolParams : IRequest<RenameSymbolResult>
     public RenameSymbolOptions Options { get; set; }
 }
 
-public class TextChange
-{
-    public string NewText { get; set; }
-    public int StartLine { get; set; }
-    public int StartColumn { get; set; }
-    public int EndLine { get; set; }
-    public int EndColumn { get; set; }
-}
-
-public class ModifiedFileResponse
-{
-    public string FileName { get; set; }
-    public List<TextChange> Changes { get; set; }
-    public ModifiedFileResponse(string fileName)
-    {
-        FileName = fileName;
-        Changes = new List<TextChange>();
-    }
-
-    public void AddTextChange(Ast Symbol, string NewText)
-    {
-        Changes.Add(
-            new TextChange
-            {
-                StartColumn = Symbol.Extent.StartColumnNumber - 1,
-                StartLine = Symbol.Extent.StartLineNumber - 1,
-                EndColumn = Symbol.Extent.EndColumnNumber - 1,
-                EndLine = Symbol.Extent.EndLineNumber - 1,
-                NewText = NewText
-            }
-        );
-    }
-}
-
 public class RenameSymbolResult
 {
-    public RenameSymbolResult() => Changes = new List<ModifiedFileResponse>();
-    public List<ModifiedFileResponse> Changes { get; set; }
+    public RenameSymbolResult() => Changes = new List<TextEdit>();
+    public List<TextEdit> Changes { get; set; }
 }
-
-//     internal class RenameSymbolHandler : IRenameSymbolHandler
-//     {
-//         private readonly WorkspaceService _workspaceService;
-
-//         public RenameSymbolHandler(WorkspaceService workspaceService) => _workspaceService = workspaceService;
-
-
-
-
-//         public async Task<RenameSymbolResult> Handle(RenameSymbolParams request, CancellationToken cancellationToken)
-//         {
-//             // if (!_workspaceService.TryGetFile(request.FileName, out ScriptFile scriptFile))
-//             // {
-//             //     throw new InvalidOperationException("This should not happen as PrepareRename should have already checked for viability. File an issue if you see this.");
-//             // }
-
-//             return await Task.Run(() =>
-//             {
-//                 ScriptFile scriptFile = _workspaceService.GetFile(new Uri(request.FileName));
-//                 Ast token = Utilities.GetAst(request.Line + 1, request.Column + 1, scriptFile.ScriptAst);
-//                 if (token == null) { return null; }
-
-//
-
-//                 return result;
-//             }).ConfigureAwait(false);
-//         }
-//     }
-// }
