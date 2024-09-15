@@ -6,6 +6,7 @@ using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using System.Linq;
 using System;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Refactoring
 {
@@ -15,7 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         private readonly string OldName;
         private readonly string NewName;
         internal bool ShouldRename;
-        public List<TextChange> Modifications = new();
+        public List<TextEdit> Modifications = [];
         internal int StartLineNumber;
         internal int StartColumnNumber;
         internal VariableExpressionAst TargetVariableAst;
@@ -396,19 +397,16 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                 if (ShouldRename)
                 {
                     // have some modifications to account for the dollar sign prefix powershell uses for variables
-                    TextChange Change = new()
+                    TextEdit Change = new()
                     {
                         NewText = NewName.Contains("$") ? NewName : "$" + NewName,
-                        StartLine = variableExpressionAst.Extent.StartLineNumber - 1,
-                        StartColumn = variableExpressionAst.Extent.StartColumnNumber - 1,
-                        EndLine = variableExpressionAst.Extent.StartLineNumber - 1,
-                        EndColumn = variableExpressionAst.Extent.StartColumnNumber + OldName.Length,
+                        Range = Utilities.ToRange(variableExpressionAst.Extent),
                     };
                     // If the variables parent is a parameterAst Add a modification
                     if (variableExpressionAst.Parent is ParameterAst paramAst && !AliasSet &&
                         options.CreateAlias)
                     {
-                        TextChange aliasChange = NewParameterAliasChange(variableExpressionAst, paramAst);
+                        TextEdit aliasChange = NewParameterAliasChange(variableExpressionAst, paramAst);
                         Modifications.Add(aliasChange);
                         AliasSet = true;
                     }
@@ -431,13 +429,10 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                 if (TargetFunction != null && commandParameterAst.Parent is CommandAst commandAst &&
                     commandAst.GetCommandName().ToLower() == TargetFunction.Name.ToLower() && isParam && ShouldRename)
                 {
-                    TextChange Change = new()
+                    TextEdit Change = new()
                     {
                         NewText = NewName.Contains("-") ? NewName : "-" + NewName,
-                        StartLine = commandParameterAst.Extent.StartLineNumber - 1,
-                        StartColumn = commandParameterAst.Extent.StartColumnNumber - 1,
-                        EndLine = commandParameterAst.Extent.StartLineNumber - 1,
-                        EndColumn = commandParameterAst.Extent.StartColumnNumber + OldName.Length,
+                        Range = Utilities.ToRange(commandParameterAst.Extent)
                     };
                     Modifications.Add(Change);
                 }
@@ -468,13 +463,10 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     if (element.Item1 is StringConstantExpressionAst strConstAst &&
                     strConstAst.Value.ToLower() == OldName.ToLower())
                     {
-                        TextChange Change = new()
+                        TextEdit Change = new()
                         {
                             NewText = NewName,
-                            StartLine = strConstAst.Extent.StartLineNumber - 1,
-                            StartColumn = strConstAst.Extent.StartColumnNumber - 1,
-                            EndLine = strConstAst.Extent.StartLineNumber - 1,
-                            EndColumn = strConstAst.Extent.EndColumnNumber - 1,
+                            Range = Utilities.ToRange(strConstAst.Extent)
                         };
 
                         Modifications.Add(Change);
@@ -485,13 +477,14 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             }
         }
 
-        internal TextChange NewParameterAliasChange(VariableExpressionAst variableExpressionAst, ParameterAst paramAst)
+        internal TextEdit NewParameterAliasChange(VariableExpressionAst variableExpressionAst, ParameterAst paramAst)
         {
             // Check if an Alias AttributeAst already exists and append the new Alias to the existing list
             // Otherwise Create a new Alias Attribute
             // Add the modifications to the changes
             // The Attribute will be appended before the variable or in the existing location of the original alias
-            TextChange aliasChange = new();
+            TextEdit aliasChange = new();
+            // FIXME: Understand this more, if this returns more than one result, why does it overwrite the aliasChange?
             foreach (Ast Attr in paramAst.Attributes)
             {
                 if (Attr is AttributeAst AttrAst)
@@ -504,24 +497,21 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                         existingEntries = existingEntries.Substring(0, existingEntries.Length - ")]".Length);
                         string nentries = existingEntries + $", \"{OldName}\"";
 
-                        aliasChange.NewText = $"[Alias({nentries})]";
-                        aliasChange.StartLine = Attr.Extent.StartLineNumber - 1;
-                        aliasChange.StartColumn = Attr.Extent.StartColumnNumber - 1;
-                        aliasChange.EndLine = Attr.Extent.StartLineNumber - 1;
-                        aliasChange.EndColumn = Attr.Extent.EndColumnNumber - 1;
-
-                        break;
+                        aliasChange = aliasChange with
+                        {
+                            NewText = $"[Alias({nentries})]",
+                            Range = Utilities.ToRange(AttrAst.Extent)
+                        };
                     }
-
                 }
             }
             if (aliasChange.NewText == null)
             {
-                aliasChange.NewText = $"[Alias(\"{OldName}\")]";
-                aliasChange.StartLine = variableExpressionAst.Extent.StartLineNumber - 1;
-                aliasChange.StartColumn = variableExpressionAst.Extent.StartColumnNumber - 1;
-                aliasChange.EndLine = variableExpressionAst.Extent.StartLineNumber - 1;
-                aliasChange.EndColumn = variableExpressionAst.Extent.StartColumnNumber - 1;
+                aliasChange = aliasChange with
+                {
+                    NewText = $"[Alias(\"{OldName}\")]",
+                    Range = Utilities.ToRange(paramAst.Extent)
+                };
             }
 
             return aliasChange;

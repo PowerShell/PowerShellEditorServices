@@ -270,7 +270,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             Validate.IsNotNull(nameof(result), result);
 
-            TextEdit textEdit = new()
+            OmniSharp.Extensions.LanguageServer.Protocol.Models.TextEdit textEdit = new()
             {
                 NewText = result.CompletionText,
                 Range = new Range
@@ -374,7 +374,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             InsertTextFormat insertFormat;
-            TextEdit edit;
+            OmniSharp.Extensions.LanguageServer.Protocol.Models.TextEdit edit;
             CompletionItemKind itemKind;
             if (result.ResultType is CompletionResultType.ProviderContainer
                 && SupportsSnippets

@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 using System.Management.Automation.Language;
-using Microsoft.PowerShell.EditorServices.Handlers;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Refactoring
 {
@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
     {
         private readonly string OldName;
         private readonly string NewName;
-        public List<TextChange> Modifications = new();
+        public List<TextEdit> Modifications = [];
         internal int StartLineNumber;
         internal int StartColumnNumber;
         internal FunctionDefinitionAst TargetFunctionAst;
@@ -150,16 +150,19 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                         ast.Extent.StartColumnNumber == StartColumnNumber)
                         {
                             TargetFunctionAst = ast;
-                            TextChange Change = new()
+                            TextEdit change = new()
                             {
                                 NewText = NewName,
-                                StartLine = ast.Extent.StartLineNumber - 1,
-                                StartColumn = ast.Extent.StartColumnNumber + "function ".Length - 1,
-                                EndLine = ast.Extent.StartLineNumber - 1,
-                                EndColumn = ast.Extent.StartColumnNumber + "function ".Length + ast.Name.Length - 1,
+                                // FIXME: Introduce adapter class to avoid off-by-one errors
+                                Range = new(
+                                    ast.Extent.StartLineNumber - 1,
+                                    ast.Extent.StartColumnNumber + "function ".Length - 1,
+                                    ast.Extent.StartLineNumber - 1,
+                                    ast.Extent.StartColumnNumber + "function ".Length + ast.Name.Length - 1
+                                ),
                             };
 
-                            Modifications.Add(Change);
+                            Modifications.Add(change);
                             //node.ShouldRename = true;
                         }
                         else
@@ -176,15 +179,12 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     {
                         if (shouldRename)
                         {
-                            TextChange Change = new()
+                            TextEdit change = new()
                             {
                                 NewText = NewName,
-                                StartLine = ast.Extent.StartLineNumber - 1,
-                                StartColumn = ast.Extent.StartColumnNumber - 1,
-                                EndLine = ast.Extent.StartLineNumber - 1,
-                                EndColumn = ast.Extent.StartColumnNumber + OldName.Length - 1,
+                                Range = Utilities.ToRange(ast.Extent),
                             };
-                            Modifications.Add(Change);
+                            Modifications.Add(change);
                         }
                     }
                     break;

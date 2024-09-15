@@ -9,7 +9,6 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Test;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
-using Microsoft.PowerShell.EditorServices.Handlers;
 using Xunit;
 using PowerShellEditorServices.Test.Shared.Refactoring.Variables;
 using static PowerShellEditorServices.Test.Refactoring.RefactorUtilities;
@@ -39,11 +38,7 @@ public class RefactorVariableTests : IAsyncLifetime
                                     request.Column,
                                     scriptFile.ScriptAst);
         iterative.Visit(scriptFile.ScriptAst);
-        ModifiedFileResponse changes = new(request.FileName)
-        {
-            Changes = iterative.Modifications
-        };
-        return GetModifiedScript(scriptFile.Contents, changes);
+        return GetModifiedScript(scriptFile.Contents, iterative.Modifications.ToArray());
     }
     public class VariableRenameTestData : TheoryData<RenameSymbolParamsSerialized>
     {
