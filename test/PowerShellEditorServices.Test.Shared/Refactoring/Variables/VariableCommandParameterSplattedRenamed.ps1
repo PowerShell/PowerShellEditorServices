@@ -1,6 +1,6 @@
 function New-User {
     param (
-        [string][Alias("Username")]$Renamed,
+        [string]$Renamed,
         [string]$password
     )
     write-host $Renamed + $password
