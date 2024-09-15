@@ -14,7 +14,7 @@ using PowerShellEditorServices.Test.Shared.Refactoring.Variables;
 using static PowerShellEditorServices.Test.Refactoring.RefactorUtilities;
 using Microsoft.PowerShell.EditorServices.Refactoring;
 
-namespace PowerShellEditorServices.Handlers.Test;
+namespace PowerShellEditorServices.Test.Handlers;
 
 [Trait("Category", "RenameHandlerVariable")]
 public class RefactorVariableTests : IAsyncLifetime
