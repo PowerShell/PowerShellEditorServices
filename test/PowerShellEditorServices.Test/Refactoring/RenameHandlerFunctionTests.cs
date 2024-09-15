@@ -9,12 +9,12 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Test;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
-using Microsoft.PowerShell.EditorServices.Handlers;
 using Xunit;
 using Microsoft.PowerShell.EditorServices.Services.Symbols;
 using Microsoft.PowerShell.EditorServices.Refactoring;
 using PowerShellEditorServices.Test.Shared.Refactoring.Functions;
 using static PowerShellEditorServices.Test.Refactoring.RefactorUtilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace PowerShellEditorServices.Handlers.Test;
 
@@ -32,18 +32,15 @@ public class RefactorFunctionTests : IAsyncLifetime
     public async Task DisposeAsync() => await Task.Run(psesHost.StopAsync);
     private ScriptFile GetTestScript(string fileName) => workspace.GetFile(TestUtilities.GetSharedPath(Path.Combine("Refactoring", "Functions", fileName)));
 
-    internal static string TestRenaming(ScriptFile scriptFile, RenameSymbolParamsSerialized request, SymbolReference symbol)
+    internal static string GetRenamedFunctionScriptContent(ScriptFile scriptFile, RenameSymbolParamsSerialized request, SymbolReference symbol)
     {
-        IterativeFunctionRename iterative = new(symbol.NameRegion.Text,
+        IterativeFunctionRename visitor = new(symbol.NameRegion.Text,
                                     request.RenameTo,
                                     symbol.ScriptRegion.StartLineNumber,
                                     symbol.ScriptRegion.StartColumnNumber,
                                     scriptFile.ScriptAst);
-        iterative.Visit(scriptFile.ScriptAst);
-        ModifiedFileResponse changes = new(request.FileName)
-        {
-            Changes = iterative.Modifications
-        };
+        visitor.Visit(scriptFile.ScriptAst);
+        TextEdit[] changes = visitor.Modifications.ToArray();
         return GetModifiedScript(scriptFile.Contents, changes);
     }
 
@@ -85,7 +82,7 @@ public class RefactorFunctionTests : IAsyncLifetime
          request.Line,
          request.Column);
         // Act
-        string modifiedcontent = TestRenaming(scriptFile, request, symbol);
+        string modifiedcontent = GetRenamedFunctionScriptContent(scriptFile, request, symbol);
 
         // Assert
         Assert.Equal(expectedContent.Contents, modifiedcontent);
