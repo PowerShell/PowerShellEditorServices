@@ -3,7 +3,7 @@ $x = 1..10
 function testing_files {
 
     param (
-        [Alias("x")]$Renamed
+        $Renamed
     )
     write-host "Printing $Renamed"
 }
