@@ -400,7 +400,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     TextEdit Change = new()
                     {
                         NewText = NewName.Contains("$") ? NewName : "$" + NewName,
-                        Range = Utilities.ToRange(variableExpressionAst.Extent),
+                        Range = new ScriptExtentAdapter(variableExpressionAst.Extent),
                     };
                     // If the variables parent is a parameterAst Add a modification
                     if (variableExpressionAst.Parent is ParameterAst paramAst && !AliasSet &&
@@ -432,7 +432,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     TextEdit Change = new()
                     {
                         NewText = NewName.Contains("-") ? NewName : "-" + NewName,
-                        Range = Utilities.ToRange(commandParameterAst.Extent)
+                        Range = new ScriptExtentAdapter(commandParameterAst.Extent)
                     };
                     Modifications.Add(Change);
                 }
@@ -466,7 +466,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                         TextEdit Change = new()
                         {
                             NewText = NewName,
-                            Range = Utilities.ToRange(strConstAst.Extent)
+                            Range = new ScriptExtentAdapter(strConstAst.Extent)
                         };
 
                         Modifications.Add(Change);
@@ -500,7 +500,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                         aliasChange = aliasChange with
                         {
                             NewText = $"[Alias({nentries})]",
-                            Range = Utilities.ToRange(AttrAst.Extent)
+                            Range = new ScriptExtentAdapter(AttrAst.Extent)
                         };
                     }
                 }
@@ -510,7 +510,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                 aliasChange = aliasChange with
                 {
                     NewText = $"[Alias(\"{OldName}\")]",
-                    Range = Utilities.ToRange(paramAst.Extent)
+                    Range = new ScriptExtentAdapter(paramAst.Extent)
                 };
             }
 
