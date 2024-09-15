@@ -2,7 +2,9 @@
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
+using System.IO;
 using System.Management.Automation.Language;
+using Microsoft.PowerShell.EditorServices.Handlers;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Refactoring
@@ -150,16 +152,24 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                         ast.Extent.StartColumnNumber == StartColumnNumber)
                         {
                             TargetFunctionAst = ast;
+                            int functionPrefixLength = "function ".Length;
+                            int functionNameStartColumn = ast.Extent.StartColumnNumber + functionPrefixLength;
+
                             TextEdit change = new()
                             {
                                 NewText = NewName,
-                                // FIXME: Introduce adapter class to avoid off-by-one errors
+                                // HACK: Because we cannot get a token extent of the function name itself, we have to adjust to find it here
+                                // TOOD: Parse the upfront and use offsets probably to get the function name token
                                 Range = new(
-                                    ast.Extent.StartLineNumber - 1,
-                                    ast.Extent.StartColumnNumber + "function ".Length - 1,
-                                    ast.Extent.StartLineNumber - 1,
-                                    ast.Extent.StartColumnNumber + "function ".Length + ast.Name.Length - 1
-                                ),
+                                    new ScriptPositionAdapter(
+                                        ast.Extent.StartLineNumber,
+                                        functionNameStartColumn
+                                    ),
+                                    new ScriptPositionAdapter(
+                                        ast.Extent.StartLineNumber,
+                                        functionNameStartColumn + OldName.Length
+                                    )
+                                )
                             };
 
                             Modifications.Add(change);
@@ -179,10 +189,15 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     {
                         if (shouldRename)
                         {
+                            // What we weant to rename is actually the first token of the command
+                            if (ast.CommandElements[0] is not StringConstantExpressionAst funcName)
+                            {
+                                throw new InvalidDataException("Command element should always have a string expresssion as its first item. This is a bug and you should report it.");
+                            }
                             TextEdit change = new()
                             {
                                 NewText = NewName,
-                                Range = Utilities.ToRange(ast.Extent),
+                                Range = new ScriptExtentAdapter(funcName.Extent)
                             };
                             Modifications.Add(change);
                         }
