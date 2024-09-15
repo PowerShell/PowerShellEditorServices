@@ -35,10 +35,10 @@ public class RefactorFunctionTests : IAsyncLifetime
     internal static string GetRenamedFunctionScriptContent(ScriptFile scriptFile, RenameSymbolParamsSerialized request, SymbolReference symbol)
     {
         IterativeFunctionRename visitor = new(symbol.NameRegion.Text,
-                                    request.RenameTo,
-                                    symbol.ScriptRegion.StartLineNumber,
-                                    symbol.ScriptRegion.StartColumnNumber,
-                                    scriptFile.ScriptAst);
+                                                request.RenameTo,
+                                                symbol.ScriptRegion.StartLineNumber,
+                                                symbol.ScriptRegion.StartColumnNumber,
+                                                scriptFile.ScriptAst);
         visitor.Visit(scriptFile.ScriptAst);
         TextEdit[] changes = visitor.Modifications.ToArray();
         return GetModifiedScript(scriptFile.Contents, changes);
@@ -83,8 +83,6 @@ public class RefactorFunctionTests : IAsyncLifetime
         );
 
         string modifiedcontent = GetRenamedFunctionScriptContent(scriptFile, request, symbol);
-
-
         Assert.Equal(expectedContent.Contents, modifiedcontent);
     }
 }

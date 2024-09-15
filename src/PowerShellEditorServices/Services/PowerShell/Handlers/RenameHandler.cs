@@ -204,12 +204,14 @@ public record ScriptPositionAdapter(IScriptPosition position) : IScriptPosition,
     public int Offset => position.Offset;
 
     public ScriptPositionAdapter(int Line, int Column) : this(new ScriptPosition(null, Line, Column, null)) { }
+    public ScriptPositionAdapter(ScriptPosition position) : this((IScriptPosition)position) { }
     public ScriptPositionAdapter(Position position) : this(position.Line + 1, position.Character + 1) { }
 
     public static implicit operator ScriptPositionAdapter(Position position) => new(position);
     public static implicit operator ScriptPositionAdapter(ScriptPosition position) => new(position);
 
     public static implicit operator Position(ScriptPositionAdapter scriptPosition) => new(scriptPosition.position.LineNumber - 1, scriptPosition.position.ColumnNumber - 1);
+
     public static implicit operator ScriptPosition(ScriptPositionAdapter position) => position;
 
     internal ScriptPositionAdapter Delta(int LineAdjust, int ColumnAdjust) => new(
@@ -236,17 +238,23 @@ public record ScriptPositionAdapter(IScriptPosition position) : IScriptPosition,
 /// <param name="extent"></param>
 internal record ScriptExtentAdapter(IScriptExtent extent) : IScriptExtent
 {
-    public readonly ScriptPositionAdapter Start = new(extent.StartScriptPosition);
-    public readonly ScriptPositionAdapter End = new(extent.StartScriptPosition);
+    public ScriptPositionAdapter Start = new(extent.StartScriptPosition);
+    public ScriptPositionAdapter End = new(extent.EndScriptPosition);
 
     public static implicit operator ScriptExtentAdapter(ScriptExtent extent) => new(extent);
     public static implicit operator ScriptExtent(ScriptExtentAdapter extent) => extent;
 
     public static implicit operator Range(ScriptExtentAdapter extent) => new()
     {
-        // Will get shifted to 0-based
         Start = extent.Start,
         End = extent.End
+        // End = extent.End with
+        // {
+        //     // The end position in Script Extents is actually shifted an additional 1 column, no idea why
+        //     // https://learn.microsoft.com/en-us/dotnet/api/system.management.automation.language.iscriptextent.endscriptposition?view=powershellsdk-7.4.0#system-management-automation-language-iscriptextent-endscriptposition
+
+        //     position = (extent.EndScriptPosition as ScriptPositionAdapter).Delta(0, -1)
+        // }
     };
     public static implicit operator ScriptExtentAdapter(Range range) => new(new ScriptExtent(
         // Will get shifted to 1-based
