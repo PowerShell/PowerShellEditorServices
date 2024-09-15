@@ -11,7 +11,7 @@ using Microsoft.PowerShell.EditorServices.Test.Shared;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
-using static PowerShellEditorServices.Test.Refactoring.RefactorFunctionTests;
+using static PowerShellEditorServices.Handlers.Test.RefactorFunctionTests;
 using static PowerShellEditorServices.Test.Refactoring.RefactorUtilities;
 
 namespace PowerShellEditorServices.Handlers.Test;
@@ -30,7 +30,7 @@ public class PrepareRenameHandlerTests : TheoryData<RenameSymbolParamsSerialized
         handler = new(workspace);
     }
 
-    // TODO: Test an untitled document (maybe that belongs in E2E)
+    // TODO: Test an untitled document (maybe that belongs in E2E tests)
 
     [Theory]
     [ClassData(typeof(FunctionRenameTestData))]
