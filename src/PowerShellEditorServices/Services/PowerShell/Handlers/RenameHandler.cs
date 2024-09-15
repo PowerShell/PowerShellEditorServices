@@ -110,6 +110,7 @@ internal class RenameHandler(WorkspaceService workspaceService) : IRenameHandler
         ScriptPositionAdapter position = request.Position;
 
         Ast tokenToRename = PrepareRenameHandler.FindRenamableSymbol(scriptFile, position);
+        if (tokenToRename is null) { return null; }
 
         // TODO: Potentially future cross-file support
         TextEdit[] changes = tokenToRename switch
@@ -131,15 +132,9 @@ internal class RenameHandler(WorkspaceService workspaceService) : IRenameHandler
 
     // TODO: We can probably merge these two methods with Generic Type constraints since they are factored into overloading
 
-    internal static TextEdit[] RenameFunction(Ast token, Ast scriptAst, RenameParams requestParams)
+    internal static TextEdit[] RenameFunction(Ast token, Ast scriptAst, RenameParams renameParams)
     {
-        RenameSymbolParams request = new()
-        {
-            FileName = requestParams.TextDocument.Uri.ToString(),
-            Line = requestParams.Position.Line,
-            Column = requestParams.Position.Character,
-            RenameTo = requestParams.NewName
-        };
+        ScriptPositionAdapter position = renameParams.Position;
 
         string tokenName = "";
         if (token is FunctionDefinitionAst funcDef)
@@ -150,11 +145,13 @@ internal class RenameHandler(WorkspaceService workspaceService) : IRenameHandler
         {
             tokenName = CommAst.GetCommandName();
         }
-        IterativeFunctionRename visitor = new(tokenName,
-                    request.RenameTo,
-                    token.Extent.StartLineNumber,
-                    token.Extent.StartColumnNumber,
-                    scriptAst);
+        IterativeFunctionRename visitor = new(
+            tokenName,
+            renameParams.NewName,
+            position.Line,
+            position.Column,
+            scriptAst
+        );
         visitor.Visit(scriptAst);
         return visitor.Modifications.ToArray();
     }
