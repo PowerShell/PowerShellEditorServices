@@ -11,10 +11,10 @@ using Microsoft.PowerShell.EditorServices.Test.Shared;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
-using static PowerShellEditorServices.Handlers.Test.RefactorFunctionTests;
+using static PowerShellEditorServices.Test.Handlers.RefactorFunctionTests;
 using static PowerShellEditorServices.Test.Refactoring.RefactorUtilities;
 
-namespace PowerShellEditorServices.Handlers.Test;
+namespace PowerShellEditorServices.Test.Handlers;
 
 [Trait("Category", "PrepareRename")]
 public class PrepareRenameHandlerTests : TheoryData<RenameSymbolParamsSerialized>

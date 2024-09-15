@@ -16,7 +16,7 @@ using PowerShellEditorServices.Test.Shared.Refactoring.Functions;
 using static PowerShellEditorServices.Test.Refactoring.RefactorUtilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
-namespace PowerShellEditorServices.Handlers.Test;
+namespace PowerShellEditorServices.Test.Handlers;
 
 [Trait("Category", "RenameHandlerFunction")]
 public class RefactorFunctionTests : IAsyncLifetime
@@ -74,17 +74,17 @@ public class RefactorFunctionTests : IAsyncLifetime
     [ClassData(typeof(FunctionRenameTestData))]
     public void Rename(RenameSymbolParamsSerialized s)
     {
-        // Arrange
         RenameSymbolParamsSerialized request = s;
         ScriptFile scriptFile = GetTestScript(request.FileName);
         ScriptFile expectedContent = GetTestScript(request.FileName.Substring(0, request.FileName.Length - 4) + "Renamed.ps1");
         SymbolReference symbol = scriptFile.References.TryGetSymbolAtPosition(
-         request.Line,
-         request.Column);
-        // Act
+            request.Line,
+            request.Column
+        );
+
         string modifiedcontent = GetRenamedFunctionScriptContent(scriptFile, request, symbol);
 
-        // Assert
+
         Assert.Equal(expectedContent.Contents, modifiedcontent);
     }
 }
