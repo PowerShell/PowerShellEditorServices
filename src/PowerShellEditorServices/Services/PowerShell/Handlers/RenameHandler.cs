@@ -41,7 +41,7 @@ internal class PrepareRenameHandler(WorkspaceService workspaceService) : IPrepar
         if (token is null) { return null; }
 
         // TODO: Really should have a class with implicit convertors handing these conversions to avoid off-by-one mistakes.
-        return Utilities.ToRange(token.Extent); ;
+        return new ScriptExtentAdapter(token.Extent);
     }
 
     /// <summary>
@@ -211,7 +211,6 @@ public record ScriptPositionAdapter(IScriptPosition position) : IScriptPosition,
     public static implicit operator ScriptPositionAdapter(ScriptPosition position) => new(position);
 
     public static implicit operator Position(ScriptPositionAdapter scriptPosition) => new(scriptPosition.position.LineNumber - 1, scriptPosition.position.ColumnNumber - 1);
-
     public static implicit operator ScriptPosition(ScriptPositionAdapter position) => position;
 
     internal ScriptPositionAdapter Delta(int LineAdjust, int ColumnAdjust) => new(
@@ -242,25 +241,19 @@ internal record ScriptExtentAdapter(IScriptExtent extent) : IScriptExtent
     public ScriptPositionAdapter End = new(extent.EndScriptPosition);
 
     public static implicit operator ScriptExtentAdapter(ScriptExtent extent) => new(extent);
-    public static implicit operator ScriptExtent(ScriptExtentAdapter extent) => extent;
-
-    public static implicit operator Range(ScriptExtentAdapter extent) => new()
-    {
-        Start = extent.Start,
-        End = extent.End
-        // End = extent.End with
-        // {
-        //     // The end position in Script Extents is actually shifted an additional 1 column, no idea why
-        //     // https://learn.microsoft.com/en-us/dotnet/api/system.management.automation.language.iscriptextent.endscriptposition?view=powershellsdk-7.4.0#system-management-automation-language-iscriptextent-endscriptposition
-
-        //     position = (extent.EndScriptPosition as ScriptPositionAdapter).Delta(0, -1)
-        // }
-    };
     public static implicit operator ScriptExtentAdapter(Range range) => new(new ScriptExtent(
         // Will get shifted to 1-based
         new ScriptPositionAdapter(range.Start),
         new ScriptPositionAdapter(range.End)
     ));
+
+    public static implicit operator ScriptExtent(ScriptExtentAdapter adapter) => adapter;
+    public static implicit operator Range(ScriptExtentAdapter adapter) => new()
+    {
+        Start = adapter.Start,
+        End = adapter.End
+    };
+    public static implicit operator RangeOrPlaceholderRange(ScriptExtentAdapter adapter) => new(adapter);
 
     public IScriptPosition StartScriptPosition => Start;
     public IScriptPosition EndScriptPosition => End;
