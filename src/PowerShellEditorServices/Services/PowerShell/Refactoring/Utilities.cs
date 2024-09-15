@@ -5,11 +5,33 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation.Language;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Refactoring
 {
     internal class Utilities
     {
+        /// <summary>
+        /// Helper function to convert 1-based script positions to zero-based LSP positions
+        /// </summary>
+        /// <param name="extent"></param>
+        /// <returns></returns>
+        public static Range ToRange(IScriptExtent extent)
+        {
+            return new Range
+            {
+                Start = new Position
+                {
+                    Line = extent.StartLineNumber - 1,
+                    Character = extent.StartColumnNumber - 1
+                },
+                End = new Position
+                {
+                    Line = extent.EndLineNumber - 1,
+                    Character = extent.EndColumnNumber - 1
+                }
+            };
+        }
 
         public static Ast GetAstAtPositionOfType(int StartLineNumber, int StartColumnNumber, Ast ScriptAst, params Type[] type)
         {
