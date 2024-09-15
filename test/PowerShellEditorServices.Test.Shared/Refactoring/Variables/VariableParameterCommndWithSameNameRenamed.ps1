@@ -1,7 +1,7 @@
 function Test-AADConnected {
 
     param (
-        [Parameter(Mandatory = $false)][Alias("UPName", "UserPrincipalName")][String]$Renamed
+        [Parameter(Mandatory = $false)][String]$Renamed
     )
     Begin {}
     Process {
