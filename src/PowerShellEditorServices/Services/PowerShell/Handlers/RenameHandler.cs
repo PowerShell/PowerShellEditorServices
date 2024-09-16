@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
+#nullable enable
 
 using System.Collections.Generic;
 using System.Threading;
@@ -14,9 +15,9 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using System;
-using PowerShellEditorServices.Services.PowerShell.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers;
+
 
 /// <summary>
 /// A handler for <a href="https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_prepareRename">textDocument/prepareRename</a>
@@ -26,7 +27,7 @@ internal class PrepareRenameHandler(WorkspaceService workspaceService) : IPrepar
 {
     public RenameRegistrationOptions GetRegistrationOptions(RenameCapability capability, ClientCapabilities clientCapabilities) => capability.PrepareSupport ? new() { PrepareProvider = true } : new();
 
-    public async Task<RangeOrPlaceholderRange> Handle(PrepareRenameParams request, CancellationToken cancellationToken)
+    public async Task<RangeOrPlaceholderRange?> Handle(PrepareRenameParams request, CancellationToken cancellationToken)
     {
         ScriptFile scriptFile = workspaceService.GetFile(request.TextDocument.Uri);
 
@@ -37,11 +38,28 @@ internal class PrepareRenameHandler(WorkspaceService workspaceService) : IPrepar
         }
 
         ScriptPositionAdapter position = request.Position;
-        Ast token = FindRenamableSymbol(scriptFile, position);
-        if (token is null) { return null; }
+        Ast target = FindRenamableSymbol(scriptFile, position);
+        if (target is null) { return null; }
+        return target switch
+        {
+            FunctionDefinitionAst funcAst => GetFunctionNameExtent(funcAst),
+            _ => new ScriptExtentAdapter(target.Extent)
+        };
+    }
 
-        // TODO: Really should have a class with implicit convertors handing these conversions to avoid off-by-one mistakes.
-        return new ScriptExtentAdapter(token.Extent);
+    private static ScriptExtentAdapter GetFunctionNameExtent(FunctionDefinitionAst ast)
+    {
+        string name = ast.Name;
+        // FIXME: Gather dynamically from the AST and include backticks and whatnot that might be present
+        int funcLength = "function ".Length;
+        ScriptExtentAdapter funcExtent = new(ast.Extent);
+
+        // Get a range that represents only the function name
+        return funcExtent with
+        {
+            Start = funcExtent.Start.Delta(0, funcLength),
+            End = funcExtent.Start.Delta(0, funcLength + name.Length)
+        };
     }
 
     /// <summary>
@@ -89,8 +107,15 @@ internal class PrepareRenameHandler(WorkspaceService workspaceService) : IPrepar
                 if (parent.GetCommandName() != stringAst.Value) { return false; }
             }
 
-            return ast.Extent.Contains(position);
+            ScriptExtentAdapter target = ast switch
+            {
+                FunctionDefinitionAst funcAst => GetFunctionNameExtent(funcAst),
+                _ => new ScriptExtentAdapter(ast.Extent)
+            };
+
+            return target.Contains(position);
         }, true);
+
         return token;
     }
 }
@@ -104,7 +129,7 @@ internal class RenameHandler(WorkspaceService workspaceService) : IRenameHandler
     // RenameOptions may only be specified if the client states that it supports prepareSupport in its initial initialize request.
     public RenameRegistrationOptions GetRegistrationOptions(RenameCapability capability, ClientCapabilities clientCapabilities) => capability.PrepareSupport ? new() { PrepareProvider = true } : new();
 
-    public async Task<WorkspaceEdit> Handle(RenameParams request, CancellationToken cancellationToken)
+    public async Task<WorkspaceEdit?> Handle(RenameParams request, CancellationToken cancellationToken)
     {
         ScriptFile scriptFile = workspaceService.GetFile(request.TextDocument.Uri);
         ScriptPositionAdapter position = request.Position;
@@ -179,7 +204,7 @@ internal class RenameHandler(WorkspaceService workspaceService) : IRenameHandler
             return visitor.Modifications.ToArray();
 
         }
-        return null;
+        return [];
     }
 }
 
@@ -205,12 +230,16 @@ public record ScriptPositionAdapter(IScriptPosition position) : IScriptPosition,
 
     public ScriptPositionAdapter(int Line, int Column) : this(new ScriptPosition(null, Line, Column, null)) { }
     public ScriptPositionAdapter(ScriptPosition position) : this((IScriptPosition)position) { }
+
     public ScriptPositionAdapter(Position position) : this(position.Line + 1, position.Character + 1) { }
-
     public static implicit operator ScriptPositionAdapter(Position position) => new(position);
-    public static implicit operator ScriptPositionAdapter(ScriptPosition position) => new(position);
+    public static implicit operator Position(ScriptPositionAdapter scriptPosition) => new
+    (
+        scriptPosition.position.LineNumber - 1, scriptPosition.position.ColumnNumber - 1
+    );
 
-    public static implicit operator Position(ScriptPositionAdapter scriptPosition) => new(scriptPosition.position.LineNumber - 1, scriptPosition.position.ColumnNumber - 1);
+
+    public static implicit operator ScriptPositionAdapter(ScriptPosition position) => new(position);
     public static implicit operator ScriptPosition(ScriptPositionAdapter position) => position;
 
     internal ScriptPositionAdapter Delta(int LineAdjust, int ColumnAdjust) => new(
@@ -241,19 +270,22 @@ internal record ScriptExtentAdapter(IScriptExtent extent) : IScriptExtent
     public ScriptPositionAdapter End = new(extent.EndScriptPosition);
 
     public static implicit operator ScriptExtentAdapter(ScriptExtent extent) => new(extent);
+
     public static implicit operator ScriptExtentAdapter(Range range) => new(new ScriptExtent(
         // Will get shifted to 1-based
         new ScriptPositionAdapter(range.Start),
         new ScriptPositionAdapter(range.End)
     ));
-
-    public static implicit operator ScriptExtent(ScriptExtentAdapter adapter) => adapter;
     public static implicit operator Range(ScriptExtentAdapter adapter) => new()
     {
+        // Will get shifted to 0-based
         Start = adapter.Start,
         End = adapter.End
     };
-    public static implicit operator RangeOrPlaceholderRange(ScriptExtentAdapter adapter) => new(adapter);
+
+    public static implicit operator ScriptExtent(ScriptExtentAdapter adapter) => adapter;
+
+    public static implicit operator RangeOrPlaceholderRange(ScriptExtentAdapter adapter) => new((Range)adapter);
 
     public IScriptPosition StartScriptPosition => Start;
     public IScriptPosition EndScriptPosition => End;
@@ -272,11 +304,11 @@ internal record ScriptExtentAdapter(IScriptExtent extent) : IScriptExtent
 
 public class RenameSymbolParams : IRequest<RenameSymbolResult>
 {
-    public string FileName { get; set; }
+    public string? FileName { get; set; }
     public int Line { get; set; }
     public int Column { get; set; }
-    public string RenameTo { get; set; }
-    public RenameSymbolOptions Options { get; set; }
+    public string? RenameTo { get; set; }
+    public RenameSymbolOptions? Options { get; set; }
 }
 
 public class RenameSymbolResult
