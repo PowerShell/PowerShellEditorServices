@@ -49,7 +49,7 @@ public class PrepareRenameHandlerTests : TheoryData<RenameSymbolParamsSerialized
             }
         };
 
-        RangeOrPlaceholderRange result = await handler.Handle(testParams, CancellationToken.None);
+        RangeOrPlaceholderRange? result = await handler.Handle(testParams, CancellationToken.None);
         Assert.NotNull(result);
         Assert.NotNull(result.Range);
         Assert.True(result.Range.Contains(position));
