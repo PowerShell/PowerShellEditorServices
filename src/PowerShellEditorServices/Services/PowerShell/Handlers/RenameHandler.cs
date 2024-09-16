@@ -2,11 +2,12 @@
 // Licensed under the MIT License.
 #nullable enable
 
+using System;
 using System.Collections.Generic;
+using System.Management.Automation.Language;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
-using System.Management.Automation.Language;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Refactoring;
@@ -14,7 +15,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol;
-using System;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers;
 
@@ -23,12 +24,32 @@ namespace Microsoft.PowerShell.EditorServices.Handlers;
 /// A handler for <a href="https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_prepareRename">textDocument/prepareRename</a>
 /// LSP Ref: <see cref="PrepareRename()"/>
 /// </summary>
-internal class PrepareRenameHandler(WorkspaceService workspaceService) : IPrepareRenameHandler
+internal class PrepareRenameHandler(WorkspaceService workspaceService, ILanguageServerFacade lsp, ILanguageServerConfiguration config) : IPrepareRenameHandler
 {
     public RenameRegistrationOptions GetRegistrationOptions(RenameCapability capability, ClientCapabilities clientCapabilities) => capability.PrepareSupport ? new() { PrepareProvider = true } : new();
 
     public async Task<RangeOrPlaceholderRange?> Handle(PrepareRenameParams request, CancellationToken cancellationToken)
     {
+        // FIXME: Config actually needs to be read and implemented, this is to make the referencing satisfied
+        config.ToString();
+        ShowMessageRequestParams reqParams = new ShowMessageRequestParams
+        {
+            Type = MessageType.Warning,
+            Message = "Test Send",
+            Actions = new MessageActionItem[] {
+                new MessageActionItem() { Title = "I Accept" },
+                new MessageActionItem() { Title = "I Accept [Workspace]" },
+                new MessageActionItem() { Title = "Decline" }
+            }
+        };
+
+        MessageActionItem result = await lsp.SendRequest(reqParams, cancellationToken).ConfigureAwait(false);
+        if (result.Title == "Test Action")
+        {
+            // FIXME: Need to accept
+            Console.WriteLine("yay");
+        }
+
         ScriptFile scriptFile = workspaceService.GetFile(request.TextDocument.Uri);
 
         // TODO: Is this too aggressive? We can still rename inside a var/function even if dotsourcing is in use in a file, we just need to be clear it's not supported to take rename actions inside the dotsourced file.
