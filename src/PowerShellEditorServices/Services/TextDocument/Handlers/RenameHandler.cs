@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Management.Automation.Language;
 using System.Threading;
 using System.Threading.Tasks;
-using MediatR;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Refactoring;
@@ -18,7 +17,6 @@ using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers;
-
 
 /// <summary>
 /// A handler for <a href="https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_prepareRename">textDocument/prepareRename</a>
@@ -82,15 +80,6 @@ internal class PrepareRenameHandler(WorkspaceService workspaceService, ILanguage
             End = funcExtent.Start.Delta(0, funcLength + name.Length)
         };
     }
-
-    /// <summary>
-    /// Finds a renamable symbol at a given position in a script file using 1-based row/column references
-    /// <param name="scriptFile"/>
-    /// <param name="line">1-based line number</param>
-    /// <param name="column">1-based column number</param>
-    /// </summary>
-    internal static Ast FindRenamableSymbol(ScriptFile scriptFile, int line, int column) =>
-        FindRenamableSymbol(scriptFile, new ScriptPositionAdapter(line, column));
 
     /// <summary>
     /// Finds a renamable symbol at a given position in a script file.
@@ -204,22 +193,15 @@ internal class RenameHandler(WorkspaceService workspaceService) : IRenameHandler
 
     internal static TextEdit[] RenameVariable(Ast symbol, Ast scriptAst, RenameParams requestParams)
     {
-        RenameSymbolParams request = new()
-        {
-            FileName = requestParams.TextDocument.Uri.ToString(),
-            Line = requestParams.Position.Line,
-            Column = requestParams.Position.Character,
-            RenameTo = requestParams.NewName
-        };
         if (symbol is VariableExpressionAst or ParameterAst or CommandParameterAst or StringConstantExpressionAst)
         {
 
             IterativeVariableRename visitor = new(
-                request.RenameTo,
+                requestParams.NewName,
                 symbol.Extent.StartLineNumber,
                 symbol.Extent.StartColumnNumber,
                 scriptAst,
-                request.Options ?? null
+                null //FIXME: Pass through Alias config
             );
             visitor.Visit(scriptAst);
             return visitor.Modifications.ToArray();
@@ -321,19 +303,4 @@ internal record ScriptExtentAdapter(IScriptExtent extent) : IScriptExtent
 
     public bool Contains(Position position) => ContainsPosition(this, position);
     public static bool ContainsPosition(ScriptExtentAdapter range, ScriptPositionAdapter position) => Range.ContainsPosition(range, position);
-}
-
-public class RenameSymbolParams : IRequest<RenameSymbolResult>
-{
-    public string? FileName { get; set; }
-    public int Line { get; set; }
-    public int Column { get; set; }
-    public string? RenameTo { get; set; }
-    public RenameSymbolOptions? Options { get; set; }
-}
-
-public class RenameSymbolResult
-{
-    public RenameSymbolResult() => Changes = new List<TextEdit>();
-    public List<TextEdit> Changes { get; set; }
 }
