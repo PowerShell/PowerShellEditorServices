@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using System.Management.Automation.Language;
-using Microsoft.PowerShell.EditorServices.Handlers;
+using Microsoft.PowerShell.EditorServices.Services;
 
 namespace PowerShellEditorServices.Services.PowerShell.Utility
 {

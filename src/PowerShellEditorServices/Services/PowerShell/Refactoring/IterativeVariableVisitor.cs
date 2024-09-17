@@ -3,10 +3,10 @@
 
 using System.Collections.Generic;
 using System.Management.Automation.Language;
-using Microsoft.PowerShell.EditorServices.Handlers;
 using System.Linq;
 using System;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using Microsoft.PowerShell.EditorServices.Services;
 
 namespace Microsoft.PowerShell.EditorServices.Refactoring
 {
