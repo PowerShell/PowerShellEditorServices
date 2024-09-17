@@ -18,52 +18,83 @@ using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Progress;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using PowerShellEditorServices.Test.Shared.Refactoring;
 using Xunit;
-using static PowerShellEditorServices.Test.Handlers.RefactorFunctionTests;
-using static PowerShellEditorServices.Test.Refactoring.RefactorUtilities;
 
 namespace PowerShellEditorServices.Test.Handlers;
 
 [Trait("Category", "PrepareRename")]
-public class PrepareRenameHandlerTests : TheoryData<RenameSymbolParamsSerialized>
+public class PrepareRenameHandlerTests
 {
-    private readonly WorkspaceService workspace = new(NullLoggerFactory.Instance);
-    private readonly PrepareRenameHandler handler;
+    private readonly PrepareRenameHandler testHandler;
+
     public PrepareRenameHandlerTests()
     {
+        WorkspaceService workspace = new(NullLoggerFactory.Instance);
         workspace.WorkspaceFolders.Add(new WorkspaceFolder
         {
             Uri = DocumentUri.FromFileSystemPath(TestUtilities.GetSharedPath("Refactoring"))
         });
-        // FIXME: Need to make a Mock<ILanguageServerFacade> to pass to the ExtensionService constructor
 
-        handler = new(workspace, new fakeLspSendMessageRequestFacade("I Accept"), new fakeConfigurationService());
+        testHandler = new
+        (
+            new RenameService
+            (
+                workspace,
+                new fakeLspSendMessageRequestFacade("I Accept"),
+                new fakeConfigurationService()
+            )
+        );
     }
 
-    // TODO: Test an untitled document (maybe that belongs in E2E tests)
+    /// <summary>
+    /// Convert test cases into theory data. This keeps us from needing xunit in the test data project
+    /// This type has a special ToString to add a data-driven test name which is why we dont convert directly to the param type first
+    /// </summary>
+    public static TheoryData<RenameTestTarget> FunctionTestCases()
+        => new(RefactorFunctionTestCases.TestCases);
+
+    public static TheoryData<RenameTestTarget> VariableTestCases()
+    => new(RefactorVariableTestCases.TestCases);
 
     [Theory]
-    [ClassData(typeof(FunctionRenameTestData))]
-    public async Task FindsSymbol(RenameSymbolParamsSerialized param)
+    [MemberData(nameof(FunctionTestCases))]
+    public async Task FindsFunction(RenameTestTarget testTarget)
     {
-        // The test data is the PS script location. The handler expects 0-based line and column numbers.
-        Position position = new(param.Line - 1, param.Column - 1);
-        PrepareRenameParams testParams = new()
+        PrepareRenameParams testParams = testTarget.ToPrepareRenameParams("Functions");
+
+        RangeOrPlaceholderRange? result = await testHandler.Handle(testParams, CancellationToken.None);
+
+        Assert.NotNull(result?.Range);
+        Assert.True(result.Range.Contains(testParams.Position));
+    }
+
+    [Theory]
+    [MemberData(nameof(VariableTestCases))]
+    public async Task FindsVariable(RenameTestTarget testTarget)
+    {
+        PrepareRenameParams testParams = testTarget.ToPrepareRenameParams("Variables");
+
+        RangeOrPlaceholderRange? result = await testHandler.Handle(testParams, CancellationToken.None);
+
+        Assert.NotNull(result?.Range);
+        Assert.True(result.Range.Contains(testParams.Position));
+    }
+}
+
+public static partial class RenameTestTargetExtensions
+{
+    public static PrepareRenameParams ToPrepareRenameParams(this RenameTestTarget testCase, string baseFolder)
+        => new()
         {
-            Position = position,
+            Position = new ScriptPositionAdapter(Line: testCase.Line, Column: testCase.Column),
             TextDocument = new TextDocumentIdentifier
             {
                 Uri = DocumentUri.FromFileSystemPath(
-                    TestUtilities.GetSharedPath($"Refactoring/Functions/{param.FileName}")
+                    TestUtilities.GetSharedPath($"Refactoring/{baseFolder}/{testCase.FileName}")
                 )
             }
         };
-
-        RangeOrPlaceholderRange? result = await handler.Handle(testParams, CancellationToken.None);
-        Assert.NotNull(result);
-        Assert.NotNull(result.Range);
-        Assert.True(result.Range.Contains(position));
-    }
 }
 
 public class fakeLspSendMessageRequestFacade(string title) : ILanguageServerFacade
