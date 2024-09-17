@@ -4,7 +4,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Management.Automation.Language;
-using Microsoft.PowerShell.EditorServices.Handlers;
+using Microsoft.PowerShell.EditorServices.Services;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Refactoring
