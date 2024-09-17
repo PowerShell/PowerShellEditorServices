@@ -42,24 +42,24 @@ internal class RenameService(
     public async Task<RangeOrPlaceholderRange?> PrepareRenameSymbol(PrepareRenameParams request, CancellationToken cancellationToken)
     {
         // FIXME: Config actually needs to be read and implemented, this is to make the referencing satisfied
-        config.ToString();
-        ShowMessageRequestParams reqParams = new()
-        {
-            Type = MessageType.Warning,
-            Message = "Test Send",
-            Actions = new MessageActionItem[] {
-                new MessageActionItem() { Title = "I Accept" },
-                new MessageActionItem() { Title = "I Accept [Workspace]" },
-                new MessageActionItem() { Title = "Decline" }
-            }
-        };
+        // config.ToString();
+        // ShowMessageRequestParams reqParams = new()
+        // {
+        //     Type = MessageType.Warning,
+        //     Message = "Test Send",
+        //     Actions = new MessageActionItem[] {
+        //         new MessageActionItem() { Title = "I Accept" },
+        //         new MessageActionItem() { Title = "I Accept [Workspace]" },
+        //         new MessageActionItem() { Title = "Decline" }
+        //     }
+        // };
 
-        MessageActionItem result = await lsp.SendRequest(reqParams, cancellationToken).ConfigureAwait(false);
-        if (result.Title == "Test Action")
-        {
-            // FIXME: Need to accept
-            Console.WriteLine("yay");
-        }
+        // MessageActionItem result = await lsp.SendRequest(reqParams, cancellationToken).ConfigureAwait(false);
+        // if (result.Title == "Test Action")
+        // {
+        //     // FIXME: Need to accept
+        //     Console.WriteLine("yay");
+        // }
 
         ScriptFile scriptFile = workspaceService.GetFile(request.TextDocument.Uri);
 
