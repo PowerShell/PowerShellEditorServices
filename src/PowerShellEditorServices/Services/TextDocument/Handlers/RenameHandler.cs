@@ -11,16 +11,14 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 
-
 namespace Microsoft.PowerShell.EditorServices.Handlers;
 
 /// <summary>
 /// A handler for <a href="https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_prepareRename">textDocument/prepareRename</a>
-/// LSP Ref: <see cref="PrepareRename()"/>
 /// </summary>
 internal class PrepareRenameHandler
 (
-    IRenameService renameService
+    RenameService renameService
 ) : IPrepareRenameHandler
 {
     public RenameRegistrationOptions GetRegistrationOptions(RenameCapability capability, ClientCapabilities clientCapabilities) => capability.PrepareSupport ? new() { PrepareProvider = true } : new();
@@ -30,11 +28,10 @@ internal class PrepareRenameHandler
 }
 
 /// <summary>
-/// A handler for textDocument/prepareRename
-/// <para />LSP Ref: https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_rename
+/// A handler for <a href="https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_rename">textDocument/rename</a>
 /// </summary>
 internal class RenameHandler(
-    IRenameService renameService
+    RenameService renameService
 ) : IRenameHandler
 {
     // RenameOptions may only be specified if the client states that it supports prepareSupport in its initial initialize request.
