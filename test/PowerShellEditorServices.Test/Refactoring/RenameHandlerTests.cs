@@ -43,58 +43,42 @@ public class RenameHandlerTests
     }
 
     // Decided to keep this DAMP instead of DRY due to memberdata boundaries, duplicates with PrepareRenameHandler
-    public static TheoryData<RenameTestTarget> VariableTestCases()
-        => new(RefactorVariableTestCases.TestCases);
+    public static TheoryData<RenameTestTargetSerializable> VariableTestCases()
+        => new(RefactorVariableTestCases.TestCases.Select(RenameTestTargetSerializable.FromRenameTestTarget));
 
-    public static TheoryData<RenameTestTarget> FunctionTestCases()
-        => new(RefactorFunctionTestCases.TestCases);
+    public static TheoryData<RenameTestTargetSerializable> FunctionTestCases()
+        => new(RefactorFunctionTestCases.TestCases.Select(RenameTestTargetSerializable.FromRenameTestTarget));
 
     [Theory]
     [MemberData(nameof(VariableTestCases))]
-    public async void RenamedSymbol(RenameTestTarget request)
+    public async void RenamedSymbol(RenameTestTarget s)
     {
-        string fileName = request.FileName;
+        string fileName = s.FileName;
         ScriptFile scriptFile = GetTestScript(fileName);
 
-        WorkspaceEdit response = await testHandler.Handle(request.ToRenameParams(), CancellationToken.None);
+        WorkspaceEdit response = await testHandler.Handle(s.ToRenameParams(), CancellationToken.None);
 
         string expected = GetTestScript(fileName.Substring(0, fileName.Length - 4) + "Renamed.ps1").Contents;
-        string actual = GetModifiedScript(scriptFile.Contents, response.Changes[request.ToRenameParams().TextDocument.Uri].ToArray());
+        string actual = GetModifiedScript(scriptFile.Contents, response.Changes[s.ToRenameParams().TextDocument.Uri].ToArray());
 
         Assert.Equal(expected, actual);
     }
 
     [Theory]
     [MemberData(nameof(FunctionTestCases))]
-    public async void RenamedFunction(RenameTestTarget request)
+    public async void RenamedFunction(RenameTestTarget s)
     {
-        string fileName = request.FileName;
+        string fileName = s.FileName;
         ScriptFile scriptFile = GetTestScript(fileName);
 
-        WorkspaceEdit response = await testHandler.Handle(request.ToRenameParams(), CancellationToken.None);
+        WorkspaceEdit response = await testHandler.Handle(s.ToRenameParams(), CancellationToken.None);
 
         string expected = GetTestScript(fileName.Substring(0, fileName.Length - 4) + "Renamed.ps1").Contents;
-        string actual = GetModifiedScript(scriptFile.Contents, response.Changes[request.ToRenameParams().TextDocument.Uri].ToArray());
+        string actual = GetModifiedScript(scriptFile.Contents, response.Changes[s.ToRenameParams().TextDocument.Uri].ToArray());
 
         Assert.Equal(expected, actual);
     }
 
     private ScriptFile GetTestScript(string fileName) =>
         workspace.GetFile(TestUtilities.GetSharedPath(Path.Combine("Refactoring", "Functions", fileName)));
-}
-
-public static partial class RenameTestTargetExtensions
-{
-    public static RenameParams ToRenameParams(this RenameTestTarget testCase)
-        => new()
-        {
-            Position = new ScriptPositionAdapter(Line: testCase.Line, Column: testCase.Column),
-            TextDocument = new TextDocumentIdentifier
-            {
-                Uri = DocumentUri.FromFileSystemPath(
-                    TestUtilities.GetSharedPath($"Refactoring/Functions/{testCase.FileName}")
-                )
-            },
-            NewName = testCase.NewName
-        };
 }

@@ -3,6 +3,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -20,6 +21,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Progress;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using PowerShellEditorServices.Test.Shared.Refactoring;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace PowerShellEditorServices.Test.Handlers;
 
@@ -51,17 +53,17 @@ public class PrepareRenameHandlerTests
     /// Convert test cases into theory data. This keeps us from needing xunit in the test data project
     /// This type has a special ToString to add a data-driven test name which is why we dont convert directly to the param type first
     /// </summary>
-    public static TheoryData<RenameTestTarget> FunctionTestCases()
-        => new(RefactorFunctionTestCases.TestCases);
+    public static TheoryData<RenameTestTargetSerializable> VariableTestCases()
+        => new(RefactorVariableTestCases.TestCases.Select(RenameTestTargetSerializable.FromRenameTestTarget));
 
-    public static TheoryData<RenameTestTarget> VariableTestCases()
-    => new(RefactorVariableTestCases.TestCases);
+    public static TheoryData<RenameTestTargetSerializable> FunctionTestCases()
+        => new(RefactorFunctionTestCases.TestCases.Select(RenameTestTargetSerializable.FromRenameTestTarget));
 
     [Theory]
     [MemberData(nameof(FunctionTestCases))]
-    public async Task FindsFunction(RenameTestTarget testTarget)
+    public async Task FindsFunction(RenameTestTarget s)
     {
-        PrepareRenameParams testParams = testTarget.ToPrepareRenameParams("Functions");
+        PrepareRenameParams testParams = s.ToPrepareRenameParams("Functions");
 
         RangeOrPlaceholderRange? result = await testHandler.Handle(testParams, CancellationToken.None);
 
@@ -71,9 +73,9 @@ public class PrepareRenameHandlerTests
 
     [Theory]
     [MemberData(nameof(VariableTestCases))]
-    public async Task FindsVariable(RenameTestTarget testTarget)
+    public async Task FindsVariable(RenameTestTarget s)
     {
-        PrepareRenameParams testParams = testTarget.ToPrepareRenameParams("Variables");
+        PrepareRenameParams testParams = s.ToPrepareRenameParams("Variables");
 
         RangeOrPlaceholderRange? result = await testHandler.Handle(testParams, CancellationToken.None);
 
@@ -144,4 +146,57 @@ public class fakeConfigurationService : ILanguageServerConfiguration
     public IConfigurationSection GetSection(string key) => throw new NotImplementedException();
     public ILanguageServerConfiguration RemoveConfigurationItems(IEnumerable<ConfigurationItem> configurationItems) => throw new NotImplementedException();
     public bool TryGetScopedConfiguration(DocumentUri scopeUri, out IScopedConfiguration configuration) => throw new NotImplementedException();
+}
+
+public static partial class RenameTestTargetExtensions
+{
+    /// <summary>
+    /// Extension Method to convert a RenameTestTarget to a RenameParams. Needed because RenameTestTarget is in a separate project.
+    /// </summary>
+    public static RenameParams ToRenameParams(this RenameTestTarget testCase)
+        => new()
+        {
+            Position = new ScriptPositionAdapter(Line: testCase.Line, Column: testCase.Column),
+            TextDocument = new TextDocumentIdentifier
+            {
+                Uri = DocumentUri.FromFileSystemPath(
+                    TestUtilities.GetSharedPath($"Refactoring/Functions/{testCase.FileName}")
+                )
+            },
+            NewName = testCase.NewName
+        };
+}
+
+/// <summary>
+/// This is necessary for the MS test explorer to display the test cases
+/// Ref:
+/// </summary>
+public class RenameTestTargetSerializable : RenameTestTarget, IXunitSerializable
+{
+    public RenameTestTargetSerializable() : base() { }
+
+    public void Serialize(IXunitSerializationInfo info)
+    {
+        info.AddValue(nameof(FileName), FileName);
+        info.AddValue(nameof(Line), Line);
+        info.AddValue(nameof(Column), Column);
+        info.AddValue(nameof(NewName), NewName);
+    }
+
+    public void Deserialize(IXunitSerializationInfo info)
+    {
+        FileName = info.GetValue<string>(nameof(FileName));
+        Line = info.GetValue<int>(nameof(Line));
+        Column = info.GetValue<int>(nameof(Column));
+        NewName = info.GetValue<string>(nameof(NewName));
+    }
+
+    public static RenameTestTargetSerializable FromRenameTestTarget(RenameTestTarget t)
+        => new RenameTestTargetSerializable()
+        {
+            FileName = t.FileName,
+            Column = t.Column,
+            Line = t.Line,
+            NewName = t.NewName
+        };
 }
