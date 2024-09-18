@@ -70,8 +70,10 @@ internal class RenameService(
         }
 
         ScriptPositionAdapter position = request.Position;
-        Ast target = FindRenamableSymbol(scriptFile, position);
+        Ast? target = FindRenamableSymbol(scriptFile, position);
         if (target is null) { return null; }
+
+        // Will implicitly convert to RangeOrPlaceholder and adjust to 0-based
         return target switch
         {
             FunctionDefinitionAst funcAst => GetFunctionNameExtent(funcAst),
@@ -85,7 +87,7 @@ internal class RenameService(
         ScriptFile scriptFile = workspaceService.GetFile(request.TextDocument.Uri);
         ScriptPositionAdapter position = request.Position;
 
-        Ast tokenToRename = FindRenamableSymbol(scriptFile, position);
+        Ast? tokenToRename = FindRenamableSymbol(scriptFile, position);
         if (tokenToRename is null) { return null; }
 
         // TODO: Potentially future cross-file support
@@ -151,54 +153,34 @@ internal class RenameService(
         return [];
     }
 
-
     /// <summary>
-    /// Finds a renamable symbol at a given position in a script file.
+    /// Finds the most specific renamable symbol at the given position
     /// </summary>
     /// <returns>Ast of the token or null if no renamable symbol was found</returns>
-    internal static Ast FindRenamableSymbol(ScriptFile scriptFile, ScriptPositionAdapter position)
+    internal static Ast? FindRenamableSymbol(ScriptFile scriptFile, ScriptPositionAdapter position)
     {
-        int line = position.Line;
-        int column = position.Column;
+        Ast? ast = scriptFile.ScriptAst.FindAtPosition(position,
+        [
+            // Filters just the ASTs that are candidates for rename
+            typeof(FunctionDefinitionAst),
+            typeof(VariableExpressionAst),
+            typeof(CommandParameterAst),
+            typeof(ParameterAst),
+            typeof(StringConstantExpressionAst),
+            typeof(CommandAst)
+        ]);
 
-        // Cannot use generic here as our desired ASTs do not share a common parent
-        Ast token = scriptFile.ScriptAst.Find(ast =>
+        // Special detection for Function calls that dont follow verb-noun syntax e.g. DoThing
+        // It's not foolproof but should work in most cases where it is explicit (e.g. not & $x)
+        if (ast is StringConstantExpressionAst stringAst)
         {
-            // Skip all statements that end before our target line or start after our target line. This is a performance optimization.
-            if (ast.Extent.EndLineNumber < line || ast.Extent.StartLineNumber > line) { return false; }
+            if (stringAst.Parent is not CommandAst parent) { return null; }
+            if (parent.GetCommandName() != stringAst.Value) { return null; }
+        }
 
-            // Supported types, filters out scriptblocks and whatnot
-            if (ast is not (
-                FunctionDefinitionAst
-                or VariableExpressionAst
-                or CommandParameterAst
-                or ParameterAst
-                or StringConstantExpressionAst
-                or CommandAst
-            ))
-            {
-                return false;
-            }
-
-            // Special detection for Function calls that dont follow verb-noun syntax e.g. DoThing
-            // It's not foolproof but should work in most cases where it is explicit (e.g. not & $x)
-            if (ast is StringConstantExpressionAst stringAst)
-            {
-                if (stringAst.Parent is not CommandAst parent) { return false; }
-                if (parent.GetCommandName() != stringAst.Value) { return false; }
-            }
-
-            ScriptExtentAdapter target = ast switch
-            {
-                FunctionDefinitionAst funcAst => GetFunctionNameExtent(funcAst),
-                _ => new ScriptExtentAdapter(ast.Extent)
-            };
-
-            return target.Contains(position);
-        }, true);
-
-        return token;
+        return ast;
     }
+
 
     private static ScriptExtentAdapter GetFunctionNameExtent(FunctionDefinitionAst ast)
     {
@@ -219,6 +201,63 @@ internal class RenameService(
 public class RenameSymbolOptions
 {
     public bool CreateAlias { get; set; }
+}
+
+
+public static class AstExtensions
+{
+    /// <summary>
+    /// Finds the most specific Ast at the given script position, or returns null if none found.<br/>
+    /// For example, if the position is on a variable expression within a function definition,
+    /// the variable will be returned even if the function definition is found first.
+    /// </summary>
+    internal static Ast? FindAtPosition(this Ast ast, IScriptPosition position, Type[]? allowedTypes)
+    {
+        // Short circuit quickly if the position is not in the provided range, no need to traverse if not
+        // TODO: Maybe this should be an exception instead? I mean technically its not found but if you gave a position outside the file something very wrong probably happened.
+        if (!new ScriptExtentAdapter(ast.Extent).Contains(position)) { return null; }
+
+        // This will be updated with each loop, and re-Find to dig deeper
+        Ast? mostSpecificAst = null;
+
+        do
+        {
+            ast = ast.Find(currentAst =>
+            {
+                if (currentAst == mostSpecificAst) { return false; }
+
+                int line = position.LineNumber;
+                int column = position.ColumnNumber;
+
+                // Performance optimization, skip statements that don't contain the position
+                if (
+                    currentAst.Extent.EndLineNumber < line
+                    || currentAst.Extent.StartLineNumber > line
+                    || (currentAst.Extent.EndLineNumber == line && currentAst.Extent.EndColumnNumber < column)
+                    || (currentAst.Extent.StartLineNumber == line && currentAst.Extent.StartColumnNumber > column)
+                )
+                {
+                    return false;
+                }
+
+                if (allowedTypes is not null && !allowedTypes.Contains(currentAst.GetType()))
+                {
+                    return false;
+                }
+
+                if (new ScriptExtentAdapter(currentAst.Extent).Contains(position))
+                {
+                    mostSpecificAst = currentAst;
+                    return true; //Stops the find
+                }
+
+                return false;
+            }, true);
+        } while (ast is not null);
+
+        return mostSpecificAst;
+    }
+
 }
 
 internal class Utilities
@@ -385,10 +424,10 @@ internal class Utilities
 public record ScriptPositionAdapter(IScriptPosition position) : IScriptPosition, IComparable<ScriptPositionAdapter>, IComparable<Position>, IComparable<ScriptPosition>
 {
     public int Line => position.LineNumber;
-    public int Column => position.ColumnNumber;
-    public int Character => position.ColumnNumber;
     public int LineNumber => position.LineNumber;
+    public int Column => position.ColumnNumber;
     public int ColumnNumber => position.ColumnNumber;
+    public int Character => position.ColumnNumber;
 
     public string File => position.File;
     string IScriptPosition.Line => position.Line;
@@ -457,13 +496,32 @@ internal record ScriptExtentAdapter(IScriptExtent extent) : IScriptExtent
     public IScriptPosition EndScriptPosition => End;
     public int EndColumnNumber => End.ColumnNumber;
     public int EndLineNumber => End.LineNumber;
-    public int StartOffset => extent.EndOffset;
+    public int StartOffset => extent.StartOffset;
     public int EndOffset => extent.EndOffset;
     public string File => extent.File;
     public int StartColumnNumber => extent.StartColumnNumber;
     public int StartLineNumber => extent.StartLineNumber;
     public string Text => extent.Text;
 
-    public bool Contains(Position position) => ContainsPosition(this, position);
-    public static bool ContainsPosition(ScriptExtentAdapter range, ScriptPositionAdapter position) => Range.ContainsPosition(range, position);
+    public bool Contains(IScriptPosition position) => Contains((ScriptPositionAdapter)position);
+
+    public bool Contains(ScriptPositionAdapter position)
+    {
+        if (position.Line < Start.Line || position.Line > End.Line)
+        {
+            return false;
+        }
+
+        if (position.Line == Start.Line && position.Character < Start.Character)
+        {
+            return false;
+        }
+
+        if (position.Line == End.Line && position.Character > End.Character)
+        {
+            return false;
+        }
+
+        return true;
+    }
 }

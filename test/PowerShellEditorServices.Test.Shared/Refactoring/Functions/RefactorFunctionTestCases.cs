@@ -7,7 +7,7 @@ public class RefactorFunctionTestCases
 {
     public static RenameTestTarget[] TestCases =
     [
-        new("FunctionsSingle.ps1",                     Line: 1,  Column:  5 ),
+        new("FunctionsSingle.ps1",                     Line: 1,  Column: 11 ),
         new("FunctionMultipleOccurrences.ps1",         Line: 1,  Column:  5 ),
         new("FunctionInnerIsNested.ps1",               Line: 5,  Column:  5, "bar"),
         new("FunctionOuterHasNestedFunction.ps1",      Line: 10, Column:  1 ),
@@ -19,7 +19,7 @@ public class RefactorFunctionTestCases
         new("FunctionLoop.ps1",                        Line: 5,  Column:  5 ),
         new("FunctionForeach.ps1",                     Line: 5,  Column: 11 ),
         new("FunctionForeachObject.ps1",               Line: 5,  Column: 11 ),
-        new("FunctionCallWIthinStringExpression.ps1",  Line: 10, Column:  1 ),
-        new("FunctionNestedRedefinition.ps1",          Line: 15, Column: 13 )
+        new("FunctionCallWIthinStringExpression.ps1",  Line: 1,  Column: 10 ),
+        new("FunctionNestedRedefinition.ps1",          Line: 13, Column: 15 )
     ];
 }
