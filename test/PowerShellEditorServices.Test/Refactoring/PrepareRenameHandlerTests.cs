@@ -82,6 +82,8 @@ public class PrepareRenameHandlerTests
         Assert.NotNull(result);
         Assert.True(result?.DefaultBehavior?.DefaultBehavior);
     }
+
+    // TODO: Bad Path Tests (strings, parameters, etc.)
 }
 
 public static partial class RenameTestTargetExtensions
