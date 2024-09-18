@@ -71,14 +71,13 @@ internal class RenameService(
 
         ScriptPositionAdapter position = request.Position;
         Ast? target = FindRenamableSymbol(scriptFile, position);
-        if (target is null) { return null; }
 
-        // Will implicitly convert to RangeOrPlaceholder and adjust to 0-based
-        return target switch
-        {
-            FunctionDefinitionAst funcAst => GetFunctionNameExtent(funcAst),
-            _ => new ScriptExtentAdapter(target.Extent)
-        };
+        // Since 3.16 we can simply basically return a DefaultBehavior true or null to signal to the client that the position is valid for rename and it should use its default selection criteria (which is probably the language semantic highlighting or grammar). For the current scope of the rename provider, this should be fine, but we have the option to supply the specific range in the future for special cases.
+        RangeOrPlaceholderRange? renamable = target is null ? null : new RangeOrPlaceholderRange
+        (
+            new RenameDefaultBehavior() { DefaultBehavior = true }
+        );
+        return renamable;
     }
 
     public async Task<WorkspaceEdit?> RenameSymbol(RenameParams request, CancellationToken cancellationToken)
@@ -176,25 +175,36 @@ internal class RenameService(
         {
             if (stringAst.Parent is not CommandAst parent) { return null; }
             if (parent.GetCommandName() != stringAst.Value) { return null; }
+            if (parent.CommandElements[0] != stringAst) { return null; }
+            // TODO: Potentially find if function was defined earlier in the file to avoid native executable renames and whatnot?
+        }
+
+        // Only the function name is valid for rename, not other components
+        if (ast is FunctionDefinitionAst funcDefAst)
+        {
+            if (!GetFunctionNameExtent(funcDefAst).Contains(position))
+            {
+                return null;
+            }
         }
 
         return ast;
     }
 
 
+    /// <summary>
+    /// Return an extent that only contains the position of the name of the function, for Client highlighting purposes.
+    /// </summary>
     private static ScriptExtentAdapter GetFunctionNameExtent(FunctionDefinitionAst ast)
     {
         string name = ast.Name;
         // FIXME: Gather dynamically from the AST and include backticks and whatnot that might be present
         int funcLength = "function ".Length;
         ScriptExtentAdapter funcExtent = new(ast.Extent);
+        funcExtent.Start = funcExtent.Start.Delta(0, funcLength);
+        funcExtent.End = funcExtent.Start.Delta(0, name.Length);
 
-        // Get a range that represents only the function name
-        return funcExtent with
-        {
-            Start = funcExtent.Start.Delta(0, funcLength),
-            End = funcExtent.Start.Delta(0, funcLength + name.Length)
-        };
+        return funcExtent;
     }
 }
 
@@ -219,41 +229,47 @@ public static class AstExtensions
 
         // This will be updated with each loop, and re-Find to dig deeper
         Ast? mostSpecificAst = null;
+        Ast? currentAst = ast;
 
         do
         {
-            ast = ast.Find(currentAst =>
+            currentAst = currentAst.Find(thisAst =>
             {
-                if (currentAst == mostSpecificAst) { return false; }
+                if (thisAst == mostSpecificAst) { return false; }
 
                 int line = position.LineNumber;
                 int column = position.ColumnNumber;
 
                 // Performance optimization, skip statements that don't contain the position
                 if (
-                    currentAst.Extent.EndLineNumber < line
-                    || currentAst.Extent.StartLineNumber > line
-                    || (currentAst.Extent.EndLineNumber == line && currentAst.Extent.EndColumnNumber < column)
-                    || (currentAst.Extent.StartLineNumber == line && currentAst.Extent.StartColumnNumber > column)
+                    thisAst.Extent.EndLineNumber < line
+                    || thisAst.Extent.StartLineNumber > line
+                    || (thisAst.Extent.EndLineNumber == line && thisAst.Extent.EndColumnNumber < column)
+                    || (thisAst.Extent.StartLineNumber == line && thisAst.Extent.StartColumnNumber > column)
                 )
                 {
                     return false;
                 }
 
-                if (allowedTypes is not null && !allowedTypes.Contains(currentAst.GetType()))
+                if (allowedTypes is not null && !allowedTypes.Contains(thisAst.GetType()))
                 {
                     return false;
                 }
 
-                if (new ScriptExtentAdapter(currentAst.Extent).Contains(position))
+                if (new ScriptExtentAdapter(thisAst.Extent).Contains(position))
                 {
-                    mostSpecificAst = currentAst;
-                    return true; //Stops the find
+                    mostSpecificAst = thisAst;
+                    return true; //Stops this particular find and looks more specifically
                 }
 
                 return false;
             }, true);
-        } while (ast is not null);
+
+            if (currentAst is not null)
+            {
+                mostSpecificAst = currentAst;
+            }
+        } while (currentAst is not null);
 
         return mostSpecificAst;
     }
@@ -490,7 +506,10 @@ internal record ScriptExtentAdapter(IScriptExtent extent) : IScriptExtent
 
     public static implicit operator ScriptExtent(ScriptExtentAdapter adapter) => adapter;
 
-    public static implicit operator RangeOrPlaceholderRange(ScriptExtentAdapter adapter) => new((Range)adapter);
+    public static implicit operator RangeOrPlaceholderRange(ScriptExtentAdapter adapter) => new((Range)adapter)
+    {
+        DefaultBehavior = new() { DefaultBehavior = false }
+    };
 
     public IScriptPosition StartScriptPosition => Start;
     public IScriptPosition EndScriptPosition => End;
