@@ -67,8 +67,8 @@ public class PrepareRenameHandlerTests
 
         RangeOrPlaceholderRange? result = await testHandler.Handle(testParams, CancellationToken.None);
 
-        Assert.NotNull(result?.Range);
-        Assert.True(result.Range.Contains(testParams.Position));
+        Assert.NotNull(result);
+        Assert.True(result?.DefaultBehavior?.DefaultBehavior);
     }
 
     [Theory]
@@ -79,8 +79,8 @@ public class PrepareRenameHandlerTests
 
         RangeOrPlaceholderRange? result = await testHandler.Handle(testParams, CancellationToken.None);
 
-        Assert.NotNull(result?.Range);
-        Assert.True(result.Range.Contains(testParams.Position));
+        Assert.NotNull(result);
+        Assert.True(result?.DefaultBehavior?.DefaultBehavior);
     }
 }
 
