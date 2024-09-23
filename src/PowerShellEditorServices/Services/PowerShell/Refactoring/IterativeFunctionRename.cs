@@ -29,16 +29,16 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             this.StartColumnNumber = StartColumnNumber;
             this.ScriptAst = ScriptAst;
 
-            Ast Node = Utilities.GetAstAtPositionOfType(StartLineNumber, StartColumnNumber, ScriptAst,
-            typeof(FunctionDefinitionAst), typeof(CommandAst));
+            ScriptPosition position = new(null, StartLineNumber, StartColumnNumber, null);
+            Ast node = ScriptAst.FindAtPosition(position, [typeof(FunctionDefinitionAst), typeof(CommandAst)]);
 
-            if (Node != null)
+            if (node != null)
             {
-                if (Node is FunctionDefinitionAst FuncDef && FuncDef.Name.ToLower() == OldName.ToLower())
+                if (node is FunctionDefinitionAst funcDef && funcDef.Name.ToLower() == OldName.ToLower())
                 {
-                    TargetFunctionAst = FuncDef;
+                    TargetFunctionAst = funcDef;
                 }
-                if (Node is CommandAst commdef && commdef.GetCommandName().ToLower() == OldName.ToLower())
+                if (node is CommandAst commdef && commdef.GetCommandName().ToLower() == OldName.ToLower())
                 {
                     TargetFunctionAst = Utilities.GetFunctionDefByCommandAst(OldName, StartLineNumber, StartColumnNumber, ScriptAst);
                     if (TargetFunctionAst == null)
@@ -57,6 +57,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             public bool ShouldRename { get; set; }
             public IEnumerator<Ast> ChildrenEnumerator { get; set; }
         }
+
         public bool DetermineChildShouldRenameState(NodeProcessingState currentState, Ast child)
         {
             // The Child Has the name we are looking for
@@ -75,7 +76,6 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     DuplicateFunctionAst = funcDef;
                     return false;
                 }
-
             }
             else if (child?.Parent?.Parent is ScriptBlockAst)
             {
@@ -105,6 +105,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             }
             return currentState.ShouldRename;
         }
+
         public void Visit(Ast root)
         {
             Stack<NodeProcessingState> processingStack = new();

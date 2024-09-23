@@ -270,7 +270,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         {
             Validate.IsNotNull(nameof(result), result);
 
-            OmniSharp.Extensions.LanguageServer.Protocol.Models.TextEdit textEdit = new()
+            TextEdit textEdit = new()
             {
                 NewText = result.CompletionText,
                 Range = new Range

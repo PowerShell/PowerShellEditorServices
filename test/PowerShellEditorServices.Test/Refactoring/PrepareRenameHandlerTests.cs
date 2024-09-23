@@ -155,14 +155,14 @@ public static partial class RenameTestTargetExtensions
     /// <summary>
     /// Extension Method to convert a RenameTestTarget to a RenameParams. Needed because RenameTestTarget is in a separate project.
     /// </summary>
-    public static RenameParams ToRenameParams(this RenameTestTarget testCase)
+    public static RenameParams ToRenameParams(this RenameTestTarget testCase, string subPath)
         => new()
         {
             Position = new ScriptPositionAdapter(Line: testCase.Line, Column: testCase.Column),
             TextDocument = new TextDocumentIdentifier
             {
                 Uri = DocumentUri.FromFileSystemPath(
-                    TestUtilities.GetSharedPath($"Refactoring/Functions/{testCase.FileName}")
+                    TestUtilities.GetSharedPath($"Refactoring/{subPath}/{testCase.FileName}")
                 )
             },
             NewName = testCase.NewName
