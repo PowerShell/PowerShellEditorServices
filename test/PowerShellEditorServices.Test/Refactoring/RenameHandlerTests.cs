@@ -9,7 +9,6 @@ using Microsoft.PowerShell.EditorServices.Test.Shared;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using static PowerShellEditorServices.Test.Refactoring.RefactorUtilities;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using Xunit;
@@ -50,35 +49,43 @@ public class RenameHandlerTests
         => new(RefactorFunctionTestCases.TestCases.Select(RenameTestTargetSerializable.FromRenameTestTarget));
 
     [Theory]
-    [MemberData(nameof(VariableTestCases))]
-    public async void RenamedSymbol(RenameTestTarget s)
+    [MemberData(nameof(FunctionTestCases))]
+    public async void RenamedFunction(RenameTestTarget s)
     {
-        string fileName = s.FileName;
-        ScriptFile scriptFile = GetTestScript(fileName);
+        RenameParams request = s.ToRenameParams("Functions");
+        WorkspaceEdit response = await testHandler.Handle(request, CancellationToken.None);
+        DocumentUri testScriptUri = request.TextDocument.Uri;
 
-        WorkspaceEdit response = await testHandler.Handle(s.ToRenameParams(), CancellationToken.None);
+        string expected = workspace.GetFile
+        (
+            testScriptUri.ToString().Substring(0, testScriptUri.ToString().Length - 4) + "Renamed.ps1"
+        ).Contents;
 
-        string expected = GetTestScript(fileName.Substring(0, fileName.Length - 4) + "Renamed.ps1").Contents;
-        string actual = GetModifiedScript(scriptFile.Contents, response.Changes[s.ToRenameParams().TextDocument.Uri].ToArray());
+        ScriptFile scriptFile = workspace.GetFile(testScriptUri);
 
+        string actual = GetModifiedScript(scriptFile.Contents, response.Changes[testScriptUri].ToArray());
+
+        Assert.NotEmpty(response.Changes[testScriptUri]);
         Assert.Equal(expected, actual);
     }
 
     [Theory]
-    [MemberData(nameof(FunctionTestCases))]
-    public async void RenamedFunction(RenameTestTarget s)
+    [MemberData(nameof(VariableTestCases))]
+    public async void RenamedVariable(RenameTestTarget s)
     {
-        string fileName = s.FileName;
-        ScriptFile scriptFile = GetTestScript(fileName);
+        RenameParams request = s.ToRenameParams("Variables");
+        WorkspaceEdit response = await testHandler.Handle(request, CancellationToken.None);
+        DocumentUri testScriptUri = request.TextDocument.Uri;
 
-        WorkspaceEdit response = await testHandler.Handle(s.ToRenameParams(), CancellationToken.None);
+        string expected = workspace.GetFile
+        (
+            testScriptUri.ToString().Substring(0, testScriptUri.ToString().Length - 4) + "Renamed.ps1"
+        ).Contents;
 
-        string expected = GetTestScript(fileName.Substring(0, fileName.Length - 4) + "Renamed.ps1").Contents;
-        string actual = GetModifiedScript(scriptFile.Contents, response.Changes[s.ToRenameParams().TextDocument.Uri].ToArray());
+        ScriptFile scriptFile = workspace.GetFile(testScriptUri);
+
+        string actual = GetModifiedScript(scriptFile.Contents, response.Changes[testScriptUri].ToArray());
 
         Assert.Equal(expected, actual);
     }
-
-    private ScriptFile GetTestScript(string fileName) =>
-        workspace.GetFile(TestUtilities.GetSharedPath(Path.Combine("Refactoring", "Functions", fileName)));
 }
