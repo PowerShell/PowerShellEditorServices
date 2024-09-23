@@ -109,28 +109,13 @@ internal class RenameService(
 
     // TODO: We can probably merge these two methods with Generic Type constraints since they are factored into overloading
 
-    internal static TextEdit[] RenameFunction(Ast token, Ast scriptAst, RenameParams renameParams)
+    internal static TextEdit[] RenameFunction(Ast target, Ast scriptAst, RenameParams renameParams)
     {
-        ScriptPositionAdapter position = renameParams.Position;
+        if (target is not FunctionDefinitionAst or CommandAst)
+        {
+            throw new HandlerErrorException($"Asked to rename a function but the target is not a viable function type: {target.GetType()}. This should not happen as PrepareRename should have already checked for viability. File an issue if you see this.");
+        }
 
-        string tokenName = "";
-        if (token is FunctionDefinitionAst funcDef)
-        {
-            tokenName = funcDef.Name;
-        }
-        else if (token.Parent is CommandAst CommAst)
-        {
-            tokenName = CommAst.GetCommandName();
-        }
-        IterativeFunctionRename visitor = new(
-            tokenName,
-            renameParams.NewName,
-            position.Line,
-            position.Column,
-            scriptAst
-        );
-        visitor.Visit(scriptAst);
-        return visitor.Modifications.ToArray();
     }
 
     internal static TextEdit[] RenameVariable(Ast symbol, Ast scriptAst, RenameParams requestParams)
@@ -195,7 +180,7 @@ internal class RenameService(
     /// <summary>
     /// Return an extent that only contains the position of the name of the function, for Client highlighting purposes.
     /// </summary>
-    private static ScriptExtentAdapter GetFunctionNameExtent(FunctionDefinitionAst ast)
+    public static ScriptExtentAdapter GetFunctionNameExtent(FunctionDefinitionAst ast)
     {
         string name = ast.Name;
         // FIXME: Gather dynamically from the AST and include backticks and whatnot that might be present
@@ -208,9 +193,132 @@ internal class RenameService(
     }
 }
 
+/// <summary>
+/// A visitor that renames a function given a particular target. The Edits property contains the edits when complete.
+/// You should use a new instance for each rename operation.
+/// Skipverify can be used as a performance optimization when you are sure you are in scope.
+/// </summary>
+/// <param name="target"></param>
+public class RenameFunctionVisitor(Ast target, string oldName, string newName, bool skipVerify = false) : AstVisitor
+{
+    public List<TextEdit> Edits { get; } = new();
+    private Ast? CurrentDocument;
+
+    // Wire up our visitor to the relevant AST types we are potentially renaming
+    public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst ast) => Visit(ast);
+    public override AstVisitAction VisitCommand(CommandAst ast) => Visit(ast);
+
+    public AstVisitAction Visit(Ast ast)
+    {
+        /// If this is our first run, we need to verify we are in scope.
+        if (!skipVerify && CurrentDocument is null)
+        {
+            if (ast.Find(ast => ast == target, true) is null)
+            {
+                throw new TargetSymbolNotFoundException("The target this visitor would rename is not present in the AST. This is a bug and you should file an issue");
+            }
+            CurrentDocument = ast;
+
+            // If our target was a command, we need to find the original function.
+            if (target is CommandAst command)
+            {
+                target = CurrentDocument.GetFunctionDefinition(command)
+                    ?? throw new TargetSymbolNotFoundException("The command to rename does not have a function definition.");
+            }
+        }
+        if (CurrentDocument != ast)
+        {
+            throw new TargetSymbolNotFoundException("The visitor should not be reused to rename a different document. It should be created new for each rename operation. This is a bug and you should file an issue");
+        }
+
+        if (ShouldRename(ast))
+        {
+            Edits.Add(GetRenameFunctionEdit(ast));
+            return AstVisitAction.Continue;
+        }
+        else
+        {
+            return AstVisitAction.SkipChildren;
+        }
+
+        /// TODO: Is there a way we can know we are fully outside where the function might be referenced, and if so, call a AstVisitAction Abort as a perf optimization?
+    }
+
+    public bool ShouldRename(Ast candidate)
+    {
+        // There should be only one function definition and if it is not our target, it may be a duplicately named function
+        if (candidate is FunctionDefinitionAst funcDef)
+        {
+            return funcDef == target;
+        }
+
+        if (candidate is not CommandAst)
+        {
+            throw new InvalidOperationException($"ShouldRename for a function had an Unexpected Ast Type {candidate.GetType()}. This is a bug and you should file an issue.");
+        }
+
+        // Determine if calls of the function are in the same scope as the function definition
+        if (candidate?.Parent?.Parent is ScriptBlockAst)
+        {
+            return target.Parent.Parent == candidate.Parent.Parent;
+        }
+        else if (candidate?.Parent is StatementBlockAst)
+        {
+            return candidate.Parent == target.Parent;
+        }
+
+        // If we get this far, we hit an edge case
+        throw new InvalidOperationException("ShouldRename for a function could not determine the viability of a rename. This is a bug and you should file an issue.");
+    }
+
+    private TextEdit GetRenameFunctionEdit(Ast candidate)
+    {
+        if (candidate is FunctionDefinitionAst funcDef)
+        {
+            if (funcDef != target)
+            {
+                throw new InvalidOperationException("GetRenameFunctionEdit was called on an Ast that was not the target. This is a bug and you should file an issue.");
+            }
+
+            ScriptExtentAdapter functionNameExtent = RenameService.GetFunctionNameExtent(funcDef);
+
+            return new TextEdit()
+            {
+                NewText = newName,
+                Range = functionNameExtent
+            };
+        }
+
+        // Should be CommandAst past this point.
+        if (candidate is not CommandAst command)
+        {
+            throw new InvalidOperationException($"Expected a command but got {candidate.GetType()}");
+        }
+
+        if (command.GetCommandName()?.ToLower() == oldName.ToLower() &&
+            target.Extent.StartLineNumber <= command.Extent.StartLineNumber)
+        {
+            if (command.CommandElements[0] is not StringConstantExpressionAst funcName)
+            {
+                throw new InvalidOperationException("Command element should always have a string expresssion as its first item. This is a bug and you should report it.");
+            }
+
+            return new TextEdit()
+            {
+                NewText = newName,
+                Range = new ScriptExtentAdapter(funcName.Extent)
+            };
+        }
+
+        throw new InvalidOperationException("GetRenameFunctionEdit was not provided a FuncitonDefinition or a CommandAst");
+    }
+}
+
 public class RenameSymbolOptions
 {
     public bool CreateAlias { get; set; }
+
+
 }
 
 
@@ -274,6 +382,55 @@ public static class AstExtensions
         return mostSpecificAst;
     }
 
+    public static FunctionDefinitionAst? GetFunctionDefinition(this Ast ast, CommandAst command)
+    {
+        string? name = command.GetCommandName();
+        if (name is null) { return null; }
+
+        List<FunctionDefinitionAst> FunctionDefinitions = ast.FindAll(ast =>
+        {
+            return ast is FunctionDefinitionAst funcDef &&
+            funcDef.Name.ToLower() == name &&
+            (funcDef.Extent.EndLineNumber < command.Extent.StartLineNumber ||
+            (funcDef.Extent.EndColumnNumber <= command.Extent.StartColumnNumber &&
+            funcDef.Extent.EndLineNumber <= command.Extent.StartLineNumber));
+        }, true).Cast<FunctionDefinitionAst>().ToList();
+
+        // return the function def if we only have one match
+        if (FunctionDefinitions.Count == 1)
+        {
+            return FunctionDefinitions[0];
+        }
+        // Determine which function definition is the right one
+        FunctionDefinitionAst? CorrectDefinition = null;
+        for (int i = FunctionDefinitions.Count - 1; i >= 0; i--)
+        {
+            FunctionDefinitionAst element = FunctionDefinitions[i];
+
+            Ast parent = element.Parent;
+            // walk backwards till we hit a functiondefinition if any
+            while (null != parent)
+            {
+                if (parent is FunctionDefinitionAst)
+                {
+                    break;
+                }
+                parent = parent.Parent;
+            }
+            // we have hit the global scope of the script file
+            if (null == parent)
+            {
+                CorrectDefinition = element;
+                break;
+            }
+
+            if (command?.Parent == parent)
+            {
+                CorrectDefinition = (FunctionDefinitionAst)parent;
+            }
+        }
+        return CorrectDefinition;
+    }
 }
 
 internal class Utilities
@@ -453,9 +610,10 @@ public record ScriptPositionAdapter(IScriptPosition position) : IScriptPosition,
     public ScriptPositionAdapter(ScriptPosition position) : this((IScriptPosition)position) { }
 
     public ScriptPositionAdapter(Position position) : this(position.Line + 1, position.Character + 1) { }
+
     public static implicit operator ScriptPositionAdapter(Position position) => new(position);
     public static implicit operator Position(ScriptPositionAdapter scriptPosition) => new
-    (
+(
         scriptPosition.position.LineNumber - 1, scriptPosition.position.ColumnNumber - 1
     );
 
@@ -522,7 +680,7 @@ internal record ScriptExtentAdapter(IScriptExtent extent) : IScriptExtent
     public int StartLineNumber => extent.StartLineNumber;
     public string Text => extent.Text;
 
-    public bool Contains(IScriptPosition position) => Contains((ScriptPositionAdapter)position);
+    public bool Contains(IScriptPosition position) => Contains(new ScriptPositionAdapter(position));
 
     public bool Contains(ScriptPositionAdapter position)
     {
