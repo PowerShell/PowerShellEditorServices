@@ -91,6 +91,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         .ClearProviders()
                         .AddPsesLanguageServerLogging()
                         .SetMinimumLevel(_minimumLogLevel))
+                    // TODO: Consider replacing all WithHandler with AddSingleton
+                    .WithConfigurationSection("powershell")
                     .WithHandler<PsesWorkspaceSymbolsHandler>()
                     .WithHandler<PsesTextDocumentHandler>()
                     .WithHandler<GetVersionHandler>()

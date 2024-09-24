@@ -8,6 +8,7 @@ using System.Linq;
 using System.Management.Automation.Language;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Language;
 using Microsoft.PowerShell.EditorServices.Refactoring;
@@ -40,40 +41,26 @@ internal class RenameService(
     ILanguageServerConfiguration config
 ) : IRenameService
 {
+    private bool disclaimerDeclined;
+
     public async Task<RangeOrPlaceholderRange?> PrepareRenameSymbol(PrepareRenameParams request, CancellationToken cancellationToken)
     {
-        // FIXME: Config actually needs to be read and implemented, this is to make the referencing satisfied
-        // config.ToString();
-        // ShowMessageRequestParams reqParams = new()
-        // {
-        //     Type = MessageType.Warning,
-        //     Message = "Test Send",
-        //     Actions = new MessageActionItem[] {
-        //         new MessageActionItem() { Title = "I Accept" },
-        //         new MessageActionItem() { Title = "I Accept [Workspace]" },
-        //         new MessageActionItem() { Title = "Decline" }
-        //     }
-        // };
-
-        // MessageActionItem result = await lsp.SendRequest(reqParams, cancellationToken).ConfigureAwait(false);
-        // if (result.Title == "Test Action")
-        // {
-        //     // FIXME: Need to accept
-        //     Console.WriteLine("yay");
-        // }
+        if (!await AcceptRenameDisclaimer(cancellationToken).ConfigureAwait(false)) { return null; }
 
         ScriptFile scriptFile = workspaceService.GetFile(request.TextDocument.Uri);
 
-        // TODO: Is this too aggressive? We can still rename inside a var/function even if dotsourcing is in use in a file, we just need to be clear it's not supported to take rename actions inside the dotsourced file.
+        // TODO: Is this too aggressive? We can still rename inside a var/function even if dotsourcing is in use in a file, we just need to be clear it's not supported to expect rename actions to propogate.
         if (Utilities.AssertContainsDotSourced(scriptFile.ScriptAst))
         {
             throw new HandlerErrorException("Dot Source detected, this is currently not supported");
         }
 
+        // TODO: FindRenamableSymbol may create false positives for renaming, so we probably should go ahead and execute a full rename and return true if edits are found.
+
         ScriptPositionAdapter position = request.Position;
         Ast? target = FindRenamableSymbol(scriptFile, position);
 
-        // Since 3.16 we can simply basically return a DefaultBehavior true or null to signal to the client that the position is valid for rename and it should use its default selection criteria (which is probably the language semantic highlighting or grammar). For the current scope of the rename provider, this should be fine, but we have the option to supply the specific range in the future for special cases.
+        // Since LSP 3.16 we can simply basically return a DefaultBehavior true or null to signal to the client that the position is valid for rename and it should use its default selection criteria (which is probably the language semantic highlighting or grammar). For the current scope of the rename provider, this should be fine, but we have the option to supply the specific range in the future for special cases.
         RangeOrPlaceholderRange? renamable = target is null ? null : new RangeOrPlaceholderRange
         (
             new RenameDefaultBehavior() { DefaultBehavior = true }
@@ -83,6 +70,7 @@ internal class RenameService(
 
     public async Task<WorkspaceEdit?> RenameSymbol(RenameParams request, CancellationToken cancellationToken)
     {
+        if (!await AcceptRenameDisclaimer(cancellationToken).ConfigureAwait(false)) { return null; }
 
         ScriptFile scriptFile = workspaceService.GetFile(request.TextDocument.Uri);
         ScriptPositionAdapter position = request.Position;
@@ -194,6 +182,66 @@ internal class RenameService(
         funcExtent.End = funcExtent.Start.Delta(0, name.Length);
 
         return funcExtent;
+    }
+
+    /// <summary>
+    /// Prompts the user to accept the rename disclaimer.
+    /// </summary>
+    /// <returns>true if accepted, false if rejected</returns>
+    private async Task<bool> AcceptRenameDisclaimer(CancellationToken cancellationToken)
+    {
+        // User has declined for the session so we don't want this popping up a bunch.
+        if (disclaimerDeclined) { return false; }
+
+        // FIXME: This should be referencing an options type that is initialized with the Service or is a getter.
+        if (config.GetSection("powershell").GetValue<bool>("acceptRenameDisclaimer")) { return true; }
+
+        // TODO: Localization
+        const string acceptAnswer = "I Accept";
+        const string acceptWorkspaceAnswer = "I Accept [Workspace]";
+        const string acceptSessionAnswer = "I Accept [Session]";
+        const string declineAnswer = "Decline";
+        ShowMessageRequestParams reqParams = new()
+        {
+            Type = MessageType.Warning,
+            Message = "Test Send",
+            Actions = new MessageActionItem[] {
+                new MessageActionItem() { Title = acceptAnswer },
+                new MessageActionItem() { Title = acceptWorkspaceAnswer },
+                new MessageActionItem() { Title = acceptSessionAnswer },
+                new MessageActionItem() { Title = declineAnswer }
+            }
+        };
+
+        MessageActionItem result = await lsp.SendRequest(reqParams, cancellationToken).ConfigureAwait(false);
+        if (result.Title == declineAnswer)
+        {
+            ShowMessageParams msgParams = new()
+            {
+                Message = "PowerShell Rename functionality will be disabled for this session and you will not be prompted again until restart.",
+                Type = MessageType.Info
+            };
+            lsp.SendNotification(msgParams);
+            disclaimerDeclined = true;
+            return !disclaimerDeclined;
+        }
+        if (result.Title == acceptAnswer)
+        {
+            // FIXME: Set the appropriate setting
+            return true;
+        }
+        if (result.Title == acceptWorkspaceAnswer)
+        {
+            // FIXME: Set the appropriate setting
+            return true;
+        }
+        if (result.Title == acceptSessionAnswer)
+        {
+            // FIXME: Set the appropriate setting
+            return true;
+        }
+
+        throw new InvalidOperationException("Unknown Disclaimer Response received. This is a bug and you should report it.");
     }
 }
 
