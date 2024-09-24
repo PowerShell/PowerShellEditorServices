@@ -19,6 +19,13 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Services;
 
+internal class RenameServiceOptions
+{
+    internal bool createFunctionAlias { get; set; }
+    internal bool createVariableAlias { get; set; }
+    internal bool acceptDisclaimer { get; set; }
+}
+
 public interface IRenameService
 {
     /// <summary>
@@ -38,15 +45,17 @@ public interface IRenameService
 internal class RenameService(
     WorkspaceService workspaceService,
     ILanguageServerFacade lsp,
-    ILanguageServerConfiguration config
+    ILanguageServerConfiguration config,
+    string configSection = "powershell.rename"
 ) : IRenameService
 {
     private bool disclaimerDeclined;
+    private readonly RenameServiceOptions options = new();
 
     public async Task<RangeOrPlaceholderRange?> PrepareRenameSymbol(PrepareRenameParams request, CancellationToken cancellationToken)
     {
+        config.GetSection(configSection).Bind(options);
         if (!await AcceptRenameDisclaimer(cancellationToken).ConfigureAwait(false)) { return null; }
-
         ScriptFile scriptFile = workspaceService.GetFile(request.TextDocument.Uri);
 
         // TODO: Is this too aggressive? We can still rename inside a var/function even if dotsourcing is in use in a file, we just need to be clear it's not supported to expect rename actions to propogate.
@@ -70,6 +79,7 @@ internal class RenameService(
 
     public async Task<WorkspaceEdit?> RenameSymbol(RenameParams request, CancellationToken cancellationToken)
     {
+        config.GetSection(configSection).Bind(options);
         if (!await AcceptRenameDisclaimer(cancellationToken).ConfigureAwait(false)) { return null; }
 
         ScriptFile scriptFile = workspaceService.GetFile(request.TextDocument.Uri);
@@ -172,7 +182,7 @@ internal class RenameService(
     /// <summary>
     /// Return an extent that only contains the position of the name of the function, for Client highlighting purposes.
     /// </summary>
-    public static ScriptExtentAdapter GetFunctionNameExtent(FunctionDefinitionAst ast)
+    internal static ScriptExtentAdapter GetFunctionNameExtent(FunctionDefinitionAst ast)
     {
         string name = ast.Name;
         // FIXME: Gather dynamically from the AST and include backticks and whatnot that might be present
@@ -194,17 +204,19 @@ internal class RenameService(
         if (disclaimerDeclined) { return false; }
 
         // FIXME: This should be referencing an options type that is initialized with the Service or is a getter.
-        if (config.GetSection("powershell").GetValue<bool>("acceptRenameDisclaimer")) { return true; }
+        if (options.acceptDisclaimer) { return true; }
 
         // TODO: Localization
+        const string renameDisclaimer = "PowerShell rename functionality is only supported in a limited set of circumstances. Please review the notice and understand the limitations and risks.";
         const string acceptAnswer = "I Accept";
         const string acceptWorkspaceAnswer = "I Accept [Workspace]";
         const string acceptSessionAnswer = "I Accept [Session]";
         const string declineAnswer = "Decline";
+
         ShowMessageRequestParams reqParams = new()
         {
             Type = MessageType.Warning,
-            Message = "Test Send",
+            Message = renameDisclaimer,
             Actions = new MessageActionItem[] {
                 new MessageActionItem() { Title = acceptAnswer },
                 new MessageActionItem() { Title = acceptWorkspaceAnswer },
@@ -216,9 +228,11 @@ internal class RenameService(
         MessageActionItem result = await lsp.SendRequest(reqParams, cancellationToken).ConfigureAwait(false);
         if (result.Title == declineAnswer)
         {
+            const string renameDisabledNotice = "PowerShell Rename functionality will be disabled for this session and you will not be prompted again until restart.";
+
             ShowMessageParams msgParams = new()
             {
-                Message = "PowerShell Rename functionality will be disabled for this session and you will not be prompted again until restart.",
+                Message = renameDisabledNotice,
                 Type = MessageType.Info
             };
             lsp.SendNotification(msgParams);
@@ -250,9 +264,9 @@ internal class RenameService(
 /// You should use a new instance for each rename operation.
 /// Skipverify can be used as a performance optimization when you are sure you are in scope.
 /// </summary>
-public class RenameFunctionVisitor(Ast target, string newName, bool skipVerify = false) : AstVisitor
+internal class RenameFunctionVisitor(Ast target, string newName, bool skipVerify = false) : AstVisitor
 {
-    public List<TextEdit> Edits { get; } = new();
+    internal List<TextEdit> Edits { get; } = new();
     private Ast? CurrentDocument;
     private FunctionDefinitionAst? FunctionToRename;
 
@@ -353,16 +367,11 @@ public class RenameFunctionVisitor(Ast target, string newName, bool skipVerify =
         };
     }
 
-    public TextEdit[] VisitAndGetEdits(Ast ast)
+    internal TextEdit[] VisitAndGetEdits(Ast ast)
     {
         ast.Visit(this);
         return Edits.ToArray();
     }
-}
-
-public class RenameSymbolOptions
-{
-    public bool CreateAlias { get; set; }
 }
 
 internal class Utilities
@@ -519,8 +528,8 @@ public record ScriptPositionAdapter(IScriptPosition position) : IScriptPosition,
 /// <param name="extent"></param>
 internal record ScriptExtentAdapter(IScriptExtent extent) : IScriptExtent
 {
-    public ScriptPositionAdapter Start = new(extent.StartScriptPosition);
-    public ScriptPositionAdapter End = new(extent.EndScriptPosition);
+    internal ScriptPositionAdapter Start = new(extent.StartScriptPosition);
+    internal ScriptPositionAdapter End = new(extent.EndScriptPosition);
 
     public static implicit operator ScriptExtentAdapter(ScriptExtent extent) => new(extent);
 
