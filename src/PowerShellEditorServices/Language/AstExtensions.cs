@@ -72,7 +72,7 @@ public static class AstExtensions
 
     public static FunctionDefinitionAst? FindFunctionDefinition(this Ast ast, CommandAst command)
     {
-        string? name = command.GetCommandName().ToLower();
+        string? name = command.GetCommandName()?.ToLower();
         if (name is null) { return null; }
 
         FunctionDefinitionAst[] candidateFuncDefs = ast.FindAll(ast =>
