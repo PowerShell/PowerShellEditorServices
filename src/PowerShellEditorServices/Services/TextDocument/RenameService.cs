@@ -206,7 +206,7 @@ public class RenameFunctionVisitor(Ast target, string newName, bool skipVerify =
 {
     public List<TextEdit> Edits { get; } = new();
     private Ast? CurrentDocument;
-    private string OldName = string.Empty;
+    private FunctionDefinitionAst? FunctionToRename;
 
     // Wire up our visitor to the relevant AST types we are potentially renaming
     public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst ast) => Visit(ast);
@@ -223,15 +223,13 @@ public class RenameFunctionVisitor(Ast target, string newName, bool skipVerify =
                 throw new TargetSymbolNotFoundException("The target this visitor would rename is not present in the AST. This is a bug and you should file an issue");
             }
 
-            FunctionDefinitionAst functionDef = target switch
+            FunctionToRename = target switch
             {
                 FunctionDefinitionAst f => f,
                 CommandAst command => CurrentDocument.FindFunctionDefinition(command)
                     ?? throw new TargetSymbolNotFoundException("The command to rename does not have a function definition. Renaming a function is only supported when the function is defined within the same scope"),
                 _ => throw new Exception($"Unsupported AST type {target.GetType()} encountered")
             };
-
-            OldName = functionDef.Name;
         };
 
         if (CurrentDocument != ast.GetHighestParent())
@@ -241,7 +239,7 @@ public class RenameFunctionVisitor(Ast target, string newName, bool skipVerify =
 
         if (ShouldRename(ast))
         {
-            Edits.Add(GetRenameFunctionEdits(ast));
+            Edits.Add(GetRenameFunctionEdit(ast));
             return AstVisitAction.Continue;
         }
         else
@@ -254,10 +252,10 @@ public class RenameFunctionVisitor(Ast target, string newName, bool skipVerify =
 
     private bool ShouldRename(Ast candidate)
     {
-        // There should be only one function definition and if it is not our target, it may be a duplicately named function
+        // Rename our original function definition. There may be duplicate definitions of the same name
         if (candidate is FunctionDefinitionAst funcDef)
         {
-            return funcDef == target;
+            return funcDef == FunctionToRename;
         }
 
         // Should only be CommandAst (function calls) from this point forward in the visit.
@@ -266,36 +264,20 @@ public class RenameFunctionVisitor(Ast target, string newName, bool skipVerify =
             throw new InvalidOperationException($"ShouldRename for a function had an Unexpected Ast Type {candidate.GetType()}. This is a bug and you should file an issue.");
         }
 
-        if (command.GetCommandName().ToLower() != OldName.ToLower())
+        if (CurrentDocument is null)
         {
-            return false;
+            throw new InvalidOperationException("CurrentDoc should always be set by now from first Visit. This is a bug and you should file an issue.");
         }
 
-        // TODO: Use position comparisons here
-        // Command calls must always come after the function definitions
-        if (
-            target.Extent.StartLineNumber > command.Extent.StartLineNumber
-            || (
-                target.Extent.StartLineNumber == command.Extent.StartLineNumber
-                && target.Extent.StartColumnNumber >= command.Extent.StartColumnNumber
-            )
-        )
-        {
-            return false;
-        }
-
-        // If the command is defined in the same parent scope as the function
-        return command.HasParent(target.Parent);
-
-        // If we get this far, we hit an edge case
-        throw new InvalidOperationException("ShouldRename for a function could not determine the viability of a rename. This is a bug and you should file an issue.");
+        // Match up the command to its function definition
+        return CurrentDocument.FindFunctionDefinition(command) == FunctionToRename;
     }
 
-    private TextEdit GetRenameFunctionEdits(Ast candidate)
+    private TextEdit GetRenameFunctionEdit(Ast candidate)
     {
         if (candidate is FunctionDefinitionAst funcDef)
         {
-            if (funcDef != target)
+            if (funcDef != FunctionToRename)
             {
                 throw new InvalidOperationException("GetRenameFunctionEdit was called on an Ast that was not the target. This is a bug and you should file an issue.");
             }
@@ -315,22 +297,16 @@ public class RenameFunctionVisitor(Ast target, string newName, bool skipVerify =
             throw new InvalidOperationException($"Expected a command but got {candidate.GetType()}");
         }
 
-        if (command.GetCommandName()?.ToLower() == OldName.ToLower() &&
-            target.Extent.StartLineNumber <= command.Extent.StartLineNumber)
+        if (command.CommandElements[0] is not StringConstantExpressionAst funcName)
         {
-            if (command.CommandElements[0] is not StringConstantExpressionAst funcName)
-            {
-                throw new InvalidOperationException("Command element should always have a string expresssion as its first item. This is a bug and you should report it.");
-            }
-
-            return new TextEdit()
-            {
-                NewText = newName,
-                Range = new ScriptExtentAdapter(funcName.Extent)
-            };
+            throw new InvalidOperationException("Command element should always have a string expresssion as its first item. This is a bug and you should report it.");
         }
 
-        throw new InvalidOperationException("GetRenameFunctionEdit was not provided a FuncitonDefinition or a CommandAst");
+        return new TextEdit()
+        {
+            NewText = newName,
+            Range = new ScriptExtentAdapter(funcName.Extent)
+        };
     }
 
     public TextEdit[] VisitAndGetEdits(Ast ast)
