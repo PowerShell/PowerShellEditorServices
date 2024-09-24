@@ -112,7 +112,7 @@ internal class RenameService(
 
     internal static TextEdit[] RenameFunction(Ast target, Ast scriptAst, RenameParams renameParams)
     {
-        if (target is not FunctionDefinitionAst or CommandAst)
+        if (target is not (FunctionDefinitionAst or CommandAst))
         {
             throw new HandlerErrorException($"Asked to rename a function but the target is not a viable function type: {target.GetType()}. This should not happen as PrepareRename should have already checked for viability. File an issue if you see this.");
         }
@@ -151,26 +151,27 @@ internal class RenameService(
             // Filters just the ASTs that are candidates for rename
             typeof(FunctionDefinitionAst),
             typeof(VariableExpressionAst),
-            typeof(CommandParameterAst),
-            typeof(ParameterAst),
-            typeof(StringConstantExpressionAst),
             typeof(CommandAst)
         ]);
-
-        // Special detection for Function calls that dont follow verb-noun syntax e.g. DoThing
-        // It's not foolproof but should work in most cases where it is explicit (e.g. not & $x)
-        if (ast is StringConstantExpressionAst stringAst)
-        {
-            if (stringAst.Parent is not CommandAst parent) { return null; }
-            if (parent.GetCommandName() != stringAst.Value) { return null; }
-            if (parent.CommandElements[0] != stringAst) { return null; }
-            // TODO: Potentially find if function was defined earlier in the file to avoid native executable renames and whatnot?
-        }
 
         // Only the function name is valid for rename, not other components
         if (ast is FunctionDefinitionAst funcDefAst)
         {
             if (!GetFunctionNameExtent(funcDefAst).Contains(position))
+            {
+                return null;
+            }
+        }
+
+        // Only the command name (function call) portion is renamable
+        if (ast is CommandAst command)
+        {
+            if (command.CommandElements[0] is not StringConstantExpressionAst name)
+            {
+                return null;
+            }
+
+            if (!new ScriptExtentAdapter(name.Extent).Contains(position))
             {
                 return null;
             }
@@ -216,18 +217,18 @@ public class RenameFunctionVisitor(Ast target, string newName, bool skipVerify =
         // If this is our first run, we need to verify we are in scope and gather our rename operation info
         if (!skipVerify && CurrentDocument is null)
         {
-            if (ast.Find(ast => ast == target, true) is null)
+            CurrentDocument = ast.GetHighestParent();
+            if (CurrentDocument.Find(ast => ast == target, true) is null)
             {
                 throw new TargetSymbolNotFoundException("The target this visitor would rename is not present in the AST. This is a bug and you should file an issue");
             }
-            CurrentDocument = ast.GetHighestParent();
 
             FunctionDefinitionAst functionDef = target switch
             {
                 FunctionDefinitionAst f => f,
                 CommandAst command => CurrentDocument.FindFunctionDefinition(command)
                     ?? throw new TargetSymbolNotFoundException("The command to rename does not have a function definition. Renaming a function is only supported when the function is defined within the same scope"),
-                _ => throw new Exception("Unsupported AST type encountered")
+                _ => throw new Exception($"Unsupported AST type {target.GetType()} encountered")
             };
 
             OldName = functionDef.Name;
@@ -285,7 +286,6 @@ public class RenameFunctionVisitor(Ast target, string newName, bool skipVerify =
 
         // If the command is defined in the same parent scope as the function
         return command.HasParent(target.Parent);
-
 
         // If we get this far, we hit an edge case
         throw new InvalidOperationException("ShouldRename for a function could not determine the viability of a rename. This is a bug and you should file an issue.");
