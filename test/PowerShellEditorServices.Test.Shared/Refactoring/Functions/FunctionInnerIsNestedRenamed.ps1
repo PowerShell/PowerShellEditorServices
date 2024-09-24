@@ -1,8 +1,8 @@
 function outer {
-    function bar {
-        Write-Host "Inside nested foo"
+    function Renamed {
+        Write-Host 'Inside nested foo'
     }
-    bar
+    Renamed
 }
 
 function foo {
