@@ -6,7 +6,7 @@ function outer {
 }
 
 function foo {
-    Write-Host "Inside top-level foo"
+    Write-Host 'Inside top-level foo'
 }
 
 outer
