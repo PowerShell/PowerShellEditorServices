@@ -72,54 +72,48 @@ public static class AstExtensions
 
     public static FunctionDefinitionAst? FindFunctionDefinition(this Ast ast, CommandAst command)
     {
-        string? name = command.GetCommandName();
+        string? name = command.GetCommandName().ToLower();
         if (name is null) { return null; }
 
-        List<FunctionDefinitionAst> FunctionDefinitions = ast.FindAll(ast =>
+        FunctionDefinitionAst[] candidateFuncDefs = ast.FindAll(ast =>
         {
-            return ast is FunctionDefinitionAst funcDef &&
-            funcDef.Name.ToLower() == name &&
-            (funcDef.Extent.EndLineNumber < command.Extent.StartLineNumber ||
-            (funcDef.Extent.EndColumnNumber <= command.Extent.StartColumnNumber &&
-            funcDef.Extent.EndLineNumber <= command.Extent.StartLineNumber));
-        }, true).Cast<FunctionDefinitionAst>().ToList();
-
-        // return the function def if we only have one match
-        if (FunctionDefinitions.Count == 1)
-        {
-            return FunctionDefinitions[0];
-        }
-        // Determine which function definition is the right one
-        FunctionDefinitionAst? CorrectDefinition = null;
-        for (int i = FunctionDefinitions.Count - 1; i >= 0; i--)
-        {
-            FunctionDefinitionAst element = FunctionDefinitions[i];
-
-            Ast parent = element.Parent;
-            // walk backwards till we hit a functiondefinition if any
-            while (null != parent)
+            if (ast is not FunctionDefinitionAst funcDef)
             {
-                if (parent is FunctionDefinitionAst)
-                {
-                    break;
-                }
-                parent = parent.Parent;
-            }
-            // we have hit the global scope of the script file
-            if (null == parent)
-            {
-                CorrectDefinition = element;
-                break;
+                return false;
             }
 
-            if (command?.Parent == parent)
+            if (funcDef.Name.ToLower() != name)
             {
-                CorrectDefinition = (FunctionDefinitionAst)parent;
+                return false;
             }
-        }
-        return CorrectDefinition;
+
+            // If the function is recursive (calls itself), its parent is a match unless a more specific in-scope function definition comes next (this is a "bad practice" edge case)
+            // TODO: Consider a simple "contains" match
+            if (command.HasParent(funcDef))
+            {
+                return true;
+            }
+
+            if
+            (
+                // TODO: Replace with a position match
+                funcDef.Extent.EndLineNumber > command.Extent.StartLineNumber
+                ||
+                (
+                    funcDef.Extent.EndLineNumber == command.Extent.StartLineNumber
+                    && funcDef.Extent.EndColumnNumber >= command.Extent.StartColumnNumber
+                )
+            )
+            {
+                return false;
+            }
+
+            return command.HasParent(funcDef.Parent); // The command is in the same scope as the function definition
+        }, true).Cast<FunctionDefinitionAst>().ToArray();
+
+        // There should only be one match most of the time, the only other cases is when a function is defined multiple times (bad practice). If there are multiple definitions, the candidate "closest" to the command, which would be the last one found, is the appropriate one
+        return candidateFuncDefs.LastOrDefault();
     }
-
 
     public static Ast[] FindParents(this Ast ast, params Type[] type)
     {
