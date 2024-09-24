@@ -240,12 +240,8 @@ public class RenameFunctionVisitor(Ast target, string newName, bool skipVerify =
         if (ShouldRename(ast))
         {
             Edits.Add(GetRenameFunctionEdit(ast));
-            return AstVisitAction.Continue;
         }
-        else
-        {
-            return AstVisitAction.SkipChildren;
-        }
+        return AstVisitAction.Continue;
 
         // TODO: Is there a way we can know we are fully outside where the function might be referenced, and if so, call a AstVisitAction Abort as a perf optimization?
     }

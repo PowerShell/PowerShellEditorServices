@@ -1,7 +1,7 @@
 function OuterFunction {
-    function RenamedInnerFunction {
-        Write-Host "This is the inner function"
+    function Renamed {
+        Write-Host 'This is the inner function'
     }
-    RenamedInnerFunction
+    Renamed
 }
 OuterFunction
