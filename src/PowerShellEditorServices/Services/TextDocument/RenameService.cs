@@ -19,7 +19,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Services;
 
-internal class RenameServiceOptions
+public class RenameServiceOptions
 {
     internal bool createFunctionAlias { get; set; }
     internal bool createVariableAlias { get; set; }
@@ -50,11 +50,15 @@ internal class RenameService(
 ) : IRenameService
 {
     private bool disclaimerDeclined;
-    private readonly RenameServiceOptions options = new();
+    private bool disclaimerAccepted;
+
+    private readonly RenameServiceOptions settings = new();
+
+    internal void RefreshSettings() => config.GetSection(configSection).Bind(settings);
 
     public async Task<RangeOrPlaceholderRange?> PrepareRenameSymbol(PrepareRenameParams request, CancellationToken cancellationToken)
     {
-        config.GetSection(configSection).Bind(options);
+
         if (!await AcceptRenameDisclaimer(cancellationToken).ConfigureAwait(false)) { return null; }
         ScriptFile scriptFile = workspaceService.GetFile(request.TextDocument.Uri);
 
@@ -79,7 +83,6 @@ internal class RenameService(
 
     public async Task<WorkspaceEdit?> RenameSymbol(RenameParams request, CancellationToken cancellationToken)
     {
-        config.GetSection(configSection).Bind(options);
         if (!await AcceptRenameDisclaimer(cancellationToken).ConfigureAwait(false)) { return null; }
 
         ScriptFile scriptFile = workspaceService.GetFile(request.TextDocument.Uri);
@@ -119,7 +122,7 @@ internal class RenameService(
         return visitor.VisitAndGetEdits(scriptAst);
     }
 
-    internal static TextEdit[] RenameVariable(Ast symbol, Ast scriptAst, RenameParams requestParams)
+    internal TextEdit[] RenameVariable(Ast symbol, Ast scriptAst, RenameParams requestParams)
     {
         if (symbol is VariableExpressionAst or ParameterAst or CommandParameterAst or StringConstantExpressionAst)
         {
@@ -129,11 +132,10 @@ internal class RenameService(
                 symbol.Extent.StartLineNumber,
                 symbol.Extent.StartColumnNumber,
                 scriptAst,
-                null //FIXME: Pass through Alias config
+                settings
             );
             visitor.Visit(scriptAst);
             return visitor.Modifications.ToArray();
-
         }
         return [];
     }
@@ -200,28 +202,32 @@ internal class RenameService(
     /// <returns>true if accepted, false if rejected</returns>
     private async Task<bool> AcceptRenameDisclaimer(CancellationToken cancellationToken)
     {
+        // Fetch the latest settings from the client, in case they have changed.
+        config.GetSection(configSection).Bind(settings);
+
         // User has declined for the session so we don't want this popping up a bunch.
         if (disclaimerDeclined) { return false; }
 
-        // FIXME: This should be referencing an options type that is initialized with the Service or is a getter.
-        if (options.acceptDisclaimer) { return true; }
+        if (settings.acceptDisclaimer || disclaimerAccepted) { return true; }
 
         // TODO: Localization
         const string renameDisclaimer = "PowerShell rename functionality is only supported in a limited set of circumstances. Please review the notice and understand the limitations and risks.";
         const string acceptAnswer = "I Accept";
-        const string acceptWorkspaceAnswer = "I Accept [Workspace]";
-        const string acceptSessionAnswer = "I Accept [Session]";
+        // const string acceptWorkspaceAnswer = "I Accept [Workspace]";
+        // const string acceptSessionAnswer = "I Accept [Session]";
         const string declineAnswer = "Decline";
 
+        // TODO: Unfortunately the LSP spec has no spec for the server to change a client setting, so
+        // We have a suboptimal experience until we implement a custom feature for this.
         ShowMessageRequestParams reqParams = new()
         {
             Type = MessageType.Warning,
             Message = renameDisclaimer,
             Actions = new MessageActionItem[] {
                 new MessageActionItem() { Title = acceptAnswer },
-                new MessageActionItem() { Title = acceptWorkspaceAnswer },
-                new MessageActionItem() { Title = acceptSessionAnswer },
                 new MessageActionItem() { Title = declineAnswer }
+                // new MessageActionItem() { Title = acceptWorkspaceAnswer },
+                // new MessageActionItem() { Title = acceptSessionAnswer },
             }
         };
 
@@ -241,19 +247,27 @@ internal class RenameService(
         }
         if (result.Title == acceptAnswer)
         {
-            // FIXME: Set the appropriate setting
-            return true;
+            const string acceptDisclaimerNotice = "PowerShell rename functionality has been enabled for this session. To avoid this prompt in the future, set the powershell.rename.acceptDisclaimer to true in your settings.";
+            ShowMessageParams msgParams = new()
+            {
+                Message = acceptDisclaimerNotice,
+                Type = MessageType.Info
+            };
+            lsp.SendNotification(msgParams);
+
+            disclaimerAccepted = true;
+            return disclaimerAccepted;
         }
-        if (result.Title == acceptWorkspaceAnswer)
-        {
-            // FIXME: Set the appropriate setting
-            return true;
-        }
-        if (result.Title == acceptSessionAnswer)
-        {
-            // FIXME: Set the appropriate setting
-            return true;
-        }
+        // if (result.Title == acceptWorkspaceAnswer)
+        // {
+        //     // FIXME: Set the appropriate setting
+        //     return true;
+        // }
+        // if (result.Title == acceptSessionAnswer)
+        // {
+        //     // FIXME: Set the appropriate setting
+        //     return true;
+        // }
 
         throw new InvalidOperationException("Unknown Disclaimer Response received. This is a bug and you should report it.");
     }
