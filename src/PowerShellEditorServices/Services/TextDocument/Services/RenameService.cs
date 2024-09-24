@@ -9,6 +9,7 @@ using System.Management.Automation.Language;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Handlers;
+using Microsoft.PowerShell.EditorServices.Language;
 using Microsoft.PowerShell.EditorServices.Refactoring;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using OmniSharp.Extensions.LanguageServer.Protocol;
@@ -95,7 +96,7 @@ internal class RenameService(
             FunctionDefinitionAst or CommandAst => RenameFunction(tokenToRename, scriptFile.ScriptAst, request),
             VariableExpressionAst => RenameVariable(tokenToRename, scriptFile.ScriptAst, request),
             // FIXME: Only throw if capability is not prepareprovider
-            _ => throw new HandlerErrorException("This should not happen as PrepareRename should have already checked for viability. File an issue if you see this.")
+            _ => throw new InvalidOperationException("This should not happen as PrepareRename should have already checked for viability. File an issue if you see this.")
         };
 
         return new WorkspaceEdit
@@ -116,6 +117,8 @@ internal class RenameService(
             throw new HandlerErrorException($"Asked to rename a function but the target is not a viable function type: {target.GetType()}. This should not happen as PrepareRename should have already checked for viability. File an issue if you see this.");
         }
 
+        RenameFunctionVisitor visitor = new(target, renameParams.NewName);
+        return visitor.VisitAndGetEdits(scriptAst);
     }
 
     internal static TextEdit[] RenameVariable(Ast symbol, Ast scriptAst, RenameParams requestParams)
@@ -194,15 +197,15 @@ internal class RenameService(
 }
 
 /// <summary>
-/// A visitor that renames a function given a particular target. The Edits property contains the edits when complete.
+/// A visitor that generates a list of TextEdits to a TextDocument to rename a PowerShell function
 /// You should use a new instance for each rename operation.
 /// Skipverify can be used as a performance optimization when you are sure you are in scope.
 /// </summary>
-/// <param name="target"></param>
-public class RenameFunctionVisitor(Ast target, string oldName, string newName, bool skipVerify = false) : AstVisitor
+public class RenameFunctionVisitor(Ast target, string newName, bool skipVerify = false) : AstVisitor
 {
     public List<TextEdit> Edits { get; } = new();
     private Ast? CurrentDocument;
+    private string OldName = string.Empty;
 
     // Wire up our visitor to the relevant AST types we are potentially renaming
     public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst ast) => Visit(ast);
@@ -210,30 +213,34 @@ public class RenameFunctionVisitor(Ast target, string oldName, string newName, b
 
     public AstVisitAction Visit(Ast ast)
     {
-        /// If this is our first run, we need to verify we are in scope.
+        // If this is our first run, we need to verify we are in scope and gather our rename operation info
         if (!skipVerify && CurrentDocument is null)
         {
             if (ast.Find(ast => ast == target, true) is null)
             {
                 throw new TargetSymbolNotFoundException("The target this visitor would rename is not present in the AST. This is a bug and you should file an issue");
             }
-            CurrentDocument = ast;
+            CurrentDocument = ast.GetHighestParent();
 
-            // If our target was a command, we need to find the original function.
-            if (target is CommandAst command)
+            FunctionDefinitionAst functionDef = target switch
             {
-                target = CurrentDocument.GetFunctionDefinition(command)
-                    ?? throw new TargetSymbolNotFoundException("The command to rename does not have a function definition.");
-            }
-        }
-        if (CurrentDocument != ast)
+                FunctionDefinitionAst f => f,
+                CommandAst command => CurrentDocument.FindFunctionDefinition(command)
+                    ?? throw new TargetSymbolNotFoundException("The command to rename does not have a function definition. Renaming a function is only supported when the function is defined within the same scope"),
+                _ => throw new Exception("Unsupported AST type encountered")
+            };
+
+            OldName = functionDef.Name;
+        };
+
+        if (CurrentDocument != ast.GetHighestParent())
         {
             throw new TargetSymbolNotFoundException("The visitor should not be reused to rename a different document. It should be created new for each rename operation. This is a bug and you should file an issue");
         }
 
         if (ShouldRename(ast))
         {
-            Edits.Add(GetRenameFunctionEdit(ast));
+            Edits.Add(GetRenameFunctionEdits(ast));
             return AstVisitAction.Continue;
         }
         else
@@ -241,10 +248,10 @@ public class RenameFunctionVisitor(Ast target, string oldName, string newName, b
             return AstVisitAction.SkipChildren;
         }
 
-        /// TODO: Is there a way we can know we are fully outside where the function might be referenced, and if so, call a AstVisitAction Abort as a perf optimization?
+        // TODO: Is there a way we can know we are fully outside where the function might be referenced, and if so, call a AstVisitAction Abort as a perf optimization?
     }
 
-    public bool ShouldRename(Ast candidate)
+    private bool ShouldRename(Ast candidate)
     {
         // There should be only one function definition and if it is not our target, it may be a duplicately named function
         if (candidate is FunctionDefinitionAst funcDef)
@@ -252,26 +259,39 @@ public class RenameFunctionVisitor(Ast target, string oldName, string newName, b
             return funcDef == target;
         }
 
-        if (candidate is not CommandAst)
+        // Should only be CommandAst (function calls) from this point forward in the visit.
+        if (candidate is not CommandAst command)
         {
             throw new InvalidOperationException($"ShouldRename for a function had an Unexpected Ast Type {candidate.GetType()}. This is a bug and you should file an issue.");
         }
 
-        // Determine if calls of the function are in the same scope as the function definition
-        if (candidate?.Parent?.Parent is ScriptBlockAst)
+        if (command.GetCommandName().ToLower() != OldName.ToLower())
         {
-            return target.Parent.Parent == candidate.Parent.Parent;
+            return false;
         }
-        else if (candidate?.Parent is StatementBlockAst)
+
+        // TODO: Use position comparisons here
+        // Command calls must always come after the function definitions
+        if (
+            target.Extent.StartLineNumber > command.Extent.StartLineNumber
+            || (
+                target.Extent.StartLineNumber == command.Extent.StartLineNumber
+                && target.Extent.StartColumnNumber >= command.Extent.StartColumnNumber
+            )
+        )
         {
-            return candidate.Parent == target.Parent;
+            return false;
         }
+
+        // If the command is defined in the same parent scope as the function
+        return command.HasParent(target.Parent);
+
 
         // If we get this far, we hit an edge case
         throw new InvalidOperationException("ShouldRename for a function could not determine the viability of a rename. This is a bug and you should file an issue.");
     }
 
-    private TextEdit GetRenameFunctionEdit(Ast candidate)
+    private TextEdit GetRenameFunctionEdits(Ast candidate)
     {
         if (candidate is FunctionDefinitionAst funcDef)
         {
@@ -295,7 +315,7 @@ public class RenameFunctionVisitor(Ast target, string oldName, string newName, b
             throw new InvalidOperationException($"Expected a command but got {candidate.GetType()}");
         }
 
-        if (command.GetCommandName()?.ToLower() == oldName.ToLower() &&
+        if (command.GetCommandName()?.ToLower() == OldName.ToLower() &&
             target.Extent.StartLineNumber <= command.Extent.StartLineNumber)
         {
             if (command.CommandElements[0] is not StringConstantExpressionAst funcName)
@@ -312,125 +332,17 @@ public class RenameFunctionVisitor(Ast target, string oldName, string newName, b
 
         throw new InvalidOperationException("GetRenameFunctionEdit was not provided a FuncitonDefinition or a CommandAst");
     }
+
+    public TextEdit[] VisitAndGetEdits(Ast ast)
+    {
+        ast.Visit(this);
+        return Edits.ToArray();
+    }
 }
 
 public class RenameSymbolOptions
 {
     public bool CreateAlias { get; set; }
-
-
-}
-
-
-public static class AstExtensions
-{
-    /// <summary>
-    /// Finds the most specific Ast at the given script position, or returns null if none found.<br/>
-    /// For example, if the position is on a variable expression within a function definition,
-    /// the variable will be returned even if the function definition is found first.
-    /// </summary>
-    internal static Ast? FindAtPosition(this Ast ast, IScriptPosition position, Type[]? allowedTypes)
-    {
-        // Short circuit quickly if the position is not in the provided range, no need to traverse if not
-        // TODO: Maybe this should be an exception instead? I mean technically its not found but if you gave a position outside the file something very wrong probably happened.
-        if (!new ScriptExtentAdapter(ast.Extent).Contains(position)) { return null; }
-
-        // This will be updated with each loop, and re-Find to dig deeper
-        Ast? mostSpecificAst = null;
-        Ast? currentAst = ast;
-
-        do
-        {
-            currentAst = currentAst.Find(thisAst =>
-            {
-                if (thisAst == mostSpecificAst) { return false; }
-
-                int line = position.LineNumber;
-                int column = position.ColumnNumber;
-
-                // Performance optimization, skip statements that don't contain the position
-                if (
-                    thisAst.Extent.EndLineNumber < line
-                    || thisAst.Extent.StartLineNumber > line
-                    || (thisAst.Extent.EndLineNumber == line && thisAst.Extent.EndColumnNumber < column)
-                    || (thisAst.Extent.StartLineNumber == line && thisAst.Extent.StartColumnNumber > column)
-                )
-                {
-                    return false;
-                }
-
-                if (allowedTypes is not null && !allowedTypes.Contains(thisAst.GetType()))
-                {
-                    return false;
-                }
-
-                if (new ScriptExtentAdapter(thisAst.Extent).Contains(position))
-                {
-                    mostSpecificAst = thisAst;
-                    return true; //Stops this particular find and looks more specifically
-                }
-
-                return false;
-            }, true);
-
-            if (currentAst is not null)
-            {
-                mostSpecificAst = currentAst;
-            }
-        } while (currentAst is not null);
-
-        return mostSpecificAst;
-    }
-
-    public static FunctionDefinitionAst? GetFunctionDefinition(this Ast ast, CommandAst command)
-    {
-        string? name = command.GetCommandName();
-        if (name is null) { return null; }
-
-        List<FunctionDefinitionAst> FunctionDefinitions = ast.FindAll(ast =>
-        {
-            return ast is FunctionDefinitionAst funcDef &&
-            funcDef.Name.ToLower() == name &&
-            (funcDef.Extent.EndLineNumber < command.Extent.StartLineNumber ||
-            (funcDef.Extent.EndColumnNumber <= command.Extent.StartColumnNumber &&
-            funcDef.Extent.EndLineNumber <= command.Extent.StartLineNumber));
-        }, true).Cast<FunctionDefinitionAst>().ToList();
-
-        // return the function def if we only have one match
-        if (FunctionDefinitions.Count == 1)
-        {
-            return FunctionDefinitions[0];
-        }
-        // Determine which function definition is the right one
-        FunctionDefinitionAst? CorrectDefinition = null;
-        for (int i = FunctionDefinitions.Count - 1; i >= 0; i--)
-        {
-            FunctionDefinitionAst element = FunctionDefinitions[i];
-
-            Ast parent = element.Parent;
-            // walk backwards till we hit a functiondefinition if any
-            while (null != parent)
-            {
-                if (parent is FunctionDefinitionAst)
-                {
-                    break;
-                }
-                parent = parent.Parent;
-            }
-            // we have hit the global scope of the script file
-            if (null == parent)
-            {
-                CorrectDefinition = element;
-                break;
-            }
-
-            if (command?.Parent == parent)
-            {
-                CorrectDefinition = (FunctionDefinitionAst)parent;
-            }
-        }
-        return CorrectDefinition;
-    }
 }
 
 internal class Utilities
@@ -464,64 +376,6 @@ internal class Utilities
             parent = parent.Parent;
         }
         return null;
-
-    }
-
-    public static FunctionDefinitionAst? GetFunctionDefByCommandAst(string OldName, int StartLineNumber, int StartColumnNumber, Ast ScriptFile)
-    {
-        // Look up the targeted object
-        CommandAst? TargetCommand = (CommandAst?)GetAstAtPositionOfType(StartLineNumber, StartColumnNumber, ScriptFile
-        , typeof(CommandAst));
-
-        if (TargetCommand?.GetCommandName().ToLower() != OldName.ToLower())
-        {
-            TargetCommand = null;
-        }
-
-        string? FunctionName = TargetCommand?.GetCommandName();
-
-        List<FunctionDefinitionAst> FunctionDefinitions = ScriptFile.FindAll(ast =>
-        {
-            return ast is FunctionDefinitionAst FuncDef &&
-            FuncDef.Name.ToLower() == OldName.ToLower() &&
-            (FuncDef.Extent.EndLineNumber < TargetCommand?.Extent.StartLineNumber ||
-            (FuncDef.Extent.EndColumnNumber <= TargetCommand?.Extent.StartColumnNumber &&
-            FuncDef.Extent.EndLineNumber <= TargetCommand.Extent.StartLineNumber));
-        }, true).Cast<FunctionDefinitionAst>().ToList();
-        // return the function def if we only have one match
-        if (FunctionDefinitions.Count == 1)
-        {
-            return FunctionDefinitions[0];
-        }
-        // Determine which function definition is the right one
-        FunctionDefinitionAst? CorrectDefinition = null;
-        for (int i = FunctionDefinitions.Count - 1; i >= 0; i--)
-        {
-            FunctionDefinitionAst element = FunctionDefinitions[i];
-
-            Ast parent = element.Parent;
-            // walk backwards till we hit a functiondefinition if any
-            while (null != parent)
-            {
-                if (parent is FunctionDefinitionAst)
-                {
-                    break;
-                }
-                parent = parent.Parent;
-            }
-            // we have hit the global scope of the script file
-            if (null == parent)
-            {
-                CorrectDefinition = element;
-                break;
-            }
-
-            if (TargetCommand?.Parent == parent)
-            {
-                CorrectDefinition = (FunctionDefinitionAst)parent;
-            }
-        }
-        return CorrectDefinition;
     }
 
     public static bool AssertContainsDotSourced(Ast ScriptAst)
