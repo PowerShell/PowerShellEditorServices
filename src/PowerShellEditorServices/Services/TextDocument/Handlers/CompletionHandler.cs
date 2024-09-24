@@ -374,7 +374,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             InsertTextFormat insertFormat;
-            OmniSharp.Extensions.LanguageServer.Protocol.Models.TextEdit edit;
+            TextEdit edit;
             CompletionItemKind itemKind;
             if (result.ResultType is CompletionResultType.ProviderContainer
                 && SupportsSnippets
