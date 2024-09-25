@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Primitives;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
@@ -44,7 +43,8 @@ public class PrepareRenameHandlerTests
             (
                 workspace,
                 new fakeLspSendMessageRequestFacade("I Accept"),
-                new fakeConfigurationService()
+                new EmptyConfiguration(),
+                disclaimerAcceptedForSession: true //Suppresses prompts
             )
         );
     }
@@ -134,18 +134,17 @@ public class fakeLspSendMessageRequestFacade(string title) : ILanguageServerFaca
     public bool TryGetRequest(long id, out string method, out TaskCompletionSource<JToken> pendingTask) => throw new NotImplementedException();
 }
 
-public class fakeConfigurationService : ILanguageServerConfiguration
+
+
+public class EmptyConfiguration : ConfigurationRoot, ILanguageServerConfiguration, IScopedConfiguration
 {
-    public string this[string key] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public EmptyConfiguration() : base([]) { }
 
     public bool IsSupported => throw new NotImplementedException();
 
     public ILanguageServerConfiguration AddConfigurationItems(IEnumerable<ConfigurationItem> configurationItems) => throw new NotImplementedException();
-    public IEnumerable<IConfigurationSection> GetChildren() => throw new NotImplementedException();
     public Task<IConfiguration> GetConfiguration(params ConfigurationItem[] items) => throw new NotImplementedException();
-    public IChangeToken GetReloadToken() => throw new NotImplementedException();
-    public Task<IScopedConfiguration> GetScopedConfiguration(DocumentUri scopeUri, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public IConfigurationSection GetSection(string key) => throw new NotImplementedException();
+    public Task<IScopedConfiguration> GetScopedConfiguration(DocumentUri scopeUri, CancellationToken cancellationToken) => Task.FromResult((IScopedConfiguration)this);
     public ILanguageServerConfiguration RemoveConfigurationItems(IEnumerable<ConfigurationItem> configurationItems) => throw new NotImplementedException();
     public bool TryGetScopedConfiguration(DocumentUri scopeUri, out IScopedConfiguration configuration) => throw new NotImplementedException();
 }

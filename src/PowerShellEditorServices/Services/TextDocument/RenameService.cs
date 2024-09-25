@@ -19,11 +19,14 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Services;
 
+/// <summary>
+/// Used with Configuration Bind to sync the settings to what is set on the client.
+/// </summary>
 public class RenameServiceOptions
 {
-    internal bool createFunctionAlias { get; set; }
-    internal bool createVariableAlias { get; set; }
-    internal bool acceptDisclaimer { get; set; }
+    public bool createFunctionAlias { get; set; }
+    public bool createVariableAlias { get; set; }
+    public bool acceptDisclaimer { get; set; }
 }
 
 public interface IRenameService
@@ -46,44 +49,44 @@ internal class RenameService(
     WorkspaceService workspaceService,
     ILanguageServerFacade lsp,
     ILanguageServerConfiguration config,
+    bool disclaimerDeclinedForSession = false,
+    bool disclaimerAcceptedForSession = false,
     string configSection = "powershell.rename"
 ) : IRenameService
 {
-    private bool disclaimerDeclined;
-    private bool disclaimerAccepted;
 
-    private readonly RenameServiceOptions settings = new();
-
-    internal void RefreshSettings() => config.GetSection(configSection).Bind(settings);
+    private async Task<RenameServiceOptions> GetScopedSettings(DocumentUri uri, CancellationToken cancellationToken = default)
+    {
+        IScopedConfiguration scopedConfig = await config.GetScopedConfiguration(uri, cancellationToken).ConfigureAwait(false);
+        return scopedConfig.GetSection(configSection).Get<RenameServiceOptions>() ?? new RenameServiceOptions();
+    }
 
     public async Task<RangeOrPlaceholderRange?> PrepareRenameSymbol(PrepareRenameParams request, CancellationToken cancellationToken)
     {
-
-        if (!await AcceptRenameDisclaimer(cancellationToken).ConfigureAwait(false)) { return null; }
-        ScriptFile scriptFile = workspaceService.GetFile(request.TextDocument.Uri);
-
-        // TODO: Is this too aggressive? We can still rename inside a var/function even if dotsourcing is in use in a file, we just need to be clear it's not supported to expect rename actions to propogate.
-        if (Utilities.AssertContainsDotSourced(scriptFile.ScriptAst))
+        RenameParams renameRequest = new()
         {
-            throw new HandlerErrorException("Dot Source detected, this is currently not supported");
-        }
-
-        // TODO: FindRenamableSymbol may create false positives for renaming, so we probably should go ahead and execute a full rename and return true if edits are found.
-
-        ScriptPositionAdapter position = request.Position;
-        Ast? target = FindRenamableSymbol(scriptFile, position);
+            NewName = "PREPARERENAMETEST", //A placeholder just to gather edits
+            Position = request.Position,
+            TextDocument = request.TextDocument
+        };
+        // TODO: Should we cache these resuls and just fetch them on the actual rename, and move the bulk to an implementation method?
+        WorkspaceEdit? renameResponse = await RenameSymbol(renameRequest, cancellationToken).ConfigureAwait(false);
 
         // Since LSP 3.16 we can simply basically return a DefaultBehavior true or null to signal to the client that the position is valid for rename and it should use its default selection criteria (which is probably the language semantic highlighting or grammar). For the current scope of the rename provider, this should be fine, but we have the option to supply the specific range in the future for special cases.
-        RangeOrPlaceholderRange? renamable = target is null ? null : new RangeOrPlaceholderRange
-        (
-            new RenameDefaultBehavior() { DefaultBehavior = true }
-        );
-        return renamable;
+        return (renameResponse?.Changes?[request.TextDocument.Uri].ToArray().Length > 0)
+            ? new RangeOrPlaceholderRange
+            (
+                new RenameDefaultBehavior() { DefaultBehavior = true }
+            )
+            : null;
     }
 
     public async Task<WorkspaceEdit?> RenameSymbol(RenameParams request, CancellationToken cancellationToken)
     {
-        if (!await AcceptRenameDisclaimer(cancellationToken).ConfigureAwait(false)) { return null; }
+        // We want scoped settings because a workspace setting might be relevant here.
+        RenameServiceOptions options = await GetScopedSettings(request.TextDocument.Uri, cancellationToken).ConfigureAwait(false);
+
+        if (!await AcceptRenameDisclaimer(options.acceptDisclaimer, cancellationToken).ConfigureAwait(false)) { return null; }
 
         ScriptFile scriptFile = workspaceService.GetFile(request.TextDocument.Uri);
         ScriptPositionAdapter position = request.Position;
@@ -95,7 +98,7 @@ internal class RenameService(
         TextEdit[] changes = tokenToRename switch
         {
             FunctionDefinitionAst or CommandAst => RenameFunction(tokenToRename, scriptFile.ScriptAst, request),
-            VariableExpressionAst => RenameVariable(tokenToRename, scriptFile.ScriptAst, request),
+            VariableExpressionAst => RenameVariable(tokenToRename, scriptFile.ScriptAst, request, options.createVariableAlias),
             // FIXME: Only throw if capability is not prepareprovider
             _ => throw new InvalidOperationException("This should not happen as PrepareRename should have already checked for viability. File an issue if you see this.")
         };
@@ -122,17 +125,16 @@ internal class RenameService(
         return visitor.VisitAndGetEdits(scriptAst);
     }
 
-    internal TextEdit[] RenameVariable(Ast symbol, Ast scriptAst, RenameParams requestParams)
+    internal static TextEdit[] RenameVariable(Ast symbol, Ast scriptAst, RenameParams requestParams, bool createAlias)
     {
         if (symbol is VariableExpressionAst or ParameterAst or CommandParameterAst or StringConstantExpressionAst)
         {
-
             IterativeVariableRename visitor = new(
                 requestParams.NewName,
                 symbol.Extent.StartLineNumber,
                 symbol.Extent.StartColumnNumber,
                 scriptAst,
-                settings
+                createAlias
             );
             visitor.Visit(scriptAst);
             return visitor.Modifications.ToArray();
@@ -200,15 +202,10 @@ internal class RenameService(
     /// Prompts the user to accept the rename disclaimer.
     /// </summary>
     /// <returns>true if accepted, false if rejected</returns>
-    private async Task<bool> AcceptRenameDisclaimer(CancellationToken cancellationToken)
+    private async Task<bool> AcceptRenameDisclaimer(bool acceptDisclaimerOption, CancellationToken cancellationToken)
     {
-        // Fetch the latest settings from the client, in case they have changed.
-        config.GetSection(configSection).Bind(settings);
-
-        // User has declined for the session so we don't want this popping up a bunch.
-        if (disclaimerDeclined) { return false; }
-
-        if (settings.acceptDisclaimer || disclaimerAccepted) { return true; }
+        if (disclaimerDeclinedForSession) { return false; }
+        if (acceptDisclaimerOption || disclaimerAcceptedForSession) { return true; }
 
         // TODO: Localization
         const string renameDisclaimer = "PowerShell rename functionality is only supported in a limited set of circumstances. Please review the notice and understand the limitations and risks.";
@@ -242,8 +239,8 @@ internal class RenameService(
                 Type = MessageType.Info
             };
             lsp.SendNotification(msgParams);
-            disclaimerDeclined = true;
-            return !disclaimerDeclined;
+            disclaimerDeclinedForSession = true;
+            return !disclaimerDeclinedForSession;
         }
         if (result.Title == acceptAnswer)
         {
@@ -255,8 +252,8 @@ internal class RenameService(
             };
             lsp.SendNotification(msgParams);
 
-            disclaimerAccepted = true;
-            return disclaimerAccepted;
+            disclaimerAcceptedForSession = true;
+            return disclaimerAcceptedForSession;
         }
         // if (result.Title == acceptWorkspaceAnswer)
         // {
@@ -513,7 +510,6 @@ public record ScriptPositionAdapter(IScriptPosition position) : IScriptPosition,
 (
         scriptPosition.position.LineNumber - 1, scriptPosition.position.ColumnNumber - 1
     );
-
 
     public static implicit operator ScriptPositionAdapter(ScriptPosition position) => new(position);
     public static implicit operator ScriptPosition(ScriptPositionAdapter position) => position;
