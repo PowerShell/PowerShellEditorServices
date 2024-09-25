@@ -24,15 +24,15 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         internal bool isParam;
         internal bool AliasSet;
         internal FunctionDefinitionAst TargetFunction;
-        internal RenameServiceOptions options;
+        internal bool CreateAlias;
 
-        public IterativeVariableRename(string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst, RenameServiceOptions options)
+        public IterativeVariableRename(string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst, bool CreateAlias)
         {
             this.NewName = NewName;
             this.StartLineNumber = StartLineNumber;
             this.StartColumnNumber = StartColumnNumber;
             this.ScriptAst = ScriptAst;
-            this.options = options;
+            this.CreateAlias = CreateAlias;
 
             VariableExpressionAst Node = (VariableExpressionAst)GetVariableTopAssignment(StartLineNumber, StartColumnNumber, ScriptAst);
             if (Node != null)
@@ -404,7 +404,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     };
                     // If the variables parent is a parameterAst Add a modification
                     if (variableExpressionAst.Parent is ParameterAst paramAst && !AliasSet &&
-                        options.createVariableAlias)
+                        CreateAlias)
                     {
                         TextEdit aliasChange = NewParameterAliasChange(variableExpressionAst, paramAst);
                         Modifications.Add(aliasChange);
