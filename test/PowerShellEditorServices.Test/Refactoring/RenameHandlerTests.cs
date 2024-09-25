@@ -64,9 +64,10 @@ public class RenameHandlerTests
 
         ScriptFile scriptFile = workspace.GetFile(testScriptUri);
 
+        Assert.NotEmpty(response.Changes[testScriptUri]);
+
         string actual = GetModifiedScript(scriptFile.Contents, response.Changes[testScriptUri].ToArray());
 
-        Assert.NotEmpty(response.Changes[testScriptUri]);
         Assert.Equal(expected, actual);
     }
 
@@ -84,6 +85,9 @@ public class RenameHandlerTests
         ).Contents;
 
         ScriptFile scriptFile = workspace.GetFile(testScriptUri);
+
+        Assert.NotNull(response);
+        Assert.NotEmpty(response.Changes[testScriptUri]);
 
         string actual = GetModifiedScript(scriptFile.Contents, response.Changes[testScriptUri].ToArray());
 
