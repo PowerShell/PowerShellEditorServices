@@ -98,12 +98,14 @@ internal class RenameService(
         TextEdit[] changes = tokenToRename switch
         {
             FunctionDefinitionAst
-            or CommandAst => RenameFunction(tokenToRename, scriptFile.ScriptAst, request),
+            or CommandAst
+            => RenameFunction(tokenToRename, scriptFile.ScriptAst, request),
 
             VariableExpressionAst
             or ParameterAst
             or CommandParameterAst
-            or AssignmentStatementAst => RenameVariable(tokenToRename, scriptFile.ScriptAst, request, options.createVariableAlias),
+            or AssignmentStatementAst
+            => RenameVariable(tokenToRename, scriptFile.ScriptAst, request, options.createVariableAlias),
 
             _ => throw new InvalidOperationException("This should not happen as PrepareRename should have already checked for viability. File an issue if you see this.")
         };
