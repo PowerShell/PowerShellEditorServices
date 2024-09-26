@@ -1,7 +1,7 @@
 function Sample{
-    $var = "Hello"
+    $var = 'Hello'
     $sb = {
-        write-host $var
+        Write-Host $var
     }
     & $sb
     $var
