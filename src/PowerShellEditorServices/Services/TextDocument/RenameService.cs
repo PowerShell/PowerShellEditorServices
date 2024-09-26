@@ -215,7 +215,7 @@ internal class RenameService(
         if (acceptDisclaimerOption || disclaimerAcceptedForSession) { return true; }
 
         // TODO: Localization
-        const string renameDisclaimer = "PowerShell rename functionality is only supported in a limited set of circumstances. Please review the notice and understand the limitations and risks.";
+        const string renameDisclaimer = "PowerShell rename functionality is only supported in a limited set of circumstances. [Please review the notice](https://github.com/PowerShell/PowerShellEditorServices?tab=readme-ov-file#rename-disclaimer) and accept the limitations and risks.";
         const string acceptAnswer = "I Accept";
         // const string acceptWorkspaceAnswer = "I Accept [Workspace]";
         // const string acceptSessionAnswer = "I Accept [Session]";

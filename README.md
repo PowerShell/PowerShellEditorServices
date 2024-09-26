@@ -143,6 +143,26 @@ The debugging functionality in PowerShell Editor Services is available in the fo
 - [powershell.nvim for Neovim](https://github.com/TheLeoP/powershell.nvim)
 - [intellij-powershell](https://github.com/ant-druha/intellij-powershell)
 
+### Rename Disclaimer
+
+PowerShell is not a statically typed language. As such, the renaming of functions, parameters, and other symbols can only be done on a best effort basis. While this is sufficient for the majority of use cases, it cannot be relied upon to find all instances of a symbol and rename them across an entire code base such as in C# or TypeScript.
+
+There are several edge case scenarios which may exist where rename is difficult or impossible, or unable to be determined due to the dynamic scoping nature of PowerShell.
+
+The focus of the rename support is on quick updates to variables or functions within a self-contained script file. It is not intended for module developers to find and rename a symbol across multiple files, which is very difficult to do as the relationships are primarily only computed at runtime and not possible to be statically analyzed.
+
+🤚🤚 Unsupported Scenarios
+
+❌ Renaming can only be done within a single file. Renaming symbols across multiple files is not supported.
+❌ Files containing dotsourcing are currently not supported.
+❌ Functions or variables must have a corresponding definition within their scope to be renamed. If we cannot find the original definition of a variable or function, the rename will not be supported.
+
+👍👍 [Implemented and Tested Rename Scenarios](https://github.com/PowerShell/PowerShellEditorServices/blob/main/test/PowerShellEditorServices.Test.Shared/Refactoring)
+
+📄📄 Filing a Rename Issue
+
+If there is a rename scenario you feel can be reasonably supported in PowerShell, please file a bug report in the PowerShellEditorServices repository with the "Expected" and "Actual" being the before and after rename. We will evaluate it and accept or reject it and give reasons why. Items that fall under the Unsupported Scenarios above will be summarily rejected, however that does not mean that they may not be supported in the future if we come up with a reasonably safe way to implement a scenario.
+
 ## API Usage
 
 Please note that we only consider the following as stable APIs that can be relied on:
