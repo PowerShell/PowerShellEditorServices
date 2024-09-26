@@ -29,17 +29,17 @@ public class RenameServiceOptions
     public bool acceptDisclaimer { get; set; }
 }
 
-public interface IRenameService
+internal interface IRenameService
 {
     /// <summary>
     /// Implementation of textDocument/prepareRename
     /// </summary>
-    public Task<RangeOrPlaceholderRange?> PrepareRenameSymbol(PrepareRenameParams prepareRenameParams, CancellationToken cancellationToken);
+    internal Task<RangeOrPlaceholderRange?> PrepareRenameSymbol(PrepareRenameParams prepareRenameParams, CancellationToken cancellationToken);
 
     /// <summary>
     /// Implementation of textDocument/rename
     /// </summary>
-    public Task<WorkspaceEdit?> RenameSymbol(RenameParams renameParams, CancellationToken cancellationToken);
+    internal Task<WorkspaceEdit?> RenameSymbol(RenameParams renameParams, CancellationToken cancellationToken);
 }
 
 /// <summary>
@@ -54,12 +54,6 @@ internal class RenameService(
     string configSection = "powershell.rename"
 ) : IRenameService
 {
-
-    private async Task<RenameServiceOptions> GetScopedSettings(DocumentUri uri, CancellationToken cancellationToken = default)
-    {
-        IScopedConfiguration scopedConfig = await config.GetScopedConfiguration(uri, cancellationToken).ConfigureAwait(false);
-        return scopedConfig.GetSection(configSection).Get<RenameServiceOptions>() ?? new RenameServiceOptions();
-    }
 
     public async Task<RangeOrPlaceholderRange?> PrepareRenameSymbol(PrepareRenameParams request, CancellationToken cancellationToken)
     {
@@ -125,7 +119,7 @@ internal class RenameService(
     {
         if (target is not (FunctionDefinitionAst or CommandAst))
         {
-            throw new HandlerErrorException($"Asked to rename a function but the target is not a viable function type: {target.GetType()}. This should not happen as PrepareRename should have already checked for viability. File an issue if you see this.");
+            throw new HandlerErrorException($"Asked to rename a function but the target is not a viable function type: {target.GetType()}. This is a bug, file an issue if you see this.");
         }
 
         RenameFunctionVisitor visitor = new(target, renameParams.NewName);
@@ -134,19 +128,20 @@ internal class RenameService(
 
     internal static TextEdit[] RenameVariable(Ast symbol, Ast scriptAst, RenameParams requestParams, bool createAlias)
     {
-        if (symbol is VariableExpressionAst or ParameterAst or CommandParameterAst or StringConstantExpressionAst)
+        if (symbol is not (VariableExpressionAst or ParameterAst or CommandParameterAst or StringConstantExpressionAst))
         {
-            IterativeVariableRename visitor = new(
-                requestParams.NewName,
-                symbol.Extent.StartLineNumber,
-                symbol.Extent.StartColumnNumber,
-                scriptAst,
-                createAlias
-            );
-            visitor.Visit(scriptAst);
-            return visitor.Modifications.ToArray();
+            throw new HandlerErrorException($"Asked to rename a variable but the target is not a viable variable type: {symbol.GetType()}. This is a bug, file an issue if you see this.");
         }
-        return [];
+
+        RenameVariableVisitor visitor = new(
+            requestParams.NewName,
+            symbol.Extent.StartLineNumber,
+            symbol.Extent.StartColumnNumber,
+            scriptAst,
+            createAlias
+        );
+        return visitor.VisitAndGetEdits();
+
     }
 
     /// <summary>
@@ -280,6 +275,12 @@ internal class RenameService(
 
         throw new InvalidOperationException("Unknown Disclaimer Response received. This is a bug and you should report it.");
     }
+
+    private async Task<RenameServiceOptions> GetScopedSettings(DocumentUri uri, CancellationToken cancellationToken = default)
+    {
+        IScopedConfiguration scopedConfig = await config.GetScopedConfiguration(uri, cancellationToken).ConfigureAwait(false);
+        return scopedConfig.GetSection(configSection).Get<RenameServiceOptions>() ?? new RenameServiceOptions();
+    }
 }
 
 /// <summary>
@@ -396,6 +397,523 @@ internal class RenameFunctionVisitor(Ast target, string newName, bool skipVerify
         return Edits.ToArray();
     }
 }
+
+#nullable disable
+internal class RenameVariableVisitor : AstVisitor
+{
+    private readonly string OldName;
+    private readonly string NewName;
+    internal bool ShouldRename;
+    internal List<TextEdit> Edits = [];
+    internal int StartLineNumber;
+    internal int StartColumnNumber;
+    internal VariableExpressionAst TargetVariableAst;
+    internal readonly Ast ScriptAst;
+    internal bool isParam;
+    internal bool AliasSet;
+    internal FunctionDefinitionAst TargetFunction;
+    internal bool CreateAlias;
+
+    public RenameVariableVisitor(string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst, bool CreateAlias)
+    {
+        this.NewName = NewName;
+        this.StartLineNumber = StartLineNumber;
+        this.StartColumnNumber = StartColumnNumber;
+        this.ScriptAst = ScriptAst;
+        this.CreateAlias = CreateAlias;
+
+        VariableExpressionAst Node = (VariableExpressionAst)GetVariableTopAssignment(StartLineNumber, StartColumnNumber, ScriptAst);
+        if (Node != null)
+        {
+            if (Node.Parent is ParameterAst)
+            {
+                isParam = true;
+                Ast parent = Node;
+                // Look for a target function that the parameterAst will be within if it exists
+                parent = Utilities.GetAstParentOfType(parent, typeof(FunctionDefinitionAst));
+                if (parent != null)
+                {
+                    TargetFunction = (FunctionDefinitionAst)parent;
+                }
+            }
+            TargetVariableAst = Node;
+            OldName = TargetVariableAst.VariablePath.UserPath.Replace("$", "");
+            this.StartColumnNumber = TargetVariableAst.Extent.StartColumnNumber;
+            this.StartLineNumber = TargetVariableAst.Extent.StartLineNumber;
+        }
+    }
+
+    private static Ast GetVariableTopAssignment(int StartLineNumber, int StartColumnNumber, Ast ScriptAst)
+    {
+
+        // Look up the target object
+        Ast node = Utilities.GetAstAtPositionOfType(StartLineNumber, StartColumnNumber,
+        ScriptAst, typeof(VariableExpressionAst), typeof(CommandParameterAst), typeof(StringConstantExpressionAst));
+
+        string name = node switch
+        {
+            CommandParameterAst commdef => commdef.ParameterName,
+            VariableExpressionAst varDef => varDef.VariablePath.UserPath,
+            // Key within a Hashtable
+            StringConstantExpressionAst strExp => strExp.Value,
+            _ => throw new TargetSymbolNotFoundException()
+        };
+
+        VariableExpressionAst splatAssignment = null;
+        // A rename of a parameter has been initiated from a splat
+        if (node is StringConstantExpressionAst)
+        {
+            Ast parent = node;
+            parent = Utilities.GetAstParentOfType(parent, typeof(AssignmentStatementAst));
+            if (parent is not null and AssignmentStatementAst assignmentStatementAst)
+            {
+                splatAssignment = (VariableExpressionAst)assignmentStatementAst.Left.Find(
+                    ast => ast is VariableExpressionAst, false);
+            }
+        }
+
+        Ast TargetParent = GetAstParentScope(node);
+
+        // Is the Variable sitting within a ParameterBlockAst that is within a Function Definition
+        // If so we don't need to look further as this is most likley the AssignmentStatement we are looking for
+        Ast paramParent = Utilities.GetAstParentOfType(node, typeof(ParamBlockAst));
+        if (TargetParent is FunctionDefinitionAst && null != paramParent)
+        {
+            return node;
+        }
+
+        // Find all variables and parameter assignments with the same name before
+        // The node found above
+        List<VariableExpressionAst> VariableAssignments = ScriptAst.FindAll(ast =>
+        {
+            return ast is VariableExpressionAst VarDef &&
+            VarDef.Parent is AssignmentStatementAst or ParameterAst &&
+            VarDef.VariablePath.UserPath.ToLower() == name.ToLower() &&
+            // Look Backwards from the node above
+            (VarDef.Extent.EndLineNumber < node.Extent.StartLineNumber ||
+            (VarDef.Extent.EndColumnNumber <= node.Extent.StartColumnNumber &&
+            VarDef.Extent.EndLineNumber <= node.Extent.StartLineNumber));
+        }, true).Cast<VariableExpressionAst>().ToList();
+        // return the def if we have no matches
+        if (VariableAssignments.Count == 0)
+        {
+            return node;
+        }
+        Ast CorrectDefinition = null;
+        for (int i = VariableAssignments.Count - 1; i >= 0; i--)
+        {
+            VariableExpressionAst element = VariableAssignments[i];
+
+            Ast parent = GetAstParentScope(element);
+            // closest assignment statement is within the scope of the node
+            if (TargetParent == parent)
+            {
+                CorrectDefinition = element;
+                break;
+            }
+            else if (node.Parent is AssignmentStatementAst)
+            {
+                // the node is probably the first assignment statement within the scope
+                CorrectDefinition = node;
+                break;
+            }
+            // node is proably just a reference to an assignment statement or Parameter within the global scope or higher
+            if (node.Parent is not AssignmentStatementAst)
+            {
+                if (null == parent || null == parent.Parent)
+                {
+                    // we have hit the global scope of the script file
+                    CorrectDefinition = element;
+                    break;
+                }
+
+                if (parent is FunctionDefinitionAst funcDef && node is CommandParameterAst or StringConstantExpressionAst)
+                {
+                    if (node is StringConstantExpressionAst)
+                    {
+                        List<VariableExpressionAst> SplatReferences = ScriptAst.FindAll(ast =>
+                        {
+                            return ast is VariableExpressionAst varDef &&
+                            varDef.Splatted &&
+                            varDef.Parent is CommandAst &&
+                            varDef.VariablePath.UserPath.ToLower() == splatAssignment.VariablePath.UserPath.ToLower();
+                        }, true).Cast<VariableExpressionAst>().ToList();
+
+                        if (SplatReferences.Count >= 1)
+                        {
+                            CommandAst splatFirstRefComm = (CommandAst)SplatReferences.First().Parent;
+                            if (funcDef.Name == splatFirstRefComm.GetCommandName()
+                            && funcDef.Parent.Parent == TargetParent)
+                            {
+                                CorrectDefinition = element;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (node.Parent is CommandAst commDef)
+                    {
+                        if (funcDef.Name == commDef.GetCommandName()
+                        && funcDef.Parent.Parent == TargetParent)
+                        {
+                            CorrectDefinition = element;
+                            break;
+                        }
+                    }
+                }
+                if (WithinTargetsScope(element, node))
+                {
+                    CorrectDefinition = element;
+                }
+            }
+        }
+        return CorrectDefinition ?? node;
+    }
+
+    private static Ast GetAstParentScope(Ast node)
+    {
+        Ast parent = node;
+        // Walk backwards up the tree looking for a ScriptBLock of a FunctionDefinition
+        parent = Utilities.GetAstParentOfType(parent, typeof(ScriptBlockAst), typeof(FunctionDefinitionAst), typeof(ForEachStatementAst), typeof(ForStatementAst));
+        if (parent is ScriptBlockAst && parent.Parent != null && parent.Parent is FunctionDefinitionAst)
+        {
+            parent = parent.Parent;
+        }
+        // Check if the parent of the VariableExpressionAst is a ForEachStatementAst then check if the variable names match
+        // if so this is probably a variable defined within a foreach loop
+        else if (parent is ForEachStatementAst ForEachStmnt && node is VariableExpressionAst VarExp &&
+            ForEachStmnt.Variable.VariablePath.UserPath == VarExp.VariablePath.UserPath)
+        {
+            parent = ForEachStmnt;
+        }
+        // Check if the parent of the VariableExpressionAst is a ForStatementAst then check if the variable names match
+        // if so this is probably a variable defined within a foreach loop
+        else if (parent is ForStatementAst ForStmnt && node is VariableExpressionAst ForVarExp &&
+                ForStmnt.Initializer is AssignmentStatementAst AssignStmnt && AssignStmnt.Left is VariableExpressionAst VarExpStmnt &&
+                VarExpStmnt.VariablePath.UserPath == ForVarExp.VariablePath.UserPath)
+        {
+            parent = ForStmnt;
+        }
+
+        return parent;
+    }
+
+    private static bool IsVariableExpressionAssignedInTargetScope(VariableExpressionAst node, Ast scope)
+    {
+        bool r = false;
+
+        List<VariableExpressionAst> VariableAssignments = node.FindAll(ast =>
+        {
+            return ast is VariableExpressionAst VarDef &&
+            VarDef.Parent is AssignmentStatementAst or ParameterAst &&
+            VarDef.VariablePath.UserPath.ToLower() == node.VariablePath.UserPath.ToLower() &&
+            // Look Backwards from the node above
+            (VarDef.Extent.EndLineNumber < node.Extent.StartLineNumber ||
+            (VarDef.Extent.EndColumnNumber <= node.Extent.StartColumnNumber &&
+            VarDef.Extent.EndLineNumber <= node.Extent.StartLineNumber)) &&
+            // Must be within the the designated scope
+            VarDef.Extent.StartLineNumber >= scope.Extent.StartLineNumber;
+        }, true).Cast<VariableExpressionAst>().ToList();
+
+        if (VariableAssignments.Count > 0)
+        {
+            r = true;
+        }
+        // Node is probably the first Assignment Statement within scope
+        if (node.Parent is AssignmentStatementAst && node.Extent.StartLineNumber >= scope.Extent.StartLineNumber)
+        {
+            r = true;
+        }
+
+        return r;
+    }
+
+    private static bool WithinTargetsScope(Ast Target, Ast Child)
+    {
+        bool r = false;
+        Ast childParent = Child.Parent;
+        Ast TargetScope = GetAstParentScope(Target);
+        while (childParent != null)
+        {
+            if (childParent is FunctionDefinitionAst FuncDefAst)
+            {
+                if (Child is VariableExpressionAst VarExpAst && !IsVariableExpressionAssignedInTargetScope(VarExpAst, FuncDefAst))
+                {
+
+                }
+                else
+                {
+                    break;
+                }
+            }
+            if (childParent == TargetScope)
+            {
+                break;
+            }
+            childParent = childParent.Parent;
+        }
+        if (childParent == TargetScope)
+        {
+            r = true;
+        }
+        return r;
+    }
+
+    private class NodeProcessingState
+    {
+        public Ast Node { get; set; }
+        public IEnumerator<Ast> ChildrenEnumerator { get; set; }
+    }
+
+    internal void Visit(Ast root)
+    {
+        Stack<NodeProcessingState> processingStack = new();
+
+        processingStack.Push(new NodeProcessingState { Node = root });
+
+        while (processingStack.Count > 0)
+        {
+            NodeProcessingState currentState = processingStack.Peek();
+
+            if (currentState.ChildrenEnumerator == null)
+            {
+                // First time processing this node. Do the initial processing.
+                ProcessNode(currentState.Node);  // This line is crucial.
+
+                // Get the children and set up the enumerator.
+                IEnumerable<Ast> children = currentState.Node.FindAll(ast => ast.Parent == currentState.Node, searchNestedScriptBlocks: true);
+                currentState.ChildrenEnumerator = children.GetEnumerator();
+            }
+
+            // Process the next child.
+            if (currentState.ChildrenEnumerator.MoveNext())
+            {
+                Ast child = currentState.ChildrenEnumerator.Current;
+                processingStack.Push(new NodeProcessingState { Node = child });
+            }
+            else
+            {
+                // All children have been processed, we're done with this node.
+                processingStack.Pop();
+            }
+        }
+    }
+
+    private void ProcessNode(Ast node)
+    {
+
+        switch (node)
+        {
+            case CommandAst commandAst:
+                ProcessCommandAst(commandAst);
+                break;
+            case CommandParameterAst commandParameterAst:
+                ProcessCommandParameterAst(commandParameterAst);
+                break;
+            case VariableExpressionAst variableExpressionAst:
+                ProcessVariableExpressionAst(variableExpressionAst);
+                break;
+        }
+    }
+
+    private void ProcessCommandAst(CommandAst commandAst)
+    {
+        // Is the Target Variable a Parameter and is this commandAst the target function
+        if (isParam && commandAst.GetCommandName()?.ToLower() == TargetFunction?.Name.ToLower())
+        {
+            // Check to see if this is a splatted call to the target function.
+            Ast Splatted = null;
+            foreach (Ast element in commandAst.CommandElements)
+            {
+                if (element is VariableExpressionAst varAst && varAst.Splatted)
+                {
+                    Splatted = varAst;
+                    break;
+                }
+            }
+            if (Splatted != null)
+            {
+                NewSplattedModification(Splatted);
+            }
+            else
+            {
+                // The Target Variable is a Parameter and the commandAst is the Target Function
+                ShouldRename = true;
+            }
+        }
+    }
+
+    private void ProcessVariableExpressionAst(VariableExpressionAst variableExpressionAst)
+    {
+        if (variableExpressionAst.VariablePath.UserPath.ToLower() == OldName.ToLower())
+        {
+            // Is this the Target Variable
+            if (variableExpressionAst.Extent.StartColumnNumber == StartColumnNumber &&
+            variableExpressionAst.Extent.StartLineNumber == StartLineNumber)
+            {
+                ShouldRename = true;
+                TargetVariableAst = variableExpressionAst;
+            }
+            // Is this a Command Ast within scope
+            else if (variableExpressionAst.Parent is CommandAst commandAst)
+            {
+                if (WithinTargetsScope(TargetVariableAst, commandAst))
+                {
+                    ShouldRename = true;
+                }
+                // The TargetVariable is defined within a function
+                // This commandAst is not within that function's scope so we should not rename
+                if (GetAstParentScope(TargetVariableAst) is FunctionDefinitionAst && !WithinTargetsScope(TargetVariableAst, commandAst))
+                {
+                    ShouldRename = false;
+                }
+
+            }
+            // Is this a Variable Assignment thats not within scope
+            else if (variableExpressionAst.Parent is AssignmentStatementAst assignment &&
+                assignment.Operator == TokenKind.Equals)
+            {
+                if (!WithinTargetsScope(TargetVariableAst, variableExpressionAst))
+                {
+                    ShouldRename = false;
+                }
+
+            }
+            // Else is the variable within scope
+            else
+            {
+                ShouldRename = WithinTargetsScope(TargetVariableAst, variableExpressionAst);
+            }
+            if (ShouldRename)
+            {
+                // have some modifications to account for the dollar sign prefix powershell uses for variables
+                TextEdit Change = new()
+                {
+                    NewText = NewName.Contains("$") ? NewName : "$" + NewName,
+                    Range = new ScriptExtentAdapter(variableExpressionAst.Extent),
+                };
+                // If the variables parent is a parameterAst Add a modification
+                if (variableExpressionAst.Parent is ParameterAst paramAst && !AliasSet &&
+                    CreateAlias)
+                {
+                    TextEdit aliasChange = NewParameterAliasChange(variableExpressionAst, paramAst);
+                    Edits.Add(aliasChange);
+                    AliasSet = true;
+                }
+                Edits.Add(Change);
+
+            }
+        }
+    }
+
+    private void ProcessCommandParameterAst(CommandParameterAst commandParameterAst)
+    {
+        if (commandParameterAst.ParameterName.ToLower() == OldName.ToLower())
+        {
+            if (commandParameterAst.Extent.StartLineNumber == StartLineNumber &&
+                commandParameterAst.Extent.StartColumnNumber == StartColumnNumber)
+            {
+                ShouldRename = true;
+            }
+
+            if (TargetFunction != null && commandParameterAst.Parent is CommandAst commandAst &&
+                commandAst.GetCommandName().ToLower() == TargetFunction.Name.ToLower() && isParam && ShouldRename)
+            {
+                TextEdit Change = new()
+                {
+                    NewText = NewName.Contains("-") ? NewName : "-" + NewName,
+                    Range = new ScriptExtentAdapter(commandParameterAst.Extent)
+                };
+                Edits.Add(Change);
+            }
+            else
+            {
+                ShouldRename = false;
+            }
+        }
+    }
+
+    private void NewSplattedModification(Ast Splatted)
+    {
+        // This Function should be passed a splatted VariableExpressionAst which
+        // is used by a CommandAst that is the TargetFunction.
+
+        // Find the splats top assignment / definition
+        Ast SplatAssignment = GetVariableTopAssignment(
+            Splatted.Extent.StartLineNumber,
+            Splatted.Extent.StartColumnNumber,
+            ScriptAst);
+        // Look for the Parameter within the Splats HashTable
+        if (SplatAssignment.Parent is AssignmentStatementAst assignmentStatementAst &&
+        assignmentStatementAst.Right is CommandExpressionAst commExpAst &&
+        commExpAst.Expression is HashtableAst hashTableAst)
+        {
+            foreach (Tuple<ExpressionAst, StatementAst> element in hashTableAst.KeyValuePairs)
+            {
+                if (element.Item1 is StringConstantExpressionAst strConstAst &&
+                strConstAst.Value.ToLower() == OldName.ToLower())
+                {
+                    TextEdit Change = new()
+                    {
+                        NewText = NewName,
+                        Range = new ScriptExtentAdapter(strConstAst.Extent)
+                    };
+
+                    Edits.Add(Change);
+                    break;
+                }
+
+            }
+        }
+    }
+
+    private TextEdit NewParameterAliasChange(VariableExpressionAst variableExpressionAst, ParameterAst paramAst)
+    {
+        // Check if an Alias AttributeAst already exists and append the new Alias to the existing list
+        // Otherwise Create a new Alias Attribute
+        // Add the modifications to the changes
+        // The Attribute will be appended before the variable or in the existing location of the original alias
+        TextEdit aliasChange = new();
+        // FIXME: Understand this more, if this returns more than one result, why does it overwrite the aliasChange?
+        foreach (Ast Attr in paramAst.Attributes)
+        {
+            if (Attr is AttributeAst AttrAst)
+            {
+                // Alias Already Exists
+                if (AttrAst.TypeName.FullName == "Alias")
+                {
+                    string existingEntries = AttrAst.Extent.Text
+                    .Substring("[Alias(".Length);
+                    existingEntries = existingEntries.Substring(0, existingEntries.Length - ")]".Length);
+                    string nentries = existingEntries + $", \"{OldName}\"";
+
+                    aliasChange = aliasChange with
+                    {
+                        NewText = $"[Alias({nentries})]",
+                        Range = new ScriptExtentAdapter(AttrAst.Extent)
+                    };
+                }
+            }
+        }
+        if (aliasChange.NewText == null)
+        {
+            aliasChange = aliasChange with
+            {
+                NewText = $"[Alias(\"{OldName}\")]",
+                Range = new ScriptExtentAdapter(paramAst.Extent)
+            };
+        }
+
+        return aliasChange;
+    }
+
+    internal TextEdit[] VisitAndGetEdits()
+    {
+        Visit(ScriptAst);
+        return Edits.ToArray();
+    }
+}
+#nullable enable
 
 internal class Utilities
 {
