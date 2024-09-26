@@ -7,9 +7,9 @@ public class RefactorVariableTestCases
     [
         new ("SimpleVariableAssignment.ps1",                   Line:  1, Column:  1),
         new ("VariableCommandParameter.ps1",                   Line:  3, Column: 17),
-        new ("VariableCommandParameter.ps1",                   Line: 10, Column:  9),
-        new ("VariableCommandParameterSplatted.ps1",           Line: 16, Column:  5),
-        new ("VariableCommandParameterSplatted.ps1",           Line: 21, Column: 11),
+        new ("VariableCommandParameter.ps1",                   Line: 10, Column: 10),
+        new ("VariableCommandParameterSplatted.ps1",           Line:  3, Column: 19 ),
+        new ("VariableCommandParameterSplatted.ps1",           Line: 21, Column: 12),
         new ("VariableDotNotationFromInnerFunction.ps1",       Line:  1, Column:  1),
         new ("VariableDotNotationFromInnerFunction.ps1",       Line: 11, Column: 26),
         new ("VariableInForeachDuplicateAssignment.ps1",       Line:  6, Column: 18),
