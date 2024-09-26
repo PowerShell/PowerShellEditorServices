@@ -97,9 +97,14 @@ internal class RenameService(
         // TODO: Potentially future cross-file support
         TextEdit[] changes = tokenToRename switch
         {
-            FunctionDefinitionAst or CommandAst => RenameFunction(tokenToRename, scriptFile.ScriptAst, request),
-            VariableExpressionAst => RenameVariable(tokenToRename, scriptFile.ScriptAst, request, options.createVariableAlias),
-            // FIXME: Only throw if capability is not prepareprovider
+            FunctionDefinitionAst
+            or CommandAst => RenameFunction(tokenToRename, scriptFile.ScriptAst, request),
+
+            VariableExpressionAst
+            or ParameterAst
+            or CommandParameterAst
+            or AssignmentStatementAst => RenameVariable(tokenToRename, scriptFile.ScriptAst, request, options.createVariableAlias),
+
             _ => throw new InvalidOperationException("This should not happen as PrepareRename should have already checked for viability. File an issue if you see this.")
         };
 
@@ -150,10 +155,15 @@ internal class RenameService(
     {
         Ast? ast = scriptFile.ScriptAst.FindAtPosition(position,
         [
-            // Filters just the ASTs that are candidates for rename
+            // Functions
             typeof(FunctionDefinitionAst),
+            typeof(CommandAst),
+
+            // Variables
             typeof(VariableExpressionAst),
-            typeof(CommandAst)
+            typeof(ParameterAst),
+            typeof(CommandParameterAst),
+            typeof(AssignmentStatementAst),
         ]);
 
         // Only the function name is valid for rename, not other components
