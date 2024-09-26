@@ -283,14 +283,18 @@ internal class RenameService(
     }
 }
 
+internal abstract class RenameVisitorBase() : AstVisitor
+{
+    internal List<TextEdit> Edits { get; } = new();
+}
+
 /// <summary>
 /// A visitor that generates a list of TextEdits to a TextDocument to rename a PowerShell function
 /// You should use a new instance for each rename operation.
 /// Skipverify can be used as a performance optimization when you are sure you are in scope.
 /// </summary>
-internal class RenameFunctionVisitor(Ast target, string newName, bool skipVerify = false) : AstVisitor
+internal class RenameFunctionVisitor(Ast target, string newName, bool skipVerify = false) : RenameVisitorBase
 {
-    internal List<TextEdit> Edits { get; } = new();
     private Ast? CurrentDocument;
     private FunctionDefinitionAst? FunctionToRename;
 
@@ -399,12 +403,11 @@ internal class RenameFunctionVisitor(Ast target, string newName, bool skipVerify
 }
 
 #nullable disable
-internal class RenameVariableVisitor : AstVisitor
+internal class RenameVariableVisitor : RenameVisitorBase
 {
     private readonly string OldName;
     private readonly string NewName;
     internal bool ShouldRename;
-    internal List<TextEdit> Edits = [];
     internal int StartLineNumber;
     internal int StartColumnNumber;
     internal VariableExpressionAst TargetVariableAst;
