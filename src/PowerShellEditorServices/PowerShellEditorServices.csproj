@@ -4,7 +4,7 @@
   <PropertyGroup>
     <AssemblyTitle>PowerShell Editor Services</AssemblyTitle>
     <Description>Provides common PowerShell editor capabilities as a .NET library.</Description>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Microsoft.PowerShell.EditorServices</AssemblyName>
     <Configurations>Debug;Release</Configurations>
   </PropertyGroup>

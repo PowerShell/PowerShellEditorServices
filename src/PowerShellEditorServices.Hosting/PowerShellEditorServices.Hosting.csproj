@@ -2,7 +2,7 @@
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net462</TargetFrameworks>
+    <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>Microsoft.PowerShell.EditorServices.Hosting</AssemblyName>
   </PropertyGroup>
 
