@@ -5,14 +5,14 @@ function testing_files {
     param (
         $Renamed
     )
-    write-host "Printing $Renamed"
+    Write-Host "Printing $Renamed"
 }
 
 foreach ($number in $x) {
     testing_files $number
 
     function testing_files {
-        write-host "------------------"
+        Write-Host '------------------'
     }
 }
-testing_files "99"
+testing_files '99'

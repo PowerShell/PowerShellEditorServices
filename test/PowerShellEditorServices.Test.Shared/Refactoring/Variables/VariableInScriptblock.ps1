@@ -1,3 +1,3 @@
-$var = "Hello"
+$var = 'Hello'
 $action = { Write-Output $var }
 &$action

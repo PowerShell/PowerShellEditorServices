@@ -7,4 +7,4 @@ function Get-foo {
     return $string[$pos]
 
 }
-Get-foo -string "Hello" -pos -1
+Get-foo -string 'Hello' -pos -1

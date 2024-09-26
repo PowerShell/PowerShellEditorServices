@@ -20,9 +20,9 @@ function Write-Item($itemCount) {
 # Hover over the function name below to see the PSScriptAnalyzer warning that "Do-Work"
 # doesn't use an approved verb.
 function Do-Work($workCount) {
-    Write-Output "Doing work..."
+    Write-Output 'Doing work...'
     Write-Item $workcount
-    Write-Host "Done!"
+    Write-Host 'Done!'
 }
 
 Do-Work $Count

@@ -7,4 +7,4 @@ function Get-foo {
     return $Renamed[$pos]
 
 }
-Get-foo -Renamed "Hello" -pos -1
+Get-foo -Renamed 'Hello' -pos -1

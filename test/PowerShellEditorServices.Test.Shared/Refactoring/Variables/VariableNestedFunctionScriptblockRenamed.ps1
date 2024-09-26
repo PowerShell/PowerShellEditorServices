@@ -1,7 +1,7 @@
 function Sample{
-    $Renamed = "Hello"
+    $Renamed = 'Hello'
     $sb = {
-        write-host $Renamed
+        Write-Host $Renamed
     }
     & $sb
     $Renamed
