@@ -1,4 +1,4 @@
-param([int]$Count=50, [int]$DelayMilliseconds=200)
+param([int]$Count = 50, [int]$DelayMilliseconds = 200)
 
 function Write-Item($itemCount) {
     $i = 1
@@ -20,9 +20,9 @@ function Write-Item($itemCount) {
 # Hover over the function name below to see the PSScriptAnalyzer warning that "Do-Work"
 # doesn't use an approved verb.
 function Do-Work($Renamed) {
-    Write-Output "Doing work..."
+    Write-Output 'Doing work...'
     Write-Item $Renamed
-    Write-Host "Done!"
+    Write-Host 'Done!'
 }
 
 Do-Work $Count

@@ -3,19 +3,19 @@ function New-User {
         [string]$Renamed,
         [string]$password
     )
-    write-host $Renamed + $password
+    Write-Host $Renamed + $password
 
-    $splat= @{
-        Renamed = "JohnDeer"
-        Password = "SomePassword"
+    $splat = @{
+        Renamed = 'JohnDeer'
+        Password = 'SomePassword'
     }
     New-User @splat
 }
 
-$UserDetailsSplat= @{
-    Renamed = "JohnDoe"
-    Password = "SomePassword"
+$UserDetailsSplat = @{
+    Renamed = 'JohnDoe'
+    Password = 'SomePassword'
 }
 New-User @UserDetailsSplat
 
-New-User -Renamed "JohnDoe" -Password "SomePassword"
+New-User -Renamed 'JohnDoe' -Password 'SomePassword'
