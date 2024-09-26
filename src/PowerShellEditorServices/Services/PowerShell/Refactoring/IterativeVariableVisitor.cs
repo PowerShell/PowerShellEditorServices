@@ -194,7 +194,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
             // Check if the parent of the VariableExpressionAst is a ForEachStatementAst then check if the variable names match
             // if so this is probably a variable defined within a foreach loop
             else if (parent is ForEachStatementAst ForEachStmnt && node is VariableExpressionAst VarExp &&
-                     ForEachStmnt.Variable.VariablePath.UserPath == VarExp.VariablePath.UserPath)
+                ForEachStmnt.Variable.VariablePath.UserPath == VarExp.VariablePath.UserPath)
             {
                 parent = ForEachStmnt;
             }
@@ -252,7 +252,9 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
                     if (Child is VariableExpressionAst VarExpAst && !IsVariableExpressionAssignedInTargetScope(VarExpAst, FuncDefAst))
                     {
 
-                    }else{
+                    }
+                    else
+                    {
                         break;
                     }
                 }
