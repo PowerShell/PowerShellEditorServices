@@ -25,7 +25,7 @@ namespace Microsoft.PowerShell.EditorServices.Services;
 public class RenameServiceOptions
 {
     public bool createFunctionAlias { get; set; }
-    public bool createVariableAlias { get; set; }
+    public bool createParameterAlias { get; set; }
     public bool acceptDisclaimer { get; set; }
 }
 
@@ -99,7 +99,7 @@ internal class RenameService(
             or ParameterAst
             or CommandParameterAst
             or AssignmentStatementAst
-            => RenameVariable(tokenToRename, scriptFile.ScriptAst, request, options.createVariableAlias),
+            => RenameVariable(tokenToRename, scriptFile.ScriptAst, request, options.createParameterAlias),
 
             _ => throw new InvalidOperationException("This should not happen as PrepareRename should have already checked for viability. File an issue if you see this.")
         };
@@ -126,7 +126,7 @@ internal class RenameService(
         return visitor.VisitAndGetEdits(scriptAst);
     }
 
-    internal static TextEdit[] RenameVariable(Ast symbol, Ast scriptAst, RenameParams requestParams, bool createAlias)
+    internal static TextEdit[] RenameVariable(Ast symbol, Ast scriptAst, RenameParams requestParams, bool createParameterAlias)
     {
         if (symbol is not (VariableExpressionAst or ParameterAst or CommandParameterAst or StringConstantExpressionAst))
         {
@@ -138,7 +138,7 @@ internal class RenameService(
             symbol.Extent.StartLineNumber,
             symbol.Extent.StartColumnNumber,
             scriptAst,
-            createAlias
+            createParameterAlias
         );
         return visitor.VisitAndGetEdits();
 
@@ -418,15 +418,15 @@ internal class RenameVariableVisitor : RenameVisitorBase
     internal bool isParam;
     internal bool AliasSet;
     internal FunctionDefinitionAst TargetFunction;
-    internal bool CreateAlias;
+    internal bool CreateParameterAlias;
 
-    public RenameVariableVisitor(string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst, bool CreateAlias)
+    public RenameVariableVisitor(string NewName, int StartLineNumber, int StartColumnNumber, Ast ScriptAst, bool CreateParameterAlias)
     {
         this.NewName = NewName;
         this.StartLineNumber = StartLineNumber;
         this.StartColumnNumber = StartColumnNumber;
         this.ScriptAst = ScriptAst;
-        this.CreateAlias = CreateAlias;
+        this.CreateParameterAlias = CreateParameterAlias;
 
         VariableExpressionAst Node = (VariableExpressionAst)GetVariableTopAssignment(StartLineNumber, StartColumnNumber, ScriptAst);
         if (Node != null)
@@ -800,7 +800,7 @@ internal class RenameVariableVisitor : RenameVisitorBase
                 };
                 // If the variables parent is a parameterAst Add a modification
                 if (variableExpressionAst.Parent is ParameterAst paramAst && !AliasSet &&
-                    CreateAlias)
+                    CreateParameterAlias)
                 {
                     TextEdit aliasChange = NewParameterAliasChange(variableExpressionAst, paramAst);
                     Edits.Add(aliasChange);
