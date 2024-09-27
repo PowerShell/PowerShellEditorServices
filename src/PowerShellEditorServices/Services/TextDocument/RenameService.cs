@@ -67,11 +67,9 @@ internal class RenameService(
         WorkspaceEdit? renameResponse = await RenameSymbol(renameRequest, cancellationToken).ConfigureAwait(false);
 
         // Since LSP 3.16 we can simply basically return a DefaultBehavior true or null to signal to the client that the position is valid for rename and it should use its default selection criteria (which is probably the language semantic highlighting or grammar). For the current scope of the rename provider, this should be fine, but we have the option to supply the specific range in the future for special cases.
+        RangeOrPlaceholderRange renameSupported = new(new RenameDefaultBehavior() { DefaultBehavior = true });
         return (renameResponse?.Changes?[request.TextDocument.Uri].ToArray().Length > 0)
-            ? new RangeOrPlaceholderRange
-            (
-                new RenameDefaultBehavior() { DefaultBehavior = true }
-            )
+            ? renameSupported
             : null;
     }
 
