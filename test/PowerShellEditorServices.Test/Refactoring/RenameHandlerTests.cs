@@ -56,7 +56,22 @@ public class RenameHandlerTests
     public async void RenamedFunction(RenameTestTarget s)
     {
         RenameParams request = s.ToRenameParams("Functions");
-        WorkspaceEdit response = await testHandler.Handle(request, CancellationToken.None);
+        WorkspaceEdit response;
+        try
+        {
+            response = await testHandler.Handle(request, CancellationToken.None);
+        }
+        catch (HandlerErrorException)
+        {
+            Assert.True(s.ShouldFail);
+            return;
+        }
+        if (s.ShouldFail)
+        {
+            Assert.Null(response);
+            return;
+        }
+
         DocumentUri testScriptUri = request.TextDocument.Uri;
 
         string expected = workspace.GetFile
@@ -78,7 +93,21 @@ public class RenameHandlerTests
     public async void RenamedVariable(RenameTestTarget s)
     {
         RenameParams request = s.ToRenameParams("Variables");
-        WorkspaceEdit response = await testHandler.Handle(request, CancellationToken.None);
+        WorkspaceEdit response;
+        try
+        {
+            response = await testHandler.Handle(request, CancellationToken.None);
+        }
+        catch (HandlerErrorException)
+        {
+            Assert.True(s.ShouldFail);
+            return;
+        }
+        if (s.ShouldFail)
+        {
+            Assert.Null(response);
+            return;
+        }
         DocumentUri testScriptUri = request.TextDocument.Uri;
 
         string expected = workspace.GetFile

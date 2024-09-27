@@ -67,7 +67,21 @@ public class PrepareRenameHandlerTests
     {
         PrepareRenameParams testParams = s.ToPrepareRenameParams("Functions");
 
-        RangeOrPlaceholderRange? result = await testHandler.Handle(testParams, CancellationToken.None);
+        RangeOrPlaceholderRange? result;
+        try
+        {
+            result = await testHandler.Handle(testParams, CancellationToken.None);
+        }
+        catch (HandlerErrorException)
+        {
+            Assert.True(s.ShouldFail);
+            return;
+        }
+        if (s.ShouldFail)
+        {
+            Assert.Null(result);
+            return;
+        }
 
         Assert.NotNull(result);
         Assert.True(result?.DefaultBehavior?.DefaultBehavior);
@@ -79,7 +93,21 @@ public class PrepareRenameHandlerTests
     {
         PrepareRenameParams testParams = s.ToPrepareRenameParams("Variables");
 
-        RangeOrPlaceholderRange? result = await testHandler.Handle(testParams, CancellationToken.None);
+        RangeOrPlaceholderRange? result;
+        try
+        {
+            result = await testHandler.Handle(testParams, CancellationToken.None);
+        }
+        catch (HandlerErrorException)
+        {
+            Assert.True(s.ShouldFail);
+            return;
+        }
+        if (s.ShouldFail)
+        {
+            Assert.Null(result);
+            return;
+        }
 
         Assert.NotNull(result);
         Assert.True(result?.DefaultBehavior?.DefaultBehavior);
@@ -184,6 +212,7 @@ public class RenameTestTargetSerializable : RenameTestTarget, IXunitSerializable
         info.AddValue(nameof(Line), Line);
         info.AddValue(nameof(Column), Column);
         info.AddValue(nameof(NewName), NewName);
+        info.AddValue(nameof(ShouldFail), ShouldFail);
     }
 
     public void Deserialize(IXunitSerializationInfo info)
@@ -192,6 +221,7 @@ public class RenameTestTargetSerializable : RenameTestTarget, IXunitSerializable
         Line = info.GetValue<int>(nameof(Line));
         Column = info.GetValue<int>(nameof(Column));
         NewName = info.GetValue<string>(nameof(NewName));
+        ShouldFail = info.GetValue<bool>(nameof(ShouldFail));
     }
 
     public static RenameTestTargetSerializable FromRenameTestTarget(RenameTestTarget t)
@@ -200,6 +230,7 @@ public class RenameTestTargetSerializable : RenameTestTarget, IXunitSerializable
             FileName = t.FileName,
             Column = t.Column,
             Line = t.Line,
-            NewName = t.NewName
+            NewName = t.NewName,
+            ShouldFail = t.ShouldFail
         };
 }
