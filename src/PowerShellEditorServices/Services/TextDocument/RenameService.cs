@@ -63,7 +63,8 @@ internal class RenameService(
             Position = request.Position,
             TextDocument = request.TextDocument
         };
-        // TODO: Should we cache these resuls and just fetch them on the actual rename, and move the bulk to an implementation method?
+
+        // TODO: As a performance optimization, should we cache these results and just fetch them on the actual rename, and move the bulk to an implementation method? Seems pretty fast right now but may slow down on large documents. Need to add a large document test example.
         WorkspaceEdit? renameResponse = await RenameSymbol(renameRequest, cancellationToken).ConfigureAwait(false);
 
         // Since LSP 3.16 we can simply basically return a DefaultBehavior true or null to signal to the client that the position is valid for rename and it should use its default selection criteria (which is probably the language semantic highlighting or grammar). For the current scope of the rename provider, this should be fine, but we have the option to supply the specific range in the future for special cases.
@@ -318,7 +319,7 @@ internal class RenameFunctionVisitor(Ast target, string newName, bool skipVerify
             {
                 FunctionDefinitionAst f => f,
                 CommandAst command => CurrentDocument.FindFunctionDefinition(command)
-                    ?? throw new TargetSymbolNotFoundException("The command to rename does not have a function definition. Renaming a function is only supported when the function is defined within the same scope"),
+                    ?? throw new HandlerErrorException("The command to rename does not have a function definition. Renaming a function is only supported when the function is defined within the same scope"),
                 _ => throw new Exception($"Unsupported AST type {target.GetType()} encountered")
             };
         };
