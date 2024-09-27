@@ -1,8 +1,8 @@
 function SameNameFunction {
     Write-Host "This is the outer function"
-    function RenamedSameNameFunction {
-        Write-Host "This is the inner function"
+    function Renamed {
+        Write-Host 'This is the inner function'
     }
-    RenamedSameNameFunction
+    Renamed
 }
 SameNameFunction
