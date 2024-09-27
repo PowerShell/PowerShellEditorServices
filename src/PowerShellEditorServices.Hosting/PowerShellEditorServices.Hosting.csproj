@@ -2,7 +2,7 @@
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net462</TargetFrameworks>
+    <TargetFrameworks>net6.0</TargetFrameworks>
     <AssemblyName>Microsoft.PowerShell.EditorServices.Hosting</AssemblyName>
   </PropertyGroup>
 
@@ -20,11 +20,4 @@
   <ItemGroup>
     <ProjectReference Include="..\PowerShellEditorServices\PowerShellEditorServices.csproj" PrivateAssets="all" />
   </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net462' ">
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-
-    <Compile Remove="Internal/PsesLoadContext.cs" />
-  </ItemGroup>
-
 </Project>
