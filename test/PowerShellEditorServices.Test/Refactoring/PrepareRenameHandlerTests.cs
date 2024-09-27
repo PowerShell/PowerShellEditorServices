@@ -43,9 +43,11 @@ public class PrepareRenameHandlerTests
             (
                 workspace,
                 new fakeLspSendMessageRequestFacade("I Accept"),
-                new EmptyConfiguration(),
-                disclaimerAcceptedForSession: true //Suppresses prompts
+                new EmptyConfiguration()
             )
+            {
+                DisclaimerAcceptedForSession = true //Disables UI prompts
+            }
         );
     }
 

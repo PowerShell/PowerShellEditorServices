@@ -48,12 +48,12 @@ internal interface IRenameService
 internal class RenameService(
     WorkspaceService workspaceService,
     ILanguageServerFacade lsp,
-    ILanguageServerConfiguration config,
-    bool disclaimerDeclinedForSession = false,
-    bool disclaimerAcceptedForSession = false,
-    string configSection = "powershell.rename"
+    ILanguageServerConfiguration config
 ) : IRenameService
 {
+    internal bool DisclaimerAcceptedForSession; //This is exposed to allow testing non-interactively
+    private bool DisclaimerDeclinedForSession;
+    private const string ConfigSection = "powershell.rename";
 
     public async Task<RangeOrPlaceholderRange?> PrepareRenameSymbol(PrepareRenameParams request, CancellationToken cancellationToken)
     {
@@ -211,8 +211,10 @@ internal class RenameService(
     /// <returns>true if accepted, false if rejected</returns>
     private async Task<bool> AcceptRenameDisclaimer(bool acceptDisclaimerOption, CancellationToken cancellationToken)
     {
-        if (disclaimerDeclinedForSession) { return false; }
-        if (acceptDisclaimerOption || disclaimerAcceptedForSession) { return true; }
+        const string disclaimerDeclinedMessage = "PowerShell rename has been disabled for this session as the disclaimer message was declined. Please restart the extension if you wish to use rename and accept the disclaimer.";
+
+        if (DisclaimerDeclinedForSession) { throw new HandlerErrorException(disclaimerDeclinedMessage); }
+        if (acceptDisclaimerOption || DisclaimerAcceptedForSession) { return true; }
 
         // TODO: Localization
         const string renameDisclaimer = "PowerShell rename functionality is only supported in a limited set of circumstances. [Please review the notice](https://github.com/PowerShell/PowerShellEditorServices?tab=readme-ov-file#rename-disclaimer) and accept the limitations and risks.";
@@ -235,8 +237,9 @@ internal class RenameService(
             }
         };
 
-        MessageActionItem result = await lsp.SendRequest(reqParams, cancellationToken).ConfigureAwait(false);
-        if (result.Title == declineAnswer)
+        MessageActionItem? result = await lsp.SendRequest(reqParams, cancellationToken).ConfigureAwait(false);
+        // null happens if the user closes the dialog rather than making a selection.
+        if (result is null || result.Title == declineAnswer)
         {
             const string renameDisabledNotice = "PowerShell Rename functionality will be disabled for this session and you will not be prompted again until restart.";
 
@@ -246,8 +249,8 @@ internal class RenameService(
                 Type = MessageType.Info
             };
             lsp.SendNotification(msgParams);
-            disclaimerDeclinedForSession = true;
-            return !disclaimerDeclinedForSession;
+            DisclaimerDeclinedForSession = true;
+            throw new HandlerErrorException(disclaimerDeclinedMessage);
         }
         if (result.Title == acceptAnswer)
         {
@@ -259,8 +262,8 @@ internal class RenameService(
             };
             lsp.SendNotification(msgParams);
 
-            disclaimerAcceptedForSession = true;
-            return disclaimerAcceptedForSession;
+            DisclaimerAcceptedForSession = true;
+            return DisclaimerAcceptedForSession;
         }
         // if (result.Title == acceptWorkspaceAnswer)
         // {
@@ -279,7 +282,7 @@ internal class RenameService(
     private async Task<RenameServiceOptions> GetScopedSettings(DocumentUri uri, CancellationToken cancellationToken = default)
     {
         IScopedConfiguration scopedConfig = await config.GetScopedConfiguration(uri, cancellationToken).ConfigureAwait(false);
-        return scopedConfig.GetSection(configSection).Get<RenameServiceOptions>() ?? new RenameServiceOptions();
+        return scopedConfig.GetSection(ConfigSection).Get<RenameServiceOptions>() ?? new RenameServiceOptions();
     }
 }
 
