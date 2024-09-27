@@ -44,5 +44,5 @@ public class RenameTestTarget
     }
     public RenameTestTarget() { }
 
-    public override string ToString() => $"{FileName} L{Line} C{Column} N:{NewName} F:{ShouldFail}";
+    public override string ToString() => $"{FileName.Substring(0, FileName.Length - 4)} {Line}:{Column} N:{NewName} F:{ShouldFail}";
 }
