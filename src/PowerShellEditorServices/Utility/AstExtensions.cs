@@ -280,6 +280,37 @@ public static class AstExtensions
             typeof(ForStatementAst)
         );
 
+    public static VariableExpressionAst? FindClosestParameterInFunction(this Ast target, string functionName, string parameterName)
+    {
+        Ast? scope = target.GetScopeBoundary();
+        while (scope is not null)
+        {
+            FunctionDefinitionAst? funcDef = scope.FindAll
+            (
+                ast => ast is FunctionDefinitionAst funcDef
+                    && funcDef.StartsBefore(target)
+                    && funcDef.Name.ToLower() == functionName.ToLower()
+                    && (funcDef.Parameters ?? funcDef.Body.ParamBlock.Parameters)
+                        .SingleOrDefault(
+                            param => param.Name.GetUnqualifiedName().ToLower() == parameterName.ToLower()
+                        ) is not null
+                , false
+            ).LastOrDefault() as FunctionDefinitionAst;
+
+            if (funcDef is not null)
+            {
+                return (funcDef.Parameters ?? funcDef.Body.ParamBlock.Parameters)
+                    .SingleOrDefault
+                    (
+                        param => param.Name.GetUnqualifiedName().ToLower() == parameterName.ToLower()
+                    )?.Name; //Should not be null at this point
+            }
+
+            scope = scope.GetScopeBoundary();
+        }
+        return null;
+    }
+
     /// <summary>
     /// Returns true if the Expression is part of a variable assignment
     /// </summary>
@@ -333,9 +364,9 @@ public static class AstExtensions
     }
 
     /// <summary>
-    /// For a given string constant, determine if it is a splat, and there is at least one splat reference. If so, return a tuple of the variable assignment and the name of the splat reference. If not, return null.
+    /// For a given string constant, determine if it is a splat, and there is at least one splat reference. If so, return the location of the splat assignment.
     /// </summary>
-    public static VariableExpressionAst? FindSplatVariableAssignment(this StringConstantExpressionAst stringConstantAst)
+    public static VariableExpressionAst? FindSplatParameterReference(this StringConstantExpressionAst stringConstantAst)
     {
         if (stringConstantAst.Parent is not HashtableAst hashtableAst) { return null; }
         if (hashtableAst.Parent is not CommandExpressionAst commandAst) { return null; }
@@ -359,7 +390,7 @@ public static class AstExtensions
         return varAst.FindBefore(ast =>
             ast is StringConstantExpressionAst stringAst
             && stringAst.Value == varAst.GetUnqualifiedName()
-            && stringAst.FindSplatVariableAssignment() == varAst,
+            && stringAst.FindSplatParameterReference() == varAst,
             crossScopeBoundaries: true) as StringConstantExpressionAst;
     }
 
@@ -389,11 +420,18 @@ public static class AstExtensions
         // Splats are special, we will treat them as a top variable assignment and search both above for a parameter assignment and below for a splat reference, but we don't require a command definition within the same scope for the splat.
         if (reference is StringConstantExpressionAst stringConstant)
         {
-            VariableExpressionAst? splat = stringConstant.FindSplatVariableAssignment();
-            if (splat is not null)
+            VariableExpressionAst? splat = stringConstant.FindSplatParameterReference();
+            if (splat is null) { return null; }
+            // Find the function associated with the splat parameter reference
+            string? commandName = (splat.Parent as CommandAst)?.GetCommandName().ToLower();
+            if (commandName is null) { return null; }
+            VariableExpressionAst? splatParamReference = splat.FindClosestParameterInFunction(commandName, stringConstant.Value);
+
+            if (splatParamReference is not null)
             {
-                return reference;
+                return splatParamReference;
             }
+
         }
 
         // If nothing found, search parent scopes for a variable assignment until we hit the top of the document
@@ -432,27 +470,17 @@ public static class AstExtensions
             // TODO: This could be less complicated
             if (reference is CommandParameterAst parameterAst)
             {
-                FunctionDefinitionAst? closestFunctionMatch = scope.FindAll(
-                    ast => ast is FunctionDefinitionAst funcDef
-                    && funcDef.Name.ToLower() == (parameterAst.Parent as CommandAst)?.GetCommandName()?.ToLower()
-                    && (funcDef.Parameters ?? funcDef.Body.ParamBlock.Parameters).SingleOrDefault(
-                        param => param.Name.GetUnqualifiedName().ToLower() == name.ToLower()
-                    ) is not null
-                    , false
-                ).LastOrDefault() as FunctionDefinitionAst;
+                string? commandName = (parameterAst.Parent as CommandAst)?.GetCommandName()?.ToLower();
 
-                if (closestFunctionMatch is not null)
+                if (commandName is not null)
                 {
-                    //TODO: This should not ever be null but should probably be sure.
-                    return
-                    (closestFunctionMatch.Parameters ?? closestFunctionMatch.Body.ParamBlock.Parameters)
-                    .SingleOrDefault
-                    (
-                        param => param.Name.GetUnqualifiedName().ToLower() == name.ToLower()
-                    )?.Name;
-                };
-            };
-
+                    VariableExpressionAst? paramDefinition = parameterAst.FindClosestParameterInFunction(commandName, parameterAst.ParameterName);
+                    if (paramDefinition is not null)
+                    {
+                        return paramDefinition;
+                    }
+                }
+            }
             // Will find the outermost assignment that matches the reference.
             varAssignment = reference switch
             {
