@@ -481,6 +481,11 @@ internal class NewRenameVariableVisitor(Ast target, string newName, bool skipVer
                 NewText = '-' + NewName,
                 Range = new ScriptExtentAdapter(param.Extent)
             },
+            StringConstantExpressionAst stringAst => new TextEdit
+            {
+                NewText = NewName,
+                Range = new ScriptExtentAdapter(stringAst.Extent)
+            },
             _ => throw new InvalidOperationException($"GetRenameVariableEdit was called on an Ast that was not the target. This is a bug and you should file an issue.")
         };
     }
