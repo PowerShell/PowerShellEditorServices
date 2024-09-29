@@ -18,7 +18,7 @@ public class RefactorVariableTestCases
         new ("VariableInForloopDuplicateAssignment.ps1",       Line:  9, Column: 14),
         new ("VariableInLoop.ps1",                             Line:  1, Column:  1),
         new ("VariableInParam.ps1",                            Line: 24, Column: 16),
-        new ("VariableInPipeline.ps1",                         Line:  2, Column: 23),
+        new ("VariableInPipeline.ps1",                         Line:  3, Column: 23),
         new ("VariableInScriptblockScoped.ps1",                Line:  2, Column: 16),
         new ("VariableNestedFunctionScriptblock.ps1",          Line:  4, Column: 20),
         new ("VariableNestedScopeFunction.ps1",                Line:  1, Column:  1),
@@ -31,6 +31,7 @@ public class RefactorVariableTestCases
         new ("VariableusedInWhileLoop.ps1",                    Line:  2, Column:  5),
         new ("VariableWithinCommandAstScriptBlock.ps1",        Line:  3, Column: 75),
         new ("VariableWithinForeachObject.ps1",                Line:  2, Column:  1),
-        new ("VariableWithinHastableExpression.ps1",          Line:  3, Column: 46),
+        new ("VariableWithinHastableExpression.ps1",           Line:  3, Column: 46),
+        new ("ParameterUndefinedFunction.ps1",                 Line:  1, Column: 39, ShouldFail: true),
     ];
 }
