@@ -98,9 +98,9 @@ public class PrepareRenameHandlerTests
         {
             result = await testHandler.Handle(testParams, CancellationToken.None);
         }
-        catch (HandlerErrorException)
+        catch (HandlerErrorException err)
         {
-            Assert.True(s.ShouldFail);
+            Assert.True(s.ShouldFail, err.Message);
             return;
         }
         if (s.ShouldFail)
