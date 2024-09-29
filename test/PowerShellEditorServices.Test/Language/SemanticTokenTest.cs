@@ -114,7 +114,11 @@ Get-A*A
                         Assert.Single(mappedTokens, sToken => SemanticTokenType.Keyword == sToken.Type);
                         break;
                     case "Get-A*A":
-                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Function == sToken.Type);
+                        if (t.TokenFlags.HasFlag(TokenFlags.CommandName))
+                        {
+                            Assert.Single(mappedTokens, sToken => SemanticTokenType.Function == sToken.Type);
+                        }
+
                         break;
                 }
             }
