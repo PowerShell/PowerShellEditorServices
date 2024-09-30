@@ -5,9 +5,11 @@ public class RefactorVariableTestCases
 {
     public static RenameTestTarget[] TestCases =
     [
-        new ("SimpleVariableAssignment.ps1",                   Line:  1, Column:  1, NewName: "$Renamed"),
-        new ("SimpleVariableAssignment.ps1",                   Line:  1, Column:  1),
-        new ("SimpleVariableAssignment.ps1",                   Line:  2, Column:  1, NewName: "Wrong", ShouldFail: true),
+        new ("VariableSimpleAssignment.ps1",                   Line:  1, Column:  1),
+        new ("VariableSimpleAssignment.ps1",                   Line:  1, Column:  1, NewName: "$Renamed"),
+        new ("VariableSimpleAssignment.ps1",                   Line:  1, Column:  1, NewName: "$Bad Name", ShouldThrow: true),
+        new ("VariableSimpleAssignment.ps1",                   Line:  1, Column:  1, NewName: "Bad Name", ShouldThrow: true),
+        new ("VariableSimpleAssignment.ps1",                   Line:  1, Column:  6, NoResult: true),
         new ("VariableCommandParameter.ps1",                   Line:  3, Column: 17),
         new ("VariableCommandParameter.ps1",                   Line: 10, Column: 10),
         new ("VariableCommandParameterSplatted.ps1",           Line:  3, Column: 19 ),
@@ -32,6 +34,5 @@ public class RefactorVariableTestCases
         new ("VariableWithinCommandAstScriptBlock.ps1",        Line:  3, Column: 75),
         new ("VariableWithinForeachObject.ps1",                Line:  2, Column:  1),
         new ("VariableWithinHastableExpression.ps1",           Line:  3, Column: 46),
-        new ("ParameterUndefinedFunction.ps1",                 Line:  1, Column: 39, ShouldFail: true),
     ];
 }

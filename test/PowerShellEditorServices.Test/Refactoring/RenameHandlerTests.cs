@@ -61,9 +61,9 @@ public class RenameHandlerTests
         {
             response = await testHandler.Handle(request, CancellationToken.None);
         }
-        catch (HandlerErrorException)
+        catch (HandlerErrorException err)
         {
-            Assert.True(s.ShouldFail);
+            Assert.True(s.ShouldThrow, $"Unexpected HandlerErrorException: {err.Message}");
             return;
         }
         if (s.ShouldFail)
@@ -100,7 +100,7 @@ public class RenameHandlerTests
         }
         catch (HandlerErrorException err)
         {
-            Assert.True(s.ShouldFail, $"Shouldfail is {s.ShouldFail} and error is {err.Message}");
+            Assert.True(s.ShouldThrow, $"Unexpected HandlerErrorException: {err.Message}");
             return;
         }
         if (s.ShouldFail)

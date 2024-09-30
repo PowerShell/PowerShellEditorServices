@@ -72,9 +72,9 @@ public class PrepareRenameHandlerTests
         {
             result = await testHandler.Handle(testParams, CancellationToken.None);
         }
-        catch (HandlerErrorException)
+        catch (HandlerErrorException err)
         {
-            Assert.True(s.ShouldFail);
+            Assert.True(s.ShouldThrow, $"Unexpected HandlerErrorException: {err.Message}");
             return;
         }
         if (s.ShouldFail)
@@ -100,7 +100,7 @@ public class PrepareRenameHandlerTests
         }
         catch (HandlerErrorException err)
         {
-            Assert.True(s.ShouldFail, err.Message);
+            Assert.True(s.ShouldThrow, $"Unexpected HandlerErrorException: {err.Message}");
             return;
         }
         if (s.ShouldFail)
@@ -213,6 +213,7 @@ public class RenameTestTargetSerializable : RenameTestTarget, IXunitSerializable
         info.AddValue(nameof(Column), Column);
         info.AddValue(nameof(NewName), NewName);
         info.AddValue(nameof(ShouldFail), ShouldFail);
+        info.AddValue(nameof(ShouldThrow), ShouldThrow);
     }
 
     public void Deserialize(IXunitSerializationInfo info)
@@ -222,6 +223,7 @@ public class RenameTestTargetSerializable : RenameTestTarget, IXunitSerializable
         Column = info.GetValue<int>(nameof(Column));
         NewName = info.GetValue<string>(nameof(NewName));
         ShouldFail = info.GetValue<bool>(nameof(ShouldFail));
+        ShouldThrow = info.GetValue<bool>(nameof(ShouldThrow));
     }
 
     public static RenameTestTargetSerializable FromRenameTestTarget(RenameTestTarget t)
@@ -231,6 +233,7 @@ public class RenameTestTargetSerializable : RenameTestTarget, IXunitSerializable
             Column = t.Column,
             Line = t.Line,
             NewName = t.NewName,
-            ShouldFail = t.ShouldFail
+            ShouldFail = t.ShouldFail,
+            ShouldThrow = t.ShouldThrow
         };
 }
