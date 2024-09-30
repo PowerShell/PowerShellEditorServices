@@ -9,16 +9,6 @@ using TextEditRange = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
 namespace PowerShellEditorServices.Test.Refactoring
 {
-    internal class TextEditComparer : IComparer<TextEdit>
-    {
-        public int Compare(TextEdit a, TextEdit b)
-        {
-            return a.Range.Start.Line == b.Range.Start.Line
-            ? b.Range.End.Character - a.Range.End.Character
-            : b.Range.Start.Line - a.Range.Start.Line;
-        }
-    }
-
     public class RefactorUtilities
     {
         /// <summary>
@@ -50,44 +40,15 @@ namespace PowerShellEditorServices.Test.Refactoring
 
             return string.Join(Environment.NewLine, Lines);
         }
+    }
 
-        // public class RenameSymbolParamsSerialized : IRequest<RenameSymbolResult>, IXunitSerializable
-        // {
-        //     public string FileName { get; set; }
-        //     public int Line { get; set; }
-        //     public int Column { get; set; }
-        //     public string RenameTo { get; set; }
-
-        //     // Default constructor needed for deserialization
-        //     public RenameSymbolParamsSerialized() { }
-
-        //     // Parameterized constructor for convenience
-        //     public RenameSymbolParamsSerialized(RenameSymbolParams RenameSymbolParams)
-        //     {
-        //         FileName = RenameSymbolParams.FileName;
-        //         Line = RenameSymbolParams.Line;
-        //         Column = RenameSymbolParams.Column;
-        //         RenameTo = RenameSymbolParams.RenameTo;
-        //     }
-
-        //     public void Deserialize(IXunitSerializationInfo info)
-        //     {
-        //         FileName = info.GetValue<string>("FileName");
-        //         Line = info.GetValue<int>("Line");
-        //         Column = info.GetValue<int>("Column");
-        //         RenameTo = info.GetValue<string>("RenameTo");
-        //     }
-
-        //     public void Serialize(IXunitSerializationInfo info)
-        //     {
-        //         info.AddValue("FileName", FileName);
-        //         info.AddValue("Line", Line);
-        //         info.AddValue("Column", Column);
-        //         info.AddValue("RenameTo", RenameTo);
-        //     }
-
-        //     public override string ToString() => $"{FileName}";
-        // }
-
+    internal class TextEditComparer : IComparer<TextEdit>
+    {
+        public int Compare(TextEdit a, TextEdit b)
+        {
+            return a.Range.Start.Line == b.Range.Start.Line
+            ? b.Range.End.Character - a.Range.End.Character
+            : b.Range.Start.Line - a.Range.Start.Line;
+        }
     }
 }
