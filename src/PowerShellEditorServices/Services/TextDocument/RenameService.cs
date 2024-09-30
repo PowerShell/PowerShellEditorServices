@@ -69,6 +69,7 @@ internal class RenameService(
 
         // Since LSP 3.16 we can simply basically return a DefaultBehavior true or null to signal to the client that the position is valid for rename and it should use its default selection criteria (which is probably the language semantic highlighting or grammar). For the current scope of the rename provider, this should be fine, but we have the option to supply the specific range in the future for special cases.
         RangeOrPlaceholderRange renameSupported = new(new RenameDefaultBehavior() { DefaultBehavior = true });
+
         return (renameResponse?.Changes?[request.TextDocument.Uri].ToArray().Length > 0)
             ? renameSupported
             : null;
@@ -95,9 +96,8 @@ internal class RenameService(
             => RenameFunction(tokenToRename, scriptFile.ScriptAst, request),
 
             VariableExpressionAst
-            or ParameterAst
             or CommandParameterAst
-            or AssignmentStatementAst
+            or StringConstantExpressionAst
             => RenameVariable(tokenToRename, scriptFile.ScriptAst, request, options.createParameterAlias),
 
             _ => throw new InvalidOperationException("This should not happen as PrepareRename should have already checked for viability. File an issue if you see this.")
@@ -114,24 +114,14 @@ internal class RenameService(
 
     // TODO: We can probably merge these two methods with Generic Type constraints since they are factored into overloading
 
-    internal static TextEdit[] RenameFunction(Ast target, Ast scriptAst, RenameParams renameParams)
+    private static TextEdit[] RenameFunction(Ast target, Ast scriptAst, RenameParams renameParams)
     {
-        if (target is not (FunctionDefinitionAst or CommandAst))
-        {
-            throw new HandlerErrorException($"Asked to rename a function but the target is not a viable function type: {target.GetType()}. This is a bug, file an issue if you see this.");
-        }
-
         RenameFunctionVisitor visitor = new(target, renameParams.NewName);
         return visitor.VisitAndGetEdits(scriptAst);
     }
 
-    internal static TextEdit[] RenameVariable(Ast symbol, Ast scriptAst, RenameParams requestParams, bool createParameterAlias)
+    private static TextEdit[] RenameVariable(Ast symbol, Ast scriptAst, RenameParams requestParams, bool createParameterAlias)
     {
-        if (symbol is not (VariableExpressionAst or ParameterAst or CommandParameterAst or StringConstantExpressionAst))
-        {
-            throw new HandlerErrorException($"Asked to rename a variable but the target is not a viable variable type: {symbol.GetType()}. This is a bug, file an issue if you see this.");
-        }
-
         NewRenameVariableVisitor visitor = new(
             symbol, requestParams.NewName
         );
@@ -144,22 +134,33 @@ internal class RenameService(
     /// <returns>Ast of the token or null if no renamable symbol was found</returns>
     internal static Ast? FindRenamableSymbol(ScriptFile scriptFile, ScriptPositionAdapter position)
     {
-        Ast? ast = scriptFile.ScriptAst.FindClosest(position,
-        [
+        List<Type> renameableAstTypes = [
             // Functions
             typeof(FunctionDefinitionAst),
             typeof(CommandAst),
 
             // Variables
             typeof(VariableExpressionAst),
-            typeof(CommandParameterAst)
-            // FIXME: Splat parameter in hashtable
-        ]);
+            typeof(CommandParameterAst),
+            typeof(StringConstantExpressionAst)
+        ];
+        Ast? ast = scriptFile.ScriptAst.FindClosest(position, renameableAstTypes.ToArray());
+
+        if (ast is StringConstantExpressionAst stringAst)
+        {
+            // Only splat string parameters should be considered for evaluation.
+            if (stringAst.FindSplatParameterReference() is not null) { return stringAst; }
+            // Otherwise redo the search without stringConstant, so the most specific is a command, etc.
+            renameableAstTypes.Remove(typeof(StringConstantExpressionAst));
+            ast = scriptFile.ScriptAst.FindClosest(position, renameableAstTypes.ToArray());
+        }
+
+        // Performance optimizations
 
         // Only the function name is valid for rename, not other components
         if (ast is FunctionDefinitionAst funcDefAst)
         {
-            if (!GetFunctionNameExtent(funcDefAst).Contains(position))
+            if (!funcDefAst.GetFunctionNameExtent().Contains(position))
             {
                 return null;
             }
@@ -179,23 +180,9 @@ internal class RenameService(
             }
         }
 
+
+
         return ast;
-    }
-
-
-    /// <summary>
-    /// Return an extent that only contains the position of the name of the function, for Client highlighting purposes.
-    /// </summary>
-    internal static ScriptExtentAdapter GetFunctionNameExtent(FunctionDefinitionAst ast)
-    {
-        string name = ast.Name;
-        // FIXME: Gather dynamically from the AST and include backticks and whatnot that might be present
-        int funcLength = "function ".Length;
-        ScriptExtentAdapter funcExtent = new(ast.Extent);
-        funcExtent.Start = funcExtent.Start.Delta(0, funcLength);
-        funcExtent.End = funcExtent.Start.Delta(0, name.Length);
-
-        return funcExtent;
     }
 
     /// <summary>
@@ -322,7 +309,7 @@ internal class RenameFunctionVisitor(Ast target, string newName, bool skipVerify
             {
                 FunctionDefinitionAst f => f,
                 CommandAst command => CurrentDocument.FindFunctionDefinition(command)
-                    ?? throw new HandlerErrorException("The command to rename does not have a function definition. Renaming a function is only supported when the function is defined within the same scope"),
+                    ?? throw new HandlerErrorException("The command to rename does not have a function definition. Renaming a function is only supported when the function is defined within an accessible scope"),
                 _ => throw new Exception($"Unsupported AST type {target.GetType()} encountered")
             };
         };
@@ -373,7 +360,12 @@ internal class RenameFunctionVisitor(Ast target, string newName, bool skipVerify
                 throw new InvalidOperationException("GetRenameFunctionEdit was called on an Ast that was not the target. This is a bug and you should file an issue.");
             }
 
-            ScriptExtentAdapter functionNameExtent = RenameService.GetFunctionNameExtent(funcDef);
+            if (!IsValidFunctionName(newName))
+            {
+                throw new HandlerErrorException($"{newName} is not a valid function name.");
+            }
+
+            ScriptExtentAdapter functionNameExtent = funcDef.GetFunctionNameExtent();
 
             return new TextEdit()
             {
@@ -398,6 +390,19 @@ internal class RenameFunctionVisitor(Ast target, string newName, bool skipVerify
             NewText = newName,
             Range = new ScriptExtentAdapter(funcName.Extent)
         };
+    }
+
+    internal static bool IsValidFunctionName(string name)
+    {
+        // Allows us to supply function:varname or varname and get a proper result
+        string candidate = "function " + name.TrimStart('$').TrimStart('-') + " {}";
+        Parser.ParseInput(candidate, out Token[] tokens, out _);
+        return tokens.Length == 5
+            && tokens[0].Kind == TokenKind.Function
+            && tokens[1].Kind == TokenKind.Identifier
+            && tokens[2].Kind == TokenKind.LCurly
+            && tokens[3].Kind == TokenKind.RCurly
+            && tokens[4].Kind == TokenKind.EndOfInput;
     }
 }
 
@@ -430,7 +435,7 @@ internal class NewRenameVariableVisitor(Ast target, string newName, bool skipVer
             VariableDefinition = target.GetTopVariableAssignment();
             if (VariableDefinition is null)
             {
-                throw new HandlerErrorException("The element to rename does not have a definition. Renaming an element is only supported when the element is defined within the same scope");
+                throw new HandlerErrorException("The variable element to rename does not have a definition. Renaming an element is only supported when the variable element is defined within an accessible scope");
             }
         }
         else if (CurrentDocument != ast.GetHighestParent())
@@ -464,23 +469,50 @@ internal class NewRenameVariableVisitor(Ast target, string newName, bool skipVer
     {
         return ast switch
         {
-            VariableExpressionAst var => new TextEdit
-            {
-                NewText = '$' + NewName,
-                Range = new ScriptExtentAdapter(var.Extent)
-            },
-            CommandParameterAst param => new TextEdit
-            {
-                NewText = '-' + NewName,
-                Range = new ScriptExtentAdapter(param.Extent)
-            },
-            StringConstantExpressionAst stringAst => new TextEdit
-            {
-                NewText = NewName,
-                Range = new ScriptExtentAdapter(stringAst.Extent)
-            },
+            VariableExpressionAst var => !IsValidVariableName(NewName)
+                ? throw new HandlerErrorException($"${NewName} is not a valid variable name.")
+                : new TextEdit
+                {
+                    NewText = '$' + NewName,
+                    Range = new ScriptExtentAdapter(var.Extent)
+                },
+            StringConstantExpressionAst stringAst => !IsValidVariableName(NewName)
+                ? throw new Exception($"{NewName} is not a valid variable name.")
+                : new TextEdit
+                {
+                    NewText = NewName,
+                    Range = new ScriptExtentAdapter(stringAst.Extent)
+                },
+            CommandParameterAst param => !IsValidCommandParameterName(NewName)
+                ? throw new Exception($"-{NewName} is not a valid command parameter name.")
+                : new TextEdit
+                {
+                    NewText = '-' + NewName,
+                    Range = new ScriptExtentAdapter(param.Extent)
+                },
             _ => throw new InvalidOperationException($"GetRenameVariableEdit was called on an Ast that was not the target. This is a bug and you should file an issue.")
         };
+    }
+
+    internal static bool IsValidVariableName(string name)
+    {
+        // Allows us to supply $varname or varname and get a proper result
+        string candidate = '$' + name.TrimStart('$').TrimStart('-');
+        Parser.ParseInput(candidate, out Token[] tokens, out _);
+        return tokens.Length is 2
+            && tokens[0].Kind == TokenKind.Variable
+            && tokens[1].Kind == TokenKind.EndOfInput;
+    }
+
+    internal static bool IsValidCommandParameterName(string name)
+    {
+        // Allows us to supply -varname or varname and get a proper result
+        string candidate = "Command -" + name.TrimStart('$').TrimStart('-');
+        Parser.ParseInput(candidate, out Token[] tokens, out _);
+        return tokens.Length == 3
+            && tokens[0].Kind == TokenKind.Command
+            && tokens[1].Kind == TokenKind.Parameter
+            && tokens[2].Kind == TokenKind.EndOfInput;
     }
 }
 

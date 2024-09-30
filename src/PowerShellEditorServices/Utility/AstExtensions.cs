@@ -523,4 +523,19 @@ public static class AstExtensions
         return false;
     }
 
+
+    /// <summary>
+    /// Return an extent that only contains the position of the name of the function, for Client highlighting purposes.
+    /// </summary>
+    internal static ScriptExtentAdapter GetFunctionNameExtent(this FunctionDefinitionAst ast)
+    {
+        string name = ast.Name;
+        // FIXME: Gather dynamically from the AST and include backticks and whatnot that might be present
+        int funcLength = "function ".Length;
+        ScriptExtentAdapter funcExtent = new(ast.Extent);
+        funcExtent.Start = funcExtent.Start.Delta(0, funcLength);
+        funcExtent.End = funcExtent.Start.Delta(0, name.Length);
+
+        return funcExtent;
+    }
 }
