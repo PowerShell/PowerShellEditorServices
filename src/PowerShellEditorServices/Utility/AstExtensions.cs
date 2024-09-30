@@ -196,42 +196,6 @@ public static class AstExtensions
             ? ast.VariablePath.ToString()
             : ast.VariablePath.ToString().Split(':').Last();
 
-    /// <summary>
-    /// Finds the closest variable definition to the given reference.
-    /// </summary>
-    public static VariableExpressionAst? FindVariableDefinition(this Ast ast, Ast reference)
-    {
-        string? name = reference switch
-        {
-            VariableExpressionAst var => var.GetUnqualifiedName(),
-            CommandParameterAst param => param.ParameterName,
-            // StringConstantExpressionAst stringConstant => ,
-            _ => null
-        };
-        if (name is null) { return null; }
-
-        return ast.FindAll(candidate =>
-        {
-            if (candidate is not VariableExpressionAst candidateVar) { return false; }
-            if (candidateVar.GetUnqualifiedName() != name) { return false; }
-            if
-            (
-                // TODO: Replace with a position match
-                candidateVar.Extent.EndLineNumber > reference.Extent.StartLineNumber
-                ||
-                (
-                    candidateVar.Extent.EndLineNumber == reference.Extent.StartLineNumber
-                    && candidateVar.Extent.EndColumnNumber >= reference.Extent.StartColumnNumber
-                )
-            )
-            {
-                return false;
-            }
-
-            return candidateVar.HasParent(reference.Parent);
-        }, true).Cast<VariableExpressionAst>().LastOrDefault();
-    }
-
     public static Ast GetHighestParent(this Ast ast)
         => ast.Parent is null ? ast : ast.Parent.GetHighestParent();
 
@@ -405,7 +369,6 @@ public static class AstExtensions
         return false;
     }
 
-
     /// <summary>
     /// Finds the highest variable expression within a variable assignment within the current scope of the provided variable reference. Returns the original object if it is the highest assignment or null if no assignment was found. It is assumed the reference is part of a larger Ast.
     /// </summary>
@@ -544,62 +507,6 @@ public static class AstExtensions
         }
 
         return null;
-    }
-
-    public static bool WithinScope(this Ast Target, Ast Child)
-    {
-        Ast childParent = Child.Parent;
-        Ast? TargetScope = Target.GetScopeBoundary();
-        while (childParent != null)
-        {
-            if (childParent is FunctionDefinitionAst FuncDefAst)
-            {
-                if (Child is VariableExpressionAst VarExpAst && !IsVariableExpressionAssignedInTargetScope(VarExpAst, FuncDefAst))
-                {
-
-                }
-                else
-                {
-                    break;
-                }
-            }
-            if (childParent == TargetScope)
-            {
-                break;
-            }
-            childParent = childParent.Parent;
-        }
-        return childParent == TargetScope;
-    }
-
-    public static bool IsVariableExpressionAssignedInTargetScope(this VariableExpressionAst node, Ast scope)
-    {
-        bool r = false;
-
-        List<VariableExpressionAst> VariableAssignments = node.FindAll(ast =>
-        {
-            return ast is VariableExpressionAst VarDef &&
-            VarDef.Parent is AssignmentStatementAst or ParameterAst &&
-            VarDef.VariablePath.UserPath.ToLower() == node.VariablePath.UserPath.ToLower() &&
-            // Look Backwards from the node above
-            (VarDef.Extent.EndLineNumber < node.Extent.StartLineNumber ||
-            (VarDef.Extent.EndColumnNumber <= node.Extent.StartColumnNumber &&
-            VarDef.Extent.EndLineNumber <= node.Extent.StartLineNumber)) &&
-            // Must be within the the designated scope
-            VarDef.Extent.StartLineNumber >= scope.Extent.StartLineNumber;
-        }, true).Cast<VariableExpressionAst>().ToList();
-
-        if (VariableAssignments.Count > 0)
-        {
-            r = true;
-        }
-        // Node is probably the first Assignment Statement within scope
-        if (node.Parent is AssignmentStatementAst && node.Extent.StartLineNumber >= scope.Extent.StartLineNumber)
-        {
-            r = true;
-        }
-
-        return r;
     }
 
     public static bool HasParent(this Ast ast, Ast parent)

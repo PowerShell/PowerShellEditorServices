@@ -132,13 +132,6 @@ internal class RenameService(
             throw new HandlerErrorException($"Asked to rename a variable but the target is not a viable variable type: {symbol.GetType()}. This is a bug, file an issue if you see this.");
         }
 
-        // RenameVariableVisitor visitor = new(
-        //     requestParams.NewName,
-        //     symbol.Extent.StartLineNumber,
-        //     symbol.Extent.StartColumnNumber,
-        //     scriptAst,
-        //     createParameterAlias
-        // );
         NewRenameVariableVisitor visitor = new(
             symbol, requestParams.NewName
         );
