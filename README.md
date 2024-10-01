@@ -159,6 +159,7 @@ The focus of the rename support is on quick updates to variables or functions wi
 ❌ Dynamic Parameters are not supported
 ❌ Dynamically constructed splat parameters will not be renamed/updated (e.g. `$splat = @{};$splat.a = 5;Do-Thing @a`)
 ❌ Scoped variables (e.g. $SCRIPT:test) are not currently supported
+❌ Renaming a variable inside of a scriptblock that is used in unscoped operations like `Foreach-Parallel` or `Start-Job` and the variable is not defined within the scriptblock is not supported and can have unexpected results.
 
 📄📄 Filing a Rename Issue
 
