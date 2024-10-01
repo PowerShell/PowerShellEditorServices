@@ -8,7 +8,7 @@
 functionality needed to enable a consistent and robust PowerShell development
 experience in almost any editor or integrated development environment (IDE).
 
-## [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) clients using PowerShell Editor Services:
+## [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) clients using PowerShell Editor Services
 
 - [PowerShell for Visual Studio Code](https://github.com/PowerShell/vscode-powershell)
 > [!NOTE]
@@ -150,14 +150,15 @@ PowerShell is not a statically typed language. As such, the renaming of function
 There are several edge case scenarios which may exist where rename is difficult or impossible, or unable to be determined due to the dynamic scoping nature of PowerShell.
 
 The focus of the rename support is on quick updates to variables or functions within a self-contained script file. It is not intended for module developers to find and rename a symbol across multiple files, which is very difficult to do as the relationships are primarily only computed at runtime and not possible to be statically analyzed.
+👍👍 [Implemented and Tested Rename Scenarios](https://github.com/PowerShell/PowerShellEditorServices/blob/main/test/PowerShellEditorServices.Test.Shared/Refactoring)
 
 🤚🤚 Unsupported Scenarios
 
-❌ Renaming can only be done within a single file. Renaming symbols across multiple files is not supported.
-❌ Files containing dotsourcing are currently not supported.
-❌ Functions or variables must have a corresponding definition within their scope to be renamed. If we cannot find the original definition of a variable or function, the rename will not be supported.
-
-👍👍 [Implemented and Tested Rename Scenarios](https://github.com/PowerShell/PowerShellEditorServices/blob/main/test/PowerShellEditorServices.Test.Shared/Refactoring)
+❌ Renaming can only be done within a single file. Renaming symbols across multiple files is not supported, even if those are dotsourced from the source file.
+❌ Functions or variables must have a corresponding definition within their scope or above to be renamed. If we cannot find the original definition of a variable or function, the rename will not be supported.
+❌ Dynamic Parameters are not supported
+❌ Dynamically constructed splat parameters will not be renamed/updated (e.g. `$splat = @{};$splat.a = 5;Do-Thing @a`)
+❌ Scoped variables (e.g. $SCRIPT:test) are not currently supported
 
 📄📄 Filing a Rename Issue
 
