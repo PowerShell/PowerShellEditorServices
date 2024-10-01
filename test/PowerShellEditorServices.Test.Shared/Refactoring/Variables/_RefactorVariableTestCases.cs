@@ -11,6 +11,7 @@ public class RefactorVariableTestCases
         new ("VariableSimpleAssignment.ps1",                   Line:  1, Column:  1, NewName: "Bad Name", ShouldThrow: true),
         new ("VariableSimpleAssignment.ps1",                   Line:  1, Column:  6, NoResult: true),
         new ("VariableCommandParameter.ps1",                   Line:  3, Column: 17),
+        new ("VariableCommandParameter.ps1",                   Line:  3, Column: 17, NewName: "-Renamed"),
         new ("VariableCommandParameter.ps1",                   Line: 10, Column: 10),
         new ("VariableCommandParameterSplatted.ps1",           Line:  3, Column: 19 ),
         new ("VariableCommandParameterSplatted.ps1",           Line: 21, Column: 12),
