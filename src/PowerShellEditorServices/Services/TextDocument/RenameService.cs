@@ -396,13 +396,14 @@ internal class RenameFunctionVisitor(Ast target, string newName, bool skipVerify
     {
         // Allows us to supply function:varname or varname and get a proper result
         string candidate = "function " + name.TrimStart('$').TrimStart('-') + " {}";
-        Parser.ParseInput(candidate, out Token[] tokens, out _);
-        return tokens.Length == 5
-            && tokens[0].Kind == TokenKind.Function
-            && tokens[1].Kind == TokenKind.Identifier
-            && tokens[2].Kind == TokenKind.LCurly
-            && tokens[3].Kind == TokenKind.RCurly
-            && tokens[4].Kind == TokenKind.EndOfInput;
+        Ast ast = Parser.ParseInput(candidate, out _, out ParseError[] errors);
+        if (errors.Length > 0)
+        {
+            return false;
+        }
+
+        return (ast.Find(a => a is FunctionDefinitionAst, false) as FunctionDefinitionAst)?
+            .Name is not null;
     }
 }
 
