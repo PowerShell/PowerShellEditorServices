@@ -132,7 +132,7 @@ internal class RenameService(
     /// Finds the most specific renamable symbol at the given position
     /// </summary>
     /// <returns>Ast of the token or null if no renamable symbol was found</returns>
-    internal static Ast? FindRenamableSymbol(ScriptFile scriptFile, ScriptPositionAdapter position)
+    internal static Ast? FindRenamableSymbol(ScriptFile scriptFile, IScriptPosition position)
     {
         List<Type> renameableAstTypes = [
             // Functions
@@ -604,26 +604,4 @@ internal record ScriptExtentAdapter(IScriptExtent extent) : IScriptExtent
     public int StartColumnNumber => extent.StartColumnNumber;
     public int StartLineNumber => extent.StartLineNumber;
     public string Text => extent.Text;
-
-    public bool Contains(IScriptPosition position) => Contains(new ScriptPositionAdapter(position));
-
-    public bool Contains(ScriptPositionAdapter position)
-    {
-        if (position.Line < Start.Line || position.Line > End.Line)
-        {
-            return false;
-        }
-
-        if (position.Line == Start.Line && position.Character < Start.Character)
-        {
-            return false;
-        }
-
-        if (position.Line == End.Line && position.Character > End.Character)
-        {
-            return false;
-        }
-
-        return true;
-    }
 }

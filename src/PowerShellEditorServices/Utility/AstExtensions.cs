@@ -10,77 +10,161 @@ using Microsoft.PowerShell.EditorServices.Services;
 
 namespace Microsoft.PowerShell.EditorServices.Language;
 
+// NOTE: A lot of this is reimplementation of https://github.com/PowerShell/PowerShell/blob/2d5d702273060b416aea9601e939ff63bb5679c9/src/System.Management.Automation/engine/parser/Position.cs which is internal and sealed.
+
 public static class AstExtensions
 {
-
-    internal static bool Contains(this Ast ast, Ast other) => ast.Find(ast => ast == other, true) != null;
-    internal static bool Contains(this Ast ast, IScriptPosition position) => new ScriptExtentAdapter(ast.Extent).Contains(position);
-
-    internal static bool IsAfter(this Ast ast, Ast other)
+    private const int IS_BEFORE = -1;
+    private const int IS_AFTER = 1;
+    private const int IS_EQUAL = 0;
+    internal static int CompareTo(this IScriptPosition position, IScriptPosition other)
     {
-        return
-            ast.Extent.StartLineNumber > other.Extent.EndLineNumber
-            ||
-            (
-                ast.Extent.StartLineNumber == other.Extent.EndLineNumber
-                && ast.Extent.StartColumnNumber > other.Extent.EndColumnNumber
-            );
+        if (position.LineNumber < other.LineNumber)
+        {
+            return IS_BEFORE;
+        }
+        else if (position.LineNumber > other.LineNumber)
+        {
+            return IS_AFTER;
+        }
+        else //Lines are equal
+        {
+            if (position.ColumnNumber < other.ColumnNumber)
+            {
+                return IS_BEFORE;
+            }
+            else if (position.ColumnNumber > other.ColumnNumber)
+            {
+                return IS_AFTER;
+            }
+            else //Columns are equal
+            {
+                return IS_EQUAL;
+            }
+        }
     }
+
+    internal static bool IsEqual(this IScriptPosition position, IScriptPosition other)
+        => position.CompareTo(other) == IS_EQUAL;
+
+    internal static bool IsBefore(this IScriptPosition position, IScriptPosition other)
+        => position.CompareTo(other) == IS_BEFORE;
+
+    internal static bool IsAfter(this IScriptPosition position, IScriptPosition other)
+        => position.CompareTo(other) == IS_AFTER;
+
+    internal static bool Contains(this IScriptExtent extent, IScriptPosition position)
+        => extent.StartScriptPosition.IsEqual(position)
+            || extent.EndScriptPosition.IsEqual(position)
+            || (extent.StartScriptPosition.IsBefore(position) && extent.EndScriptPosition.IsAfter(position));
+
+    internal static bool Contains(this IScriptExtent extent, IScriptExtent other)
+        => extent.Contains(other.StartScriptPosition) && extent.Contains(other.EndScriptPosition);
+
+    internal static bool StartsBefore(this IScriptExtent extent, IScriptExtent other)
+        => extent.StartScriptPosition.IsBefore(other.StartScriptPosition);
+
+    internal static bool StartsBefore(this IScriptExtent extent, IScriptPosition other)
+        => extent.StartScriptPosition.IsBefore(other);
+
+    internal static bool StartsAfter(this IScriptExtent extent, IScriptExtent other)
+        => extent.StartScriptPosition.IsAfter(other.StartScriptPosition);
+
+    internal static bool StartsAfter(this IScriptExtent extent, IScriptPosition other)
+        => extent.StartScriptPosition.IsAfter(other);
+
+    internal static bool IsBefore(this IScriptExtent extent, IScriptExtent other)
+        => !other.Contains(extent)
+        && !extent.Contains(other)
+        && extent.StartScriptPosition.IsBefore(other.StartScriptPosition);
+
+    internal static bool IsAfter(this IScriptExtent extent, IScriptExtent other)
+        => !other.Contains(extent)
+        && !extent.Contains(other)
+        && extent.StartScriptPosition.IsAfter(other.StartScriptPosition);
+
+    internal static bool Contains(this Ast ast, Ast other)
+        => ast.Extent.Contains(other.Extent);
+
+    internal static bool Contains(this Ast ast, IScriptPosition position)
+        => ast.Extent.Contains(position);
+
+    internal static bool Contains(this Ast ast, IScriptExtent position)
+        => ast.Extent.Contains(position);
 
     internal static bool IsBefore(this Ast ast, Ast other)
-    {
-        return
-            ast.Extent.EndLineNumber < other.Extent.StartLineNumber
-            ||
-            (
-                ast.Extent.EndLineNumber == other.Extent.StartLineNumber
-                && ast.Extent.EndColumnNumber < other.Extent.StartColumnNumber
-            );
-    }
+        => ast.Extent.IsBefore(other.Extent);
+
+    internal static bool IsAfter(this Ast ast, Ast other)
+        => ast.Extent.IsAfter(other.Extent);
 
     internal static bool StartsBefore(this Ast ast, Ast other)
-    {
-        return
-            ast.Extent.StartLineNumber < other.Extent.StartLineNumber
-            ||
-            (
-                ast.Extent.StartLineNumber == other.Extent.StartLineNumber
-                && ast.Extent.StartColumnNumber < other.Extent.StartColumnNumber
-            );
-    }
+        => ast.Extent.StartsBefore(other.Extent);
+
+    internal static bool StartsBefore(this Ast ast, IScriptExtent other)
+        => ast.Extent.StartsBefore(other);
+
+    internal static bool StartsBefore(this Ast ast, IScriptPosition other)
+        => ast.Extent.StartsBefore(other);
 
     internal static bool StartsAfter(this Ast ast, Ast other)
+        => ast.Extent.StartsAfter(other.Extent);
+
+    internal static bool StartsAfter(this Ast ast, IScriptExtent other)
+        => ast.Extent.StartsAfter(other);
+
+    internal static bool StartsAfter(this Ast ast, IScriptPosition other)
+        => ast.Extent.StartsAfter(other);
+
+    /// <summary>
+    /// Finds the outermost Ast that starts before the target and matches the predicate within the scope. Returns null if none found. Useful for finding definitions of variable/function references
+    /// </summary>
+    /// <param name="target">The target Ast to search from</param>
+    /// <param name="predicate">The predicate to match the Ast against</param>
+    /// <param name="crossScopeBoundaries">If true, the search will continue until the topmost scope boundary is reached</param>
+    internal static Ast? FindStartsBefore(this Ast target, Func<Ast, bool> predicate, bool crossScopeBoundaries = false)
     {
-        return
-            ast.Extent.StartLineNumber < other.Extent.StartLineNumber
-            ||
-            (
-                ast.Extent.StartLineNumber == other.Extent.StartLineNumber
-                && ast.Extent.StartColumnNumber < other.Extent.StartColumnNumber
-            );
+        Ast? scope = target.GetScopeBoundary();
+        do
+        {
+            Ast? result = scope?.Find(ast => ast.StartsBefore(target) && predicate(ast)
+            , searchNestedScriptBlocks: false);
+
+            if (result is not null)
+            {
+                return result;
+            }
+
+            scope = scope?.GetScopeBoundary();
+        } while (crossScopeBoundaries && scope is not null);
+
+        return null;
     }
 
-    internal static Ast? FindBefore(this Ast target, Func<Ast, bool> predicate, bool crossScopeBoundaries = false)
+    /// <summary>
+    /// Finds all AST items that start before the target and match the predicate within the scope. Items are returned in order from closest to furthest. Returns an empty list if none found. Useful for finding definitions of variable/function references
+    /// </summary>
+    internal static IEnumerable<Ast> FindAllStartsBefore(this Ast target, Func<Ast, bool> predicate, bool crossScopeBoundaries = false)
     {
-        Ast? scope = crossScopeBoundaries
-            ? target.FindParents(typeof(ScriptBlockAst)).LastOrDefault()
-            : target.GetScopeBoundary();
-        return scope?.Find(ast => ast.IsBefore(target) && predicate(ast), false);
+        Ast? scope = target.GetScopeBoundary();
+        do
+        {
+            IEnumerable<Ast> results = scope?.FindAll(ast => ast.StartsBefore(target) && predicate(ast)
+            , searchNestedScriptBlocks: false) ?? [];
+
+            foreach (Ast result in results.Reverse())
+            {
+                yield return result;
+            }
+            scope = scope?.GetScopeBoundary();
+        } while (crossScopeBoundaries && scope is not null);
     }
 
-    internal static IEnumerable<Ast> FindAllBefore(this Ast target, Func<Ast, bool> predicate, bool crossScopeBoundaries = false)
-    {
-        Ast? scope = crossScopeBoundaries
-            ? target.FindParents(typeof(ScriptBlockAst)).LastOrDefault()
-            : target.GetScopeBoundary();
-        return scope?.FindAll(ast => ast.IsBefore(target) && predicate(ast), false) ?? [];
-    }
+    internal static Ast? FindStartsAfter(this Ast target, Func<Ast, bool> predicate, bool searchNestedScriptBlocks = false)
+        => target.Parent.Find(ast => ast.StartsAfter(target) && predicate(ast), searchNestedScriptBlocks);
 
-    internal static Ast? FindAfter(this Ast target, Func<Ast, bool> predicate, bool crossScopeBoundaries = false)
-        => target.Parent.Find(ast => ast.IsAfter(target) && predicate(ast), crossScopeBoundaries);
-
-    internal static IEnumerable<Ast> FindAllAfter(this Ast target, Func<Ast, bool> predicate, bool crossScopeBoundaries = false)
-        => target.Parent.FindAll(ast => ast.IsAfter(target) && predicate(ast), crossScopeBoundaries);
+    internal static IEnumerable<Ast> FindAllStartsAfter(this Ast target, Func<Ast, bool> predicate, bool searchNestedScriptBlocks = false)
+        => target.Parent.FindAllStartsAfter(ast => ast.StartsAfter(target) && predicate(ast), searchNestedScriptBlocks);
 
     /// <summary>
     /// Finds the most specific Ast at the given script position, or returns null if none found.<br/>
@@ -89,52 +173,28 @@ public static class AstExtensions
     /// </summary>
     internal static Ast? FindClosest(this Ast ast, IScriptPosition position, Type[]? allowedTypes)
     {
-        // Short circuit quickly if the position is not in the provided range, no need to traverse if not
-        // TODO: Maybe this should be an exception instead? I mean technically its not found but if you gave a position outside the file something very wrong probably happened.
-        if (!new ScriptExtentAdapter(ast.Extent).Contains(position)) { return null; }
+        // Short circuit quickly if the position is not in the provided ast, no need to traverse if not
+        if (!ast.Contains(position)) { return null; }
 
-        // This will be updated with each loop, and re-Find to dig deeper
         Ast? mostSpecificAst = null;
         Ast? currentAst = ast;
-
         do
         {
             currentAst = currentAst.Find(thisAst =>
             {
+                // Always starts with the current item, we can skip it
                 if (thisAst == mostSpecificAst) { return false; }
 
-                int line = position.LineNumber;
-                int column = position.ColumnNumber;
+                if (allowedTypes is not null && !allowedTypes.Contains(thisAst.GetType())) { return false; }
 
-                // Performance optimization, skip statements that don't contain the position
-                if (
-                    thisAst.Extent.EndLineNumber < line
-                    || thisAst.Extent.StartLineNumber > line
-                    || (thisAst.Extent.EndLineNumber == line && thisAst.Extent.EndColumnNumber < column)
-                    || (thisAst.Extent.StartLineNumber == line && thisAst.Extent.StartColumnNumber > column)
-                )
-                {
-                    return false;
-                }
-
-                if (allowedTypes is not null && !allowedTypes.Contains(thisAst.GetType()))
-                {
-                    return false;
-                }
-
-                if (new ScriptExtentAdapter(thisAst.Extent).Contains(position))
+                if (thisAst.Contains(position))
                 {
                     mostSpecificAst = thisAst;
-                    return true; //Stops this particular find and looks more specifically
+                    return true; //Restart the search within the more specific AST
                 }
 
                 return false;
             }, true);
-
-            if (currentAst is not null)
-            {
-                mostSpecificAst = currentAst;
-            }
         } while (currentAst is not null);
 
         return mostSpecificAst;
@@ -148,47 +208,24 @@ public static class AstExtensions
 
     public static FunctionDefinitionAst? FindFunctionDefinition(this Ast ast, CommandAst command)
     {
+        if (!ast.Contains(command)) { return null; } // Short circuit if the command is not in the ast
+
         string? name = command.GetCommandName()?.ToLower();
         if (name is null) { return null; }
 
-        FunctionDefinitionAst[] candidateFuncDefs = ast.FindAll(ast =>
+        // NOTE: There should only be one match most of the time, the only other cases is when a function is defined multiple times (bad practice). If there are multiple definitions, the candidate "closest" to the command, which would be the last one found, is the appropriate one
+        return command.FindAllStartsBefore(ast =>
         {
-            if (ast is not FunctionDefinitionAst funcDef)
-            {
-                return false;
-            }
+            if (ast is not FunctionDefinitionAst funcDef) { return false; }
 
-            if (funcDef.Name.ToLower() != name)
-            {
-                return false;
-            }
+            if (funcDef.Name.ToLower() != name) { return false; }
 
             // If the function is recursive (calls itself), its parent is a match unless a more specific in-scope function definition comes next (this is a "bad practice" edge case)
             // TODO: Consider a simple "contains" match
-            if (command.HasParent(funcDef))
-            {
-                return true;
-            }
-
-            if
-            (
-                // TODO: Replace with a position match
-                funcDef.Extent.EndLineNumber > command.Extent.StartLineNumber
-                ||
-                (
-                    funcDef.Extent.EndLineNumber == command.Extent.StartLineNumber
-                    && funcDef.Extent.EndColumnNumber >= command.Extent.StartColumnNumber
-                )
-            )
-            {
-                return false;
-            }
+            if (command.HasParent(funcDef)) { return true; }
 
             return command.HasParent(funcDef.Parent); // The command is in the same scope as the function definition
-        }, true).Cast<FunctionDefinitionAst>().ToArray();
-
-        // There should only be one match most of the time, the only other cases is when a function is defined multiple times (bad practice). If there are multiple definitions, the candidate "closest" to the command, which would be the last one found, is the appropriate one
-        return candidateFuncDefs.LastOrDefault();
+        }, true).FirstOrDefault() as FunctionDefinitionAst;
     }
 
     public static string GetUnqualifiedName(this VariableExpressionAst ast)
@@ -211,19 +248,19 @@ public static class AstExtensions
     /// <summary>
     /// Gets the closest parent that matches the specified type or null if none found.
     /// </summary>
-    public static Ast? FindParent(this Ast ast, params Type[] type)
-        => FindParents(ast, type).FirstOrDefault();
+    public static Ast? FindParent(this Ast ast, params Type[] types)
+        => FindParents(ast, types).FirstOrDefault();
 
     /// <summary>
     /// Returns an array of parents in order from closest to furthest
     /// </summary>
-    public static Ast[] FindParents(this Ast ast, params Type[] type)
+    public static Ast[] FindParents(this Ast ast, params Type[] types)
     {
         List<Ast> parents = new();
         Ast parent = ast.Parent;
         while (parent is not null)
         {
-            if (type.Contains(parent.GetType()))
+            if (types.Contains(parent.GetType()))
             {
                 parents.Add(parent);
             }
@@ -336,7 +373,7 @@ public static class AstExtensions
         if (hashtableAst.Parent is not CommandExpressionAst commandAst) { return null; }
         if (commandAst.Parent is not AssignmentStatementAst assignmentAst) { return null; }
         if (assignmentAst.Left is not VariableExpressionAst leftAssignVarAst) { return null; }
-        return assignmentAst.FindAfter(ast =>
+        return assignmentAst.FindStartsAfter(ast =>
             ast is VariableExpressionAst var
             && var.Splatted
             && var.GetUnqualifiedName().ToLower() == leftAssignVarAst.GetUnqualifiedName().ToLower()
@@ -351,7 +388,7 @@ public static class AstExtensions
     {
         if (!varAst.Splatted) { throw new InvalidOperationException("The provided variable reference is not a splat and cannot be used with FindSplatVariableAssignment"); }
 
-        return varAst.FindBefore(ast =>
+        return varAst.FindStartsBefore(ast =>
             ast is StringConstantExpressionAst stringAst
             && stringAst.Value == varAst.GetUnqualifiedName()
             && stringAst.FindSplatParameterReference() == varAst,
