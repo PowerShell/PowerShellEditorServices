@@ -121,14 +121,17 @@ public static class AstExtensions
     /// </summary>
     /// <param name="target">The target Ast to search from</param>
     /// <param name="predicate">The predicate to match the Ast against</param>
-    /// <param name="crossScopeBoundaries">If true, the search will continue until the topmost scope boundary is reached</param>
-    internal static Ast? FindStartsBefore(this Ast target, Func<Ast, bool> predicate, bool crossScopeBoundaries = false)
+    /// <param name="crossScopeBoundaries">If true, the search will continue until the topmost scope boundary is
+    /// <param name="searchNestedScriptBlocks">Searches scriptblocks within the parent at each level. This can be helpful to find "side" scopes but affects performance</param>
+    internal static Ast? FindStartsBefore(this Ast target, Func<Ast, bool> predicate, bool crossScopeBoundaries = false, bool searchNestedScriptBlocks = false)
     {
         Ast? scope = target.GetScopeBoundary();
         do
         {
-            Ast? result = scope?.Find(ast => ast.StartsBefore(target) && predicate(ast)
-            , searchNestedScriptBlocks: false);
+            Ast? result = scope?.Find(ast =>
+                ast.StartsBefore(target)
+                && predicate(ast)
+            , searchNestedScriptBlocks);
 
             if (result is not null)
             {
@@ -140,6 +143,12 @@ public static class AstExtensions
 
         return null;
     }
+
+    internal static T? FindStartsBefore<T>(this Ast target, Func<T, bool> predicate, bool crossScopeBoundaries = false, bool searchNestedScriptBlocks = false) where T : Ast
+        => target.FindStartsBefore
+        (
+            ast => ast is T type && predicate(type), crossScopeBoundaries, searchNestedScriptBlocks
+        ) as T;
 
     /// <summary>
     /// Finds all AST items that start before the target and match the predicate within the scope. Items are returned in order from closest to furthest. Returns an empty list if none found. Useful for finding definitions of variable/function references
@@ -252,21 +261,19 @@ public static class AstExtensions
         => FindParents(ast, types).FirstOrDefault();
 
     /// <summary>
-    /// Returns an array of parents in order from closest to furthest
+    /// Returns an enumerable of parents, in order of closest to furthest, that match the specified types.
     /// </summary>
-    public static Ast[] FindParents(this Ast ast, params Type[] types)
+    public static IEnumerable<Ast> FindParents(this Ast ast, params Type[] types)
     {
-        List<Ast> parents = new();
         Ast parent = ast.Parent;
         while (parent is not null)
         {
             if (types.Contains(parent.GetType()))
             {
-                parents.Add(parent);
+                yield return parent;
             }
             parent = parent.Parent;
         }
-        return parents.ToArray();
     }
 
     /// <summary>
@@ -442,10 +449,8 @@ public static class AstExtensions
             StringConstantExpressionAst stringConstantExpressionAst => stringConstantExpressionAst.Value,
             _ => throw new NotSupportedException("The provided reference is not a variable reference type.")
         };
-
-        Ast? scope = reference.GetScopeBoundary();
-
         VariableExpressionAst? varAssignment = null;
+        Ast? scope = reference;
 
         while (scope is not null)
         {
@@ -481,34 +486,29 @@ public static class AstExtensions
                     }
                 }
             }
-            // Will find the outermost assignment that matches the reference.
+
+            // Will find the outermost assignment within the scope that matches the reference.
             varAssignment = reference switch
             {
-                VariableExpressionAst var => scope.Find
-                (
-                    ast => ast is VariableExpressionAst var
-                            && ast.IsBefore(reference)
-                            &&
-                            (
-                                (var.IsVariableAssignment() && !var.IsOperatorAssignment())
-                                || var.IsScopedVariableAssignment()
-                            )
-                            && var.GetUnqualifiedName().ToLower() == name.ToLower()
-                    , searchNestedScriptBlocks: false
-                ) as VariableExpressionAst,
+                VariableExpressionAst => scope.FindStartsBefore<VariableExpressionAst>(var =>
+                    var.GetUnqualifiedName().ToLower() == name.ToLower()
+                    && (
+                        (var.IsVariableAssignment() && !var.IsOperatorAssignment())
+                        || var.IsScopedVariableAssignment()
+                    )
+                    , crossScopeBoundaries: false, searchNestedScriptBlocks: false
+                ),
 
-                CommandParameterAst param => scope.Find
-                (
-                    ast => ast is VariableExpressionAst var
-                            && ast.IsBefore(reference)
-                            && var.GetUnqualifiedName().ToLower() == name.ToLower()
-                            && var.Parent is ParameterAst paramAst
-                            && paramAst.TryGetFunction(out FunctionDefinitionAst? foundFunction)
-                            && foundFunction?.Name.ToLower()
-                                == (param.Parent as CommandAst)?.GetCommandName()?.ToLower()
-                            && foundFunction?.Parent?.Parent == scope
-                    , searchNestedScriptBlocks: true //This might hit side scopes...
-                ) as VariableExpressionAst,
+                CommandParameterAst param => scope.FindStartsBefore<VariableExpressionAst>(var =>
+                    var.GetUnqualifiedName().ToLower() == name.ToLower()
+                    && var.Parent is ParameterAst paramAst
+                    && paramAst.TryGetFunction(out FunctionDefinitionAst? foundFunction)
+                    && foundFunction?.Name.ToLower()
+                        == (param.Parent as CommandAst)?.GetCommandName()?.ToLower()
+                    && foundFunction?.Parent?.Parent == scope
+                ),
+
+
                 _ => null
             };
 

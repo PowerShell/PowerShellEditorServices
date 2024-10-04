@@ -460,7 +460,9 @@ internal class NewRenameVariableVisitor(Ast target, string newName, bool skipVer
         }
 
         if (candidate == VariableDefinition) { return true; }
+        // Performance optimization
         if (VariableDefinition.IsAfter(candidate)) { return false; }
+
         if (candidate.GetTopVariableAssignment() == VariableDefinition) { return true; }
 
         return false;
