@@ -161,6 +161,9 @@ The focus of the rename support is on quick updates to variables or functions wi
 ❌ Scoped variables (e.g. $SCRIPT:test) are not currently supported
 ❌ Renaming a variable inside of a scriptblock that is used in unscoped operations like `Foreach-Parallel` or `Start-Job` and the variable is not defined within the scriptblock is not supported and can have unexpected results.
 ❌ Scriptblocks part of an assignment are considered isolated scopes. For example `$a = 5; $x = {$a}; & $x` does not consider the two $a to be related, even though in execution this reference matches.
+❌ Scriptblocks that are part of a parameter are assumed to not be executing in a different runspace. For example, the renaming behavior will treat `ForEach-Object -Parallel {$x}` the same as `Foreach-Object {$x}` for purposes of finding scope definitions. To avoid unexpected renaming, define/redefine all your variables in the scriptblock using a param block.
+❌ A lot of the logic relies on the position of items, so for example, defining a variable in a `begin` block and placing it after a `process` block, while technically correct in PowerShell, will not rename as expected. 
+❌ Similarly, defining a function, and having the function rely on a variable that is assigned outside the function and after the function definition, will not find the outer variable reference.
 
 📄📄 Filing a Rename Issue
 
