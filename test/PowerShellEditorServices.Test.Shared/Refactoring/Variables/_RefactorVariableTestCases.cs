@@ -15,6 +15,7 @@ public class RefactorVariableTestCases
         new ("VariableCommandParameter.ps1",                   Line: 10, Column: 10),
         new ("VariableCommandParameterSplatted.ps1",           Line:  3, Column: 19 ),
         new ("VariableCommandParameterSplatted.ps1",           Line: 21, Column: 12),
+        new ("VariableDefinedInParamBlock.ps1",                Line: 10, Column:  9),
         new ("VariableDotNotationFromInnerFunction.ps1",       Line:  1, Column:  1),
         new ("VariableDotNotationFromInnerFunction.ps1",       Line: 11, Column: 26),
         new ("VariableInForeachDuplicateAssignment.ps1",       Line:  6, Column: 18),
