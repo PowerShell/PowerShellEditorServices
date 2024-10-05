@@ -54,7 +54,7 @@ internal class RenameService(
     internal bool DisclaimerAcceptedForSession; //This is exposed to allow testing non-interactively
     private bool DisclaimerDeclinedForSession;
     private const string ConfigSection = "powershell.rename";
-
+    private RenameServiceOptions? options;
     public async Task<RangeOrPlaceholderRange?> PrepareRenameSymbol(PrepareRenameParams request, CancellationToken cancellationToken)
     {
         RenameParams renameRequest = new()
@@ -78,7 +78,7 @@ internal class RenameService(
     public async Task<WorkspaceEdit?> RenameSymbol(RenameParams request, CancellationToken cancellationToken)
     {
         // We want scoped settings because a workspace setting might be relevant here.
-        RenameServiceOptions options = await GetScopedSettings(request.TextDocument.Uri, cancellationToken).ConfigureAwait(false);
+        options = await GetScopedSettings(request.TextDocument.Uri, cancellationToken).ConfigureAwait(false);
 
         if (!await AcceptRenameDisclaimer(options.acceptDisclaimer, cancellationToken).ConfigureAwait(false)) { return null; }
 
@@ -98,7 +98,7 @@ internal class RenameService(
             VariableExpressionAst
             or CommandParameterAst
             or StringConstantExpressionAst
-            => RenameVariable(tokenToRename, scriptFile.ScriptAst, request, options.createParameterAlias),
+            => RenameVariable(tokenToRename, scriptFile.ScriptAst, request),
 
             _ => throw new InvalidOperationException("This should not happen as PrepareRename should have already checked for viability. File an issue if you see this.")
         };
@@ -120,10 +120,10 @@ internal class RenameService(
         return visitor.VisitAndGetEdits(scriptAst);
     }
 
-    private static TextEdit[] RenameVariable(Ast symbol, Ast scriptAst, RenameParams requestParams, bool createParameterAlias)
+    private TextEdit[] RenameVariable(Ast symbol, Ast scriptAst, RenameParams requestParams)
     {
-        NewRenameVariableVisitor visitor = new(
-            symbol, requestParams.NewName
+        RenameVariableVisitor visitor = new(
+            symbol, requestParams.NewName, createParameterAlias: options?.createParameterAlias ?? false
         );
         return visitor.VisitAndGetEdits(scriptAst);
     }
@@ -407,7 +407,7 @@ internal class RenameFunctionVisitor(Ast target, string newName, bool skipVerify
     }
 }
 
-internal class NewRenameVariableVisitor(Ast target, string newName, bool skipVerify = false) : RenameVisitorBase
+internal class RenameVariableVisitor(Ast target, string newName, bool skipVerify = false, bool createParameterAlias = false) : RenameVisitorBase
 {
     // Used to store the original definition of the variable to use as a reference.
     internal Ast? VariableDefinition;
@@ -446,6 +446,24 @@ internal class NewRenameVariableVisitor(Ast target, string newName, bool skipVer
 
         if (ShouldRename(ast))
         {
+            if (
+                createParameterAlias
+                && ast == VariableDefinition
+                && VariableDefinition is not null and VariableExpressionAst varDefAst
+                && varDefAst.Parent is ParameterAst paramAst
+            )
+            {
+                Edits.Add(new TextEdit
+                {
+                    NewText = $"[Alias('{varDefAst.VariablePath.UserPath}')]",
+                    Range = new Range()
+                    {
+                        Start = new ScriptPositionAdapter(paramAst.Extent.StartScriptPosition),
+                        End = new ScriptPositionAdapter(paramAst.Extent.StartScriptPosition)
+                    }
+                });
+            }
+
             Edits.Add(GetRenameVariableEdit(ast));
         }
 
