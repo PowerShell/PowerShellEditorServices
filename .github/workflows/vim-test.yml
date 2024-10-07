@@ -35,7 +35,10 @@ jobs:
         run: Invoke-Build Build
 
       - name: Install Vim
+        id: vim
         uses: rhysd/action-setup-vim@v1
+        with:
+          version: nightly
 
       - name: Checkout vim-ps1
         uses: actions/checkout@v4
@@ -58,6 +61,9 @@ jobs:
         with:
           repository: thinca/vim-themis
           path: vim-themis
+
+      # - name: Debug if run with debugging enabled
+      #   uses: lhotari/action-upterm@v1
 
       - name: Run Themis with full CLI
         env:
