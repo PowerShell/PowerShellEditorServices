@@ -164,6 +164,7 @@ The focus of the rename support is on quick updates to variables or functions wi
 ❌ Scriptblocks that are part of a parameter are assumed to not be executing in a different runspace. For example, the renaming behavior will treat `ForEach-Object -Parallel {$x}` the same as `Foreach-Object {$x}` for purposes of finding scope definitions. To avoid unexpected renaming, define/redefine all your variables in the scriptblock using a param block.
 ❌ A lot of the logic relies on the position of items, so for example, defining a variable in a `begin` block and placing it after a `process` block, while technically correct in PowerShell, will not rename as expected. 
 ❌ Similarly, defining a function, and having the function rely on a variable that is assigned outside the function and after the function definition, will not find the outer variable reference.
+❌ `Get-Variable` and `Set-Variable` are not considered and not currently searched for renames
 
 📄📄 Filing a Rename Issue
 
