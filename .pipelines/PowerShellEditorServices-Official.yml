@@ -80,7 +80,7 @@ extends:
             displayName: Use .NET 8.x SDK
             inputs:
               packageType: sdk
-              version: 8.x
+              useGlobalJson: true
           - task: UseDotNet@2
             displayName: Use .NET 6.x runtime (for tests)
             inputs:
