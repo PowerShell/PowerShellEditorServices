@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System.Collections.Generic;
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,9 +23,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public async Task<EvaluateResponseBody> Handle(EvaluateRequestArguments request, CancellationToken cancellationToken)
         {
             // This API is mostly used for F8 execution so it requires the foreground.
-            await _executionService.ExecutePSCommandAsync(
+            IReadOnlyList<PSObject> results = await _executionService.ExecutePSCommandAsync<PSObject>(
                 new PSCommand().AddScript(request.Expression),
-                CancellationToken.None,
+                cancellationToken,
                 new PowerShellExecutionOptions
                 {
                     RequiresForeground = true,
@@ -34,10 +35,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     ThrowOnError = false,
                 }).ConfigureAwait(false);
 
-            // TODO: Should we return a more informative result?
             return new EvaluateResponseBody
             {
-                Result = "",
+                Result = string.Join(System.Environment.NewLine, results),
                 VariablesReference = 0
             };
         }
