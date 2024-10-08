@@ -4,7 +4,6 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -21,11 +20,8 @@ namespace PowerShellEditorServices.Test.E2E
     [Trait("Category", "DAP")]
     public class DebugAdapterProtocolMessageTests : IAsyncLifetime, IDisposable
     {
-        private const string TestOutputFileName = "__dapTestOutputFile.txt";
         private static readonly bool s_isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-        private static readonly string s_binDir =
-            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        private static readonly string s_testOutputPath = Path.Combine(s_binDir, TestOutputFileName);
+        private static readonly string s_testOutputPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
         private readonly ITestOutputHelper _output;
         private DebugAdapterClient PsesDebugAdapterClient;
@@ -116,7 +112,7 @@ namespace PowerShellEditorServices.Test.E2E
         private static string NewTestFile(string script, bool isPester = false)
         {
             string fileExt = isPester ? ".Tests.ps1" : ".ps1";
-            string filePath = Path.Combine(s_binDir, Path.GetRandomFileName() + fileExt);
+            string filePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + fileExt);
             File.WriteAllText(filePath, script);
 
             return filePath;
