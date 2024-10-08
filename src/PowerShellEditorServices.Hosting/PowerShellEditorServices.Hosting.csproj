@@ -11,7 +11,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NETStandard.Library" />
     <PackageReference Include="PowerShellStandard.Library" PrivateAssets="all" />
     <PackageReference Include="System.IO.Pipes.AccessControl" />
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" />
