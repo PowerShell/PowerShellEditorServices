@@ -1,0 +1,28 @@
+<Project>
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageVersion Include="Microsoft.Extensions.FileSystemGlobbing" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
+    <PackageVersion Include="Microsoft.PowerShell.5.ReferenceAssemblies" Version="1.1.0" />
+    <PackageVersion Include="Microsoft.PowerShell.SDK" Version="7.4.5" />
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageVersion Include="OmniSharp.Extensions.DebugAdapter.Client" Version="0.19.9" />
+    <PackageVersion Include="OmniSharp.Extensions.DebugAdapter.Server" Version="0.19.9" />
+    <PackageVersion Include="OmniSharp.Extensions.LanguageClient" Version="0.19.9" />
+    <PackageVersion Include="OmniSharp.Extensions.LanguageServer" Version="0.19.9" />
+    <PackageVersion Include="PowerShellStandard.Library" Version="5.1.1" />
+    <PackageVersion Include="Serilog" Version="4.0.0" />
+    <PackageVersion Include="Serilog.Extensions.Logging" Version="8.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Async" Version="2.0.0" />
+    <PackageVersion Include="Serilog.Sinks.File" Version="6.0.0" />
+    <PackageVersion Include="System.IO.Pipes.AccessControl" Version="5.0.0" />
+    <PackageVersion Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
+    <PackageVersion Include="System.Security.Principal" Version="4.3.0" />
+    <PackageVersion Include="System.Security.Principal.Windows" Version="5.0.0" />
+    <PackageVersion Include="System.ValueTuple" Version="4.5.0" />
+    <PackageVersion Include="xunit" Version="2.9.0" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageVersion Include="Xunit.SkippableFact" Version="1.4.13" />
+  </ItemGroup>
+</Project>

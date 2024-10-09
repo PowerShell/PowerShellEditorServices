@@ -832,7 +832,7 @@ namespace PowerShellEditorServices.Test.Language
             Assert.True(symbol.IsDeclaration);
 
             // There should be no region symbols unless the provider has been registered.
-            Assert.Empty(symbols.Where(i => i.Type == SymbolType.Region));
+            Assert.DoesNotContain(symbols, i => i.Type == SymbolType.Region);
         }
 
         [Fact]
