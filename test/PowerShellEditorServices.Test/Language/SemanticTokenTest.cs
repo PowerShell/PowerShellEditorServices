@@ -20,7 +20,8 @@ namespace PowerShellEditorServices.Test.Language
         {
             const string text = @"
 function Get-Sum {
-    param( [int]$a, [int]$b )
+    param( [parameter()] [int]$a, [int]$b )
+    :loopLabel while (0) {break loopLabel}
     return $a + $b
 }
 ";
@@ -38,10 +39,21 @@ function Get-Sum {
                     case "function":
                     case "param":
                     case "return":
+                    case "while":
+                    case "break":
                         Assert.Single(mappedTokens, sToken => SemanticTokenType.Keyword == sToken.Type);
                         break;
-                    case "Get-Sum":
-                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Function == sToken.Type);
+                    case "parameter":
+                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Decorator == sToken.Type);
+                        break;
+                    case "0":
+                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Number == sToken.Type);
+                        break;
+                    case ":loopLabel":
+                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Label == sToken.Type);
+                        break;
+                    case "loopLabel":
+                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Property == sToken.Type);
                         break;
                     case "$a":
                     case "$b":
@@ -75,7 +87,6 @@ function Get-Sum {
             mappedTokens = new List<SemanticToken>(PsesSemanticTokensHandler.ConvertToSemanticTokens(stringExpandableToken));
             Assert.Collection(mappedTokens,
                 sToken => Assert.Equal(SemanticTokenType.Function, sToken.Type),
-                sToken => Assert.Equal(SemanticTokenType.Function, sToken.Type),
                 sToken => Assert.Equal(SemanticTokenType.Function, sToken.Type)
             );
         }
@@ -103,7 +114,11 @@ Get-A*A
                         Assert.Single(mappedTokens, sToken => SemanticTokenType.Keyword == sToken.Type);
                         break;
                     case "Get-A*A":
-                        Assert.Single(mappedTokens, sToken => SemanticTokenType.Function == sToken.Type);
+                        if (t.TokenFlags.HasFlag(TokenFlags.CommandName))
+                        {
+                            Assert.Single(mappedTokens, sToken => SemanticTokenType.Function == sToken.Type);
+                        }
+
                         break;
                 }
             }
