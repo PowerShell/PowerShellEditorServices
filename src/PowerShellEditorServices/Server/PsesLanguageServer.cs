@@ -86,6 +86,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         .AddLanguageProtocolLogging()
                         .SetMinimumLevel(_minimumLogLevel))
                     // TODO: Consider replacing all WithHandler with AddSingleton
+                    .WithConfigurationSection("powershell.rename")
                     .WithHandler<PsesWorkspaceSymbolsHandler>()
                     .WithHandler<PsesTextDocumentHandler>()
                     .WithHandler<GetVersionHandler>()
@@ -118,6 +119,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<ExpandAliasHandler>()
                     .WithHandler<PsesSemanticTokensHandler>()
                     .WithHandler<DidChangeWatchedFilesHandler>()
+                    .WithHandler<PrepareRenameHandler>()
+                    .WithHandler<RenameHandler>()
                     // NOTE: The OnInitialize delegate gets run when we first receive the
                     // _Initialize_ request:
                     // https://microsoft.github.io/language-server-protocol/specifications/specification-current/#initialize
