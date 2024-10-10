@@ -47,6 +47,7 @@ jobs:
 
       - name: Install daily
         if: ${{ github.event_name == 'schedule' || github.event_name == 'merge_group' }}
+        continue-on-error: true
         shell: pwsh
         run: ./pwsh/tools/install-powershell.ps1 -Daily
 
