@@ -38,6 +38,7 @@ jobs:
         run: ./tools/installPSResources.ps1
 
       - name: Download daily install script
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'merge_group' }}
         uses: actions/checkout@v4
         with:
           repository: PowerShell/PowerShell
