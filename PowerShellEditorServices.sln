@@ -1,0 +1,57 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{F46EF430-95AA-4386-9259-292A443AB715}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices.Test.Shared", "test\PowerShellEditorServices.Test.Shared\PowerShellEditorServices.Test.Shared.csproj", "{9D307AF9-D1F7-4185-AE9B-2DD3F178832C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices.Test", "test\PowerShellEditorServices.Test\PowerShellEditorServices.Test.csproj", "{DFD3C9C2-F9E6-4EE3-B614-A8EA7D1E1A98}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices.Test.E2E", "test\PowerShellEditorServices.Test.E2E\PowerShellEditorServices.Test.E2E.csproj", "{AA007633-5178-4D73-A262-CCE7247BDE93}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{F40C4EC9-AE86-4A26-974F-95381888DCDC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices", "src\PowerShellEditorServices\PowerShellEditorServices.csproj", "{B4431254-9A2F-43DE-A998-12B22A1593CE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerShellEditorServices.Hosting", "src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj", "{983D05F2-3C77-4B51-9A28-A8C6595911BA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9D307AF9-D1F7-4185-AE9B-2DD3F178832C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D307AF9-D1F7-4185-AE9B-2DD3F178832C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D307AF9-D1F7-4185-AE9B-2DD3F178832C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D307AF9-D1F7-4185-AE9B-2DD3F178832C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DFD3C9C2-F9E6-4EE3-B614-A8EA7D1E1A98}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DFD3C9C2-F9E6-4EE3-B614-A8EA7D1E1A98}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DFD3C9C2-F9E6-4EE3-B614-A8EA7D1E1A98}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DFD3C9C2-F9E6-4EE3-B614-A8EA7D1E1A98}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA007633-5178-4D73-A262-CCE7247BDE93}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA007633-5178-4D73-A262-CCE7247BDE93}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA007633-5178-4D73-A262-CCE7247BDE93}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA007633-5178-4D73-A262-CCE7247BDE93}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4431254-9A2F-43DE-A998-12B22A1593CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4431254-9A2F-43DE-A998-12B22A1593CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4431254-9A2F-43DE-A998-12B22A1593CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4431254-9A2F-43DE-A998-12B22A1593CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{983D05F2-3C77-4B51-9A28-A8C6595911BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{983D05F2-3C77-4B51-9A28-A8C6595911BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{983D05F2-3C77-4B51-9A28-A8C6595911BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{983D05F2-3C77-4B51-9A28-A8C6595911BA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{9D307AF9-D1F7-4185-AE9B-2DD3F178832C} = {F46EF430-95AA-4386-9259-292A443AB715}
+		{DFD3C9C2-F9E6-4EE3-B614-A8EA7D1E1A98} = {F46EF430-95AA-4386-9259-292A443AB715}
+		{AA007633-5178-4D73-A262-CCE7247BDE93} = {F46EF430-95AA-4386-9259-292A443AB715}
+		{B4431254-9A2F-43DE-A998-12B22A1593CE} = {F40C4EC9-AE86-4A26-974F-95381888DCDC}
+		{983D05F2-3C77-4B51-9A28-A8C6595911BA} = {F40C4EC9-AE86-4A26-974F-95381888DCDC}
+	EndGlobalSection
+EndGlobal
