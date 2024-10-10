@@ -1,7 +1,4 @@
 bin/
 obj/
-module/PowerShellEditorServices/NOTICE.txt
-module/PowerShellEditorServices/Commands/en-US/
-module/PSReadLine/
-module/PSScriptAnalyzer/
+module/
 TestResults/

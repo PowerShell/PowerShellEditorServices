@@ -51,7 +51,9 @@ extends:
       EnableCDPxPAT: false
       WindowsHostVersion:
         Version: 2022
-        Network: Netlock
+        Network: KS3
+    release:
+      category: NonAzure
     stages:
     - stage: build
       jobs:
@@ -60,7 +62,7 @@ extends:
         pool:
           type: windows
         variables:
-          ob_outputDirectory: $(Build.SourcesDirectory)/module
+          ob_outputDirectory: $(Build.SourcesDirectory)/out
         steps:
           - pwsh: |
               [xml]$xml = Get-Content PowerShellEditorServices.Common.props
@@ -88,9 +90,10 @@ extends:
               version: 6.x
           - pwsh: |
               Register-PSRepository -Name CFS -SourceLocation "https://pkgs.dev.azure.com/powershell/PowerShell/_packaging/powershell/nuget/v2" -InstallationPolicy Trusted
-              Install-Module -Repository CFS -Name InvokeBuild -RequiredVersion 5.11.3
-              Install-Module -Repository CFS -Name platyPS -RequiredVersion 0.14.2
-              Invoke-Build TestFull -Configuration $(BuildConfiguration) -PSRepository CFS
+              Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet
+              ./tools/installPSResources.ps1 -PSRepository CFS
+            displayName: Install PSResources
+          - pwsh: Invoke-Build TestFull -Configuration $(BuildConfiguration) -PSRepository CFS
             displayName: Build and test
           - task: PublishTestResults@2
             displayName: Publish test results
@@ -131,36 +134,37 @@ extends:
                 **/OmniSharp.Extensions*.dll;
                 **/Serilog*.dll;
                 **/System.Reactive.dll;
+          - task: ArchiveFiles@2
+            displayName: Zip signed artifacts
+            inputs:
+              rootFolderOrFile: $(Build.SourcesDirectory)/module
+              includeRootFolder: false
+              archiveType: zip
+              archiveFile: out/PowerShellEditorServices.zip
     - stage: release
       dependsOn: build
       condition: eq(variables['Build.Reason'], 'Manual')
       variables:
+        ob_release_environment: Production
         version: $[ stageDependencies.build.main.outputs['package.version'] ]
         prerelease: $[ stageDependencies.build.main.outputs['package.prerelease'] ]
-        drop: $(Pipeline.Workspace)/drop_build_main
       jobs:
       - job: github
         displayName: Publish draft to GitHub
         pool:
-          type: windows
-        variables:
-          ob_outputDirectory: $(Build.SourcesDirectory)/out
-        steps:
-        - download: current
-          displayName: Download artifacts
-        - task: ArchiveFiles@2
-          displayName: Zip signed artifacts
+          type: release
+        templateContext:
           inputs:
-            rootFolderOrFile: $(drop)
-            includeRootFolder: false
-            archiveType: zip
-            archiveFile: out/PowerShellEditorServices.zip
+          - input: pipelineArtifact
+            artifactName: drop_build_main
+        steps:
         - task: GitHubRelease@1
           displayName: Create GitHub release
           inputs:
             gitHubConnection: GitHub
             repositoryName: PowerShell/PowerShellEditorServices
-            assets: out/PowerShellEditorServices.zip
+            target: main
+            assets: $(Pipeline.Workspace)/PowerShellEditorServices.zip
             tagSource: userSpecifiedTag
             tag: v$(version)
             isDraft: true
