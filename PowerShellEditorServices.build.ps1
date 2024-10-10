@@ -121,7 +121,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
 task RestorePsesModules -If (-not (Test-Path "module/PSReadLine") -or -not (Test-Path "module/PSScriptAnalyzer")) {
     Write-Build DarkMagenta "Restoring bundled modules"
-    Save-Module -Path module -Repository $PSRepository -Name PSScriptAnalyzer -RequiredVersion "1.22.0" -Verbose
+    Save-Module -Path module -Repository $PSRepository -Name PSScriptAnalyzer -RequiredVersion "1.23.0" -Verbose
     Save-Module -Path module -Repository $PSRepository -Name PSReadLine -RequiredVersion "2.4.0-beta0" -AllowPrerelease -Verbose
 }
 
