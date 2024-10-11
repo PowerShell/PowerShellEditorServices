@@ -96,6 +96,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private static readonly Version s_minVersionForCustomPipeName = new(6, 2);
         private readonly ILogger<LaunchAndAttachHandler> _logger;
         private readonly BreakpointService _breakpointService;
+        private readonly BreakpointSyncService _breakpointSyncService;
         private readonly DebugService _debugService;
         private readonly IRunspaceContext _runspaceContext;
         private readonly IInternalPowerShellExecutionService _executionService;
@@ -108,6 +109,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             ILoggerFactory factory,
             IDebugAdapterServerFacade debugAdapterServer,
             BreakpointService breakpointService,
+            BreakpointSyncService breakpointSyncService,
             DebugEventHandlerService debugEventHandlerService,
             DebugService debugService,
             IRunspaceContext runspaceContext,
@@ -118,6 +120,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _logger = factory.CreateLogger<LaunchAndAttachHandler>();
             _debugAdapterServer = debugAdapterServer;
             _breakpointService = breakpointService;
+            _breakpointSyncService = breakpointSyncService;
             _debugEventHandlerService = debugEventHandlerService;
             _debugService = debugService;
             _runspaceContext = runspaceContext;
@@ -336,7 +339,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             debugRunspaceCmd.AddParameter("Id", request.RunspaceId);
 
             // Clear any existing breakpoints before proceeding
-            await _breakpointService.RemoveAllBreakpointsAsync().ConfigureAwait(continueOnCapturedContext: false);
+            if (_breakpointSyncService.IsSupported)
+            {
+                _breakpointSyncService.SyncServerAfterAttach();
+            }
+            else
+            {
+                await _breakpointService.RemoveAllBreakpointsAsync()
+                    .ConfigureAwait(continueOnCapturedContext: false);
+            }
 
             _debugStateService.WaitingForAttach = true;
             Task nonAwaitedTask = _executionService
@@ -499,6 +510,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             _debugService.IsClientAttached = false;
             _debugAdapterServer.SendNotification(EventNames.Terminated);
+            _debugStateService.Reset();
         }
     }
 }

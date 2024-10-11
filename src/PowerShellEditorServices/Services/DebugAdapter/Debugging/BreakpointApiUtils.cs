@@ -22,9 +22,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
 
         private static readonly Lazy<Func<Debugger, string, ScriptBlock, string, int?, CommandBreakpoint>> s_setCommandBreakpointLazy;
 
+        private static readonly Lazy<Func<Debugger, string, VariableAccessMode, ScriptBlock, string, int?, VariableBreakpoint>> s_setVariableBreakpointLazy;
+
         private static readonly Lazy<Func<Debugger, int?, List<Breakpoint>>> s_getBreakpointsLazy;
 
         private static readonly Lazy<Func<Debugger, Breakpoint, int?, bool>> s_removeBreakpointLazy;
+
+        private static readonly Lazy<Func<Debugger, Breakpoint, int?, Breakpoint>> s_disableBreakpointLazy;
+
+        private static readonly Lazy<Func<Debugger, Breakpoint, int?, Breakpoint>> s_enableBreakpointLazy;
+
+        private static readonly Lazy<Action<Debugger, IEnumerable<Breakpoint>, int?>> s_setBreakpointsLazy;
 
         private static readonly Version s_minimumBreakpointApiPowerShellVersion = new(7, 0, 0, 0);
 
@@ -65,6 +73,17 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                     setCommandBreakpointMethod);
             });
 
+            s_setVariableBreakpointLazy = new Lazy<Func<Debugger, string, VariableAccessMode, ScriptBlock, string, int?, VariableBreakpoint>>(() =>
+            {
+                Type[] setVariableBreakpointParameters = new[] { typeof(string), typeof(VariableAccessMode), typeof(ScriptBlock), typeof(string), typeof(int?) };
+                MethodInfo setVariableBreakpointMethod = typeof(Debugger).GetMethod("SetVariableBreakpoint", setVariableBreakpointParameters);
+
+                return (Func<Debugger, string, VariableAccessMode, ScriptBlock, string, int?, VariableBreakpoint>)Delegate.CreateDelegate(
+                    typeof(Func<Debugger, string, VariableAccessMode, ScriptBlock, string, int?, VariableBreakpoint>),
+                    firstArgument: null,
+                    setVariableBreakpointMethod);
+            });
+
             s_getBreakpointsLazy = new Lazy<Func<Debugger, int?, List<Breakpoint>>>(() =>
             {
                 Type[] getBreakpointsParameters = new[] { typeof(int?) };
@@ -86,19 +105,60 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                     firstArgument: null,
                     removeBreakpointMethod);
             });
+
+            s_disableBreakpointLazy = new Lazy<Func<Debugger, Breakpoint, int?, Breakpoint>>(() =>
+            {
+                Type[] disableBreakpointParameters = new[] { typeof(Breakpoint), typeof(int?) };
+                MethodInfo disableBreakpointMethod = typeof(Debugger).GetMethod("DisableBreakpoint", disableBreakpointParameters);
+
+                return (Func<Debugger, Breakpoint, int?, Breakpoint>)Delegate.CreateDelegate(
+                    typeof(Func<Debugger, Breakpoint, int?, Breakpoint>),
+                    firstArgument: null,
+                    disableBreakpointMethod);
+            });
+
+            s_enableBreakpointLazy = new Lazy<Func<Debugger, Breakpoint, int?, Breakpoint>>(() =>
+            {
+                Type[] enableBreakpointParameters = new[] { typeof(Breakpoint), typeof(int?) };
+                MethodInfo enableBreakpointMethod = typeof(Debugger).GetMethod("EnableBreakpoint", enableBreakpointParameters);
+
+                return (Func<Debugger, Breakpoint, int?, Breakpoint>)Delegate.CreateDelegate(
+                    typeof(Func<Debugger, Breakpoint, int?, Breakpoint>),
+                    firstArgument: null,
+                    enableBreakpointMethod);
+            });
+
+            s_setBreakpointsLazy = new Lazy<Action<Debugger, IEnumerable<Breakpoint>, int?>>(() =>
+            {
+                Type[] setBreakpointsParameters = new[] { typeof(IEnumerable<Breakpoint>), typeof(int?) };
+                MethodInfo setBreakpointsMethod = typeof(Debugger).GetMethod("SetBreakpoints", setBreakpointsParameters);
+
+                return (Action<Debugger, IEnumerable<Breakpoint>, int?>)Delegate.CreateDelegate(
+                    typeof(Action<Debugger, IEnumerable<Breakpoint>, int?>),
+                    firstArgument: null,
+                    setBreakpointsMethod);
+            });
         }
 
         #endregion
 
         #region Private Static Properties
 
-        private static Func<Debugger, string, int, int, ScriptBlock, int?, LineBreakpoint> SetLineBreakpointDelegate => s_setLineBreakpointLazy.Value;
+        internal static Func<Debugger, string, int, int, ScriptBlock, int?, LineBreakpoint> SetLineBreakpointDelegate => s_setLineBreakpointLazy.Value;
 
-        private static Func<Debugger, string, ScriptBlock, string, int?, CommandBreakpoint> SetCommandBreakpointDelegate => s_setCommandBreakpointLazy.Value;
+        internal static Func<Debugger, string, ScriptBlock, string, int?, CommandBreakpoint> SetCommandBreakpointDelegate => s_setCommandBreakpointLazy.Value;
 
-        private static Func<Debugger, int?, List<Breakpoint>> GetBreakpointsDelegate => s_getBreakpointsLazy.Value;
+        internal static Func<Debugger, string, VariableAccessMode, ScriptBlock, string, int?, VariableBreakpoint> SetVariableBreakpointDelegate => s_setVariableBreakpointLazy.Value;
 
-        private static Func<Debugger, Breakpoint, int?, bool> RemoveBreakpointDelegate => s_removeBreakpointLazy.Value;
+        internal static Func<Debugger, int?, List<Breakpoint>> GetBreakpointsDelegate => s_getBreakpointsLazy.Value;
+
+        internal static Func<Debugger, Breakpoint, int?, bool> RemoveBreakpointDelegate => s_removeBreakpointLazy.Value;
+
+        internal static Func<Debugger, Breakpoint, int?, Breakpoint> DisableBreakpointDelegate => s_disableBreakpointLazy.Value;
+
+        internal static Func<Debugger, Breakpoint, int?, Breakpoint> EnableBreakpointDelegate => s_enableBreakpointLazy.Value;
+
+        internal static Action<Debugger, IEnumerable<Breakpoint>, int?> SetBreakpointsDelegate => s_setBreakpointsLazy.Value;
 
         #endregion
 
