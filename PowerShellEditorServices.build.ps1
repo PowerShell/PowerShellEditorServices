@@ -147,8 +147,10 @@ Task AssembleModule -After Build {
         New-Item -Force -Path $dir -ItemType Directory | Out-Null
     }
 
-    # Copy third party notices to module folder
-    Copy-Item -Force -Path "NOTICE.txt" -Destination $psesOutputPath
+    # Copy documents to module root
+    foreach ($document in @("LICENSE", "NOTICE.txt", "README.md", "SECURITY.md")) {
+        Copy-Item -Force -Path $document -Destination "./module"
+    }
 
     # Assemble PSES module
     $includedDlls = [System.Collections.Generic.HashSet[string]]::new()
