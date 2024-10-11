@@ -32,17 +32,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
-    <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" />
-    <PackageReference Include="Serilog" Version="3.0.1" />
-    <PackageReference Include="Serilog.Extensions.Logging" Version="7.0.0" />
-    <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-    <PackageReference Include="System.IO.Pipes.AccessControl" Version="5.0.0" />
-    <PackageReference Include="System.Security.Principal" Version="4.3.0" />
-    <PackageReference Include="System.Security.Principal.Windows" Version="5.0.0" />
+    <PackageReference Include="Microsoft.CSharp" />
+    <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="PowerShellStandard.Library" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
+    <PackageReference Include="Serilog.Sinks.Async" />
+    <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="System.IO.Pipes.AccessControl" />
+    <PackageReference Include="System.Security.Principal" />
+    <PackageReference Include="System.Security.Principal.Windows" />
   </ItemGroup>
 
   <Choose>
@@ -54,16 +54,9 @@
     </When>
     <Otherwise>
       <ItemGroup>
-        <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.19.7" />
-        <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Server" Version="0.19.7" />
+        <PackageReference Include="OmniSharp.Extensions.LanguageServer" />
+        <PackageReference Include="OmniSharp.Extensions.DebugAdapter.Server" />
       </ItemGroup>
     </Otherwise>
   </Choose>
-
-  <!-- TODO: Remove these entirely. -->
-  <ItemGroup>
-    <Compile Remove="Services\Extension\Templating\**" />
-    <EmbeddedResource Remove="Services\Extension\Templating\**" />
-    <None Remove="Services\Extension\Templating\**" />
-  </ItemGroup>
 </Project>

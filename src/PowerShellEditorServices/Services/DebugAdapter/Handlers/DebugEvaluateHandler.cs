@@ -22,6 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly IInternalPowerShellExecutionService _executionService;
         private readonly DebugService _debugService;
 
+        // AKA Watch Variables
         public DebugEvaluateHandler(
             ILoggerFactory factory,
             IPowerShellDebugContext debugContext,

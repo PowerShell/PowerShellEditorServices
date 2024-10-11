@@ -252,6 +252,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="editorOperations">
         /// The IEditorOperations instance to use for opening/closing files in the editor.
         /// </param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD110:Observe result of async calls", Justification = "Intentionally fire and forget.")]
         public RemoteFileManagerService(
             ILoggerFactory factory,
             IRunspaceContext runspaceContext,
@@ -275,7 +276,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // Delete existing temporary file cache path if it already exists
             TryDeleteTemporaryPath();
 
-            // TODO: Do this somewhere other than the constructor and make it async
             // Register the psedit function in the current runspace
             RegisterPSEditFunctionAsync().HandleErrorsAsync(logger);
         }
@@ -519,6 +519,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return remotePathMappings;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Supporting synchronous API.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD110:Observe result of async calls", Justification = "Intentionally fire and forget.")]
         private void HandleRunspaceChanged(object sender, RunspaceChangedEventArgs e)
         {
             if (e.ChangeAction == RunspaceChangeAction.Enter)
@@ -572,6 +574,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 StringComparison.CurrentCultureIgnoreCase);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "It has to be async.")]
         private async void HandlePSEventReceivedAsync(object sender, PSEventArgs args)
         {
             if (!string.Equals(RemoteSessionOpenFile, args.SourceIdentifier, StringComparison.CurrentCultureIgnoreCase))

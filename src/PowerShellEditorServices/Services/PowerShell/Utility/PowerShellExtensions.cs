@@ -140,7 +140,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             // Calling the cmdlet is the simplest way to do that
             IReadOnlyList<PSObject> policies = pwsh
                 .AddCommand(@"Microsoft.PowerShell.Security\Get-ExecutionPolicy")
-                    .AddParameter("-List")
+                .AddParameter("List")
                 .InvokeAndClear<PSObject>();
 
             // The policies come out in the following order:
@@ -223,7 +223,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         public static void ImportModule(this PowerShell pwsh, string moduleNameOrPath)
         {
             pwsh.AddCommand(@"Microsoft.PowerShell.Core\Import-Module")
-                .AddParameter("-Name", moduleNameOrPath)
+                .AddParameter("Name", moduleNameOrPath)
                 .InvokeAndClear();
         }
 

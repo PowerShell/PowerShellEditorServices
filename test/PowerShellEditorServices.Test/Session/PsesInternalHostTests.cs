@@ -20,19 +20,13 @@ namespace PowerShellEditorServices.Test.Session
     using System.Management.Automation.Runspaces;
 
     [Trait("Category", "PsesInternalHost")]
-    public class PsesInternalHostTests : IDisposable
+    public class PsesInternalHostTests : IAsyncLifetime
     {
-        private readonly PsesInternalHost psesHost;
+        private PsesInternalHost psesHost;
 
-        public PsesInternalHostTests() => psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
+        public async Task InitializeAsync() => psesHost = await PsesHostFactory.Create(NullLoggerFactory.Instance);
 
-        public void Dispose()
-        {
-#pragma warning disable VSTHRD002
-            psesHost.StopAsync().Wait();
-#pragma warning restore VSTHRD002
-            GC.SuppressFinalize(this);
-        }
+        public async Task DisposeAsync() => await psesHost.StopAsync();
 
         [Fact]
         public async Task CanExecutePSCommand()
@@ -40,7 +34,7 @@ namespace PowerShellEditorServices.Test.Session
             Assert.True(psesHost.IsRunning);
             PSCommand command = new PSCommand().AddScript("$a = \"foo\"; $a");
             Task<IReadOnlyList<string>> task = psesHost.ExecutePSCommandAsync<string>(command, CancellationToken.None);
-            IReadOnlyList<string> result = await task.ConfigureAwait(true);
+            IReadOnlyList<string> result = await task;
             Assert.Equal("foo", result[0]);
         }
 
@@ -50,7 +44,7 @@ namespace PowerShellEditorServices.Test.Session
             await psesHost.ExecutePSCommandAsync(
                 new PSCommand().AddScript("throw"),
                 CancellationToken.None,
-                new PowerShellExecutionOptions { ThrowOnError = false }).ConfigureAwait(true);
+                new PowerShellExecutionOptions { ThrowOnError = false });
         }
 
         [Fact]
@@ -74,26 +68,26 @@ namespace PowerShellEditorServices.Test.Session
                 CancellationToken.None);
 
             // Wait for all of the executes to complete.
-            await Task.WhenAll(taskOne, taskTwo, taskThree, resultTask).ConfigureAwait(true);
+            await Task.WhenAll(taskOne, taskTwo, taskThree, resultTask);
 
             // Sanity checks
             Assert.Equal(RunspaceState.Opened, psesHost.Runspace.RunspaceStateInfo.State);
 
             // 100 + 200 = 300, then divided by 100 is 3.  We are ensuring that
             // the commands were executed in the sequence they were called.
-            Assert.Equal(3, (await resultTask.ConfigureAwait(true))[0]);
+            Assert.Equal(3, (await resultTask)[0]);
         }
 
         [Fact]
         public async Task CanCancelExecutionWithToken()
         {
             using CancellationTokenSource cancellationSource = new(millisecondsDelay: 1000);
-            _ = await Assert.ThrowsAsync<TaskCanceledException>(() =>
+            await Assert.ThrowsAsync<TaskCanceledException>(() =>
             {
                 return psesHost.ExecutePSCommandAsync(
                     new PSCommand().AddScript("Start-Sleep 10"),
                     cancellationSource.Token);
-            }).ConfigureAwait(true);
+            });
         }
 
         [Fact]
@@ -104,10 +98,9 @@ namespace PowerShellEditorServices.Test.Session
                 new PSCommand().AddScript("Start-Sleep 10"),
                 CancellationToken.None);
 
-            // Wait until our task has started.
-            Thread.Sleep(2000);
-            psesHost.CancelCurrentTask();
-            await Assert.ThrowsAsync<TaskCanceledException>(() => executeTask).ConfigureAwait(true);
+            // Cancel the task after 1 second in another thread.
+            Task.Run(() => { Thread.Sleep(1000); psesHost.CancelCurrentTask(); });
+            await Assert.ThrowsAsync<TaskCanceledException>(() => executeTask);
             Assert.True(executeTask.IsCanceled);
         }
 
@@ -126,7 +119,7 @@ namespace PowerShellEditorServices.Test.Session
                     pwsh.LoadProfiles(emptyProfilePaths);
                     Assert.Empty(pwsh.Commands.Commands);
                 },
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
         }
 
         // NOTE: Tests where we call functions that use PowerShell runspaces are slightly more
@@ -142,13 +135,13 @@ namespace PowerShellEditorServices.Test.Session
                 return psesHost.ExecutePSCommandAsync(
                     new PSCommand().AddScript("function prompt { throw }; prompt"),
                     CancellationToken.None);
-            }).ConfigureAwait(true);
+            });
 
             string prompt = await psesHost.ExecuteDelegateAsync(
                 nameof(psesHost.GetPrompt),
                 executionOptions: null,
                 (_, _) => psesHost.GetPrompt(CancellationToken.None),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
             Assert.Equal(PsesInternalHost.DefaultPrompt, prompt);
         }
@@ -158,13 +151,13 @@ namespace PowerShellEditorServices.Test.Session
         {
             Assert.Empty(await psesHost.ExecutePSCommandAsync<PSObject>(
                 new PSCommand().AddScript("Remove-Item function:prompt; Get-Item function:prompt -ErrorAction Ignore"),
-                CancellationToken.None).ConfigureAwait(true));
+                CancellationToken.None));
 
             string prompt = await psesHost.ExecuteDelegateAsync(
                 nameof(psesHost.GetPrompt),
                 executionOptions: null,
                 (_, _) => psesHost.GetPrompt(CancellationToken.None),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
             Assert.Equal(PsesInternalHost.DefaultPrompt, prompt);
         }
@@ -174,11 +167,11 @@ namespace PowerShellEditorServices.Test.Session
         {
             IReadOnlyList<PSObject> task = await psesHost.ExecutePSCommandAsync<PSObject>(
                 new PSCommand().AddScript("$handled = $false; Register-EngineEvent -SourceIdentifier PowerShell.OnIdle -MaxTriggerCount 1 -Action { $global:handled = $true }"),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
             IReadOnlyList<bool> handled = await psesHost.ExecutePSCommandAsync<bool>(
                 new PSCommand().AddScript("$handled"),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
             Assert.Collection(handled, Assert.False);
 
@@ -186,14 +179,14 @@ namespace PowerShellEditorServices.Test.Session
                 nameof(psesHost.OnPowerShellIdle),
                 executionOptions: null,
                 (_, _) => psesHost.OnPowerShellIdle(CancellationToken.None),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
             // TODO: Why is this racy?
             Thread.Sleep(2000);
 
             handled = await psesHost.ExecutePSCommandAsync<bool>(
                 new PSCommand().AddScript("$handled"),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
             Assert.Collection(handled, Assert.True);
         }
@@ -208,7 +201,7 @@ namespace PowerShellEditorServices.Test.Session
                     pwsh,
                     (EngineIntrinsics)pwsh.Runspace.SessionStateProxy.GetVariable("ExecutionContext"),
                     out IReadLine readLine),
-                CancellationToken.None).ConfigureAwait(true));
+                CancellationToken.None));
         }
 
         // This test asserts that we do not mess up the console encoding, which leads to native
@@ -218,7 +211,7 @@ namespace PowerShellEditorServices.Test.Session
         {
             await psesHost.ExecutePSCommandAsync(
                 new PSCommand().AddScript("\"protocol=https`nhost=myhost.com`nusername=john`npassword=doe`n`n\" | git.exe credential approve; if ($LastExitCode) { throw }"),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
         }
 
         [Theory]
@@ -228,29 +221,23 @@ namespace PowerShellEditorServices.Test.Session
         public async Task CanHandleBadInitialWorkingDirectory(string path)
         {
             string cwd = Environment.CurrentDirectory;
-            await psesHost.SetInitialWorkingDirectoryAsync(path, CancellationToken.None).ConfigureAwait(true);
+            await psesHost.SetInitialWorkingDirectoryAsync(path, CancellationToken.None);
 
             IReadOnlyList<string> getLocation = await psesHost.ExecutePSCommandAsync<string>(
                 new PSCommand().AddCommand("Get-Location"),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
             Assert.Collection(getLocation, (d) => Assert.Equal(cwd, d, ignoreCase: true));
         }
     }
 
     [Trait("Category", "PsesInternalHost")]
-    public class PsesInternalHostWithProfileTests : IDisposable
+    public class PsesInternalHostWithProfileTests : IAsyncLifetime
     {
-        private readonly PsesInternalHost psesHost;
+        private PsesInternalHost psesHost;
 
-        public PsesInternalHostWithProfileTests() => psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance, loadProfiles: true);
+        public async Task InitializeAsync() => psesHost = await PsesHostFactory.Create(NullLoggerFactory.Instance, loadProfiles: true);
 
-        public void Dispose()
-        {
-#pragma warning disable VSTHRD002
-            psesHost.StopAsync().Wait();
-#pragma warning restore VSTHRD002
-            GC.SuppressFinalize(this);
-        }
+        public async Task DisposeAsync() => await psesHost.StopAsync();
 
         [Fact]
         public async Task CanResolveAndLoadProfilesForHostId()
@@ -258,7 +245,7 @@ namespace PowerShellEditorServices.Test.Session
             // Ensure that the $PROFILE variable is a string with the value of CurrentUserCurrentHost.
             IReadOnlyList<string> profileVariable = await psesHost.ExecutePSCommandAsync<string>(
                 new PSCommand().AddScript("$PROFILE"),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
             Assert.Collection(profileVariable,
                 (p) => Assert.Equal(PsesHostFactory.TestProfilePaths.CurrentUserCurrentHost, p));
@@ -266,7 +253,7 @@ namespace PowerShellEditorServices.Test.Session
             // Ensure that all the profile paths are set in the correct note properties.
             IReadOnlyList<string> profileProperties = await psesHost.ExecutePSCommandAsync<string>(
                 new PSCommand().AddScript("$PROFILE | Get-Member -Type NoteProperty"),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
             Assert.Collection(profileProperties,
                 (p) => Assert.Equal($"string AllUsersAllHosts={PsesHostFactory.TestProfilePaths.AllUsersAllHosts}", p, ignoreCase: true),
@@ -277,7 +264,7 @@ namespace PowerShellEditorServices.Test.Session
             // Ensure that the profile was loaded. The profile also checks that $PROFILE was defined.
             IReadOnlyList<bool> profileLoaded = await psesHost.ExecutePSCommandAsync<bool>(
                 new PSCommand().AddScript("Assert-ProfileLoaded"),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
             Assert.Collection(profileLoaded, Assert.True);
         }
@@ -292,14 +279,14 @@ namespace PowerShellEditorServices.Test.Session
                 nameof(psesHost.OnPowerShellIdle),
                 executionOptions: null,
                 (_, _) => psesHost.OnPowerShellIdle(CancellationToken.None),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
             // TODO: Why is this racy?
             Thread.Sleep(2000);
 
             IReadOnlyList<bool> handled = await psesHost.ExecutePSCommandAsync<bool>(
                 new PSCommand().AddScript("$handledInProfile"),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
             Assert.Collection(handled, Assert.True);
         }

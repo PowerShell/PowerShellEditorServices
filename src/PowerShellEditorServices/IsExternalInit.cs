@@ -1,4 +1,6 @@
-#pragma warning disable IDE0073
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 #if NET5_0_OR_GREATER
 [assembly: System.Runtime.CompilerServices.TypeForwardedTo(typeof(System.Runtime.CompilerServices.IsExternalInit))]
 #else

@@ -11,6 +11,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         public bool SupportsBreakpointSync { get; set; }
 
-        public bool ShellIntegrationEnabled { get; set; }
+        public string ShellIntegrationScript { get; set; }
     }
 }

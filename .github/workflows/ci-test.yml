@@ -1,0 +1,75 @@
+name: CI Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  merge_group:
+    types: [ checks_requested ]
+  schedule:
+    # 6am UTC which should be after a new daily build posts
+    - cron: "0 6 * * *"
+
+jobs:
+  ci:
+    name: dotnet
+    strategy:
+      matrix:
+        os: [ windows-latest, macos-latest, ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_GENERATE_ASPNET_CERTIFICATE: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          cache: true
+          cache-dependency-path: '**/*.csproj'
+          dotnet-version: 6.0.x
+          global-json-file: "./global.json"
+
+      - name: Install PSResources
+        shell: pwsh
+        run: ./tools/installPSResources.ps1
+
+      - name: Download daily install script
+        uses: actions/checkout@v4
+        with:
+          repository: PowerShell/PowerShell
+          path: pwsh
+          sparse-checkout: tools/install-powershell.ps1
+          sparse-checkout-cone-mode: false
+
+      - name: Install daily
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'merge_group' }}
+        continue-on-error: true
+        shell: pwsh
+        run: ./pwsh/tools/install-powershell.ps1 -Daily
+
+      - name: Build and test
+        shell: pwsh
+        run: Invoke-Build -Configuration Release ${{ github.event_name == 'merge_group' && 'TestFull' || 'Test' }}
+
+      - name: Test daily
+        if: ${{ github.event_name == 'schedule' }}
+        shell: pwsh
+        run: Invoke-Build -Configuration Release TestE2EDaily
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: PowerShellEditorServices-module-${{ matrix.os }}
+          path: module
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: PowerShellEditorServices-test-results-${{ matrix.os }}
+          path: '**/*.trx'

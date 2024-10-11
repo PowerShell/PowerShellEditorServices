@@ -4,7 +4,7 @@ let s:assert = themis#helper('assert')
 function s:suite.before()
   let l:pses_path = g:repo_root . '/module'
   let g:LanguageClient_serverCommands = {
-    \ 'ps1': ['pwsh', '-NoLogo', '-NoProfile', '-Command',
+    \ 'ps1': [ 'pwsh', '-NoLogo', '-NoProfile', '-Command',
     \   l:pses_path . '/PowerShellEditorServices/Start-EditorServices.ps1',
     \   '-HostName', 'vim', '-HostProfileId', 'vim', '-HostVersion', '1.0.0',
     \   '-BundledModulesPath', l:pses_path, '-Stdio',

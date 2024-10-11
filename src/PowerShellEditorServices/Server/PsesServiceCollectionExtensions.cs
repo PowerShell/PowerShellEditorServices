@@ -10,13 +10,13 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
-using Microsoft.PowerShell.EditorServices.Services.Template;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Server
 {
     internal static class PsesServiceCollectionExtensions
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD110:Observe result of async calls", Justification = "Using lazy initialization.")]
         public static IServiceCollection AddPsesLanguageServices(
             this IServiceCollection collection,
             HostStartupInfo hostStartupInfo)
@@ -33,7 +33,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
                 .AddSingleton<ConfigurationService>()
                 .AddSingleton<IPowerShellDebugContext>(
                     (provider) => provider.GetService<PsesInternalHost>().DebugContext)
-                .AddSingleton<TemplateService>()
                 .AddSingleton<EditorOperationsService>()
                 .AddSingleton<RemoteFileManagerService>()
                 .AddSingleton<BreakpointService>()
@@ -51,9 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         // is ready, it will be available. NOTE: We cannot await this because it
                         // uses a lazy initialization to avoid a race with the dependency injection
                         // framework, see the EditorObject class for that!
-#pragma warning disable VSTHRD110
                         extensionService.InitializeAsync();
-#pragma warning restore VSTHRD110
                         return extensionService;
                     })
                 .AddSingleton<AnalysisService>();

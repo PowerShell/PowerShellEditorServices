@@ -7,6 +7,7 @@ using System.IO;
 using System.Management.Automation.Host;
 using System.Management.Automation.Runspaces;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
@@ -28,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Test
 
         public static readonly string BundledModulePath = Path.GetFullPath(TestUtilities.NormalizePath("../../../../../module"));
 
-        public static PsesInternalHost Create(ILoggerFactory loggerFactory, bool loadProfiles = false)
+        public static async Task<PsesInternalHost> Create(ILoggerFactory loggerFactory, bool loadProfiles = false)
         {
             // We intentionally use `CreateDefault2()` as it loads `Microsoft.PowerShell.Core` only,
             // which is a more minimal and therefore safer state.
@@ -57,13 +58,12 @@ namespace Microsoft.PowerShell.EditorServices.Test
                 logLevel: (int)LogLevel.None,
                 consoleReplEnabled: false,
                 usesLegacyReadLine: false,
+                useNullPSHostUI: true,
                 bundledModulePath: BundledModulePath);
 
             PsesInternalHost psesHost = new(loggerFactory, null, testHostDetails);
 
-            #pragma warning disable VSTHRD002 // Because this is used by constructors it can't use await.
-            if (psesHost.TryStartAsync(new HostStartOptions { LoadProfiles = loadProfiles }, CancellationToken.None).GetAwaiter().GetResult())
-            #pragma warning restore VSTHRD002
+            if (await psesHost.TryStartAsync(new HostStartOptions { LoadProfiles = loadProfiles }, CancellationToken.None))
             {
                 return psesHost;
             }

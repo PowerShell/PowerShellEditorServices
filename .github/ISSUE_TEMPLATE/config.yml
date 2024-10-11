@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🙋 Ask a question
+    url: https://aka.ms/powershell-vscode-discord
+    about: "Find us in #vscode on the PowerShell Community Discord"

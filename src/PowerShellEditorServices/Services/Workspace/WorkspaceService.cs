@@ -104,9 +104,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         #region Public Methods
 
-        public IEnumerable<string> WorkspacePaths => WorkspaceFolders.Count == 0
-                ? new List<string> { InitialWorkingDirectory }
-                : WorkspaceFolders.Select(i => i.Uri.GetFileSystemPath());
+        public IEnumerable<string> WorkspacePaths => WorkspaceFolders.Select(i => i.Uri.GetFileSystemPath());
 
         /// <summary>
         /// Gets an open file in the workspace. If the file isn't open but exists on the filesystem, load and return it.
@@ -277,7 +275,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (!workspaceFiles.TryGetValue(keyName, out ScriptFile scriptFile) && initialBuffer != null)
             {
                 scriptFile =
-                    new ScriptFile(
+                    ScriptFile.Create(
                         documentUri,
                         initialBuffer,
                         powerShellVersion);

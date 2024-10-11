@@ -36,6 +36,7 @@ namespace PowerShellEditorServices.Test.Services.Symbols
                 logPath: null,
                 logLevel: 0,
                 consoleReplEnabled: false,
+                useNullPSHostUI: true,
                 usesLegacyReadLine: false,
                 bundledModulePath: PsesHostFactory.BundledModulePath));
 
@@ -51,8 +52,7 @@ namespace PowerShellEditorServices.Test.Services.Symbols
         {
             ScriptFileMarker[] violations = await analysisService
                 .AnalysisEngine
-                .AnalyzeScriptAsync(script)
-                .ConfigureAwait(true);
+                .AnalyzeScriptAsync(script);
 
             Assert.Collection(violations,
             (actual) =>
@@ -72,14 +72,12 @@ namespace PowerShellEditorServices.Test.Services.Symbols
             ScriptFile[] scriptFiles = { scriptFile };
 
             await analysisService
-                .DelayThenInvokeDiagnosticsAsync(scriptFiles, CancellationToken.None)
-                .ConfigureAwait(true);
+                .DelayThenInvokeDiagnosticsAsync(scriptFiles, CancellationToken.None);
             Assert.Single(scriptFile.DiagnosticMarkers);
 
             // This is repeated to test that the markers are not duplicated.
             await analysisService
-                .DelayThenInvokeDiagnosticsAsync(scriptFiles, CancellationToken.None)
-                .ConfigureAwait(true);
+                .DelayThenInvokeDiagnosticsAsync(scriptFiles, CancellationToken.None);
             Assert.Single(scriptFile.DiagnosticMarkers);
         }
 
@@ -91,8 +89,7 @@ namespace PowerShellEditorServices.Test.Services.Symbols
             ScriptFile[] scriptFiles = { scriptFile };
 
             await analysisService
-                .DelayThenInvokeDiagnosticsAsync(scriptFiles, CancellationToken.None)
-                .ConfigureAwait(true);
+                .DelayThenInvokeDiagnosticsAsync(scriptFiles, CancellationToken.None);
 
             Assert.Collection(scriptFile.DiagnosticMarkers,
                 (actual) =>

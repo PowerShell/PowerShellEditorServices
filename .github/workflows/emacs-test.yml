@@ -1,37 +1,50 @@
-name: "Emacs"
+name: Emacs End-to-End Tests
 
 on:
   push:
     branches: [ main ]
-    tags: [ v* ]
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ main ]
-    paths-ignore: [ '**/*.md' ]
   merge_group:
     types: [ checks_requested ]
 
 jobs:
-  test:
-    name: Test via Eglot
+  emacs:
+    name: ert
     runs-on: ubuntu-latest
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_GENERATE_ASPNET_CERTIFICATE: false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install dotnet
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
+        with:
+          cache: true
+          cache-dependency-path: '**/*.csproj'
 
-      - name: Build PSES
+      - name: Install PSResources
         shell: pwsh
-        run: tools/azurePipelinesBuild.ps1
+        run: tools/installPSResources.ps1
+
+      - name: Build
+        shell: pwsh
+        run: Invoke-Build Build
 
       - name: Install Emacs
         uses: purcell/setup-emacs@master
         with:
           version: '28.2'
 
-      - name: Run ERT
+      - name: Run ERT with full CLI
         run: |
           emacs -Q --batch -f package-refresh-contents --eval "(package-install 'eglot)"
           emacs -Q --batch -l test/emacs-test.el -f ert-run-tests-batch-and-exit
+
+      - name: Run ERT with simple CLI
+        run: |
+          emacs -Q --batch -f package-refresh-contents --eval "(package-install 'eglot)"
+          emacs -Q --batch -l test/emacs-simple-test.el -f ert-run-tests-batch-and-exit

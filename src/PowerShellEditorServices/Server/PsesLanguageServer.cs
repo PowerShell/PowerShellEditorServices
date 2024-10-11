@@ -11,7 +11,6 @@ using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Extension;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
-using Microsoft.PowerShell.EditorServices.Services.Template;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
@@ -70,9 +69,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
         /// cref="PsesServiceCollectionExtensions.AddPsesLanguageServices"/>.
         /// </remarks>
         /// <returns>A task that completes when the server is ready and listening.</returns>
-#pragma warning disable CA1506 // Coupling complexity we don't care about
         public async Task StartAsync()
-#pragma warning restore CA1506
         {
             LanguageServer = await OmniSharp.Extensions.LanguageServer.Server.LanguageServer.From(options =>
             {
@@ -115,7 +112,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<PsesHoverHandler>()
                     .WithHandler<PsesSignatureHelpHandler>()
                     .WithHandler<PsesDefinitionHandler>()
-                    .WithHandler<TemplateHandlers>()
                     .WithHandler<GetCommentHelpHandler>()
                     .WithHandler<EvaluateHandler>()
                     .WithHandler<GetCommandHandler>()
@@ -154,12 +150,11 @@ namespace Microsoft.PowerShell.EditorServices.Server
                                 InitialWorkingDirectory = initializationOptions?.GetValue("initialWorkingDirectory")?.Value<string>()
                                     ?? workspaceService.WorkspaceFolders.FirstOrDefault()?.Uri.GetFileSystemPath()
                                     ?? Directory.GetCurrentDirectory(),
-
                                 SupportsBreakpointSync = initializationOptions?.GetValue("supportsBreakpointSync")?.Value<bool>()
                                     ?? false,
-                              
-                                ShellIntegrationEnabled = initializationOptions?.GetValue("shellIntegrationEnabled")?.Value<bool>()
-                                    ?? false,
+                                // If a shell integration script path is provided, that implies the feature is enabled.
+                                ShellIntegrationScript = initializationOptions?.GetValue("shellIntegrationScript")?.Value<string>()
+                                    ?? "",
                             };
 
                             languageServer.Services.GetService<BreakpointSyncService>().IsSupported = hostStartOptions.SupportsBreakpointSync;

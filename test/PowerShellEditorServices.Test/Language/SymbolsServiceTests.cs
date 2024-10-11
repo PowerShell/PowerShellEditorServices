@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
@@ -30,16 +29,16 @@ using Xunit;
 namespace PowerShellEditorServices.Test.Language
 {
     [Trait("Category", "Symbols")]
-    public class SymbolsServiceTests : IDisposable
+    public class SymbolsServiceTests : IAsyncLifetime
     {
-        private readonly PsesInternalHost psesHost;
-        private readonly WorkspaceService workspace;
-        private readonly SymbolsService symbolsService;
+        private PsesInternalHost psesHost;
+        private WorkspaceService workspace;
+        private SymbolsService symbolsService;
         private static readonly bool s_isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
-        public SymbolsServiceTests()
+        public async Task InitializeAsync()
         {
-            psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
+            psesHost = await PsesHostFactory.Create(NullLoggerFactory.Instance);
             workspace = new WorkspaceService(NullLoggerFactory.Instance);
             workspace.WorkspaceFolders.Add(new WorkspaceFolder
             {
@@ -53,14 +52,11 @@ namespace PowerShellEditorServices.Test.Language
                 new ConfigurationService());
         }
 
-        public void Dispose()
+        public async Task DisposeAsync()
         {
-#pragma warning disable VSTHRD002
-            psesHost.StopAsync().GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002
+            psesHost.StopAsync();
             CommandHelpers.s_cmdletToAliasCache.Clear();
             CommandHelpers.s_aliasToCmdletCache.Clear();
-            GC.SuppressFinalize(this);
         }
 
         private static void AssertIsRegion(
@@ -99,14 +95,14 @@ namespace PowerShellEditorServices.Test.Language
             Assert.NotNull(symbol);
 
             IEnumerable<SymbolReference> symbols =
-                await symbolsService.GetDefinitionOfSymbolAsync(scriptFile, symbol).ConfigureAwait(true);
+                await symbolsService.GetDefinitionOfSymbolAsync(scriptFile, symbol);
 
             return symbols.OrderBy((i) => i.ScriptRegion.ToRange().Start);
         }
 
         private async Task<SymbolReference> GetDefinition(ScriptRegion scriptRegion)
         {
-            IEnumerable<SymbolReference> definitions = await GetDefinitions(scriptRegion).ConfigureAwait(true);
+            IEnumerable<SymbolReference> definitions = await GetDefinitions(scriptRegion);
             return definitions.FirstOrDefault();
         }
 
@@ -122,7 +118,7 @@ namespace PowerShellEditorServices.Test.Language
             Assert.NotNull(symbol);
 
             IEnumerable<SymbolReference> symbols =
-                await symbolsService.ScanForReferencesOfSymbolAsync(symbol).ConfigureAwait(true);
+                await symbolsService.ScanForReferencesOfSymbolAsync(symbol);
 
             return symbols.OrderBy((i) => i.ScriptRegion.ToRange().Start);
         }
@@ -149,7 +145,7 @@ namespace PowerShellEditorServices.Test.Language
         public async Task FindsParameterHintsOnCommand()
         {
             // TODO: Fix signatures to use parameters, not sets.
-            ParameterSetSignatures signatures = await GetParamSetSignatures(FindsParameterSetsOnCommandData.SourceDetails).ConfigureAwait(true);
+            ParameterSetSignatures signatures = await GetParamSetSignatures(FindsParameterSetsOnCommandData.SourceDetails);
             Assert.NotNull(signatures);
             Assert.Equal("Get-Process", signatures.CommandName);
             Assert.Equal(6, signatures.Signatures.Length);
@@ -158,7 +154,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsCommandForParamHintsWithSpaces()
         {
-            ParameterSetSignatures signatures = await GetParamSetSignatures(FindsParameterSetsOnCommandWithSpacesData.SourceDetails).ConfigureAwait(true);
+            ParameterSetSignatures signatures = await GetParamSetSignatures(FindsParameterSetsOnCommandWithSpacesData.SourceDetails);
             Assert.NotNull(signatures);
             Assert.Equal("Write-Host", signatures.CommandName);
             Assert.Single(signatures.Signatures);
@@ -167,7 +163,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsFunctionDefinition()
         {
-            SymbolReference symbol = await GetDefinition(FindsFunctionDefinitionData.SourceDetails).ConfigureAwait(true);
+            SymbolReference symbol = await GetDefinition(FindsFunctionDefinitionData.SourceDetails);
             Assert.Equal("fn My-Function", symbol.Id);
             Assert.Equal("function My-Function ($myInput)", symbol.Name);
             Assert.Equal(SymbolType.Function, symbol.Type);
@@ -183,9 +179,9 @@ namespace PowerShellEditorServices.Test.Language
             // being defined in the runspace.
             await psesHost.ExecutePSCommandAsync(
                 new PSCommand().AddScript("Set-Alias -Name My-Alias -Value My-Function"),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
-            SymbolReference symbol = await GetDefinition(FindsFunctionDefinitionOfAliasData.SourceDetails).ConfigureAwait(true);
+            SymbolReference symbol = await GetDefinition(FindsFunctionDefinitionOfAliasData.SourceDetails);
             Assert.Equal("function My-Function ($myInput)", symbol.Name);
             Assert.Equal(SymbolType.Function, symbol.Type);
             AssertIsRegion(symbol.NameRegion, 1, 10, 1, 21);
@@ -196,7 +192,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsReferencesOnFunction()
         {
-            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnFunctionData.SourceDetails);
             Assert.Collection(symbols,
             (i) =>
             {
@@ -246,7 +242,7 @@ namespace PowerShellEditorServices.Test.Language
                 }).ToList();
 
             SymbolReference symbol = new("fn Get-Process", SymbolType.Function);
-            IEnumerable<SymbolReference> symbols = await symbolsService.ScanForReferencesOfSymbolAsync(symbol).ConfigureAwait(true);
+            IEnumerable<SymbolReference> symbols = await symbolsService.ScanForReferencesOfSymbolAsync(symbol);
             Assert.Collection(symbols.OrderBy(i => i.FilePath),
                 i => Assert.EndsWith("VariableTest.ps1", i.FilePath),
                 i => Assert.EndsWith("ParamHints.ps1", i.FilePath),
@@ -259,9 +255,9 @@ namespace PowerShellEditorServices.Test.Language
             // TODO: Same as in FindsFunctionDefinitionForAlias.
             await psesHost.ExecutePSCommandAsync(
                 new PSCommand().AddScript("Set-Alias -Name My-Alias -Value My-Function"),
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
-            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnFunctionData.SourceDetails).ConfigureAwait(true);
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnFunctionData.SourceDetails);
 
             Assert.Collection(symbols,
                 (i) => AssertIsRegion(i.NameRegion, 1, 10, 1, 21),
@@ -280,7 +276,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsFunctionDefinitionInWorkspace()
         {
-            IEnumerable<SymbolReference> symbols = await GetDefinitions(FindsFunctionDefinitionInWorkspaceData.SourceDetails).ConfigureAwait(true);
+            IEnumerable<SymbolReference> symbols = await GetDefinitions(FindsFunctionDefinitionInWorkspaceData.SourceDetails);
             SymbolReference symbol = Assert.Single(symbols);
             Assert.Equal("fn My-Function", symbol.Id);
             Assert.Equal("function My-Function ($myInput)", symbol.Name);
@@ -291,7 +287,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsVariableDefinition()
         {
-            IEnumerable<SymbolReference> definitions = await GetDefinitions(FindsVariableDefinitionData.SourceDetails).ConfigureAwait(true);
+            IEnumerable<SymbolReference> definitions = await GetDefinitions(FindsVariableDefinitionData.SourceDetails);
             SymbolReference symbol = Assert.Single(definitions); // Even though it's re-assigned
             Assert.Equal("var things", symbol.Id);
             Assert.Equal("$things", symbol.Name);
@@ -303,7 +299,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsTypedVariableDefinition()
         {
-            IEnumerable<SymbolReference> definitions = await GetDefinitions(FindsTypedVariableDefinitionData.SourceDetails).ConfigureAwait(true);
+            IEnumerable<SymbolReference> definitions = await GetDefinitions(FindsTypedVariableDefinitionData.SourceDetails);
             SymbolReference symbol = Assert.Single(definitions);
             Assert.Equal("var hello", symbol.Id);
             Assert.Equal("$hello", symbol.Name);
@@ -315,7 +311,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsReferencesOnVariable()
         {
-            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnVariableData.SourceDetails).ConfigureAwait(true);
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnVariableData.SourceDetails);
             Assert.Collection(symbols,
                 (i) =>
                 {
@@ -402,7 +398,7 @@ namespace PowerShellEditorServices.Test.Language
         public async Task FindsReferencesOnCommandWithAlias()
         {
             // NOTE: This doesn't use GetOccurrences as it's testing for aliases.
-            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnBuiltInCommandWithAliasData.SourceDetails).ConfigureAwait(true);
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnBuiltInCommandWithAliasData.SourceDetails);
             Assert.Collection(symbols.Where(
                 (i) => i.FilePath
                         .EndsWith(FindsReferencesOnBuiltInCommandWithAliasData.SourceDetails.File)),
@@ -415,7 +411,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsClassDefinition()
         {
-            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.ClassSourceDetails).ConfigureAwait(true);
+            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.ClassSourceDetails);
             Assert.Equal("type SuperClass", symbol.Id);
             Assert.Equal("class SuperClass { }", symbol.Name);
             Assert.Equal(SymbolType.Class, symbol.Type);
@@ -426,7 +422,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsReferencesOnClass()
         {
-            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.ClassSourceDetails).ConfigureAwait(true);
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.ClassSourceDetails);
             Assert.Collection(symbols,
                 (i) =>
                 {
@@ -449,7 +445,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsEnumDefinition()
         {
-            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.EnumSourceDetails).ConfigureAwait(true);
+            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.EnumSourceDetails);
             Assert.Equal("type MyEnum", symbol.Id);
             Assert.Equal("enum MyEnum { }", symbol.Name);
             Assert.Equal(SymbolType.Enum, symbol.Type);
@@ -460,7 +456,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsReferencesOnEnum()
         {
-            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.EnumSourceDetails).ConfigureAwait(true);
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.EnumSourceDetails);
             Assert.Collection(symbols,
                 (i) =>
                 {
@@ -497,7 +493,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsTypeExpressionDefinition()
         {
-            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.TypeExpressionSourceDetails).ConfigureAwait(true);
+            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.TypeExpressionSourceDetails);
             AssertIsRegion(symbol.NameRegion, 39, 6, 39, 12);
             Assert.Equal("type MyEnum", symbol.Id);
             Assert.Equal("enum MyEnum { }", symbol.Name);
@@ -507,7 +503,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsReferencesOnTypeExpression()
         {
-            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.TypeExpressionSourceDetails).ConfigureAwait(true);
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.TypeExpressionSourceDetails);
             Assert.Collection(symbols,
                 (i) =>
                 {
@@ -530,7 +526,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsTypeConstraintDefinition()
         {
-            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.TypeConstraintSourceDetails).ConfigureAwait(true);
+            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.TypeConstraintSourceDetails);
             AssertIsRegion(symbol.NameRegion, 39, 6, 39, 12);
             Assert.Equal("type MyEnum", symbol.Id);
             Assert.Equal("enum MyEnum { }", symbol.Name);
@@ -540,7 +536,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsReferencesOnTypeConstraint()
         {
-            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.TypeConstraintSourceDetails).ConfigureAwait(true);
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.TypeConstraintSourceDetails);
             Assert.Collection(symbols,
                 (i) =>
                 {
@@ -596,7 +592,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsConstructorDefinition()
         {
-            IEnumerable<SymbolReference> symbols = await GetDefinitions(FindsTypeSymbolsDefinitionData.ConstructorSourceDetails).ConfigureAwait(true);
+            IEnumerable<SymbolReference> symbols = await GetDefinitions(FindsTypeSymbolsDefinitionData.ConstructorSourceDetails);
             Assert.Collection(symbols,
                 (i) =>
                 {
@@ -613,14 +609,14 @@ namespace PowerShellEditorServices.Test.Language
                     Assert.True(i.IsDeclaration);
                 });
 
-            Assert.Equal(symbols, await GetReferences(FindsReferencesOnTypeSymbolsData.ConstructorSourceDetails).ConfigureAwait(true));
+            Assert.Equal(symbols, await GetReferences(FindsReferencesOnTypeSymbolsData.ConstructorSourceDetails));
             Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.ConstructorSourceDetails));
         }
 
         [Fact]
         public async Task FindsMethodDefinition()
         {
-            IEnumerable<SymbolReference> symbols = await GetDefinitions(FindsTypeSymbolsDefinitionData.MethodSourceDetails).ConfigureAwait(true);
+            IEnumerable<SymbolReference> symbols = await GetDefinitions(FindsTypeSymbolsDefinitionData.MethodSourceDetails);
             Assert.Collection(symbols,
                 (i) =>
                 {
@@ -648,7 +644,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsReferencesOnMethod()
         {
-            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.MethodSourceDetails).ConfigureAwait(true);
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.MethodSourceDetails);
             Assert.Collection(symbols,
                 (i) => Assert.Equal("string MyClassMethod([string]$param1, $param2, [int]$param3)", i.Name),
                 (i) => Assert.Equal("string MyClassMethod([MyEnum]$param1)", i.Name),
@@ -668,7 +664,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsPropertyDefinition()
         {
-            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.PropertySourceDetails).ConfigureAwait(true);
+            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.PropertySourceDetails);
             Assert.Equal("prop SomePropWithDefault", symbol.Id);
             Assert.Equal("[string] $SomePropWithDefault", symbol.Name);
             Assert.Equal(SymbolType.Property, symbol.Type);
@@ -678,7 +674,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsReferencesOnProperty()
         {
-            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.PropertySourceDetails).ConfigureAwait(true);
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.PropertySourceDetails);
             Assert.Collection(symbols,
                 (i) =>
                 {
@@ -720,7 +716,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsEnumMemberDefinition()
         {
-            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.EnumMemberSourceDetails).ConfigureAwait(true);
+            SymbolReference symbol = await GetDefinition(FindsTypeSymbolsDefinitionData.EnumMemberSourceDetails);
             Assert.Equal("prop Second", symbol.Id);
             // Doesn't include [MyEnum]:: because that'd be redundant in the outline.
             Assert.Equal("Second", symbol.Name);
@@ -728,7 +724,7 @@ namespace PowerShellEditorServices.Test.Language
             Assert.True(symbol.IsDeclaration);
             AssertIsRegion(symbol.NameRegion, 41, 5, 41, 11);
 
-            symbol = await GetDefinition(FindsReferencesOnTypeSymbolsData.EnumMemberSourceDetails).ConfigureAwait(true);
+            symbol = await GetDefinition(FindsReferencesOnTypeSymbolsData.EnumMemberSourceDetails);
             Assert.Equal("prop First", symbol.Id);
             Assert.Equal("First", symbol.Name);
             Assert.Equal(SymbolType.EnumMember, symbol.Type);
@@ -739,7 +735,7 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsReferencesOnEnumMember()
         {
-            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.EnumMemberSourceDetails).ConfigureAwait(true);
+            IEnumerable<SymbolReference> symbols = await GetReferences(FindsReferencesOnTypeSymbolsData.EnumMemberSourceDetails);
             Assert.Collection(symbols,
                 (i) =>
                 {
@@ -768,7 +764,7 @@ namespace PowerShellEditorServices.Test.Language
                 GetScriptFile(FindsDetailsForBuiltInCommandData.SourceDetails),
                 FindsDetailsForBuiltInCommandData.SourceDetails.StartLineNumber,
                 FindsDetailsForBuiltInCommandData.SourceDetails.StartColumnNumber,
-                CancellationToken.None).ConfigureAwait(true);
+                CancellationToken.None);
 
             Assert.Equal("Gets the processes that are running on the local computer.", symbolDetails.Documentation);
         }
@@ -836,7 +832,7 @@ namespace PowerShellEditorServices.Test.Language
             Assert.True(symbol.IsDeclaration);
 
             // There should be no region symbols unless the provider has been registered.
-            Assert.Empty(symbols.Where(i => i.Type == SymbolType.Region));
+            Assert.DoesNotContain(symbols, i => i.Type == SymbolType.Region);
         }
 
         [Fact]
@@ -907,7 +903,7 @@ namespace PowerShellEditorServices.Test.Language
             AssertIsRegion(symbol.ScriptRegion, 27, 5, 27, 10);
         }
 
-        [Fact(Skip="DSC symbols don't work yet.")]
+        [Fact(Skip = "DSC symbols don't work yet.")]
         public void FindsSymbolsInDSCFile()
         {
             Skip.If(!s_isWindows, "DSC only works properly on Windows.");

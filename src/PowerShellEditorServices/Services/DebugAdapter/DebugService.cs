@@ -30,7 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
     {
         #region Fields
 
-        private const string PsesGlobalVariableNamePrefix = "__psEditorServices_";
+        internal const string PsesGlobalVariableNamePrefix = "__psEditorServices_";
         private const string TemporaryScriptFileName = "Script Listing.ps1";
 
         private readonly ILogger _logger;
@@ -527,11 +527,15 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 return null;
             }
 
-            // If we didn't write output,
-            // return a VariableDetails instance.
+            // If we didn't write output, return a VariableDetails instance.
             return new VariableDetails(
-                    expressionString,
-                    string.Join(Environment.NewLine, results));
+                expressionString,
+                // If there's only one result, we want its raw value (especially if it's null). For
+                // a collection, since we're displaying these, we want to concatenante them.
+                // However, doing that for one result caused null to be turned into an empty string.
+                results.Count == 1
+                    ? results[0]
+                    : string.Join(Environment.NewLine, results));
         }
 
         /// <summary>
@@ -919,6 +923,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public event EventHandler<DebuggerStoppedEventArgs> DebuggerStopped;
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "It has to be async.")]
         internal async void OnDebuggerStopAsync(object sender, DebuggerStopEventArgs e)
         {
             try

@@ -382,6 +382,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1825:Avoid zero-length array allocations", Justification = "Cannot use Array.Empty, since it must work in net452")]
         private static Version GetPSVersion()
         {
             // In order to read the $PSVersionTable variable,
@@ -389,12 +390,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             // which is expensive.
             // Rather than do that, we instead go straight to the source,
             // which is a static property, internal in WinPS and public in PS 6+
-#pragma warning disable CA1825
             return typeof(PSObject).Assembly
                 .GetType("System.Management.Automation.PSVersionInfo")
                 .GetMethod("get_PSVersion", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
-                .Invoke(null, new object[0] /* Cannot use Array.Empty, since it must work in net452 */) as Version;
-#pragma warning restore CA1825
+                .Invoke(null, new object[0]) as Version;
         }
     }
 }

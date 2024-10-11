@@ -201,6 +201,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             await debugServer.WaitForShutdown().ConfigureAwait(false);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD003:Avoid awaiting foreign Tasks", Justification = "It's a wrapper.")]
         private async Task StartDebugServer(Task<PsesDebugServer> debugServerCreation)
         {
             PsesDebugServer debugServer = await debugServerCreation.ConfigureAwait(false);
@@ -289,6 +290,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 _config.LogPath,
                 (int)_config.LogLevel,
                 consoleReplEnabled: _config.ConsoleRepl != ConsoleReplKind.None,
+                useNullPSHostUI: _config.UseNullPSHostUI,
                 usesLegacyReadLine: _config.ConsoleRepl == ConsoleReplKind.LegacyReadLine,
                 bundledModulePath: _config.BundledModulePath);
         }
@@ -303,6 +305,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _config.PSHost.UI.WriteLine(_config.StartupBanner);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD110:Observe result of async calls", Justification = "Intentionally fire and forget.")]
         private void DebugServer_OnSessionEnded(object sender, EventArgs args)
         {
             _logger.Log(PsesLogLevel.Verbose, "Debug session ended, restarting debug service...");
