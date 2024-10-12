@@ -20,14 +20,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public Task<ScopesResponse> Handle(ScopesArguments request, CancellationToken cancellationToken)
         {
-            VariableScope[] variableScopes =
-                _debugService.GetVariableScopes(
-                    (int)request.FrameId);
+            //We have an artificial breakpoint label, so just copy the stacktrace from the first stack entry for this.
+            int frameId = request.FrameId == 0 ? 0 : (int)request.FrameId - 1;
+
+            VariableScope[] variableScopes = _debugService.GetVariableScopes(frameId);
 
             return Task.FromResult(new ScopesResponse
             {
-                Scopes = new Container<Scope>(variableScopes
-                    .Select(LspDebugUtils.CreateScope))
+                Scopes = new Container<Scope>(
+                    variableScopes
+                    .Select(LspDebugUtils.CreateScope)
+                )
             });
         }
     }
