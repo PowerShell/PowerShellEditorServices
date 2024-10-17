@@ -6,8 +6,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
-using System.Management.Automation.Language;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -50,7 +48,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private VariableContainerDetails scriptScopeVariables;
         private VariableContainerDetails localScopeVariables;
         private StackFrameDetails[] stackFrameDetails;
-        private readonly PropertyInfo invocationTypeScriptPositionProperty;
 
         private readonly SemaphoreSlim debugInfoHandle = AsyncUtils.CreateSimpleLockingSemaphore();
         #endregion
@@ -74,6 +71,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// is stopped.
         /// </summary>
         public DebuggerStoppedEventArgs CurrentDebuggerStoppedEventArgs { get; private set; }
+
+        /// <summary>
+        /// Returns a task that completes when script frames and variables have completed population
+        /// </summary>
+        public Task StackFramesAndVariablesFetched { get; private set; }
+
 
         /// <summary>
         /// Tracks whether we are running <c>Debug-Runspace</c> in an out-of-process runspace.
@@ -111,12 +114,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _debugContext.DebuggerResuming += OnDebuggerResuming;
             _debugContext.BreakpointUpdated += OnBreakpointUpdated;
             _remoteFileManager = remoteFileManager;
-
-            invocationTypeScriptPositionProperty =
-                typeof(InvocationInfo)
-                    .GetProperty(
-                        "ScriptPosition",
-                        BindingFlags.NonPublic | BindingFlags.Instance);
         }
 
         #endregion
@@ -981,8 +978,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     }
                 }
 
-                // Get call stack and variables.
-                await FetchStackFramesAndVariablesAsync(noScriptName ? localScriptPath : null).ConfigureAwait(false);
+                // Begin call stack and variables fetch. We don't need to block here.
+                StackFramesAndVariablesFetched = FetchStackFramesAndVariablesAsync(noScriptName ? localScriptPath : null);
 
                 // If this is a remote connection and the debugger stopped at a line
                 // in a script file, get the file contents
@@ -994,53 +991,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         await _remoteFileManager.FetchRemoteFileAsync(
                             e.InvocationInfo.ScriptName,
                             _psesHost.CurrentRunspace).ConfigureAwait(false);
-                }
-
-                if (stackFrameDetails.Length > 0)
-                {
-                    // Augment the top stack frame with details from the stop event
-                    if (invocationTypeScriptPositionProperty.GetValue(e.InvocationInfo) is IScriptExtent scriptExtent)
-                    {
-                        StackFrameDetails targetFrame = stackFrameDetails[0];
-
-                        // Certain context changes (like stepping into the default value expression
-                        // of a parameter) do not create a call stack frame. In order to represent
-                        // this context change we create a fake call stack frame.
-                        if (!string.IsNullOrEmpty(scriptExtent.File)
-                            && !PathUtils.IsPathEqual(scriptExtent.File, targetFrame.ScriptPath))
-                        {
-                            await debugInfoHandle.WaitAsync().ConfigureAwait(false);
-                            try
-                            {
-                                targetFrame = new StackFrameDetails
-                                {
-                                    ScriptPath = scriptExtent.File,
-                                    // Just use the last frame's variables since we don't have a
-                                    // good way to get real values.
-                                    AutoVariables = targetFrame.AutoVariables,
-                                    CommandVariables = targetFrame.CommandVariables,
-                                    // Ideally we'd get a real value here but since there's no real
-                                    // call stack frame for this, we'd need to replicate a lot of
-                                    // engine code.
-                                    FunctionName = "<ScriptBlock>",
-                                };
-
-                                StackFrameDetails[] newFrames = new StackFrameDetails[stackFrameDetails.Length + 1];
-                                newFrames[0] = targetFrame;
-                                stackFrameDetails.CopyTo(newFrames, 1);
-                                stackFrameDetails = newFrames;
-                            }
-                            finally
-                            {
-                                debugInfoHandle.Release();
-                            }
-                        }
-
-                        targetFrame.StartLineNumber = scriptExtent.StartLineNumber;
-                        targetFrame.EndLineNumber = scriptExtent.EndLineNumber;
-                        targetFrame.StartColumnNumber = scriptExtent.StartColumnNumber;
-                        targetFrame.EndColumnNumber = scriptExtent.EndColumnNumber;
-                    }
                 }
 
                 CurrentDebuggerStoppedEventArgs =

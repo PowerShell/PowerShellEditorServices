@@ -56,38 +56,6 @@ namespace Microsoft.PowerShell.EditorServices.Utility
             };
         }
 
-        public static StackFrame CreateStackFrame(
-            StackFrameDetails stackFrame,
-            long id)
-        {
-            SourcePresentationHint sourcePresentationHint =
-                stackFrame.IsExternalCode ? SourcePresentationHint.Deemphasize : SourcePresentationHint.Normal;
-
-            // When debugging an interactive session, the ScriptPath is <No File> which is not a valid source file.
-            // We need to make sure the user can't open the file associated with this stack frame.
-            // It will generate a VSCode error in this case.
-            Source source = null;
-            if (!stackFrame.ScriptPath.Contains("<"))
-            {
-                source = new Source
-                {
-                    Path = stackFrame.ScriptPath,
-                    PresentationHint = sourcePresentationHint
-                };
-            }
-
-            return new StackFrame
-            {
-                Id = id,
-                Name = (source != null) ? stackFrame.FunctionName : "Interactive Session",
-                Line = (source != null) ? stackFrame.StartLineNumber : 0,
-                EndLine = stackFrame.EndLineNumber,
-                Column = (source != null) ? stackFrame.StartColumnNumber : 0,
-                EndColumn = stackFrame.EndColumnNumber,
-                Source = source
-            };
-        }
-
         public static Scope CreateScope(VariableScope scope)
         {
             return new Scope
