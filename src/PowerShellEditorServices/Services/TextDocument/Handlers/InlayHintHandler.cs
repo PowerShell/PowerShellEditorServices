@@ -61,13 +61,15 @@ internal class PsesInlayHandler(
 
         IEnumerable<InlayHint> inlayHints =
             from s in symbolReferences
-            where s.Type == SymbolType.Variable | s.Type == SymbolType.Parameter
+            where s.Type is SymbolType.Variable or SymbolType.Parameter
             select new InlayHint
             {
-                Kind = InlayHintKind.Type,
+                Kind = s.Type is SymbolType.Parameter ? InlayHintKind.Parameter : InlayHintKind.Type,
+                // TODO: Integrate ScriptPositionAdapter once rename PR is merged
                 Position = new Position(
                     s.ScriptRegion.StartLineNumber - 1,
-                    s.ScriptRegion.StartColumnNumber - 1),
+                    s.ScriptRegion.StartColumnNumber - 1
+                ),
                 Label = "TypeGoesHere:" //Fixme: Get the type of the symbol
             };
 
