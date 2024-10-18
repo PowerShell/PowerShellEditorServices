@@ -54,11 +54,11 @@ dotnet_diagnostic.CA1068.severity = error
 # CA1501: Avoid excessive inheritance
 dotnet_diagnostic.CA1501.severity = error
 # CA1502: Avoid excessive complexity
-dotnet_diagnostic.CA1502.severity = warning
+dotnet_diagnostic.CA1502.severity = silent
 # CA1505: Avoid unmaintainable code
 dotnet_diagnostic.CA1505.severity = error
 # CA1506: Avoid excessive class coupling
-dotnet_diagnostic.CA1506.severity = warning
+dotnet_diagnostic.CA1506.severity = silent
 # CA1507: Use nameof in place of string
 dotnet_diagnostic.CA1507.severity = error
 # CA1508: Avoid dead conditional code
@@ -95,22 +95,22 @@ dotnet_diagnostic.RCS1210.severity = error
 # RCS1036: Remove unnecessary blank line
 dotnet_diagnostic.RCS1036.severity = error
 # RCS1075: Avoid empty catch clause that catches System.Exception
-dotnet_diagnostic.RCS1075.severity = suggestion
+dotnet_diagnostic.RCS1075.severity = error
 # RCS1170: Use read-only auto-implemented property
 dotnet_diagnostic.RCS1170.severity = error
 
 # VSTHRD002: Avoid problematic synchronous waits
-dotnet_diagnostic.VSTHRD002.severity = suggestion
+dotnet_diagnostic.VSTHRD002.severity = error
 # VSTHRD003: Avoid awaiting foreign Tasks
-dotnet_diagnostic.VSTHRD003.severity = suggestion
+dotnet_diagnostic.VSTHRD003.severity = error
 # VSTHRD105: Avoid method overloads that assume TaskScheduler.Current
-dotnet_diagnostic.VSTHRD105.severity = suggestion
+dotnet_diagnostic.VSTHRD105.severity = error
 # VSTHRD100: Avoid async void methods
-dotnet_diagnostic.VSTHRD100.severity = suggestion
+dotnet_diagnostic.VSTHRD100.severity = error
 # VSTHRD103: Call async methods when in an async method
-dotnet_diagnostic.VSTHRD103.severity = suggestion
+dotnet_diagnostic.VSTHRD103.severity = error
 # VSTHRD110: Observe result of async calls
-dotnet_diagnostic.VSTHRD110.severity = suggestion
+dotnet_diagnostic.VSTHRD110.severity = error
 # VSTHRD114: Avoid returning a null Task
 dotnet_diagnostic.VSTHRD114.severity = error
 # VSTHRD200: Use "Async" suffix for awaitable methods

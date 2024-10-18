@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
@@ -30,16 +29,16 @@ using Xunit;
 namespace PowerShellEditorServices.Test.Language
 {
     [Trait("Category", "Symbols")]
-    public class SymbolsServiceTests : IDisposable
+    public class SymbolsServiceTests : IAsyncLifetime
     {
-        private readonly PsesInternalHost psesHost;
-        private readonly WorkspaceService workspace;
-        private readonly SymbolsService symbolsService;
+        private PsesInternalHost psesHost;
+        private WorkspaceService workspace;
+        private SymbolsService symbolsService;
         private static readonly bool s_isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
-        public SymbolsServiceTests()
+        public async Task InitializeAsync()
         {
-            psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
+            psesHost = await PsesHostFactory.Create(NullLoggerFactory.Instance);
             workspace = new WorkspaceService(NullLoggerFactory.Instance);
             workspace.WorkspaceFolders.Add(new WorkspaceFolder
             {
@@ -53,14 +52,11 @@ namespace PowerShellEditorServices.Test.Language
                 new ConfigurationService());
         }
 
-        public void Dispose()
+        public async Task DisposeAsync()
         {
-#pragma warning disable VSTHRD002
-            psesHost.StopAsync().GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002
+            psesHost.StopAsync();
             CommandHelpers.s_cmdletToAliasCache.Clear();
             CommandHelpers.s_aliasToCmdletCache.Clear();
-            GC.SuppressFinalize(this);
         }
 
         private static void AssertIsRegion(
@@ -836,7 +832,7 @@ namespace PowerShellEditorServices.Test.Language
             Assert.True(symbol.IsDeclaration);
 
             // There should be no region symbols unless the provider has been registered.
-            Assert.Empty(symbols.Where(i => i.Type == SymbolType.Region));
+            Assert.DoesNotContain(symbols, i => i.Type == SymbolType.Region);
         }
 
         [Fact]

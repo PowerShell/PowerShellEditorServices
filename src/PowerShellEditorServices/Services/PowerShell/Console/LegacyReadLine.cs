@@ -35,9 +35,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             _onIdleAction = onIdleAction;
         }
 
-#pragma warning disable CA1502 // Cyclomatic complexity we don't care about
         public override string ReadLine(CancellationToken cancellationToken)
-#pragma warning restore CA1502
         {
             string inputBeforeCompletion = null;
             string inputAfterCompletion = null;
@@ -394,6 +392,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Console
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "This is a legacy implementation.")]
         private ConsoleKeyInfo ReadKeyWithIdleSupport(CancellationToken cancellationToken)
         {
             // We run the readkey function on another thread so we can run an idle handler

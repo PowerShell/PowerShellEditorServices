@@ -41,6 +41,7 @@ internal class DidChangeWatchedFilesHandler : IDidChangeWatchedFilesHandler
     public DidChangeWatchedFilesRegistrationOptions GetRegistrationOptions(
         DidChangeWatchedFilesCapability capability,
         ClientCapabilities clientCapabilities)
+#pragma warning disable CS8601 // Possible null reference assignment (it's from the library).
         => new()
         {
             Watchers = new[]
@@ -52,6 +53,7 @@ internal class DidChangeWatchedFilesHandler : IDidChangeWatchedFilesHandler
                 },
             },
         };
+#pragma warning restore CS8601 // Possible null reference assignment.
 
     public Task<Unit> Handle(DidChangeWatchedFilesParams request, CancellationToken cancellationToken)
     {

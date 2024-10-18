@@ -10,10 +10,10 @@ using System.Reflection;
 using SMA = System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using Microsoft.PowerShell.EditorServices.Hosting;
+using System.Diagnostics;
 using System.Globalization;
 
 #if DEBUG
-using System.Diagnostics;
 using System.Threading;
 using Debugger = System.Diagnostics.Debugger;
 #endif
@@ -23,7 +23,6 @@ namespace Microsoft.PowerShell.EditorServices.Commands
     /// <summary>
     /// The Start-EditorServices command, the conventional entrypoint for PowerShell Editor Services.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays", Justification = "Cmdlet parameters can be arrays")]
     [Cmdlet(VerbsLifecycle.Start, "EditorServices", DefaultParameterSetName = "NamedPipe")]
     public sealed class StartEditorServicesCommand : PSCmdlet
     {
@@ -32,6 +31,10 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         private readonly List<IDisposable> _loggerUnsubscribers;
 
         private HostLogger _logger;
+
+        // NOTE: Ignore the suggestion to use Environment.ProcessId as it doesn't work for
+        // .NET 4.6.2 (for Windows PowerShell), and this won't be caught in CI.
+        private static readonly int s_currentPID = Process.GetCurrentProcess().Id;
 
         public StartEditorServicesCommand()
         {
@@ -44,30 +47,30 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         /// <summary>
         /// The name of the EditorServices host to report.
         /// </summary>
-        [Parameter(Mandatory = true)]
+        [Parameter]
         [ValidateNotNullOrEmpty]
-        public string HostName { get; set; }
+        public string HostName { get; set; } = "PSES";
 
         /// <summary>
         /// The ID to give to the host's profile.
         /// </summary>
-        [Parameter(Mandatory = true)]
+        [Parameter]
         [ValidateNotNullOrEmpty]
-        public string HostProfileId { get; set; }
+        public string HostProfileId { get; set; } = "PSES";
 
         /// <summary>
         /// The version to report for the host.
         /// </summary>
-        [Parameter(Mandatory = true)]
+        [Parameter]
         [ValidateNotNullOrEmpty]
-        public Version HostVersion { get; set; }
+        public Version HostVersion { get; set; } = new Version(0, 0, 0);
 
         /// <summary>
         /// Path to the session file to create on startup or startup failure.
         /// </summary>
-        [Parameter(Mandatory = true)]
+        [Parameter]
         [ValidateNotNullOrEmpty]
-        public string SessionDetailsPath { get; set; }
+        public string SessionDetailsPath { get; set; } = "PowerShellEditorServices.json";
 
         /// <summary>
         /// The name of the named pipe to use for the LSP transport.
@@ -120,14 +123,16 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         /// </summary>
         [Parameter]
         [ValidateNotNullOrEmpty]
-        public string BundledModulesPath { get; set; }
+        public string BundledModulesPath { get; set; } = Path.GetFullPath(Path.Combine(
+            Path.GetDirectoryName(typeof(StartEditorServicesCommand).Assembly.Location),
+            "..", "..", ".."));
 
         /// <summary>
-        /// The absolute path to the where the editor services log file should be created and logged to.
+        /// The absolute path to the folder where logs will be saved.
         /// </summary>
         [Parameter]
         [ValidateNotNullOrEmpty]
-        public string LogPath { get; set; }
+        public string LogPath { get; set; } = Path.Combine(Path.GetTempPath(), "PowerShellEditorServices");
 
         /// <summary>
         /// The minimum log level that should be emitted.
@@ -198,7 +203,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             {
                 // NOTE: Ignore the suggestion to use Environment.ProcessId as it doesn't work for
                 // .NET 4.6.2 (for Windows PowerShell), and this won't be caught in CI.
-                Console.WriteLine($"Waiting for debugger to attach, PID: {Process.GetCurrentProcess().Id}");
+                Console.WriteLine($"Waiting for debugger to attach, PID: {s_currentPID}");
                 while (!Debugger.IsAttached)
                 {
                     Thread.Sleep(1000);
@@ -210,7 +215,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         }
 #pragma warning restore IDE0022
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Uses ThrowTerminatingError() instead")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "We have to wait here, it's the whole program.")]
         protected override void EndProcessing()
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Beginning EndProcessing block");
@@ -227,9 +232,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 using EditorServicesLoader psesLoader = EditorServicesLoader.Create(_logger, editorServicesConfig, SessionDetailsPath, _loggerUnsubscribers);
                 _logger.Log(PsesLogLevel.Verbose, "Loading EditorServices");
                 // Synchronously start editor services and wait here until it shuts down.
-#pragma warning disable VSTHRD002
                 psesLoader.LoadAndRunEditorServicesAsync().GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002
             }
             catch (Exception e)
             {
@@ -266,14 +269,12 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             }
 
             string logDirPath = GetLogDirPath();
-            string logPath = Path.Combine(logDirPath, "StartEditorServices.log");
+            string logPath = Path.Combine(logDirPath, $"StartEditorServices-{s_currentPID}.log");
 
-            // Temp debugging sessions may try to reuse this same path,
-            // so we ensure they have a unique path
             if (File.Exists(logPath))
             {
                 int randomInt = new Random().Next();
-                logPath = Path.Combine(logDirPath, $"StartEditorServices-temp{randomInt.ToString("X", CultureInfo.InvariantCulture.NumberFormat)}.log");
+                logPath = Path.Combine(logDirPath, $"StartEditorServices-{s_currentPID}-{randomInt.ToString("X", CultureInfo.InvariantCulture.NumberFormat)}.log");
             }
 
             StreamLogger fileLogger = StreamLogger.CreateWithNewFile(logPath);
@@ -281,19 +282,19 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             IDisposable fileLoggerUnsubscriber = _logger.Subscribe(fileLogger);
             fileLogger.AddUnsubscriber(fileLoggerUnsubscriber);
             _loggerUnsubscribers.Add(fileLoggerUnsubscriber);
-
             _logger.Log(PsesLogLevel.Diagnostic, "Logging started");
         }
 
+        // Sanitizes user input and ensures the directory is created.
         private string GetLogDirPath()
         {
-            string logDir = !string.IsNullOrEmpty(LogPath)
-                ? Path.GetDirectoryName(LogPath)
-                : Path.GetDirectoryName(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+            string logDir = LogPath;
+            if (string.IsNullOrEmpty(logDir))
+            {
+                logDir = Path.Combine(Path.GetTempPath(), "PowerShellEditorServices");
+            }
 
-            // Ensure logDir exists
             Directory.CreateDirectory(logDir);
-
             return logDir;
         }
 
@@ -351,6 +352,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 FeatureFlags = FeatureFlags,
                 LogLevel = LogLevel,
                 ConsoleRepl = GetReplKind(),
+                UseNullPSHostUI = Stdio, // If Stdio is used we can't write anything else out
                 AdditionalModules = AdditionalModules,
                 LanguageServiceTransport = GetLanguageServiceTransport(),
                 DebugServiceTransport = GetDebugServiceTransport(),

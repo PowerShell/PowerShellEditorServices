@@ -94,10 +94,12 @@ namespace Microsoft.PowerShell.EditorServices.Utility
 
         public static string EscapeScriptFilePath(string f) => string.Concat("'", f.Replace("'", "''"), "'");
 
-        public static PSCommand BuildDotSourceCommandWithArguments(string command, IEnumerable<string> arguments)
+        // Operator defaults to dot-source but could also be call (ampersand).
+        // It can't be called that because it's a reserved keyword in C#.
+        public static PSCommand BuildDotSourceCommandWithArguments(string command, IEnumerable<string> arguments, string executeMode = ".")
         {
             string args = string.Join(" ", arguments ?? Array.Empty<string>());
-            string script = string.Concat(". ", command, string.IsNullOrEmpty(args) ? "" : " ", args);
+            string script = string.Concat(executeMode, " ", command, string.IsNullOrEmpty(args) ? "" : " ", args);
             // HACK: We use AddScript instead of AddArgument/AddParameter to reuse Powershell parameter binding logic.
             return new PSCommand().AddScript(script);
         }

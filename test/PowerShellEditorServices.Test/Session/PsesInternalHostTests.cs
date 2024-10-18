@@ -20,19 +20,13 @@ namespace PowerShellEditorServices.Test.Session
     using System.Management.Automation.Runspaces;
 
     [Trait("Category", "PsesInternalHost")]
-    public class PsesInternalHostTests : IDisposable
+    public class PsesInternalHostTests : IAsyncLifetime
     {
-        private readonly PsesInternalHost psesHost;
+        private PsesInternalHost psesHost;
 
-        public PsesInternalHostTests() => psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
+        public async Task InitializeAsync() => psesHost = await PsesHostFactory.Create(NullLoggerFactory.Instance);
 
-        public void Dispose()
-        {
-#pragma warning disable VSTHRD002
-            psesHost.StopAsync().Wait();
-#pragma warning restore VSTHRD002
-            GC.SuppressFinalize(this);
-        }
+        public async Task DisposeAsync() => await psesHost.StopAsync();
 
         [Fact]
         public async Task CanExecutePSCommand()
@@ -88,7 +82,7 @@ namespace PowerShellEditorServices.Test.Session
         public async Task CanCancelExecutionWithToken()
         {
             using CancellationTokenSource cancellationSource = new(millisecondsDelay: 1000);
-            _ = await Assert.ThrowsAsync<TaskCanceledException>(() =>
+            await Assert.ThrowsAsync<TaskCanceledException>(() =>
             {
                 return psesHost.ExecutePSCommandAsync(
                     new PSCommand().AddScript("Start-Sleep 10"),
@@ -104,9 +98,8 @@ namespace PowerShellEditorServices.Test.Session
                 new PSCommand().AddScript("Start-Sleep 10"),
                 CancellationToken.None);
 
-            // Wait until our task has started.
-            Thread.Sleep(2000);
-            psesHost.CancelCurrentTask();
+            // Cancel the task after 1 second in another thread.
+            Task.Run(() => { Thread.Sleep(1000); psesHost.CancelCurrentTask(); });
             await Assert.ThrowsAsync<TaskCanceledException>(() => executeTask);
             Assert.True(executeTask.IsCanceled);
         }
@@ -238,19 +231,13 @@ namespace PowerShellEditorServices.Test.Session
     }
 
     [Trait("Category", "PsesInternalHost")]
-    public class PsesInternalHostWithProfileTests : IDisposable
+    public class PsesInternalHostWithProfileTests : IAsyncLifetime
     {
-        private readonly PsesInternalHost psesHost;
+        private PsesInternalHost psesHost;
 
-        public PsesInternalHostWithProfileTests() => psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance, loadProfiles: true);
+        public async Task InitializeAsync() => psesHost = await PsesHostFactory.Create(NullLoggerFactory.Instance, loadProfiles: true);
 
-        public void Dispose()
-        {
-#pragma warning disable VSTHRD002
-            psesHost.StopAsync().Wait();
-#pragma warning restore VSTHRD002
-            GC.SuppressFinalize(this);
-        }
+        public async Task DisposeAsync() => await psesHost.StopAsync();
 
         [Fact]
         public async Task CanResolveAndLoadProfilesForHostId()

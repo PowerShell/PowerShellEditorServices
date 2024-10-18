@@ -23,9 +23,8 @@ namespace PowerShellEditorServices.Test.E2E
         /// <summary>
         ///     The current server process (if any).
         /// </summary>
-#pragma warning disable CA2213
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "It is diposed but with a lock.")]
         private Process _serverProcess;
-#pragma warning restore CA2213
 
         /// <summary>
         ///     Create a new <see cref="StdioServerProcess"/>.

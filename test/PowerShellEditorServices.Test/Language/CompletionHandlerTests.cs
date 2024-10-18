@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -21,26 +20,20 @@ using Xunit;
 namespace PowerShellEditorServices.Test.Language
 {
     [Trait("Category", "Completions")]
-    public class CompletionHandlerTests : IDisposable
+    public class CompletionHandlerTests : IAsyncLifetime
     {
-        private readonly PsesInternalHost psesHost;
-        private readonly WorkspaceService workspace;
-        private readonly PsesCompletionHandler completionHandler;
+        private PsesInternalHost psesHost;
+        private WorkspaceService workspace;
+        private PsesCompletionHandler completionHandler;
 
-        public CompletionHandlerTests()
+        public async Task InitializeAsync()
         {
-            psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
+            psesHost = await PsesHostFactory.Create(NullLoggerFactory.Instance);
             workspace = new WorkspaceService(NullLoggerFactory.Instance);
             completionHandler = new PsesCompletionHandler(NullLoggerFactory.Instance, psesHost, psesHost, workspace);
         }
 
-        public void Dispose()
-        {
-#pragma warning disable VSTHRD002
-            psesHost.StopAsync().Wait();
-#pragma warning restore VSTHRD002
-            GC.SuppressFinalize(this);
-        }
+        public async Task DisposeAsync() => await Task.Run(psesHost.StopAsync);
 
         private ScriptFile GetScriptFile(ScriptRegion scriptRegion) => workspace.GetFile(TestUtilities.GetSharedPath(scriptRegion.File));
 

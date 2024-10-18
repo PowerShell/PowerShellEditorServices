@@ -90,6 +90,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public ConsoleReplKind ConsoleRepl { get; set; } = ConsoleReplKind.None;
 
         /// <summary>
+        /// Will suppress messages to PSHost (to prevent Stdio clobbering)        
+        /// </summary>
+        public bool UseNullPSHostUI { get; set; }
+
+        /// <summary>
         /// The minimum log level to log events with.
         /// </summary>
         public PsesLogLevel LogLevel { get; set; } = PsesLogLevel.Normal;

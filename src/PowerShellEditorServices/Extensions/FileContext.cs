@@ -208,14 +208,13 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         /// <param name="textToInsert">The text string to insert.</param>
         /// <param name="insertRange">The buffer range which will be replaced by the string.</param>
-        #pragma warning disable VSTHRD002
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Supporting synchronous API.")]
         public void InsertText(string textToInsert, IFileRange insertRange)
         {
             editorOperations
                 .InsertTextAsync(scriptFile.DocumentUri.ToString(), textToInsert, insertRange.ToBufferRange())
                 .Wait();
         }
-        #pragma warning restore VSTHRD002
 
         #endregion
 
@@ -224,6 +223,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Saves this file.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD110:Observe result of async calls", Justification = "Supporting synchronous API.")]
         public void Save() => editorOperations.SaveFileAsync(scriptFile.FilePath);
 
         /// <summary>
@@ -233,7 +233,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// the path where the file should be saved,
         /// including the file name with extension as the leaf
         /// </param>
-        #pragma warning disable VSTHRD002
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Supporting synchronous API.")]
         public void SaveAs(string newFilePath)
         {
             // Do some validation here so that we can provide a helpful error if the path won't work
@@ -248,7 +248,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
 
             editorOperations.SaveFileAsync(scriptFile.FilePath, newFilePath).Wait();
         }
-        #pragma warning restore VSTHRD002
 
         #endregion
     }

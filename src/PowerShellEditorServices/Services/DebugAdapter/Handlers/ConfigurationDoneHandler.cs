@@ -110,9 +110,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             PSCommand command;
             if (System.IO.File.Exists(scriptToLaunch))
             {
-                // For a saved file we just execute its path (after escaping it).
+                // For a saved file we just execute its path (after escaping it), with the configured operator
+                // (which can't be called that because it's a reserved keyword in C#).
+                string executeMode = _debugStateService?.ExecuteMode == "Call" ? "&" : ".";
                 command = PSCommandHelpers.BuildDotSourceCommandWithArguments(
-                    PSCommandHelpers.EscapeScriptFilePath(scriptToLaunch), _debugStateService?.Arguments);
+                    PSCommandHelpers.EscapeScriptFilePath(scriptToLaunch), _debugStateService?.Arguments, executeMode);
             }
             else // It's a URI to an untitled script, or a raw script.
             {

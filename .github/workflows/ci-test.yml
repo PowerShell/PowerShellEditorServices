@@ -4,9 +4,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    # The branches below must be a subset of the branches above
     branches: [ main ]
-    paths-ignore: [ '**/*.md' ]
   merge_group:
     types: [ checks_requested ]
   schedule:
@@ -22,7 +20,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       DOTNET_NOLOGO: true
-      DOTNET_CLI_TELEMETRY_OPTOUT: true
       DOTNET_GENERATE_ASPNET_CERTIFICATE: false
     steps:
       - name: Checkout repository
@@ -32,11 +29,9 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           cache: true
-          cache-dependency-path: '**/packages.lock.json'
-          dotnet-version: |
-            6.0.x
-            7.0.x
-            8.0.x
+          cache-dependency-path: '**/*.csproj'
+          dotnet-version: 6.0.x
+          global-json-file: "./global.json"
 
       - name: Install PSResources
         shell: pwsh
@@ -50,14 +45,20 @@ jobs:
           sparse-checkout: tools/install-powershell.ps1
           sparse-checkout-cone-mode: false
 
+      - name: Install daily
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'merge_group' }}
+        continue-on-error: true
+        shell: pwsh
+        run: ./pwsh/tools/install-powershell.ps1 -Daily
+
       - name: Build and test
         shell: pwsh
-        run: Invoke-Build ${{ github.event_name == 'merge_group' && 'TestFull' || 'Test' }}
+        run: Invoke-Build -Configuration Release ${{ github.event_name == 'merge_group' && 'TestFull' || 'Test' }}
 
-      - name: Test with daily
+      - name: Test daily
         if: ${{ github.event_name == 'schedule' }}
         shell: pwsh
-        run: ./pwsh/tools/install-powershell.ps1 -Daily && Invoke-Build TestE2EDaily
+        run: Invoke-Build -Configuration Release TestE2EDaily
 
       - name: Upload build artifacts
         if: always()

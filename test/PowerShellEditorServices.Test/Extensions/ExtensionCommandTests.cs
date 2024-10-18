@@ -20,39 +20,31 @@ using Xunit;
 namespace PowerShellEditorServices.Test.Extensions
 {
     [Trait("Category", "Extensions")]
-    public class ExtensionCommandTests : IDisposable
+    public class ExtensionCommandTests : IAsyncLifetime
     {
-        private readonly PsesInternalHost psesHost;
+        private PsesInternalHost psesHost;
 
-        private readonly ExtensionCommandService extensionCommandService;
+        private ExtensionCommandService extensionCommandService;
 
-        public ExtensionCommandTests()
+        public async Task InitializeAsync()
         {
-            psesHost = PsesHostFactory.Create(NullLoggerFactory.Instance);
+            psesHost = await PsesHostFactory.Create(NullLoggerFactory.Instance);
             ExtensionService extensionService = new(
                 languageServer: null,
                 serviceProvider: null,
                 editorOperations: null,
                 executionService: psesHost);
-#pragma warning disable VSTHRD002
-            extensionService.InitializeAsync().Wait();
-#pragma warning restore VSTHRD002
+            await extensionService.InitializeAsync();
             extensionCommandService = new(extensionService);
         }
 
-        public void Dispose()
-        {
-#pragma warning disable VSTHRD002
-            psesHost.StopAsync().Wait();
-#pragma warning restore VSTHRD002
-            GC.SuppressFinalize(this);
-        }
+        public async Task DisposeAsync() => await psesHost.StopAsync();
 
         [Fact]
         public async Task CanRegisterAndInvokeCommandWithCmdletName()
         {
             string filePath = TestUtilities.NormalizePath(@"C:\Temp\Test.ps1");
-            ScriptFile currentFile = new(new Uri(filePath), "This is a test file", new Version("7.0"));
+            ScriptFile currentFile = ScriptFile.Create(new Uri(filePath), "This is a test file", new Version("7.0"));
             EditorContext editorContext = new(
                 editorOperations: null,
                 currentFile,
@@ -88,7 +80,7 @@ namespace PowerShellEditorServices.Test.Extensions
         public async Task CanRegisterAndInvokeCommandWithScriptBlock()
         {
             string filePath = TestUtilities.NormalizePath(@"C:\Temp\Test.ps1");
-            ScriptFile currentFile = new(new Uri(filePath), "This is a test file", new Version("7.0"));
+            ScriptFile currentFile = ScriptFile.Create(new Uri(filePath), "This is a test file", new Version("7.0"));
             EditorContext editorContext = new(
                 editorOperations: null,
                 currentFile,
@@ -150,7 +142,7 @@ namespace PowerShellEditorServices.Test.Extensions
         public async Task CanUnregisterCommand()
         {
             string filePath = TestUtilities.NormalizePath(@"C:\Temp\Test.ps1");
-            ScriptFile currentFile = new(new Uri(filePath), "This is a test file", new Version("7.0"));
+            ScriptFile currentFile = ScriptFile.Create(new Uri(filePath), "This is a test file", new Version("7.0"));
             EditorContext editorContext = new(
                 editorOperations: null,
                 currentFile,

@@ -146,15 +146,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// <param name="fileUri">The System.Uri of the file.</param>
         /// <param name="initialBuffer">The initial contents of the script file.</param>
         /// <param name="powerShellVersion">The version of PowerShell for which the script is being parsed.</param>
-        internal ScriptFile(
+        internal static ScriptFile Create(
             DocumentUri fileUri,
             string initialBuffer,
             Version powerShellVersion)
-            : this(
-                  fileUri,
-                  new StringReader(initialBuffer),
-                  powerShellVersion)
+
         {
+            using TextReader textReader = new StringReader(initialBuffer);
+            return new ScriptFile(fileUri, textReader, powerShellVersion);
         }
 
         #endregion
