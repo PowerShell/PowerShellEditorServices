@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
             file: TestUtilities.NormalizePath("Completion/CompletionExamples.psm1"),
             text: string.Empty,
             startLineNumber: 8,
-            startColumnNumber: 7,
+            startColumnNumber: 10,
             startOffset: 0,
             endLineNumber: 0,
             endColumnNumber: 0,
@@ -22,17 +22,17 @@ namespace Microsoft.PowerShell.EditorServices.Test.Shared.Completion
         {
             Kind = CompletionItemKind.Function,
             Detail = "",
-            FilterText = "Get-Something",
-            InsertText = "Get-Something",
-            Label = "Get-Something",
-            SortText = "0001Get-Something",
+            FilterText = "Get-XYZSomething",
+            InsertText = "Get-XYZSomething",
+            Label = "Get-XYZSomething",
+            SortText = "0001Get-XYZSomething",
             TextEdit = new TextEdit
             {
-                NewText = "Get-Something",
+                NewText = "Get-XYZSomething",
                 Range = new Range
                 {
                     Start = new Position { Line = 7, Character = 0 },
-                    End = new Position { Line = 7, Character = 6 }
+                    End = new Position { Line = 7, Character = 9 }
                 }
             }
         };

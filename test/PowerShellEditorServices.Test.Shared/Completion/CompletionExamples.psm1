@@ -1,11 +1,11 @@
-function Get-Something
+function Get-XYZSomething
 {
 	$testVar2 = "Shouldn't find this variable"
 }
 
 $testVar1 = "Should find this variable"
 
-Get-So
+Get-XYZSo
 
 $testVar
 
