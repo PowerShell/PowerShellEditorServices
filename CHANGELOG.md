@@ -1,5 +1,12 @@
 # PowerShell Editor Services Release History
 
+## v3.21.0
+### Wednesday, October 30, 2024
+
+See more details at the GitHub Release for [v3.21.0](https://github.com/PowerShell/PowerShellEditorServices/releases/tag/v3.21.0).
+
+Updates to PSScriptAnalyzer and Call-operator support
+
 ## v3.20.1
 ### Friday, May 03, 2024
 
