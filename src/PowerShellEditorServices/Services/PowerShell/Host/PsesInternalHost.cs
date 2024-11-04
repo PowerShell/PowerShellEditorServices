@@ -9,6 +9,7 @@ using System.Management.Automation.Host;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Hosting;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
@@ -111,6 +112,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         private CancellationToken _readKeyCancellationToken;
 
         private bool _resettingRunspace;
+
+        private BreakpointSyncService _breakpointSyncService;
 
         static PsesInternalHost()
         {
@@ -233,6 +236,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
         public event Action<object, RunspaceChangedEventArgs> RunspaceChanged;
 
         private bool ShouldExitExecutionLoop => _shouldExit || _shuttingDown != 0;
+
+        private BreakpointSyncService BreakpointSync
+            => _breakpointSyncService ??= _languageServer?.GetService<BreakpointSyncService>();
 
         public override void EnterNestedPrompt() => PushPowerShellAndRunLoop(
             CreateNestedPowerShell(CurrentRunspace),
@@ -538,6 +544,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             return task.ExecuteAndGetResult(cancellationToken);
         }
 
+        void IInternalPowerShellExecutionService.UnsafeInvokePSCommand(
+            PSCommand psCommand,
+            PowerShellExecutionOptions executionOptions,
+            CancellationToken cancellationToken)
+            => InvokePSCommand<PSObject>(psCommand, executionOptions, cancellationToken);
+
+        IReadOnlyList<TResult> IInternalPowerShellExecutionService.UnsafeInvokePSCommand<TResult>(
+            PSCommand psCommand,
+            PowerShellExecutionOptions executionOptions,
+            CancellationToken cancellationToken)
+            => InvokePSCommand<TResult>(psCommand, executionOptions, cancellationToken);
+
         public void InvokePSCommand(PSCommand psCommand, PowerShellExecutionOptions executionOptions, CancellationToken cancellationToken) => InvokePSCommand<PSObject>(psCommand, executionOptions, cancellationToken);
 
         public TResult InvokePSDelegate<TResult>(string representation, ExecutionOptions executionOptions, Func<PowerShell, CancellationToken, TResult> func, CancellationToken cancellationToken)
@@ -783,6 +801,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                                 runspaceChangeAction,
                                 previousRunspaceFrame.RunspaceInfo,
                                 newRunspaceFrame.RunspaceInfo));
+                    }
+
+                    if (BreakpointSync?.IsSupported is true)
+                    {
+                        BreakpointSync.SyncServerAfterRunspacePop();
                     }
                 }
             });
@@ -1449,7 +1472,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             }
         }
 
-        private void OnBreakpointUpdated(object sender, BreakpointUpdatedEventArgs breakpointUpdatedEventArgs) => DebugContext.HandleBreakpointUpdated(breakpointUpdatedEventArgs);
+        private void OnBreakpointUpdated(object sender, BreakpointUpdatedEventArgs breakpointUpdatedEventArgs)
+        {
+            if (BreakpointSync is not BreakpointSyncService breakpointSyncService)
+            {
+                DebugContext.HandleBreakpointUpdated(breakpointUpdatedEventArgs);
+                return;
+            }
+
+            if (!breakpointSyncService.IsSupported || breakpointSyncService.IsMutatingBreakpoints)
+            {
+                DebugContext.HandleBreakpointUpdated(breakpointUpdatedEventArgs);
+                return;
+            }
+
+            _ = Task.Run(() => breakpointSyncService.UpdatedByServerAsync(breakpointUpdatedEventArgs));
+            DebugContext.HandleBreakpointUpdated(breakpointUpdatedEventArgs);
+        }
 
         private void OnRunspaceStateChanged(object sender, RunspaceStateEventArgs runspaceStateEventArgs)
         {

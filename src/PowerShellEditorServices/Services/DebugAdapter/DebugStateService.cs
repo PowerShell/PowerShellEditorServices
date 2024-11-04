@@ -42,5 +42,20 @@ namespace Microsoft.PowerShell.EditorServices.Services
         internal int ReleaseSetBreakpointHandle() => _setBreakpointInProgressHandle.Release();
 
         internal Task WaitForSetBreakpointHandleAsync() => _setBreakpointInProgressHandle.WaitAsync();
+
+        internal void Reset()
+        {
+            NoDebug = false;
+            Arguments = null;
+            IsRemoteAttach = false;
+            RunspaceId = null;
+            IsAttachSession = false;
+            WaitingForAttach = false;
+            ScriptToLaunch = null;
+            ExecutionCompleted = false;
+            IsInteractiveDebugSession = false;
+            IsUsingTempIntegratedConsole = false;
+            ServerStarted = null;
+        }
     }
 }

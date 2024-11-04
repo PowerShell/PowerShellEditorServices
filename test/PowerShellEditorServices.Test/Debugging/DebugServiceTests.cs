@@ -53,11 +53,13 @@ namespace PowerShellEditorServices.Test.Debugging
             psesHost.DebugContext.EnableDebugMode();
             psesHost._readLineProvider.ReadLine = testReadLine;
 
+            DebugStateService debugStateService = new();
             breakpointService = new BreakpointService(
                 NullLoggerFactory.Instance,
                 psesHost,
                 psesHost,
-                new DebugStateService());
+                debugStateService,
+                breakpointSyncService: null);
 
             debugService = new DebugService(
                 psesHost,

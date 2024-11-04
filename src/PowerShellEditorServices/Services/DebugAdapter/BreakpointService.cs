@@ -22,6 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private readonly IInternalPowerShellExecutionService _executionService;
         private readonly PsesInternalHost _editorServicesHost;
         private readonly DebugStateService _debugStateService;
+        private readonly BreakpointSyncService _breakpointSyncService;
 
         // TODO: This needs to be managed per nested session
         internal readonly Dictionary<string, HashSet<Breakpoint>> BreakpointsPerFile = new();
@@ -32,12 +33,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
             ILoggerFactory factory,
             IInternalPowerShellExecutionService executionService,
             PsesInternalHost editorServicesHost,
-            DebugStateService debugStateService)
+            DebugStateService debugStateService,
+            BreakpointSyncService breakpointSyncService)
         {
             _logger = factory.CreateLogger<BreakpointService>();
             _executionService = executionService;
             _editorServicesHost = editorServicesHost;
             _debugStateService = debugStateService;
+            _breakpointSyncService = breakpointSyncService;
         }
 
         public async Task<IReadOnlyList<Breakpoint>> GetBreakpointsAsync()
@@ -59,6 +62,23 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         public async Task<IReadOnlyList<BreakpointDetails>> SetBreakpointsAsync(string escapedScriptPath, IReadOnlyList<BreakpointDetails> breakpoints)
         {
+            if (_breakpointSyncService?.IsSupported is true)
+            {
+                // Since we're syncing breakpoints outside of debug configurations, if we can't find
+                // an existing breakpoint then mark it as unverified.
+                foreach (BreakpointDetails details in breakpoints)
+                {
+                    if (_breakpointSyncService.TryGetBreakpointByServerId(details.Id, out SyncedBreakpoint syncedBreakpoint))
+                    {
+                        continue;
+                    }
+
+                    details.Verified = false;
+                }
+
+                return breakpoints.ToArray();
+            }
+
             if (BreakpointApiUtils.SupportsBreakpointApis(_editorServicesHost.CurrentRunspace))
             {
                 foreach (BreakpointDetails breakpointDetails in breakpoints)
@@ -227,6 +247,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public async Task RemoveAllBreakpointsAsync(string scriptPath = null)
         {
+            // Only need to remove all breakpoints if we're not able to sync outside of debug
+            // sessions.
+            if (_breakpointSyncService?.IsSupported is true)
+            {
+                return;
+            }
+
             try
             {
                 if (BreakpointApiUtils.SupportsBreakpointApis(_editorServicesHost.CurrentRunspace))
