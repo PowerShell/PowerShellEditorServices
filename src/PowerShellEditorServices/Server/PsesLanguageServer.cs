@@ -131,7 +131,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         {
                             // Wire up the HostLogger to the LanguageServer's logger once we are initialized, so that any messages still logged to the HostLogger get sent across the LSP channel. There is no more logging to disk at this point.
                             hostLoggerSubscription = HostLogger.Subscribe(new HostLoggerAdapter(
-                                languageServer.Services.GetService<ILogger<HostLogger>>()
+                                languageServer.Services.GetService<ILogger<HostLoggerAdapter>>()
                             ));
 
                             // Set the workspace path from the parameters.
