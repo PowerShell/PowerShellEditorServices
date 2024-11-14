@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using Microsoft.PowerShell.EditorServices.Services.Extension;
-using OmniSharp.Extensions.LanguageServer.Server;
 
 // The HostLogger type isn't directly referenced from this assembly, however it uses a common IObservable interface and this alias helps make it more clear the purpose. We can use Microsoft.Extensions.Logging from this point because the ALC should be loaded, but we need to only expose the IObservable to the Hosting assembly so it doesn't try to load MEL before the ALC is ready.
 using HostLogger = System.IObservable<(int logLevel, string message)>;
@@ -103,7 +102,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             ServiceProvider serviceProvider = new ServiceCollection()
                 .AddLogging(builder => builder
                     .ClearProviders()
-                    .AddLanguageProtocolLogging()
                     .SetMinimumLevel(LogLevel.Trace)) // TODO: Why randomly set to trace?
                 .AddSingleton<ILanguageServerFacade>(_ => null)
                 // TODO: Why add these for a debug server?!
