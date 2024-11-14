@@ -5,12 +5,14 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using OmniSharp.Extensions.DebugAdapter.Server;
 using OmniSharp.Extensions.LanguageServer.Server;
+
+// See EditorServicesServerFactory.cs for the explanation of this alias.
+using HostLogger = System.IObservable<(int logLevel, string message)>;
 
 namespace Microsoft.PowerShell.EditorServices.Server
 {
@@ -26,16 +28,17 @@ namespace Microsoft.PowerShell.EditorServices.Server
         private PsesInternalHost _psesHost;
         private bool _startedPses;
         private readonly bool _isTemp;
-        protected readonly ILoggerFactory _loggerFactory;
+        // FIXME: This was never actually used in the debug server. Since we never have a debug server without an LSP, we could probably remove this and either reuse the MEL from the LSP, or create a new one here. It is probably best to only use this for exceptions that we can't reasonably send via the DAP protocol, which should only be anything before the initialize request.
+        protected readonly HostLogger _hostLogger;
 
         public PsesDebugServer(
-            ILoggerFactory factory,
+            HostLogger hostLogger,
             Stream inputStream,
             Stream outputStream,
             IServiceProvider serviceProvider,
             bool isTemp = false)
         {
-            _loggerFactory = factory;
+            _hostLogger = hostLogger;
             _inputStream = inputStream;
             _outputStream = outputStream;
             ServiceProvider = serviceProvider;
@@ -63,7 +66,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithOutput(_outputStream)
                     .WithServices(serviceCollection =>
                         serviceCollection
-                            .AddLogging()
                             .AddOptions()
                             .AddPsesDebugServices(ServiceProvider, this))
                     // TODO: Consider replacing all WithHandler with AddSingleton
@@ -130,7 +132,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
             _debugAdapterServer?.Dispose();
             _inputStream.Dispose();
             _outputStream.Dispose();
-            _loggerFactory.Dispose();
             _serverStopped.SetResult(true);
             // TODO: If the debugger has stopped, should we clear the breakpoints?
         }

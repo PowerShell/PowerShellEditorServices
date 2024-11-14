@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Debug;
 using OmniSharp.Extensions.DebugAdapter.Client;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Models;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
@@ -33,8 +34,10 @@ namespace PowerShellEditorServices.Test.E2E
 
         public async Task InitializeAsync()
         {
-            LoggerFactory factory = new();
-            _psesProcess = new PsesStdioProcess(factory, true);
+            LoggerFactory debugLoggerFactory = new();
+            debugLoggerFactory.AddProvider(new DebugLoggerProvider());
+
+            _psesProcess = new PsesStdioProcess(debugLoggerFactory, true);
             await _psesProcess.Start();
 
             TaskCompletionSource<bool> initialized = new();
@@ -50,6 +53,11 @@ namespace PowerShellEditorServices.Test.E2E
                 options
                     .WithInput(_psesProcess.OutputStream)
                     .WithOutput(_psesProcess.InputStream)
+                    .ConfigureLogging(builder =>
+                        builder
+                        .AddDebug()
+                        .SetMinimumLevel(LogLevel.Trace)
+                    )
                     // The OnStarted delegate gets run when we receive the _Initialized_ event from the server:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Events_Initialized
                     .OnStarted((_, _) =>
