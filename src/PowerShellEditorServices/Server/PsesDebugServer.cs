@@ -66,7 +66,6 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithOutput(_outputStream)
                     .WithServices(serviceCollection =>
                         serviceCollection
-                            .AddLogging()
                             .AddOptions()
                             .AddPsesDebugServices(ServiceProvider, this))
                     // TODO: Consider replacing all WithHandler with AddSingleton
