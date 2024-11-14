@@ -40,12 +40,11 @@ $script:BuildInfoPath = "src/PowerShellEditorServices.Hosting/BuildInfo.cs"
 
 $script:NetFramework = @{
     PS51     = 'net462'
-    PS72     = 'net6.0'
     PS74     = 'net8.0'
     Standard = 'netstandard2.0'
 }
 
-$script:HostCoreOutput = "src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetFramework.PS72)/publish"
+$script:HostCoreOutput = "src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetFramework.PS74)/publish"
 $script:HostDeskOutput = "src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetFramework.PS51)/publish"
 $script:PsesOutput = "src/PowerShellEditorServices/bin/$Configuration/$($script:NetFramework.Standard)/publish"
 
@@ -128,7 +127,7 @@ task RestorePsesModules -If (-not (Test-Path "module/PSReadLine") -or -not (Test
 Task Build FindDotNet, CreateBuildInfo, RestorePsesModules, {
     Write-Build DarkGreen "Building PowerShellEditorServices"
     Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs ./src/PowerShellEditorServices/PowerShellEditorServices.csproj -f $script:NetFramework.Standard }
-    Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs ./src/PowerShellEditorServices.Hosting/PowerShellEditorServices.Hosting.csproj -f $script:NetFramework.PS72 }
+    Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs ./src/PowerShellEditorServices.Hosting/PowerShellEditorServices.Hosting.csproj -f $script:NetFramework.PS74 }
 
     if (-not $script:IsNix) {
         Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs ./src/PowerShellEditorServices.Hosting/PowerShellEditorServices.Hosting.csproj -f $script:NetFramework.PS51 }
@@ -199,11 +198,6 @@ Task SetupHelpForTests {
 Task TestPS74 Build, SetupHelpForTests, {
     Set-Location ./test/PowerShellEditorServices.Test/
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
-}
-
-Task TestPS72 Build, SetupHelpForTests, {
-    Set-Location ./test/PowerShellEditorServices.Test/
-    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS72 }
 }
 
 Task TestPS51 -If (-not $script:IsNix) Build, SetupHelpForTests, {
@@ -299,7 +293,7 @@ Task TestE2EPowerShellCLM -If (-not $script:IsNix) Build, SetupHelpForTests, {
     }
 }
 
-Task Test TestPS72, TestPS74, TestE2EPwsh, TestPS51, TestE2EPowerShell
+Task Test TestPS74, TestE2EPwsh, TestPS51, TestE2EPowerShell
 
 Task TestFull Test, TestE2EDaily, TestE2EPwshCLM, TestE2EPowerShellCLM
 
