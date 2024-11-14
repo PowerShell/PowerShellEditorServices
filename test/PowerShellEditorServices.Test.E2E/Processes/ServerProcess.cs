@@ -38,8 +38,8 @@ namespace PowerShellEditorServices.Test.E2E
 
             Exited = _exitedSubject = new AsyncSubject<System.Reactive.Unit>();
 
-            _inStreamLazy = new Lazy<Stream>(() => new LoggingStream(GetInputStream()));
-            _outStreamLazy = new Lazy<Stream>(() => new LoggingStream(GetOutputStream()));
+            _inStreamLazy = new Lazy<Stream>(GetInputStream);
+            _outStreamLazy = new Lazy<Stream>(GetOutputStream);
         }
 
         /// <summary>

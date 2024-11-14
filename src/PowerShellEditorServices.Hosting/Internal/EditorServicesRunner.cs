@@ -42,7 +42,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _config = config;
             _sessionFileWriter = sessionFileWriter;
             // NOTE: This factory helps to isolate `Microsoft.Extensions.Logging/DependencyInjection`.
-            _serverFactory = EditorServicesServerFactory.Create(_config.LogPath, (int)_config.LogLevel, logger);
+            _serverFactory = new(logger);
             _alreadySubscribedDebug = false;
             _loggersToUnsubscribe = loggersToUnsubscribe;
         }

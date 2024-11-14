@@ -2,81 +2,30 @@
 // Licensed under the MIT License.
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Server;
-using Serilog;
-using Serilog.Events;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using Microsoft.PowerShell.EditorServices.Services.Extension;
 
-#if DEBUG
-using Serilog.Debugging;
-#endif
+// The HostLogger type isn't directly referenced from this assembly, however it uses a common IObservable interface and this alias helps make it more clear the purpose. We can use Microsoft.Extensions.Logging from this point because the ALC should be loaded, but we need to only expose the IObservable to the Hosting assembly so it doesn't try to load MEL before the ALC is ready.
+using HostLogger = System.IObservable<(int logLevel, string message)>;
 
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
     /// <summary>
-    /// Factory class for hiding dependencies of Editor Services.
+    /// Factory for creating the LSP server and debug server instances.
     /// </summary>
-    /// <remarks>
-    /// Dependency injection and logging are wrapped by factory methods on this class so that the
-    /// host assembly can construct the LSP and debug servers without directly depending on <see
-    /// cref="Microsoft.Extensions.Logging"/> and <see
-    /// cref="Microsoft.Extensions.DependencyInjection"/>.
-    /// </remarks>
     internal sealed class EditorServicesServerFactory : IDisposable
     {
+        private readonly HostLogger _hostLogger;
+
         /// <summary>
-        /// Create a new Editor Services factory. This method will instantiate logging.
+        /// Creates a loggerfactory for this instance
         /// </summary>
-        /// <remarks>
-        /// <para>
-        /// This can only be called once because it sets global state (the logger) and that call is
-        /// in <see cref="Hosting.EditorServicesRunner" />.
-        /// </para>
-        /// <para>
-        /// TODO: Why is this a static function wrapping a constructor instead of just a
-        /// constructor? In the end it returns an instance (albeit a "singleton").
-        /// </para>
-        /// </remarks>
-        /// <param name="logDirectoryPath">The path of the log file to use.</param>
-        /// <param name="minimumLogLevel">The minimum log level to use.</param>
-        /// <param name="hostLogger">The host logger?</param>
-        public static EditorServicesServerFactory Create(string logDirectoryPath, int minimumLogLevel, IObservable<(int logLevel, string message)> hostLogger)
-        {
-            // NOTE: Ignore the suggestion to use Environment.ProcessId as it doesn't work for
-            // .NET 4.6.2 (for Windows PowerShell), and this won't be caught in CI.
-            int currentPID = Process.GetCurrentProcess().Id;
-            string logPath = Path.Combine(logDirectoryPath, $"PowerShellEditorServices-{currentPID}.log");
-            Log.Logger = new LoggerConfiguration()
-                .Enrich.FromLogContext()
-                .WriteTo.Async(config => config.File(logPath))
-                .MinimumLevel.Is((LogEventLevel)minimumLogLevel)
-                .CreateLogger();
-
-#if DEBUG
-            SelfLog.Enable(msg => Debug.WriteLine(msg));
-#endif
-
-            LoggerFactory loggerFactory = new();
-            loggerFactory.AddSerilog();
-
-            // Hook up logging from the host so that its recorded in the log file
-            hostLogger.Subscribe(new HostLoggerAdapter(loggerFactory));
-
-            return new EditorServicesServerFactory(loggerFactory);
-        }
-
-        // TODO: Can we somehow refactor this member so the language and debug servers can be
-        // instantiated using their constructors instead of tying them to this factory with `Create`
-        // methods?
-        private readonly ILoggerFactory _loggerFactory;
-
-        private EditorServicesServerFactory(ILoggerFactory loggerFactory) => _loggerFactory = loggerFactory;
+        /// <param name="hostLogger">The hostLogger that will be provided to the language services for logging handoff</param>
+        internal EditorServicesServerFactory(HostLogger hostLogger) => _hostLogger = hostLogger;
 
         /// <summary>
         /// Create the LSP server.
@@ -92,7 +41,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public PsesLanguageServer CreateLanguageServer(
             Stream inputStream,
             Stream outputStream,
-            HostStartupInfo hostStartupInfo) => new(_loggerFactory, inputStream, outputStream, hostStartupInfo);
+            HostStartupInfo hostStartupInfo) => new(_hostLogger, inputStream, outputStream, hostStartupInfo);
 
         /// <summary>
         /// Create the debug server given a language server instance.
@@ -110,7 +59,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             PsesLanguageServer languageServer)
         {
             return new PsesDebugServer(
-                _loggerFactory,
+                _hostLogger,
                 inputStream,
                 outputStream,
                 languageServer.LanguageServer.Services);
@@ -132,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             PsesDebugServer debugServer)
         {
             return new PsesDebugServer(
-                _loggerFactory,
+                _hostLogger,
                 inputStream,
                 outputStream,
                 debugServer.ServiceProvider);
@@ -153,7 +102,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             ServiceProvider serviceProvider = new ServiceCollection()
                 .AddLogging(builder => builder
                     .ClearProviders()
-                    .AddSerilog()
                     .SetMinimumLevel(LogLevel.Trace)) // TODO: Why randomly set to trace?
                 .AddSingleton<ILanguageServerFacade>(_ => null)
                 // TODO: Why add these for a debug server?!
@@ -171,25 +119,14 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             serviceProvider.GetService<ExtensionService>();
 
             return new PsesDebugServer(
-                _loggerFactory,
+                _hostLogger,
                 inputStream,
                 outputStream,
                 serviceProvider,
                 isTemp: true);
         }
 
-        /// <summary>
-        /// TODO: This class probably should not be <see cref="IDisposable"/> as the primary
-        /// intention of that interface is to provide cleanup of unmanaged resources, which the
-        /// logger certainly is not. Nor is this class used with a <see langword="using"/>. Instead,
-        /// this class should call <see cref="Log.CloseAndFlush()"/> in a finalizer. This
-        /// could potentially even be done with <see
-        /// cref="SerilogLoggerFactoryExtensions.AddSerilog"</> by passing <c>dispose=true</c>.
-        /// </summary>
-        public void Dispose()
-        {
-            Log.CloseAndFlush();
-            _loggerFactory.Dispose();
-        }
+        // TODO: Clean up host logger? Shouldn't matter since we start a new process after shutdown.
+        public void Dispose() { }
     }
 }

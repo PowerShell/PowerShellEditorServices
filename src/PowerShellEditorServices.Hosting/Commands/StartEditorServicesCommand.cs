@@ -219,7 +219,6 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         protected override void EndProcessing()
         {
             _logger.Log(PsesLogLevel.Diagnostic, "Beginning EndProcessing block");
-
             try
             {
                 // First try to remove PSReadLine to decomplicate startup
