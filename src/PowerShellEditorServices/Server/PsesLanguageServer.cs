@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,14 +9,18 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Hosting;
+using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.Extension;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.JsonRpc;
+using OmniSharp.Extensions.LanguageServer.Protocol.General;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Server;
-using Serilog;
+
+// See EditorServicesServerFactory.cs for the explanation of this alias.
+using HostLogger = System.IObservable<(int logLevel, string message)>;
 
 namespace Microsoft.PowerShell.EditorServices.Server
 {
@@ -24,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
     /// </summary>
     internal class PsesLanguageServer
     {
-        internal ILoggerFactory LoggerFactory { get; }
+        internal HostLogger HostLogger { get; }
         internal ILanguageServer LanguageServer { get; private set; }
         private readonly LogLevel _minimumLogLevel;
         private readonly Stream _inputStream;
@@ -32,6 +37,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
         private readonly HostStartupInfo _hostDetails;
         private readonly TaskCompletionSource<bool> _serverStart;
         private PsesInternalHost _psesHost;
+        private IDisposable hostLoggerSubscription;
 
         /// <summary>
         /// Create a new language server instance.
@@ -41,18 +47,18 @@ namespace Microsoft.PowerShell.EditorServices.Server
         /// cref="EditorServicesServerFactory.CreateLanguageServer"/>. It is essentially a
         /// singleton. The factory hides the logger.
         /// </remarks>
-        /// <param name="factory">Factory to create loggers with.</param>
+        /// <param name="hostLogger">The host logger to hand off for monitoring.</param>
         /// <param name="inputStream">Protocol transport input stream.</param>
         /// <param name="outputStream">Protocol transport output stream.</param>
         /// <param name="hostStartupInfo">Host configuration to instantiate the server and services
         /// with.</param>
         public PsesLanguageServer(
-            ILoggerFactory factory,
+            HostLogger hostLogger,
             Stream inputStream,
             Stream outputStream,
             HostStartupInfo hostStartupInfo)
         {
-            LoggerFactory = factory;
+            HostLogger = hostLogger;
             _minimumLogLevel = (LogLevel)hostStartupInfo.LogLevel;
             _inputStream = inputStream;
             _outputStream = outputStream;
@@ -82,10 +88,9 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         serviceCollection.AddPsesLanguageServices(_hostDetails);
                     })
                     .ConfigureLogging(builder => builder
-                        .AddSerilog(Log.Logger) // TODO: Set dispose to true?
+                        .ClearProviders()
                         .AddLanguageProtocolLogging()
                         .SetMinimumLevel(_minimumLogLevel))
-                    // TODO: Consider replacing all WithHandler with AddSingleton
                     .WithHandler<PsesWorkspaceSymbolsHandler>()
                     .WithHandler<PsesTextDocumentHandler>()
                     .WithHandler<GetVersionHandler>()
@@ -124,6 +129,11 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .OnInitialize(
                         (languageServer, initializeParams, cancellationToken) =>
                         {
+                            // Wire up the HostLogger to the LanguageServer's logger once we are initialized, so that any messages still logged to the HostLogger get sent across the LSP channel. There is no more logging to disk at this point.
+                            hostLoggerSubscription = HostLogger.Subscribe(new HostLoggerAdapter(
+                                languageServer.Services.GetService<ILogger<HostLogger>>()
+                            ));
+
                             // Set the workspace path from the parameters.
                             WorkspaceService workspaceService = languageServer.Services.GetService<WorkspaceService>();
                             if (initializeParams.WorkspaceFolders is not null)
@@ -158,7 +168,9 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
                             _psesHost = languageServer.Services.GetService<PsesInternalHost>();
                             return _psesHost.TryStartAsync(hostStartOptions, cancellationToken);
-                        });
+                        }
+                    )
+                    .OnShutdown(_ => hostLoggerSubscription.Dispose());
             }).ConfigureAwait(false);
 
             _serverStart.SetResult(true);

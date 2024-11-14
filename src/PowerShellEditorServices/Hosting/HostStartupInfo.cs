@@ -107,9 +107,8 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// The minimum log level of log events to be logged.
         /// </summary>
         /// <remarks>
-        /// This is cast to all of <see cref="Hosting.PsesLogLevel"/>, <see
-        /// cref="Microsoft.Extensions.Logging.LogLevel"/>, and <see
-        /// cref="Serilog.Events.LogEventLevel"/>, hence it is an <c>int</c>.
+        /// This primitive maps to <see cref="Hosting.PsesLogLevel"/> and <see
+        /// cref="Microsoft.Extensions.Logging.LogLevel"/>
         /// </remarks>
         public int LogLevel { get; }
 

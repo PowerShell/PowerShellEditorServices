@@ -132,7 +132,6 @@ extends:
                 **/Nerdbank.Streams.dll;
                 **/Newtonsoft.Json.dll;
                 **/OmniSharp.Extensions*.dll;
-                **/Serilog*.dll;
                 **/System.Reactive.dll;
           - task: ArchiveFiles@2
             displayName: Zip signed artifacts
