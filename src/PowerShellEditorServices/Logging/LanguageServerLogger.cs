@@ -26,11 +26,15 @@ internal class LanguageServerLogger(ILanguageServerFacade responseRouter, string
         Func<TState, Exception?, string> formatter
     )
     {
+        if (responseRouter is null)
+        {
+            throw new InvalidOperationException("Log received without a valid responseRouter dependency. This is a bug, please report it.");
+        }
         // Any Omnisharp or trace logs are directly LSP protocol related and we send them to the trace channel
         // TODO: Dynamically adjust if SetTrace is reported
-        // BUG: There is an omnisharp filter incorrectly filtering this. As a workaround we will use logMessage.
+        // BUG: There is an omnisharp filter incorrectly filtering this. As a workaround we will use logMessage for now.
         //  https://github.com/OmniSharp/csharp-language-server-protocol/issues/1390
-        // if (categoryName.StartsWith("OmniSharp") || logLevel == LogLevel.Trace)
+        //
         // {
         //     // Everything with omnisharp goes directly to trace
         //     string eventMessage = string.Empty;
@@ -47,22 +51,54 @@ internal class LanguageServerLogger(ILanguageServerFacade responseRouter, string
         //     };
         //     responseRouter.Client.LogTrace(trace);
         // }
-        if (TryGetMessageType(logLevel, out MessageType messageType))
+
+        // Drop all omnisharp messages to trace. This isn't a MEL filter because it's specific only to this provider.
+        if (categoryName.StartsWith("OmniSharp.", StringComparison.OrdinalIgnoreCase))
         {
-            LogMessageParams logMessage = new()
-            {
-                Type = messageType,
-                // TODO: Add Critical and Debug delineations
-                Message = categoryName + ": " + formatter(state, exception) +
-                    (exception != null ? " - " + exception : "") + " | " +
-                    //Hopefully this isn't too expensive in the long run
-                    FormatState(state, exception)
-            };
-            responseRouter.Window.Log(logMessage);
+            logLevel = LogLevel.Trace;
         }
+
+        (MessageType messageType, string messagePrepend) = GetMessageInfo(logLevel);
+
+        // The vscode-languageserver-node client doesn't support LogOutputChannel as of 2024-11-24 and also doesn't
+        // provide a way to middleware the incoming log messages, so our output channel has no idea what the logLevel
+        // is. As a workaround, we send the severity in-line with the message for the client to parse.
+        // BUG: https://github.com/microsoft/vscode-languageserver-node/issues/1116
+        if (responseRouter.Client?.ClientSettings?.ClientInfo?.Name == "Visual Studio Code")
+        {
+            messagePrepend = logLevel switch
+            {
+                LogLevel.Critical => "<Error> CRITICAL: ",
+                LogLevel.Error => "<Error>",
+                LogLevel.Warning => "<Warning>",
+                LogLevel.Information => "<Info>",
+                LogLevel.Debug => "<Debug>",
+                LogLevel.Trace => "<Trace>",
+                _ => string.Empty
+            };
+        }
+
+        LogMessageParams logMessage = new()
+        {
+            Type = messageType,
+            Message = messagePrepend + categoryName + ": " + formatter(state, exception) +
+                (exception != null ? " - " + exception : "") + " | " +
+                //Hopefully this isn't too expensive in the long run
+                FormatState(state, exception)
+        };
+        responseRouter.Window.Log(logMessage);
     }
 
-
+    /// <summary>
+    /// Formats the state object into a string for logging.
+    /// </summary>
+    /// <remarks>
+    /// This is copied from Omnisharp, we can probably do better.
+    /// </remarks>
+    /// <typeparam name="TState"></typeparam>
+    /// <param name="state"></param>
+    /// <param name="exception"></param>
+    /// <returns></returns>
     private static string FormatState<TState>(TState state, Exception? exception)
     {
         return state switch
@@ -72,29 +108,20 @@ internal class LanguageServerLogger(ILanguageServerFacade responseRouter, string
         };
     }
 
-    private static bool TryGetMessageType(LogLevel logLevel, out MessageType messageType)
-    {
-        switch (logLevel)
+    /// <summary>
+    /// Maps MEL log levels to LSP message types
+    /// </summary>
+    private static (MessageType messageType, string messagePrepend) GetMessageInfo(LogLevel logLevel)
+        => logLevel switch
         {
-            case LogLevel.Critical:
-            case LogLevel.Error:
-                messageType = MessageType.Error;
-                return true;
-            case LogLevel.Warning:
-                messageType = MessageType.Warning;
-                return true;
-            case LogLevel.Information:
-                messageType = MessageType.Info;
-                return true;
-            case LogLevel.Debug:
-            case LogLevel.Trace:
-                messageType = MessageType.Log;
-                return true;
-        }
-
-        messageType = MessageType.Log;
-        return false;
-    }
+            LogLevel.Critical => (MessageType.Error, "Critical: "),
+            LogLevel.Error => (MessageType.Error, string.Empty),
+            LogLevel.Warning => (MessageType.Warning, string.Empty),
+            LogLevel.Information => (MessageType.Info, string.Empty),
+            LogLevel.Debug => (MessageType.Log, string.Empty),
+            LogLevel.Trace => (MessageType.Log, "Trace: "),
+            _ => throw new ArgumentOutOfRangeException(nameof(logLevel), logLevel, null)
+        };
 }
 
 internal class LanguageServerLoggerProvider(ILanguageServerFacade languageServer) : ILoggerProvider
