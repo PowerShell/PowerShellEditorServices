@@ -63,7 +63,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <param name="reason">The reason for the startup failure.</param>
         public void WriteSessionFailure(string reason)
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Writing session failure");
+            _logger.Log(PsesLogLevel.Trace, "Writing session failure");
 
             Dictionary<string, object> sessionObject = new()
             {
@@ -81,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         /// <param name="debugAdapterTransport">The debug adapter transport configuration.</param>
         public void WriteSessionStarted(ITransportConfig languageServiceTransport, ITransportConfig debugAdapterTransport)
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Writing session started");
+            _logger.Log(PsesLogLevel.Trace, "Writing session started");
 
             Dictionary<string, object> sessionObject = new()
             {
@@ -142,7 +142,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 File.WriteAllText(_sessionFilePath, content, s_sessionFileEncoding);
             }
 
-            _logger.Log(PsesLogLevel.Verbose, $"Session file written to {_sessionFilePath} with content:\n{content}");
+            _logger.Log(PsesLogLevel.Debug, $"Session file written to {_sessionFilePath} with content:\n{content}");
         }
     }
 }

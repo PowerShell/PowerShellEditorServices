@@ -60,11 +60,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             Task runAndAwaitShutdown = CreateEditorServicesAndRunUntilShutdown();
 
             // Now write the session file
-            _logger.Log(PsesLogLevel.Diagnostic, "Writing session file");
+            _logger.Log(PsesLogLevel.Trace, "Writing session file");
             _sessionFileWriter.WriteSessionStarted(_config.LanguageServiceTransport, _config.DebugServiceTransport);
 
             // Finally, wait for Editor Services to shut down
-            _logger.Log(PsesLogLevel.Diagnostic, "Waiting on PSES run/shutdown");
+            _logger.Log(PsesLogLevel.Trace, "Waiting on PSES run/shutdown");
             return runAndAwaitShutdown;
         }
 
@@ -124,7 +124,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             try
             {
-                _logger.Log(PsesLogLevel.Diagnostic, "Creating/running editor services");
+                _logger.Log(PsesLogLevel.Trace, "Creating/running editor services");
 
                 bool creatingLanguageServer = _config.LanguageServiceTransport != null;
                 bool creatingDebugServer = _config.DebugServiceTransport != null;
@@ -149,7 +149,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 //  - Wait for the LSP server to finish
 
                 // Unsubscribe the host logger here so that the Extension Terminal is not polluted with input after the first prompt
-                _logger.Log(PsesLogLevel.Verbose, "Starting server, deregistering host logger and registering shutdown listener");
+                _logger.Log(PsesLogLevel.Debug, "Starting server, deregistering host logger and registering shutdown listener");
                 if (_loggersToUnsubscribe != null)
                 {
                     foreach (IDisposable loggerToUnsubscribe in _loggersToUnsubscribe)
@@ -193,11 +193,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private async Task RunTempDebugSessionAsync(HostStartupInfo hostDetails)
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Running temp debug session");
+            _logger.Log(PsesLogLevel.Trace, "Running temp debug session");
             PsesDebugServer debugServer = await CreateDebugServerForTempSessionAsync(hostDetails).ConfigureAwait(false);
-            _logger.Log(PsesLogLevel.Verbose, "Debug server created");
+            _logger.Log(PsesLogLevel.Debug, "Debug server created");
             await debugServer.StartAsync().ConfigureAwait(false);
-            _logger.Log(PsesLogLevel.Verbose, "Debug server started");
+            _logger.Log(PsesLogLevel.Debug, "Debug server started");
             await debugServer.WaitForShutdown().ConfigureAwait(false);
         }
 
@@ -210,47 +210,47 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             // To do this, we set an event to allow it to create a new debug server as its session ends
             if (!_alreadySubscribedDebug)
             {
-                _logger.Log(PsesLogLevel.Diagnostic, "Subscribing debug server for session ended event");
+                _logger.Log(PsesLogLevel.Trace, "Subscribing debug server for session ended event");
                 _alreadySubscribedDebug = true;
                 debugServer.SessionEnded += DebugServer_OnSessionEnded;
             }
 
-            _logger.Log(PsesLogLevel.Diagnostic, "Starting debug server");
+            _logger.Log(PsesLogLevel.Trace, "Starting debug server");
 
             await debugServer.StartAsync().ConfigureAwait(false);
         }
 
         private Task RestartDebugServerAsync(PsesDebugServer debugServer)
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Restarting debug server");
+            _logger.Log(PsesLogLevel.Trace, "Restarting debug server");
             Task<PsesDebugServer> debugServerCreation = RecreateDebugServerAsync(debugServer);
             return StartDebugServer(debugServerCreation);
         }
 
         private async Task<PsesLanguageServer> CreateLanguageServerAsync(HostStartupInfo hostDetails)
         {
-            _logger.Log(PsesLogLevel.Verbose, $"Creating LSP transport with endpoint {_config.LanguageServiceTransport.EndpointDetails}");
+            _logger.Log(PsesLogLevel.Debug, $"Creating LSP transport with endpoint {_config.LanguageServiceTransport.EndpointDetails}");
             (Stream inStream, Stream outStream) = await _config.LanguageServiceTransport.ConnectStreamsAsync().ConfigureAwait(false);
 
-            _logger.Log(PsesLogLevel.Diagnostic, "Creating language server");
+            _logger.Log(PsesLogLevel.Trace, "Creating language server");
             return _serverFactory.CreateLanguageServer(inStream, outStream, hostDetails);
         }
 
         private async Task<PsesDebugServer> CreateDebugServerWithLanguageServerAsync(PsesLanguageServer languageServer)
         {
-            _logger.Log(PsesLogLevel.Verbose, $"Creating debug adapter transport with endpoint {_config.DebugServiceTransport.EndpointDetails}");
+            _logger.Log(PsesLogLevel.Debug, $"Creating debug adapter transport with endpoint {_config.DebugServiceTransport.EndpointDetails}");
             (Stream inStream, Stream outStream) = await _config.DebugServiceTransport.ConnectStreamsAsync().ConfigureAwait(false);
 
-            _logger.Log(PsesLogLevel.Diagnostic, "Creating debug adapter");
+            _logger.Log(PsesLogLevel.Trace, "Creating debug adapter");
             return _serverFactory.CreateDebugServerWithLanguageServer(inStream, outStream, languageServer);
         }
 
         private async Task<PsesDebugServer> RecreateDebugServerAsync(PsesDebugServer debugServer)
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Recreating debug adapter transport");
+            _logger.Log(PsesLogLevel.Trace, "Recreating debug adapter transport");
             (Stream inStream, Stream outStream) = await _config.DebugServiceTransport.ConnectStreamsAsync().ConfigureAwait(false);
 
-            _logger.Log(PsesLogLevel.Diagnostic, "Recreating debug adapter");
+            _logger.Log(PsesLogLevel.Trace, "Recreating debug adapter");
             return _serverFactory.RecreateDebugServer(inStream, outStream, debugServer);
         }
 
@@ -263,7 +263,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private HostStartupInfo CreateHostStartupInfo()
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Creating startup info object");
+            _logger.Log(PsesLogLevel.Trace, "Creating startup info object");
 
             ProfilePathInfo profilePaths = null;
             if (_config.ProfilePaths.AllUsersAllHosts != null
@@ -288,7 +288,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 _config.AdditionalModules,
                 _config.InitialSessionState,
                 _config.LogPath,
-                (int)_config.LogLevel,
+                (int)_config.LogLevel, //This maps to MEL log levels, we use int so this is easily supplied externally.
                 consoleReplEnabled: _config.ConsoleRepl != ConsoleReplKind.None,
                 useNullPSHostUI: _config.UseNullPSHostUI,
                 usesLegacyReadLine: _config.ConsoleRepl == ConsoleReplKind.LegacyReadLine,
@@ -308,7 +308,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD110:Observe result of async calls", Justification = "Intentionally fire and forget.")]
         private void DebugServer_OnSessionEnded(object sender, EventArgs args)
         {
-            _logger.Log(PsesLogLevel.Verbose, "Debug session ended, restarting debug service...");
+            _logger.Log(PsesLogLevel.Debug, "Debug session ended, restarting debug service...");
             PsesDebugServer oldServer = (PsesDebugServer)sender;
             oldServer.Dispose();
             _alreadySubscribedDebug = false;
