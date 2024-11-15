@@ -212,10 +212,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             ValidateConfiguration();
 
             // Method with no implementation that forces the PSES assembly to load, triggering an AssemblyResolve event
-            _logger.Log(PsesLogLevel.Debug, "Loading PowerShell Editor Services");
+            _logger.Log(PsesLogLevel.Information, "Loading PowerShell Editor Services");
             LoadEditorServices();
 
-            _logger.Log(PsesLogLevel.Debug, "Starting EditorServices");
+            _logger.Log(PsesLogLevel.Information, "Starting EditorServices");
 
             _editorServicesRunner = new EditorServicesRunner(_logger, _hostConfig, _sessionFileWriter, _loggersToUnsubscribe);
 
