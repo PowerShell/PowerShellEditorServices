@@ -28,6 +28,12 @@ Please update to PowerShell 7.4 LTS going forward.
 This release contains a logging overhaul which purposely removes our
 dependency on Serilog and should lead to improved stability with
 PowerShell 5.1 (by avoiding a major GAC assembly conflict).
+## v3.3.0
+### Friday, November 15, 2024
+
+See more details at the GitHub Release for [v3.3.0](https://github.com/PowerShell/PowerShellEditorServices/releases/tag/v3.3.0).
+
+Logging updates and dropped EOL PowerShell
 
 ## v3.21.0
 ### Wednesday, October 30, 2024
