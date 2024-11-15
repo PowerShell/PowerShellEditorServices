@@ -22,6 +22,5 @@ namespace Microsoft.PowerShell.EditorServices.Logging
         {
             // Nothing to do; we simply don't send more log messages
         }
-
     }
 }

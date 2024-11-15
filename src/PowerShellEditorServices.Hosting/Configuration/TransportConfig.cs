@@ -53,7 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public Task<(Stream inStream, Stream outStream)> ConnectStreamsAsync()
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Connecting stdio streams");
+            _logger.Log(PsesLogLevel.Trace, "Connecting stdio streams");
             return Task.FromResult((Console.OpenStandardInput(), Console.OpenStandardOutput()));
         }
     }
@@ -102,11 +102,11 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public async Task<(Stream inStream, Stream outStream)> ConnectStreamsAsync()
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Creating named pipe");
+            _logger.Log(PsesLogLevel.Trace, "Creating named pipe");
             NamedPipeServerStream namedPipe = NamedPipeUtils.CreateNamedPipe(_pipeName, PipeDirection.InOut);
-            _logger.Log(PsesLogLevel.Diagnostic, "Waiting for named pipe connection");
+            _logger.Log(PsesLogLevel.Trace, "Waiting for named pipe connection");
             await namedPipe.WaitForConnectionAsync().ConfigureAwait(false);
-            _logger.Log(PsesLogLevel.Diagnostic, "Named pipe connected");
+            _logger.Log(PsesLogLevel.Trace, "Named pipe connected");
             return (namedPipe, namedPipe);
         }
     }
@@ -173,18 +173,18 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public async Task<(Stream inStream, Stream outStream)> ConnectStreamsAsync()
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Starting in pipe connection");
+            _logger.Log(PsesLogLevel.Trace, "Starting in pipe connection");
             NamedPipeServerStream inPipe = NamedPipeUtils.CreateNamedPipe(_inPipeName, PipeDirection.InOut);
             Task inPipeConnected = inPipe.WaitForConnectionAsync();
 
-            _logger.Log(PsesLogLevel.Diagnostic, "Starting out pipe connection");
+            _logger.Log(PsesLogLevel.Trace, "Starting out pipe connection");
             NamedPipeServerStream outPipe = NamedPipeUtils.CreateNamedPipe(_outPipeName, PipeDirection.Out);
             Task outPipeConnected = outPipe.WaitForConnectionAsync();
 
-            _logger.Log(PsesLogLevel.Diagnostic, "Wating for pipe connections");
+            _logger.Log(PsesLogLevel.Trace, "Wating for pipe connections");
             await Task.WhenAll(inPipeConnected, outPipeConnected).ConfigureAwait(false);
 
-            _logger.Log(PsesLogLevel.Diagnostic, "Simplex named pipe transport connected");
+            _logger.Log(PsesLogLevel.Trace, "Simplex named pipe transport connected");
             return (inPipe, outPipe);
         }
     }
