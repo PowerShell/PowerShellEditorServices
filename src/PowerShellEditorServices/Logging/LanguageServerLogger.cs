@@ -68,7 +68,7 @@ internal class LanguageServerLogger(ILanguageServerFacade responseRouter, string
         {
             messagePrepend = logLevel switch
             {
-                LogLevel.Critical => "<Error> CRITICAL: ",
+                LogLevel.Critical => "<Error>CRITICAL: ",
                 LogLevel.Error => "<Error>",
                 LogLevel.Warning => "<Warning>",
                 LogLevel.Information => "<Info>",
@@ -76,6 +76,12 @@ internal class LanguageServerLogger(ILanguageServerFacade responseRouter, string
                 LogLevel.Trace => "<Trace>",
                 _ => string.Empty
             };
+
+            // The vscode formatter prepends some extra stuff to Info specifically, so we drop Info to Log, but it will get logged correctly on the other side thanks to our inline indicator that our custom parser on the other side will pick up and process.
+            if (messageType == MessageType.Info)
+            {
+                messageType = MessageType.Log;
+            }
         }
 
         LogMessageParams logMessage = new()
