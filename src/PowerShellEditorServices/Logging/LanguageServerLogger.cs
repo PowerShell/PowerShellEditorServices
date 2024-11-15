@@ -10,7 +10,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using OmniSharp.Extensions.LanguageServer.Protocol.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Window;
@@ -29,33 +28,35 @@ internal class LanguageServerLogger(ILanguageServerFacade responseRouter, string
     {
         // Any Omnisharp or trace logs are directly LSP protocol related and we send them to the trace channel
         // TODO: Dynamically adjust if SetTrace is reported
-        if (categoryName.StartsWith("OmniSharp") || logLevel == LogLevel.Trace)
-        {
-            // Everything with omnisharp goes directly to trace
-            string eventMessage = string.Empty;
-            string exceptionName = exception?.GetType().Name ?? string.Empty;
-            if (eventId.Name is not null)
-            {
-                eventMessage = eventId.Id == 0 ? eventId.Name : $"{eventId.Name} [{eventId.Id}] ";
-            }
+        // BUG: There is an omnisharp filter incorrectly filtering this. As a workaround we will use logMessage.
+        //  https://github.com/OmniSharp/csharp-language-server-protocol/issues/1390
+        // if (categoryName.StartsWith("OmniSharp") || logLevel == LogLevel.Trace)
+        // {
+        //     // Everything with omnisharp goes directly to trace
+        //     string eventMessage = string.Empty;
+        //     string exceptionName = exception?.GetType().Name ?? string.Empty;
+        //     if (eventId.Name is not null)
+        //     {
+        //         eventMessage = eventId.Id == 0 ? eventId.Name : $"{eventId.Name} [{eventId.Id}] ";
+        //     }
 
-            LogTraceParams trace = new()
-            {
-                Message = categoryName + ": " + eventMessage + exceptionName,
-                Verbose = formatter(state, exception)
-            };
-            responseRouter.Client.LogTrace(trace);
-        }
-        else if (TryGetMessageType(logLevel, out MessageType messageType))
+        //     LogTraceParams trace = new()
+        //     {
+        //         Message = categoryName + ": " + eventMessage + exceptionName,
+        //         Verbose = formatter(state, exception)
+        //     };
+        //     responseRouter.Client.LogTrace(trace);
+        // }
+        if (TryGetMessageType(logLevel, out MessageType messageType))
         {
             LogMessageParams logMessage = new()
             {
                 Type = messageType,
                 // TODO: Add Critical and Debug delineations
                 Message = categoryName + ": " + formatter(state, exception) +
-                                (exception != null ? " - " + exception : "") + " | " +
-                                //Hopefully this isn't too expensive in the long run
-                                FormatState(state, exception)
+                    (exception != null ? " - " + exception : "") + " | " +
+                    //Hopefully this isn't too expensive in the long run
+                    FormatState(state, exception)
             };
             responseRouter.Window.Log(logMessage);
         }

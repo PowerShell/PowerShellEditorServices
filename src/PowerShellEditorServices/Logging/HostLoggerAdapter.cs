@@ -13,6 +13,9 @@ namespace Microsoft.PowerShell.EditorServices.Logging
     {
         public void OnError(Exception error) => logger.LogError(error, "Error in host logger");
 
+        /// <summary>
+        /// Log the message received from the host into MEL.
+        /// </summary>
         public void OnNext((int logLevel, string message) value) => logger.Log((LogLevel)value.logLevel, value.message);
 
         public void OnCompleted()

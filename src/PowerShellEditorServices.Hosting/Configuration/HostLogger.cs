@@ -12,20 +12,51 @@ using System.Threading;
 namespace Microsoft.PowerShell.EditorServices.Hosting
 {
     /// <summary>
-    /// User-facing log level for editor services configuration.
+    /// Log Level for HostLogger. This is a direct copy of LogLevel from Microsoft.Extensions.Logging, and will map to
+    /// MEL.LogLevel once MEL is bootstrapped, but we don't want to load any MEL assemblies until the Assembly Load
+    /// Context is set up.
     /// </summary>
-    /// <remarks>
-    /// The underlying values of this enum attempt to align to
-    /// <see cref="Microsoft.Extensions.Logging.LogLevel" />
-    /// </remarks>
     public enum PsesLogLevel
     {
-        Diagnostic = 0,
-        Verbose = 1,
-        Normal = 2,
+        /// <summary>
+        /// Logs that contain the most detailed messages. These messages may contain sensitive application data.
+        /// These messages are disabled by default and should never be enabled in a production environment.
+        /// </summary>
+        Trace = 0,
+
+        /// <summary>
+        /// Logs that are used for interactive investigation during development.  These logs should primarily contain
+        /// information useful for debugging and have no long-term value.
+        /// </summary>
+        Debug = 1,
+
+        /// <summary>
+        /// Logs that track the general flow of the application. These logs should have long-term value.
+        /// </summary>
+        Information = 2,
+
+        /// <summary>
+        /// Logs that highlight an abnormal or unexpected event in the application flow, but do not otherwise cause the
+        /// application execution to stop.
+        /// </summary>
         Warning = 3,
+
+        /// <summary>
+        /// Logs that highlight when the current flow of execution is stopped due to a failure. These should indicate a
+        /// failure in the current activity, not an application-wide failure.
+        /// </summary>
         Error = 4,
-        None = 5
+
+        /// <summary>
+        /// Logs that describe an unrecoverable application or system crash, or a catastrophic failure that requires
+        /// immediate attention.
+        /// </summary>
+        Critical = 5,
+
+        /// <summary>
+        /// Not used for writing log messages. Specifies that a logging category should not write any messages.
+        /// </summary>
+        None = 6,
     }
 
     /// <summary>
@@ -180,15 +211,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// Since it's likely that the process will end when PSES shuts down,
     /// there's no good reason to need objects rather than writing directly to the host.
     /// </remarks>
-    internal class PSHostLogger : IObserver<(PsesLogLevel logLevel, string message)>
+    /// <param name="ui">The PowerShell host user interface object to log output to.</param>
+    internal class PSHostLogger(PSHostUserInterface ui) : IObserver<(PsesLogLevel logLevel, string message)>
     {
-        private readonly PSHostUserInterface _ui;
-
-        /// <summary>
-        /// Create a new PowerShell host logger.
-        /// </summary>
-        /// <param name="ui">The PowerShell host user interface object to log output to.</param>
-        public PSHostLogger(PSHostUserInterface ui) => _ui = ui;
 
         public void OnCompleted()
         {
@@ -200,35 +225,37 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public void OnNext((PsesLogLevel logLevel, string message) value)
         {
-            switch (value.logLevel)
+            (PsesLogLevel logLevel, string message) = value;
+            switch (logLevel)
             {
-                case PsesLogLevel.Diagnostic:
-                    _ui.WriteDebugLine(value.message);
-                    return;
+                case PsesLogLevel.Trace:
+                case PsesLogLevel.Debug:
+                    ui.WriteDebugLine(message);
+                    break;
 
-                case PsesLogLevel.Verbose:
-                    _ui.WriteVerboseLine(value.message);
-                    return;
-
-                case PsesLogLevel.Normal:
-                    _ui.WriteLine(value.message);
-                    return;
+                case PsesLogLevel.Information:
+                    ui.WriteVerboseLine(message);
+                    break;
 
                 case PsesLogLevel.Warning:
-                    _ui.WriteWarningLine(value.message);
-                    return;
+                    ui.WriteWarningLine(message);
+                    break;
 
                 case PsesLogLevel.Error:
-                    _ui.WriteErrorLine(value.message);
-                    return;
+                case PsesLogLevel.Critical:
+                    ui.WriteErrorLine(message);
+                    break;
 
                 default:
-                    _ui.WriteLine(value.message);
-                    return;
+                    ui.WriteLine(message);
+                    break;
             }
         }
     }
 
+    /// <summary>
+    /// A simple log sink that logs to a stream, typically used to log to a file.
+    /// </summary>
     internal class StreamLogger : IObserver<(PsesLogLevel logLevel, string message)>, IDisposable
     {
         public static StreamLogger CreateWithNewFile(string path)
@@ -283,9 +310,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             }
 
             _cancellationSource.Cancel();
-
             _writerThread.Join();
-
             _unsubscriber.Dispose();
             _fileWriter.Flush();
             _fileWriter.Close();
@@ -298,29 +323,17 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public void OnNext((PsesLogLevel logLevel, string message) value)
         {
-            string message = null;
-            switch (value.logLevel)
+            string message = value.logLevel switch
             {
-                case PsesLogLevel.Diagnostic:
-                    message = $"[DBG]: {value.message}";
-                    break;
-
-                case PsesLogLevel.Verbose:
-                    message = $"[VRB]: {value.message}";
-                    break;
-
-                case PsesLogLevel.Normal:
-                    message = $"[INF]: {value.message}";
-                    break;
-
-                case PsesLogLevel.Warning:
-                    message = $"[WRN]: {value.message}";
-                    break;
-
-                case PsesLogLevel.Error:
-                    message = $"[ERR]: {value.message}";
-                    break;
-            }
+                // String interpolation often considered a logging sin is OK here because our filtering happens before.
+                PsesLogLevel.Trace => $"[TRC]: {value.message}",
+                PsesLogLevel.Debug => $"[DBG]: {value.message}",
+                PsesLogLevel.Information => $"[INF]: {value.message}",
+                PsesLogLevel.Warning => $"[WRN]: {value.message}",
+                PsesLogLevel.Error => $"[ERR]: {value.message}",
+                PsesLogLevel.Critical => $"[CRT]: {value.message}",
+                _ => value.message,
+            };
 
             _messageQueue.Add(message);
         }
