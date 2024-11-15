@@ -138,7 +138,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         /// The minimum log level that should be emitted.
         /// </summary>
         [Parameter]
-        public PsesLogLevel LogLevel { get; set; } = PsesLogLevel.Warning;
+        public string LogLevel { get; set; } = PsesLogLevel.Warning.ToString();
 
         /// <summary>
         /// Paths to additional PowerShell modules to be imported at startup.
@@ -194,6 +194,11 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         /// </summary>
         [Parameter]
         public string StartupBanner { get; set; }
+
+        /// <summary>
+        /// Compatibility to store the currently supported PSESLogLevel Enum Value
+        /// </summary>
+        private PsesLogLevel _psesLogLevel = PsesLogLevel.Warning;
 
 #pragma warning disable IDE0022
         protected override void BeginProcessing()
@@ -257,7 +262,25 @@ namespace Microsoft.PowerShell.EditorServices.Commands
 
         private void StartLogging()
         {
-            _logger = new HostLogger(LogLevel);
+            bool isLegacyPsesLogLevel = false;
+            if (!Enum.TryParse(LogLevel, true, out _psesLogLevel))
+            {
+                // PSES used to have log levels that didn't match MEL levels, this is an adapter for those types and may eventually be removed once people migrate their settings.
+                isLegacyPsesLogLevel = true;
+                _psesLogLevel = LogLevel switch
+                {
+                    "Diagnostic" => PsesLogLevel.Trace,
+                    "Verbose" => PsesLogLevel.Debug,
+                    "Normal" => PsesLogLevel.Information,
+                    _ => PsesLogLevel.Trace
+                };
+            }
+
+            _logger = new HostLogger(_psesLogLevel);
+            if (isLegacyPsesLogLevel)
+            {
+                _logger.Log(PsesLogLevel.Warning, $"The log level '{LogLevel}' is deprecated and will be removed in a future release. Please update your settings or command line options to use one of the following options: 'Trace', 'Debug', 'Information', 'Warning', 'Error', 'Critical'.");
+            }
 
             // We need to not write log messages to Stdio
             // if it's being used as a protocol transport
@@ -349,7 +372,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 LogPath)
             {
                 FeatureFlags = FeatureFlags,
-                LogLevel = LogLevel,
+                LogLevel = _psesLogLevel,
                 ConsoleRepl = GetReplKind(),
                 UseNullPSHostUI = Stdio, // If Stdio is used we can't write anything else out
                 AdditionalModules = AdditionalModules,

@@ -87,7 +87,7 @@ $command = @(
         "-HostName 'My Client'",
         "-HostProfileId 'myclient'",
         "-HostVersion 1.0.0",
-        "-LogLevel Diagnostic"
+        "-LogLevel Trace"
 ) -join " "
 
 $pwsh_arguments = "-NoLogo -NoProfile -Command $command"
