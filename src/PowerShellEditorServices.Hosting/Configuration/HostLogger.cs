@@ -229,25 +229,23 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             switch (logLevel)
             {
                 case PsesLogLevel.Trace:
+                    ui.WriteDebugLine("[Trace] " + message);
+                    break;
                 case PsesLogLevel.Debug:
                     ui.WriteDebugLine(message);
                     break;
-
                 case PsesLogLevel.Information:
                     ui.WriteVerboseLine(message);
                     break;
-
                 case PsesLogLevel.Warning:
                     ui.WriteWarningLine(message);
                     break;
-
                 case PsesLogLevel.Error:
                 case PsesLogLevel.Critical:
                     ui.WriteErrorLine(message);
                     break;
-
                 default:
-                    ui.WriteLine(message);
+                    ui.WriteDebugLine("UNKNOWN:" + message);
                     break;
             }
         }

@@ -212,10 +212,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             ValidateConfiguration();
 
             // Method with no implementation that forces the PSES assembly to load, triggering an AssemblyResolve event
-            _logger.Log(PsesLogLevel.Information, "Loading PowerShell Editor Services");
+            _logger.Log(PsesLogLevel.Information, "Loading PowerShell Editor Services Assemblies");
             LoadEditorServices();
 
-            _logger.Log(PsesLogLevel.Information, "Starting EditorServices");
+            _logger.Log(PsesLogLevel.Information, "Starting PowerShell Editor Services");
 
             _editorServicesRunner = new EditorServicesRunner(_logger, _hostConfig, _sessionFileWriter, _loggersToUnsubscribe);
 
@@ -242,7 +242,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             PSLanguageMode languageMode = Runspace.DefaultRunspace.SessionStateProxy.LanguageMode;
 
-            _logger.Log(PsesLogLevel.Debug, $@"
+            _logger.Log(PsesLogLevel.Trace, $@"
 == PowerShell Details ==
 - PowerShell version: {_powerShellVersion}
 - Language mode:      {languageMode}
@@ -295,12 +295,12 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             }
             psModulePath = $"{psModulePath}{Path.PathSeparator}{_hostConfig.BundledModulePath}";
             Environment.SetEnvironmentVariable("PSModulePath", psModulePath);
-            _logger.Log(PsesLogLevel.Debug, $"Updated PSModulePath to: '{psModulePath}'");
+            _logger.Log(PsesLogLevel.Trace, $"Updated PSModulePath to: '{psModulePath}'");
         }
 
         private void LogHostInformation()
         {
-            _logger.Log(PsesLogLevel.Debug, $"PID: {System.Diagnostics.Process.GetCurrentProcess().Id}");
+            _logger.Log(PsesLogLevel.Trace, $"PID: {System.Diagnostics.Process.GetCurrentProcess().Id}");
 
             _logger.Log(PsesLogLevel.Debug, $@"
 == Build Details ==
@@ -359,7 +359,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2208:Instantiate argument exceptions correctly", Justification = "Checking user-defined configuration")]
         private void ValidateConfiguration()
         {
-            _logger.Log(PsesLogLevel.Trace, "Validating configuration");
+            _logger.Log(PsesLogLevel.Debug, "Validating configuration");
 
             bool lspUsesStdio = _hostConfig.LanguageServiceTransport is StdioTransportConfig;
             bool debugUsesStdio = _hostConfig.DebugServiceTransport is StdioTransportConfig;
