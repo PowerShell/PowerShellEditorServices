@@ -21,6 +21,12 @@ The functionality in PowerShell Editor Services is available in the following ed
 Please note that other than PowerShell for Visual Studio Code, these clients are community maintained and may be very out of date.
 It is recommended that you simply use an LSP plugin for your editor and configure it as demonstrated [below](#Usage).
 
+## Supported PowerShell Versions
+
+PSES runs as a PowerShell Module in [currently supported versions of PowerShell 7+](https://learn.microsoft.com/en-us/powershell/scripting/install/powershell-support-lifecycle).
+
+Windows PowerShell 5.1 is supported on a best-effort basis.
+
 ## Features
 
 - The Language Service provides common editor features for the PowerShell language:
