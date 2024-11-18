@@ -10,16 +10,21 @@ experience in almost any editor or integrated development environment (IDE).
 
 ## [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) clients using PowerShell Editor Services:
 
+- [PowerShell for Visual Studio Code](https://github.com/PowerShell/vscode-powershell)
+> [!NOTE]
+> PowerShell for Azure Data Studio will no longer be updated or maintained.
+
+> [!WARNING]
+> Other than PowerShell for Visual Studio Code, these clients are community maintained and may be very out of date.
+It is recommended to use a generic [LSP plugin](#Usage) with your client if possible.
 The functionality in PowerShell Editor Services is available in the following editor extensions:
 
-- [PowerShell for Visual Studio Code](https://github.com/PowerShell/vscode-powershell), also available in Azure Data Studio
 - [lsp-pwsh](https://github.com/emacs-lsp/lsp-mode/blob/master/clients/lsp-pwsh.el), an Emacs PowerShell plugin
 - [intellij-powershell](https://github.com/ant-druha/intellij-powershell), adds PowerShell language support to IntelliJ-based IDEs
 - [coc-powershell](https://github.com/yatli/coc-powershell), a Vim and Neovim plugin
 - [powershell.nvim](https://github.com/TheLeoP/powershell.nvim) a Neovim plugin
 
-Please note that other than PowerShell for Visual Studio Code, these clients are community maintained and may be very out of date.
-It is recommended that you simply use an LSP plugin for your editor and configure it as demonstrated [below](#Usage).
+
 
 ## Supported PowerShell Versions
 
@@ -152,7 +157,8 @@ The types of PowerShell Editor Services can change at any moment and should not 
 
 ## Development
 
-> NOTE: The easiest way to manually test changes you've made in PowerShellEditorServices is to follow the [vscode-powershell development doc](https://github.com/PowerShell/vscode-powershell/blob/main/docs/development.md) to get a local build of the VS Code extension to use your local build of PowerShellEditorServices.
+> [!TIP]
+> The easiest way to manually test changes you've made in PowerShellEditorServices is to follow the [vscode-powershell development doc](https://github.com/PowerShell/vscode-powershell/blob/main/docs/development.md).
 
 ### 1. Install PowerShell 7+
 
