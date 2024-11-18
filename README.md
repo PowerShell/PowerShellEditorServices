@@ -14,17 +14,15 @@ experience in almost any editor or integrated development environment (IDE).
 > [!NOTE]
 > PowerShell for Azure Data Studio will no longer be updated or maintained.
 
-> [!WARNING]
-> Other than PowerShell for Visual Studio Code, these clients are community maintained and may be very out of date.
-It is recommended to use a generic [LSP plugin](#Usage) with your client if possible.
 The functionality in PowerShell Editor Services is available in the following editor extensions:
+> [!WARNING]
+> These clients are community maintained and may be very out of date.
+It is recommended to use a generic [LSP plugin](#Usage) with your client if possible.
 
 - [lsp-pwsh](https://github.com/emacs-lsp/lsp-mode/blob/master/clients/lsp-pwsh.el), an Emacs PowerShell plugin
 - [intellij-powershell](https://github.com/ant-druha/intellij-powershell), adds PowerShell language support to IntelliJ-based IDEs
 - [coc-powershell](https://github.com/yatli/coc-powershell), a Vim and Neovim plugin
 - [powershell.nvim](https://github.com/TheLeoP/powershell.nvim) a Neovim plugin
-
-
 
 ## Supported PowerShell Versions
 
