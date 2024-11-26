@@ -77,7 +77,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </summary>
         public Task StackFramesAndVariablesFetched { get; private set; }
 
-
         /// <summary>
         /// Tracks whether we are running <c>Debug-Runspace</c> in an out-of-process runspace.
         /// </summary>

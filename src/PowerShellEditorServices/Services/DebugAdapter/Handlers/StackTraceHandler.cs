@@ -12,6 +12,7 @@ using OmniSharp.Extensions.DebugAdapter.Protocol.Models;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using System.Linq;
+using OmniSharp.Extensions.JsonRpc;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers;
 
@@ -26,7 +27,7 @@ internal class StackTraceHandler(DebugService debugService) : IStackTraceHandler
     {
         if (!debugService.IsDebuggerStopped)
         {
-            throw new NotSupportedException("Stacktrace was requested while we are not stopped at a breakpoint.");
+            throw new RpcErrorException(0, null!, "Stacktrace was requested while we are not stopped at a breakpoint. This is a violation of the DAP protocol, and is probably a bug.");
         }
 
         // Adapting to int to let us use LINQ, realistically if you have a stacktrace larger than this that the client is requesting, you have bigger problems...
@@ -35,7 +36,7 @@ internal class StackTraceHandler(DebugService debugService) : IStackTraceHandler
 
         // We generate a label for the breakpoint and can return that immediately if the client is supporting DelayedStackTraceLoading.
         InvocationInfo invocationInfo = debugService.CurrentDebuggerStoppedEventArgs?.OriginalEvent?.InvocationInfo
-            ?? throw new NotSupportedException("InvocationInfo was not available on CurrentDebuggerStoppedEvent args. This is a bug.");
+            ?? throw new RpcErrorException(0, null!, "InvocationInfo was not available on CurrentDebuggerStoppedEvent args. This is a bug and you should report it.");
 
         StackFrame breakpointLabel = CreateBreakpointLabel(invocationInfo);
 
@@ -52,7 +53,7 @@ internal class StackTraceHandler(DebugService debugService) : IStackTraceHandler
         await debugService.StackFramesAndVariablesFetched.ConfigureAwait(false);
 
         StackFrameDetails[] stackFrameDetails = await debugService.GetStackFramesAsync(cancellationToken)
-                                                                    .ConfigureAwait(false);
+            .ConfigureAwait(false);
 
         // Handle a rare race condition where the adapter requests stack frames before they've
         // begun building.
@@ -94,7 +95,7 @@ internal class StackTraceHandler(DebugService debugService) : IStackTraceHandler
         // We need to make sure the user can't open the file associated with this stack frame.
         // It will generate a VSCode error in this case.
         Source? source = null;
-        if (!stackFrame.ScriptPath.Contains("<"))
+        if (!stackFrame.ScriptPath.Contains("<No File>"))
         {
             source = new Source
             {
