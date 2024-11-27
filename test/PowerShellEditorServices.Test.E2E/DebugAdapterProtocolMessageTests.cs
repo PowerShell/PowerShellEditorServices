@@ -2,22 +2,31 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Debug;
 using OmniSharp.Extensions.DebugAdapter.Client;
+using DapStackFrame = OmniSharp.Extensions.DebugAdapter.Protocol.Models.StackFrame;
+using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Models;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
+using OmniSharp.Extensions.JsonRpc.Server;
 using Xunit;
 using Xunit.Abstractions;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace PowerShellEditorServices.Test.E2E
 {
+    public class XunitOutputTraceListener(ITestOutputHelper output) : TraceListener
+    {
+        public override void Write(string message) => output.WriteLine(message);
+        public override void WriteLine(string message) => output.WriteLine(message);
+    }
+
     [Trait("Category", "DAP")]
     public class DebugAdapterProtocolMessageTests : IAsyncLifetime, IDisposable
     {
@@ -28,16 +37,26 @@ namespace PowerShellEditorServices.Test.E2E
         private DebugAdapterClient PsesDebugAdapterClient;
         private PsesStdioProcess _psesProcess;
 
+        /// <summary>
+        /// Completes when the debug adapter is started.
+        /// </summary>
         public TaskCompletionSource<object> Started { get; } = new TaskCompletionSource<object>();
+        /// <summary>
+        /// Completes when the first breakpoint is reached.
+        /// </summary>
+        public TaskCompletionSource<StoppedEvent> Stopped { get; } = new TaskCompletionSource<StoppedEvent>();
 
+        /// <summary>
+        /// Constructor. The ITestOutputHelper is injected by xUnit and used to write diagnostic logs.
+        /// </summary>
+        /// <param name="output"></param>
         public DebugAdapterProtocolMessageTests(ITestOutputHelper output) => _output = output;
 
         public async Task InitializeAsync()
         {
-            LoggerFactory debugLoggerFactory = new();
-            debugLoggerFactory.AddProvider(new DebugLoggerProvider());
+            // NOTE: To see debug logger output, add this line to your test
 
-            _psesProcess = new PsesStdioProcess(debugLoggerFactory, true);
+            _psesProcess = new PsesStdioProcess(new NullLoggerFactory(), true);
             await _psesProcess.Start();
 
             TaskCompletionSource<bool> initialized = new();
@@ -53,16 +72,18 @@ namespace PowerShellEditorServices.Test.E2E
                 options
                     .WithInput(_psesProcess.OutputStream)
                     .WithOutput(_psesProcess.InputStream)
-                    .ConfigureLogging(builder =>
-                        builder
-                        .AddDebug()
-                        .SetMinimumLevel(LogLevel.Trace)
-                    )
                     // The OnStarted delegate gets run when we receive the _Initialized_ event from the server:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Events_Initialized
                     .OnStarted((_, _) =>
                     {
                         Started.SetResult(true);
+                        return Task.CompletedTask;
+                    })
+                    // We use this to create a task we can await to test debugging after a breakpoint has been received.
+                    .OnNotification<StoppedEvent>(null, (stoppedEvent, _) =>
+                    {
+                        Console.WriteLine("StoppedEvent received");
+                        Stopped.SetResult(stoppedEvent);
                         return Task.CompletedTask;
                     })
                     // The OnInitialized delegate gets run when we first receive the _Initialize_ response:
@@ -261,6 +282,83 @@ namespace PowerShellEditorServices.Test.E2E
             Assert.Collection(await GetLog(),
                 (i) => Assert.Equal("at breakpoint", i),
                 (i) => Assert.Equal("after breakpoint", i));
+        }
+
+        [SkippableFact]
+        public async Task FailsIfStacktraceRequestedWhenNotPaused()
+        {
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode,
+                "Breakpoints can't be set in Constrained Language Mode.");
+            string filePath = NewTestFile(GenerateScriptFromLoggingStatements(
+                "labelTestBreakpoint"
+            ));
+            // Set a breakpoint
+            await PsesDebugAdapterClient.SetBreakpoints(
+                new SetBreakpointsArguments
+                {
+                    Source = new Source { Name = Path.GetFileName(filePath), Path = filePath },
+                    Breakpoints = new SourceBreakpoint[] { new SourceBreakpoint { Line = 1 } },
+                    SourceModified = false,
+                }
+            );
+
+            // Signal to start the script
+            await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments());
+            await PsesDebugAdapterClient.LaunchScript(filePath, Started);
+
+
+            // Get the stacktrace for the breakpoint
+            await Assert.ThrowsAsync<JsonRpcException>(() => PsesDebugAdapterClient.RequestStackTrace(
+                new StackTraceArguments { }
+            ));
+        }
+
+        [SkippableFact]
+        public async Task SendsInitialLabelBreakpointForPerformanceReasons()
+        {
+            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode,
+                "Breakpoints can't be set in Constrained Language Mode.");
+            string filePath = NewTestFile(GenerateScriptFromLoggingStatements(
+                "before breakpoint",
+                "at breakpoint",
+                "after breakpoint"
+            ));
+
+            //TODO: This is technically wrong per the spec, configDone should be completed BEFORE launching, but this is how the vscode client does it today and we really need to fix that.
+            await PsesDebugAdapterClient.LaunchScript(filePath, Started);
+
+            // {"command":"setBreakpoints","arguments":{"source":{"name":"dfsdfg.ps1","path":"/Users/tyleonha/Code/PowerShell/Misc/foo/dfsdfg.ps1"},"lines":[2],"breakpoints":[{"line":2}],"sourceModified":false},"type":"request","seq":3}
+            SetBreakpointsResponse setBreakpointsResponse = await PsesDebugAdapterClient.SetBreakpoints(new SetBreakpointsArguments
+            {
+                Source = new Source { Name = Path.GetFileName(filePath), Path = filePath },
+                Breakpoints = new SourceBreakpoint[] { new SourceBreakpoint { Line = 2 } },
+                SourceModified = false,
+            });
+
+            Breakpoint breakpoint = setBreakpointsResponse.Breakpoints.First();
+            Assert.True(breakpoint.Verified);
+            Assert.Equal(filePath, breakpoint.Source.Path, ignoreCase: s_isWindows);
+            Assert.Equal(2, breakpoint.Line);
+
+            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments());
+
+            // FIXME: I think there is a race condition here. If you remove this, the following line Stack Trace fails because the breakpoint hasn't been hit yet. I think the whole getLog process just works long enough for ConfigurationDone to complete and for the breakpoint to be hit.
+
+            // I've tried to do this properly by waiting for a StoppedEvent, but that doesn't seem to work, I'm probably just not wiring it up right in the handler.
+            Assert.NotNull(configDoneResponse);
+            Assert.Collection(await GetLog(),
+                (i) => Assert.Equal("before breakpoint", i));
+            File.Delete(s_testOutputPath);
+
+            // Get the stacktrace for the breakpoint
+            StackTraceResponse stackTraceResponse = await PsesDebugAdapterClient.RequestStackTrace(
+                new StackTraceArguments { ThreadId = 1 }
+            );
+            DapStackFrame firstFrame = stackTraceResponse.StackFrames.First();
+            Assert.Equal(
+                firstFrame.PresentationHint,
+                StackFramePresentationHint.Label
+            );
         }
 
         // This is a regression test for a bug where user code causes a new synchronization context
