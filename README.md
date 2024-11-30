@@ -10,16 +10,25 @@ experience in almost any editor or integrated development environment (IDE).
 
 ## [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) clients using PowerShell Editor Services:
 
-The functionality in PowerShell Editor Services is available in the following editor extensions:
+- [PowerShell for Visual Studio Code](https://github.com/PowerShell/vscode-powershell)
+> [!NOTE]
+> PowerShell for Azure Data Studio will no longer be updated or maintained.
 
-- [PowerShell for Visual Studio Code](https://github.com/PowerShell/vscode-powershell), also available in Azure Data Studio
+The functionality in PowerShell Editor Services is available in the following editor extensions:
+> [!WARNING]
+> These clients are community maintained and may be very out of date.
+It is recommended to use a generic [LSP plugin](#Usage) with your client if possible.
+
 - [lsp-pwsh](https://github.com/emacs-lsp/lsp-mode/blob/master/clients/lsp-pwsh.el), an Emacs PowerShell plugin
 - [intellij-powershell](https://github.com/ant-druha/intellij-powershell), adds PowerShell language support to IntelliJ-based IDEs
 - [coc-powershell](https://github.com/yatli/coc-powershell), a Vim and Neovim plugin
 - [powershell.nvim](https://github.com/TheLeoP/powershell.nvim) a Neovim plugin
 
-Please note that other than PowerShell for Visual Studio Code, these clients are community maintained and may be very out of date.
-It is recommended that you simply use an LSP plugin for your editor and configure it as demonstrated [below](#Usage).
+## Supported PowerShell Versions
+
+PSES runs as a PowerShell Module in [currently supported versions of PowerShell 7+](https://learn.microsoft.com/en-us/powershell/scripting/install/powershell-support-lifecycle).
+
+Windows PowerShell 5.1 is supported on a best-effort basis.
 
 ## Features
 
@@ -144,9 +153,10 @@ Please note that we only consider the following as stable APIs that can be relie
 
 The types of PowerShell Editor Services can change at any moment and should not be linked against in a production environment.
 
-## Development
+## Development Environment
 
-> NOTE: The easiest way to manually test changes you've made in PowerShellEditorServices is to follow the [vscode-powershell development doc](https://github.com/PowerShell/vscode-powershell/blob/main/docs/development.md) to get a local build of the VS Code extension to use your local build of PowerShellEditorServices.
+> [!TIP]
+> The easiest way to manually test changes you've made in PowerShellEditorServices is to follow the [vscode-powershell development doc](https://github.com/PowerShell/vscode-powershell/blob/main/docs/development.md).
 
 ### 1. Install PowerShell 7+
 
@@ -165,31 +175,31 @@ Install-Module InvokeBuild -Scope CurrentUser
 Install-Module platyPS -Scope CurrentUser
 ```
 
-### 4. Delete `NuGet.Config`
+### 4. Adjust `nuget.config` if necessary
 
-Our NuGet configuration points to a private feed necessary for secure builds,
-and it must be committed to the repo as it is.
-The easiest way to build without access to that private feed is to delete the file:
+Our NuGet configuration uses a secure feed with allow-listed third party dependency packages. If your contribution requires any changes to the included NuGet packages, you must disable this secure feed.
 
-```powershell
-Remove-Item NuGet.Config
-```
-
-Please be careful not to commit this change in a PR.
-
-Now you're ready to build the code.
-You can do so in one of two ways:
-
-### Building the code from PowerShell
+First, run this command to prevent accidentally commiting changes to this file
 
 ```powershell
-PS C:\path\to\PowerShellEditorServices> Invoke-Build Build
+git update-index --skip-worktree nuget.config
 ```
 
-### Building the code from Visual Studio Code
+Then, either delete the file or remove the `packagesources` section to use nuget.org again. Your PR _will_ fail automated build checks and you _must_ inform us at the top of your PR so the appropriate packages can be added if approved.
+
+## Build PowerShell Editor Services
+Now you're ready to build the code. You can do so in one of two ways:
+
+### PowerShell
+
+```powershell
+PS C:\src\PowerShellEditorServices> Invoke-Build
+```
+
+### Visual Studio Code
 
 Open the PowerShellEditorServices folder that you cloned locally and press <kbd>Ctrl+Shift+B</kbd>
-(or <kbd>Cmd+Shift+B</kbd> on macOS).
+(or <kbd>Cmd+Shift+B</kbd> on macOS) which will run the default build task.
 
 ## Code of Conduct
 

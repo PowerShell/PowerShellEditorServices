@@ -93,7 +93,7 @@ extends:
               Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet
               ./tools/installPSResources.ps1 -PSRepository CFS
             displayName: Install PSResources
-          - pwsh: Invoke-Build TestFull -Configuration $(BuildConfiguration) -PSRepository CFS
+          - pwsh: Invoke-Build Build -Configuration $(BuildConfiguration) -PSRepository CFS
             displayName: Build and test
           - task: PublishTestResults@2
             displayName: Publish test results
