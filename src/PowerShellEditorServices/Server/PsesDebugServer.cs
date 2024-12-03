@@ -120,7 +120,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         response.SupportsDelayedStackTraceLoading = true;
 
                         return Task.CompletedTask;
-                    });
+                    })
+                ;
             }).ConfigureAwait(false);
         }
 

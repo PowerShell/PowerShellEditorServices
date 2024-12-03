@@ -1,0 +1,1 @@
+Windows PowerShell does not have updated help in CI by default and we utilize a private Azure Devops repo for builds that has no internet access. The completion tests validate the Windows Help so we update it offline from here so these tests can work.

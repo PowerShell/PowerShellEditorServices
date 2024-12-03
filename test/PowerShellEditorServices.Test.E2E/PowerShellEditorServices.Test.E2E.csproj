@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
+  <Import
+    Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
 
   <PropertyGroup>
     <TargetFrameworks>net8.0</TargetFrameworks>
@@ -18,8 +19,10 @@
   <Choose>
     <When Condition=" '$(LocalOmniSharp)' == 'true' ">
       <ItemGroup>
-        <ProjectReference Include="..\..\..\csharp-language-server-protocol\src\Client\Client.csproj" />
-        <ProjectReference Include="..\..\..\csharp-language-server-protocol\src\Dap.Client\Dap.client.csproj" />
+        <ProjectReference
+          Include="..\..\..\csharp-language-server-protocol\src\Client\Client.csproj" />
+        <ProjectReference
+          Include="..\..\..\csharp-language-server-protocol\src\Dap.Client\Dap.client.csproj" />
       </ItemGroup>
     </When>
     <Otherwise>
@@ -37,4 +40,11 @@
   <ItemGroup>
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- Used for Update-Help for some test fixtures -->
+    <Content Include="..\PowerShellEditorServices.Test.Shared\PSHelp\**\*"
+      CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
