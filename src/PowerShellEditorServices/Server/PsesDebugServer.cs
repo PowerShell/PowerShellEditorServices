@@ -117,6 +117,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         response.SupportsHitConditionalBreakpoints = true;
                         response.SupportsLogPoints = true;
                         response.SupportsSetVariable = true;
+                        response.SupportsDelayedStackTraceLoading = true;
 
                         return Task.CompletedTask;
                     });
