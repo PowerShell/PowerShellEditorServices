@@ -1,7 +1,8 @@
 {
   "$schema": "https://xunit.net/schema/current/xunit.runner.schema.json",
   "appDomain": "denied",
-  "parallelizeTestCollections": false,
+  "parallelizeTestCollections": true,
+  "parallelAlgorithm": "aggressive",
   "methodDisplay": "method",
   "diagnosticMessages": true,
   "longRunningTestSeconds": 60
