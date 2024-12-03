@@ -48,7 +48,7 @@ namespace PowerShellEditorServices.Test.E2E
             Messages.Clear();
             Diagnostics = data.Diagnostics;
             Diagnostics.Clear();
-            PwshExe = PsesStdioProcess.PwshExe;
+            PwshExe = PsesStdioLanguageServerProcessHost.PwshExe;
         }
 
         public void Dispose()
@@ -139,7 +139,7 @@ function CanSendWorkspaceSymbolRequest {
         [SkippableFact]
         public async Task CanReceiveDiagnosticsFromFileOpenAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             NewTestFile("$a = 4");
@@ -161,7 +161,7 @@ function CanSendWorkspaceSymbolRequest {
         [SkippableFact]
         public async Task CanReceiveDiagnosticsFromFileChangedAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string filePath = NewTestFile("$a = 4");
@@ -212,7 +212,7 @@ function CanSendWorkspaceSymbolRequest {
         [SkippableFact]
         public async Task CanReceiveDiagnosticsFromConfigurationChangeAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             PsesLanguageClient.SendNotification("workspace/didChangeConfiguration",
@@ -312,7 +312,7 @@ $_
         [SkippableFact]
         public async Task CanSendFormattingRequestAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string scriptPath = NewTestFile(@"
@@ -348,7 +348,7 @@ Get-Process
         [SkippableFact]
         public async Task CanSendRangeFormattingRequestAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string scriptPath = NewTestFile(@"
@@ -977,7 +977,7 @@ enum MyEnum {
         [SkippableFact]
         public async Task CanSendCodeActionRequestAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string filePath = NewTestFile("gci");
@@ -1034,7 +1034,7 @@ enum MyEnum {
         public async Task CanSendCompletionAndCompletionResolveRequestAsync()
         {
             Skip.If(IsLinux, "This depends on the help system, which is flaky on Linux.");
-            Skip.If(PsesStdioProcess.IsWindowsPowerShell, "This help system isn't updated in CI.");
+            Skip.If(PsesStdioLanguageServerProcessHost.IsWindowsPowerShell, "This help system isn't updated in CI.");
             string filePath = NewTestFile("Write-H");
 
             CompletionList completionItems = await PsesLanguageClient.TextDocument.RequestCompletion(
@@ -1133,7 +1133,7 @@ enum MyEnum {
         public async Task CanSendHoverRequestAsync()
         {
             Skip.If(IsLinux, "This depends on the help system, which is flaky on Linux.");
-            Skip.If(PsesStdioProcess.IsWindowsPowerShell, "This help system isn't updated in CI.");
+            Skip.If(PsesStdioLanguageServerProcessHost.IsWindowsPowerShell, "This help system isn't updated in CI.");
             string filePath = NewTestFile("Write-Host");
 
             Hover hover = await PsesLanguageClient.TextDocument.RequestHover(
@@ -1215,7 +1215,7 @@ CanSendDefinitionRequest
         [SkippableFact]
         public async Task CanSendGetCommentHelpRequestAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string scriptPath = NewTestFile(@"
@@ -1285,7 +1285,7 @@ function CanSendGetCommentHelpRequest {
         [SkippableFact]
         public async Task CanSendExpandAliasRequestAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode,
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
                 "The expand alias request doesn't work in Constrained Language Mode.");
 
             ExpandAliasResult expandAliasResult =
