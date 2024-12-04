@@ -1,5 +1,12 @@
 # PowerShell Editor Services Release History
 
+## v4.1.0
+### Wednesday, December 04, 2024
+
+See more details at the GitHub Release for [v4.1.0](https://github.com/PowerShell/PowerShellEditorServices/releases/tag/v4.1.0).
+
+Debugger optimizations and incremental build support!
+
 ## v4.0.0
 ### Monday, November 18, 2024
 
