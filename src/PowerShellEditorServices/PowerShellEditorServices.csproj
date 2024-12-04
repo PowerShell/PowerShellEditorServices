@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
+  <Import
+    Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
 
   <PropertyGroup>
     <AssemblyTitle>PowerShell Editor Services</AssemblyTitle>
@@ -39,6 +40,12 @@
     <PackageReference Include="System.IO.Pipes.AccessControl" />
     <PackageReference Include="System.Security.Principal" />
     <PackageReference Include="System.Security.Principal.Windows" />
+  </ItemGroup>
+
+  <ItemGroup Label="Roslynator">
+    <PackageReference Include="Roslynator.Analyzers" />
+    <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" />
+    <PackageReference Include="Roslynator.Formatting.Analyzers" />
   </ItemGroup>
 
   <Choose>
