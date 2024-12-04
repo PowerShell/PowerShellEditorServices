@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
+  <Import
+    Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
 
   <PropertyGroup>
     <TargetFrameworks>net8.0;net462</TargetFrameworks>
@@ -14,6 +15,12 @@
     <PackageReference Include="PowerShellStandard.Library" PrivateAssets="all" />
     <PackageReference Include="System.IO.Pipes.AccessControl" />
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" />
+  </ItemGroup>
+
+  <ItemGroup Label="Roslynator">
+    <PackageReference Include="Roslynator.Analyzers" />
+    <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" />
+    <PackageReference Include="Roslynator.Formatting.Analyzers" />
   </ItemGroup>
 
   <ItemGroup>

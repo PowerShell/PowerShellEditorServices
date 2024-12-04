@@ -214,7 +214,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// <param name="ui">The PowerShell host user interface object to log output to.</param>
     internal class PSHostLogger(PSHostUserInterface ui) : IObserver<(PsesLogLevel logLevel, string message)>
     {
-
         public void OnCompleted()
         {
             // No-op since there's nothing to close or dispose,
