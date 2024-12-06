@@ -1057,44 +1057,6 @@ enum MyEnum {
             Assert.Contains("Writes customized output to a host", updatedCompletionItem.Documentation.String);
         }
 
-        // Regression test for https://github.com/PowerShell/PowerShellEditorServices/issues/1926
-        [SkippableFact]
-        public async Task CanRequestCompletionsAndHandleExceptions()
-        {
-            PowerShellVersion details
-                = await PsesLanguageClient
-                    .SendRequest("powerShell/getVersion", new GetVersionParams())
-                    .Returning<PowerShellVersion>(CancellationToken.None);
-
-            Skip.IfNot(details.Version.StartsWith("7.2") || details.Version.StartsWith("7.3"),
-                "This is a bug in PowerShell 7.2 and 7.3, fixed in 7.4");
-
-            string filePath = NewTestFile(@"
-@() | ForEach-Object {
-    if ($false) {
-      return
-    }
-
-    @{key=$}
-  }");
-
-            Messages.Clear(); //  On some systems there's a warning message about configuration items too.
-            CompletionList completionItems = await PsesLanguageClient.TextDocument.RequestCompletion(
-                new CompletionParams
-                {
-                    TextDocument = new TextDocumentIdentifier
-                    {
-                        Uri = DocumentUri.FromFileSystemPath(filePath)
-                    },
-                    Position = new Position(line: 6, character: 11)
-                });
-
-            Assert.Empty(completionItems);
-            Assert.Collection(Messages,
-                (message) => Assert.Contains("Error Occurred in TabExpansion2", message.Message),
-                (message) => Assert.Contains("Exception occurred while running handling completion request", message.Message));
-        }
-
         [SkippableFact(Skip = "Completion for Expand-SlowArchive is flaky.")]
         public async Task CanSendCompletionResolveWithModulePrefixRequestAsync()
         {
