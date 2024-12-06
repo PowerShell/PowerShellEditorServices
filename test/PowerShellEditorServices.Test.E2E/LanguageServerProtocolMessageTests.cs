@@ -1030,12 +1030,19 @@ enum MyEnum {
                 });
         }
 
-        [SkippableFact]
+        [Fact]
         public async Task CanSendCompletionAndCompletionResolveRequestAsync()
         {
-            Skip.If(IsLinux, "This depends on the help system, which is flaky on Linux.");
-            Skip.If(PsesStdioLanguageServerProcessHost.IsWindowsPowerShell, "This help system isn't updated in CI.");
-            string filePath = NewTestFile("Write-H");
+            await PsesLanguageClient
+            .SendRequest(
+                "evaluate",
+                new EvaluateRequestArguments
+                {
+                    Expression = $"Update-Help Microsoft.Powershell.Utility -SourcePath {s_binDir};"
+                })
+            .ReturningVoid(CancellationToken.None);
+
+            string filePath = NewTestFile("Get-Date");
 
             CompletionList completionItems = await PsesLanguageClient.TextDocument.RequestCompletion(
                 new CompletionParams
@@ -1048,16 +1055,16 @@ enum MyEnum {
                 });
 
             CompletionItem completionItem = Assert.Single(completionItems,
-                completionItem1 => completionItem1.FilterText == "Write-Host");
+                completionItem1 => completionItem1.FilterText == "Get-Date");
 
             CompletionItem updatedCompletionItem = await PsesLanguageClient
                 .SendRequest("completionItem/resolve", completionItem)
                 .Returning<CompletionItem>(CancellationToken.None);
 
-            Assert.Contains("Writes customized output to a host", updatedCompletionItem.Documentation.String);
+            Assert.Contains("Gets the current date and time.", updatedCompletionItem.Documentation.String);
         }
 
-        [SkippableFact(Skip = "Completion for Expand-SlowArchive is flaky.")]
+        [Fact]
         public async Task CanSendCompletionResolveWithModulePrefixRequestAsync()
         {
             await PsesLanguageClient
@@ -1065,11 +1072,11 @@ enum MyEnum {
                     "evaluate",
                     new EvaluateRequestArguments
                     {
-                        Expression = "Import-Module Microsoft.PowerShell.Archive -Prefix Slow"
+                        Expression = $"Update-Help Microsoft.Powershell.Utility -SourcePath {s_binDir};Import-Module Microsoft.PowerShell.Utility -Prefix Test -Force"
                     })
                 .ReturningVoid(CancellationToken.None);
 
-            string filePath = NewTestFile("Expand-SlowArch");
+            string filePath = NewTestFile("Get-TestDate");
 
             CompletionList completionItems = await PsesLanguageClient.TextDocument.RequestCompletion(
                 new CompletionParams
@@ -1078,17 +1085,15 @@ enum MyEnum {
                     {
                         Uri = DocumentUri.FromFileSystemPath(filePath)
                     },
-                    Position = new Position(line: 0, character: 15)
+                    Position = new Position(line: 0, character: 12)
                 });
 
             CompletionItem completionItem = Assert.Single(completionItems,
-                completionItem1 => completionItem1.Label == "Expand-SlowArchive");
+                completionItem1 => completionItem1.Label == "Get-TestDate");
 
-            CompletionItem updatedCompletionItem = await PsesLanguageClient
-                .SendRequest("completionItem/resolve", completionItem)
-                .Returning<CompletionItem>(CancellationToken.None);
+            CompletionItem updatedCompletionItem = await PsesLanguageClient.ResolveCompletion(completionItem);
 
-            Assert.Contains("Extracts files from a specified archive", updatedCompletionItem.Documentation.String);
+            Assert.Contains("Gets the current date and time.", updatedCompletionItem.Documentation.String);
         }
 
         [SkippableFact]
@@ -1123,22 +1128,21 @@ enum MyEnum {
         {
             string filePath = NewTestFile("Get-Date -");
 
-            SignatureHelp signatureHelp = await PsesLanguageClient
-                .SendRequest(
-                    "textDocument/signatureHelp",
-                    new SignatureHelpParams
+            SignatureHelp signatureHelp = await PsesLanguageClient.RequestSignatureHelp
+            (
+                new SignatureHelpParams
+                {
+                    TextDocument = new TextDocumentIdentifier
                     {
-                        TextDocument = new TextDocumentIdentifier
-                        {
-                            Uri = new Uri(filePath)
-                        },
-                        Position = new Position
-                        {
-                            Line = 0,
-                            Character = 10
-                        }
-                    })
-                .Returning<SignatureHelp>(CancellationToken.None);
+                        Uri = new Uri(filePath)
+                    },
+                    Position = new Position
+                    {
+                        Line = 0,
+                        Character = 10
+                    }
+                }
+            );
 
             Assert.Contains("Get-Date", signatureHelp.Signatures.First().Label);
         }
@@ -1231,7 +1235,7 @@ function CanSendGetCommentHelpRequest {
             Assert.Equal(0, evaluateResponseBody.VariablesReference);
         }
 
-        [Fact]
+        [Fact(Timeout = 60000)]
         public async Task CanSendGetCommandRequestAsync()
         {
             List<object> pSCommandMessages =
