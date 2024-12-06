@@ -13,6 +13,18 @@
     <PackageVersion Include="OmniSharp.Extensions.LanguageClient" Version="0.19.9" />
     <PackageVersion Include="OmniSharp.Extensions.LanguageServer" Version="0.19.9" />
     <PackageVersion Include="PowerShellStandard.Library" Version="5.1.1" />
+    <PackageVersion Include="Roslynator.Analyzers" Version="4.12.9">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageVersion>
+    <PackageVersion Include="Roslynator.CodeAnalysis.Analyzers" Version="4.12.9">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageVersion>
+    <PackageVersion Include="Roslynator.Formatting.Analyzers" Version="4.12.9">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageVersion>
     <PackageVersion Include="System.IO.Pipes.AccessControl" Version="5.0.0" />
     <PackageVersion Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
     <PackageVersion Include="System.Security.Principal" Version="4.3.0" />
