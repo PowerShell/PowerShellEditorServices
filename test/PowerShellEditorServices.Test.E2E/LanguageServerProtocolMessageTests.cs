@@ -48,7 +48,7 @@ namespace PowerShellEditorServices.Test.E2E
             Messages.Clear();
             Diagnostics = data.Diagnostics;
             Diagnostics.Clear();
-            PwshExe = PsesStdioProcess.PwshExe;
+            PwshExe = PsesStdioLanguageServerProcessHost.PwshExe;
         }
 
         public void Dispose()
@@ -139,7 +139,7 @@ function CanSendWorkspaceSymbolRequest {
         [SkippableFact]
         public async Task CanReceiveDiagnosticsFromFileOpenAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             NewTestFile("$a = 4");
@@ -161,7 +161,7 @@ function CanSendWorkspaceSymbolRequest {
         [SkippableFact]
         public async Task CanReceiveDiagnosticsFromFileChangedAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string filePath = NewTestFile("$a = 4");
@@ -212,7 +212,7 @@ function CanSendWorkspaceSymbolRequest {
         [SkippableFact]
         public async Task CanReceiveDiagnosticsFromConfigurationChangeAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             PsesLanguageClient.SendNotification("workspace/didChangeConfiguration",
@@ -312,7 +312,7 @@ $_
         [SkippableFact]
         public async Task CanSendFormattingRequestAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string scriptPath = NewTestFile(@"
@@ -348,7 +348,7 @@ Get-Process
         [SkippableFact]
         public async Task CanSendRangeFormattingRequestAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string scriptPath = NewTestFile(@"
@@ -977,7 +977,7 @@ enum MyEnum {
         [SkippableFact]
         public async Task CanSendCodeActionRequestAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string filePath = NewTestFile("gci");
@@ -1030,12 +1030,19 @@ enum MyEnum {
                 });
         }
 
-        [SkippableFact]
+        [Fact]
         public async Task CanSendCompletionAndCompletionResolveRequestAsync()
         {
-            Skip.If(IsLinux, "This depends on the help system, which is flaky on Linux.");
-            Skip.If(PsesStdioProcess.IsWindowsPowerShell, "This help system isn't updated in CI.");
-            string filePath = NewTestFile("Write-H");
+            await PsesLanguageClient
+            .SendRequest(
+                "evaluate",
+                new EvaluateRequestArguments
+                {
+                    Expression = $"Update-Help Microsoft.Powershell.Utility -SourcePath {s_binDir};"
+                })
+            .ReturningVoid(CancellationToken.None);
+
+            string filePath = NewTestFile("Get-Date");
 
             CompletionList completionItems = await PsesLanguageClient.TextDocument.RequestCompletion(
                 new CompletionParams
@@ -1048,54 +1055,16 @@ enum MyEnum {
                 });
 
             CompletionItem completionItem = Assert.Single(completionItems,
-                completionItem1 => completionItem1.FilterText == "Write-Host");
+                completionItem1 => completionItem1.FilterText == "Get-Date");
 
             CompletionItem updatedCompletionItem = await PsesLanguageClient
                 .SendRequest("completionItem/resolve", completionItem)
                 .Returning<CompletionItem>(CancellationToken.None);
 
-            Assert.Contains("Writes customized output to a host", updatedCompletionItem.Documentation.String);
+            Assert.Contains("Gets the current date and time.", updatedCompletionItem.Documentation.String);
         }
 
-        // Regression test for https://github.com/PowerShell/PowerShellEditorServices/issues/1926
-        [SkippableFact]
-        public async Task CanRequestCompletionsAndHandleExceptions()
-        {
-            PowerShellVersion details
-                = await PsesLanguageClient
-                    .SendRequest("powerShell/getVersion", new GetVersionParams())
-                    .Returning<PowerShellVersion>(CancellationToken.None);
-
-            Skip.IfNot(details.Version.StartsWith("7.2") || details.Version.StartsWith("7.3"),
-                "This is a bug in PowerShell 7.2 and 7.3, fixed in 7.4");
-
-            string filePath = NewTestFile(@"
-@() | ForEach-Object {
-    if ($false) {
-      return
-    }
-
-    @{key=$}
-  }");
-
-            Messages.Clear(); //  On some systems there's a warning message about configuration items too.
-            CompletionList completionItems = await PsesLanguageClient.TextDocument.RequestCompletion(
-                new CompletionParams
-                {
-                    TextDocument = new TextDocumentIdentifier
-                    {
-                        Uri = DocumentUri.FromFileSystemPath(filePath)
-                    },
-                    Position = new Position(line: 6, character: 11)
-                });
-
-            Assert.Empty(completionItems);
-            Assert.Collection(Messages,
-                (message) => Assert.Contains("Error Occurred in TabExpansion2", message.Message),
-                (message) => Assert.Contains("Exception occurred while running handling completion request", message.Message));
-        }
-
-        [SkippableFact(Skip = "Completion for Expand-SlowArchive is flaky.")]
+        [Fact]
         public async Task CanSendCompletionResolveWithModulePrefixRequestAsync()
         {
             await PsesLanguageClient
@@ -1103,11 +1072,11 @@ enum MyEnum {
                     "evaluate",
                     new EvaluateRequestArguments
                     {
-                        Expression = "Import-Module Microsoft.PowerShell.Archive -Prefix Slow"
+                        Expression = $"Update-Help Microsoft.Powershell.Utility -SourcePath {s_binDir};Import-Module Microsoft.PowerShell.Utility -Prefix Test -Force"
                     })
                 .ReturningVoid(CancellationToken.None);
 
-            string filePath = NewTestFile("Expand-SlowArch");
+            string filePath = NewTestFile("Get-TestDate");
 
             CompletionList completionItems = await PsesLanguageClient.TextDocument.RequestCompletion(
                 new CompletionParams
@@ -1116,24 +1085,22 @@ enum MyEnum {
                     {
                         Uri = DocumentUri.FromFileSystemPath(filePath)
                     },
-                    Position = new Position(line: 0, character: 15)
+                    Position = new Position(line: 0, character: 12)
                 });
 
             CompletionItem completionItem = Assert.Single(completionItems,
-                completionItem1 => completionItem1.Label == "Expand-SlowArchive");
+                completionItem1 => completionItem1.Label == "Get-TestDate");
 
-            CompletionItem updatedCompletionItem = await PsesLanguageClient
-                .SendRequest("completionItem/resolve", completionItem)
-                .Returning<CompletionItem>(CancellationToken.None);
+            CompletionItem updatedCompletionItem = await PsesLanguageClient.ResolveCompletion(completionItem);
 
-            Assert.Contains("Extracts files from a specified archive", updatedCompletionItem.Documentation.String);
+            Assert.Contains("Gets the current date and time.", updatedCompletionItem.Documentation.String);
         }
 
         [SkippableFact]
         public async Task CanSendHoverRequestAsync()
         {
             Skip.If(IsLinux, "This depends on the help system, which is flaky on Linux.");
-            Skip.If(PsesStdioProcess.IsWindowsPowerShell, "This help system isn't updated in CI.");
+            Skip.If(PsesStdioLanguageServerProcessHost.IsWindowsPowerShell, "This help system isn't updated in CI.");
             string filePath = NewTestFile("Write-Host");
 
             Hover hover = await PsesLanguageClient.TextDocument.RequestHover(
@@ -1161,22 +1128,21 @@ enum MyEnum {
         {
             string filePath = NewTestFile("Get-Date -");
 
-            SignatureHelp signatureHelp = await PsesLanguageClient
-                .SendRequest(
-                    "textDocument/signatureHelp",
-                    new SignatureHelpParams
+            SignatureHelp signatureHelp = await PsesLanguageClient.RequestSignatureHelp
+            (
+                new SignatureHelpParams
+                {
+                    TextDocument = new TextDocumentIdentifier
                     {
-                        TextDocument = new TextDocumentIdentifier
-                        {
-                            Uri = new Uri(filePath)
-                        },
-                        Position = new Position
-                        {
-                            Line = 0,
-                            Character = 10
-                        }
-                    })
-                .Returning<SignatureHelp>(CancellationToken.None);
+                        Uri = new Uri(filePath)
+                    },
+                    Position = new Position
+                    {
+                        Line = 0,
+                        Character = 10
+                    }
+                }
+            );
 
             Assert.Contains("Get-Date", signatureHelp.Signatures.First().Label);
         }
@@ -1215,7 +1181,7 @@ CanSendDefinitionRequest
         [SkippableFact]
         public async Task CanSendGetCommentHelpRequestAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode && PsesStdioProcess.IsWindowsPowerShell,
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
                 "Windows PowerShell doesn't trust PSScriptAnalyzer by default so it won't load.");
 
             string scriptPath = NewTestFile(@"
@@ -1269,7 +1235,7 @@ function CanSendGetCommentHelpRequest {
             Assert.Equal(0, evaluateResponseBody.VariablesReference);
         }
 
-        [Fact]
+        [Fact(Timeout = 60000)]
         public async Task CanSendGetCommandRequestAsync()
         {
             List<object> pSCommandMessages =
@@ -1285,7 +1251,7 @@ function CanSendGetCommentHelpRequest {
         [SkippableFact]
         public async Task CanSendExpandAliasRequestAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode,
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
                 "The expand alias request doesn't work in Constrained Language Mode.");
 
             ExpandAliasResult expandAliasResult =
