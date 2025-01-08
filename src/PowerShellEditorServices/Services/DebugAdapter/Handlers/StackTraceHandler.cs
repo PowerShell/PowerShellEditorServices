@@ -128,6 +128,4 @@ internal class StackTraceHandler(DebugService debugService) : IStackTraceHandler
         Column = invocationInfo.OffsetInLine,
         PresentationHint = StackFramePresentationHint.Label
     };
-
 }
-

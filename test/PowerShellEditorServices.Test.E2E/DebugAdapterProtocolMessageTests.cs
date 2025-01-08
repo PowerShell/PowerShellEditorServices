@@ -306,7 +306,6 @@ namespace PowerShellEditorServices.Test.E2E
             await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments());
             await PsesDebugAdapterClient.LaunchScript(filePath, Started);
 
-
             // Get the stacktrace for the breakpoint
             await Assert.ThrowsAsync<JsonRpcException>(() => PsesDebugAdapterClient.RequestStackTrace(
                 new StackTraceArguments { }
