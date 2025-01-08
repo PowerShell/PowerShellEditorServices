@@ -137,7 +137,6 @@ internal class LanguageServerLoggerProvider(ILanguageServerFacade languageServer
     public void Dispose() { }
 }
 
-
 public static class LanguageServerLoggerExtensions
 {
     /// <summary>

@@ -76,7 +76,6 @@ namespace PowerShellEditorServices.Test.Debugging
             variableScriptFile = GetDebugScript("VariableTest.ps1");
         }
 
-
         public async Task DisposeAsync()
         {
             debugService.Abort();
