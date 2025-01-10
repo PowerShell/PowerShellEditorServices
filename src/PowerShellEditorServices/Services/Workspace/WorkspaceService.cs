@@ -336,6 +336,35 @@ namespace Microsoft.PowerShell.EditorServices.Services
         }
 
         /// <summary>
+        /// Finds a file in the first workspace folder where it exists, if possible.
+        /// Used as a backwards-compatible way to find files in the workspace.
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns>Best possible path.</returns>
+        public string FindFileInWorkspace(string filePath)
+        {
+            // If the file path is already an absolute path, just return it.
+            if (Path.IsPathRooted(filePath))
+            {
+                return filePath;
+            }
+
+            // If the file path is relative, try to find it in the workspace folders.
+            foreach (WorkspaceFolder workspaceFolder in WorkspaceFolders)
+            {
+                string folderPath = workspaceFolder.Uri.GetFileSystemPath();
+                string combinedPath = Path.Combine(folderPath, filePath);
+                if (File.Exists(combinedPath))
+                {
+                    return combinedPath;
+                }
+            }
+
+            // If the file path is not found in the workspace folders, return the original path.
+            return filePath;
+        }
+
+        /// <summary>
         /// Enumerate all the PowerShell (ps1, psm1, psd1) files in the workspace in a recursive manner, using default values.
         /// </summary>
         /// <returns>An enumerator over the PowerShell files found in the workspace.</returns>
@@ -407,57 +436,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             using StreamReader reader = OpenStreamReader(uri);
             return reader.ReadToEnd();
-        }
-
-        internal string ResolveWorkspacePath(string path) => ResolveRelativeScriptPath(InitialWorkingDirectory, path);
-
-        internal string ResolveRelativeScriptPath(string baseFilePath, string relativePath)
-        {
-            // TODO: Sometimes the `baseFilePath` (even when its `WorkspacePath`) is null.
-            string combinedPath = null;
-            Exception resolveException = null;
-
-            try
-            {
-                // If the path is already absolute there's no need to resolve it relatively
-                // to the baseFilePath.
-                if (Path.IsPathRooted(relativePath))
-                {
-                    return relativePath;
-                }
-
-                // Get the directory of the original script file, combine it
-                // with the given path and then resolve the absolute file path.
-                combinedPath =
-                    Path.GetFullPath(
-                        Path.Combine(
-                            baseFilePath,
-                            relativePath));
-            }
-            catch (NotSupportedException e)
-            {
-                // Occurs if the path is incorrectly formatted for any reason.  One
-                // instance where this occurred is when a user had curly double-quote
-                // characters in their source instead of normal double-quotes.
-                resolveException = e;
-            }
-            catch (ArgumentException e)
-            {
-                // Occurs if the path contains invalid characters, specifically those
-                // listed in System.IO.Path.InvalidPathChars.
-                resolveException = e;
-            }
-
-            if (resolveException != null)
-            {
-                logger.LogError(
-                    "Could not resolve relative script path\r\n" +
-                    $"    baseFilePath = {baseFilePath}\r\n    " +
-                    $"    relativePath = {relativePath}\r\n\r\n" +
-                    $"{resolveException}");
-            }
-
-            return combinedPath;
         }
 
         /// <summary>
