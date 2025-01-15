@@ -30,8 +30,7 @@ jobs:
         with:
           cache: true
           cache-dependency-path: '**/*.csproj'
-          dotnet-version: 6.0.x
-          global-json-file: "./global.json"
+          global-json-file: ./global.json
 
       - name: Install PSResources
         shell: pwsh
