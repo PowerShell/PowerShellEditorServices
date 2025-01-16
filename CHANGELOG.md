@@ -1,5 +1,12 @@
 # PowerShell Editor Services Release History
 
+## v4.2.0
+### Thursday, January 16, 2025
+
+See more details at the GitHub Release for [v4.2.0](https://github.com/PowerShell/PowerShellEditorServices/releases/tag/v4.2.0).
+
+Support PSScriptAnalyzer config in multi-root workspaces
+
 ## v4.1.0
 ### Wednesday, December 04, 2024
 
