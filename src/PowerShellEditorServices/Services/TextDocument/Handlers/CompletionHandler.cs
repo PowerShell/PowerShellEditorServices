@@ -327,15 +327,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     Data = item.Detail,
                     Detail = SupportsMarkdown ? null : item.Detail,
                 },
-                CompletionResultType.ParameterName => TryExtractType(detail, out string type)
-                    ? item with { Kind = CompletionItemKind.Variable, Detail = type }
+                CompletionResultType.ParameterName => TryExtractType(detail, item.Label, out string type, out string documentation)
+                    ? item with { Kind = CompletionItemKind.Variable, Detail = type, Documentation = documentation }
                     // The comparison operators (-eq, -not, -gt, etc) unfortunately come across as
                     // ParameterName types but they don't have a type associated to them, so we can
                     // deduce it is an operator.
                     : item with { Kind = CompletionItemKind.Operator },
                 CompletionResultType.ParameterValue => item with { Kind = CompletionItemKind.Value },
-                CompletionResultType.Variable => TryExtractType(detail, out string type)
-                    ? item with { Kind = CompletionItemKind.Variable, Detail = type }
+                CompletionResultType.Variable => TryExtractType(detail, item.Label, out string type, out string documentation)
+                    ? item with { Kind = CompletionItemKind.Variable, Detail = type, Documentation = documentation }
                     : item with { Kind = CompletionItemKind.Variable },
                 CompletionResultType.Namespace => item with { Kind = CompletionItemKind.Module },
                 CompletionResultType.Type => detail.StartsWith("Class ", StringComparison.CurrentCulture)
@@ -450,16 +450,41 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         /// type names in [] to be consistent with PowerShell syntax and how the debugger displays
         /// type names.
         /// </summary>
-        /// <param name="toolTipText"></param>
-        /// <param name="type"></param>
+        /// <param name="toolTipText">The tooltip text to parse</param>
+        /// <param name="type">The extracted type string, if found</param>
+        /// <param name="documentation">The remaining text after the type, if any</param>
+        /// <param name="label">The label to check for in the documentation prefix</param>
         /// <returns>Whether or not the type was found.</returns>
-        private static bool TryExtractType(string toolTipText, out string type)
+        private static bool TryExtractType(string toolTipText, string label, out string type, out string documentation)
         {
             MatchCollection matches = s_typeRegex.Matches(toolTipText);
             type = string.Empty;
+            documentation = null; //We use null instead of String.Empty to indicate no documentation was found.
+
             if ((matches.Count > 0) && (matches[0].Groups.Count > 1))
             {
                 type = matches[0].Groups[1].Value;
+
+                // Extract the description as everything after the type
+                if (matches[0].Length < toolTipText.Length)
+                {
+                    documentation = toolTipText.Substring(matches[0].Length).Trim();
+
+                    if (documentation is not null)
+                    {
+                        // If the substring is the same as the label, documentation should remain blank
+                        if (documentation.Equals(label, StringComparison.OrdinalIgnoreCase))
+                        {
+                            documentation = null;
+                        }
+                        // If the documentation starts with "label - ", remove this prefix
+                        else if (documentation.StartsWith(label + " - ", StringComparison.OrdinalIgnoreCase))
+                        {
+                            documentation = documentation.Substring((label + " - ").Length).Trim();
+                        }
+                    }
+                }
+
                 return true;
             }
             return false;
