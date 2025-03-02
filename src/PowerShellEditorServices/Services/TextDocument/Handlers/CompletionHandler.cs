@@ -455,7 +455,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         /// <param name="documentation">The remaining text after the type, if any</param>
         /// <param name="label">The label to check for in the documentation prefix</param>
         /// <returns>Whether or not the type was found.</returns>
-        private static bool TryExtractType(string toolTipText, string label, out string type, out string documentation)
+        internal static bool TryExtractType(string toolTipText, string label, out string type, out string documentation)
         {
             MatchCollection matches = s_typeRegex.Matches(toolTipText);
             type = string.Empty;

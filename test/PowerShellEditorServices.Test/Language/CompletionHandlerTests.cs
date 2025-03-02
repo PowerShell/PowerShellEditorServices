@@ -126,5 +126,28 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Equal(actual.TextEdit.TextEdit with { NewText = "" }, CompleteFilePath.ExpectedEdit);
             Assert.All(results, r => Assert.True(r.Kind is CompletionItemKind.File or CompletionItemKind.Folder));
         }
+
+        // TODO: These should be an integration tests at a higher level if/when https://github.com/PowerShell/PowerShell/pull/25108 is merged. As of today, we can't actually test this in the PS engine currently.
+        [Fact]
+        public void CanExtractTypeAndDescriptionFromTooltip()
+        {
+            string expectedType = "[string]";
+            string expectedDescription = "Test String";
+            string paramName = "TestParam";
+            string testHelp = $"{expectedType} {paramName} - {expectedDescription}";
+            Assert.True(PsesCompletionHandler.TryExtractType(testHelp, paramName, out string type, out string description));
+            Assert.Equal(expectedType, type);
+            Assert.Equal(expectedDescription, description);
+        }
+
+        [Fact]
+        public void CanExtractTypeFromTooltip()
+        {
+            string expectedType = "[string]";
+            string testHelp = $"{expectedType}";
+            Assert.True(PsesCompletionHandler.TryExtractType(testHelp, string.Empty, out string type, out string description));
+            Assert.Null(description);
+            Assert.Equal(expectedType, type);
+        }
     }
 }
