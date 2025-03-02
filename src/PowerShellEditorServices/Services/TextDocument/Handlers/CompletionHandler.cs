@@ -482,6 +482,15 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         {
                             documentation = documentation.Substring((label + " - ").Length).Trim();
                         }
+                        // If the documentation starts with the same name as the variable, truncate this as well.
+                        else if (documentation.StartsWith("$" + label, StringComparison.OrdinalIgnoreCase))
+                        {
+                            documentation = documentation.Substring(("$" + label).Length).Trim();
+                        }
+                    }
+                    if (string.IsNullOrWhiteSpace(documentation))
+                    {
+                        documentation = null;
                     }
                 }
 
