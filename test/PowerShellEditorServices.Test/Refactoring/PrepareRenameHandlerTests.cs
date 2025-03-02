@@ -164,8 +164,6 @@ public class fakeLspSendMessageRequestFacade(string title) : ILanguageServerFaca
     public bool TryGetRequest(long id, out string method, out TaskCompletionSource<JToken> pendingTask) => throw new NotImplementedException();
 }
 
-
-
 public class EmptyConfiguration : ConfigurationRoot, ILanguageServerConfiguration, IScopedConfiguration
 {
     public EmptyConfiguration() : base([]) { }

@@ -13,6 +13,7 @@ using System.Linq;
 using System.Threading;
 using Xunit;
 using PowerShellEditorServices.Test.Shared.Refactoring;
+using System.Threading.Tasks;
 
 namespace PowerShellEditorServices.Test.Handlers;
 #pragma warning disable VSTHRD100 // XUnit handles async void with a custom SyncContext
@@ -53,7 +54,7 @@ public class RenameHandlerTests
 
     [Theory]
     [MemberData(nameof(FunctionTestCases))]
-    public async void RenamedFunction(RenameTestTarget s)
+    public async Task RenamedFunction(RenameTestTarget s)
     {
         RenameParams request = s.ToRenameParams("Functions");
         WorkspaceEdit response;
@@ -90,7 +91,7 @@ public class RenameHandlerTests
 
     [Theory]
     [MemberData(nameof(VariableTestCases))]
-    public async void RenamedVariable(RenameTestTarget s)
+    public async Task RenamedVariable(RenameTestTarget s)
     {
         RenameParams request = s.ToRenameParams("Variables");
         WorkspaceEdit response;

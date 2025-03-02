@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 namespace PowerShellEditorServices.Test.Shared.Refactoring;
-public class RefactorVariableTestCases
+public static class RefactorVariableTestCases
 {
     public static RenameTestTarget[] TestCases =
     [

@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 #nullable enable
 
-
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services;

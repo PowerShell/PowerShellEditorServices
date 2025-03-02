@@ -180,8 +180,6 @@ internal class RenameService(
             }
         }
 
-
-
         return ast;
     }
 
