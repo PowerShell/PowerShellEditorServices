@@ -438,7 +438,6 @@ public static class AstExtensions
             {
                 return splatParamReference;
             }
-
         }
 
         // If nothing found, search parent scopes for a variable assignment until we hit the top of the document
@@ -508,7 +507,6 @@ public static class AstExtensions
                     && foundFunction?.Parent?.Parent == scope
                 ),
 
-
                 _ => null
             };
 
@@ -559,7 +557,6 @@ public static class AstExtensions
         }
         return false;
     }
-
 
     /// <summary>
     /// Return an extent that only contains the position of the name of the function, for Client highlighting purposes.

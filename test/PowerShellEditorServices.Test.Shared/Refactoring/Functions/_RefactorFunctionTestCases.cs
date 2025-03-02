@@ -3,7 +3,7 @@
 
 namespace PowerShellEditorServices.Test.Shared.Refactoring;
 
-public class RefactorFunctionTestCases
+public static class RefactorFunctionTestCases
 {
     /// <summary>
     /// Defines where functions should be renamed. These numbers are 1-based.

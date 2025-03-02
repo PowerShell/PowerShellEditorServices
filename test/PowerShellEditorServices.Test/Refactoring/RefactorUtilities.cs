@@ -9,7 +9,7 @@ using TextEditRange = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
 namespace PowerShellEditorServices.Test.Refactoring
 {
-    public class RefactorUtilities
+    public static class RefactorUtilities
     {
         /// <summary>
         /// A simplistic "Mock" implementation of vscode client performing rename activities. It is not comprehensive and an E2E test is recommended.

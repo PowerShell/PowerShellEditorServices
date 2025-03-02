@@ -4,7 +4,6 @@
 using System;
 namespace Microsoft.PowerShell.EditorServices.Refactoring
 {
-
     public class TargetSymbolNotFoundException : Exception
     {
         public TargetSymbolNotFoundException()
