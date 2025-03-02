@@ -334,7 +334,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     // deduce it is an operator.
                     : item with { Kind = CompletionItemKind.Operator },
                 CompletionResultType.ParameterValue => item with { Kind = CompletionItemKind.Value },
-                CompletionResultType.Variable => TryExtractType(detail, item.Label, out string type, out string documentation)
+                CompletionResultType.Variable => TryExtractType(detail, "$" + item.Label, out string type, out string documentation)
                     ? item with { Kind = CompletionItemKind.Variable, Detail = type, Documentation = documentation }
                     : item with { Kind = CompletionItemKind.Variable },
                 CompletionResultType.Namespace => item with { Kind = CompletionItemKind.Module },
@@ -481,11 +481,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                         else if (documentation.StartsWith(label + " - ", StringComparison.OrdinalIgnoreCase))
                         {
                             documentation = documentation.Substring((label + " - ").Length).Trim();
-                        }
-                        // If the documentation starts with the same name as the variable, truncate this as well.
-                        else if (documentation.StartsWith("$" + label, StringComparison.OrdinalIgnoreCase))
-                        {
-                            documentation = documentation.Substring(("$" + label).Length).Trim();
                         }
                     }
                     if (string.IsNullOrWhiteSpace(documentation))
