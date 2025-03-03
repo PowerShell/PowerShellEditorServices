@@ -148,5 +148,30 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Null(description);
             Assert.Equal(expectedType, type);
         }
+
+        [Fact]
+        public async Task CompletesAndResolvesCommand()
+        {
+            // Get initial completion results
+            (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteCommandFromModule.SourceDetails);
+            CompletionItem initialCompletion = results.Single();
+
+            // Verify initial completion has expected properties
+            Assert.Equal(CompleteCommandFromModule.ExpectedCompletion.Label, initialCompletion.Label);
+            Assert.Equal(CompleteCommandFromModule.ExpectedCompletion.Kind, initialCompletion.Kind);
+
+            // Resolve the completion item
+            CompletionItem resolvedCompletion = await completionHandler.Handle(
+                initialCompletion,
+                CancellationToken.None);
+
+            // Verify the resolved completion has more details
+            Assert.NotNull(resolvedCompletion);
+            Assert.NotNull(resolvedCompletion.Detail);
+            Assert.NotNull(resolvedCompletion.Documentation);
+            Assert.Equal(initialCompletion.Label, resolvedCompletion.Label);
+            Assert.Equal(initialCompletion.Kind, resolvedCompletion.Kind);
+            Assert.StartsWith(CompleteCommandFromModule.GetRandomDetail, resolvedCompletion.Detail);
+        }
     }
 }
