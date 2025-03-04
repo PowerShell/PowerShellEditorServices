@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Services.Symbols
 {
@@ -29,7 +30,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
         /// Gets the documentation string for this symbol.  Returns an
         /// empty string if the symbol has no documentation.
         /// </summary>
-        public string Documentation { get; private set; }
+        public StringOrMarkupContent Documentation { get; private set; }
 
         #endregion
 
@@ -57,10 +58,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.Symbols
                 if (commandInfo is not null)
                 {
                     symbolDetails.Documentation =
-                        await CommandHelpers.GetCommandSynopsisAsync(
+                        (await CommandHelpers.GetCommandHelpAsync(
                             commandInfo,
                             executionService,
-                            cancellationToken).ConfigureAwait(false);
+                            cancellationToken).ConfigureAwait(false)).ToMarkupContent(noTitle: true);
 
                     if (commandInfo.CommandType == CommandTypes.Application)
                     {

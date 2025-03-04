@@ -7,6 +7,7 @@ using System.Linq;
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -66,16 +67,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             // Dynamic simplifies processing as the help is a "serialized" PSCustomObject format rather than the original types
             dynamic helpObj = psObject;
 
-            PSObject[] linksProperty = [helpObj.relatedLinks?.navigationLink];
-
+            PSObject[] linksProperty = helpObj.relatedLinks?.navigationLink;
             // Extract description text from a weird array of PSObjects to a common paragraph format.
             string description = string.Join(Environment.NewLine,
-                helpObj
-                    .description
-                    .OfType<PSObject>()
-                    .Select((Func<PSObject, string>)(o => o.GetPropertyValue<string>("Text")))
-                    ?? string.Empty
+                ((IEnumerable)helpObj.description)?
+                    .Cast<PSObject>()
+                    .Select(o => o.GetPropertyValue<string>("Text"))
+                    ?? Array.Empty<string>()
             );
+
             // Extract Online Link, if available.
             string onlineLink = linksProperty?
                 .FirstOrDefault(o => o.GetPropertyValue<string>("linkText").Equals("Online Version:"))?

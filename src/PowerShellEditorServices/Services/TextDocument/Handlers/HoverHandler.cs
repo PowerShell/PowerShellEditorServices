@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -58,19 +57,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return null;
             }
 
-            List<MarkedString> symbolInfo = new()
-            {
-                new MarkedString("PowerShell", symbolDetails.SymbolReference.Name)
-            };
-
-            if (!string.IsNullOrEmpty(symbolDetails.Documentation))
-            {
-                symbolInfo.Add(new MarkedString("markdown", symbolDetails.Documentation));
-            }
-
             return new Hover
             {
-                Contents = new MarkedStringsOrMarkupContent(symbolInfo),
+                Contents = new(symbolDetails.Documentation.MarkupContent),
                 Range = symbolDetails.SymbolReference.NameRegion.ToRange()
             };
         }
