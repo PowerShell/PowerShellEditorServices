@@ -117,11 +117,12 @@ public static class AstExtensions
         => ast.Extent.StartsAfter(other);
 
     /// <summary>
-    /// Finds the outermost Ast that starts before the target and matches the predicate within the scope. Returns null if none found. Useful for finding definitions of variable/function references
+    /// Finds the outermost Ast that starts before the target and matches the predicate within the scope.
+    /// Returns null if none found. Useful for finding definitions of variable/function references.
     /// </summary>
     /// <param name="target">The target Ast to search from</param>
     /// <param name="predicate">The predicate to match the Ast against</param>
-    /// <param name="crossScopeBoundaries">If true, the search will continue until the topmost scope boundary is
+    /// <param name="crossScopeBoundaries">If true, the search will continue until the topmost scope boundary is found.</param>
     /// <param name="searchNestedScriptBlocks">Searches scriptblocks within the parent at each level. This can be helpful to find "side" scopes but affects performance</param>
     internal static Ast? FindStartsBefore(this Ast target, Func<Ast, bool> predicate, bool crossScopeBoundaries = false, bool searchNestedScriptBlocks = false)
     {
