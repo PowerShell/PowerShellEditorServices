@@ -380,7 +380,7 @@ internal class RenameFunctionVisitor(Ast target, string newName, bool skipVerify
 
         if (command.CommandElements[0] is not StringConstantExpressionAst funcName)
         {
-            throw new InvalidOperationException("Command element should always have a string expresssion as its first item. This is a bug and you should report it.");
+            throw new InvalidOperationException("Command element should always have a string expression as its first item. This is a bug and you should report it.");
         }
 
         return new TextEdit()
