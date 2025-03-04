@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Utility;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
 {
@@ -34,22 +35,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         /// <summary>
         /// The syntax examples for the command.
         /// </summary>
-        public string Syntax { get; init; }
+        public SyntaxHelp[] Syntax { get; init; }
 
         /// <summary>
         /// The parameter descriptions for the command.
         /// </summary>
-        public string Parameters { get; init; }
+        public ParameterHelp[] Parameters { get; init; }
 
         /// <summary>
         /// Usage examples for the command.
         /// </summary>
-        public string Examples { get; init; }
+        public ExampleHelp[] Examples { get; init; }
 
         /// <summary>
-        /// Notes about the command.
+        /// Alerts or warnings related to the command. This shows as NOTES in the CLI help.
         /// </summary>
-        public string Notes { get; init; }
+        public string[] Alerts { get; init; }
 
         /// <summary>
         /// Online help link for the command.
@@ -62,23 +63,61 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         /// <param name="psObject">The PSCustomObject to convert.</param>
         public static CommandHelp From(PSObject psObject)
         {
-            // Dynamics are required here without a lot of reflection as the help is a "serialized" PSCustomObject format rather than the original types
+            // Dynamic simplifies processing as the help is a "serialized" PSCustomObject format rather than the original types
             dynamic helpObj = psObject;
 
             PSObject[] linksProperty = [helpObj.relatedLinks?.navigationLink];
 
+            // Extract description text from a weird array of PSObjects to a common paragraph format.
+            string description = string.Join(Environment.NewLine,
+                helpObj
+                    .description
+                    .OfType<PSObject>()
+                    .Select((Func<PSObject, string>)(o => o.GetPropertyValue<string>("Text")))
+                    ?? string.Empty
+            );
+            // Extract Online Link, if available.
             string onlineLink = linksProperty?
                 .FirstOrDefault(o => o.GetPropertyValue<string>("linkText").Equals("Online Version:"))?
-                .GetPropertyValue<string>("uri");
+                .GetPropertyValue<string>("uri")
+                ?? string.Empty;
 
             return new()
             {
                 Name = helpObj.Name,
                 Synopsis = helpObj.Synopsis,
+                Description = description,
+                // Syntax = syntaxHelp ?? Array.Empty<SyntaxHelp>(),
+                // Parameters = parameterHelp ?? Array.Empty<ParameterHelp>(),
+                // Examples = examplesHelp ?? Array.Empty<ExampleHelp>(),
                 OnlineLink = onlineLink
             };
         }
+
+        public MarkupContent ToMarkupContent(bool noTitle)
+        {
+            string Title = noTitle ? "" : $"# {Name}  \n";
+            string markdownSynopsis = string.IsNullOrWhiteSpace(Synopsis) ? string.Empty : $"**{Synopsis}**  \n";
+            string markdownOnlineLink = string.IsNullOrWhiteSpace(OnlineLink) ? string.Empty : $"[View Online Help]({OnlineLink})  \n";
+            return new MarkupContent
+            {
+                Kind = MarkupKind.Markdown,
+                Value = $"{markdownOnlineLink}{Title}{markdownSynopsis}\n\n{Description}"
+            };
+        }
     }
+
+    public record ParameterHelp(
+        string Name,
+        string Description,
+        bool PipelineInput,
+        int Position,
+        bool Required,
+        string Type,
+        bool variableLength
+    );
+    public record ExampleHelp(string Title, string Code, string Remarks);
+    public record SyntaxHelp(string Name, ParameterHelp[] Parameters);
 
     /// <summary>
     /// Provides utility methods for working with PowerShell commands.
@@ -238,7 +277,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             IInternalPowerShellExecutionService executionService,
             CancellationToken cancellationToken = default)
         {
-            CommandHelp commandDetail = await GetCommandDetailAsync(
+            CommandHelp commandDetail = await GetCommandHelpAsync(
                 commandInfo,
                 executionService,
                 cancellationToken
@@ -254,7 +293,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         /// <param name="executionService">The execution service to use for getting command documentation.</param>
         /// <param name="cancellationToken">The token used to cancel this.</param>
         /// <returns>The command help information.</returns>
-        public static async Task<CommandHelp> GetCommandDetailAsync(
+        public static async Task<CommandHelp> GetCommandHelpAsync(
             CommandInfo commandInfo,
             IInternalPowerShellExecutionService executionService,
             CancellationToken cancellationToken = default)
