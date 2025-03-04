@@ -105,7 +105,6 @@ namespace PowerShellEditorServices.Test.Language
         [SkippableFact]
         public async Task CompletesAttributeValue()
         {
-            Skip.If(VersionUtils.IsPS74, "PowerShell 7.4 isn't returning these!");
             (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteAttributeValue.SourceDetails);
             // NOTE: Since the completions come through un-ordered from PowerShell, their SortText
             // (which has an index prepended from the original order) will mis-match our assumed
@@ -125,6 +124,29 @@ namespace PowerShellEditorServices.Test.Language
             // Paths are system dependent so we ignore the text and just check the type and range.
             Assert.Equal(actual.TextEdit.TextEdit with { NewText = "" }, CompleteFilePath.ExpectedEdit);
             Assert.All(results, r => Assert.True(r.Kind is CompletionItemKind.File or CompletionItemKind.Folder));
+        }
+
+        // TODO: These should be an integration tests at a higher level if/when https://github.com/PowerShell/PowerShell/pull/25108 is merged. As of today, we can't actually test this in the PS engine currently.
+        [Fact]
+        public void CanExtractTypeAndDescriptionFromTooltip()
+        {
+            string expectedType = "[string]";
+            string expectedDescription = "Test String";
+            string paramName = "TestParam";
+            string testHelp = $"{expectedType} {paramName} - {expectedDescription}";
+            Assert.True(PsesCompletionHandler.TryExtractType(testHelp, paramName, out string type, out string description));
+            Assert.Equal(expectedType, type);
+            Assert.Equal(expectedDescription, description);
+        }
+
+        [Fact]
+        public void CanExtractTypeFromTooltip()
+        {
+            string expectedType = "[string]";
+            string testHelp = $"{expectedType}";
+            Assert.True(PsesCompletionHandler.TryExtractType(testHelp, string.Empty, out string type, out string description));
+            Assert.Null(description);
+            Assert.Equal(expectedType, type);
         }
     }
 }

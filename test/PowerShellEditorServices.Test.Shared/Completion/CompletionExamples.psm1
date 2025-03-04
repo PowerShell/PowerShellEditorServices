@@ -13,7 +13,7 @@ Import-Module PowerShellGet
 Get-Rand
 
 function Test-Completion {
-    param([Parameter(Mandatory, Value)])
+    param([Parameter(Mandatory, Value)]$test)
 }
 
 Get-ChildItem /
