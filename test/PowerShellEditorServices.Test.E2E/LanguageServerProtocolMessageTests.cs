@@ -1099,8 +1099,6 @@ enum MyEnum {
         [SkippableFact]
         public async Task CanSendHoverRequestAsync()
         {
-            Skip.If(IsLinux, "This depends on the help system, which is flaky on Linux.");
-            Skip.If(PsesStdioLanguageServerProcessHost.IsWindowsPowerShell, "This help system isn't updated in CI.");
             string filePath = NewTestFile("Write-Host");
 
             Hover hover = await PsesLanguageClient.TextDocument.RequestHover(
@@ -1235,7 +1233,7 @@ function CanSendGetCommentHelpRequest {
             Assert.Equal(0, evaluateResponseBody.VariablesReference);
         }
 
-        [Fact(Timeout = 60000)]
+        [SkippableFact(Timeout = 60000)]
         public async Task CanSendGetCommandRequestAsync()
         {
             Skip.If(Environment.GetEnvironmentVariable("TF_BUILD") is not null,
