@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,9 +28,6 @@ namespace PowerShellEditorServices.Test.E2E
     [Trait("Category", "LSP")]
     public class LanguageServerProtocolMessageTests : IClassFixture<LSPTestsFixture>, IDisposable
     {
-        // Borrowed from `VersionUtils` which can't be used here due to an initialization problem.
-        private static bool IsLinux { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
-
         private static readonly string s_binDir =
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
