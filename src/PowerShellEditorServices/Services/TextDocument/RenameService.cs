@@ -556,8 +556,7 @@ public record ScriptPositionAdapter(IScriptPosition position) : IScriptPosition,
     public ScriptPositionAdapter(Position position) : this(position.Line + 1, position.Character + 1) { }
 
     public static implicit operator ScriptPositionAdapter(Position position) => new(position);
-    public static implicit operator Position(ScriptPositionAdapter scriptPosition) => new
-(
+    public static implicit operator Position(ScriptPositionAdapter scriptPosition) => new(
         scriptPosition.position.LineNumber - 1, scriptPosition.position.ColumnNumber - 1
     );
 
