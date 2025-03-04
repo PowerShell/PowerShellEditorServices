@@ -228,7 +228,7 @@ public static class AstExtensions
         {
             if (ast is not FunctionDefinitionAst funcDef) { return false; }
 
-            if (funcDef.Name.ToLower() != name) { return false; }
+            if (!funcDef.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)) { return false; }
 
             // If the function is recursive (calls itself), its parent is a match unless a more specific in-scope function definition comes next (this is a "bad practice" edge case)
             // TODO: Consider a simple "contains" match
@@ -298,10 +298,10 @@ public static class AstExtensions
             (
                 ast => ast is FunctionDefinitionAst funcDef
                     && funcDef.StartsBefore(target)
-                    && funcDef.Name.ToLower() == functionName.ToLower()
+                    && funcDef.Name.Equals(functionName, StringComparison.CurrentCultureIgnoreCase)
                     && (funcDef.Parameters ?? funcDef.Body.ParamBlock.Parameters)
                         .SingleOrDefault(
-                            param => param.Name.GetUnqualifiedName().ToLower() == parameterName.ToLower()
+                            param => param.Name.GetUnqualifiedName().Equals(parameterName, StringComparison.CurrentCultureIgnoreCase)
                         ) is not null
                 , false
             ).LastOrDefault() as FunctionDefinitionAst;
@@ -311,7 +311,7 @@ public static class AstExtensions
                 return (funcDef.Parameters ?? funcDef.Body.ParamBlock.Parameters)
                     .SingleOrDefault
                     (
-                        param => param.Name.GetUnqualifiedName().ToLower() == parameterName.ToLower()
+                        param => param.Name.GetUnqualifiedName().Equals(parameterName, StringComparison.CurrentCultureIgnoreCase)
                     )?.Name; //Should not be null at this point
             }
 
@@ -384,7 +384,7 @@ public static class AstExtensions
         return assignmentAst.FindStartsAfter(ast =>
             ast is VariableExpressionAst var
             && var.Splatted
-            && var.GetUnqualifiedName().ToLower() == leftAssignVarAst.GetUnqualifiedName().ToLower()
+            && var.GetUnqualifiedName().Equals(leftAssignVarAst.GetUnqualifiedName(), StringComparison.CurrentCultureIgnoreCase)
         , true) as VariableExpressionAst;
     }
 
@@ -464,7 +464,7 @@ public static class AstExtensions
                 _ => null
             };
             ParameterAst? matchParam = parameters?.SingleOrDefault(
-                param => param.Name.GetUnqualifiedName().ToLower() == name.ToLower()
+                param => param.Name.GetUnqualifiedName().Equals(name, StringComparison.CurrentCultureIgnoreCase)
             );
             if (matchParam is not null)
             {
@@ -491,7 +491,7 @@ public static class AstExtensions
             varAssignment = reference switch
             {
                 VariableExpressionAst => scope.FindStartsBefore<VariableExpressionAst>(var =>
-                    var.GetUnqualifiedName().ToLower() == name.ToLower()
+                    var.GetUnqualifiedName().Equals(name, StringComparison.CurrentCultureIgnoreCase)
                     && (
                         (var.IsVariableAssignment() && !var.IsOperatorAssignment())
                         || var.IsScopedVariableAssignment()
@@ -500,7 +500,7 @@ public static class AstExtensions
                 ),
 
                 CommandParameterAst param => scope.FindStartsBefore<VariableExpressionAst>(var =>
-                    var.GetUnqualifiedName().ToLower() == name.ToLower()
+                    var.GetUnqualifiedName().Equals(name, StringComparison.CurrentCultureIgnoreCase)
                     && var.Parent is ParameterAst paramAst
                     && paramAst.TryGetFunction(out FunctionDefinitionAst? foundFunction)
                     && foundFunction?.Name.ToLower()
