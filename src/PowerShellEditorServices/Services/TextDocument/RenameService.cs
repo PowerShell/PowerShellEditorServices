@@ -579,7 +579,6 @@ public record ScriptPositionAdapter(IScriptPosition position) : IScriptPosition,
     }
     public int CompareTo(Position other) => CompareTo((ScriptPositionAdapter)other);
     public int CompareTo(ScriptPosition other) => CompareTo((ScriptPositionAdapter)other);
-    public string GetFullScript() => throw new NotImplementedException();
 }
 
 /// <summary>
