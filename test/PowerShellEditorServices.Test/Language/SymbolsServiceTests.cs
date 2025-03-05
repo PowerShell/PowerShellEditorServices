@@ -913,9 +913,10 @@ namespace PowerShellEditorServices.Test.Language
 
             IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInDSCFile.SourceDetails);
             SymbolReference symbol = Assert.Single(symbols, i => i.Type == SymbolType.Configuration);
-            Assert.Equal("AConfiguration", symbol.Id);
+            // The prefix "dsc" is added for sorting reasons.
+            Assert.Equal("dsc AConfiguration", symbol.Id);
             Assert.Equal(2, symbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(15, symbol.ScriptRegion.StartColumnNumber);
+            Assert.Equal(1, symbol.ScriptRegion.StartColumnNumber);
         }
 
         [Fact]
