@@ -227,16 +227,17 @@ Task TestE2EPwsh Build, SetupHelpForTests, {
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
 }
 
-$PwshDaily = if ($script:IsNix) {
-    "$HOME/.powershell-daily/pwsh"
+$PwshPreview = if ($script:IsNix) {
+    "$HOME/.powershell-preview/pwsh"
 } else {
-    "$env:LOCALAPPDATA/Microsoft/powershell-daily/pwsh.exe"
+    "$env:LOCALAPPDATA/Microsoft/powershell-preview/pwsh.exe"
 }
 
-Task TestE2EDaily -If (Test-Path $PwshDaily) Build, SetupHelpForTests, {
+Task TestE2EPreview Build, SetupHelpForTests, {
+    Assert (Test-Path $PwshPreview) "PowerShell Preview not found at $PwshPreview, please install it: https://github.com/PowerShell/PowerShell/blob/master/tools/install-powershell.ps1"
     Set-Location ./test/PowerShellEditorServices.Test.E2E/
-    $env:PWSH_EXE_NAME = $PwshDaily
-    Write-Build DarkGreen "Running end-to-end tests with: $(& $PwshDaily --version)"
+    $env:PWSH_EXE_NAME = $PwshPreview
+    Write-Build DarkGreen "Running end-to-end tests with: $(& $PwshPreview --version)"
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
 }
 
@@ -314,6 +315,6 @@ Task BuildIfChanged -Inputs {
 
 Task Test TestPS74, TestE2EPwsh, TestPS51, TestE2EPowerShell
 
-Task TestFull Test, TestE2EDaily, TestE2EPwshCLM, TestE2EPowerShellCLM
+Task TestFull Test, TestE2EPreview, TestE2EPwshCLM, TestE2EPowerShellCLM
 
 Task . Clean, Build, Test
