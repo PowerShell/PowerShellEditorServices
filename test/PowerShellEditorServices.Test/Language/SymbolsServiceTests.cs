@@ -4,7 +4,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -33,7 +32,6 @@ namespace PowerShellEditorServices.Test.Language
         private PsesInternalHost psesHost;
         private WorkspaceService workspace;
         private SymbolsService symbolsService;
-        private static readonly bool s_isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
         public async Task InitializeAsync()
         {
@@ -755,7 +753,6 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.EnumMemberSourceDetails));
         }
 
-        // This test fetches every command in PS,
         [Fact]
         public async Task FindsDetailsForBuiltInCommand()
         {
@@ -902,10 +899,10 @@ namespace PowerShellEditorServices.Test.Language
             AssertIsRegion(symbol.ScriptRegion, 27, 5, 27, 10);
         }
 
-        [Fact(Skip = "DSC symbols don't work yet.")]
+        [SkippableFact()]
         public void FindsSymbolsInDSCFile()
         {
-            Skip.If(!s_isWindows, "DSC only works properly on Windows.");
+            // Skip.If(!s_isWindows, "DSC only works properly on Windows.");
 
             IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInDSCFile.SourceDetails);
             SymbolReference symbol = Assert.Single(symbols, i => i.Type == SymbolType.Configuration);

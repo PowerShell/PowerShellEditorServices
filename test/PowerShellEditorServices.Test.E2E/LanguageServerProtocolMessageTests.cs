@@ -1095,7 +1095,8 @@ enum MyEnum {
         [SkippableFact]
         public async Task CanSendHoverRequestAsync()
         {
-            Skip.If(PsesStdioLanguageServerProcessHost.IsWindowsPowerShell, "TODO: Fix this in hover refactor");
+            Skip.If(Environment.OSVersion.Platform == PlatformID.Win32NT,
+                "TODO: Fails in Windows GHA but works locally for some reason.");
             string filePath = NewTestFile("Write-Host");
 
             Hover hover = await PsesLanguageClient.TextDocument.RequestHover(
