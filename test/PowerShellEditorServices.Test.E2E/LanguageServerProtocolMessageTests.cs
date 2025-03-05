@@ -1095,7 +1095,7 @@ enum MyEnum {
         [SkippableFact]
         public async Task CanSendHoverRequestAsync()
         {
-            Skip.If(Environment.OSVersion.Platform == PlatformID.Win32NT,
+            Skip.If(OperatingSystem.IsWindows(),
                 "TODO: Fails in Windows GHA but works locally for some reason.");
             string filePath = NewTestFile("Write-Host");
 
