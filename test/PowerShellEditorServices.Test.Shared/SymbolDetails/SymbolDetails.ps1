@@ -1,4 +1,4 @@
-﻿Get-Process -ComputerName "test-computer"
+﻿Write-Host -ForegroundColor Black 'Test'
 
 <#
 .Synopsis
@@ -10,19 +10,18 @@
 .EXAMPLE
 	Another example of how to use this cmdlet
 #>
-function Get-Thing
-{
+function Get-Thing {
 	[Alias()]
 	[OutputType([int])]
 	Param
 	(
 		# Param1 help description
-		[Parameter(Mandatory=$true,
-				   ValueFromPipelineByPropertyName=$true,
-				   Position=0)]
+		[Parameter(Mandatory = $true,
+			ValueFromPipelineByPropertyName = $true,
+			Position = 0)]
 		$Name
 	)
-	
+
 	Begin
 	{
 	}

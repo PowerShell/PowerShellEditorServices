@@ -756,13 +756,18 @@ namespace PowerShellEditorServices.Test.Language
         [Fact]
         public async Task FindsDetailsForBuiltInCommand()
         {
+            // Ensure help is updated prior to test run
+            await psesHost.ExecutePSCommandAsync(
+                new PSCommand().AddScript("Update-Help Microsoft.Powershell.Utility -SourcePath $PSHOME"),
+                default);
+
             SymbolDetails symbolDetails = await symbolsService.FindSymbolDetailsAtLocationAsync(
                 GetScriptFile(FindsDetailsForBuiltInCommandData.SourceDetails),
                 FindsDetailsForBuiltInCommandData.SourceDetails.StartLineNumber,
                 FindsDetailsForBuiltInCommandData.SourceDetails.StartColumnNumber,
                 CancellationToken.None);
 
-            Assert.Equal("Gets the processes that are running on the local computer.", symbolDetails.Documentation);
+            Assert.Equal("Writes customized output to a host.", symbolDetails.Documentation);
         }
 
         [Fact]
