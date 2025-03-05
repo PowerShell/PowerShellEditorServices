@@ -1230,7 +1230,8 @@ function CanSendGetCommentHelpRequest {
             Assert.Equal(0, evaluateResponseBody.VariablesReference);
         }
 
-        [SkippableFact(Timeout = 60000)]
+        // getCommand gets all the commands in the system, and is not optimized and can take forever on CI systems
+        [SkippableFact(Timeout = 120000)]
         public async Task CanSendGetCommandRequestAsync()
         {
             Skip.If(Environment.GetEnvironmentVariable("TF_BUILD") is not null,
