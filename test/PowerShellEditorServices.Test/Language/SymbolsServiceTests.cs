@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -32,6 +33,7 @@ namespace PowerShellEditorServices.Test.Language
         private PsesInternalHost psesHost;
         private WorkspaceService workspace;
         private SymbolsService symbolsService;
+        private static readonly bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
         public async Task InitializeAsync()
         {
@@ -907,7 +909,7 @@ namespace PowerShellEditorServices.Test.Language
         [SkippableFact()]
         public void FindsSymbolsInDSCFile()
         {
-            // Skip.If(!s_isWindows, "DSC only works properly on Windows.");
+            Skip.If(!isWindows, "DSC only works properly on Windows.");
 
             IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInDSCFile.SourceDetails);
             SymbolReference symbol = Assert.Single(symbols, i => i.Type == SymbolType.Configuration);

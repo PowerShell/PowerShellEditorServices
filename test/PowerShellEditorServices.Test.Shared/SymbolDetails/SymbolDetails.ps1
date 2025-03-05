@@ -1,4 +1,6 @@
 ﻿Write-Host -ForegroundColor Black 'Test'
+# References Test uses this one
+Get-Process -Name 'powershell*'
 
 <#
 .Synopsis
