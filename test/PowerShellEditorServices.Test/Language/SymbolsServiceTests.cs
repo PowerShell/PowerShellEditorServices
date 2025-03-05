@@ -21,7 +21,6 @@ using Microsoft.PowerShell.EditorServices.Test.Shared.ParameterHint;
 using Microsoft.PowerShell.EditorServices.Test.Shared.References;
 using Microsoft.PowerShell.EditorServices.Test.Shared.SymbolDetails;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Symbols;
-using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
@@ -34,7 +33,7 @@ namespace PowerShellEditorServices.Test.Language
         private PsesInternalHost psesHost;
         private WorkspaceService workspace;
         private SymbolsService symbolsService;
-        private static readonly bool s_isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        private static readonly bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
         public async Task InitializeAsync()
         {
@@ -756,17 +755,21 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.EnumMemberSourceDetails));
         }
 
-        [SkippableFact]
+        [Fact]
         public async Task FindsDetailsForBuiltInCommand()
         {
-            Skip.IfNot(VersionUtils.IsMacOS, "macOS gets the right synopsis but others don't.");
+            // Ensure help is updated prior to test run
+            await psesHost.ExecutePSCommandAsync(
+                new PSCommand().AddScript("Update-Help Microsoft.Powershell.Utility -SourcePath $PSHOME"),
+                default);
+
             SymbolDetails symbolDetails = await symbolsService.FindSymbolDetailsAtLocationAsync(
                 GetScriptFile(FindsDetailsForBuiltInCommandData.SourceDetails),
                 FindsDetailsForBuiltInCommandData.SourceDetails.StartLineNumber,
                 FindsDetailsForBuiltInCommandData.SourceDetails.StartColumnNumber,
                 CancellationToken.None);
 
-            Assert.Equal("Gets the processes that are running on the local computer.", symbolDetails.Documentation);
+            Assert.Equal("Writes customized output to a host.", symbolDetails.Documentation);
         }
 
         [Fact]
@@ -903,10 +906,10 @@ namespace PowerShellEditorServices.Test.Language
             AssertIsRegion(symbol.ScriptRegion, 27, 5, 27, 10);
         }
 
-        [Fact(Skip = "DSC symbols don't work yet.")]
+        [SkippableFact()]
         public void FindsSymbolsInDSCFile()
         {
-            Skip.If(!s_isWindows, "DSC only works properly on Windows.");
+            Skip.If(!isWindows, "DSC only works properly on Windows.");
 
             IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInDSCFile.SourceDetails);
             SymbolReference symbol = Assert.Single(symbols, i => i.Type == SymbolType.Configuration);
