@@ -264,17 +264,18 @@ Task SetupHelpForTests {
             throw 'Failed to install PowerShell 5.1 Help.'
         }
     }
-    if ($PSEdition -eq 'Core') {
-        Write-Host -Fore Magenta 'Checking Runner Pwsh help'
-        & ([ScriptBlock]::Create($resolvedScript))
-    }
 
     if ($PwshDaily -and (Get-Command $PwshDaily -ea 0)) {
         Write-Host -Fore Magenta "Checking PWSH Daily help at $PwshDaily"
-        & $PwshDaily -NoProfile -NonInteractive -Command $resolvedScript
+        & $PwshDaily -NoProfile -NonInteractive -Command $resolvedScript -args $helpPath
         if ($LASTEXITCODE -ne 0) {
             throw 'Failed to install PowerShell Daily Help.'
         }
+    }
+
+    if ($PSEdition -eq 'Core') {
+        Write-Host -Fore Magenta 'Checking Runner Pwsh help'
+        & ([ScriptBlock]::Create($resolvedScript)) $helpPath
     }
 }
 
