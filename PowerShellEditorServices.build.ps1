@@ -239,7 +239,7 @@ Task SetupHelpForTests {
     }
 }
 
-Task TestPS74 Build, {
+Task TestPS74 Build, SetupHelpForTests, {
     Set-Location ./test/PowerShellEditorServices.Test/
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
 }

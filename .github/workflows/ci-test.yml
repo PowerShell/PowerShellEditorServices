@@ -51,6 +51,12 @@ jobs:
         shell: pwsh
         run: ./pwsh/tools/install-powershell.ps1 -Daily
 
+      - name: If Debugging, start upterm for interactive pipeline troubleshooting
+        if: ${{ runner.debug == 1 }}
+        uses: lhotari/action-upterm@v1
+        with:
+          wait-timeout-minutes: 1
+
       - name: Build and test
         shell: pwsh
         run: Invoke-Build -Configuration Release ${{ github.event_name == 'merge_group' && 'TestFull' || 'Test' }}
