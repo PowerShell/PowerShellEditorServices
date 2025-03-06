@@ -1029,15 +1029,6 @@ enum MyEnum {
         [Fact]
         public async Task CanSendCompletionAndCompletionResolveRequestAsync()
         {
-            await PsesLanguageClient
-            .SendRequest(
-                "evaluate",
-                new EvaluateRequestArguments
-                {
-                    Expression = $"Update-Help Microsoft.Powershell.Utility -SourcePath {s_binDir};"
-                })
-            .ReturningVoid(CancellationToken.None);
-
             string filePath = NewTestFile("Get-Date");
 
             CompletionList completionItems = await PsesLanguageClient.TextDocument.RequestCompletion(
@@ -1063,15 +1054,6 @@ enum MyEnum {
         [Fact]
         public async Task CanSendCompletionResolveWithModulePrefixRequestAsync()
         {
-            await PsesLanguageClient
-                .SendRequest(
-                    "evaluate",
-                    new EvaluateRequestArguments
-                    {
-                        Expression = $"Update-Help Microsoft.Powershell.Utility -SourcePath {s_binDir};Import-Module Microsoft.PowerShell.Utility -Prefix Test -Force"
-                    })
-                .ReturningVoid(CancellationToken.None);
-
             string filePath = NewTestFile("Get-TestDate");
 
             CompletionList completionItems = await PsesLanguageClient.TextDocument.RequestCompletion(

@@ -193,11 +193,53 @@ Task BuildCmdletHelp -After AssembleModule {
 }
 
 Task SetupHelpForTests {
-    Write-Build DarkMagenta 'Updating help (for tests)'
-    Update-Help -Module Microsoft.PowerShell.Management, Microsoft.PowerShell.Utility -Force -Scope CurrentUser -UICulture en-US
+    # Powershell 7+ ship with help included, but 5.1 does not on Windows Servers and CI. The secure devops pipeline also does not allow internet access, so we must update help from our local repository source.
+
+    # Only commands in Microsoft.PowerShell.Utility can be tested for help so as to minimize the repository storage.
+    # This requires admin rights
+
+    #NOTE: You can run this task once as admin or update help separately, and continue to run tests as non-admin, if for instance developing locally.
+
+    $installHelpScript = {
+        $ErrorActionPreference = 'Stop'
+        if ((Get-Help Invoke-RestMethod).remarks -notlike 'Get-Help cannot find the Help files*') {
+            Write-Host -Fore Green 'Powershell 5.1 Utility Help is already installed'
+            return
+        }
+
+        # Cant use requires RunAsAdministrator because PS isn't smart enough to know this is a subscript.
+        if (-not [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+            throw 'Windows PowerShell Update-Help requires admin rights. Please re-run the script in an elevated powershell session.'
+        }
+
+        # We store our local copy of help files here for testing as some pipelines disallow internet access
+        $helpPath = '{{HELPPATH}}'
+
+        Write-Host -Fore Magenta "Powershell 5.1 Utility Help is not installed, installing from $helpPath"
+
+        #Update the help, and capture verbose output
+        $updateHelpOutput = Update-Help 'Microsoft.PowerShell.Utility' -Verbose -SourcePath $helpPath -Force *>&1
+
+        if ((Get-Help Invoke-RestMethod).remarks -like 'Get-Help cannot find the Help files*') {
+            throw "Failed to install PowerShell 5.1 Help: $updateHelpOutput"
+        } else {
+            Write-Host -Fore Green 'Powershell 5.1 Utility Help installed successfully'
+        }
+    }
+
+    #Need this to inject the help file path, since PSScriptRoot won't work inside the script
+    $helpPath = "$PSScriptRoot\test\PowerShellEditorServices.Test.Shared\PSHelp"
+    $resolvedScript = $installHelpScript -replace '{{HELPPATH}}', $helpPath
+
+    #We might be running as PS7, so run as separate WinPS process to be sure.
+    powershell.exe -NoProfile -NonInteractive -Command $resolvedScript
+
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Failed to install PowerShell 5.1 Help.'
+    }
 }
 
-Task TestPS74 Build, SetupHelpForTests, {
+Task TestPS74 Build, {
     Set-Location ./test/PowerShellEditorServices.Test/
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
 }

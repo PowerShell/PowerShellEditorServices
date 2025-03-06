@@ -40,11 +40,4 @@
   <ItemGroup>
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
-
-  <ItemGroup>
-    <!-- Used for Update-Help for some test fixtures -->
-    <Content Include="..\PowerShellEditorServices.Test.Shared\PSHelp\**\*"
-      CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-
 </Project>
