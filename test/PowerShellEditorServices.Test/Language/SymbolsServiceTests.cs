@@ -764,7 +764,7 @@ namespace PowerShellEditorServices.Test.Language
                 FindsDetailsForBuiltInCommandData.SourceDetails.StartColumnNumber,
                 CancellationToken.None);
 
-            Assert.Equal("Writes customized output to a host.", symbolDetails.Documentation);
+            Assert.Equal("Extracts files from a specified archive (zipped) file.", symbolDetails.Documentation);
         }
 
         [Fact]

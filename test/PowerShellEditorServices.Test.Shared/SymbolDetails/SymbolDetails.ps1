@@ -1,4 +1,4 @@
-﻿Write-Host -ForegroundColor Black 'Test'
+﻿Expand-Archive -Path $TEMP
 # References Test uses this one
 Get-Process -Name 'powershell*'
 

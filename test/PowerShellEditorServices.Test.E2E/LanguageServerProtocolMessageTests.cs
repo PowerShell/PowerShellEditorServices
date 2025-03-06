@@ -30,6 +30,8 @@ namespace PowerShellEditorServices.Test.E2E
     {
         private static readonly string s_binDir =
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        private const string testCommand = "Expand-Archive";
+        private const string testDescription = "Extracts files from a specified archive (zipped) file.";
 
         private readonly ILanguageClient PsesLanguageClient;
         private readonly List<LogMessageParams> Messages;
@@ -1029,57 +1031,77 @@ enum MyEnum {
         [Fact]
         public async Task CanSendCompletionAndCompletionResolveRequestAsync()
         {
-            string filePath = NewTestFile("Get-Date");
-
             CompletionList completionItems = await PsesLanguageClient.TextDocument.RequestCompletion(
                 new CompletionParams
                 {
                     TextDocument = new TextDocumentIdentifier
                     {
-                        Uri = DocumentUri.FromFileSystemPath(filePath)
+                        Uri = DocumentUri.FromFileSystemPath(NewTestFile(testCommand))
                     },
                     Position = new Position(line: 0, character: 7)
                 });
 
             CompletionItem completionItem = Assert.Single(completionItems,
-                completionItem1 => completionItem1.FilterText == "Get-Date");
+                completionItem1 => completionItem1.FilterText == testCommand);
 
             CompletionItem updatedCompletionItem = await PsesLanguageClient
                 .SendRequest("completionItem/resolve", completionItem)
                 .Returning<CompletionItem>(CancellationToken.None);
 
-            Assert.Contains("Gets the current date and time.", updatedCompletionItem.Documentation.String);
+            Assert.Contains(testDescription, updatedCompletionItem.Documentation.String);
         }
 
         [Fact]
         public async Task CanSendCompletionResolveWithModulePrefixRequestAsync()
         {
-            string filePath = NewTestFile("Get-TestDate");
+            await PsesLanguageClient
+            .SendRequest(
+                "evaluate",
+                new EvaluateRequestArguments
+                {
+                    Expression = "Import-Module Microsoft.PowerShell.Archive -Prefix Test"
+                })
+            .ReturningVoid(CancellationToken.None);
 
-            CompletionList completionItems = await PsesLanguageClient.TextDocument.RequestCompletion(
+            try
+            {
+                const string command = "Expand-TestArchive";
+
+                CompletionList completionItems = await PsesLanguageClient.TextDocument.RequestCompletion(
                 new CompletionParams
                 {
                     TextDocument = new TextDocumentIdentifier
                     {
-                        Uri = DocumentUri.FromFileSystemPath(filePath)
+                        Uri = DocumentUri.FromFileSystemPath(NewTestFile(command))
                     },
                     Position = new Position(line: 0, character: 12)
                 });
 
-            CompletionItem completionItem = Assert.Single(completionItems,
-                completionItem1 => completionItem1.Label == "Get-TestDate");
+                CompletionItem completionItem = Assert.Single(completionItems,
+                    completionItem1 => completionItem1.Label == command);
 
-            CompletionItem updatedCompletionItem = await PsesLanguageClient.ResolveCompletion(completionItem);
+                CompletionItem updatedCompletionItem = await PsesLanguageClient.ResolveCompletion(completionItem);
 
-            Assert.Contains("Gets the current date and time.", updatedCompletionItem.Documentation.String);
+                Assert.Contains(testDescription, updatedCompletionItem.Documentation.String);
+            }
+            finally
+            {
+                // Reset the Archive module to the non-prefixed version
+                await PsesLanguageClient
+                .SendRequest(
+                    "evaluate",
+                    new EvaluateRequestArguments
+                    {
+                        Expression = "Remove-Module Microsoft.PowerShell.Archive;Import-Module Microsoft.PowerShell.Archive -Force"
+                    })
+                .ReturningVoid(CancellationToken.None);
+            }
         }
 
         [SkippableFact]
         public async Task CanSendHoverRequestAsync()
         {
-            Skip.If(OperatingSystem.IsWindows(),
-                "TODO: Fails in Windows GHA but works locally for some reason.");
-            string filePath = NewTestFile("Write-Host");
+            string filePath = NewTestFile(testCommand);
 
             Hover hover = await PsesLanguageClient.TextDocument.RequestHover(
                 new HoverParams
@@ -1093,18 +1115,18 @@ enum MyEnum {
 
             Assert.True(hover.Contents.HasMarkedStrings);
             Assert.Collection(hover.Contents.MarkedStrings,
-                str1 => Assert.Equal("Write-Host", str1.Value),
+                str1 => Assert.Equal(testCommand, str1.Value),
                 str2 =>
                 {
                     Assert.Equal("markdown", str2.Language);
-                    Assert.Equal("Writes customized output to a host.", str2.Value);
+                    Assert.Equal(testDescription, str2.Value);
                 });
         }
 
         [Fact]
         public async Task CanSendSignatureHelpRequestAsync()
         {
-            string filePath = NewTestFile("Get-Date -");
+            string filePath = NewTestFile($"{testCommand} -");
 
             SignatureHelp signatureHelp = await PsesLanguageClient.RequestSignatureHelp
             (
@@ -1122,7 +1144,7 @@ enum MyEnum {
                 }
             );
 
-            Assert.Contains("Get-Date", signatureHelp.Signatures.First().Label);
+            Assert.Contains(testCommand, signatureHelp.Signatures.First().Label);
         }
 
         [Fact]

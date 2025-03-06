@@ -195,10 +195,10 @@ Task BuildCmdletHelp -After AssembleModule {
 Task SetupHelpForTests {
     # Some CI do not ship with help included, and the secure devops pipeline also does not allow internet access, so we must update help from our local repository source.
 
-    # Only commands in Microsoft.PowerShell.Utility can be tested for help so as to minimize the repository storage.
+    # Only commands in Microsoft.PowerShell.Archive can be tested for help so as to minimize the repository storage.
     # This requires admin rights for PS5.1
 
-    #NOTE: You can run this task once as admin or update help separately, and continue to run tests as non-admin, if for instance developing locally. Also this help is for PS5.1 so tests should be written for that even if PS7. For instance, don't write tests for new Invoke-RestMethod parameters.
+    #NOTE: You can run this task once as admin or update help separately, and continue to run tests as non-admin, if for instance developing locally.
 
     $installHelpScript = {
         param(
@@ -211,8 +211,8 @@ Task SetupHelpForTests {
             $helpPath = Join-Path $helpPath '7'
         }
 
-        if ((Get-Help Invoke-RestMethod).remarks -notlike 'Get-Help cannot find the Help files*') {
-            Write-Host -Fore Green "PowerShell $PSVersion Utility Help is already installed"
+        if ((Get-Help Expand-Archive).remarks -notlike 'Get-Help cannot find the Help files*') {
+            Write-Host -Fore Green "PowerShell $PSVersion Archive Help is already installed"
             return
         }
 
@@ -227,10 +227,10 @@ Task SetupHelpForTests {
             }
         }
 
-        Write-Host -Fore Magenta "Powershell $PSVersion Utility Help is not installed, installing from $helpPath"
+        Write-Host -Fore Magenta "Powershell $PSVersion Archive Help is not installed, installing from $helpPath"
 
         $updateHelpParams = @{
-            Module     = 'Microsoft.PowerShell.Utility'
+            Module     = 'Microsoft.PowerShell.Archive'
             SourcePath = $helpPath
             UICulture  = 'en-US'
             Force      = $true
@@ -244,10 +244,10 @@ Task SetupHelpForTests {
         #Update the help, and capture verbose output
         $updateHelpOutput = Update-Help @updateHelpParams *>&1
 
-        if ((Get-Help Invoke-RestMethod).remarks -like 'Get-Help cannot find the Help files*') {
+        if ((Get-Help Expand-Archive).remarks -like 'Get-Help cannot find the Help files*') {
             throw "Failed to install PowerShell $PSVersion Help: $updateHelpOutput"
         } else {
-            Write-Host -Fore Green "Powershell $PSVersion Utility Help installed successfully"
+            Write-Host -Fore Green "Powershell $PSVersion Archive Help installed successfully"
         }
     }
 
