@@ -202,7 +202,7 @@ Task SetupHelpForTests {
 
     $installHelpScript = {
         param(
-            [Parameter(Mandatory)][string]$helpPath
+            [Parameter(Position = 0)][string]$helpPath
         )
         $PSVersion = $PSVersionTable.PSVersion
         $ErrorActionPreference = 'Stop'
@@ -242,7 +242,6 @@ Task SetupHelpForTests {
             $updateHelpParams.'Scope' = 'CurrentUser'
         }
         #Update the help, and capture verbose output
-        Wait-Debugger
         $updateHelpOutput = Update-Help @updateHelpParams *>&1
 
         if ((Get-Help Invoke-RestMethod).remarks -like 'Get-Help cannot find the Help files*') {
@@ -255,11 +254,10 @@ Task SetupHelpForTests {
     #Need this to inject the help file path, since PSScriptRoot won't work inside the script
     $helpPath = Resolve-Path "$PSScriptRoot\test\PowerShellEditorServices.Test.Shared\PSHelp" -ErrorAction Stop
     Write-Host -Fore Magenta "Runner Help located at $helpPath"
-    $resolvedScript = $installHelpScript -replace '{{HELPPATH}}', $helpPath
 
     if (Get-Command powershell.exe -CommandType Application -ea 0) {
         Write-Host -Fore Magenta 'Checking PowerShell 5.1 help'
-        powershell.exe -NoProfile -NonInteractive -Command $resolvedScript -args $helpPath
+        & powershell.exe -NoProfile -NonInteractive -Command $installHelpScript -args $helpPath
         if ($LASTEXITCODE -ne 0) {
             throw 'Failed to install PowerShell 5.1 Help.'
         }
@@ -267,7 +265,7 @@ Task SetupHelpForTests {
 
     if ($PwshDaily -and (Get-Command $PwshDaily -ea 0)) {
         Write-Host -Fore Magenta "Checking PWSH Daily help at $PwshDaily"
-        & $PwshDaily -NoProfile -NonInteractive -Command $resolvedScript -args $helpPath
+        Invoke-BuildExec { & $PwshDaily -NoProfile -NonInteractive -Command $installHelpScript -args $helpPath }
         if ($LASTEXITCODE -ne 0) {
             throw 'Failed to install PowerShell Daily Help.'
         }
@@ -275,7 +273,7 @@ Task SetupHelpForTests {
 
     if ($PSEdition -eq 'Core') {
         Write-Host -Fore Magenta 'Checking Runner Pwsh help'
-        & ([ScriptBlock]::Create($resolvedScript)) $helpPath
+        & $installHelpScript $helpPath
     }
 }
 
