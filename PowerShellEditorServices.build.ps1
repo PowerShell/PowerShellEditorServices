@@ -313,7 +313,7 @@ if ($env:GITHUB_ACTIONS) {
     $PwshPreview = if ($script:IsNix) { "$HOME/.powershell-preview/pwsh" } else { "$env:LOCALAPPDATA/Microsoft/powershell-preview/pwsh.exe" }
 }
 
-Task TestE2EPreview Build, SetupHelpForTests, {
+Task TestE2EPreview -If (-not $env:TF_BUILD) Build, SetupHelpForTests, {
     Assert (Test-Path $PwshPreview) "PowerShell Preview not found at $PwshPreview, please install it: https://github.com/PowerShell/PowerShell/blob/master/tools/install-powershell.ps1"
     Set-Location ./test/PowerShellEditorServices.Test.E2E/
     $env:PWSH_EXE_NAME = $PwshPreview
