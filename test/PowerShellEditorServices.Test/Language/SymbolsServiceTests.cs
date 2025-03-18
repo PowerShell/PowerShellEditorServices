@@ -21,7 +21,6 @@ using Microsoft.PowerShell.EditorServices.Test.Shared.ParameterHint;
 using Microsoft.PowerShell.EditorServices.Test.Shared.References;
 using Microsoft.PowerShell.EditorServices.Test.Shared.SymbolDetails;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Symbols;
-using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
@@ -34,7 +33,7 @@ namespace PowerShellEditorServices.Test.Language
         private PsesInternalHost psesHost;
         private WorkspaceService workspace;
         private SymbolsService symbolsService;
-        private static readonly bool s_isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        private static readonly bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
         public async Task InitializeAsync()
         {
@@ -756,17 +755,16 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.EnumMemberSourceDetails));
         }
 
-        [SkippableFact]
+        [Fact]
         public async Task FindsDetailsForBuiltInCommand()
         {
-            Skip.IfNot(VersionUtils.IsMacOS, "macOS gets the right synopsis but others don't.");
             SymbolDetails symbolDetails = await symbolsService.FindSymbolDetailsAtLocationAsync(
                 GetScriptFile(FindsDetailsForBuiltInCommandData.SourceDetails),
                 FindsDetailsForBuiltInCommandData.SourceDetails.StartLineNumber,
                 FindsDetailsForBuiltInCommandData.SourceDetails.StartColumnNumber,
                 CancellationToken.None);
 
-            Assert.Equal("Gets the processes that are running on the local computer.", symbolDetails.Documentation);
+            Assert.Equal("Extracts files from a specified archive (zipped) file.", symbolDetails.Documentation);
         }
 
         [Fact]
@@ -903,16 +901,17 @@ namespace PowerShellEditorServices.Test.Language
             AssertIsRegion(symbol.ScriptRegion, 27, 5, 27, 10);
         }
 
-        [Fact(Skip = "DSC symbols don't work yet.")]
+        [SkippableFact()]
         public void FindsSymbolsInDSCFile()
         {
-            Skip.If(!s_isWindows, "DSC only works properly on Windows.");
+            Skip.If(!isWindows, "DSC only works properly on Windows.");
 
             IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInDSCFile.SourceDetails);
             SymbolReference symbol = Assert.Single(symbols, i => i.Type == SymbolType.Configuration);
-            Assert.Equal("AConfiguration", symbol.Id);
+            // The prefix "dsc" is added for sorting reasons.
+            Assert.Equal("dsc AConfiguration", symbol.Id);
             Assert.Equal(2, symbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(15, symbol.ScriptRegion.StartColumnNumber);
+            Assert.Equal(1, symbol.ScriptRegion.StartColumnNumber);
         }
 
         [Fact]

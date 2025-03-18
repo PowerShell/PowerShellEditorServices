@@ -8,9 +8,9 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services.Configuration;
+using Nerdbank.Streams;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol;
@@ -38,14 +38,16 @@ namespace PowerShellEditorServices.Test.E2E
         internal List<PsesTelemetryEvent> TelemetryEvents = new();
         public ITestOutputHelper Output { get; set; }
 
-        protected PsesStdioProcess _psesProcess;
-        public int ProcessId => _psesProcess.Id;
+        internal PsesStdioLanguageServerProcessHost _psesHost = new(IsDebugAdapterTests);
 
         public async Task InitializeAsync()
         {
-            LoggerFactory factory = new();
-            _psesProcess = new PsesStdioProcess(factory, IsDebugAdapterTests);
-            await _psesProcess.Start();
+            (StreamReader stdout, StreamWriter stdin) = await _psesHost.Start();
+
+            // Splice the streams together and enable debug logging of all messages sent and received
+            DebugOutputStream psesStream = new(
+                FullDuplexStream.Splice(stdout.BaseStream, stdin.BaseStream)
+            );
 
             DirectoryInfo testDir =
                 Directory.CreateDirectory(Path.Combine(s_binDir, Path.GetRandomFileName()));
@@ -53,12 +55,13 @@ namespace PowerShellEditorServices.Test.E2E
             PsesLanguageClient = LanguageClient.PreInit(options =>
             {
                 options
-                    .WithInput(_psesProcess.OutputStream)
-                    .WithOutput(_psesProcess.InputStream)
+                    .WithInput(psesStream)
+                    .WithOutput(psesStream)
                     .WithWorkspaceFolder(DocumentUri.FromFileSystemPath(testDir.FullName), "testdir")
                     .WithInitializationOptions(new { EnableProfileLoading = false })
                     .OnPublishDiagnostics(diagnosticParams => Diagnostics.AddRange(diagnosticParams.Diagnostics.Where(d => d != null)))
-                    .OnLogMessage(logMessageParams => {
+                    .OnLogMessage(logMessageParams =>
+                    {
                         Output?.WriteLine($"{logMessageParams.Type}: {logMessageParams.Message}");
                         Messages.Add(logMessageParams);
                     })
@@ -98,7 +101,7 @@ namespace PowerShellEditorServices.Test.E2E
         public async Task DisposeAsync()
         {
             await PsesLanguageClient.Shutdown();
-            await _psesProcess.Stop();
+            await _psesHost.Stop();
             PsesLanguageClient?.Dispose();
         }
     }

@@ -1,4 +1,6 @@
-﻿Get-Process -ComputerName "test-computer"
+﻿Expand-Archive -Path $TEMP
+# References Test uses this one
+Get-Process -Name 'powershell*'
 
 <#
 .Synopsis
@@ -10,19 +12,18 @@
 .EXAMPLE
 	Another example of how to use this cmdlet
 #>
-function Get-Thing
-{
+function Get-Thing {
 	[Alias()]
 	[OutputType([int])]
 	Param
 	(
 		# Param1 help description
-		[Parameter(Mandatory=$true,
-				   ValueFromPipelineByPropertyName=$true,
-				   Position=0)]
+		[Parameter(Mandatory = $true,
+			ValueFromPipelineByPropertyName = $true,
+			Position = 0)]
 		$Name
 	)
-	
+
 	Begin
 	{
 	}

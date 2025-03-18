@@ -193,8 +193,88 @@ Task BuildCmdletHelp -After AssembleModule {
 }
 
 Task SetupHelpForTests {
-    Write-Build DarkMagenta 'Updating help (for tests)'
-    Update-Help -Module Microsoft.PowerShell.Management, Microsoft.PowerShell.Utility -Force -Scope CurrentUser -UICulture en-US
+    # Some CI do not ship with help included, and the secure devops pipeline also does not allow internet access, so we must update help from our local repository source.
+
+    # Only commands in Microsoft.PowerShell.Archive can be tested for help so as to minimize the repository storage.
+    # This requires admin rights for PS5.1
+
+    # NOTE: You can run this task once as admin or update help separately, and continue to run tests as non-admin, if for instance developing locally.
+
+    $installHelpScript = {
+        param(
+            [Parameter(Position = 0)][string]$helpPath
+        )
+        $PSVersion = $PSVersionTable.PSVersion
+        $ErrorActionPreference = 'Stop'
+        $helpPath = Resolve-Path $helpPath
+        if ($PSEdition -ne 'Desktop') {
+            $helpPath = Join-Path $helpPath '7'
+        }
+
+        if ((Get-Help Expand-Archive).remarks -notlike 'Get-Help cannot find the Help files*') {
+            Write-Host -ForegroundColor Green "PowerShell $PSVersion Archive help is already installed"
+            return
+        }
+
+        if ($PSEdition -eq 'Desktop') {
+            # Cant use requires RunAsAdministrator because PS isn't smart enough to know this is a subscript.
+            if (-not [Security.Principal.WindowsPrincipal]::new(
+                    [Security.Principal.WindowsIdentity]::GetCurrent()
+                ).IsInRole(
+                    [Security.Principal.WindowsBuiltInRole]::Administrator
+                )) {
+                throw 'Windows PowerShell Update-Help requires admin rights. Please re-run the script in an elevated PowerShell session!'
+            }
+        }
+
+        Write-Host -ForegroundColor Magenta "PowerShell $PSVersion Archive help is not installed, installing from $helpPath"
+
+        $updateHelpParams = @{
+            Module     = 'Microsoft.PowerShell.Archive'
+            SourcePath = $helpPath
+            UICulture  = 'en-US'
+            Force      = $true
+            Verbose    = $true
+        }
+
+        # PS7+ does not require admin rights if CurrentUser is used for scope. PS5.1 does not have this option.
+        if ($PSEdition -ne 'Desktop') {
+            $updateHelpParams.'Scope' = 'CurrentUser'
+        }
+        # Update the help and capture verbose output
+        $updateHelpOutput = Update-Help @updateHelpParams *>&1
+
+        if ((Get-Help Expand-Archive).remarks -like 'Get-Help cannot find the Help files*') {
+            throw "Failed to install PowerShell $PSVersion Help: $updateHelpOutput"
+        } else {
+            Write-Host -ForegroundColor Green "PowerShell $PSVersion Archive help installed successfully"
+        }
+    }
+
+    # Need this to inject the help file path since PSScriptRoot won't work inside the script
+    $helpPath = Resolve-Path "$PSScriptRoot\test\PowerShellEditorServices.Test.Shared\PSHelp" -ErrorAction Stop
+    Write-Build DarkMagenta "Runner help located at $helpPath"
+
+    if (Get-Command powershell.exe -CommandType Application -ea 0) {
+        Write-Build DarkMagenta 'Checking PowerShell 5.1 help'
+        & powershell.exe -NoProfile -NonInteractive -Command $installHelpScript -args $helpPath
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to install PowerShell 5.1 help!'
+        }
+    }
+
+    if ($PwshDaily -and (Get-Command $PwshDaily -ea 0)) {
+        Write-Build DarkMagenta "Checking PowerShell Daily help at $PwshDaily"
+        Invoke-BuildExec { & $PwshDaily -NoProfile -NonInteractive -Command $installHelpScript -args $helpPath }
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to install PowerShell Daily help!'
+        }
+    }
+
+    if ($PSEdition -eq 'Core') {
+        Write-Build DarkMagenta "Checking this PowerShell process's help"
+        & $installHelpScript $helpPath
+    }
 }
 
 Task TestPS74 Build, SetupHelpForTests, {
