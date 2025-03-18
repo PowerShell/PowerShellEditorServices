@@ -263,11 +263,11 @@ Task SetupHelpForTests {
         }
     }
 
-    if ($PwshDaily -and (Get-Command $PwshDaily -ea 0)) {
-        Write-Build DarkMagenta "Checking PowerShell Daily help at $PwshDaily"
-        Invoke-BuildExec { & $PwshDaily -NoProfile -NonInteractive -Command $installHelpScript -args $helpPath }
+    if ($PwshPreview -and (Get-Command $PwshPreview -ea 0)) {
+        Write-Build DarkMagenta "Checking PowerShell Preview help at $PwshPreview"
+        Invoke-BuildExec { & $PwshPreview -NoProfile -NonInteractive -Command $installHelpScript -args $helpPath }
         if ($LASTEXITCODE -ne 0) {
-            throw 'Failed to install PowerShell Daily help!'
+            throw 'Failed to install PowerShell Preview help!'
         }
     }
 
@@ -307,16 +307,17 @@ Task TestE2EPwsh Build, SetupHelpForTests, {
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
 }
 
-$PwshDaily = if ($script:IsNix) {
-    "$HOME/.powershell-daily/pwsh"
+if ($env:GITHUB_ACTIONS) {
+    $PwshPreview = if ($script:IsNix) { "$PSScriptRoot/preview/pwsh" } else { "$PSScriptRoot/preview/pwsh.exe" }
 } else {
-    "$env:LOCALAPPDATA/Microsoft/powershell-daily/pwsh.exe"
+    $PwshPreview = if ($script:IsNix) { "$HOME/.powershell-preview/pwsh" } else { "$env:LOCALAPPDATA/Microsoft/powershell-preview/pwsh.exe" }
 }
 
-Task TestE2EDaily -If (Test-Path $PwshDaily) Build, SetupHelpForTests, {
+Task TestE2EPreview Build, SetupHelpForTests, {
+    Assert (Test-Path $PwshPreview) "PowerShell Preview not found at $PwshPreview, please install it: https://github.com/PowerShell/PowerShell/blob/master/tools/install-powershell.ps1"
     Set-Location ./test/PowerShellEditorServices.Test.E2E/
-    $env:PWSH_EXE_NAME = $PwshDaily
-    Write-Build DarkGreen "Running end-to-end tests with: $(& $PwshDaily --version)"
+    $env:PWSH_EXE_NAME = $PwshPreview
+    Write-Build DarkGreen "Running end-to-end tests with: $(& $PwshPreview --version)"
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
 }
 
@@ -394,6 +395,6 @@ Task BuildIfChanged -Inputs {
 
 Task Test TestPS74, TestE2EPwsh, TestPS51, TestE2EPowerShell
 
-Task TestFull Test, TestE2EDaily, TestE2EPwshCLM, TestE2EPowerShellCLM
+Task TestFull Test, TestE2EPreview, TestE2EPwshCLM, TestE2EPowerShellCLM
 
 Task . Clean, Build, Test
