@@ -198,7 +198,7 @@ Task SetupHelpForTests {
     # Only commands in Microsoft.PowerShell.Archive can be tested for help so as to minimize the repository storage.
     # This requires admin rights for PS5.1
 
-    #NOTE: You can run this task once as admin or update help separately, and continue to run tests as non-admin, if for instance developing locally.
+    # NOTE: You can run this task once as admin or update help separately, and continue to run tests as non-admin, if for instance developing locally.
 
     $installHelpScript = {
         param(
@@ -212,7 +212,7 @@ Task SetupHelpForTests {
         }
 
         if ((Get-Help Expand-Archive).remarks -notlike 'Get-Help cannot find the Help files*') {
-            Write-Host -Fore Green "PowerShell $PSVersion Archive Help is already installed"
+            Write-Host -ForegroundColor Green "PowerShell $PSVersion Archive help is already installed"
             return
         }
 
@@ -223,11 +223,11 @@ Task SetupHelpForTests {
                 ).IsInRole(
                     [Security.Principal.WindowsBuiltInRole]::Administrator
                 )) {
-                throw 'Windows PowerShell Update-Help requires admin rights. Please re-run the script in an elevated powershell session.'
+                throw 'Windows PowerShell Update-Help requires admin rights. Please re-run the script in an elevated PowerShell session!'
             }
         }
 
-        Write-Host -Fore Magenta "Powershell $PSVersion Archive Help is not installed, installing from $helpPath"
+        Write-Host -ForegroundColor Magenta "PowerShell $PSVersion Archive help is not installed, installing from $helpPath"
 
         $updateHelpParams = @{
             Module     = 'Microsoft.PowerShell.Archive'
@@ -237,42 +237,42 @@ Task SetupHelpForTests {
             Verbose    = $true
         }
 
-        #PS7+ does not require admin rights if currentuser is used for scope. 5.1 does not have this option.
+        # PS7+ does not require admin rights if CurrentUser is used for scope. PS5.1 does not have this option.
         if ($PSEdition -ne 'Desktop') {
             $updateHelpParams.'Scope' = 'CurrentUser'
         }
-        #Update the help, and capture verbose output
+        # Update the help and capture verbose output
         $updateHelpOutput = Update-Help @updateHelpParams *>&1
 
         if ((Get-Help Expand-Archive).remarks -like 'Get-Help cannot find the Help files*') {
             throw "Failed to install PowerShell $PSVersion Help: $updateHelpOutput"
         } else {
-            Write-Host -Fore Green "Powershell $PSVersion Archive Help installed successfully"
+            Write-Host -ForegroundColor Green "PowerShell $PSVersion Archive help installed successfully"
         }
     }
 
-    #Need this to inject the help file path, since PSScriptRoot won't work inside the script
+    # Need this to inject the help file path since PSScriptRoot won't work inside the script
     $helpPath = Resolve-Path "$PSScriptRoot\test\PowerShellEditorServices.Test.Shared\PSHelp" -ErrorAction Stop
-    Write-Host -Fore Magenta "Runner Help located at $helpPath"
+    Write-Build DarkMagenta "Runner help located at $helpPath"
 
     if (Get-Command powershell.exe -CommandType Application -ea 0) {
-        Write-Host -Fore Magenta 'Checking PowerShell 5.1 help'
+        Write-Build DarkMagenta 'Checking PowerShell 5.1 help'
         & powershell.exe -NoProfile -NonInteractive -Command $installHelpScript -args $helpPath
         if ($LASTEXITCODE -ne 0) {
-            throw 'Failed to install PowerShell 5.1 Help.'
+            throw 'Failed to install PowerShell 5.1 help!'
         }
     }
 
     if ($PwshDaily -and (Get-Command $PwshDaily -ea 0)) {
-        Write-Host -Fore Magenta "Checking PWSH Daily help at $PwshDaily"
+        Write-Build DarkMagenta "Checking PowerShell Daily help at $PwshDaily"
         Invoke-BuildExec { & $PwshDaily -NoProfile -NonInteractive -Command $installHelpScript -args $helpPath }
         if ($LASTEXITCODE -ne 0) {
-            throw 'Failed to install PowerShell Daily Help.'
+            throw 'Failed to install PowerShell Daily help!'
         }
     }
 
     if ($PSEdition -eq 'Core') {
-        Write-Host -Fore Magenta 'Checking Runner Pwsh help'
+        Write-Build DarkMagenta "Checking this PowerShell process's help"
         & $installHelpScript $helpPath
     }
 }
