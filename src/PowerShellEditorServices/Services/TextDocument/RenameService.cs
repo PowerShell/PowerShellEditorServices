@@ -59,7 +59,7 @@ internal class RenameService(
     {
         RenameParams renameRequest = new()
         {
-            NewName = "PREPARE-RENAME-UNUSED", //A placeholder just to gather edits
+            NewName = "PREPARE_RENAME_UNUSED", //A placeholder just to gather edits
             Position = request.Position,
             TextDocument = request.TextDocument
         };
