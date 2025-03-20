@@ -111,8 +111,6 @@ internal class RenameService(
         };
     }
 
-    // TODO: We can probably merge these two methods with Generic Type constraints since they are factored into overloading
-
     private static TextEdit[] RenameFunction(Ast target, Ast scriptAst, RenameParams renameParams)
     {
         RenameFunctionVisitor visitor = new(target, renameParams.NewName);

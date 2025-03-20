@@ -231,7 +231,6 @@ public static class AstExtensions
             if (!funcDef.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)) { return false; }
 
             // If the function is recursive (calls itself), its parent is a match unless a more specific in-scope function definition comes next (this is a "bad practice" edge case)
-            // TODO: Consider a simple "contains" match
             if (command.HasParent(funcDef)) { return true; }
 
             return command.HasParent(funcDef.Parent); // The command is in the same scope as the function definition
@@ -323,7 +322,6 @@ public static class AstExtensions
     /// <summary>
     /// Returns true if the Expression is part of a variable assignment
     /// </summary>
-    /// TODO: Potentially check the name matches
     public static bool IsVariableAssignment(this VariableExpressionAst var)
         => var.Parent is AssignmentStatementAst or ParameterAst;
 
@@ -348,7 +346,6 @@ public static class AstExtensions
     /// <summary>
     /// Determines if a variable assignment is a scoped variable assignment, meaning that it can be considered the top assignment within the current scope. This does not include Variable assignments within the body of a scope which may or may not be the top only if one of these do not exist above it in the same scope.
     /// </summary>
-    // TODO: Naming is hard, I feel like this could have a better name
     public static bool IsScopedVariableAssignment(this VariableExpressionAst var)
     {
         // foreach ($x in $y) { }
@@ -390,7 +387,6 @@ public static class AstExtensions
 
     /// <summary>
     /// For a given splat reference, find its source splat assignment. If the reference is not a splat, an exception will be thrown. If no assignment is found, null will be returned.
-    /// TODO: Support incremental splat references e.g. $x = @{}, $x.Method = 'GET'
     /// </summary>
     public static StringConstantExpressionAst? FindSplatAssignmentReference(this VariableExpressionAst varAst)
     {
@@ -455,7 +451,6 @@ public static class AstExtensions
         while (scope is not null)
         {
             // Check if the reference is a parameter in the current scope. This saves us from having to do a nested search later on.
-            // TODO: Can probably be combined with below
             IEnumerable<ParameterAst>? parameters = scope switch
             {
                 // Covers both function test() { param($x) } and function param($x)
@@ -472,7 +467,6 @@ public static class AstExtensions
             }
 
             // Find any top level function definitions in the currentscope that might match the parameter
-            // TODO: This could be less complicated
             if (reference is CommandParameterAst parameterAst)
             {
                 string? commandName = (parameterAst.Parent as CommandAst)?.GetCommandName()?.ToLower();
