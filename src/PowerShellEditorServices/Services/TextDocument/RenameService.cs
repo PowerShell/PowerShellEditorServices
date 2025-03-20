@@ -59,7 +59,7 @@ internal class RenameService(
     {
         RenameParams renameRequest = new()
         {
-            NewName = "PREPARERENAMETEST", //A placeholder just to gather edits
+            NewName = "PREPARE-RENAME-UNUSED", //A placeholder just to gather edits
             Position = request.Position,
             TextDocument = request.TextDocument
         };
@@ -88,7 +88,6 @@ internal class RenameService(
         Ast? tokenToRename = FindRenamableSymbol(scriptFile, position);
         if (tokenToRename is null) { return null; }
 
-        // TODO: Potentially future cross-file support
         TextEdit[] changes = tokenToRename switch
         {
             FunctionDefinitionAst
@@ -194,28 +193,22 @@ internal class RenameService(
         if (DisclaimerDeclinedForSession) { throw new HandlerErrorException(disclaimerDeclinedMessage); }
         if (acceptDisclaimerOption || DisclaimerAcceptedForSession) { return true; }
 
-        // TODO: Localization
         const string renameDisclaimer = "PowerShell rename functionality is only supported in a limited set of circumstances. [Please review the notice](https://github.com/PowerShell/PowerShellEditorServices?tab=readme-ov-file#rename-disclaimer) and accept the limitations and risks.";
         const string acceptAnswer = "I Accept";
-        // const string acceptWorkspaceAnswer = "I Accept [Workspace]";
-        // const string acceptSessionAnswer = "I Accept [Session]";
         const string declineAnswer = "Decline";
 
-        // TODO: Unfortunately the LSP spec has no spec for the server to change a client setting, so
-        // We have a suboptimal experience until we implement a custom feature for this.
         ShowMessageRequestParams reqParams = new()
         {
             Type = MessageType.Warning,
             Message = renameDisclaimer,
             Actions = new MessageActionItem[] {
-                new MessageActionItem() { Title = acceptAnswer },
-                new MessageActionItem() { Title = declineAnswer }
-                // new MessageActionItem() { Title = acceptWorkspaceAnswer },
-                // new MessageActionItem() { Title = acceptSessionAnswer },
+                new() { Title = acceptAnswer },
+                new() { Title = declineAnswer }
             }
         };
 
         MessageActionItem? result = await lsp.SendRequest(reqParams, cancellationToken).ConfigureAwait(false);
+
         // null happens if the user closes the dialog rather than making a selection.
         if (result is null || result.Title == declineAnswer)
         {
@@ -232,6 +225,7 @@ internal class RenameService(
         }
         if (result.Title == acceptAnswer)
         {
+            // Unfortunately the LSP spec has no spec for the server to change a client setting, so we have a suboptimal experience to tell the user to change the setting rather than doing it for them without implementing custom client behavior.
             const string acceptDisclaimerNotice = "PowerShell rename functionality has been enabled for this session. To avoid this prompt in the future, set the powershell.rename.acceptDisclaimer to true in your settings.";
             ShowMessageParams msgParams = new()
             {
@@ -243,16 +237,6 @@ internal class RenameService(
             DisclaimerAcceptedForSession = true;
             return DisclaimerAcceptedForSession;
         }
-        // if (result.Title == acceptWorkspaceAnswer)
-        // {
-        //     // FIXME: Set the appropriate setting
-        //     return true;
-        // }
-        // if (result.Title == acceptSessionAnswer)
-        // {
-        //     // FIXME: Set the appropriate setting
-        //     return true;
-        // }
 
         throw new InvalidOperationException("Unknown Disclaimer Response received. This is a bug and you should report it.");
     }
@@ -411,7 +395,6 @@ internal class RenameVariableVisitor(Ast target, string newName, bool skipVerify
     internal Ast? VariableDefinition;
 
     // Validate and cleanup the newName definition. User may have left off the $
-    // TODO: Full AST parsing to validate the name
     private readonly string NewName = newName.TrimStart('$').TrimStart('-');
 
     // Wire up our visitor to the relevant AST types we are potentially renaming
