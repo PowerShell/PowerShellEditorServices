@@ -1,64 +1,131 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
+#nullable enable
 
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Management.Automation;
 using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
-using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Models;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
+using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
+using System.Linq;
+using OmniSharp.Extensions.JsonRpc;
 
-namespace Microsoft.PowerShell.EditorServices.Handlers
+namespace Microsoft.PowerShell.EditorServices.Handlers;
+
+internal class StackTraceHandler(DebugService debugService) : IStackTraceHandler
 {
-    internal class StackTraceHandler : IStackTraceHandler
+    /// <summary>
+    /// Because we don't know the size of the stacktrace beforehand, we will tell the client that there are more frames available, this is effectively a paging size, as the client should request this many frames after the first one.
+    /// </summary>
+    private const int INITIAL_PAGE_SIZE = 20;
+
+    public async Task<StackTraceResponse> Handle(StackTraceArguments request, CancellationToken cancellationToken)
     {
-        private readonly DebugService _debugService;
-
-        public StackTraceHandler(DebugService debugService) => _debugService = debugService;
-
-        public async Task<StackTraceResponse> Handle(StackTraceArguments request, CancellationToken cancellationToken)
+        if (!debugService.IsDebuggerStopped)
         {
-            StackFrameDetails[] stackFrameDetails = await _debugService.GetStackFramesAsync(cancellationToken).ConfigureAwait(false);
+            throw new RpcErrorException(0, null!, "Stacktrace was requested while we are not stopped at a breakpoint. This is a violation of the DAP protocol, and is probably a bug.");
+        }
 
-            // Handle a rare race condition where the adapter requests stack frames before they've
-            // begun building.
-            if (stackFrameDetails is null)
+        // Adapting to int to let us use LINQ, realistically if you have a stacktrace larger than this that the client is requesting, you have bigger problems...
+        int skip = Convert.ToInt32(request.StartFrame ?? 0);
+        int take = Convert.ToInt32(request.Levels ?? 0);
+
+        // We generate a label for the breakpoint and can return that immediately if the client is supporting DelayedStackTraceLoading.
+        InvocationInfo invocationInfo = debugService.CurrentDebuggerStoppedEventArgs?.OriginalEvent?.InvocationInfo
+            ?? throw new RpcErrorException(0, null!, "InvocationInfo was not available on CurrentDebuggerStoppedEvent args. This is a bug and you should report it.");
+
+        StackFrame breakpointLabel = CreateBreakpointLabel(invocationInfo);
+
+        if (skip == 0 && take == 1) // This indicates the client is doing an initial fetch, so we want to return quickly to unblock the UI and wait on the remaining stack frames for the subsequent requests.
+        {
+            return new StackTraceResponse()
             {
-                return new StackTraceResponse
-                {
-                    StackFrames = Array.Empty<StackFrame>(),
-                    TotalFrames = 0
-                };
-            }
-
-            List<StackFrame> newStackFrames = new();
-
-            long startFrameIndex = request.StartFrame ?? 0;
-            long maxFrameCount = stackFrameDetails.Length;
-
-            // If the number of requested levels == 0 (or null), that means get all stack frames
-            // after the specified startFrame index. Otherwise get all the stack frames.
-            long requestedFrameCount = request.Levels ?? 0;
-            if (requestedFrameCount > 0)
-            {
-                maxFrameCount = Math.Min(maxFrameCount, startFrameIndex + requestedFrameCount);
-            }
-
-            for (long i = startFrameIndex; i < maxFrameCount; i++)
-            {
-                // Create the new StackFrame object with an ID that can
-                // be referenced back to the current list of stack frames
-                newStackFrames.Add(LspDebugUtils.CreateStackFrame(stackFrameDetails[i], id: i));
-            }
-
-            return new StackTraceResponse
-            {
-                StackFrames = newStackFrames,
-                TotalFrames = newStackFrames.Count
+                StackFrames = new StackFrame[] { breakpointLabel },
+                TotalFrames = INITIAL_PAGE_SIZE //Indicate to the client that there are more frames available
             };
         }
+
+        // Wait until the stack frames and variables have been fetched.
+        await debugService.StackFramesAndVariablesFetched.ConfigureAwait(false);
+
+        StackFrameDetails[] stackFrameDetails = await debugService.GetStackFramesAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        // Handle a rare race condition where the adapter requests stack frames before they've
+        // begun building.
+        if (stackFrameDetails is null)
+        {
+            return new StackTraceResponse
+            {
+                StackFrames = Array.Empty<StackFrame>(),
+                TotalFrames = 0
+            };
+        }
+
+        List<StackFrame> newStackFrames = new();
+        if (skip == 0)
+        {
+            newStackFrames.Add(breakpointLabel);
+        }
+
+        newStackFrames.AddRange(
+            stackFrameDetails
+            .Skip(skip != 0 ? skip - 1 : skip)
+            .Take(take != 0 ? take - 1 : take)
+            .Select((frame, index) => CreateStackFrame(frame, index + 1))
+        );
+
+        return new StackTraceResponse
+        {
+            StackFrames = newStackFrames,
+            TotalFrames = newStackFrames.Count
+        };
     }
+
+    public static StackFrame CreateStackFrame(StackFrameDetails stackFrame, long id)
+    {
+        SourcePresentationHint sourcePresentationHint =
+            stackFrame.IsExternalCode ? SourcePresentationHint.Deemphasize : SourcePresentationHint.Normal;
+
+        // When debugging an interactive session, the ScriptPath is <No File> which is not a valid source file.
+        // We need to make sure the user can't open the file associated with this stack frame.
+        // It will generate a VSCode error in this case.
+        Source? source = null;
+        if (!stackFrame.ScriptPath.Contains("<No File>"))
+        {
+            source = new Source
+            {
+                Path = stackFrame.ScriptPath,
+                PresentationHint = sourcePresentationHint
+            };
+        }
+
+        return new StackFrame
+        {
+            Id = id,
+            Name = (source is not null) ? stackFrame.FunctionName : "Interactive Session",
+            Line = (source is not null) ? stackFrame.StartLineNumber : 0,
+            EndLine = stackFrame.EndLineNumber,
+            Column = (source is not null) ? stackFrame.StartColumnNumber : 0,
+            EndColumn = stackFrame.EndColumnNumber,
+            Source = source
+        };
+    }
+
+    public static StackFrame CreateBreakpointLabel(InvocationInfo invocationInfo, int id = 0) => new()
+    {
+        Name = "<Breakpoint>",
+        Id = id,
+        Source = new()
+        {
+            Path = invocationInfo.ScriptName
+        },
+        Line = invocationInfo.ScriptLineNumber,
+        Column = invocationInfo.OffsetInLine,
+        PresentationHint = StackFramePresentationHint.Label
+    };
 }

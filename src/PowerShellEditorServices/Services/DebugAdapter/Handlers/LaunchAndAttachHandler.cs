@@ -301,7 +301,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 throw new RpcErrorException(0, null, "Invalid configuration with no process ID nor custom pipe name!");
             }
 
-
             // Execute the Debug-Runspace command but don't await it because it
             // will block the debug adapter initialization process. The
             // InitializedEvent will be sent as soon as the RunspaceChanged
@@ -328,7 +327,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (request.RunspaceId < 1)
             {
-
                 throw new RpcErrorException(0, null, "A positive integer must be specified for the RunspaceId!");
             }
 

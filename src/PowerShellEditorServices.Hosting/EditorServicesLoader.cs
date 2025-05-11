@@ -70,20 +70,20 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             Version powerShellVersion = GetPSVersion();
             SessionFileWriter sessionFileWriter = new(logger, sessionDetailsPath, powerShellVersion);
-            logger.Log(PsesLogLevel.Diagnostic, "Session file writer created");
+            logger.Log(PsesLogLevel.Trace, "Session file writer created");
 
 #if CoreCLR
             // In .NET Core, we add an event here to redirect dependency loading to the new AssemblyLoadContext we load PSES' dependencies into
-            logger.Log(PsesLogLevel.Verbose, "Adding AssemblyResolve event handler for new AssemblyLoadContext dependency loading");
+            logger.Log(PsesLogLevel.Debug, "Adding AssemblyResolve event handler for new AssemblyLoadContext dependency loading");
 
             PsesLoadContext psesLoadContext = new(s_psesDependencyDirPath);
 
-            if (hostConfig.LogLevel == PsesLogLevel.Diagnostic)
+            if (hostConfig.LogLevel == PsesLogLevel.Trace)
             {
                 AppDomain.CurrentDomain.AssemblyLoad += (object sender, AssemblyLoadEventArgs args) =>
                 {
                     logger.Log(
-                        PsesLogLevel.Diagnostic,
+                        PsesLogLevel.Trace,
                         $"Loaded into load context {AssemblyLoadContext.GetLoadContext(args.LoadedAssembly)}: {args.LoadedAssembly}");
                 };
             }
@@ -91,9 +91,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             AssemblyLoadContext.Default.Resolving += (AssemblyLoadContext _, AssemblyName asmName) =>
             {
 #if ASSEMBLY_LOAD_STACKTRACE
-                logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {asmName}. Stacktrace:\n{new StackTrace()}");
+                logger.Log(PsesLogLevel.Trace, $"Assembly resolve event fired for {asmName}. Stacktrace:\n{new StackTrace()}");
 #else
-                logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {asmName}");
+                logger.Log(PsesLogLevel.Trace, $"Assembly resolve event fired for {asmName}");
 #endif
 
                 // We only want the Editor Services DLL; the new ALC will lazily load its dependencies automatically
@@ -104,15 +104,15 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
                 string asmPath = Path.Combine(s_psesDependencyDirPath, $"{asmName.Name}.dll");
 
-                logger.Log(PsesLogLevel.Verbose, "Loading PSES DLL using new assembly load context");
+                logger.Log(PsesLogLevel.Debug, "Loading PSES DLL using new assembly load context");
 
                 return psesLoadContext.LoadFromAssemblyPath(asmPath);
             };
 #else
             // In .NET Framework we add an event here to redirect dependency loading in the current AppDomain for PSES' dependencies
-            logger.Log(PsesLogLevel.Verbose, "Adding AssemblyResolve event handler for dependency loading");
+            logger.Log(PsesLogLevel.Debug, "Adding AssemblyResolve event handler for dependency loading");
 
-            if (hostConfig.LogLevel == PsesLogLevel.Diagnostic)
+            if (hostConfig.LogLevel == PsesLogLevel.Trace)
             {
                 AppDomain.CurrentDomain.AssemblyLoad += (object sender, AssemblyLoadEventArgs args) =>
                 {
@@ -122,7 +122,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                     }
 
                     logger.Log(
-                        PsesLogLevel.Diagnostic,
+                        PsesLogLevel.Trace,
                         $"Loaded '{args.LoadedAssembly.GetName()}' from '{args.LoadedAssembly.Location}'");
                 };
             }
@@ -131,9 +131,9 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             AppDomain.CurrentDomain.AssemblyResolve += (object sender, ResolveEventArgs args) =>
             {
 #if ASSEMBLY_LOAD_STACKTRACE
-                logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {args.Name}. Stacktrace:\n{new StackTrace()}");
+                logger.Log(PsesLogLevel.Trace, $"Assembly resolve event fired for {args.Name}. Stacktrace:\n{new StackTrace()}");
 #else
-                logger.Log(PsesLogLevel.Diagnostic, $"Assembly resolve event fired for {args.Name}");
+                logger.Log(PsesLogLevel.Trace, $"Assembly resolve event fired for {args.Name}");
 #endif
 
                 AssemblyName asmName = new(args.Name);
@@ -143,7 +143,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 string baseDirAsmPath = Path.Combine(s_psesBaseDirPath, dllName);
                 if (File.Exists(baseDirAsmPath))
                 {
-                    logger.Log(PsesLogLevel.Diagnostic, $"Loading {args.Name} from PSES base dir into LoadFile context");
+                    logger.Log(PsesLogLevel.Trace, $"Loading {args.Name} from PSES base dir into LoadFile context");
                     return Assembly.LoadFile(baseDirAsmPath);
                 }
 
@@ -151,7 +151,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 string asmPath = Path.Combine(s_psesDependencyDirPath, dllName);
                 if (File.Exists(asmPath))
                 {
-                    logger.Log(PsesLogLevel.Diagnostic, $"Loading {args.Name} from PSES dependency dir into LoadFile context");
+                    logger.Log(PsesLogLevel.Trace, $"Loading {args.Name} from PSES dependency dir into LoadFile context");
                     return Assembly.LoadFile(asmPath);
                 }
 
@@ -212,10 +212,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             ValidateConfiguration();
 
             // Method with no implementation that forces the PSES assembly to load, triggering an AssemblyResolve event
-            _logger.Log(PsesLogLevel.Verbose, "Loading PowerShell Editor Services");
+            _logger.Log(PsesLogLevel.Information, "Loading PowerShell Editor Services Assemblies");
             LoadEditorServices();
 
-            _logger.Log(PsesLogLevel.Verbose, "Starting EditorServices");
+            _logger.Log(PsesLogLevel.Information, "Starting PowerShell Editor Services");
 
             _editorServicesRunner = new EditorServicesRunner(_logger, _hostConfig, _sessionFileWriter, _loggersToUnsubscribe);
 
@@ -225,7 +225,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         public void Dispose()
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Loader disposed");
+            _logger.Log(PsesLogLevel.Trace, "Loader disposed");
             _editorServicesRunner?.Dispose();
 
             // TODO:
@@ -242,7 +242,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             PSLanguageMode languageMode = Runspace.DefaultRunspace.SessionStateProxy.LanguageMode;
 
-            _logger.Log(PsesLogLevel.Verbose, $@"
+            _logger.Log(PsesLogLevel.Trace, $@"
 == PowerShell Details ==
 - PowerShell version: {_powerShellVersion}
 - Language mode:      {languageMode}
@@ -261,7 +261,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 #if !CoreCLR
         private void CheckDotNetVersion()
         {
-            _logger.Log(PsesLogLevel.Verbose, "Checking that .NET Framework version is at least 4.8");
+            _logger.Log(PsesLogLevel.Debug, "Checking that .NET Framework version is at least 4.8");
             using RegistryKey key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Net Framework Setup\NDP\v4\Full");
             object netFxValue = key?.GetValue("Release");
             if (netFxValue == null || netFxValue is not int netFxVersion)
@@ -269,7 +269,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 return;
             }
 
-            _logger.Log(PsesLogLevel.Verbose, $".NET registry version: {netFxVersion}");
+            _logger.Log(PsesLogLevel.Debug, $".NET registry version: {netFxVersion}");
 
             if (netFxVersion < Net48Version)
             {
@@ -283,26 +283,26 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             if (string.IsNullOrEmpty(_hostConfig.BundledModulePath))
             {
-                _logger.Log(PsesLogLevel.Diagnostic, "BundledModulePath not set, skipping");
+                _logger.Log(PsesLogLevel.Trace, "BundledModulePath not set, skipping");
                 return;
             }
 
             string psModulePath = Environment.GetEnvironmentVariable("PSModulePath").TrimEnd(Path.PathSeparator);
             if ($"{psModulePath}{Path.PathSeparator}".Contains($"{_hostConfig.BundledModulePath}{Path.PathSeparator}"))
             {
-                _logger.Log(PsesLogLevel.Diagnostic, "BundledModulePath already set, skipping");
+                _logger.Log(PsesLogLevel.Trace, "BundledModulePath already set, skipping");
                 return;
             }
             psModulePath = $"{psModulePath}{Path.PathSeparator}{_hostConfig.BundledModulePath}";
             Environment.SetEnvironmentVariable("PSModulePath", psModulePath);
-            _logger.Log(PsesLogLevel.Verbose, $"Updated PSModulePath to: '{psModulePath}'");
+            _logger.Log(PsesLogLevel.Trace, $"Updated PSModulePath to: '{psModulePath}'");
         }
 
         private void LogHostInformation()
         {
-            _logger.Log(PsesLogLevel.Verbose, $"PID: {System.Diagnostics.Process.GetCurrentProcess().Id}");
+            _logger.Log(PsesLogLevel.Trace, $"PID: {System.Diagnostics.Process.GetCurrentProcess().Id}");
 
-            _logger.Log(PsesLogLevel.Verbose, $@"
+            _logger.Log(PsesLogLevel.Debug, $@"
 == Build Details ==
 - Editor Services version: {BuildInfo.BuildVersion}
 - Build origin:            {BuildInfo.BuildOrigin}
@@ -310,7 +310,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 - Build time:              {BuildInfo.BuildTime}
 ");
 
-            _logger.Log(PsesLogLevel.Verbose, $@"
+            _logger.Log(PsesLogLevel.Debug, $@"
 == Host Startup Configuration Details ==
  - Host name:                 {_hostConfig.HostInfo.Name}
  - Host version:              {_hostConfig.HostInfo.Version}
@@ -333,14 +333,14 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
    + CurrentUserCurrentHost: {_hostConfig.ProfilePaths.CurrentUserCurrentHost ?? "<null>"}
 ");
 
-            _logger.Log(PsesLogLevel.Verbose, $@"
+            _logger.Log(PsesLogLevel.Debug, $@"
 == Console Details ==
  - Console input encoding: {Console.InputEncoding.EncodingName}
  - Console output encoding: {Console.OutputEncoding.EncodingName}
  - PowerShell output encoding: {GetPSOutputEncoding()}
 ");
 
-            _logger.Log(PsesLogLevel.Verbose, $@"
+            _logger.Log(PsesLogLevel.Debug, $@"
 == Environment Details ==
  - OS description:  {RuntimeInformation.OSDescription}
  - OS architecture: {RuntimeInformation.OSArchitecture}
@@ -359,7 +359,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2208:Instantiate argument exceptions correctly", Justification = "Checking user-defined configuration")]
         private void ValidateConfiguration()
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Validating configuration");
+            _logger.Log(PsesLogLevel.Debug, "Validating configuration");
 
             bool lspUsesStdio = _hostConfig.LanguageServiceTransport is StdioTransportConfig;
             bool debugUsesStdio = _hostConfig.DebugServiceTransport is StdioTransportConfig;

@@ -40,12 +40,11 @@ $script:BuildInfoPath = "src/PowerShellEditorServices.Hosting/BuildInfo.cs"
 
 $script:NetFramework = @{
     PS51     = 'net462'
-    PS72     = 'net6.0'
     PS74     = 'net8.0'
     Standard = 'netstandard2.0'
 }
 
-$script:HostCoreOutput = "src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetFramework.PS72)/publish"
+$script:HostCoreOutput = "src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetFramework.PS74)/publish"
 $script:HostDeskOutput = "src/PowerShellEditorServices.Hosting/bin/$Configuration/$($script:NetFramework.PS51)/publish"
 $script:PsesOutput = "src/PowerShellEditorServices/bin/$Configuration/$($script:NetFramework.Standard)/publish"
 
@@ -121,23 +120,25 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
 task RestorePsesModules -If (-not (Test-Path "module/PSReadLine") -or -not (Test-Path "module/PSScriptAnalyzer")) {
     Write-Build DarkMagenta "Restoring bundled modules"
-    Save-Module -Path module -Repository $PSRepository -Name PSScriptAnalyzer -RequiredVersion "1.23.0" -Verbose
-    Save-Module -Path module -Repository $PSRepository -Name PSReadLine -RequiredVersion "2.4.0-beta0" -AllowPrerelease -Verbose
+    Save-PSResource -Path module -Name PSScriptAnalyzer -Version "1.24.0" -Repository $PSRepository -TrustRepository -Verbose
+    Save-PSResource -Path module -Name PSReadLine -Version "2.4.1-beta1" -Prerelease -Repository $PSRepository -TrustRepository -Verbose
 }
 
 Task Build FindDotNet, CreateBuildInfo, RestorePsesModules, {
-    Write-Build DarkGreen "Building PowerShellEditorServices"
+    Write-Build DarkGreen 'Building PowerShellEditorServices'
     Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs ./src/PowerShellEditorServices/PowerShellEditorServices.csproj -f $script:NetFramework.Standard }
-    Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs ./src/PowerShellEditorServices.Hosting/PowerShellEditorServices.Hosting.csproj -f $script:NetFramework.PS72 }
+    Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs ./src/PowerShellEditorServices.Hosting/PowerShellEditorServices.Hosting.csproj -f $script:NetFramework.PS74 }
 
     if (-not $script:IsNix) {
         Invoke-BuildExec { & dotnet publish $script:dotnetBuildArgs ./src/PowerShellEditorServices.Hosting/PowerShellEditorServices.Hosting.csproj -f $script:NetFramework.PS51 }
     }
+} -If {
+    $Null -eq $script:ChangesDetected -or $true -eq $script:ChangesDetected
 }
 
 Task AssembleModule -After Build {
-    Write-Build DarkGreen "Assembling PowerShellEditorServices module"
-    $psesOutputPath = "./module/PowerShellEditorServices"
+    Write-Build DarkGreen 'Assembling PowerShellEditorServices module'
+    $psesOutputPath = './module/PowerShellEditorServices'
     $psesBinOutputPath = "$psesOutputPath/bin"
     $psesDepsPath = "$psesBinOutputPath/Common"
     $psesCoreHostPath = "$psesBinOutputPath/Core"
@@ -148,8 +149,8 @@ Task AssembleModule -After Build {
     }
 
     # Copy documents to module root
-    foreach ($document in @("LICENSE", "NOTICE.txt", "README.md", "SECURITY.md")) {
-        Copy-Item -Force -Path $document -Destination "./module"
+    foreach ($document in @('LICENSE', 'NOTICE.txt', 'README.md', 'SECURITY.md')) {
+        Copy-Item -Force -Path $document -Destination './module'
     }
 
     # Assemble PSES module
@@ -187,23 +188,98 @@ Task AssembleModule -After Build {
 }
 
 Task BuildCmdletHelp -After AssembleModule {
-    Write-Build DarkGreen "Building cmdlet help"
+    Write-Build DarkGreen 'Building cmdlet help'
     New-ExternalHelp -Path ./module/docs -OutputPath ./module/PowerShellEditorServices/Commands/en-US -Force
 }
 
 Task SetupHelpForTests {
-    Write-Build DarkMagenta "Updating help (for tests)"
-    Update-Help -Module Microsoft.PowerShell.Management,Microsoft.PowerShell.Utility -Force -Scope CurrentUser -UICulture en-US
+    # Some CI do not ship with help included, and the secure devops pipeline also does not allow internet access, so we must update help from our local repository source.
+
+    # Only commands in Microsoft.PowerShell.Archive can be tested for help so as to minimize the repository storage.
+    # This requires admin rights for PS5.1
+
+    # NOTE: You can run this task once as admin or update help separately, and continue to run tests as non-admin, if for instance developing locally.
+
+    $installHelpScript = {
+        param(
+            [Parameter(Position = 0)][string]$helpPath
+        )
+        $PSVersion = $PSVersionTable.PSVersion
+        $ErrorActionPreference = 'Stop'
+        $helpPath = Resolve-Path $helpPath
+        if ($PSEdition -ne 'Desktop') {
+            $helpPath = Join-Path $helpPath '7'
+        }
+
+        if ((Get-Help Expand-Archive).remarks -notlike 'Get-Help cannot find the Help files*') {
+            Write-Host -ForegroundColor Green "PowerShell $PSVersion Archive help is already installed"
+            return
+        }
+
+        if ($PSEdition -eq 'Desktop') {
+            # Cant use requires RunAsAdministrator because PS isn't smart enough to know this is a subscript.
+            if (-not [Security.Principal.WindowsPrincipal]::new(
+                    [Security.Principal.WindowsIdentity]::GetCurrent()
+                ).IsInRole(
+                    [Security.Principal.WindowsBuiltInRole]::Administrator
+                )) {
+                throw 'Windows PowerShell Update-Help requires admin rights. Please re-run the script in an elevated PowerShell session!'
+            }
+        }
+
+        Write-Host -ForegroundColor Magenta "PowerShell $PSVersion Archive help is not installed, installing from $helpPath"
+
+        $updateHelpParams = @{
+            Module     = 'Microsoft.PowerShell.Archive'
+            SourcePath = $helpPath
+            UICulture  = 'en-US'
+            Force      = $true
+            Verbose    = $true
+        }
+
+        # PS7+ does not require admin rights if CurrentUser is used for scope. PS5.1 does not have this option.
+        if ($PSEdition -ne 'Desktop') {
+            $updateHelpParams.'Scope' = 'CurrentUser'
+        }
+        # Update the help and capture verbose output
+        $updateHelpOutput = Update-Help @updateHelpParams *>&1
+
+        if ((Get-Help Expand-Archive).remarks -like 'Get-Help cannot find the Help files*') {
+            throw "Failed to install PowerShell $PSVersion Help: $updateHelpOutput"
+        } else {
+            Write-Host -ForegroundColor Green "PowerShell $PSVersion Archive help installed successfully"
+        }
+    }
+
+    # Need this to inject the help file path since PSScriptRoot won't work inside the script
+    $helpPath = Resolve-Path "$PSScriptRoot\test\PowerShellEditorServices.Test.Shared\PSHelp" -ErrorAction Stop
+    Write-Build DarkMagenta "Runner help located at $helpPath"
+
+    if (Get-Command powershell.exe -CommandType Application -ea 0) {
+        Write-Build DarkMagenta 'Checking PowerShell 5.1 help'
+        & powershell.exe -NoProfile -NonInteractive -Command $installHelpScript -args $helpPath
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to install PowerShell 5.1 help!'
+        }
+    }
+
+    if ($PwshPreview -and (Get-Command $PwshPreview -ea 0)) {
+        Write-Build DarkMagenta "Checking PowerShell Preview help at $PwshPreview"
+        Invoke-BuildExec { & $PwshPreview -NoProfile -NonInteractive -Command $installHelpScript -args $helpPath }
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to install PowerShell Preview help!'
+        }
+    }
+
+    if ($PSEdition -eq 'Core') {
+        Write-Build DarkMagenta "Checking this PowerShell process's help"
+        & $installHelpScript $helpPath
+    }
 }
 
 Task TestPS74 Build, SetupHelpForTests, {
     Set-Location ./test/PowerShellEditorServices.Test/
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
-}
-
-Task TestPS72 Build, SetupHelpForTests, {
-    Set-Location ./test/PowerShellEditorServices.Test/
-    Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS72 }
 }
 
 Task TestPS51 -If (-not $script:IsNix) Build, SetupHelpForTests, {
@@ -216,7 +292,7 @@ Task TestPS51 -If (-not $script:IsNix) Build, SetupHelpForTests, {
         # TODO: See https://github.com/PowerShell/vscode-powershell/issues/3886
         # Inheriting the module path for powershell.exe breaks things!
         $originalModulePath = $env:PSModulePath
-        $env:PSModulePath = ""
+        $env:PSModulePath = ''
         Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS51 }
     } finally {
         $env:PSModulePath = $originalModulePath
@@ -227,31 +303,32 @@ Task TestPS51 -If (-not $script:IsNix) Build, SetupHelpForTests, {
 # should just be the latest supported framework.
 Task TestE2EPwsh Build, SetupHelpForTests, {
     Set-Location ./test/PowerShellEditorServices.Test.E2E/
-    $env:PWSH_EXE_NAME = "pwsh"
+    $env:PWSH_EXE_NAME = 'pwsh'
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
 }
 
-$PwshDaily = if ($script:IsNix) {
-    "$HOME/.powershell-daily/pwsh"
+if ($env:GITHUB_ACTIONS) {
+    $PwshPreview = if ($script:IsNix) { "$PSScriptRoot/preview/pwsh" } else { "$PSScriptRoot/preview/pwsh.exe" }
 } else {
-    "$env:LOCALAPPDATA/Microsoft/powershell-daily/pwsh.exe"
+    $PwshPreview = if ($script:IsNix) { "$HOME/.powershell-preview/pwsh" } else { "$env:LOCALAPPDATA/Microsoft/powershell-preview/pwsh.exe" }
 }
 
-Task TestE2EDaily -If (Test-Path $PwshDaily) Build, SetupHelpForTests, {
+Task TestE2EPreview -If (-not $env:TF_BUILD) Build, SetupHelpForTests, {
+    Assert (Test-Path $PwshPreview) "PowerShell Preview not found at $PwshPreview, please install it: https://github.com/PowerShell/PowerShell/blob/master/tools/install-powershell.ps1"
     Set-Location ./test/PowerShellEditorServices.Test.E2E/
-    $env:PWSH_EXE_NAME = $PwshDaily
-    Write-Build DarkGreen "Running end-to-end tests with: $(& $PwshDaily --version)"
+    $env:PWSH_EXE_NAME = $PwshPreview
+    Write-Build DarkGreen "Running end-to-end tests with: $(& $PwshPreview --version)"
     Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
 }
 
 Task TestE2EPowerShell -If (-not $script:IsNix) Build, SetupHelpForTests, {
     Set-Location ./test/PowerShellEditorServices.Test.E2E/
-    $env:PWSH_EXE_NAME = "powershell"
+    $env:PWSH_EXE_NAME = 'powershell'
     try {
         # TODO: See https://github.com/PowerShell/vscode-powershell/issues/3886
         # Inheriting the module path for powershell.exe breaks things!
         $originalModulePath = $env:PSModulePath
-        $env:PSModulePath = ""
+        $env:PSModulePath = ''
         Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
     } finally {
         $env:PSModulePath = $originalModulePath
@@ -260,47 +337,64 @@ Task TestE2EPowerShell -If (-not $script:IsNix) Build, SetupHelpForTests, {
 
 Task TestE2EPwshCLM -If (-not $script:IsNix) Build, SetupHelpForTests, {
     Set-Location ./test/PowerShellEditorServices.Test.E2E/
-    $env:PWSH_EXE_NAME = "pwsh"
+    $env:PWSH_EXE_NAME = 'pwsh'
 
-    if (-not [Security.Principal.WindowsIdentity]::GetCurrent().Owner.IsWellKnown("BuiltInAdministratorsSid")) {
-        Write-Build DarkRed "Skipping Constrained Language Mode tests as they must be ran in an elevated process"
+    if (-not [Security.Principal.WindowsIdentity]::GetCurrent().Owner.IsWellKnown('BuiltInAdministratorsSid')) {
+        Write-Build DarkRed 'Skipping Constrained Language Mode tests as they must be ran in an elevated process'
         return
     }
 
     try {
-        Write-Build DarkGreen "Running end-to-end tests in Constrained Language Mode"
-        [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", "0x80000007", [System.EnvironmentVariableTarget]::Machine)
+        Write-Build DarkGreen 'Running end-to-end tests in Constrained Language Mode'
+        [System.Environment]::SetEnvironmentVariable('__PSLockdownPolicy', '0x80000007', [System.EnvironmentVariableTarget]::Machine)
         Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
     } finally {
-        [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", $null, [System.EnvironmentVariableTarget]::Machine)
+        [System.Environment]::SetEnvironmentVariable('__PSLockdownPolicy', $null, [System.EnvironmentVariableTarget]::Machine)
     }
 }
 
 Task TestE2EPowerShellCLM -If (-not $script:IsNix) Build, SetupHelpForTests, {
     Set-Location ./test/PowerShellEditorServices.Test.E2E/
-    $env:PWSH_EXE_NAME = "powershell"
+    $env:PWSH_EXE_NAME = 'powershell'
 
-    if (-not [Security.Principal.WindowsIdentity]::GetCurrent().Owner.IsWellKnown("BuiltInAdministratorsSid")) {
-        Write-Build DarkRed "Skipping Constrained Language Mode tests as they must be ran in an elevated process"
+    if (-not [Security.Principal.WindowsIdentity]::GetCurrent().Owner.IsWellKnown('BuiltInAdministratorsSid')) {
+        Write-Build DarkRed 'Skipping Constrained Language Mode tests as they must be ran in an elevated process'
         return
     }
 
     try {
-        Write-Build DarkGreen "Running end-to-end tests in Constrained Language Mode"
-        [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", "0x80000007", [System.EnvironmentVariableTarget]::Machine)
+        Write-Build DarkGreen 'Running end-to-end tests in Constrained Language Mode'
+        [System.Environment]::SetEnvironmentVariable('__PSLockdownPolicy', '0x80000007', [System.EnvironmentVariableTarget]::Machine)
         # TODO: See https://github.com/PowerShell/vscode-powershell/issues/3886
         # Inheriting the module path for powershell.exe breaks things!
         $originalModulePath = $env:PSModulePath
-        $env:PSModulePath = ""
+        $env:PSModulePath = ''
         Invoke-BuildExec { & dotnet $script:dotnetTestArgs $script:NetFramework.PS74 }
     } finally {
-        [System.Environment]::SetEnvironmentVariable("__PSLockdownPolicy", $null, [System.EnvironmentVariableTarget]::Machine)
+        [System.Environment]::SetEnvironmentVariable('__PSLockdownPolicy', $null, [System.EnvironmentVariableTarget]::Machine)
         $env:PSModulePath = $originalModulePath
     }
 }
 
-Task Test TestPS72, TestPS74, TestE2EPwsh, TestPS51, TestE2EPowerShell
+Task BuildIfChanged.Init -Before BuildIfChanged {
+    [bool]$script:ChangesDetected = $false
+}
 
-Task TestFull Test, TestE2EDaily, TestE2EPwshCLM, TestE2EPowerShellCLM
+Task BuildIfChanged -Inputs {
+    $slash = [IO.Path]::DirectorySeparatorChar
+    Get-ChildItem ./src -Filter '*.cs' -Recurse
+    | Where-Object FullName -NotLike ('*' + $slash + 'obj' + $slash + '*')
+    | Where-Object FullName -NotLike ('*' + $slash + 'bin' + $slash + '*')
+} -Outputs {
+    './src/PowerShellEditorServices/bin/Debug/netstandard2.0/Microsoft.PowerShell.EditorServices.dll'
+    './src/PowerShellEditorServices.Hosting/bin/Debug/net8.0/Microsoft.PowerShell.EditorServices.Hosting.dll'
+} -Jobs {
+    Write-Build DarkMagenta 'Changes detected, rebuilding'
+    $script:ChangesDetected = $true
+}, Build
+
+Task Test TestPS74, TestE2EPwsh, TestPS51, TestE2EPowerShell
+
+Task TestFull Test, TestE2EPreview, TestE2EPwshCLM, TestE2EPowerShellCLM
 
 Task . Clean, Build, Test

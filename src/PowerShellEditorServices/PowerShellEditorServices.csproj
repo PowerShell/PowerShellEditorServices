@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
+  <Import
+    Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), PowerShellEditorServices.Common.props))\PowerShellEditorServices.Common.props" />
 
   <PropertyGroup>
     <AssemblyTitle>PowerShell Editor Services</AssemblyTitle>
@@ -36,13 +37,15 @@
     <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="PowerShellStandard.Library" />
-    <PackageReference Include="Serilog" />
-    <PackageReference Include="Serilog.Extensions.Logging" />
-    <PackageReference Include="Serilog.Sinks.Async" />
-    <PackageReference Include="Serilog.Sinks.File" />
     <PackageReference Include="System.IO.Pipes.AccessControl" />
     <PackageReference Include="System.Security.Principal" />
     <PackageReference Include="System.Security.Principal.Windows" />
+  </ItemGroup>
+
+  <ItemGroup Label="Roslynator">
+    <PackageReference Include="Roslynator.Analyzers" />
+    <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" />
+    <PackageReference Include="Roslynator.Formatting.Analyzers" />
   </ItemGroup>
 
   <Choose>

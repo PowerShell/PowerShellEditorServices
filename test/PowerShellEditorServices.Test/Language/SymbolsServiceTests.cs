@@ -21,7 +21,6 @@ using Microsoft.PowerShell.EditorServices.Test.Shared.ParameterHint;
 using Microsoft.PowerShell.EditorServices.Test.Shared.References;
 using Microsoft.PowerShell.EditorServices.Test.Shared.SymbolDetails;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Symbols;
-using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
@@ -34,7 +33,7 @@ namespace PowerShellEditorServices.Test.Language
         private PsesInternalHost psesHost;
         private WorkspaceService workspace;
         private SymbolsService symbolsService;
-        private static readonly bool s_isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        private static readonly bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
         public async Task InitializeAsync()
         {
@@ -756,17 +755,16 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Equal(symbols, GetOccurrences(FindsOccurrencesOnTypeSymbolsData.EnumMemberSourceDetails));
         }
 
-        [SkippableFact]
+        [Fact]
         public async Task FindsDetailsForBuiltInCommand()
         {
-            Skip.IfNot(VersionUtils.IsMacOS, "macOS gets the right synopsis but others don't.");
             SymbolDetails symbolDetails = await symbolsService.FindSymbolDetailsAtLocationAsync(
                 GetScriptFile(FindsDetailsForBuiltInCommandData.SourceDetails),
                 FindsDetailsForBuiltInCommandData.SourceDetails.StartLineNumber,
                 FindsDetailsForBuiltInCommandData.SourceDetails.StartColumnNumber,
                 CancellationToken.None);
 
-            Assert.Equal("Gets the processes that are running on the local computer.", symbolDetails.Documentation);
+            Assert.Equal("Extracts files from a specified archive (zipped) file.", symbolDetails.Documentation);
         }
 
         [Fact]
@@ -796,37 +794,37 @@ namespace PowerShellEditorServices.Test.Language
             Assert.False(symbol.IsDeclaration);
             AssertIsRegion(symbol.NameRegion, 16, 29, 16, 39);
 
-            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Workflow));
+            symbol = Assert.Single(symbols, i => i.Type == SymbolType.Workflow);
             Assert.Equal("fn AWorkflow", symbol.Id);
             Assert.Equal("workflow AWorkflow ()", symbol.Name);
             Assert.True(symbol.IsDeclaration);
 
-            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Class));
+            symbol = Assert.Single(symbols, i => i.Type == SymbolType.Class);
             Assert.Equal("type AClass", symbol.Id);
             Assert.Equal("class AClass { }", symbol.Name);
             Assert.True(symbol.IsDeclaration);
 
-            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Property));
+            symbol = Assert.Single(symbols, i => i.Type == SymbolType.Property);
             Assert.Equal("prop AProperty", symbol.Id);
             Assert.Equal("[string] $AProperty", symbol.Name);
             Assert.True(symbol.IsDeclaration);
 
-            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Constructor));
+            symbol = Assert.Single(symbols, i => i.Type == SymbolType.Constructor);
             Assert.Equal("mtd AClass", symbol.Id);
             Assert.Equal("AClass([string]$AParameter)", symbol.Name);
             Assert.True(symbol.IsDeclaration);
 
-            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Method));
+            symbol = Assert.Single(symbols, i => i.Type == SymbolType.Method);
             Assert.Equal("mtd AMethod", symbol.Id);
             Assert.Equal("void AMethod([string]$param1, [int]$param2, $param3)", symbol.Name);
             Assert.True(symbol.IsDeclaration);
 
-            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Enum));
+            symbol = Assert.Single(symbols, i => i.Type == SymbolType.Enum);
             Assert.Equal("type AEnum", symbol.Id);
             Assert.Equal("enum AEnum { }", symbol.Name);
             Assert.True(symbol.IsDeclaration);
 
-            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.EnumMember));
+            symbol = Assert.Single(symbols, i => i.Type == SymbolType.EnumMember);
             Assert.Equal("prop AValue", symbol.Id);
             Assert.Equal("AValue", symbol.Name);
             Assert.True(symbol.IsDeclaration);
@@ -866,53 +864,54 @@ namespace PowerShellEditorServices.Test.Language
         {
             IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInNewLineSymbolFile.SourceDetails);
 
-            SymbolReference symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Function));
+            SymbolReference symbol = Assert.Single(symbols, i => i.Type == SymbolType.Function);
             Assert.Equal("fn returnTrue", symbol.Id);
             AssertIsRegion(symbol.NameRegion, 2, 1, 2, 11);
             AssertIsRegion(symbol.ScriptRegion, 1, 1, 4, 2);
 
-            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Class));
+            symbol = Assert.Single(symbols, i => i.Type == SymbolType.Class);
             Assert.Equal("type NewLineClass", symbol.Id);
             AssertIsRegion(symbol.NameRegion, 7, 1, 7, 13);
             AssertIsRegion(symbol.ScriptRegion, 6, 1, 23, 2);
 
-            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Constructor));
+            symbol = Assert.Single(symbols, i => i.Type == SymbolType.Constructor);
             Assert.Equal("mtd NewLineClass", symbol.Id);
             AssertIsRegion(symbol.NameRegion, 8, 5, 8, 17);
             AssertIsRegion(symbol.ScriptRegion, 8, 5, 10, 6);
 
-            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Property));
+            symbol = Assert.Single(symbols, i => i.Type == SymbolType.Property);
             Assert.Equal("prop SomePropWithDefault", symbol.Id);
             AssertIsRegion(symbol.NameRegion, 15, 5, 15, 25);
             AssertIsRegion(symbol.ScriptRegion, 12, 5, 15, 40);
 
-            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Method));
+            symbol = Assert.Single(symbols, i => i.Type == SymbolType.Method);
             Assert.Equal("mtd MyClassMethod", symbol.Id);
             Assert.Equal("string MyClassMethod([MyNewLineEnum]$param1)", symbol.Name);
             AssertIsRegion(symbol.NameRegion, 20, 5, 20, 18);
             AssertIsRegion(symbol.ScriptRegion, 17, 5, 22, 6);
 
-            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.Enum));
+            symbol = Assert.Single(symbols, i => i.Type == SymbolType.Enum);
             Assert.Equal("type MyNewLineEnum", symbol.Id);
             AssertIsRegion(symbol.NameRegion, 26, 1, 26, 14);
             AssertIsRegion(symbol.ScriptRegion, 25, 1, 28, 2);
 
-            symbol = Assert.Single(symbols.Where(i => i.Type == SymbolType.EnumMember));
+            symbol = Assert.Single(symbols, i => i.Type == SymbolType.EnumMember);
             Assert.Equal("prop First", symbol.Id);
             AssertIsRegion(symbol.NameRegion, 27, 5, 27, 10);
             AssertIsRegion(symbol.ScriptRegion, 27, 5, 27, 10);
         }
 
-        [Fact(Skip = "DSC symbols don't work yet.")]
+        [SkippableFact()]
         public void FindsSymbolsInDSCFile()
         {
-            Skip.If(!s_isWindows, "DSC only works properly on Windows.");
+            Skip.If(!isWindows, "DSC only works properly on Windows.");
 
             IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInDSCFile.SourceDetails);
             SymbolReference symbol = Assert.Single(symbols, i => i.Type == SymbolType.Configuration);
-            Assert.Equal("AConfiguration", symbol.Id);
+            // The prefix "dsc" is added for sorting reasons.
+            Assert.Equal("dsc AConfiguration", symbol.Id);
             Assert.Equal(2, symbol.ScriptRegion.StartLineNumber);
-            Assert.Equal(15, symbol.ScriptRegion.StartColumnNumber);
+            Assert.Equal(1, symbol.ScriptRegion.StartColumnNumber);
         }
 
         [Fact]

@@ -34,10 +34,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                             .ToArray()
                 };
             }
+            #pragma warning disable RCS1075
             catch (Exception)
             {
                 // TODO: This shouldn't be so broad
             }
+            #pragma warning restore RCS1075
 
             return variablesResponse;
         }

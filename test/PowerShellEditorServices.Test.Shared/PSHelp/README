@@ -1,0 +1,3 @@
+Several CI platforms do not ship with PowerShell help. The build script updates help offline using this information.
+As some of the CI platforms do not have internet access.
+Linux servers use the zip file, while windows uses the cab files.

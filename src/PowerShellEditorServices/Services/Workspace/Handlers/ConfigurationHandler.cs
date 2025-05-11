@@ -100,7 +100,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             return await Unit.Task.ConfigureAwait(false);
         }
 
-
         public event EventHandler<LanguageServerSettings> ConfigurationUpdated;
     }
 }

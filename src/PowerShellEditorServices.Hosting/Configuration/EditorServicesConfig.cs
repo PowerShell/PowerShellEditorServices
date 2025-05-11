@@ -90,14 +90,14 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         public ConsoleReplKind ConsoleRepl { get; set; } = ConsoleReplKind.None;
 
         /// <summary>
-        /// Will suppress messages to PSHost (to prevent Stdio clobbering)        
+        /// Will suppress messages to PSHost (to prevent Stdio clobbering)
         /// </summary>
         public bool UseNullPSHostUI { get; set; }
 
         /// <summary>
-        /// The minimum log level to log events with.
+        /// The minimum log level to log events with. Defaults to warning but is usually overriden by the startup process.
         /// </summary>
-        public PsesLogLevel LogLevel { get; set; } = PsesLogLevel.Normal;
+        public PsesLogLevel LogLevel { get; set; } = PsesLogLevel.Warning;
 
         /// <summary>
         /// Configuration for the language server protocol transport to use.

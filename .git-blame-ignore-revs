@@ -1,0 +1,9 @@
+# Enable this file in your git config: git config blame.ignoreRevsFile .git-blame-ignore-revs
+# Enabled on GitHub automatically
+
+# Close Over APIs, was mostly reformatting
+945d61634784db2e51f894c9606e785a099fd23d
+# Dotnet Format Style
+44387b36695607248cebb9467ad48061c19354cb
+# Formatting Fixup
+7233182585b63760992545c7407b17fb2965bc5c

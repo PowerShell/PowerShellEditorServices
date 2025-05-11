@@ -6,107 +6,128 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+using Nerdbank.Streams;
 using OmniSharp.Extensions.DebugAdapter.Client;
+using OmniSharp.Extensions.DebugAdapter.Protocol.Client;
+using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Models;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
+using OmniSharp.Extensions.JsonRpc.Server;
 using Xunit;
 using Xunit.Abstractions;
+using DapStackFrame = OmniSharp.Extensions.DebugAdapter.Protocol.Models.StackFrame;
 
 namespace PowerShellEditorServices.Test.E2E
 {
     [Trait("Category", "DAP")]
-    public class DebugAdapterProtocolMessageTests : IAsyncLifetime, IDisposable
+    // ITestOutputHelper is injected by XUnit
+    // https://xunit.net/docs/capturing-output
+    public class DebugAdapterProtocolMessageTests(ITestOutputHelper output) : IAsyncLifetime
     {
+        // After initialization, use this client to send messages for E2E tests and check results
+        private IDebugAdapterClient client;
+
         private static readonly bool s_isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-        private static readonly string s_testOutputPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
-        private readonly ITestOutputHelper _output;
-        private DebugAdapterClient PsesDebugAdapterClient;
-        private PsesStdioProcess _psesProcess;
+        /// <summary>
+        /// Test scripts output here, where the output can be read to verify script progress against breakpointing
+        /// </summary>
+        private static readonly string testScriptLogPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
-        public TaskCompletionSource<object> Started { get; } = new TaskCompletionSource<object>();
+        private readonly PsesStdioLanguageServerProcessHost psesHost = new(isDebugAdapter: true);
 
-        public DebugAdapterProtocolMessageTests(ITestOutputHelper output) => _output = output;
+        private readonly TaskCompletionSource<IDebugAdapterClient> initializedLanguageClientTcs = new();
+        /// <summary>
+        /// This task is useful for waiting until the client is initialized (but before Server Initialized is sent)
+        /// </summary>
+        private Task<IDebugAdapterClient> initializedLanguageClient => initializedLanguageClientTcs.Task;
+
+        /// <summary>
+        /// Is used to read the script log file to verify script progress against breakpointing.
+        private StreamReader scriptLogReader;
+
+        private TaskCompletionSource<StoppedEvent> nextStoppedTcs = new();
+        /// <summary>
+        /// This task is useful for waiting until a breakpoint is hit in a test.
+        /// </summary>
+        private Task<StoppedEvent> nextStopped => nextStoppedTcs.Task;
 
         public async Task InitializeAsync()
         {
-            LoggerFactory factory = new();
-            _psesProcess = new PsesStdioProcess(factory, true);
-            await _psesProcess.Start();
-
-            TaskCompletionSource<bool> initialized = new();
-
-            _psesProcess.ProcessExited += (sender, args) =>
+            // Cleanup testScriptLogPath if it exists due to an interrupted previous run
+            if (File.Exists(testScriptLogPath))
             {
-                initialized.TrySetException(new ProcessExitedException("Initialization failed due to process failure", args.ExitCode, args.ErrorMessage));
-                Started.TrySetException(new ProcessExitedException("Startup failed due to process failure", args.ExitCode, args.ErrorMessage));
-            };
+                File.Delete(testScriptLogPath);
+            }
 
-            PsesDebugAdapterClient = DebugAdapterClient.Create(options =>
+            (StreamReader stdout, StreamWriter stdin) = await psesHost.Start();
+
+            // Splice the streams together and enable debug logging of all messages sent and received
+            DebugOutputStream psesStream = new(
+                FullDuplexStream.Splice(stdout.BaseStream, stdin.BaseStream)
+            );
+
+            /*
+            PSES follows the following DAP flow:
+            Receive a Initialize request
+            Run Initialize handler and send response back
+            Receive a Launch/Attach request
+            Run Launch/Attach handler and send response back
+            PSES sends the initialized event at the end of the Launch/Attach handler
+
+            This is to spec, but the omnisharp client has a flaw where it does not complete the await until after
+            Server Initialized has been received, when it should in fact return once the Client Initialize (aka
+            capabilities) response is received. Per the DAP spec, we can send Launch/Attach before Server Initialized
+            and PSES relies on this behavior, but if we await the standard client initialization From method, it would
+            deadlock the test because it won't return until Server Initialized is received from PSES, which it won't
+            send until a launch is sent.
+
+            HACK: To get around this, we abuse the OnInitialized handler to return the client "early" via the
+            `InitializedLanguageClient` once the Client Initialize response has been received.
+            see https://github.com/OmniSharp/csharp-language-server-protocol/issues/1408
+            */
+            Task<DebugAdapterClient> dapClientInitializeTask = DebugAdapterClient.From(options =>
             {
                 options
-                    .WithInput(_psesProcess.OutputStream)
-                    .WithOutput(_psesProcess.InputStream)
-                    // The OnStarted delegate gets run when we receive the _Initialized_ event from the server:
-                    // https://microsoft.github.io/debug-adapter-protocol/specification#Events_Initialized
-                    .OnStarted((_, _) =>
+                    .WithInput(psesStream)
+                    .WithOutput(psesStream)
+                    // The "early" return mentioned above
+                    .OnInitialized(async (dapClient, _, _, _) => initializedLanguageClientTcs.SetResult(dapClient))
+                    // This TCS is useful to wait for a breakpoint to be hit
+                    .OnStopped(async (StoppedEvent e) =>
                     {
-                        Started.SetResult(true);
-                        return Task.CompletedTask;
+                        nextStoppedTcs.SetResult(e);
+                        nextStoppedTcs = new();
                     })
-                    // The OnInitialized delegate gets run when we first receive the _Initialize_ response:
-                    // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
-                    .OnInitialized((_, _, _, _) =>
-                    {
-                        initialized.SetResult(true);
-                        return Task.CompletedTask;
-                    });
-
-                options.OnUnhandledException = (exception) =>
-                {
-                    initialized.SetException(exception);
-                    Started.SetException(exception);
-                };
+                ;
             });
 
-            // PSES follows the following flow:
-            // Receive a Initialize request
-            // Run Initialize handler and send response back
-            // Receive a Launch/Attach request
-            // Run Launch/Attach handler and send response back
-            // PSES sends the initialized event at the end of the Launch/Attach handler
+            // This ensures any unhandled exceptions get addressed if it fails to start before our early return completes.
+            // Under normal operation the initializedLanguageClient will always return first.
+            await Task.WhenAny(
+                initializedLanguageClient,
+                dapClientInitializeTask
+            );
 
-            // The way that the Omnisharp client works is that this Initialize method doesn't return until
-            // after OnStarted is run... which only happens when Initialized is received from the server.
-            // so if we would await this task, it would deadlock.
-            // To get around this, we run the Initialize() without await but use a `TaskCompletionSource<bool>`
-            // that gets completed when we receive the response to Initialize
-            // This tells us that we are ready to send messages to PSES... but are not stuck waiting for
-            // Initialized.
-#pragma warning disable CS4014
-            PsesDebugAdapterClient.Initialize(CancellationToken.None);
-#pragma warning restore CS4014
-            await initialized.Task;
+            client = await initializedLanguageClient;
         }
 
         public async Task DisposeAsync()
         {
-            await PsesDebugAdapterClient.RequestDisconnect(new DisconnectArguments
+            await client.RequestDisconnect(new DisconnectArguments
             {
                 Restart = false,
                 TerminateDebuggee = true
             });
-            await _psesProcess.Stop();
-        }
+            client?.Dispose();
+            psesHost.Stop();
 
-        public void Dispose()
-        {
-            GC.SuppressFinalize(this);
-            PsesDebugAdapterClient?.Dispose();
-            _psesProcess?.Dispose();
+            scriptLogReader?.Dispose(); //Also disposes the underlying filestream
+            if (File.Exists(testScriptLogPath))
+            {
+                File.Delete(testScriptLogPath);
+            }
         }
 
         private static string NewTestFile(string script, bool isPester = false)
@@ -118,7 +139,14 @@ namespace PowerShellEditorServices.Test.E2E
             return filePath;
         }
 
-        private string GenerateScriptFromLoggingStatements(params string[] logStatements)
+        /// <summary>
+        /// Given an array of strings, generate a PowerShell script that writes each string to our test script log path
+        /// so it can be read back later to verify script progress against breakpointing.
+        /// </summary>
+        /// <param name="logStatements">A list of statements that for which a script will be generated to write each statement to a testing log that can be read by <see cref="ReadScriptLogLineAsync" />. The strings are double quoted in Powershell, so variables such as <c>$($PSScriptRoot)</c> etc. can be used</param>
+        /// <returns>A script string that should be written to disk and instructed by PSES to execute</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        private string GenerateLoggingScript(params string[] logStatements)
         {
             if (logStatements.Length == 0)
             {
@@ -126,9 +154,9 @@ namespace PowerShellEditorServices.Test.E2E
             }
 
             // Clean up side effects from other test runs.
-            if (File.Exists(s_testOutputPath))
+            if (File.Exists(testScriptLogPath))
             {
-                File.Delete(s_testOutputPath);
+                File.Delete(testScriptLogPath);
             }
 
             // Have script create file first with `>` (but don't rely on overwriting).
@@ -137,7 +165,7 @@ namespace PowerShellEditorServices.Test.E2E
                 .Append("Write-Output \"")
                 .Append(logStatements[0])
                 .Append("\" > '")
-                .Append(s_testOutputPath)
+                .Append(testScriptLogPath)
                 .AppendLine("'");
 
             for (int i = 1; i < logStatements.Length; i++)
@@ -147,88 +175,114 @@ namespace PowerShellEditorServices.Test.E2E
                     .Append("Write-Output \"")
                     .Append(logStatements[i])
                     .Append("\" >> '")
-                    .Append(s_testOutputPath)
+                    .Append(testScriptLogPath)
                     .AppendLine("'");
             }
 
-            _output.WriteLine("Script is:");
-            _output.WriteLine(builder.ToString());
+            output.WriteLine("Script is:");
+            output.WriteLine(builder.ToString());
             return builder.ToString();
         }
 
-        private static async Task<string[]> GetLog()
+        /// <summary>
+        /// Reads the next output line from the test script log file. Useful in assertions to verify script progress against breakpointing.
+        /// </summary>
+        private async Task<string> ReadScriptLogLineAsync()
         {
-            for (int i = 0; !File.Exists(s_testOutputPath) && i < 60; i++)
+            while (scriptLogReader is null)
             {
-                await Task.Delay(1000);
+                try
+                {
+                    scriptLogReader = new StreamReader(
+                        new FileStream(
+                            testScriptLogPath,
+                            FileMode.OpenOrCreate,
+                            FileAccess.Read, // Because we use append, its OK to create the file ahead of the script
+                            FileShare.ReadWrite
+                        )
+                    );
+                }
+                catch (IOException) //Sadly there does not appear to be a xplat way to wait for file availability, but luckily this does not appear to fire often.
+                {
+                    await Task.Delay(500);
+                }
             }
-            // Sleep one more time after the file exists so whatever is writing can finish.
-            await Task.Delay(1000);
-            return File.ReadLines(s_testOutputPath).ToArray();
+
+            // return valid lines only
+            string nextLine = string.Empty;
+            while (nextLine is null || nextLine.Length == 0)
+            {
+                nextLine = await scriptLogReader.ReadLineAsync(); //Might return null if at EOF because we created it above but the script hasn't written to it yet
+            }
+            return nextLine;
         }
 
         [Fact]
         public void CanInitializeWithCorrectServerSettings()
         {
-            Assert.True(PsesDebugAdapterClient.ServerSettings.SupportsConditionalBreakpoints);
-            Assert.True(PsesDebugAdapterClient.ServerSettings.SupportsConfigurationDoneRequest);
-            Assert.True(PsesDebugAdapterClient.ServerSettings.SupportsFunctionBreakpoints);
-            Assert.True(PsesDebugAdapterClient.ServerSettings.SupportsHitConditionalBreakpoints);
-            Assert.True(PsesDebugAdapterClient.ServerSettings.SupportsLogPoints);
-            Assert.True(PsesDebugAdapterClient.ServerSettings.SupportsSetVariable);
+            Assert.True(client.ServerSettings.SupportsConditionalBreakpoints);
+            Assert.True(client.ServerSettings.SupportsConfigurationDoneRequest);
+            Assert.True(client.ServerSettings.SupportsFunctionBreakpoints);
+            Assert.True(client.ServerSettings.SupportsHitConditionalBreakpoints);
+            Assert.True(client.ServerSettings.SupportsLogPoints);
+            Assert.True(client.ServerSettings.SupportsSetVariable);
+            Assert.True(client.ServerSettings.SupportsDelayedStackTraceLoading);
         }
 
         [Fact]
         public async Task UsesDotSourceOperatorAndQuotesAsync()
         {
-            string filePath = NewTestFile(GenerateScriptFromLoggingStatements("$($MyInvocation.Line)"));
-            await PsesDebugAdapterClient.LaunchScript(filePath, Started);
-            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments());
+            string filePath = NewTestFile(GenerateLoggingScript("$($MyInvocation.Line)"));
+            await client.LaunchScript(filePath);
+            ConfigurationDoneResponse configDoneResponse = await client.RequestConfigurationDone(new ConfigurationDoneArguments());
             Assert.NotNull(configDoneResponse);
-            Assert.Collection(await GetLog(),
-                (i) => Assert.StartsWith(". '", i));
+
+            string actual = await ReadScriptLogLineAsync();
+            Assert.StartsWith(". '", actual);
         }
 
         [Fact]
         public async Task UsesCallOperatorWithSettingAsync()
         {
-            string filePath = NewTestFile(GenerateScriptFromLoggingStatements("$($MyInvocation.Line)"));
-            await PsesDebugAdapterClient.LaunchScript(filePath, Started, executeMode: "Call");
-            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments());
+            string filePath = NewTestFile(GenerateLoggingScript("$($MyInvocation.Line)"));
+            await client.LaunchScript(filePath, executeMode: "Call");
+            ConfigurationDoneResponse configDoneResponse = await client.RequestConfigurationDone(new ConfigurationDoneArguments());
             Assert.NotNull(configDoneResponse);
-            Assert.Collection(await GetLog(),
-                (i) => Assert.StartsWith("& '", i));
+
+            string actual = await ReadScriptLogLineAsync();
+            Assert.StartsWith("& '", actual);
         }
 
         [Fact]
         public async Task CanLaunchScriptWithNoBreakpointsAsync()
         {
-            string filePath = NewTestFile(GenerateScriptFromLoggingStatements("works"));
+            string filePath = NewTestFile(GenerateLoggingScript("works"));
 
-            await PsesDebugAdapterClient.LaunchScript(filePath, Started);
+            await client.LaunchScript(filePath);
 
-            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments());
+            ConfigurationDoneResponse configDoneResponse = await client.RequestConfigurationDone(new ConfigurationDoneArguments());
             Assert.NotNull(configDoneResponse);
-            Assert.Collection(await GetLog(),
-                (i) => Assert.Equal("works", i));
+
+            string actual = await ReadScriptLogLineAsync();
+            Assert.Equal("works", actual);
         }
 
         [SkippableFact]
         public async Task CanSetBreakpointsAsync()
         {
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode,
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
                 "Breakpoints can't be set in Constrained Language Mode.");
 
-            string filePath = NewTestFile(GenerateScriptFromLoggingStatements(
+            string filePath = NewTestFile(GenerateLoggingScript(
                 "before breakpoint",
                 "at breakpoint",
                 "after breakpoint"
             ));
 
-            await PsesDebugAdapterClient.LaunchScript(filePath, Started);
+            await client.LaunchScript(filePath);
 
             // {"command":"setBreakpoints","arguments":{"source":{"name":"dfsdfg.ps1","path":"/Users/tyleonha/Code/PowerShell/Misc/foo/dfsdfg.ps1"},"lines":[2],"breakpoints":[{"line":2}],"sourceModified":false},"type":"request","seq":3}
-            SetBreakpointsResponse setBreakpointsResponse = await PsesDebugAdapterClient.SetBreakpoints(new SetBreakpointsArguments
+            SetBreakpointsResponse setBreakpointsResponse = await client.SetBreakpoints(new SetBreakpointsArguments
             {
                 Source = new Source { Name = Path.GetFileName(filePath), Path = filePath },
                 Breakpoints = new SourceBreakpoint[] { new SourceBreakpoint { Line = 2 } },
@@ -240,19 +294,106 @@ namespace PowerShellEditorServices.Test.E2E
             Assert.Equal(filePath, breakpoint.Source.Path, ignoreCase: s_isWindows);
             Assert.Equal(2, breakpoint.Line);
 
-            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments());
+            ConfigurationDoneResponse configDoneResponse = await client.RequestConfigurationDone(new ConfigurationDoneArguments());
             Assert.NotNull(configDoneResponse);
-            Assert.Collection(await GetLog(),
-                (i) => Assert.Equal("before breakpoint", i));
-            File.Delete(s_testOutputPath);
 
-            ContinueResponse continueResponse = await PsesDebugAdapterClient.RequestContinue(
-                new ContinueArguments { ThreadId = 1 });
+            // Wait until we hit the breakpoint
+            StoppedEvent stoppedEvent = await nextStopped;
+            Assert.Equal("breakpoint", stoppedEvent.Reason);
 
-            Assert.NotNull(continueResponse);
-            Assert.Collection(await GetLog(),
-                (i) => Assert.Equal("at breakpoint", i),
-                (i) => Assert.Equal("after breakpoint", i));
+            // The code before the breakpoint should have already run
+            Assert.Equal("before breakpoint", await ReadScriptLogLineAsync());
+
+            // Assert that the stopped breakpoint is the one we set
+            StackTraceResponse stackTraceResponse = await client.RequestStackTrace(new StackTraceArguments { ThreadId = 1 });
+            DapStackFrame stoppedTopFrame = stackTraceResponse.StackFrames.First();
+            Assert.Equal(2, stoppedTopFrame.Line);
+
+            _ = await client.RequestContinue(new ContinueArguments { ThreadId = 1 });
+
+            string atBreakpointActual = await ReadScriptLogLineAsync();
+            Assert.Equal("at breakpoint", atBreakpointActual);
+
+            string afterBreakpointActual = await ReadScriptLogLineAsync();
+            Assert.Equal("after breakpoint", afterBreakpointActual);
+        }
+
+        [SkippableFact]
+        public async Task FailsIfStacktraceRequestedWhenNotPaused()
+        {
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
+                "Breakpoints can't be set in Constrained Language Mode.");
+
+            // We want a long running script that never hits the next breakpoint
+            string filePath = NewTestFile(GenerateLoggingScript(
+                "$(sleep 10)",
+                "Should fail before we get here"
+            ));
+
+            await client.SetBreakpoints(
+                new SetBreakpointsArguments
+                {
+                    Source = new Source { Name = Path.GetFileName(filePath), Path = filePath },
+                    Breakpoints = new SourceBreakpoint[] { new SourceBreakpoint { Line = 1 } },
+                    SourceModified = false,
+                }
+            );
+
+            // Signal to start the script
+            await client.RequestConfigurationDone(new ConfigurationDoneArguments());
+            await client.LaunchScript(filePath);
+
+            // Try to get the stacktrace, which should throw as we are not currently at a breakpoint.
+            await Assert.ThrowsAsync<JsonRpcException>(() => client.RequestStackTrace(
+                new StackTraceArguments { }
+            ));
+        }
+
+        [SkippableFact]
+        public async Task SendsInitialLabelBreakpointForPerformanceReasons()
+        {
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
+                "Breakpoints can't be set in Constrained Language Mode.");
+            string filePath = NewTestFile(GenerateLoggingScript(
+                "before breakpoint",
+                "label breakpoint"
+            ));
+
+            // Request a launch. Note that per DAP spec, launch doesn't actually begin until ConfigDone finishes.
+            await client.LaunchScript(filePath);
+
+            SetBreakpointsResponse setBreakpointsResponse = await client.SetBreakpoints(new SetBreakpointsArguments
+            {
+                Source = new Source { Name = Path.GetFileName(filePath), Path = filePath },
+                Breakpoints = new SourceBreakpoint[] { new SourceBreakpoint { Line = 2 } },
+                SourceModified = false,
+            });
+
+            Breakpoint breakpoint = setBreakpointsResponse.Breakpoints.First();
+            Assert.True(breakpoint.Verified);
+            Assert.Equal(filePath, breakpoint.Source.Path, ignoreCase: s_isWindows);
+            Assert.Equal(2, breakpoint.Line);
+
+            _ = client.RequestConfigurationDone(new ConfigurationDoneArguments());
+
+            // Wait for the breakpoint to be hit
+            StoppedEvent stoppedEvent = await nextStopped;
+            Assert.Equal("breakpoint", stoppedEvent.Reason);
+
+            // The code before the breakpoint should have already run
+            Assert.Equal("before breakpoint", await ReadScriptLogLineAsync());
+
+            // Get the stacktrace for the breakpoint
+            StackTraceResponse stackTraceResponse = await client.RequestStackTrace(
+                new StackTraceArguments { ThreadId = 1 }
+            );
+            DapStackFrame firstFrame = stackTraceResponse.StackFrames.First();
+
+            // Our synthetic label breakpoint should be present
+            Assert.Equal(
+                StackFramePresentationHint.Label,
+                firstFrame.PresentationHint
+            );
         }
 
         // This is a regression test for a bug where user code causes a new synchronization context
@@ -269,21 +410,21 @@ namespace PowerShellEditorServices.Test.E2E
         [SkippableFact]
         public async Task CanStepPastSystemWindowsForms()
         {
-            Skip.IfNot(PsesStdioProcess.IsWindowsPowerShell,
+            Skip.IfNot(PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
                 "Windows Forms requires Windows PowerShell.");
-            Skip.If(PsesStdioProcess.RunningInConstrainedLanguageMode,
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
                 "Breakpoints can't be set in Constrained Language Mode.");
 
             string filePath = NewTestFile(string.Join(Environment.NewLine, new[]
                 {
-                    "Add-Type -AssemblyName System.Windows.Forms",
-                    "$global:form = New-Object System.Windows.Forms.Form",
-                    "Write-Host $form"
-                }));
+                "Add-Type -AssemblyName System.Windows.Forms",
+                "$global:form = New-Object System.Windows.Forms.Form",
+                "Write-Host $form"
+            }));
 
-            await PsesDebugAdapterClient.LaunchScript(filePath, Started);
+            await client.LaunchScript(filePath);
 
-            SetFunctionBreakpointsResponse setBreakpointsResponse = await PsesDebugAdapterClient.SetFunctionBreakpoints(
+            SetFunctionBreakpointsResponse setBreakpointsResponse = await client.SetFunctionBreakpoints(
                 new SetFunctionBreakpointsArguments
                 {
                     Breakpoints = new FunctionBreakpoint[]
@@ -293,11 +434,11 @@ namespace PowerShellEditorServices.Test.E2E
             Breakpoint breakpoint = setBreakpointsResponse.Breakpoints.First();
             Assert.True(breakpoint.Verified);
 
-            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments());
+            ConfigurationDoneResponse configDoneResponse = await client.RequestConfigurationDone(new ConfigurationDoneArguments());
             Assert.NotNull(configDoneResponse);
             await Task.Delay(5000);
 
-            VariablesResponse variablesResponse = await PsesDebugAdapterClient.RequestVariables(
+            VariablesResponse variablesResponse = await client.RequestVariables(
                 new VariablesArguments { VariablesReference = 1 });
 
             Variable form = variablesResponse.Variables.FirstOrDefault(v => v.Name == "$form");
@@ -312,24 +453,25 @@ namespace PowerShellEditorServices.Test.E2E
         [Fact]
         public async Task CanLaunchScriptWithCommentedLastLineAsync()
         {
-            string script = GenerateScriptFromLoggingStatements("$($MyInvocation.Line)") + "# a comment at the end";
+            string script = GenerateLoggingScript("$($MyInvocation.Line)", "$(1+1)") + "# a comment at the end";
             Assert.EndsWith(Environment.NewLine + "# a comment at the end", script);
 
             // NOTE: This is horribly complicated, but the "script" parameter here is assigned to
             // PsesLaunchRequestArguments.Script, which is then assigned to
             // DebugStateService.ScriptToLaunch in that handler, and finally used by the
             // ConfigurationDoneHandler in LaunchScriptAsync.
-            await PsesDebugAdapterClient.LaunchScript(script, Started);
+            await client.LaunchScript(script);
 
-            ConfigurationDoneResponse configDoneResponse = await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments());
-            Assert.NotNull(configDoneResponse);
+            _ = await client.RequestConfigurationDone(new ConfigurationDoneArguments());
+
             // We can check that the script was invoked as expected, which is to dot-source a script
             // block with the contents surrounded by newlines. While we can't check that the last
             // line was a curly brace by itself, we did check that the contents ended with a
             // comment, so if this output exists then the bug did not recur.
-            Assert.Collection(await GetLog(),
-                (i) => Assert.Equal(". {", i),
-                (i) => Assert.Equal("", i));
+            Assert.Equal(". {", await ReadScriptLogLineAsync());
+
+            // Verifies that the script did run and the body was evaluated
+            Assert.Equal("2", await ReadScriptLogLineAsync());
         }
 
         [SkippableFact]
@@ -352,24 +494,24 @@ namespace PowerShellEditorServices.Test.E2E
                 await Task.Delay(1000);
             }
             await Task.Delay(15000);
-            _output.WriteLine(File.ReadAllText(pesterLog));
+            output.WriteLine(File.ReadAllText(pesterLog));
             */
 
             string pesterTest = NewTestFile(@"
-                Describe 'A' {
-                    Context 'B' {
-                        It 'C' {
-                            { throw 'error' } | Should -Throw
-                        }
-                        It 'D' {
-                            " + GenerateScriptFromLoggingStatements("pester") + @"
-                        }
+            Describe 'A' {
+                Context 'B' {
+                    It 'C' {
+                        { throw 'error' } | Should -Throw
                     }
-                }", isPester: true);
+                    It 'D' {
+                        " + GenerateLoggingScript("pester") + @"
+                    }
+                }
+            }", isPester: true);
 
-            await PsesDebugAdapterClient.LaunchScript($"Invoke-Pester -Script '{pesterTest}'", Started);
-            await PsesDebugAdapterClient.RequestConfigurationDone(new ConfigurationDoneArguments());
-            Assert.Collection(await GetLog(), (i) => Assert.Equal("pester", i));
+            await client.LaunchScript($"Invoke-Pester -Script '{pesterTest}'");
+            await client.RequestConfigurationDone(new ConfigurationDoneArguments());
+            Assert.Equal("pester", await ReadScriptLogLineAsync());
         }
     }
 }

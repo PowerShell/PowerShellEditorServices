@@ -138,7 +138,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         /// The minimum log level that should be emitted.
         /// </summary>
         [Parameter]
-        public PsesLogLevel LogLevel { get; set; } = PsesLogLevel.Normal;
+        public string LogLevel { get; set; } = PsesLogLevel.Warning.ToString();
 
         /// <summary>
         /// Paths to additional PowerShell modules to be imported at startup.
@@ -195,6 +195,11 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         [Parameter]
         public string StartupBanner { get; set; }
 
+        /// <summary>
+        /// Compatibility to store the currently supported PSESLogLevel Enum Value
+        /// </summary>
+        private PsesLogLevel _psesLogLevel = PsesLogLevel.Warning;
+
 #pragma warning disable IDE0022
         protected override void BeginProcessing()
         {
@@ -218,8 +223,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "We have to wait here, it's the whole program.")]
         protected override void EndProcessing()
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Beginning EndProcessing block");
-
+            _logger.Log(PsesLogLevel.Trace, "Beginning EndProcessing block");
             try
             {
                 // First try to remove PSReadLine to decomplicate startup
@@ -230,7 +234,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 EditorServicesConfig editorServicesConfig = CreateConfigObject();
 
                 using EditorServicesLoader psesLoader = EditorServicesLoader.Create(_logger, editorServicesConfig, SessionDetailsPath, _loggerUnsubscribers);
-                _logger.Log(PsesLogLevel.Verbose, "Loading EditorServices");
+                _logger.Log(PsesLogLevel.Debug, "Loading EditorServices");
                 // Synchronously start editor services and wait here until it shuts down.
                 psesLoader.LoadAndRunEditorServicesAsync().GetAwaiter().GetResult();
             }
@@ -258,7 +262,25 @@ namespace Microsoft.PowerShell.EditorServices.Commands
 
         private void StartLogging()
         {
-            _logger = new HostLogger(LogLevel);
+            bool isLegacyPsesLogLevel = false;
+            if (!Enum.TryParse(LogLevel, true, out _psesLogLevel))
+            {
+                // PSES used to have log levels that didn't match MEL levels, this is an adapter for those types and may eventually be removed once people migrate their settings.
+                isLegacyPsesLogLevel = true;
+                _psesLogLevel = LogLevel switch
+                {
+                    "Diagnostic" => PsesLogLevel.Trace,
+                    "Verbose" => PsesLogLevel.Debug,
+                    "Normal" => PsesLogLevel.Information,
+                    _ => PsesLogLevel.Trace
+                };
+            }
+
+            _logger = new HostLogger(_psesLogLevel);
+            if (isLegacyPsesLogLevel)
+            {
+                _logger.Log(PsesLogLevel.Warning, $"The log level '{LogLevel}' is deprecated and will be removed in a future release. Please update your settings or command line options to use one of the following options: 'Trace', 'Debug', 'Information', 'Warning', 'Error', 'Critical'.");
+            }
 
             // We need to not write log messages to Stdio
             // if it's being used as a protocol transport
@@ -282,7 +304,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
             IDisposable fileLoggerUnsubscriber = _logger.Subscribe(fileLogger);
             fileLogger.AddUnsubscriber(fileLoggerUnsubscriber);
             _loggerUnsubscribers.Add(fileLoggerUnsubscriber);
-            _logger.Log(PsesLogLevel.Diagnostic, "Logging started");
+            _logger.Log(PsesLogLevel.Trace, "Logging started");
         }
 
         // Sanitizes user input and ensures the directory is created.
@@ -300,7 +322,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
 
         private void RemovePSReadLineForStartup()
         {
-            _logger.Log(PsesLogLevel.Verbose, "Removing PSReadLine");
+            _logger.Log(PsesLogLevel.Debug, "Removing PSReadLine");
             using SMA.PowerShell pwsh = SMA.PowerShell.Create(RunspaceMode.CurrentRunspace);
             bool hasPSReadLine = pwsh.AddCommand(new CmdletInfo(@"Microsoft.PowerShell.Core\Get-Module", typeof(GetModuleCommand)))
                 .AddParameter("Name", "PSReadLine")
@@ -315,13 +337,13 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                     .AddParameter("Name", "PSReadLine")
                     .AddParameter("ErrorAction", "SilentlyContinue");
 
-                _logger.Log(PsesLogLevel.Verbose, "Removed PSReadLine");
+                _logger.Log(PsesLogLevel.Debug, "Removed PSReadLine");
             }
         }
 
         private EditorServicesConfig CreateConfigObject()
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Creating host configuration");
+            _logger.Log(PsesLogLevel.Trace, "Creating host configuration");
 
             string bundledModulesPath = BundledModulesPath;
             if (!Path.IsPathRooted(bundledModulesPath))
@@ -350,7 +372,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 LogPath)
             {
                 FeatureFlags = FeatureFlags,
-                LogLevel = LogLevel,
+                LogLevel = _psesLogLevel,
                 ConsoleRepl = GetReplKind(),
                 UseNullPSHostUI = Stdio, // If Stdio is used we can't write anything else out
                 AdditionalModules = AdditionalModules,
@@ -400,31 +422,31 @@ namespace Microsoft.PowerShell.EditorServices.Commands
         // * On Linux or macOS on any version greater than or equal to 7
         private ConsoleReplKind GetReplKind()
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Determining REPL kind");
+            _logger.Log(PsesLogLevel.Trace, "Determining REPL kind");
 
             if (Stdio || !EnableConsoleRepl)
             {
-                _logger.Log(PsesLogLevel.Diagnostic, "REPL configured as None");
+                _logger.Log(PsesLogLevel.Trace, "REPL configured as None");
                 return ConsoleReplKind.None;
             }
 
             if (UseLegacyReadLine)
             {
-                _logger.Log(PsesLogLevel.Diagnostic, "REPL configured as Legacy");
+                _logger.Log(PsesLogLevel.Trace, "REPL configured as Legacy");
                 return ConsoleReplKind.LegacyReadLine;
             }
 
-            _logger.Log(PsesLogLevel.Diagnostic, "REPL configured as PSReadLine");
+            _logger.Log(PsesLogLevel.Trace, "REPL configured as PSReadLine");
             return ConsoleReplKind.PSReadLine;
         }
 
         private ITransportConfig GetLanguageServiceTransport()
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Configuring LSP transport");
+            _logger.Log(PsesLogLevel.Trace, "Configuring LSP transport");
 
             if (DebugServiceOnly)
             {
-                _logger.Log(PsesLogLevel.Diagnostic, "No LSP transport: PSES is debug only");
+                _logger.Log(PsesLogLevel.Trace, "No LSP transport: PSES is debug only");
                 return null;
             }
 
@@ -448,11 +470,11 @@ namespace Microsoft.PowerShell.EditorServices.Commands
 
         private ITransportConfig GetDebugServiceTransport()
         {
-            _logger.Log(PsesLogLevel.Diagnostic, "Configuring debug transport");
+            _logger.Log(PsesLogLevel.Trace, "Configuring debug transport");
 
             if (LanguageServiceOnly)
             {
-                _logger.Log(PsesLogLevel.Diagnostic, "No Debug transport: PSES is language service only");
+                _logger.Log(PsesLogLevel.Trace, "No Debug transport: PSES is language service only");
                 return null;
             }
 
@@ -463,7 +485,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                     return new StdioTransportConfig(_logger);
                 }
 
-                _logger.Log(PsesLogLevel.Diagnostic, "No debug transport: Transport is Stdio with debug disabled");
+                _logger.Log(PsesLogLevel.Trace, "No debug transport: Transport is Stdio with debug disabled");
                 return null;
             }
 
