@@ -101,6 +101,15 @@ lua << EOF
 EOF
 ```
 
+#### Theme Troubleshooting
+If you find that your colorscheme appears correctly for a second and then 
+changes to not having full highlighting, you'll need to disable semantic 
+highlighting. 
+Add this line to the `on_attach` function.
+```lua
+client.server_capabilities.semanticTokensProvider = nil
+```
+
 #### Configure Additional Settings
 To further configure the server, you can supply settings to the setup table.
 For example, you can set the code formatting preset to one true brace style
