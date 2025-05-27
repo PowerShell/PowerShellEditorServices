@@ -121,6 +121,8 @@ require('lspconfig')['powershell_es'].setup {
 	settings = { powershell = { codeFormatting = { Preset = 'OTBS' } } }
 }
 ```
+For a more complete list of options have a look at this schema: 
+[nvim-lsp-installer powershell_es reference](https://github.com/williamboman/nvim-lsp-installer/blob/main/lua/nvim-lsp-installer/_generated/schemas/powershell_es.lua)
 
 You can also set the bundled PSScriptAnalyzer's custom rule path like so:
 ```lua
