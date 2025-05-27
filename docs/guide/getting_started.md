@@ -131,3 +131,11 @@ require('lspconfig')['powershell_es'].setup {
 	settings = { powershell = { scriptAnalysis = { settingsPath = custom_settings_path } } }
 }
 ```
+
+#### Autocomplete Brackets Troubleshooting
+If you're using `blink.cmp` and you're getting brackets when autocompleting 
+cmdlet names, you'll need to add `{ "ps1", "psm1" }` to the blocked filetypes 
+for both `kind_resolution` and `semantic_token_resolution` in the plugin's 
+config file.
+
+[Blink.cmp completion reference](https://cmp.saghen.dev/configuration/reference#completion-accept)
