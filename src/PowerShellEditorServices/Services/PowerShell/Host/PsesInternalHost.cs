@@ -317,6 +317,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             {
                 _logger.LogDebug("Enabling Terminal Shell Integration...");
                 _shellIntegrationEnabled = true;
+                string sourceMethod = startOptions.ShellIntegrationScript.EndsWith(".ps1") ? "." : "Import-Module";
                 // TODO: Make the __psEditorServices prefix shared (it's used elsewhere too).
                 string setupShellIntegration = $$"""
                     # Setup Terminal Shell Integration.
@@ -327,7 +328,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                     function global:PSConsoleHostReadLine { $global:__psEditorServices_userInput }
 
                     # Execute the provided shell integration script.
-                    try { . '{{startOptions.ShellIntegrationScript}}' } catch {}
+                    try { {{sourceMethod}} '{{startOptions.ShellIntegrationScript}}' } catch {}
                     """;
                 await EnableShellIntegrationAsync(setupShellIntegration, cancellationToken).ConfigureAwait(false);
                 _logger.LogDebug("Shell integration enabled!");
