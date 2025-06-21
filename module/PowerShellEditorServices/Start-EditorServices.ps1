@@ -46,7 +46,7 @@ param(
     [ValidateNotNullOrEmpty()]
     $LogPath,
 
-    [ValidateSet("Diagnostic", "Verbose", "Normal", "Warning", "Error")]
+    [ValidateSet("Diagnostic", "Verbose", "Normal", "Warning", "Error", "Trace", "Debug", "Information", "Critical", "None")]
     $LogLevel,
 
 	[ValidateNotNullOrEmpty()]
