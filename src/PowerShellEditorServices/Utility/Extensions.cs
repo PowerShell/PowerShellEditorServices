@@ -9,8 +9,8 @@ namespace Microsoft.PowerShell.EditorServices.Utility
     internal static class ObjectExtensions
     {
         /// <summary>
-        /// Extension to evaluate an object's ToString() method in an exception safe way. This will
-        /// extension method will not throw.
+        /// Extension to evaluate an object's ToString() method in an exception safe way. This extension
+        /// method will not throw.
         /// </summary>
         /// <param name="obj">The object on which to call ToString()</param>
         /// <returns>The ToString() return value or a suitable error message is that throws.</returns>
