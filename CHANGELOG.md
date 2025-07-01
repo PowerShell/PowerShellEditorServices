@@ -1,5 +1,9 @@
 # PowerShell Editor Services Release History
 
+## Unreleased
+
+- ✨ 📟 [PowerShellEditorServices #2239](https://github.com/PowerShell/PowerShellEditorServices/pull/2239) - Update PSReadLine to v2.4.2-beta2.
+
 ## v4.3.0
 ### Tuesday, March 18, 2025
 

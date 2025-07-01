@@ -61,7 +61,7 @@ Once the basic language configurations have been installed, add this to your
 ```lua
 local on_attach = function(client, bufnr)
 	-- Enable completion triggered by <c-x><c-o>
-	vim.api.nvim_buf_set_option(bufnr, 'omnifunc', 'v:lua.vim.lsp.omnifunc')
+	vim.api.nvim_set_option_value("omnifunc", "v:lua.vim.lsp.omnifunc", { buf = bufnr })
 
 	local bufopts = { noremap = true, silent = true, buffer = bufnr }
 	vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, bufopts)
@@ -141,3 +141,26 @@ for both `kind_resolution` and `semantic_token_resolution` in the plugin's
 config file.
 
 [Blink.cmp completion reference](https://cmp.saghen.dev/configuration/reference#completion-accept)
+
+### Indentation
+
+Vim/Neovim does not contain default `:h indentexpr` for filetype `ps1`.
+So you might notice indentation on newline is not behaving as expected for powershell files.
+Luckily powershell has similar syntax like C, so we can use `:h cindent` to fix the indentation problem.
+You can use the following snippet to either callback of an autocmd or ftplugin.
+
+```lua
+--- ./nvim/lua/ftplugin/ps1.lua
+
+-- disable indent from powershell treesitter parser
+-- because the parse isn't mature currently
+-- you can ignore this step if don't use treesitter
+if pcall(require, 'nvim-treesitter') then
+  vim.schedule(function() vim.cmd([[TSBufDisable indent]]) end)
+end
+
+vim.opt_local.cindent = true
+vim.opt_local.cinoptions:append { 'J1', '(1s', '+0' } -- see :h cino-J, cino-(, cino-+
+
+vim.opt_local.iskeyword:remove { '-' } -- OPTIONALLY consider Verb-Noun as a whole word
+```
