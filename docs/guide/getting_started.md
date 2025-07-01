@@ -101,6 +101,15 @@ lua << EOF
 EOF
 ```
 
+#### Theme Troubleshooting
+If you find that your colorscheme appears correctly for a second and then 
+changes to not having full highlighting, you'll need to disable semantic 
+highlighting. 
+Add this line to the `on_attach` function.
+```lua
+client.server_capabilities.semanticTokensProvider = nil
+```
+
 #### Configure Additional Settings
 To further configure the server, you can supply settings to the setup table.
 For example, you can set the code formatting preset to one true brace style
@@ -112,6 +121,8 @@ require('lspconfig')['powershell_es'].setup {
 	settings = { powershell = { codeFormatting = { Preset = 'OTBS' } } }
 }
 ```
+For a more complete list of options have a look at this schema: 
+[nvim-lsp-installer powershell_es reference](https://github.com/williamboman/nvim-lsp-installer/blob/main/lua/nvim-lsp-installer/_generated/schemas/powershell_es.lua)
 
 You can also set the bundled PSScriptAnalyzer's custom rule path like so:
 ```lua
@@ -122,6 +133,14 @@ require('lspconfig')['powershell_es'].setup {
 	settings = { powershell = { scriptAnalysis = { settingsPath = custom_settings_path } } }
 }
 ```
+
+#### Autocomplete Brackets Troubleshooting
+If you're using `blink.cmp` and you're getting brackets when autocompleting 
+cmdlet names, you'll need to add `{ "ps1", "psm1" }` to the blocked filetypes 
+for both `kind_resolution` and `semantic_token_resolution` in the plugin's 
+config file.
+
+[Blink.cmp completion reference](https://cmp.saghen.dev/configuration/reference#completion-accept)
 
 ### Indentation
 
