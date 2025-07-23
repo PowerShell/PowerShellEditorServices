@@ -75,10 +75,20 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                     ?? Array.Empty<string>()
             );
 
-            string onlineLink = "";
-            if (helpObj.relatedLinks?.navLinkProperty?.linkText == "Online Version:")
+            string onlineLink = null;
+            // HACK: This is the PSCustomObject equivalent of a reflection dive
+            // Unfortunately we have no choice as we have effectively a serialized object
+
+            PSObject links = helpObj.relatedLinks as PSObject;
+            PSObject navlink = links.Properties["navigationLink"]?.Value as PSObject;
+            string linkText = navlink?.Properties["linkText"]?.Value?.ToString();
+            if (linkText == "Online Version:")
             {
-                onlineLink = helpObj.relatedLinks?.navLinkProperty?.linkUri ?? default;
+                string uri = navlink.Properties["uri"]?.Value?.ToString();
+                if (uri is not null)
+                {
+                    onlineLink = uri;
+                }
             }
 
             return new()
@@ -86,10 +96,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 Name = helpObj.Name,
                 Synopsis = helpObj.Synopsis,
                 Description = description,
+                OnlineLink = onlineLink
                 // Syntax = syntaxHelp ?? Array.Empty<SyntaxHelp>(),
                 // Parameters = parameterHelp ?? Array.Empty<ParameterHelp>(),
                 // Examples = examplesHelp ?? Array.Empty<ExampleHelp>(),
-                OnlineLink = onlineLink
             };
         }
 
