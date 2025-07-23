@@ -107,5 +107,13 @@ param(
     $DebugServiceOutPipeName
 )
 
+#Translate legacy PSES log levels to MEL levels
+$LogLevel = switch ($LogLevel) {
+    'Diagnostic' { 'Trace' }
+    'Verbose' { 'Debug' }
+    'Normal' { 'Information' }
+    default { $LogLevel }
+}
+
 Import-Module -Name "$PSScriptRoot/PowerShellEditorServices.psd1"
 Start-EditorServices @PSBoundParameters
