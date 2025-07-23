@@ -67,7 +67,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             // Dynamic simplifies processing as the help is a "serialized" PSCustomObject format rather than the original types
             dynamic helpObj = psObject;
 
-            PSObject[] linksProperty = helpObj.relatedLinks?.navigationLink;
             // Extract description text from a weird array of PSObjects to a common paragraph format.
             string description = string.Join(Environment.NewLine,
                 ((IEnumerable)helpObj.description)?
@@ -76,11 +75,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                     ?? Array.Empty<string>()
             );
 
-            // Extract Online Link, if available.
-            string onlineLink = linksProperty?
-                .FirstOrDefault(o => o.GetPropertyValue<string>("linkText").Equals("Online Version:"))?
-                .GetPropertyValue<string>("uri")
-                ?? string.Empty;
+            string onlineLink = "";
+            if (helpObj.relatedLinks?.navLinkProperty?.linkText == "Online Version:")
+            {
+                onlineLink = helpObj.relatedLinks?.navLinkProperty?.linkUri ?? default;
+            }
 
             return new()
             {

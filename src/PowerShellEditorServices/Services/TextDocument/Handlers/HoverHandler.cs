@@ -57,9 +57,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return null;
             }
 
+            if (symbolDetails.Documentation is null)
+            {
+                _logger.LogDebug("No documentation found for symbol at {Uri} {Position}", request.TextDocument.Uri, request.Position);
+                return null;
+            }
+
             return new Hover
             {
-                Contents = new(symbolDetails.Documentation.MarkupContent),
+                Contents = symbolDetails.Documentation.HasMarkupContent
+                    ? new MarkedStringsOrMarkupContent(symbolDetails.Documentation.MarkupContent)
+                    : new MarkedStringsOrMarkupContent(symbolDetails.Documentation.String),
                 Range = symbolDetails.SymbolReference.NameRegion.ToRange()
             };
         }
