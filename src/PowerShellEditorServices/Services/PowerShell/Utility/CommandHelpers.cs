@@ -75,21 +75,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                     ?? Array.Empty<string>()
             );
 
-            string onlineLink = null;
-            // HACK: This is the PSCustomObject equivalent of a reflection dive
-            // Unfortunately we have no choice as we have effectively a serialized object
-
             PSObject links = helpObj.relatedLinks as PSObject;
-            PSObject navlink = links.Properties["navigationLink"]?.Value as PSObject;
-            string linkText = navlink?.Properties["linkText"]?.Value?.ToString();
-            if (linkText == "Online Version:")
+
+            // This could be either a single object or an array, so we need to normalize it
+            PSObject[] navigationLinks = links?.Properties["navigationLink"]?.Value switch
             {
-                string uri = navlink.Properties["uri"]?.Value?.ToString();
-                if (uri is not null)
-                {
-                    onlineLink = uri;
-                }
-            }
+                PSObject[] array => array,
+                PSObject single => [single],
+                _ => []
+            } ?? [];
+
+            string onlineLink = navigationLinks
+                .FirstOrDefault(navlink =>
+                    LanguagePrimitives.ConvertTo<string>(navlink.Properties["linkText"]?.Value) == "Online Version:"
+                ) is PSObject onlineLinkMatch
+                    ? LanguagePrimitives.ConvertTo<string>(onlineLinkMatch.Properties["uri"]?.Value)
+                    : string.Empty;
 
             return new()
             {
