@@ -18,6 +18,57 @@ namespace Microsoft.PowerShell.EditorServices.Services
 {
     internal class BreakpointService
     {
+        private const string _setPSBreakpointLegacy = @"
+            [CmdletBinding(DefaultParameterSetName = 'Line')]
+            param (
+                [Parameter()]
+                [ScriptBlock]
+                $Action,
+
+                [Parameter(ParameterSetName = 'Command')]
+                [Parameter(ParameterSetName = 'Line', Mandatory = $true)]
+                [string]
+                $Script,
+
+                [Parameter(ParameterSetName = 'Line')]
+                [int]
+                $Line,
+
+                [Parameter(ParameterSetName = 'Line')]
+                [int]
+                $Column,
+
+                [Parameter(ParameterSetName = 'Command', Mandatory = $true)]
+                [string]
+                $Command
+            )
+
+            if ($PSCmdlet.ParameterSetName -eq 'Command') {
+                $cmdCtor = [System.Management.Automation.CommandBreakpoint].GetConstructor(
+                    [System.Reflection.BindingFlags]'NonPublic, Public, Instance',
+                    $null,
+                    [type[]]@([string], [System.Management.Automation.WildcardPattern], [string], [ScriptBlock]),
+                    $null)
+                $pattern = [System.Management.Automation.WildcardPattern]::Get(
+                    $Command,
+                    [System.Management.Automation.WildcardOptions]'Compiled, IgnoreCase')
+                $b = $cmdCtor.Invoke(@($Script, $pattern, $Command, $Action))
+            }
+            else {
+                $lineCtor = [System.Management.Automation.LineBreakpoint].GetConstructor(
+                    [System.Reflection.BindingFlags]'NonPublic, Public, Instance',
+                    $null,
+                    [type[]]@([string], [int], [int], [ScriptBlock]),
+                    $null)
+                $b = $lineCtor.Invoke(@($Script, $Line, $Column, $Action))
+            }
+
+            [Runspace]::DefaultRunspace.Debugger.SetBreakpoints(
+                [System.Management.Automation.Breakpoint[]]@($b))
+
+            $b
+        ";
+
         private readonly ILogger<BreakpointService> _logger;
         private readonly IInternalPowerShellExecutionService _executionService;
         private readonly PsesInternalHost _editorServicesHost;
@@ -114,8 +165,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     psCommand.AddStatement();
                 }
 
+                // Don't use Set-PSBreakpoint as that will try and validate the Script
+                // path which may or may not exist.
                 psCommand
-                    .AddCommand(@"Microsoft.PowerShell.Utility\Set-PSBreakpoint")
+                    .AddScript(_setPSBreakpointLegacy, useLocalScope: true)
                     .AddParameter("Script", escapedScriptPath)
                     .AddParameter("Line", breakpoint.LineNumber);
 
@@ -184,7 +237,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 }
 
                 psCommand
-                    .AddCommand(@"Microsoft.PowerShell.Utility\Set-PSBreakpoint")
+                    .AddScript(_setPSBreakpointLegacy, useLocalScope: true)
                     .AddParameter("Command", breakpoint.Name);
 
                 // Check if this is a "conditional" line breakpoint.
