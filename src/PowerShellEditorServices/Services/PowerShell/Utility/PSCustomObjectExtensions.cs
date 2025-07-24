@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 #nullable enable
 
-using System;
 using System.Management.Automation;
 
 namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
@@ -37,14 +36,8 @@ public static class PSCustomObjectExtensions
         }
         try
         {
-            object propertyValue = property.Value is PSObject valuePsObject
-                ? valuePsObject.BaseObject
-                : property.Value;
-
             // Attempt a generic cast first
-            value = propertyValue is not T typedValue
-            ? (T)Convert.ChangeType(propertyValue, typeof(T))
-            : typedValue;
+            value = LanguagePrimitives.ConvertTo<T>(property.Value);
 
             return true;
         }

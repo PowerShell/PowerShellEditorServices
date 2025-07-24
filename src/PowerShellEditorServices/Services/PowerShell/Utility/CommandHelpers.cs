@@ -7,7 +7,6 @@ using System.Linq;
 using System.Management.Automation;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -67,29 +66,21 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             // Dynamic simplifies processing as the help is a "serialized" PSCustomObject format rather than the original types
             dynamic helpObj = psObject;
 
-            // Extract description text from a weird array of PSObjects to a common paragraph format.
+            // Extract description text from a PSCustomObject collection of strings
             string description = string.Join(Environment.NewLine,
-                ((IEnumerable)helpObj.description)?
-                    .Cast<PSObject>()
-                    .Select(o => o.GetPropertyValue<string>("Text"))
-                    ?? Array.Empty<string>()
+                psObject
+                    .GetPropertyValue<PSObject[]>(nameof(Description))?
+                    .Select(x => x.GetPropertyValue<string>("Text"))
+                    ?? []
             );
 
             PSObject links = helpObj.relatedLinks as PSObject;
-
-            // This could be either a single object or an array, so we need to normalize it
-            PSObject[] navigationLinks = links?.Properties["navigationLink"]?.Value switch
-            {
-                PSObject[] array => array,
-                PSObject single => [single],
-                _ => []
-            } ?? [];
-
+            PSObject[] navigationLinks = links.GetPropertyValue<PSObject[]>("navigationLink");
             string onlineLink = navigationLinks
                 .FirstOrDefault(navlink =>
-                    LanguagePrimitives.ConvertTo<string>(navlink.Properties["linkText"]?.Value) == "Online Version:"
+                    navlink.GetPropertyValue<string>("linkText") == "Online Version:"
                 ) is PSObject onlineLinkMatch
-                    ? LanguagePrimitives.ConvertTo<string>(onlineLinkMatch.Properties["uri"]?.Value)
+                    ? onlineLinkMatch.GetPropertyValue<string>("uri")
                     : string.Empty;
 
             return new()
@@ -125,7 +116,22 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         bool Required,
         string Type,
         bool variableLength
-    );
+    )
+    {
+        public static ParameterHelp From(PSObject psObject)
+        {
+            return new ParameterHelp(
+                psObject.Properties["Name"]?.Value as string,
+                psObject.Properties["Description"]?.Value as string,
+                psObject.Properties["PipelineInput"]?.Value as bool? ?? false,
+                psObject.Properties["Position"]?.Value as int? ?? -1,
+                psObject.Properties["Required"]?.Value as bool? ?? false,
+                psObject.Properties["TypeNameOfValue"]?.Value as string,
+                psObject.Properties["VariableLength"]?.Value as bool? ?? false
+            );
+        }
+    }
+
     public record ExampleHelp(string Title, string Code, string Remarks);
     public record SyntaxHelp(string Name, ParameterHelp[] Parameters);
 
