@@ -18,6 +18,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
 {
     internal class BreakpointService
     {
+        /// <summary>
+        /// Code used on WinPS 5.1 to set breakpoints without Script path validation.
+        /// It uses reflection because the APIs were not public until 7.0 but just in
+        /// case something changes it has a fallback to Set-PSBreakpoint.
+        /// </summary>
         private const string _setPSBreakpointLegacy = @"
             [CmdletBinding(DefaultParameterSetName = 'Line')]
             param (
@@ -49,6 +54,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     $null,
                     [type[]]@([string], [System.Management.Automation.WildcardPattern], [string], [ScriptBlock]),
                     $null)
+
+                if (-not $cmdCtor) {
+                    Microsoft.PowerShell.Utility\Set-PSBreakpoint @PSBoundParameters
+                    return
+                }
+
                 $pattern = [System.Management.Automation.WildcardPattern]::Get(
                     $Command,
                     [System.Management.Automation.WildcardOptions]'Compiled, IgnoreCase')
@@ -60,6 +71,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     $null,
                     [type[]]@([string], [int], [int], [ScriptBlock]),
                     $null)
+
+                if (-not $lineCtor) {
+                    Microsoft.PowerShell.Utility\Set-PSBreakpoint @PSBoundParameters
+                    return
+                }
+
                 $b = $lineCtor.Invoke(@($Script, $Line, $Column, $Action))
             }
 
