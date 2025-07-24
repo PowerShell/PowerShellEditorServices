@@ -83,12 +83,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                     ? onlineLinkMatch.GetPropertyValue<string>("uri")
                     : string.Empty;
 
+            PSObject paramsObj = helpObj.parameters as PSObject;
+            ParameterHelp[] parameters = [
+                .. paramsObj
+                .GetPropertyValue<PSObject[]>("parameter")
+                .Select(ParameterHelp.From)
+                .OrderBy(p => p.Position)
+                .ThenBy(p => p.Required ? 0 : 1) // Required parameters first
+                .ThenBy(p => p.Name)
+            ];
+
             return new()
             {
                 Name = helpObj.Name,
                 Synopsis = helpObj.Synopsis,
                 Description = description,
-                OnlineLink = onlineLink
+                OnlineLink = onlineLink,
+                Parameters = parameters
                 // Syntax = syntaxHelp ?? Array.Empty<SyntaxHelp>(),
                 // Parameters = parameterHelp ?? Array.Empty<ParameterHelp>(),
                 // Examples = examplesHelp ?? Array.Empty<ExampleHelp>(),
@@ -115,19 +126,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         int Position,
         bool Required,
         string Type,
-        bool variableLength
+        bool VariableLength
     )
     {
         public static ParameterHelp From(PSObject psObject)
         {
             return new ParameterHelp(
-                psObject.Properties["Name"]?.Value as string,
-                psObject.Properties["Description"]?.Value as string,
-                psObject.Properties["PipelineInput"]?.Value as bool? ?? false,
-                psObject.Properties["Position"]?.Value as int? ?? -1,
-                psObject.Properties["Required"]?.Value as bool? ?? false,
-                psObject.Properties["TypeNameOfValue"]?.Value as string,
-                psObject.Properties["VariableLength"]?.Value as bool? ?? false
+                psObject.GetPropertyValue<string>("name"),
+                psObject.GetPropertyValue<string>("description"),
+                psObject.GetPropertyValue<bool>("pipelineInput"),
+                psObject.GetPropertyValue<int>("position"),
+                psObject.GetPropertyValue<bool>("required"),
+                psObject.GetPropertyValue<PSObject>("type").GetPropertyValue<string>("name"),
+                psObject.GetPropertyValue<bool>("variableLength")
             );
         }
     }
