@@ -46,6 +46,10 @@ The Set-ScriptExtent function can insert or replace text at a specified position
 
 You can use the Find-Ast function to easily find the desired extent.
 
+### [Start-DebugAttachSession](Start-DebugAttachSession.md)
+
+The Start-DebugAttachSession function can start a new debug session that is attached to the specified PowerShell instance.
+
 ### [Test-ScriptExtent](Test-ScriptExtent.md)
 
 The Test-ScriptExtent function can be used to determine if a ScriptExtent object is before, after, or inside another ScriptExtent object.  You can also test for any combination of these with separate ScriptExtent objects to test against.

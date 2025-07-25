@@ -178,6 +178,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 }
 
                 _logger.LogTrace("Working dir " + (string.IsNullOrEmpty(workingDir) ? "not set." : $"set to '{workingDir}'"));
+
+                PSCommand setVariableCmd = new PSCommand().AddCommand("Set-Variable")
+                    .AddParameter("Name", DebugService.PsesGlobalVariableDebugServerName)
+                    .AddParameter("Value", _debugAdapterServer)
+                    .AddParameter("Description", "DO NOT USE: for internal use only.")
+                    .AddParameter("Scope", "Global")
+                    .AddParameter("Option", "ReadOnly");
+
+                await _executionService.ExecutePSCommandAsync(
+                    setVariableCmd,
+                    cancellationToken).ConfigureAwait(false);
             }
 
             // Prepare arguments to the script - if specified
