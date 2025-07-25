@@ -8,7 +8,7 @@ schema: 2.0.0
 
 ## SYNOPSIS
 
-Starts a new debug session attached to the specified PowerShell instance..
+Starts a new debug session attached to the specified PowerShell instance.
 
 ## SYNTAX
 
@@ -28,7 +28,7 @@ Start-DebugAttachSession [-Name <String>] [-CustomPipeName <String>] [-RunspaceN
 
 The Start-DebugAttachSession function can be used to start a new debug session that is attached to the specified PowerShell instance. The caller must be running in an existing launched debug session and the newly attached session will be treated as a child debug session in a new temporary console. If the callers script ends before the new debug session is completed, the debug session for the child will also end.
 
-The function will return once the attach reponse was received by the debug server. For an example, an attach request will return once PowerShell has attached to the process and has called `Debug-Runspace`. If you need to return early use the `-AsJob` parameter to return a `Job` object immediately that can be used to wait for the response at a later time.
+The function will return once the attach response was received by the debug server. For an example, an attach request will return once PowerShell has attached to the process and has called `Debug-Runspace`. If you need to return early use the `-AsJob` parameter to return a `Job` object immediately that can be used to wait for the response at a later time.
 
 If `-ProcessId` or `-CustomPipeName` is not specified, the debug client will prompt for process to connect to. If `-RunspaceId` or `-RunspaceName` is not specified, the debug client will prompt for which runspace to connect to.
 
@@ -95,7 +95,7 @@ Accept wildcard characters: False
 
 ### -ComputerName
 
-The computer name to which a remote session with be established before attaching to the target runspace. If specified, the temporary console will run `Enter-PSSession -ComputerName ...` to connect to a host over WSMan before attaching to the requested PowerShell instance.
+The computer name to which a remote session will be established before attaching to the target runspace. If specified, the temporary console will run `Enter-PSSession -ComputerName ...` to connect to a host over WSMan before attaching to the requested PowerShell instance.
 
 ```yaml
 Type: String

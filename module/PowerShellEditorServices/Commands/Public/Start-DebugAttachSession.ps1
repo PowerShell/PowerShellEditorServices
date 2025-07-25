@@ -120,7 +120,7 @@ function Start-DebugAttachSession {
             $configuration.computerName = $ComputerName
         }
 
-        if ($RunspaceId) {
+        if ($PSBoundParameters.ContainsKey('RunspaceId')) {
             $configuration.runspaceId = $RunspaceId
         }
         elseif ($RunspaceName) {
