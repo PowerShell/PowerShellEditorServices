@@ -1,5 +1,6 @@
 ---
 external help file: PowerShellEditorServices.Commands-help.xml
+Module Name: PowerShellEditorServices.Commands
 online version: https://github.com/PowerShell/PowerShellEditorServices/tree/main/module/docs/Start-DebugAttachSession.md
 schema: 2.0.0
 ---
@@ -14,19 +15,19 @@ Starts a new debug session attached to the specified PowerShell instance.
 
 ### ProcessId (Default)
 ```
-Start-DebugAttachSession [-Name <String>] [-ProcessId <Int32>] [-RunspaceName <String>] -RunspaceId <Int32>
+Start-DebugAttachSession [-Name <String>] [-ProcessId <Int32>] [-RunspaceName <String>] [-RunspaceId <Int32>]
  [-ComputerName <String>] [-AsJob] [<CommonParameters>]
 ```
 
 ### CustomPipeName
 ```
 Start-DebugAttachSession [-Name <String>] [-CustomPipeName <String>] [-RunspaceName <String>]
- -RunspaceId <Int32> [-ComputerName <String>] [-AsJob] [<CommonParameters>]
+ [-RunspaceId <Int32>] [-ComputerName <String>] [-AsJob] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
 
-The Start-DebugAttachSession function can be used to start a new debug session that is attached to the specified PowerShell instance. The caller must be running in an existing launched debug session and the newly attached session will be treated as a child debug session in a new temporary console. If the callers script ends before the new debug session is completed, the debug session for the child will also end.
+The Start-DebugAttachSession function can be used to start a new debug session that is attached to the specified PowerShell instance. The caller must be running in an existing launched debug session, the launched session is not running in a temporary console, and the launched session is not entered into a remote PSSession. If the callers script ends before the new debug session is completed, the debug session for the child will also end.
 
 The function will return once the attach response was received by the debug server. For an example, an attach request will return once PowerShell has attached to the process and has called `Debug-Runspace`. If you need to return early use the `-AsJob` parameter to return a `Job` object immediately that can be used to wait for the response at a later time.
 
@@ -166,7 +167,7 @@ Type: Int32
 Parameter Sets: (All)
 Aliases:
 
-Required: True
+Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False

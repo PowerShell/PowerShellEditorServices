@@ -56,7 +56,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 _debugStateService.ExecutionCompleted = true;
                 _debugService.Abort();
 
-                if (!_debugStateService.IsAttachSession)
+                if (!_debugStateService.IsAttachSession && !_debugStateService.IsUsingTempIntegratedConsole)
                 {
                     await _executionService.ExecutePSCommandAsync(
                         new PSCommand().AddCommand("Remove-Variable")
@@ -64,7 +64,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                             .AddParameter("Force", true),
                         cancellationToken).ConfigureAwait(false);
                 }
-                else if (_debugStateService.IsInteractiveDebugSession)
+
+                if (_debugStateService.IsInteractiveDebugSession && _debugStateService.IsRemoteAttach)
                 {
                     // Pop the sessions
                     if (_runspaceContext.CurrentRunspace.RunspaceOrigin == RunspaceOrigin.EnteredProcess)

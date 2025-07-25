@@ -30,7 +30,7 @@ function Start-DebugAttachSession {
         [string]
         $RunspaceName,
 
-        [Parameter(Mandatory)]
+        [Parameter()]
         [int]
         $RunspaceId,
 
@@ -46,7 +46,7 @@ function Start-DebugAttachSession {
     $ErrorActionPreference = 'Stop'
 
     try {
-        if ($RunspaceId -and $RunspaceName) {
+        if ($PSBoundParameters.ContainsKey('RunspaceId') -and $RunspaceName) {
             $err = [ErrorRecord]::new(
                 [ArgumentException]::new("Cannot specify both RunspaceId and RunspaceName parameters"),
                 "InvalidRunspaceParameters",
@@ -62,7 +62,7 @@ function Start-DebugAttachSession {
         $debugServer = Get-Variable -Name __psEditorServices_DebugServer -ValueOnly -ErrorAction Ignore
         if (-not $debugServer) {
             $err = [ErrorRecord]::new(
-                [Exception]::new("Cannot start a new attach debug session unless running in an existing debug session"),
+                [Exception]::new("Cannot start a new attach debug session unless running in an existing launch debug session not in a temporary console"),
                 "NoDebugSession",
                 [ErrorCategory]::InvalidOperation,
                 $null)
