@@ -79,6 +79,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             // At this point, the source file has been verified as a PowerShell script.
+            string mappedSource = null;
+            if (_debugService.TryGetMappedRemotePath(scriptFile.FilePath, out string remoteMappedPath))
+            {
+                mappedSource = remoteMappedPath;
+            }
             IReadOnlyList<BreakpointDetails> breakpointDetails = request.Breakpoints
                 .Select((srcBreakpoint) => BreakpointDetails.Create(
                     scriptFile.FilePath,
@@ -86,7 +91,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     srcBreakpoint.Column,
                     srcBreakpoint.Condition,
                     srcBreakpoint.HitCondition,
-                    srcBreakpoint.LogMessage)).ToList();
+                    srcBreakpoint.LogMessage,
+                    mappedSource: mappedSource)).ToList();
 
             // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
             IReadOnlyList<BreakpointDetails> updatedBreakpointDetails = breakpointDetails;
@@ -98,8 +104,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 {
                     updatedBreakpointDetails =
                         await _debugService.SetLineBreakpointsAsync(
-                            scriptFile,
-                            breakpointDetails).ConfigureAwait(false);
+                            mappedSource ?? scriptFile.FilePath,
+                            breakpointDetails,
+                            skipRemoteMapping: mappedSource is not null).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {

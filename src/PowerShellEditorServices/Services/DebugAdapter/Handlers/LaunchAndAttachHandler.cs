@@ -75,6 +75,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         /// properties of the 'environmentVariables' are used as key/value pairs.
         /// </summary>
         public Dictionary<string, string> Env { get; set; }
+
+        /// <summary>
+        /// Gets or sets the path mappings for the debugging session. This is
+        /// only used when the current runspace is remote.
+        /// </summary>
+        public PathMapping[] PathMappings { get; set; } = [];
     }
 
     internal record PsesAttachRequestArguments : AttachRequestArguments
@@ -88,6 +94,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         public string RunspaceName { get; set; }
 
         public string CustomPipeName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the path mappings for the remote debugging session.
+        /// </summary>
+        public PathMapping[] PathMappings { get; set; } = [];
     }
 
     internal class LaunchAndAttachHandler : ILaunchHandler<PsesLaunchRequestArguments>, IAttachHandler<PsesAttachRequestArguments>, IOnDebugAdapterServerStarted
@@ -128,6 +139,20 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         }
 
         public async Task<LaunchResponse> Handle(PsesLaunchRequestArguments request, CancellationToken cancellationToken)
+        {
+            _debugService.SetPathMappings(request.PathMappings);
+            try
+            {
+                return await HandleImpl(request, cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                _debugService.UnsetPathMappings();
+                throw;
+            }
+        }
+
+        public async Task<LaunchResponse> HandleImpl(PsesLaunchRequestArguments request, CancellationToken cancellationToken)
         {
             // The debugger has officially started. We use this to later check if we should stop it.
             ((PsesInternalHost)_executionService).DebugContext.IsActive = true;
@@ -222,10 +247,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (_debugStateService.ScriptToLaunch != null
                 && _runspaceContext.CurrentRunspace.IsOnRemoteMachine)
             {
-                _debugStateService.ScriptToLaunch =
-                    _remoteFileManagerService.GetMappedPath(
-                        _debugStateService.ScriptToLaunch,
-                        _runspaceContext.CurrentRunspace);
+                if (_debugService.TryGetMappedRemotePath(_debugStateService.ScriptToLaunch, out string remoteMappedPath))
+                {
+                    _debugStateService.ScriptToLaunch = remoteMappedPath;
+                }
+                else
+                {
+                    // If the script is not mapped, we will map it to the remote path
+                    // using the RemoteFileManagerService.
+                    _debugStateService.ScriptToLaunch =
+                        _remoteFileManagerService.GetMappedPath(
+                            _debugStateService.ScriptToLaunch,
+                            _runspaceContext.CurrentRunspace);
+                }
             }
 
             // If no script is being launched, mark this as an interactive
@@ -250,11 +284,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _debugService.IsDebuggingRemoteRunspace = true;
             try
             {
+                _debugService.SetPathMappings(request.PathMappings);
                 return await HandleImpl(request, cancellationToken).ConfigureAwait(false);
             }
             catch
             {
                 _debugService.IsDebuggingRemoteRunspace = false;
+                _debugService.UnsetPathMappings();
                 throw;
             }
         }
@@ -486,6 +522,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _debugEventHandlerService.UnregisterEventHandlers();
 
             _debugService.IsDebuggingRemoteRunspace = false;
+            _debugService.UnsetPathMappings();
 
             if (!isRunspaceClosed && _debugStateService.IsAttachSession)
             {
