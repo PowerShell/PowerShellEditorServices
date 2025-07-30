@@ -48,6 +48,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 $Command
             )
 
+            if ($Script) {
+                # If using Set-PSBreakpoint we need to escape any wildcard patterns.
+                $PSBoundParameters['Script'] = [WildcardPattern]::Escape($Script)
+            }
+
             if ($PSCmdlet.ParameterSetName -eq 'Command') {
                 $cmdCtor = [System.Management.Automation.CommandBreakpoint].GetConstructor(
                     [System.Reflection.BindingFlags]'NonPublic, Public, Instance',
@@ -125,7 +130,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 .ConfigureAwait(false);
         }
 
-        public async Task<IReadOnlyList<BreakpointDetails>> SetBreakpointsAsync(string escapedScriptPath, IReadOnlyList<BreakpointDetails> breakpoints)
+        public async Task<IReadOnlyList<BreakpointDetails>> SetBreakpointsAsync(IReadOnlyList<BreakpointDetails> breakpoints)
         {
             if (BreakpointApiUtils.SupportsBreakpointApis(_editorServicesHost.CurrentRunspace))
             {
@@ -186,7 +191,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // path which may or may not exist.
                 psCommand
                     .AddScript(_setPSBreakpointLegacy, useLocalScope: true)
-                    .AddParameter("Script", escapedScriptPath)
+                    .AddParameter("Script", breakpoint.Source)
                     .AddParameter("Line", breakpoint.LineNumber);
 
                 // Check if the user has specified the column number for the breakpoint.
