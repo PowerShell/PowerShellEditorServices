@@ -129,7 +129,7 @@ function Start-DebugAttachSession {
 
         # https://microsoft.github.io/debug-adapter-protocol/specification#Reverse_Requests_StartDebugging
         $resp = $debugServer.SendRequest(
-            "startDebugging",
+            'startDebugging',
             @{
                 configuration = $configuration
                 request = 'attach'
