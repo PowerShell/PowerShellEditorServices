@@ -52,6 +52,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 # If using Set-PSBreakpoint we need to escape any wildcard patterns.
                 $PSBoundParameters['Script'] = [WildcardPattern]::Escape($Script)
             }
+            else {
+                # WinPS must use null for the Script if unset.
+                $Script = [NullString]::Value
+            }
 
             if ($PSCmdlet.ParameterSetName -eq 'Command') {
                 $cmdCtor = [System.Management.Automation.CommandBreakpoint].GetConstructor(
