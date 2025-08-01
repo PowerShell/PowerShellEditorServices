@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Nerdbank.Streams;
@@ -54,11 +55,15 @@ namespace PowerShellEditorServices.Test.E2E
         /// </summary>
         private Task<StoppedEvent> nextStopped => nextStoppedTcs.Task;
 
-        private readonly TaskCompletionSource<StartDebuggingAttachRequestArguments> startDebuggingAttachRequestTcs = new();
         /// <summary>
         /// This task is useful for waiting until a StartDebuggingAttachRequest is received.
         /// </summary>
-        private Task<StartDebuggingAttachRequestArguments> startDebuggingAttachRequest => startDebuggingAttachRequestTcs.Task;
+        private readonly TaskCompletionSource<StartDebuggingAttachRequestArguments> startDebuggingAttachRequestTcs = new();
+
+        /// <summary>
+        /// This task is useful for waiting until the debug session has terminated.
+        /// </summary>
+        private readonly TaskCompletionSource<TerminatedEvent> terminatedTcs = new();
 
         public async Task InitializeAsync()
         {
@@ -110,6 +115,11 @@ namespace PowerShellEditorServices.Test.E2E
                     .OnRequest("startDebugging", (StartDebuggingAttachRequestArguments request) =>
                     {
                         startDebuggingAttachRequestTcs.SetResult(request);
+                        return Task.CompletedTask;
+                    })
+                    .OnTerminated((TerminatedEvent e) =>
+                    {
+                        terminatedTcs.SetResult(e);
                         return Task.CompletedTask;
                     })
                 ;
@@ -545,16 +555,62 @@ namespace PowerShellEditorServices.Test.E2E
 
             string script = NewTestFile($"Start-DebugAttachSession {paramString}");
 
+            using CancellationTokenSource timeoutCts = new(30000);
+            using CancellationTokenRegistration _ = timeoutCts.Token.Register(() =>
+            {
+                startDebuggingAttachRequestTcs.TrySetCanceled();
+            });
+            using CancellationTokenRegistration _2 = timeoutCts.Token.Register(() =>
+            {
+                terminatedTcs.TrySetCanceled();
+            });
+
             await client.LaunchScript(script);
             await client.RequestConfigurationDone(new ConfigurationDoneArguments());
 
-            StartDebuggingAttachRequestArguments attachRequest = await startDebuggingAttachRequest;
+            StartDebuggingAttachRequestArguments attachRequest = await startDebuggingAttachRequestTcs.Task;
             Assert.Equal("attach", attachRequest.Request);
             Assert.Equal(expectedComputerName, attachRequest.Configuration.ComputerName);
             Assert.Equal(expectedPipeName, attachRequest.Configuration.CustomPipeName);
             Assert.Equal(expectedProcessId, attachRequest.Configuration.ProcessId);
             Assert.Equal(expectedRunspaceId, attachRequest.Configuration.RunspaceId);
             Assert.Equal(expectedRunspaceName, attachRequest.Configuration.RunspaceName);
+
+            await terminatedTcs.Task;
+        }
+
+        [SkippableFact]
+        public async Task CanLaunchScriptWithNewChildAttachSessionAsJob()
+        {
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
+                "PowerShellEditorServices.Command is not signed to run FLM in Constrained Language Mode.");
+            Skip.If(PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
+                "WinPS does not have ThreadJob, needed by -AsJob, present by default.");
+
+            string script = NewTestFile("Start-DebugAttachSession -AsJob | Receive-Job -Wait -AutoRemoveJob");
+
+            using CancellationTokenSource timeoutCts = new(30000);
+            using CancellationTokenRegistration _1 = timeoutCts.Token.Register(() =>
+            {
+                startDebuggingAttachRequestTcs.TrySetCanceled();
+            });
+            using CancellationTokenRegistration _2 = timeoutCts.Token.Register(() =>
+            {
+                terminatedTcs.TrySetCanceled();
+            });
+
+            await client.LaunchScript(script);
+            await client.RequestConfigurationDone(new ConfigurationDoneArguments());
+
+            StartDebuggingAttachRequestArguments attachRequest = await startDebuggingAttachRequestTcs.Task;
+            Assert.Equal("attach", attachRequest.Request);
+            Assert.Null(attachRequest.Configuration.ComputerName);
+            Assert.Null(attachRequest.Configuration.CustomPipeName);
+            Assert.Equal(0, attachRequest.Configuration.ProcessId);
+            Assert.Equal(0, attachRequest.Configuration.RunspaceId);
+            Assert.Null(attachRequest.Configuration.RunspaceName);
+
+            await terminatedTcs.Task;
         }
 
         private record StartDebuggingAttachRequestArguments(PsesAttachRequestArguments Configuration, string Request);
