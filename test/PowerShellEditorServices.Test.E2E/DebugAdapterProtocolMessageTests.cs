@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.PowerShell.EditorServices.Handlers;
 using Nerdbank.Streams;
 using OmniSharp.Extensions.DebugAdapter.Client;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Client;
@@ -52,6 +53,12 @@ namespace PowerShellEditorServices.Test.E2E
         /// This task is useful for waiting until a breakpoint is hit in a test.
         /// </summary>
         private Task<StoppedEvent> nextStopped => nextStoppedTcs.Task;
+
+        private readonly TaskCompletionSource<StartDebuggingAttachRequestArguments> startDebuggingAttachRequestTcs = new();
+        /// <summary>
+        /// This task is useful for waiting until a StartDebuggingAttachRequest is received.
+        /// </summary>
+        private Task<StartDebuggingAttachRequestArguments> startDebuggingAttachRequest => startDebuggingAttachRequestTcs.Task;
 
         public async Task InitializeAsync()
         {
@@ -99,6 +106,11 @@ namespace PowerShellEditorServices.Test.E2E
                     {
                         nextStoppedTcs.SetResult(e);
                         nextStoppedTcs = new();
+                    })
+                    .OnRequest("startDebugging", (StartDebuggingAttachRequestArguments request) =>
+                    {
+                        startDebuggingAttachRequestTcs.SetResult(request);
+                        return Task.CompletedTask;
                     })
                 ;
             });
@@ -513,5 +525,37 @@ namespace PowerShellEditorServices.Test.E2E
             await client.RequestConfigurationDone(new ConfigurationDoneArguments());
             Assert.Equal("pester", await ReadScriptLogLineAsync());
         }
+
+#nullable enable
+        [InlineData("", null, null, 0, 0, null)]
+        [InlineData("-ProcessId 1234 -RunspaceId 5678", null, null, 1234, 5678, null)]
+        [InlineData("-ProcessId 1234 -RunspaceId 5678 -ComputerName comp", "comp", null, 1234, 5678, null)]
+        [InlineData("-CustomPipeName testpipe -RunspaceName rs-name", null, "testpipe", 0, 0, "rs-name")]
+        [Theory]
+        public async Task CanLaunchScriptWithNewChildAttachSession(
+            string paramString,
+            string? expectedComputerName,
+            string? expectedPipeName,
+            int expectedProcessId,
+            int expectedRunspaceId,
+            string? expectedRunspaceName)
+        {
+            string script = NewTestFile($"Start-DebugAttachSession {paramString}");
+
+            await client.LaunchScript(script);
+            await client.RequestConfigurationDone(new ConfigurationDoneArguments());
+
+            StartDebuggingAttachRequestArguments attachRequest = await startDebuggingAttachRequest;
+            Assert.Equal("attach", attachRequest.Request);
+            Assert.Equal(expectedComputerName, attachRequest.Configuration.ComputerName);
+            Assert.Equal(expectedPipeName, attachRequest.Configuration.CustomPipeName);
+            Assert.Equal(expectedProcessId, attachRequest.Configuration.ProcessId);
+            Assert.Equal(expectedRunspaceId, attachRequest.Configuration.RunspaceId);
+            Assert.Equal(expectedRunspaceName, attachRequest.Configuration.RunspaceName);
+        }
+
+        private record StartDebuggingAttachRequestArguments(PsesAttachRequestArguments Configuration, string Request);
+
+#nullable disable
     }
 }
