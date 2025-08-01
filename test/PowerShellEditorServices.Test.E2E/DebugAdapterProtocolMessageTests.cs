@@ -531,7 +531,7 @@ namespace PowerShellEditorServices.Test.E2E
         [InlineData("-ProcessId 1234 -RunspaceId 5678", null, null, 1234, 5678, null)]
         [InlineData("-ProcessId 1234 -RunspaceId 5678 -ComputerName comp", "comp", null, 1234, 5678, null)]
         [InlineData("-CustomPipeName testpipe -RunspaceName rs-name", null, "testpipe", 0, 0, "rs-name")]
-        [Theory]
+        [SkippableTheory]
         public async Task CanLaunchScriptWithNewChildAttachSession(
             string paramString,
             string? expectedComputerName,
@@ -540,6 +540,9 @@ namespace PowerShellEditorServices.Test.E2E
             int expectedRunspaceId,
             string? expectedRunspaceName)
         {
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
+                "PowerShellEditorServices.Command is not signed to run FLM in Constrained Language Mode.");
+
             string script = NewTestFile($"Start-DebugAttachSession {paramString}");
 
             await client.LaunchScript(script);
