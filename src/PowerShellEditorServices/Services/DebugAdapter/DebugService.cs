@@ -29,6 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         #region Fields
 
         internal const string PsesGlobalVariableNamePrefix = "__psEditorServices_";
+        internal const string PsesGlobalVariableDebugServerName = $"{PsesGlobalVariableNamePrefix}DebugServer";
         private const string TemporaryScriptFileName = "Script Listing.ps1";
 
         private readonly ILogger _logger;
