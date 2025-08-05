@@ -164,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     await _breakpointService.RemoveAllBreakpointsAsync(scriptFile.FilePath).ConfigureAwait(false);
                 }
 
-                return await _breakpointService.SetBreakpointsAsync(escapedScriptPath, breakpoints).ConfigureAwait(false);
+                return await _breakpointService.SetBreakpointsAsync(breakpoints).ConfigureAwait(false);
             }
 
             return await dscBreakpoints

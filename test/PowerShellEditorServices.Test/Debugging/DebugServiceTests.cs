@@ -527,10 +527,11 @@ namespace PowerShellEditorServices.Test.Debugging
             Assert.Equal("True > ", prompt.ValueString);
         }
 
-        [SkippableFact]
-        public async Task DebuggerBreaksInUntitledScript()
+        [Theory]
+        [InlineData("Command")]
+        [InlineData("Line")]
+        public async Task DebuggerBreaksInUntitledScript(string breakpointType)
         {
-            Skip.IfNot(VersionUtils.PSEdition == "Core", "Untitled script breakpoints only supported in PowerShell Core");
             const string contents = "Write-Output $($MyInvocation.Line)";
             const string scriptPath = "untitled:Untitled-1";
             Assert.True(ScriptFile.IsUntitledPath(scriptPath));
@@ -539,11 +540,20 @@ namespace PowerShellEditorServices.Test.Debugging
             Assert.Equal(contents, scriptFile.Contents);
             Assert.True(workspace.TryGetFile(scriptPath, out ScriptFile _));
 
-            await debugService.SetCommandBreakpointsAsync(
-                new[] { CommandBreakpointDetails.Create("Write-Output") });
+            if (breakpointType == "Command")
+            {
+                await debugService.SetCommandBreakpointsAsync(
+                    new[] { CommandBreakpointDetails.Create("Write-Output") });
+            }
+            else
+            {
+                await debugService.SetLineBreakpointsAsync(
+                    scriptFile,
+                    new[] { BreakpointDetails.Create(scriptPath, 1) });
+            }
 
             ConfigurationDoneHandler configurationDoneHandler = new(
-                NullLoggerFactory.Instance, null, debugService, null, null, psesHost, workspace, null, psesHost);
+                NullLoggerFactory.Instance, null, debugService, null, null, psesHost, workspace, null);
 
             Task _ = configurationDoneHandler.LaunchScriptAsync(scriptPath);
             await AssertDebuggerStopped(scriptPath, 1);
@@ -565,7 +575,7 @@ namespace PowerShellEditorServices.Test.Debugging
         public async Task RecordsF5CommandInPowerShellHistory()
         {
             ConfigurationDoneHandler configurationDoneHandler = new(
-                NullLoggerFactory.Instance, null, debugService, null, null, psesHost, workspace, null, psesHost);
+                NullLoggerFactory.Instance, null, debugService, null, null, psesHost, workspace, null);
             await configurationDoneHandler.LaunchScriptAsync(debugScriptFile.FilePath);
 
             IReadOnlyList<string> historyResult = await psesHost.ExecutePSCommandAsync<string>(
@@ -605,7 +615,7 @@ namespace PowerShellEditorServices.Test.Debugging
         public async Task OddFilePathsLaunchCorrectly()
         {
             ConfigurationDoneHandler configurationDoneHandler = new(
-                NullLoggerFactory.Instance, null, debugService, null, null, psesHost, workspace, null, psesHost);
+                NullLoggerFactory.Instance, null, debugService, null, null, psesHost, workspace, null);
             await configurationDoneHandler.LaunchScriptAsync(oddPathScriptFile.FilePath);
 
             IReadOnlyList<string> historyResult = await psesHost.ExecutePSCommandAsync<string>(

@@ -7,11 +7,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
@@ -44,7 +42,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly IInternalPowerShellExecutionService _executionService;
         private readonly WorkspaceService _workspaceService;
         private readonly IPowerShellDebugContext _debugContext;
-        private readonly IRunspaceContext _runspaceContext;
 
         // TODO: Decrease these arguments since they're a bunch of interfaces that can be simplified
         // (i.e., `IRunspaceContext` should just be available on `IPowerShellExecutionService`).
@@ -56,8 +53,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             DebugEventHandlerService debugEventHandlerService,
             IInternalPowerShellExecutionService executionService,
             WorkspaceService workspaceService,
-            IPowerShellDebugContext debugContext,
-            IRunspaceContext runspaceContext)
+            IPowerShellDebugContext debugContext)
         {
             _logger = loggerFactory.CreateLogger<ConfigurationDoneHandler>();
             _debugAdapterServer = debugAdapterServer;
@@ -67,7 +63,6 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _executionService = executionService;
             _workspaceService = workspaceService;
             _debugContext = debugContext;
-            _runspaceContext = runspaceContext;
         }
 
         public Task<ConfigurationDoneResponse> Handle(ConfigurationDoneArguments request, CancellationToken cancellationToken)
@@ -119,13 +114,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             else // It's a URI to an untitled script, or a raw script.
             {
                 bool isScriptFile = _workspaceService.TryGetFile(scriptToLaunch, out ScriptFile untitledScript);
-                if (isScriptFile && BreakpointApiUtils.SupportsBreakpointApis(_runspaceContext.CurrentRunspace))
+                if (isScriptFile)
                 {
                     // Parse untitled files with their `Untitled:` URI as the filename which will
                     // cache the URI and contents within the PowerShell parser. By doing this, we
-                    // light up the ability to debug untitled files with line breakpoints. This is
-                    // only possible with PowerShell 7's new breakpoint APIs since the old API,
-                    // Set-PSBreakpoint, validates that the given path points to a real file.
+                    // light up the ability to debug untitled files with line breakpoints.
                     ScriptBlockAst ast = Parser.ParseInput(
                         untitledScript.Contents,
                         untitledScript.DocumentUri.ToString(),
