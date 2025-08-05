@@ -91,10 +91,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
                     .AddCommand(@"Microsoft.PowerShell.Core\Import-Module")
                     .AddParameter("Name", "PSDesiredStateConfiguration")
                     .AddParameter("PassThru")
-                    .AddParameter("ErrorAction", ActionPreference.Ignore);
+                    .AddParameter("ErrorAction", ActionPreference.Ignore)
+                    .AddCommand(@"Microsoft.PowerShell.Utility\Select-Object")
+                    .AddParameter("ExpandProperty", "Name");
 
-                IReadOnlyList<PSModuleInfo> dscModule =
-                    await executionService.ExecutePSCommandAsync<PSModuleInfo>(
+                IReadOnlyList<string> dscModule =
+                    await executionService.ExecutePSCommandAsync<string>(
                         psCommand,
                         CancellationToken.None,
                         new PowerShellExecutionOptions { ThrowOnError = false })
