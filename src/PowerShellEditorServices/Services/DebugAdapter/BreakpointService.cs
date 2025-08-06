@@ -18,6 +18,154 @@ namespace Microsoft.PowerShell.EditorServices.Services
 {
     internal class BreakpointService
     {
+        private const string _getPSBreakpointLegacy = @"
+            [CmdletBinding()]
+            param (
+                [Parameter()]
+                [string]
+                $Script,
+
+                [Parameter()]
+                [int]
+                $RunspaceId = [Runspace]::DefaultRunspace.Id
+            )
+
+            $runspace = if ($PSBoundParameters.ContainsKey('RunspaceId')) {
+                Get-Runspace -Id $RunspaceId
+                $null = $PSBoundParameters.Remove('RunspaceId')
+            }
+            else {
+                [Runspace]::DefaultRunspace
+            }
+
+            $debugger = $runspace.Debugger
+            $getBreakpointsMeth = $debugger.GetType().GetMethod(
+                'GetBreakpoints',
+                [System.Reflection.BindingFlags]'NonPublic, Public, Instance',
+                $null,
+                [type[]]@(),
+                $null)
+
+            $runspaceIdProp = [System.Management.Automation.PSNoteProperty]::new(
+                'RunspaceId',
+                $runspaceId)
+
+            @(
+                if (-not $getBreakpointsMeth) {
+                    if ($RunspaceId -ne [Runspace]::DefaultRunspace.Id) {
+                        throw 'Failed to find GetBreakpoints method on Debugger.'
+                    }
+
+                    Microsoft.PowerShell.Utility\Get-PSBreakpoint @PSBoundParameters
+                }
+                else {
+                    $getBreakpointsMeth.Invoke($debugger, @()) | Where-Object {
+                        if ($Script) {
+                            $_.Script -eq $Script
+                        }
+                        else {
+                            $true
+                        }
+                    }
+                }
+            ) | ForEach-Object {
+                $_.PSObject.Properties.Add($runspaceIdProp)
+                $_
+            }
+        ";
+
+        private const string _removePSBreakpointLegacy = @"
+            [CmdletBinding(DefaultParameterSetName = 'Breakpoint')]
+            param (
+                [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Breakpoint')]
+                [System.Management.Automation.Breakpoint[]]
+                $Breakpoint,
+
+                [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Id')]
+                [int[]]
+                $Id,
+
+                [Parameter(ParameterSetName = 'Id')]
+                [int]
+                $RunspaceId = [Runspace]::DefaultRunspace.Id
+            )
+
+            begin {
+                $removeBreakpointMeth = [Runspace]::DefaultRunspace.Debugger.GetType().GetMethod(
+                    'RemoveBreakpoint',
+                    [System.Reflection.BindingFlags]'NonPublic, Public, Instance',
+                    $null,
+                    [type[]]@([System.Management.Automation.Breakpoint]),
+                    $null)
+                $getBreakpointMeth = [Runspace]::DefaultRunspace.Debugger.GetType().GetMethod(
+                    'GetBreakpoint',
+                    [System.Reflection.BindingFlags]'NonPublic, Public, Instance',
+                    $null,
+                    [type[]]@([int]),
+                    $null)
+
+                $breakpointCollection = [System.Collections.Generic.List[System.Management.Automation.Breakpoint]]::new()
+            }
+
+            process {
+                if ($PSCmdlet.ParameterSetName -eq 'Id') {
+                    $runspace = Get-Runspace -Id $RunspaceId
+                    $runspaceProp = [System.Management.Automation.PSNoteProperty]::new(
+                        'Runspace',
+                        $Runspace)
+
+                    $breakpoints = if ($getBreakpointMeth) {
+                        foreach ($breakpointId in $Id) {
+                            $getBreakpointMeth.Invoke($runspace.Debugger, @($breakpointId))
+                        }
+                    }
+                    elseif ($runspace -eq [Runspace]::DefaultRunspace) {
+                        Microsoft.PowerShell.Utility\Get-PSBreakpoint -Id $Id
+                    }
+                    else {
+                        throw 'Failed to find GetBreakpoint method on Debugger.'
+                    }
+
+                    $breakpoints | ForEach-Object {
+                        $_.PSObject.Properties.Add($runspaceProp)
+                        $breakpointCollection.Add($_)
+                    }
+                }
+                else {
+                    foreach ($b in $Breakpoint) {
+                        # RunspaceId may be set by _getPSBreakpointLegacy when
+                        # targeting a breakpoint in a specific runspace.
+                        $runspace = if ($b.PSObject.Properties.Match('RunspaceId')) {
+                            Get-Runspace -Id $b.RunspaceId
+                        }
+                        else {
+                            [Runspace]::DefaultRunspace
+                        }
+
+                        $b.PSObject.Properties.Add(
+                            [System.Management.Automation.PSNoteProperty]::new('Runspace', $runspace))
+                        $breakpointCollection.Add($b)
+                    }
+                }
+            }
+
+            end {
+                foreach ($b in $breakpointCollection) {
+                    if ($removeBreakpointMeth) {
+                        $removeBreakpointMeth.Invoke($b.Runspace.Debugger, @($b))
+                    }
+                    elseif ($b.Runspace -eq [Runspace]::DefaultRunspace) {
+                        # If we don't have the method, we can only remove breakpoints
+                        # from the default runspace using Remove-PSBreakpoint.
+                        $b | Microsoft.PowerShell.Utility\Remove-PSBreakpoint
+                    }
+                    else {
+                        throw 'Failed to find RemoveBreakpoint method on Debugger.'
+                    }
+                }
+            }
+        ";
+
         /// <summary>
         /// Code used on WinPS 5.1 to set breakpoints without Script path validation.
         /// It uses reflection because the APIs were not public until 7.0 but just in
@@ -45,7 +193,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
                 [Parameter(ParameterSetName = 'Command', Mandatory = $true)]
                 [string]
-                $Command
+                $Command,
+
+                [Parameter()]
+                [int]
+                $RunspaceId
             )
 
             if ($Script) {
@@ -65,6 +217,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     $null)
 
                 if (-not $cmdCtor) {
+                    if ($PSBoundParameters.ContainsKey('RunspaceId')) {
+                        throw 'Failed to find constructor for CommandBreakpoint.'
+                    }
                     Microsoft.PowerShell.Utility\Set-PSBreakpoint @PSBoundParameters
                     return
                 }
@@ -82,6 +237,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     $null)
 
                 if (-not $lineCtor) {
+                    if ($PSBoundParameters.ContainsKey('RunspaceId')) {
+                        throw 'Failed to find constructor for LineBreakpoint.'
+                    }
                     Microsoft.PowerShell.Utility\Set-PSBreakpoint @PSBoundParameters
                     return
                 }
@@ -89,8 +247,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 $b = $lineCtor.Invoke(@($Script, $Line, $Column, $Action))
             }
 
-            [Runspace]::DefaultRunspace.Debugger.SetBreakpoints(
-                [System.Management.Automation.Breakpoint[]]@($b))
+            $runspace = if ($PSBoundParameters.ContainsKey('RunspaceId')) {
+                Get-Runspace -Id $RunspaceId
+            }
+            else {
+                [Runspace]::DefaultRunspace
+            }
+
+            $runspace.Debugger.SetBreakpoints([System.Management.Automation.Breakpoint[]]@($b))
 
             $b
         ";
@@ -128,10 +292,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             // Legacy behavior
-            PSCommand psCommand = new PSCommand().AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
+            PSCommand psCommand = new PSCommand().AddScript(_getPSBreakpointLegacy, useLocalScope: true);
+            if (_debugStateService.RunspaceId is not null)
+            {
+                psCommand.AddParameter("RunspaceId", _debugStateService.RunspaceId.Value);
+            }
             return await _executionService
-                .ExecutePSCommandAsync<Breakpoint>(psCommand, CancellationToken.None)
-                .ConfigureAwait(false);
+                    .ExecutePSCommandAsync<Breakpoint>(psCommand, CancellationToken.None)
+                    .ConfigureAwait(false);
         }
 
         public async Task<IReadOnlyList<BreakpointDetails>> SetBreakpointsAsync(IReadOnlyList<BreakpointDetails> breakpoints)
@@ -210,6 +378,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 if (actionScriptBlock is not null)
                 {
                     psCommand.AddParameter("Action", actionScriptBlock);
+                }
+
+                if (_debugStateService.RunspaceId is not null)
+                {
+                    psCommand.AddParameter("RunspaceId", _debugStateService.RunspaceId.Value);
                 }
             }
 
@@ -335,14 +508,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 }
 
                 // Legacy behavior
-                PSCommand psCommand = new PSCommand().AddCommand(@"Microsoft.PowerShell.Utility\Get-PSBreakpoint");
-
+                PSCommand psCommand = new PSCommand().AddScript(_getPSBreakpointLegacy, useLocalScope: true);
+                if (_debugStateService.RunspaceId is not null)
+                {
+                    psCommand.AddParameter("RunspaceId", _debugStateService.RunspaceId.Value);
+                }
                 if (!string.IsNullOrEmpty(scriptPath))
                 {
                     psCommand.AddParameter("Script", scriptPath);
                 }
 
-                psCommand.AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint");
+                psCommand.AddScript(_removePSBreakpointLegacy, useLocalScope: true);
                 await _executionService.ExecutePSCommandAsync<object>(psCommand, CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception e)
@@ -378,8 +554,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
             if (breakpointIds.Any())
             {
                 PSCommand psCommand = new PSCommand()
-                    .AddCommand(@"Microsoft.PowerShell.Utility\Remove-PSBreakpoint")
+                    .AddScript(_removePSBreakpointLegacy, useLocalScope: true)
                     .AddParameter("Id", breakpoints.Select(b => b.Id).ToArray());
+                if (_debugStateService.RunspaceId is not null)
+                {
+                    psCommand.AddParameter("RunspaceId", _debugStateService.RunspaceId.Value);
+                }
                 await _executionService.ExecutePSCommandAsync<object>(psCommand, CancellationToken.None).ConfigureAwait(false);
             }
         }

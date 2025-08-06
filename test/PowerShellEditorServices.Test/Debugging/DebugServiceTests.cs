@@ -552,10 +552,10 @@ namespace PowerShellEditorServices.Test.Debugging
                     new[] { BreakpointDetails.Create(scriptPath, 1) });
             }
 
-            ConfigurationDoneHandler configurationDoneHandler = new(
-                NullLoggerFactory.Instance, null, debugService, null, null, psesHost, workspace, null);
+            LaunchAndAttachHandler launchAndAttachHandler = new(
+                NullLoggerFactory.Instance, null, null, null, debugService, psesHost, psesHost, workspace, null, null);
 
-            Task _ = configurationDoneHandler.LaunchScriptAsync(scriptPath);
+            Task _ = launchAndAttachHandler.LaunchScriptAsync(scriptPath, [], "DotSource");
             await AssertDebuggerStopped(scriptPath, 1);
 
             VariableDetailsBase[] variables = await GetVariables(VariableContainerDetails.CommandVariablesName);
@@ -574,9 +574,9 @@ namespace PowerShellEditorServices.Test.Debugging
         [Fact]
         public async Task RecordsF5CommandInPowerShellHistory()
         {
-            ConfigurationDoneHandler configurationDoneHandler = new(
-                NullLoggerFactory.Instance, null, debugService, null, null, psesHost, workspace, null);
-            await configurationDoneHandler.LaunchScriptAsync(debugScriptFile.FilePath);
+            LaunchAndAttachHandler launchAndAttachHandler = new(
+                NullLoggerFactory.Instance, null, null, null, debugService, psesHost, psesHost, workspace, null, null);
+            await launchAndAttachHandler.LaunchScriptAsync(debugScriptFile.FilePath, [], "DotSource");
 
             IReadOnlyList<string> historyResult = await psesHost.ExecutePSCommandAsync<string>(
                 new PSCommand().AddScript("(Get-History).CommandLine"),
@@ -614,9 +614,9 @@ namespace PowerShellEditorServices.Test.Debugging
         [Fact]
         public async Task OddFilePathsLaunchCorrectly()
         {
-            ConfigurationDoneHandler configurationDoneHandler = new(
-                NullLoggerFactory.Instance, null, debugService, null, null, psesHost, workspace, null);
-            await configurationDoneHandler.LaunchScriptAsync(oddPathScriptFile.FilePath);
+            LaunchAndAttachHandler launchAndAttachHandler = new(
+                NullLoggerFactory.Instance, null, null, null, debugService, psesHost, psesHost, workspace, null, null);
+            await launchAndAttachHandler.LaunchScriptAsync(oddPathScriptFile.FilePath, [], "DotSource");
 
             IReadOnlyList<string> historyResult = await psesHost.ExecutePSCommandAsync<string>(
                 new PSCommand().AddScript("(Get-History).CommandLine"),
