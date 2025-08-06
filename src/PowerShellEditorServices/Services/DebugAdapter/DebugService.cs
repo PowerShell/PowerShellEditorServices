@@ -15,7 +15,6 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility;
-using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 
 namespace Microsoft.PowerShell.EditorServices.Services
@@ -49,6 +48,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private VariableContainerDetails scriptScopeVariables;
         private VariableContainerDetails localScopeVariables;
         private StackFrameDetails[] stackFrameDetails;
+        private PathMapping[] _pathMappings;
 
         private readonly SemaphoreSlim debugInfoHandle = AsyncUtils.CreateSimpleLockingSemaphore();
         #endregion
@@ -123,22 +123,22 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <summary>
         /// Sets the list of line breakpoints for the current debugging session.
         /// </summary>
-        /// <param name="scriptFile">The ScriptFile in which breakpoints will be set.</param>
+        /// <param name="scriptPath">The path in which breakpoints will be set.</param>
         /// <param name="breakpoints">BreakpointDetails for each breakpoint that will be set.</param>
         /// <param name="clearExisting">If true, causes all existing breakpoints to be cleared before setting new ones.</param>
+        /// <param name="skipRemoteMapping">If true, skips the remote file manager mapping of the script path.</param>
         /// <returns>An awaitable Task that will provide details about the breakpoints that were set.</returns>
         public async Task<IReadOnlyList<BreakpointDetails>> SetLineBreakpointsAsync(
-            ScriptFile scriptFile,
+            string scriptPath,
             IReadOnlyList<BreakpointDetails> breakpoints,
-            bool clearExisting = true)
+            bool clearExisting = true,
+            bool skipRemoteMapping = false)
         {
             DscBreakpointCapability dscBreakpoints = await _debugContext.GetDscBreakpointCapabilityAsync().ConfigureAwait(false);
 
-            string scriptPath = scriptFile.FilePath;
-
             _psesHost.Runspace.ThrowCancelledIfUnusable();
             // Make sure we're using the remote script path
-            if (_psesHost.CurrentRunspace.IsOnRemoteMachine && _remoteFileManager is not null)
+            if (!skipRemoteMapping && _psesHost.CurrentRunspace.IsOnRemoteMachine && _remoteFileManager is not null)
             {
                 if (!_remoteFileManager.IsUnderRemoteTempPath(scriptPath))
                 {
@@ -162,7 +162,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 if (clearExisting)
                 {
-                    await _breakpointService.RemoveAllBreakpointsAsync(scriptFile.FilePath).ConfigureAwait(false);
+                    await _breakpointService.RemoveAllBreakpointsAsync(scriptPath).ConfigureAwait(false);
                 }
 
                 return await _breakpointService.SetBreakpointsAsync(breakpoints).ConfigureAwait(false);
@@ -603,6 +603,59 @@ namespace Microsoft.PowerShell.EditorServices.Services
             };
         }
 
+        internal void SetPathMappings(PathMapping[] pathMappings) => _pathMappings = pathMappings;
+
+        internal void UnsetPathMappings() => _pathMappings = null;
+
+        internal bool TryGetMappedLocalPath(string remotePath, out string localPath)
+        {
+            if (_pathMappings is not null)
+            {
+                foreach (PathMapping mapping in _pathMappings)
+                {
+                    if (string.IsNullOrWhiteSpace(mapping.LocalRoot) || string.IsNullOrWhiteSpace(mapping.RemoteRoot))
+                    {
+                        // If either path mapping is null, we can't map the path.
+                        continue;
+                    }
+
+                    if (remotePath.StartsWith(mapping.RemoteRoot, StringComparison.OrdinalIgnoreCase))
+                    {
+                        localPath = mapping.LocalRoot + remotePath.Substring(mapping.RemoteRoot.Length);
+                        return true;
+                    }
+                }
+            }
+
+            localPath = null;
+            return false;
+        }
+
+        internal bool TryGetMappedRemotePath(string localPath, out string remotePath)
+        {
+            if (_pathMappings is not null)
+            {
+                foreach (PathMapping mapping in _pathMappings)
+                {
+                    if (string.IsNullOrWhiteSpace(mapping.LocalRoot) || string.IsNullOrWhiteSpace(mapping.RemoteRoot))
+                    {
+                        // If either path mapping is null, we can't map the path.
+                        continue;
+                    }
+
+                    if (localPath.StartsWith(mapping.LocalRoot, StringComparison.OrdinalIgnoreCase))
+                    {
+                        // If the local path starts with the local path mapping, we can replace it with the remote path.
+                        remotePath = mapping.RemoteRoot + localPath.Substring(mapping.LocalRoot.Length);
+                        return true;
+                    }
+                }
+            }
+
+            remotePath = null;
+            return false;
+        }
+
         #endregion
 
         #region Private Methods
@@ -873,14 +926,19 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 StackFrameDetails stackFrameDetailsEntry = StackFrameDetails.Create(callStackFrame, autoVariables, commandVariables);
                 string stackFrameScriptPath = stackFrameDetailsEntry.ScriptPath;
 
-                if (scriptNameOverride is not null
-                    && string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
+                bool isNoScriptPath = string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath);
+                if (scriptNameOverride is not null && isNoScriptPath)
                 {
                     stackFrameDetailsEntry.ScriptPath = scriptNameOverride;
                 }
+                else if (TryGetMappedLocalPath(stackFrameScriptPath, out string localMappedPath)
+                    && !isNoScriptPath)
+                {
+                    stackFrameDetailsEntry.ScriptPath = localMappedPath;
+                }
                 else if (_psesHost.CurrentRunspace.IsOnRemoteMachine
                     && _remoteFileManager is not null
-                    && !string.Equals(stackFrameScriptPath, StackFrameDetails.NoFileScriptPath))
+                    && !isNoScriptPath)
                 {
                     stackFrameDetailsEntry.ScriptPath =
                         _remoteFileManager.GetMappedPath(stackFrameScriptPath, _psesHost.CurrentRunspace);
@@ -981,9 +1039,13 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // Begin call stack and variables fetch. We don't need to block here.
                 StackFramesAndVariablesFetched = FetchStackFramesAndVariablesAsync(noScriptName ? localScriptPath : null);
 
+                if (!noScriptName && TryGetMappedLocalPath(e.InvocationInfo.ScriptName, out string mappedLocalPath))
+                {
+                    localScriptPath = mappedLocalPath;
+                }
                 // If this is a remote connection and the debugger stopped at a line
                 // in a script file, get the file contents
-                if (_psesHost.CurrentRunspace.IsOnRemoteMachine
+                else if (_psesHost.CurrentRunspace.IsOnRemoteMachine
                     && _remoteFileManager is not null
                     && !noScriptName)
                 {
@@ -1034,8 +1096,12 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 // TODO: This could be either a path or a script block!
                 string scriptPath = lineBreakpoint.Script;
-                if (_psesHost.CurrentRunspace.IsOnRemoteMachine
-                    && _remoteFileManager is not null)
+                if (TryGetMappedLocalPath(scriptPath, out string mappedLocalPath))
+                {
+                    scriptPath = mappedLocalPath;
+                }
+                else if (_psesHost.CurrentRunspace.IsOnRemoteMachine
+                        && _remoteFileManager is not null)
                 {
                     string mappedPath = _remoteFileManager.GetMappedPath(scriptPath, _psesHost.CurrentRunspace);
 

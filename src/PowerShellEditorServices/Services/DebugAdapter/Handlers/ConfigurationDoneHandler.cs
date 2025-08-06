@@ -1,161 +1,35 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Management.Automation;
-using System.Management.Automation.Language;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
-using Microsoft.PowerShell.EditorServices.Services.TextDocument;
-using Microsoft.PowerShell.EditorServices.Utility;
-using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
-using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
 
 namespace Microsoft.PowerShell.EditorServices.Handlers
 {
     internal class ConfigurationDoneHandler : IConfigurationDoneHandler
     {
-        // TODO: We currently set `WriteInputToHost` as true, which writes our debugged commands'
-        // `GetInvocationText` and that reveals some obscure implementation details we should
-        // instead hide from the user with pretty strings (or perhaps not write out at all).
-        //
-        // This API is mostly used for F5 execution so it requires the foreground.
-        private static readonly PowerShellExecutionOptions s_debuggerExecutionOptions = new()
-        {
-            RequiresForeground = true,
-            WriteInputToHost = true,
-            WriteOutputToHost = true,
-            ThrowOnError = false,
-            AddToHistory = true,
-        };
-
-        private readonly ILogger _logger;
-        private readonly IDebugAdapterServerFacade _debugAdapterServer;
         private readonly DebugService _debugService;
         private readonly DebugStateService _debugStateService;
-        private readonly DebugEventHandlerService _debugEventHandlerService;
-        private readonly IInternalPowerShellExecutionService _executionService;
-        private readonly WorkspaceService _workspaceService;
-        private readonly IPowerShellDebugContext _debugContext;
 
-        // TODO: Decrease these arguments since they're a bunch of interfaces that can be simplified
-        // (i.e., `IRunspaceContext` should just be available on `IPowerShellExecutionService`).
         public ConfigurationDoneHandler(
-            ILoggerFactory loggerFactory,
-            IDebugAdapterServerFacade debugAdapterServer,
             DebugService debugService,
-            DebugStateService debugStateService,
-            DebugEventHandlerService debugEventHandlerService,
-            IInternalPowerShellExecutionService executionService,
-            WorkspaceService workspaceService,
-            IPowerShellDebugContext debugContext)
+            DebugStateService debugStateService)
         {
-            _logger = loggerFactory.CreateLogger<ConfigurationDoneHandler>();
-            _debugAdapterServer = debugAdapterServer;
             _debugService = debugService;
             _debugStateService = debugStateService;
-            _debugEventHandlerService = debugEventHandlerService;
-            _executionService = executionService;
-            _workspaceService = workspaceService;
-            _debugContext = debugContext;
         }
 
-        public Task<ConfigurationDoneResponse> Handle(ConfigurationDoneArguments request, CancellationToken cancellationToken)
+        public async Task<ConfigurationDoneResponse> Handle(ConfigurationDoneArguments request, CancellationToken cancellationToken)
         {
             _debugService.IsClientAttached = true;
 
-            if (!string.IsNullOrEmpty(_debugStateService.ScriptToLaunch))
-            {
-                // NOTE: This is an unawaited task because responding to "configuration done" means
-                // setting up the debugger, and in our case that means starting the script but not
-                // waiting for it to finish.
-                Task _ = LaunchScriptAsync(_debugStateService.ScriptToLaunch).HandleErrorsAsync(_logger);
-            }
+            // Tells the attach/launch request handler that the config is done
+            // and it can continue starting the script.
+            await _debugStateService.SetConfigurationDoneAsync(cancellationToken).ConfigureAwait(false);
 
-            if (_debugStateService.IsInteractiveDebugSession && _debugService.IsDebuggerStopped)
-            {
-                if (_debugService.CurrentDebuggerStoppedEventArgs is not null)
-                {
-                    // If this is an interactive session and there's a pending breakpoint, send that
-                    // information along to the debugger client.
-                    _debugEventHandlerService.TriggerDebuggerStopped(_debugService.CurrentDebuggerStoppedEventArgs);
-                }
-                else
-                {
-                    // If this is an interactive session and there's a pending breakpoint that has
-                    // not been propagated through the debug service, fire the debug service's
-                    // OnDebuggerStop event.
-                    _debugService.OnDebuggerStopAsync(null, _debugContext.LastStopEventArgs);
-                }
-            }
-
-            return Task.FromResult(new ConfigurationDoneResponse());
-        }
-
-        // NOTE: We test this function in `DebugServiceTests` so it both needs to be internal, and
-        // use conditional-access on `_debugStateService` and `_debugAdapterServer` as its not set
-        // by tests.
-        internal async Task LaunchScriptAsync(string scriptToLaunch)
-        {
-            PSCommand command;
-            if (System.IO.File.Exists(scriptToLaunch))
-            {
-                // For a saved file we just execute its path (after escaping it), with the configured operator
-                // (which can't be called that because it's a reserved keyword in C#).
-                string executeMode = _debugStateService?.ExecuteMode == "Call" ? "&" : ".";
-                command = PSCommandHelpers.BuildDotSourceCommandWithArguments(
-                    PSCommandHelpers.EscapeScriptFilePath(scriptToLaunch), _debugStateService?.Arguments, executeMode);
-            }
-            else // It's a URI to an untitled script, or a raw script.
-            {
-                bool isScriptFile = _workspaceService.TryGetFile(scriptToLaunch, out ScriptFile untitledScript);
-                if (isScriptFile)
-                {
-                    // Parse untitled files with their `Untitled:` URI as the filename which will
-                    // cache the URI and contents within the PowerShell parser. By doing this, we
-                    // light up the ability to debug untitled files with line breakpoints.
-                    ScriptBlockAst ast = Parser.ParseInput(
-                        untitledScript.Contents,
-                        untitledScript.DocumentUri.ToString(),
-                        out Token[] _,
-                        out ParseError[] _);
-
-                    // In order to use utilize the parser's cache (and therefore hit line
-                    // breakpoints) we need to use the AST's `ScriptBlock` object. Due to
-                    // limitations in PowerShell's public API, this means we must use the
-                    // `PSCommand.AddArgument(object)` method, hence this hack where we dot-source
-                    // `$args[0]. Fortunately the dot-source operator maintains a stack of arguments
-                    // on each invocation, so passing the user's arguments directly in the initial
-                    // `AddScript` surprisingly works.
-                    command = PSCommandHelpers
-                        .BuildDotSourceCommandWithArguments("$args[0]", _debugStateService?.Arguments)
-                        .AddArgument(ast.GetScriptBlock());
-                }
-                else
-                {
-                    // Without the new APIs we can only execute the untitled script's contents.
-                    // Command breakpoints and `Wait-Debugger` will work. We must wrap the script
-                    // with newlines so that any included comments don't break the command.
-                    command = PSCommandHelpers.BuildDotSourceCommandWithArguments(
-                        string.Concat(
-                            "{" + System.Environment.NewLine,
-                            isScriptFile ? untitledScript.Contents : scriptToLaunch,
-                            System.Environment.NewLine + "}"),
-                            _debugStateService?.Arguments);
-                }
-            }
-
-            await _executionService.ExecutePSCommandAsync(
-                command,
-                CancellationToken.None,
-                s_debuggerExecutionOptions).ConfigureAwait(false);
-
-            _debugAdapterServer?.SendNotification(EventNames.Terminated);
+            return new ConfigurationDoneResponse();
         }
     }
 }
