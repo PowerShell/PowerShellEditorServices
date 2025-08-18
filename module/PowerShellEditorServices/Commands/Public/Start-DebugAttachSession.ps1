@@ -39,6 +39,10 @@ function Start-DebugAttachSession {
         $ComputerName,
 
         [Parameter()]
+        [IDictionary[]]
+        $PathMapping,
+
+        [Parameter()]
         [switch]
         $AsJob
     )
@@ -105,11 +109,21 @@ function Start-DebugAttachSession {
                 return
             }
 
-            $configuration.name = "Attach Process $ProcessId"
+            if ($Name) {
+                $configuration.name = $Name
+            }
+            else {
+                $configuration.name = "Attach Process $ProcessId"
+            }
             $configuration.processId = $ProcessId
         }
         elseif ($CustomPipeName) {
-            $configuration.name = "Attach Pipe $CustomPipeName"
+            if ($Name) {
+                $configuration.name = $Name
+            }
+            else {
+                $configuration.name = "Attach Pipe $CustomPipeName"
+            }
             $configuration.customPipeName = $CustomPipeName
         }
         else {
@@ -125,6 +139,10 @@ function Start-DebugAttachSession {
         }
         elseif ($RunspaceName) {
             $configuration.runspaceName = $RunspaceName
+        }
+
+        if ($PathMapping) {
+            $configuration.pathMappings = $PathMapping
         }
 
         # https://microsoft.github.io/debug-adapter-protocol/specification#Reverse_Requests_StartDebugging
