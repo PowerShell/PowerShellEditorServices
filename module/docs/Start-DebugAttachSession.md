@@ -16,14 +16,15 @@ Starts a new debug session attached to the specified PowerShell instance.
 ### ProcessId (Default)
 ```
 Start-DebugAttachSession [-Name <String>] [-ProcessId <Int32>] [-RunspaceName <String>] [-RunspaceId <Int32>]
- [-ComputerName <String>] [-WindowActionOnEnd {Close | Hide | Keep}] [-AsJob] [<CommonParameters>]
+ [-ComputerName <String>] [-WindowActionOnEnd {Close | Hide | Keep}] [-PathMapping <IDictionary[]>] [-AsJob]
+ [<CommonParameters>]
 ```
 
 ### CustomPipeName
 ```
 Start-DebugAttachSession [-Name <String>] [-CustomPipeName <String>] [-RunspaceName <String>]
- [-RunspaceId <Int32>] [-ComputerName <String>] [-WindowActionOnEnd {Close | Hide | Keep}] [-AsJob]
- [<CommonParameters>]
+ [-RunspaceId <Int32>] [-ComputerName <String>] [-WindowActionOnEnd {Close | Hide | Keep}]
+ [-PathMapping <IDictionary[]>] [-AsJob] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -74,6 +75,27 @@ Write-Host "Test $a - $PID"
 ```
 
 Launches a new PowerShell process with a custom pipe and starts a new attach configuration that will debug the new process under a child debugging session. The caller waits until the new process ends before ending the parent session.
+
+### -------------------------- EXAMPLE 2 --------------------------
+
+```powershell
+$attachParams = @{
+    ComputerName = 'remote-windows'
+    ProcessId = $remotePid
+    RunspaceId = 1
+    PathMapping = @(
+        @{
+            localRoot = 'C:\local\path\to\scripts\'
+            remoteRoot = 'C:\remote\path\on\remote-windows\'
+        }
+    )
+}
+Start-DebugAttachSession @attachParams
+```
+
+Attaches to a remote PSSession through the WSMan parameter and maps the remote path running the script in the PSSession to the same copy of files locally. For example `remote-windows` is running the script `C:\remote\path\on\remote-windows\script.ps1` but the same script(s) are located locally on the current host `C:\local\path\to\scripts\script.ps1`.
+
+The debug client can see the remote files as local when setting breakpoints and inspecting the callstack with this mapped path.
 
 ## PARAMETERS
 
@@ -133,6 +155,24 @@ The name of the debug session to show in the debug client.
 
 ```yaml
 Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -PathMapping
+
+An array of dictionaries with the keys `localRoot` and `remoteRoot` that maps a local and remote path root to each other. This option is useful when attaching to a PSSession running a script that is not accessible locally but can be found under a different path.
+
+It is a good idea to ensure the `localRoot` and `remoteRoot` entries are either the absolute path to a script or ends with the trailing directory separator if specifying a directory. A path can also be mapped from a Windows and non-Windows path, just ensure the correct directory separators are used for each OS type. For example `/` for non-Windows and `\` for Windows.
+
+```yaml
+Type: IDictionary[]
 Parameter Sets: (All)
 Aliases:
 
