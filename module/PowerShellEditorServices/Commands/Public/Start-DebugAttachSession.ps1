@@ -39,6 +39,11 @@ function Start-DebugAttachSession {
         $ComputerName,
 
         [Parameter()]
+        [ValidateSet('Close', 'Hide', 'Keep')]
+        [string]
+        $WindowActionOnEnd,
+
+        [Parameter()]
         [switch]
         $AsJob
     )
@@ -125,6 +130,10 @@ function Start-DebugAttachSession {
         }
         elseif ($RunspaceName) {
             $configuration.runspaceName = $RunspaceName
+        }
+
+        if ($WindowActionOnEnd) {
+            $configuration.temporaryConsoleWindowActionOnDebugEnd = $WindowActionOnEnd.ToLowerInvariant()
         }
 
         # https://microsoft.github.io/debug-adapter-protocol/specification#Reverse_Requests_StartDebugging

@@ -16,13 +16,14 @@ Starts a new debug session attached to the specified PowerShell instance.
 ### ProcessId (Default)
 ```
 Start-DebugAttachSession [-Name <String>] [-ProcessId <Int32>] [-RunspaceName <String>] [-RunspaceId <Int32>]
- [-ComputerName <String>] [-AsJob] [<CommonParameters>]
+ [-ComputerName <String>] [-WindowActionOnEnd {Close | Hide | Keep}] [-AsJob] [<CommonParameters>]
 ```
 
 ### CustomPipeName
 ```
 Start-DebugAttachSession [-Name <String>] [-CustomPipeName <String>] [-RunspaceName <String>]
- [-RunspaceId <Int32>] [-ComputerName <String>] [-AsJob] [<CommonParameters>]
+ [-RunspaceId <Int32>] [-ComputerName <String>] [-WindowActionOnEnd {Close | Hide | Keep}] [-AsJob]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -177,6 +178,22 @@ Accept wildcard characters: False
 ### -RunspaceName
 
 The name of the runspace to debug in the attached process. This option is mutually exclusive with `-RunspaceId`.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -WindowActionOnEnd
+
+Specifies the action to take on the temporary debug console created by the debug client after the attached session ends. This corresponds to the VSCode attach configuration option `temporaryConsoleWindowActionOnDebugEnd`. Setting to `Close` will close the debug console, `Hide` will move back to the last debug console before the attach session started, and `Keep` (default) will keep the active terminal as the attached session.
 
 ```yaml
 Type: String
