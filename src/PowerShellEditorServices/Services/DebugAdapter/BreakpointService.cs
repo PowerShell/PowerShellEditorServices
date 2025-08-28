@@ -195,7 +195,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 // path which may or may not exist.
                 psCommand
                     .AddScript(_setPSBreakpointLegacy, useLocalScope: true)
-                    .AddParameter("Script", breakpoint.Source)
+                    .AddParameter("Script", breakpoint.MappedSource ?? breakpoint.Source)
                     .AddParameter("Line", breakpoint.LineNumber);
 
                 // Check if the user has specified the column number for the breakpoint.
@@ -219,7 +219,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 IEnumerable<Breakpoint> setBreakpoints = await _executionService
                     .ExecutePSCommandAsync<Breakpoint>(psCommand, CancellationToken.None)
                     .ConfigureAwait(false);
-                configuredBreakpoints.AddRange(setBreakpoints.Select((breakpoint) => BreakpointDetails.Create(breakpoint)));
+
+                int bpIdx = 0;
+                foreach (Breakpoint setBp in setBreakpoints)
+                {
+                    BreakpointDetails setBreakpoint = BreakpointDetails.Create(
+                        setBp,
+                        sourceBreakpoint: breakpoints[bpIdx]);
+                    configuredBreakpoints.Add(setBreakpoint);
+                    bpIdx++;
+                }
             }
             return configuredBreakpoints;
         }
