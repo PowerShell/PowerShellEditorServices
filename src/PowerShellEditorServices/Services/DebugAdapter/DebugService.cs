@@ -48,7 +48,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         private VariableContainerDetails scriptScopeVariables;
         private VariableContainerDetails localScopeVariables;
         private StackFrameDetails[] stackFrameDetails;
-        private PathMapping[] _pathMappings;
 
         private readonly SemaphoreSlim debugInfoHandle = AsyncUtils.CreateSimpleLockingSemaphore();
         #endregion
@@ -86,6 +85,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
             get => _debugContext.IsDebuggingRemoteRunspace;
             set => _debugContext.IsDebuggingRemoteRunspace = value;
         }
+
+        /// <summary>
+        /// Gets or sets an array of path mappings for the current debug session.
+        /// </summary>
+        public PathMapping[] PathMappings { get; set; } = [];
 
         #endregion
 
@@ -603,27 +607,20 @@ namespace Microsoft.PowerShell.EditorServices.Services
             };
         }
 
-        internal void SetPathMappings(PathMapping[] pathMappings) => _pathMappings = pathMappings;
-
-        internal void UnsetPathMappings() => _pathMappings = null;
-
         internal bool TryGetMappedLocalPath(string remotePath, out string localPath)
         {
-            if (_pathMappings is not null)
+            foreach (PathMapping mapping in PathMappings)
             {
-                foreach (PathMapping mapping in _pathMappings)
+                if (string.IsNullOrWhiteSpace(mapping.LocalRoot) || string.IsNullOrWhiteSpace(mapping.RemoteRoot))
                 {
-                    if (string.IsNullOrWhiteSpace(mapping.LocalRoot) || string.IsNullOrWhiteSpace(mapping.RemoteRoot))
-                    {
-                        // If either path mapping is null, we can't map the path.
-                        continue;
-                    }
+                    // If either path mapping is null, we can't map the path.
+                    continue;
+                }
 
-                    if (remotePath.StartsWith(mapping.RemoteRoot, StringComparison.OrdinalIgnoreCase))
-                    {
-                        localPath = mapping.LocalRoot + remotePath.Substring(mapping.RemoteRoot.Length);
-                        return true;
-                    }
+                if (remotePath.StartsWith(mapping.RemoteRoot, StringComparison.OrdinalIgnoreCase))
+                {
+                    localPath = mapping.LocalRoot + remotePath.Substring(mapping.RemoteRoot.Length);
+                    return true;
                 }
             }
 
@@ -633,22 +630,19 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal bool TryGetMappedRemotePath(string localPath, out string remotePath)
         {
-            if (_pathMappings is not null)
+            foreach (PathMapping mapping in PathMappings)
             {
-                foreach (PathMapping mapping in _pathMappings)
+                if (string.IsNullOrWhiteSpace(mapping.LocalRoot) || string.IsNullOrWhiteSpace(mapping.RemoteRoot))
                 {
-                    if (string.IsNullOrWhiteSpace(mapping.LocalRoot) || string.IsNullOrWhiteSpace(mapping.RemoteRoot))
-                    {
-                        // If either path mapping is null, we can't map the path.
-                        continue;
-                    }
+                    // If either path mapping is null, we can't map the path.
+                    continue;
+                }
 
-                    if (localPath.StartsWith(mapping.LocalRoot, StringComparison.OrdinalIgnoreCase))
-                    {
-                        // If the local path starts with the local path mapping, we can replace it with the remote path.
-                        remotePath = mapping.RemoteRoot + localPath.Substring(mapping.LocalRoot.Length);
-                        return true;
-                    }
+                if (localPath.StartsWith(mapping.LocalRoot, StringComparison.OrdinalIgnoreCase))
+                {
+                    // If the local path starts with the local path mapping, we can replace it with the remote path.
+                    remotePath = mapping.RemoteRoot + localPath.Substring(mapping.LocalRoot.Length);
+                    return true;
                 }
             }
 
