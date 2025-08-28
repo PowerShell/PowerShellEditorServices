@@ -140,14 +140,14 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<LaunchResponse> Handle(PsesLaunchRequestArguments request, CancellationToken cancellationToken)
         {
-            _debugService.SetPathMappings(request.PathMappings);
+            _debugService.PathMappings = request.PathMappings;
             try
             {
                 return await HandleImpl(request, cancellationToken).ConfigureAwait(false);
             }
             catch
             {
-                _debugService.UnsetPathMappings();
+                _debugService.PathMappings = [];
                 throw;
             }
         }
@@ -230,37 +230,10 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             // Store the launch parameters so that they can be used later
             _debugStateService.NoDebug = request.NoDebug;
-            _debugStateService.ScriptToLaunch = request.Script;
+            _debugStateService.ScriptToLaunch = GetLaunchScript(request);
             _debugStateService.Arguments = request.Args;
             _debugStateService.IsUsingTempIntegratedConsole = request.CreateTemporaryIntegratedConsole;
             _debugStateService.ExecuteMode = request.ExecuteMode;
-
-            if (request.CreateTemporaryIntegratedConsole
-                && !string.IsNullOrEmpty(request.Script)
-                && ScriptFile.IsUntitledPath(request.Script))
-            {
-                throw new RpcErrorException(0, null, "Running an Untitled file in a temporary Extension Terminal is currently not supported!");
-            }
-
-            // If the current session is remote, map the script path to the remote
-            // machine if necessary
-            if (_debugStateService.ScriptToLaunch != null
-                && _runspaceContext.CurrentRunspace.IsOnRemoteMachine)
-            {
-                if (_debugService.TryGetMappedRemotePath(_debugStateService.ScriptToLaunch, out string remoteMappedPath))
-                {
-                    _debugStateService.ScriptToLaunch = remoteMappedPath;
-                }
-                else
-                {
-                    // If the script is not mapped, we will map it to the remote path
-                    // using the RemoteFileManagerService.
-                    _debugStateService.ScriptToLaunch =
-                        _remoteFileManagerService.GetMappedPath(
-                            _debugStateService.ScriptToLaunch,
-                            _runspaceContext.CurrentRunspace);
-                }
-            }
 
             // If no script is being launched, mark this as an interactive
             // debugging session
@@ -284,13 +257,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _debugService.IsDebuggingRemoteRunspace = true;
             try
             {
-                _debugService.SetPathMappings(request.PathMappings);
+                _debugService.PathMappings = request.PathMappings;
                 return await HandleImpl(request, cancellationToken).ConfigureAwait(false);
             }
             catch
             {
                 _debugService.IsDebuggingRemoteRunspace = false;
-                _debugService.UnsetPathMappings();
+                _debugService.PathMappings = [];
                 throw;
             }
         }
@@ -522,7 +495,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _debugEventHandlerService.UnregisterEventHandlers();
 
             _debugService.IsDebuggingRemoteRunspace = false;
-            _debugService.UnsetPathMappings();
+            _debugService.PathMappings = [];
 
             if (!isRunspaceClosed && _debugStateService.IsAttachSession)
             {
@@ -551,6 +524,37 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             _debugService.IsClientAttached = false;
             _debugAdapterServer.SendNotification(EventNames.Terminated);
+        }
+
+        private string GetLaunchScript(PsesLaunchRequestArguments request)
+        {
+            string scriptToLaunch = request.Script;
+            if (request.CreateTemporaryIntegratedConsole
+                && !string.IsNullOrEmpty(scriptToLaunch)
+                && ScriptFile.IsUntitledPath(scriptToLaunch))
+            {
+                throw new RpcErrorException(0, null, "Running an Untitled file in a temporary Extension Terminal is currently not supported!");
+            }
+
+            // If the current session is remote, map the script path to the remote
+            // machine if necessary
+            if (scriptToLaunch is not null && _runspaceContext.CurrentRunspace.IsOnRemoteMachine)
+            {
+                if (_debugService.TryGetMappedRemotePath(scriptToLaunch, out string remoteMappedPath))
+                {
+                    scriptToLaunch = remoteMappedPath;
+                }
+                else
+                {
+                    // If the script is not mapped, we will map it to the remote path
+                    // using the RemoteFileManagerService.
+                    scriptToLaunch = _remoteFileManagerService.GetMappedPath(
+                        scriptToLaunch,
+                        _runspaceContext.CurrentRunspace);
+                }
+            }
+
+            return scriptToLaunch;
         }
     }
 }
