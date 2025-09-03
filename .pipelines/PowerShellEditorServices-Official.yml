@@ -24,6 +24,10 @@ parameters:
   displayName: Enable debug output
   type: boolean
   default: false
+- name: OfficialBuild
+  displayName: Use Official OneBranch template
+  type: boolean
+  default: false
 
 variables:
   system.debug: ${{ parameters.debug }}
@@ -31,6 +35,7 @@ variables:
   WindowsContainerImage: onebranch.azurecr.io/windows/ltsc2022/vse2022:latest
   DOTNET_NOLOGO: true
   DOTNET_GENERATE_ASPNET_CERTIFICATE: false
+  OneBranchTemplate: ${{ iif(parameters.OfficialBuild, 'v2/OneBranch.Official.CrossPlat.yml@templates', 'v2/OneBranch.NonOfficial.CrossPlat.yml@templates') }}
 
 resources:
   repositories:
@@ -41,7 +46,7 @@ resources:
 
 extends:
   # https://aka.ms/obpipelines/templates
-  template: v2/OneBranch.Official.CrossPlat.yml@templates
+  template: ${{ variables.OneBranchTemplate }}
   parameters:
     globalSdl: # https://aka.ms/obpipelines/sdl
       asyncSdl:
@@ -134,9 +139,9 @@ extends:
               archiveFile: out/PowerShellEditorServices.zip
     - stage: release
       dependsOn: build
-      condition: eq(variables['Build.Reason'], 'Manual')
+      condition: and(succeeded(), ${{ eq(parameters.OfficialBuild, true) }})
       variables:
-        ob_release_environment: Production
+        ob_release_environment: ${{ iif(parameters.OfficialBuild, 'Production', 'Test') }}
         version: $[ stageDependencies.build.main.outputs['package.version'] ]
         prerelease: $[ stageDependencies.build.main.outputs['package.prerelease'] ]
       jobs:
