@@ -122,7 +122,7 @@ task RestorePsesModules -If (-not (Test-Path "module/PSReadLine") -or -not (Test
     Write-Build DarkMagenta "Restoring bundled modules"
     # NOTE: When updating module versions, ensure they are also saved to the CFS feed
     Save-PSResource -Path module -Name PSScriptAnalyzer -Version "1.24.0" -Repository $PSRepository -TrustRepository -Verbose
-    Save-PSResource -Path module -Name PSReadLine -Version "2.4.2-beta2" -Prerelease -Repository $PSRepository -TrustRepository -Verbose
+    Save-PSResource -Path module -Name PSReadLine -Version "2.4.4-beta4" -Prerelease -Repository $PSRepository -TrustRepository -Verbose
 }
 
 Task Build FindDotNet, CreateBuildInfo, RestorePsesModules, {
