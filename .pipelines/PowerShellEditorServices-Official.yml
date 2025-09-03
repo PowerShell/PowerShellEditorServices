@@ -83,11 +83,6 @@ extends:
             inputs:
               packageType: sdk
               useGlobalJson: true
-          - task: UseDotNet@2
-            displayName: Use .NET 6.x runtime (for tests)
-            inputs:
-              packageType: runtime
-              version: 6.x
           - pwsh: ./tools/installPSResources.ps1 -PSRepository CFS
             displayName: Install PSResources
           - pwsh: Invoke-Build TestFull -Configuration $(BuildConfiguration) -PSRepository CFS
