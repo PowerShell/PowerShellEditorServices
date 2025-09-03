@@ -46,7 +46,7 @@ param(
     [ValidateNotNullOrEmpty()]
     $LogPath,
 
-    [ValidateSet("Diagnostic", "Verbose", "Normal", "Warning", "Error")]
+    [ValidateSet("Diagnostic", "Verbose", "Normal", "Warning", "Error", "Trace", "Debug", "Information", "Critical", "None")]
     $LogLevel,
 
 	[ValidateNotNullOrEmpty()]
@@ -106,6 +106,14 @@ param(
     [string]
     $DebugServiceOutPipeName
 )
+
+#Translate legacy PSES log levels to MEL levels
+$LogLevel = switch ($LogLevel) {
+    'Diagnostic' { 'Trace' }
+    'Verbose' { 'Debug' }
+    'Normal' { 'Information' }
+    default { $LogLevel }
+}
 
 Import-Module -Name "$PSScriptRoot/PowerShellEditorServices.psd1"
 Start-EditorServices @PSBoundParameters
