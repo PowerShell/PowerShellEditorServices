@@ -157,7 +157,7 @@ extends:
         - task: GitHubRelease@1
           displayName: Create GitHub release
           inputs:
-            gitHubConnection: GitHub
+            gitHubConnection: github.com_andyleejordan
             repositoryName: PowerShell/PowerShellEditorServices
             target: main
             assets: $(Pipeline.Workspace)/PowerShellEditorServices.zip
