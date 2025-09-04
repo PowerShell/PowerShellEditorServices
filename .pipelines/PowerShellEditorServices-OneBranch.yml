@@ -9,7 +9,7 @@
 #################################################################################
 
 trigger:
-- main
+  - main
 
 resources:
   repositories:
@@ -19,14 +19,14 @@ resources:
       ref: refs/heads/main
 
 parameters:
-- name: debug
-  displayName: Enable debug output
-  type: boolean
-  default: false
-- name: OfficialBuild
-  displayName: Use Official OneBranch template
-  type: boolean
-  default: false
+  - name: debug
+    displayName: Enable debug output
+    type: boolean
+    default: false
+  - name: OfficialBuild
+    displayName: Use Official OneBranch template
+    type: boolean
+    default: false
 
 variables:
   system.debug: ${{ parameters.debug }}
@@ -52,111 +52,111 @@ extends:
     release:
       category: NonAzure
     stages:
-    - stage: build
-      jobs:
-      - job: main
-        displayName: Build package
-        pool:
-          type: windows
+      - stage: build
+        jobs:
+          - job: main
+            displayName: Build package
+            pool:
+              type: windows
+            variables:
+              ob_outputDirectory: $(Build.SourcesDirectory)/out
+            steps:
+              - pwsh: |
+                  [xml]$xml = Get-Content PowerShellEditorServices.Common.props
+                  $version = $xml.Project.PropertyGroup.VersionPrefix
+                  $prerelease = $xml.Project.PropertyGroup.VersionSuffix
+                  if ($prerelease) { $version += "-$prerelease" }
+                  Write-Output "##vso[task.setvariable variable=version;isOutput=true]$version"
+                  Write-Output "##vso[task.setvariable variable=prerelease;isOutput=true]$(-not [string]::IsNullOrEmpty($prerelease))"
+                name: package
+                displayName: Get version from project properties
+              - task: onebranch.pipeline.version@1
+                displayName: Set OneBranch version
+                inputs:
+                  system: Custom
+                  customVersion: $(package.version)
+              - task: UseDotNet@2
+                displayName: Use .NET 8.x SDK
+                inputs:
+                  packageType: sdk
+                  useGlobalJson: true
+              - pwsh: ./tools/installPSResources.ps1 -PSRepository CFS
+                displayName: Install PSResources
+              - pwsh: Invoke-Build TestFull -Configuration $(BuildConfiguration) -PSRepository CFS
+                displayName: Build and test
+              - task: PublishTestResults@2
+                displayName: Publish test results
+                inputs:
+                  testRunner: VSTest
+                  testResultsFiles: "**/*.trx"
+                  failTaskOnFailedTests: true
+              - pwsh: |
+                  $assembly = [Reflection.Assembly]::LoadFile("$(Build.SourcesDirectory)/module/PowerShellEditorServices/bin/Core/Microsoft.PowerShell.EditorServices.Hosting.dll")
+                  if ($assembly.GetCustomAttributes([System.Diagnostics.DebuggableAttribute], $true).IsJITOptimizerDisabled) {
+                    Write-Host "##vso[task.LogIssue type=error;]Was not built in release configuration!"
+                    exit 1
+                  }
+                displayName: Assert release configuration
+                continueOnError: true
+              - task: onebranch.pipeline.signing@1
+                displayName: Sign 1st-party files
+                inputs:
+                  command: sign
+                  signing_profile: external_distribution
+                  search_root: $(Build.SourcesDirectory)/module
+                  files_to_sign: |
+                    **/*.ps1;
+                    **/*.psd1;
+                    **/*.psm1;
+                    **/*.ps1xml;
+                    **/Microsoft.PowerShell.EditorServices*.dll;
+              - task: onebranch.pipeline.signing@1
+                displayName: Sign 3rd-party files
+                inputs:
+                  command: sign
+                  signing_profile: 135020002
+                  search_root: $(Build.SourcesDirectory)/module
+                  files_to_sign: |
+                    **/MediatR.dll;
+                    **/Nerdbank.Streams.dll;
+                    **/Newtonsoft.Json.dll;
+                    **/OmniSharp.Extensions*.dll;
+                    **/System.Reactive.dll;
+              - task: ArchiveFiles@2
+                displayName: Zip signed artifacts
+                inputs:
+                  rootFolderOrFile: $(Build.SourcesDirectory)/module
+                  includeRootFolder: false
+                  archiveType: zip
+                  archiveFile: out/PowerShellEditorServices.zip
+      - stage: release
+        dependsOn: build
+        condition: and(succeeded(), ${{ eq(parameters.OfficialBuild, true) }})
         variables:
-          ob_outputDirectory: $(Build.SourcesDirectory)/out
-        steps:
-          - pwsh: |
-              [xml]$xml = Get-Content PowerShellEditorServices.Common.props
-              $version = $xml.Project.PropertyGroup.VersionPrefix
-              $prerelease = $xml.Project.PropertyGroup.VersionSuffix
-              if ($prerelease) { $version += "-$prerelease" }
-              Write-Output "##vso[task.setvariable variable=version;isOutput=true]$version"
-              Write-Output "##vso[task.setvariable variable=prerelease;isOutput=true]$(-not [string]::IsNullOrEmpty($prerelease))"
-            name: package
-            displayName: Get version from project properties
-          - task: onebranch.pipeline.version@1
-            displayName: Set OneBranch version
-            inputs:
-              system: Custom
-              customVersion: $(package.version)
-          - task: UseDotNet@2
-            displayName: Use .NET 8.x SDK
-            inputs:
-              packageType: sdk
-              useGlobalJson: true
-          - pwsh: ./tools/installPSResources.ps1 -PSRepository CFS
-            displayName: Install PSResources
-          - pwsh: Invoke-Build TestFull -Configuration $(BuildConfiguration) -PSRepository CFS
-            displayName: Build and test
-          - task: PublishTestResults@2
-            displayName: Publish test results
-            inputs:
-              testRunner: VSTest
-              testResultsFiles: '**/*.trx'
-              failTaskOnFailedTests: true
-          - pwsh: |
-              $assembly = [Reflection.Assembly]::LoadFile("$(Build.SourcesDirectory)/module/PowerShellEditorServices/bin/Core/Microsoft.PowerShell.EditorServices.Hosting.dll")
-              if ($assembly.GetCustomAttributes([System.Diagnostics.DebuggableAttribute], $true).IsJITOptimizerDisabled) {
-                Write-Host "##vso[task.LogIssue type=error;]Was not built in release configuration!"
-                exit 1
-              }
-            displayName: Assert release configuration
-            continueOnError: true
-          - task: onebranch.pipeline.signing@1
-            displayName: Sign 1st-party files
-            inputs:
-              command: sign
-              signing_profile: external_distribution
-              search_root: $(Build.SourcesDirectory)/module
-              files_to_sign: |
-                **/*.ps1;
-                **/*.psd1;
-                **/*.psm1;
-                **/*.ps1xml;
-                **/Microsoft.PowerShell.EditorServices*.dll;
-          - task: onebranch.pipeline.signing@1
-            displayName: Sign 3rd-party files
-            inputs:
-              command: sign
-              signing_profile: 135020002
-              search_root: $(Build.SourcesDirectory)/module
-              files_to_sign: |
-                **/MediatR.dll;
-                **/Nerdbank.Streams.dll;
-                **/Newtonsoft.Json.dll;
-                **/OmniSharp.Extensions*.dll;
-                **/System.Reactive.dll;
-          - task: ArchiveFiles@2
-            displayName: Zip signed artifacts
-            inputs:
-              rootFolderOrFile: $(Build.SourcesDirectory)/module
-              includeRootFolder: false
-              archiveType: zip
-              archiveFile: out/PowerShellEditorServices.zip
-    - stage: release
-      dependsOn: build
-      condition: and(succeeded(), ${{ eq(parameters.OfficialBuild, true) }})
-      variables:
-        ob_release_environment: ${{ iif(parameters.OfficialBuild, 'Production', 'Test') }}
-        version: $[ stageDependencies.build.main.outputs['package.version'] ]
-        prerelease: $[ stageDependencies.build.main.outputs['package.prerelease'] ]
-      jobs:
-      - job: github
-        displayName: Publish draft to GitHub
-        pool:
-          type: release
-        templateContext:
-          inputs:
-          - input: pipelineArtifact
-            artifactName: drop_build_main
-        steps:
-        - task: GitHubRelease@1
-          displayName: Create GitHub release
-          inputs:
-            gitHubConnection: github.com_andyleejordan
-            repositoryName: PowerShell/PowerShellEditorServices
-            target: main
-            assets: $(Pipeline.Workspace)/PowerShellEditorServices.zip
-            tagSource: userSpecifiedTag
-            tag: v$(version)
-            isDraft: true
-            isPreRelease: $(prerelease)
-            addChangeLog: false
-            releaseNotesSource: inline
-            releaseNotesInline: "<!-- TODO: Generate release notes on GitHub! -->"
+          ob_release_environment: ${{ iif(parameters.OfficialBuild, 'Production', 'Test') }}
+          version: $[ stageDependencies.build.main.outputs['package.version'] ]
+          prerelease: $[ stageDependencies.build.main.outputs['package.prerelease'] ]
+        jobs:
+          - job: github
+            displayName: Publish draft to GitHub
+            pool:
+              type: release
+            templateContext:
+              inputs:
+                - input: pipelineArtifact
+                  artifactName: drop_build_main
+            steps:
+              - task: GitHubRelease@1
+                displayName: Create GitHub release
+                inputs:
+                  gitHubConnection: github.com_andyleejordan
+                  repositoryName: PowerShell/PowerShellEditorServices
+                  target: main
+                  assets: $(Pipeline.Workspace)/PowerShellEditorServices.zip
+                  tagSource: userSpecifiedTag
+                  tag: v$(version)
+                  isDraft: true
+                  isPreRelease: $(prerelease)
+                  addChangeLog: false
+                  releaseNotesSource: inline
+                  releaseNotesInline: "<!-- TODO: Generate release notes on GitHub! -->"
