@@ -1,5 +1,12 @@
 # PowerShell Editor Services Release History
 
+## v4.4.0
+### Thursday, September 04, 2025
+
+See more details at the GitHub Release for [v4.4.0](https://github.com/PowerShell/PowerShellEditorServices/releases/tag/v4.4.0).
+
+Supports screen readers!
+
 ## Unreleased
 
 - ✨ 📟 [PowerShellEditorServices #2239](https://github.com/PowerShell/PowerShellEditorServices/pull/2239) - Update PSReadLine to v2.4.2-beta2.
