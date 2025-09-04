@@ -50,6 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             //       We should instead ensure that the debugger is in some valid state, lock it and then tear things down
 
             _debugEventHandlerService.UnregisterEventHandlers();
+            _debugService.PathMappings = [];
 
             if (!_debugStateService.ExecutionCompleted)
             {
