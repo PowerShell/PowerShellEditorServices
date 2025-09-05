@@ -114,6 +114,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<PsesCompletionHandler>(
                         new JsonRpcHandlerOptions() { RequestProcessType = RequestProcessType.Serial })
                     .WithHandler<PsesHoverHandler>()
+                    .WithHandler<PsesInlayHandler>()
                     .WithHandler<PsesSignatureHelpHandler>()
                     .WithHandler<PsesDefinitionHandler>()
                     .WithHandler<GetCommentHelpHandler>()
