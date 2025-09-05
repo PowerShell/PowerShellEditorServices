@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Management.Automation;
+using System.Management.Automation.Language;
 using System.Management.Automation.Remoting;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,7 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Events;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Requests;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Server;
@@ -99,10 +101,47 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         /// Gets or sets the path mappings for the remote debugging session.
         /// </summary>
         public PathMapping[] PathMappings { get; set; } = [];
+
+        /// Gets or sets a boolean value that determines whether to write the
+        /// <c>PSES.Attached</c> event to the target runspace after attaching.
+        /// </summary>
+        public bool NotifyOnAttach { get; set; }
     }
 
     internal class LaunchAndAttachHandler : ILaunchHandler<PsesLaunchRequestArguments>, IAttachHandler<PsesAttachRequestArguments>, IOnDebugAdapterServerStarted
     {
+        private const string _newAttachEventScript = @"
+            [CmdletBinding()]
+            param (
+                [Parameter(Mandatory)]
+                [int]
+                $RunspaceId
+            )
+
+            $ErrorActionPreference = 'Stop'
+
+            $runspace = Get-Runspace -Id $RunspaceId
+            $runspace.Events.GenerateEvent(
+                'PSES.Attached',
+                'PSES',
+                @(),
+                $null)
+            ";
+
+        // TODO: We currently set `WriteInputToHost` as true, which writes our debugged commands'
+        // `GetInvocationText` and that reveals some obscure implementation details we should
+        // instead hide from the user with pretty strings (or perhaps not write out at all).
+        //
+        // This API is mostly used for F5 execution so it requires the foreground.
+        private static readonly PowerShellExecutionOptions s_debuggerExecutionOptions = new()
+        {
+            RequiresForeground = true,
+            WriteInputToHost = true,
+            WriteOutputToHost = true,
+            ThrowOnError = false,
+            AddToHistory = true,
+        };
+
         private static readonly int s_currentPID = System.Diagnostics.Process.GetCurrentProcess().Id;
         private static readonly Version s_minVersionForCustomPipeName = new(6, 2);
         private readonly ILogger<LaunchAndAttachHandler> _logger;
@@ -110,6 +149,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly DebugService _debugService;
         private readonly IRunspaceContext _runspaceContext;
         private readonly IInternalPowerShellExecutionService _executionService;
+        private readonly WorkspaceService _workspaceService;
         private readonly DebugStateService _debugStateService;
         private readonly DebugEventHandlerService _debugEventHandlerService;
         private readonly IDebugAdapterServerFacade _debugAdapterServer;
@@ -123,6 +163,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             DebugService debugService,
             IRunspaceContext runspaceContext,
             IInternalPowerShellExecutionService executionService,
+            WorkspaceService workspaceService,
             DebugStateService debugStateService,
             RemoteFileManagerService remoteFileManagerService)
         {
@@ -133,8 +174,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _debugService = debugService;
             _runspaceContext = runspaceContext;
             _executionService = executionService;
+            _workspaceService = workspaceService;
             _debugStateService = debugStateService;
-            _debugStateService.ServerStarted = new TaskCompletionSource<bool>();
+            // DebugServiceTests will call this with a null DebugStateService.
+            if (_debugStateService is not null)
+            {
+                _debugStateService.ServerStarted = new TaskCompletionSource<bool>();
+            }
             _remoteFileManagerService = remoteFileManagerService;
         }
 
@@ -233,15 +279,21 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _debugStateService.ScriptToLaunch = GetLaunchScript(request);
             _debugStateService.Arguments = request.Args;
             _debugStateService.IsUsingTempIntegratedConsole = request.CreateTemporaryIntegratedConsole;
-            _debugStateService.ExecuteMode = request.ExecuteMode;
 
             // If no script is being launched, mark this as an interactive
             // debugging session
-            _debugStateService.IsInteractiveDebugSession = string.IsNullOrEmpty(_debugStateService.ScriptToLaunch);
+            _debugStateService.IsInteractiveDebugSession = string.IsNullOrEmpty(requestScript);
 
             // Sends the InitializedEvent so that the debugger will continue
             // sending configuration requests
-            _debugStateService.ServerStarted.TrySetResult(true);
+            await _debugStateService.WaitForConfigurationDoneAsync("launch", cancellationToken).ConfigureAwait(false);
+
+            if (!_debugStateService.IsInteractiveDebugSession)
+            {
+                // NOTE: This is an unawaited task because we are starting the script but not
+                // waiting for it to finish.
+                Task _ = LaunchScriptAsync(requestScript, request.Args, request.ExecuteMode).HandleErrorsAsync(_logger);
+            }
 
             return new LaunchResponse();
         }
@@ -362,14 +414,88 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             // Clear any existing breakpoints before proceeding
             await _breakpointService.RemoveAllBreakpointsAsync().ConfigureAwait(continueOnCapturedContext: false);
 
-            _debugStateService.WaitingForAttach = true;
+            // The debugger is now ready to receive breakpoint requests. We do
+            // this before running Debug-Runspace so the runspace is not busy
+            // and can set breakpoints before the final configuration done.
+            await _debugStateService.WaitForConfigurationDoneAsync("attach", cancellationToken).ConfigureAwait(false);
+
+            if (request.NotifyOnAttach)
+            {
+                // This isn't perfect as there is still a race condition
+                // this and Debug-Runspace setting up the debugger below but it
+                // is the best we can do without changes to PowerShell.
+                await _executionService.ExecutePSCommandAsync(
+                    new PSCommand().AddScript(_newAttachEventScript, useLocalScope: true)
+                        .AddParameter("RunspaceId", _debugStateService.RunspaceId),
+                    cancellationToken).ConfigureAwait(false);
+            }
+
             Task nonAwaitedTask = _executionService
                 .ExecutePSCommandAsync(debugRunspaceCmd, CancellationToken.None, PowerShellExecutionOptions.ImmediateInteractive)
                 .ContinueWith(OnExecutionCompletedAsync, TaskScheduler.Default);
 
-            _debugStateService.ServerStarted.TrySetResult(true);
-
             return new AttachResponse();
+        }
+
+        // NOTE: We test this function in `DebugServiceTests` so it both needs to be internal, and
+        // use conditional-access on `_debugStateService` and `_debugAdapterServer` as its not set
+        // by tests.
+        internal async Task LaunchScriptAsync(string scriptToLaunch, string[] arguments, string requestExecuteMode)
+        {
+            PSCommand command;
+            if (File.Exists(scriptToLaunch))
+            {
+                // For a saved file we just execute its path (after escaping it), with the configured operator
+                // (which can't be called that because it's a reserved keyword in C#).
+                string executeMode = requestExecuteMode == "Call" ? "&" : ".";
+                command = PSCommandHelpers.BuildDotSourceCommandWithArguments(
+                    PSCommandHelpers.EscapeScriptFilePath(scriptToLaunch), arguments, executeMode);
+            }
+            else // It's a URI to an untitled script, or a raw script.
+            {
+                bool isScriptFile = _workspaceService.TryGetFile(scriptToLaunch, out ScriptFile untitledScript);
+                if (isScriptFile)
+                {
+                    // Parse untitled files with their `Untitled:` URI as the filename which will
+                    // cache the URI and contents within the PowerShell parser. By doing this, we
+                    // light up the ability to debug untitled files with line breakpoints.
+                    ScriptBlockAst ast = Parser.ParseInput(
+                        untitledScript.Contents,
+                        untitledScript.DocumentUri.ToString(),
+                        out Token[] _,
+                        out ParseError[] _);
+
+                    // In order to use utilize the parser's cache (and therefore hit line
+                    // breakpoints) we need to use the AST's `ScriptBlock` object. Due to
+                    // limitations in PowerShell's public API, this means we must use the
+                    // `PSCommand.AddArgument(object)` method, hence this hack where we dot-source
+                    // `$args[0]. Fortunately the dot-source operator maintains a stack of arguments
+                    // on each invocation, so passing the user's arguments directly in the initial
+                    // `AddScript` surprisingly works.
+                    command = PSCommandHelpers
+                        .BuildDotSourceCommandWithArguments("$args[0]", arguments)
+                        .AddArgument(ast.GetScriptBlock());
+                }
+                else
+                {
+                    // Without the new APIs we can only execute the untitled script's contents.
+                    // Command breakpoints and `Wait-Debugger` will work. We must wrap the script
+                    // with newlines so that any included comments don't break the command.
+                    command = PSCommandHelpers.BuildDotSourceCommandWithArguments(
+                        string.Concat(
+                            "{" + Environment.NewLine,
+                            isScriptFile ? untitledScript.Contents : scriptToLaunch,
+                            Environment.NewLine + "}"),
+                            arguments);
+                }
+            }
+
+            await _executionService.ExecutePSCommandAsync(
+                command,
+                CancellationToken.None,
+                s_debuggerExecutionOptions).ConfigureAwait(false);
+
+            _debugAdapterServer?.SendNotification(EventNames.Terminated);
         }
 
         private async Task AttachToComputer(string computerName, CancellationToken cancellationToken)
