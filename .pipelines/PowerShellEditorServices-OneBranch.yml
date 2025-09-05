@@ -11,6 +11,14 @@
 trigger:
   - main
 
+schedules:
+  - cron: "35 13 * * 4"
+    displayName: Weekly CodeQL
+    branches:
+      include:
+        - main
+    always: true
+
 resources:
   repositories:
     - repository: templates
