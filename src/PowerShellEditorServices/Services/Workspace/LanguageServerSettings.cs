@@ -208,6 +208,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         public bool IgnoreOneLineBlock { get; set; }
         public bool AlignPropertyValuePairs { get; set; }
         public bool UseCorrectCasing { get; set; }
+        public bool RemoveTrailingWhitespace { get; set; }
 
         /// <summary>
         /// Get the settings hashtable that will be consumed by PSScriptAnalyzer.
@@ -326,6 +327,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                 // Empty hashtable required to activate the rule,
                 // since PSAvoidUsingCmdletAliases inherits from IScriptRule and not ConfigurableRule
                 ruleConfigurations.Add("PSAvoidUsingCmdletAliases", new Hashtable());
+            }
+
+            if (RemoveTrailingWhitespace)
+            {
+                // Empty hashtable required to activate the rule,
+                // since PSAvoidTrailingWhitespace inherits from IScriptRule and not ConfigurableRule
+                ruleConfigurations.Add("PSAvoidTrailingWhitespace", new Hashtable());
             }
 
             return new Hashtable()
