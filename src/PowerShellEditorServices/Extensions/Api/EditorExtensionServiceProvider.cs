@@ -162,7 +162,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
         /// </summary>
         /// <param name="assemblyPath">The absolute path of the assembly to load.</param>
         /// <returns>The loaded assembly object.</returns>
-        public static Assembly LoadAssemblyInPsesLoadContext(string assemblyPath)
+#pragma warning disable CA1822 // Mark members as static
+        public Assembly LoadAssemblyInPsesLoadContext(string assemblyPath)
+#pragma warning restore CA1822 // Mark members as static
         {
             if (!VersionUtils.IsNetCore)
             {
