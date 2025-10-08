@@ -50,7 +50,8 @@ namespace Microsoft.PowerShell.EditorServices.Server
                         extensionService.InitializeAsync();
                         return extensionService;
                     })
-                .AddSingleton<AnalysisService>();
+                .AddSingleton<AnalysisService>()
+                .AddSingleton<RenameService>();
         }
 
         public static IServiceCollection AddPsesDebugServices(
