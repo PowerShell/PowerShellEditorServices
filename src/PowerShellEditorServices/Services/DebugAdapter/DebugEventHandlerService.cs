@@ -94,17 +94,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
         {
             switch (e.ChangeAction)
             {
-                case RunspaceChangeAction.Enter:
-                    if (_debugStateService.WaitingForAttach
-                        && e.NewRunspace.RunspaceOrigin == RunspaceOrigin.DebuggedRunspace)
-                    {
-                        // Sends the InitializedEvent so that the debugger will continue
-                        // sending configuration requests
-                        _debugStateService.WaitingForAttach = false;
-                        _debugStateService.ServerStarted.TrySetResult(true);
-                    }
-                    return;
-
                 case RunspaceChangeAction.Exit:
                     if (_debugContext.IsStopped)
                     {

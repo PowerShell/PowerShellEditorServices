@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -67,6 +68,12 @@ namespace PowerShellEditorServices.Test.E2E
         /// </summary>
         private readonly TaskCompletionSource<TerminatedEvent> terminatedTcs = new();
 
+        private readonly TaskCompletionSource<InitializedEvent> serverInitializedTcs = new();
+        /// <summary>
+        /// This task is useful for waiting until the server has sent the Initialized event.
+        /// </summary>
+        private Task<InitializedEvent> serverInitialized => serverInitializedTcs.Task;
+
         public async Task InitializeAsync()
         {
             // Cleanup testScriptLogPath if it exists due to an interrupted previous run
@@ -129,6 +136,10 @@ namespace PowerShellEditorServices.Test.E2E
                     {
                         terminatedTcs.SetResult(e);
                         return Task.CompletedTask;
+                    })
+                    .OnDebugAdapterInitialized((initEvent) =>
+                    {
+                        serverInitializedTcs.SetResult(initEvent);
                     })
                 ;
             });
@@ -263,9 +274,11 @@ namespace PowerShellEditorServices.Test.E2E
         public async Task UsesDotSourceOperatorAndQuotesAsync()
         {
             string filePath = NewTestFile(GenerateLoggingScript("$($MyInvocation.Line)"));
-            await client.LaunchScript(filePath);
+            Task launchTask = client.LaunchScript(filePath);
+            await serverInitialized;
             ConfigurationDoneResponse configDoneResponse = await client.RequestConfigurationDone(new ConfigurationDoneArguments());
             Assert.NotNull(configDoneResponse);
+            await launchTask;
 
             string actual = await ReadScriptLogLineAsync();
             Assert.StartsWith(". '", actual);
@@ -275,9 +288,11 @@ namespace PowerShellEditorServices.Test.E2E
         public async Task UsesCallOperatorWithSettingAsync()
         {
             string filePath = NewTestFile(GenerateLoggingScript("$($MyInvocation.Line)"));
-            await client.LaunchScript(filePath, executeMode: "Call");
+            Task launchTask = client.LaunchScript(filePath, executeMode: "Call");
+            await serverInitialized;
             ConfigurationDoneResponse configDoneResponse = await client.RequestConfigurationDone(new ConfigurationDoneArguments());
             Assert.NotNull(configDoneResponse);
+            await launchTask;
 
             string actual = await ReadScriptLogLineAsync();
             Assert.StartsWith("& '", actual);
@@ -288,10 +303,12 @@ namespace PowerShellEditorServices.Test.E2E
         {
             string filePath = NewTestFile(GenerateLoggingScript("works"));
 
-            await client.LaunchScript(filePath);
+            Task launchTask = client.LaunchScript(filePath);
+            await serverInitialized;
 
             ConfigurationDoneResponse configDoneResponse = await client.RequestConfigurationDone(new ConfigurationDoneArguments());
             Assert.NotNull(configDoneResponse);
+            await launchTask;
 
             string actual = await ReadScriptLogLineAsync();
             Assert.Equal("works", actual);
@@ -309,7 +326,8 @@ namespace PowerShellEditorServices.Test.E2E
                 "after breakpoint"
             ));
 
-            await client.LaunchScript(filePath);
+            Task launchTask = client.LaunchScript(filePath);
+            await serverInitialized;
 
             // {"command":"setBreakpoints","arguments":{"source":{"name":"dfsdfg.ps1","path":"/Users/tyleonha/Code/PowerShell/Misc/foo/dfsdfg.ps1"},"lines":[2],"breakpoints":[{"line":2}],"sourceModified":false},"type":"request","seq":3}
             SetBreakpointsResponse setBreakpointsResponse = await client.SetBreakpoints(new SetBreakpointsArguments
@@ -326,6 +344,8 @@ namespace PowerShellEditorServices.Test.E2E
 
             ConfigurationDoneResponse configDoneResponse = await client.RequestConfigurationDone(new ConfigurationDoneArguments());
             Assert.NotNull(configDoneResponse);
+
+            await launchTask;
 
             // Wait until we hit the breakpoint
             StoppedEvent stoppedEvent = await nextStopped;
@@ -370,8 +390,10 @@ namespace PowerShellEditorServices.Test.E2E
             );
 
             // Signal to start the script
+            Task launchTask = client.LaunchScript(filePath);
+            await serverInitialized;
             await client.RequestConfigurationDone(new ConfigurationDoneArguments());
-            await client.LaunchScript(filePath);
+            await launchTask;
 
             // Try to get the stacktrace, which should throw as we are not currently at a breakpoint.
             await Assert.ThrowsAsync<JsonRpcException>(() => client.RequestStackTrace(
@@ -390,7 +412,8 @@ namespace PowerShellEditorServices.Test.E2E
             ));
 
             // Request a launch. Note that per DAP spec, launch doesn't actually begin until ConfigDone finishes.
-            await client.LaunchScript(filePath);
+            Task launchTask = client.LaunchScript(filePath);
+            await serverInitialized;
 
             SetBreakpointsResponse setBreakpointsResponse = await client.SetBreakpoints(new SetBreakpointsArguments
             {
@@ -405,6 +428,8 @@ namespace PowerShellEditorServices.Test.E2E
             Assert.Equal(2, breakpoint.Line);
 
             _ = client.RequestConfigurationDone(new ConfigurationDoneArguments());
+
+            await launchTask;
 
             // Wait for the breakpoint to be hit
             StoppedEvent stoppedEvent = await nextStopped;
@@ -452,7 +477,8 @@ namespace PowerShellEditorServices.Test.E2E
                 "Write-Host $form"
             }));
 
-            await client.LaunchScript(filePath);
+            Task launchTask = client.LaunchScript(filePath);
+            await serverInitialized;
 
             SetFunctionBreakpointsResponse setBreakpointsResponse = await client.SetFunctionBreakpoints(
                 new SetFunctionBreakpointsArguments
@@ -466,6 +492,8 @@ namespace PowerShellEditorServices.Test.E2E
 
             ConfigurationDoneResponse configDoneResponse = await client.RequestConfigurationDone(new ConfigurationDoneArguments());
             Assert.NotNull(configDoneResponse);
+            await launchTask;
+
             await Task.Delay(5000);
 
             VariablesResponse variablesResponse = await client.RequestVariables(
@@ -490,9 +518,11 @@ namespace PowerShellEditorServices.Test.E2E
             // PsesLaunchRequestArguments.Script, which is then assigned to
             // DebugStateService.ScriptToLaunch in that handler, and finally used by the
             // ConfigurationDoneHandler in LaunchScriptAsync.
-            await client.LaunchScript(script);
+            Task launchTask = client.LaunchScript(script);
+            await serverInitialized;
 
             _ = await client.RequestConfigurationDone(new ConfigurationDoneArguments());
+            await launchTask;
 
             // We can check that the script was invoked as expected, which is to dot-source a script
             // block with the contents surrounded by newlines. While we can't check that the last
@@ -539,8 +569,10 @@ namespace PowerShellEditorServices.Test.E2E
                 }
             }", isPester: true);
 
-            await client.LaunchScript($"Invoke-Pester -Script '{pesterTest}'");
+            Task launchTask = client.LaunchScript($"Invoke-Pester -Script '{pesterTest}'");
+            await serverInitialized;
             await client.RequestConfigurationDone(new ConfigurationDoneArguments());
+            await launchTask;
             Assert.Equal("pester", await ReadScriptLogLineAsync());
         }
 
@@ -573,8 +605,10 @@ namespace PowerShellEditorServices.Test.E2E
                 terminatedTcs.TrySetCanceled();
             });
 
-            await client.LaunchScript(script);
+            Task launchTask = client.LaunchScript(script);
+            await serverInitialized;
             await client.RequestConfigurationDone(new ConfigurationDoneArguments());
+            await launchTask;
 
             StartDebuggingAttachRequestArguments attachRequest = await startDebuggingAttachRequestTcs.Task;
             Assert.Equal("attach", attachRequest.Request);
@@ -607,8 +641,10 @@ namespace PowerShellEditorServices.Test.E2E
                 terminatedTcs.TrySetCanceled();
             });
 
-            await client.LaunchScript(script);
+            Task launchTask = client.LaunchScript(script);
+            await serverInitialized;
             await client.RequestConfigurationDone(new ConfigurationDoneArguments());
+            await launchTask;
 
             StartDebuggingAttachRequestArguments attachRequest = await startDebuggingAttachRequestTcs.Task;
             Assert.Equal("attach", attachRequest.Request);
@@ -619,6 +655,82 @@ namespace PowerShellEditorServices.Test.E2E
             Assert.Null(attachRequest.Configuration.RunspaceName);
 
             await terminatedTcs.Task;
+        }
+
+        [SkippableFact]
+        public async Task CanAttachScriptWithEventWait()
+        {
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
+                "Breakpoints can't be set in Constrained Language Mode.");
+
+            string[] logStatements = ["before breakpoint", "after breakpoint"];
+
+            await RunWithAttachableProcess(logStatements, async (filePath, processId, runspaceId) =>
+            {
+                Task<StoppedEvent> nextStoppedTask = nextStopped;
+
+                Task<AttachResponse> attachTask = client.Attach(
+                    new PsesAttachRequestArguments
+                    {
+                        ProcessId = processId,
+                        RunspaceId = runspaceId,
+                        NotifyOnAttach = true,
+                    });
+
+                await serverInitialized;
+
+                SetBreakpointsResponse setBreakpointsResponse = await client.SetBreakpoints(new SetBreakpointsArguments
+                {
+                    Source = new Source { Name = Path.GetFileName(filePath), Path = filePath },
+                    Breakpoints = new SourceBreakpoint[] { new SourceBreakpoint { Line = 2 } },
+                    SourceModified = false,
+                });
+
+                Breakpoint breakpoint = setBreakpointsResponse.Breakpoints.First();
+                Assert.True(breakpoint.Verified);
+                Assert.NotNull(breakpoint.Source);
+                Assert.Equal(filePath, breakpoint.Source.Path, ignoreCase: s_isWindows);
+                Assert.Equal(2, breakpoint.Line);
+
+                ConfigurationDoneResponse configDoneResponse = await client.RequestConfigurationDone(new ConfigurationDoneArguments());
+                Assert.NotNull(configDoneResponse);
+
+                AttachResponse attachResponse = await attachTask;
+                Assert.NotNull(attachResponse);
+
+                StoppedEvent stoppedEvent;
+                if (PsesStdioLanguageServerProcessHost.IsWindowsPowerShell)
+                {
+                    // WinPS will break on first statement when Debug-Runspace
+                    // is called. This does not happen in pwsh 7.
+                    stoppedEvent = await nextStoppedTask;
+                    Assert.Equal("step", stoppedEvent.Reason);
+                    Assert.NotNull(stoppedEvent.ThreadId);
+
+                    nextStoppedTask = nextStopped;
+
+                    await client.RequestStackTrace(new StackTraceArguments { ThreadId = (int)stoppedEvent.ThreadId });
+                    await client.RequestContinue(new ContinueArguments { ThreadId = (int)stoppedEvent.ThreadId });
+                }
+
+                // Wait until we hit the breakpoint
+                stoppedEvent = await nextStopped;
+                Assert.Equal("breakpoint", stoppedEvent.Reason);
+
+                // The code before the breakpoint should have already run
+                Assert.Equal("before breakpoint", await ReadScriptLogLineAsync());
+
+                // Assert that the stopped breakpoint is the one we set
+                StackTraceResponse stackTraceResponse = await client.RequestStackTrace(new StackTraceArguments { ThreadId = 1 });
+                DapStackFrame? stoppedTopFrame = stackTraceResponse.StackFrames?.First();
+                Assert.NotNull(stoppedTopFrame);
+                Assert.Equal(2, stoppedTopFrame.Line);
+
+                _ = await client.RequestContinue(new ContinueArguments { ThreadId = 1 });
+
+                string afterBreakpointActual = await ReadScriptLogLineAsync();
+                Assert.Equal("after breakpoint", afterBreakpointActual);
+            }, waitForNotifyEvent: true);
         }
 
         [SkippableFact]
@@ -638,7 +750,7 @@ namespace PowerShellEditorServices.Test.E2E
 
                 Task<StoppedEvent> nextStoppedTask = nextStopped;
 
-                AttachResponse attachResponse = await client.Attach(
+                Task<AttachResponse> attachTask = client.Attach(
                     new PsesAttachRequestArguments
                     {
                         ProcessId = processId,
@@ -650,8 +762,9 @@ namespace PowerShellEditorServices.Test.E2E
                                 RemoteRoot = Path.GetDirectoryName(filePath) + Path.DirectorySeparatorChar
                             }
                         ]
-                    }) ?? throw new Exception("Attach response was null.");
-                Assert.NotNull(attachResponse);
+                    });
+
+                await serverInitialized;
 
                 SetBreakpointsResponse setBreakpointsResponse = await client.SetBreakpoints(new SetBreakpointsArguments
                 {
@@ -668,6 +781,9 @@ namespace PowerShellEditorServices.Test.E2E
 
                 ConfigurationDoneResponse configDoneResponse = await client.RequestConfigurationDone(new ConfigurationDoneArguments());
                 Assert.NotNull(configDoneResponse);
+
+                AttachResponse attachResponse = await attachTask;
+                Assert.NotNull(attachResponse);
 
                 // Wait-Debugger stop
                 StoppedEvent stoppedEvent = await nextStoppedTask;
@@ -710,7 +826,7 @@ namespace PowerShellEditorServices.Test.E2E
             });
         }
 
-        private async Task RunWithAttachableProcess(string[] logStatements, Func<string, int, int, Task> action)
+        private async Task RunWithAttachableProcess(string[] logStatements, Func<string, int, int, Task> action, bool waitForNotifyEvent = false)
         {
             /*
                 There is no public API in pwsh to wait for an attach event. We
@@ -727,7 +843,7 @@ namespace PowerShellEditorServices.Test.E2E
                 WinPS will always need this.
             */
             string scriptEntrypoint = @"
-                param([string]$TestScript)
+                param([string]$TestScript, [string]$WaitScript)
 
                 $debugRunspaceCmd = Get-Command Debug-Runspace -Module Microsoft.PowerShell.Utility
                 $runspaceBase = [PSObject].Assembly.GetType(
@@ -742,9 +858,12 @@ namespace PowerShellEditorServices.Test.E2E
                 $ps = [PowerShell]::Create()
                 $runspace = $ps.Runspace
 
-                # Wait-Debugger is needed in WinPS to sync breakpoints before
-                # running the script.
-                $null = $ps.AddCommand('Wait-Debugger').AddStatement()
+                if ($WaitScript) {
+                    $null = $ps.AddScript($WaitScript, $true).AddStatement()
+                }
+                else {
+                    $null = $ps.AddCommand('Wait-Debugger').AddStatement()
+                }
                 $null = $ps.AddCommand($TestScript)
 
                 # Let the runner know what Runspace to attach to and that it
@@ -778,7 +897,21 @@ namespace PowerShellEditorServices.Test.E2E
             ";
 
             string filePath = NewTestFile(GenerateLoggingScript(logStatements));
-            string encArgs = CreatePwshEncodedArgs(filePath);
+
+            List<string> args = [filePath];
+            if (waitForNotifyEvent)
+            {
+                args.Add(@"
+                    $e = Wait-Event -SourceIdentifier PSES.Attached -Timeout 10
+                    if ($e) {
+                        $e | Remove-Event -Force
+                    }
+                    else {
+                        throw 'Timed out waiting for PSES.Attached event.'
+                    }
+                ");
+            }
+            string encArgs = CreatePwshEncodedArgs(args.ToArray());
             string encCommand = Convert.ToBase64String(Encoding.Unicode.GetBytes(scriptEntrypoint));
 
             ProcessStartInfo psi = new ProcessStartInfo
