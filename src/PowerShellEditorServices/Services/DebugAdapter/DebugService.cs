@@ -482,6 +482,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // This makes the returned string consistent with the strings normally displayed for variables in the debugger.
             VariableDetails tempVariable = new(psVariable);
             _logger.LogTrace($"Set variable '{name}' to: {tempVariable.ValueString ?? "<null>"}");
+            
+            // Fetch stack frames and variables again to have actual data in the variables field.
+            // Without this, GetVariables and other methods that use the variables field will use old data.
+            await FetchStackFramesAndVariablesAsync(null).ConfigureAwait(false);
             return tempVariable.ValueString;
         }
 
@@ -509,6 +513,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     command,
                     cancellationToken,
                     new PowerShellExecutionOptions { WriteOutputToHost = writeResultAsOutput, ThrowOnError = !writeResultAsOutput }).ConfigureAwait(false);
+                
+                // Fetch stack frames and variables again to have actual data in the variables field.
+                // Without this, GetVariables and other methods that use the variables field will use old data.
+                await FetchStackFramesAndVariablesAsync(null).ConfigureAwait(false);
             }
             catch (Exception e)
             {
