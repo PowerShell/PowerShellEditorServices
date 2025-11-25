@@ -1098,7 +1098,7 @@ enum MyEnum {
             }
         }
 
-        [SkippableFact]
+        [Fact]
         public async Task CanSendHoverRequestAsync()
         {
             string filePath = NewTestFile(testCommand);

@@ -507,7 +507,7 @@ namespace PowerShellEditorServices.Test.E2E
         [SkippableFact]
         public async Task CanRunPesterTestFile()
         {
-            Skip.If(s_isWindows, "Windows CI Pester is broken.");
+            Skip.If(true, "Pester test is broken.");
             /* TODO: Get this to work on Windows.
             string pesterLog = Path.Combine(s_binDir, Path.GetRandomFileName() + ".log");
 
