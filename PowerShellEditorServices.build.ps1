@@ -118,11 +118,16 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     }
 }
 
-task RestorePsesModules -If (-not (Test-Path "module/PSReadLine") -or -not (Test-Path "module/PSScriptAnalyzer")) {
-    Write-Build DarkMagenta "Restoring bundled modules"
+task RestorePsesModules {
     # NOTE: When updating module versions, ensure they are also saved to the CFS feed
-    Save-PSResource -Path module -Name PSScriptAnalyzer -Version "1.24.0" -Repository $PSRepository -TrustRepository -Verbose
-    Save-PSResource -Path module -Name PSReadLine -Version "2.4.4-beta4" -Prerelease -Repository $PSRepository -TrustRepository -Verbose
+    if (-not (Test-Path "module/PSScriptAnalyzer")) {
+        Write-Build DarkMagenta "Restoring PSScriptAnalyzer module"
+        Save-PSResource -Path module -Name PSScriptAnalyzer -Version "1.24.0" -Repository $PSRepository -TrustRepository -Verbose
+    }
+    if (-not (Test-Path "module/PSReadLine")) {
+        Write-Build DarkMagenta "Restoring PSReadLine module"
+        Save-PSResource -Path module -Name PSReadLine -Version "2.4.5" -Repository $PSRepository -TrustRepository -Verbose
+    }
 }
 
 Task Build FindDotNet, CreateBuildInfo, RestorePsesModules, {
