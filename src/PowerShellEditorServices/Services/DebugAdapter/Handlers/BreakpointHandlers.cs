@@ -11,7 +11,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
-using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Utility;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Models;
@@ -31,20 +30,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly DebugService _debugService;
         private readonly DebugStateService _debugStateService;
         private readonly WorkspaceService _workspaceService;
-        private readonly IRunspaceContext _runspaceContext;
 
         public BreakpointHandlers(
             ILoggerFactory loggerFactory,
             DebugService debugService,
             DebugStateService debugStateService,
-            WorkspaceService workspaceService,
-            IRunspaceContext runspaceContext)
+            WorkspaceService workspaceService)
         {
             _logger = loggerFactory.CreateLogger<BreakpointHandlers>();
             _debugService = debugService;
             _debugStateService = debugStateService;
             _workspaceService = workspaceService;
-            _runspaceContext = runspaceContext;
         }
 
         public async Task<SetBreakpointsResponse> Handle(SetBreakpointsArguments request, CancellationToken cancellationToken)
@@ -83,6 +79,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             }
 
             // At this point, the source file has been verified as a PowerShell script.
+            string mappedSource = null;
+            if (_debugService.TryGetMappedRemotePath(scriptFile.FilePath, out string remoteMappedPath))
+            {
+                mappedSource = remoteMappedPath;
+            }
             IReadOnlyList<BreakpointDetails> breakpointDetails = request.Breakpoints
                 .Select((srcBreakpoint) => BreakpointDetails.Create(
                     scriptFile.FilePath,
@@ -90,7 +91,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                     srcBreakpoint.Column,
                     srcBreakpoint.Condition,
                     srcBreakpoint.HitCondition,
-                    srcBreakpoint.LogMessage)).ToList();
+                    srcBreakpoint.LogMessage,
+                    mappedSource: mappedSource)).ToList();
 
             // If this is a "run without debugging (Ctrl+F5)" session ignore requests to set breakpoints.
             IReadOnlyList<BreakpointDetails> updatedBreakpointDetails = breakpointDetails;
@@ -102,8 +104,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 {
                     updatedBreakpointDetails =
                         await _debugService.SetLineBreakpointsAsync(
-                            scriptFile,
-                            breakpointDetails).ConfigureAwait(false);
+                            mappedSource ?? scriptFile.FilePath,
+                            breakpointDetails,
+                            skipRemoteMapping: mappedSource is not null).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -182,12 +185,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             Task.FromResult(new SetExceptionBreakpointsResponse());
 
-        private bool IsFileSupportedForBreakpoints(string requestedPath, ScriptFile resolvedScriptFile)
+        private static bool IsFileSupportedForBreakpoints(string requestedPath, ScriptFile resolvedScriptFile)
         {
-            // PowerShell 7 and above support breakpoints in untitled files
             if (ScriptFile.IsUntitledPath(requestedPath))
             {
-                return BreakpointApiUtils.SupportsBreakpointApis(_runspaceContext.CurrentRunspace);
+                return true;
             }
 
             if (string.IsNullOrEmpty(resolvedScriptFile?.FilePath))

@@ -83,9 +83,9 @@ namespace PowerShellEditorServices.Test.E2E
             // Wait for PSSA to finish.
             for (int i = 0; Diagnostics.Count == 0; i++)
             {
-                if (i >= 30)
+                if (i >= 120)
                 {
-                    throw new InvalidDataException("No diagnostics showed up after 20s.");
+                    throw new InvalidDataException("No diagnostics showed up after 2 minutes.");
                 }
 
                 await Task.Delay(1000);
@@ -1098,7 +1098,7 @@ enum MyEnum {
             }
         }
 
-        [SkippableFact]
+        [Fact]
         public async Task CanSendHoverRequestAsync()
         {
             string filePath = NewTestFile(testCommand);

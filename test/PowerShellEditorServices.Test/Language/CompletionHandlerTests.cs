@@ -102,7 +102,7 @@ namespace PowerShellEditorServices.Test.Language
             Assert.Equal(CompleteVariableInFile.ExpectedCompletion, actual);
         }
 
-        [SkippableFact]
+        [Fact]
         public async Task CompletesAttributeValue()
         {
             (_, IEnumerable<CompletionItem> results) = await GetCompletionResultsAsync(CompleteAttributeValue.SourceDetails);

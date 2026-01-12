@@ -25,6 +25,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         public string Source { get; private set; }
 
         /// <summary>
+        /// Gets the source where the breakpoint is mapped to, will be null if no mapping exists.  Used only for debug purposes.
+        /// </summary>
+        public string MappedSource { get; private set; }
+
+        /// <summary>
         /// Gets the line number at which the breakpoint is set.
         /// </summary>
         public int LineNumber { get; private set; }
@@ -50,6 +55,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// <param name="condition"></param>
         /// <param name="hitCondition"></param>
         /// <param name="logMessage"></param>
+        /// <param name="mappedSource"></param>
         /// <returns></returns>
         internal static BreakpointDetails Create(
             string source,
@@ -57,7 +63,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             int? column = null,
             string condition = null,
             string hitCondition = null,
-            string logMessage = null)
+            string logMessage = null,
+            string mappedSource = null)
         {
             Validate.IsNotNullOrEmptyString(nameof(source), source);
 
@@ -69,7 +76,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
                 ColumnNumber = column,
                 Condition = condition,
                 HitCondition = hitCondition,
-                LogMessage = logMessage
+                LogMessage = logMessage,
+                MappedSource = mappedSource
             };
         }
 
@@ -79,10 +87,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
         /// </summary>
         /// <param name="breakpoint">The Breakpoint instance from which details will be taken.</param>
         /// <param name="updateType">The BreakpointUpdateType to determine if the breakpoint is verified.</param>
+        /// /// <param name="sourceBreakpoint">The breakpoint source from the debug client, if any.</param>
         /// <returns>A new instance of the BreakpointDetails class.</returns>
         internal static BreakpointDetails Create(
             Breakpoint breakpoint,
-            BreakpointUpdateType updateType = BreakpointUpdateType.Set)
+            BreakpointUpdateType updateType = BreakpointUpdateType.Set,
+            BreakpointDetails sourceBreakpoint = null)
         {
             Validate.IsNotNull(nameof(breakpoint), breakpoint);
 
@@ -96,10 +106,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             {
                 Id = breakpoint.Id,
                 Verified = updateType != BreakpointUpdateType.Disabled,
-                Source = lineBreakpoint.Script,
+                Source = sourceBreakpoint?.MappedSource is not null ? sourceBreakpoint.Source : lineBreakpoint.Script,
                 LineNumber = lineBreakpoint.Line,
                 ColumnNumber = lineBreakpoint.Column,
-                Condition = lineBreakpoint.Action?.ToString()
+                Condition = lineBreakpoint.Action?.ToString(),
+                MappedSource = sourceBreakpoint?.MappedSource,
             };
 
             if (lineBreakpoint.Column > 0)

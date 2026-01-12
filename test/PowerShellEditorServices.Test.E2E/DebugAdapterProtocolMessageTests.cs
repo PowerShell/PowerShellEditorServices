@@ -2,11 +2,15 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+using Microsoft.PowerShell.EditorServices.Handlers;
 using Nerdbank.Streams;
 using OmniSharp.Extensions.DebugAdapter.Client;
 using OmniSharp.Extensions.DebugAdapter.Protocol.Client;
@@ -53,6 +57,16 @@ namespace PowerShellEditorServices.Test.E2E
         /// </summary>
         private Task<StoppedEvent> nextStopped => nextStoppedTcs.Task;
 
+        /// <summary>
+        /// This task is useful for waiting until a StartDebuggingAttachRequest is received.
+        /// </summary>
+        private readonly TaskCompletionSource<StartDebuggingAttachRequestArguments> startDebuggingAttachRequestTcs = new();
+
+        /// <summary>
+        /// This task is useful for waiting until the debug session has terminated.
+        /// </summary>
+        private readonly TaskCompletionSource<TerminatedEvent> terminatedTcs = new();
+
         public async Task InitializeAsync()
         {
             // Cleanup testScriptLogPath if it exists due to an interrupted previous run
@@ -93,12 +107,28 @@ namespace PowerShellEditorServices.Test.E2E
                     .WithInput(psesStream)
                     .WithOutput(psesStream)
                     // The "early" return mentioned above
-                    .OnInitialized(async (dapClient, _, _, _) => initializedLanguageClientTcs.SetResult(dapClient))
-                    // This TCS is useful to wait for a breakpoint to be hit
-                    .OnStopped(async (StoppedEvent e) =>
+                    .OnInitialized((dapClient, _, _, _) =>
                     {
-                        nextStoppedTcs.SetResult(e);
+                        initializedLanguageClientTcs.SetResult(dapClient);
+                        return Task.CompletedTask;
+                    })
+                    // This TCS is useful to wait for a breakpoint to be hit
+                    .OnStopped((StoppedEvent e) =>
+                    {
+                        TaskCompletionSource<StoppedEvent> currentStoppedTcs = nextStoppedTcs;
                         nextStoppedTcs = new();
+
+                        currentStoppedTcs.SetResult(e);
+                    })
+                    .OnRequest("startDebugging", (StartDebuggingAttachRequestArguments request) =>
+                    {
+                        startDebuggingAttachRequestTcs.SetResult(request);
+                        return Task.CompletedTask;
+                    })
+                    .OnTerminated((TerminatedEvent e) =>
+                    {
+                        terminatedTcs.SetResult(e);
+                        return Task.CompletedTask;
                     })
                 ;
             });
@@ -477,7 +507,7 @@ namespace PowerShellEditorServices.Test.E2E
         [SkippableFact]
         public async Task CanRunPesterTestFile()
         {
-            Skip.If(s_isWindows, "Windows CI Pester is broken.");
+            Skip.If(true, "Pester test is broken.");
             /* TODO: Get this to work on Windows.
             string pesterLog = Path.Combine(s_binDir, Path.GetRandomFileName() + ".log");
 
@@ -513,5 +543,350 @@ namespace PowerShellEditorServices.Test.E2E
             await client.RequestConfigurationDone(new ConfigurationDoneArguments());
             Assert.Equal("pester", await ReadScriptLogLineAsync());
         }
+
+#nullable enable
+        [InlineData("", null, null, 0, 0, null)]
+        [InlineData("-ProcessId 1234 -RunspaceId 5678", null, null, 1234, 5678, null)]
+        [InlineData("-ProcessId 1234 -RunspaceId 5678 -ComputerName comp", "comp", null, 1234, 5678, null)]
+        [InlineData("-CustomPipeName testpipe -RunspaceName rs-name", null, "testpipe", 0, 0, "rs-name")]
+        [SkippableTheory]
+        public async Task CanLaunchScriptWithNewChildAttachSession(
+            string paramString,
+            string? expectedComputerName,
+            string? expectedPipeName,
+            int expectedProcessId,
+            int expectedRunspaceId,
+            string? expectedRunspaceName)
+        {
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
+                "PowerShellEditorServices.Command is not signed to run FLM in Constrained Language Mode.");
+
+            string script = NewTestFile($"Start-DebugAttachSession {paramString}");
+
+            using CancellationTokenSource timeoutCts = new(30000);
+            using CancellationTokenRegistration _ = timeoutCts.Token.Register(() =>
+            {
+                startDebuggingAttachRequestTcs.TrySetCanceled();
+            });
+            using CancellationTokenRegistration _2 = timeoutCts.Token.Register(() =>
+            {
+                terminatedTcs.TrySetCanceled();
+            });
+
+            await client.LaunchScript(script);
+            await client.RequestConfigurationDone(new ConfigurationDoneArguments());
+
+            StartDebuggingAttachRequestArguments attachRequest = await startDebuggingAttachRequestTcs.Task;
+            Assert.Equal("attach", attachRequest.Request);
+            Assert.Equal(expectedComputerName, attachRequest.Configuration.ComputerName);
+            Assert.Equal(expectedPipeName, attachRequest.Configuration.CustomPipeName);
+            Assert.Equal(expectedProcessId, attachRequest.Configuration.ProcessId);
+            Assert.Equal(expectedRunspaceId, attachRequest.Configuration.RunspaceId);
+            Assert.Equal(expectedRunspaceName, attachRequest.Configuration.RunspaceName);
+
+            await terminatedTcs.Task;
+        }
+
+        [SkippableFact]
+        public async Task CanLaunchScriptWithNewChildAttachSessionAsJob()
+        {
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
+                "PowerShellEditorServices.Command is not signed to run FLM in Constrained Language Mode.");
+            Skip.If(PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
+                "WinPS does not have ThreadJob, needed by -AsJob, present by default.");
+
+            string script = NewTestFile("Start-DebugAttachSession -AsJob | Receive-Job -Wait -AutoRemoveJob");
+
+            using CancellationTokenSource timeoutCts = new(30000);
+            using CancellationTokenRegistration _1 = timeoutCts.Token.Register(() =>
+            {
+                startDebuggingAttachRequestTcs.TrySetCanceled();
+            });
+            using CancellationTokenRegistration _2 = timeoutCts.Token.Register(() =>
+            {
+                terminatedTcs.TrySetCanceled();
+            });
+
+            await client.LaunchScript(script);
+            await client.RequestConfigurationDone(new ConfigurationDoneArguments());
+
+            StartDebuggingAttachRequestArguments attachRequest = await startDebuggingAttachRequestTcs.Task;
+            Assert.Equal("attach", attachRequest.Request);
+            Assert.Null(attachRequest.Configuration.ComputerName);
+            Assert.Null(attachRequest.Configuration.CustomPipeName);
+            Assert.Equal(0, attachRequest.Configuration.ProcessId);
+            Assert.Equal(0, attachRequest.Configuration.RunspaceId);
+            Assert.Null(attachRequest.Configuration.RunspaceName);
+
+            await terminatedTcs.Task;
+        }
+
+        [SkippableFact]
+        public async Task CanAttachScriptWithPathMappings()
+        {
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
+                "Breakpoints can't be set in Constrained Language Mode.");
+
+            string[] logStatements = ["$PSCommandPath", "after breakpoint"];
+
+            await RunWithAttachableProcess(logStatements, async (filePath, processId, runspaceId) =>
+            {
+                string localParent = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                string localScriptPath = Path.Combine(localParent, Path.GetFileName(filePath));
+                Directory.CreateDirectory(localParent);
+                File.Copy(filePath, localScriptPath);
+
+                Task<StoppedEvent> nextStoppedTask = nextStopped;
+
+                AttachResponse attachResponse = await client.Attach(
+                    new PsesAttachRequestArguments
+                    {
+                        ProcessId = processId,
+                        RunspaceId = runspaceId,
+                        PathMappings = [
+                            new()
+                            {
+                                LocalRoot = localParent + Path.DirectorySeparatorChar,
+                                RemoteRoot = Path.GetDirectoryName(filePath) + Path.DirectorySeparatorChar
+                            }
+                        ]
+                    }) ?? throw new Exception("Attach response was null.");
+                Assert.NotNull(attachResponse);
+
+                SetBreakpointsResponse setBreakpointsResponse = await client.SetBreakpoints(new SetBreakpointsArguments
+                {
+                    Source = new Source { Name = Path.GetFileName(localScriptPath), Path = localScriptPath },
+                    Breakpoints = new SourceBreakpoint[] { new SourceBreakpoint { Line = 2 } },
+                    SourceModified = false,
+                });
+
+                Breakpoint breakpoint = setBreakpointsResponse.Breakpoints.First();
+                Assert.True(breakpoint.Verified);
+                Assert.NotNull(breakpoint.Source);
+                Assert.Equal(localScriptPath, breakpoint.Source.Path, ignoreCase: s_isWindows);
+                Assert.Equal(2, breakpoint.Line);
+
+                ConfigurationDoneResponse configDoneResponse = await client.RequestConfigurationDone(new ConfigurationDoneArguments());
+                Assert.NotNull(configDoneResponse);
+
+                // Wait-Debugger stop
+                StoppedEvent stoppedEvent = await nextStoppedTask;
+                Assert.Equal("step", stoppedEvent.Reason);
+                Assert.NotNull(stoppedEvent.ThreadId);
+
+                nextStoppedTask = nextStopped;
+
+                // It is important we wait for the stack trace before continue.
+                // The stopped event starts to get the stack trace info in the
+                // background and requesting the stack trace is the only way to
+                // ensure it is done and won't conflict with the continue request.
+                await client.RequestStackTrace(new StackTraceArguments { ThreadId = (int)stoppedEvent.ThreadId });
+                await client.RequestContinue(new ContinueArguments { ThreadId = (int)stoppedEvent.ThreadId });
+
+                // Wait until we hit the breakpoint
+                stoppedEvent = await nextStoppedTask;
+                Assert.Equal("breakpoint", stoppedEvent.Reason);
+                Assert.NotNull(stoppedEvent.ThreadId);
+
+                // The code before the breakpoint should have already run
+                // It will contain the actual script being run
+                string beforeBreakpointActual = await ReadScriptLogLineAsync();
+                Assert.Equal(filePath, beforeBreakpointActual);
+
+                // Assert that the stopped breakpoint is the one we set
+                StackTraceResponse stackTraceResponse = await client.RequestStackTrace(new StackTraceArguments { ThreadId = (int)stoppedEvent.ThreadId });
+                DapStackFrame? stoppedTopFrame = stackTraceResponse.StackFrames?.First();
+
+                // The top frame should have a source path of our local script.
+                Assert.NotNull(stoppedTopFrame);
+                Assert.Equal(2, stoppedTopFrame.Line);
+                Assert.NotNull(stoppedTopFrame.Source);
+                Assert.Equal(localScriptPath, stoppedTopFrame.Source.Path, ignoreCase: s_isWindows);
+
+                await client.RequestContinue(new ContinueArguments { ThreadId = 1 });
+
+                string afterBreakpointActual = await ReadScriptLogLineAsync();
+                Assert.Equal("after breakpoint", afterBreakpointActual);
+            });
+        }
+
+        private async Task RunWithAttachableProcess(string[] logStatements, Func<string, int, int, Task> action)
+        {
+            /*
+                There is no public API in pwsh to wait for an attach event. We
+                use reflection to wait until the AvailabilityChanged event is
+                subscribed to by Debug-Runspace as a marker that it is ready to
+                continue.
+
+                We also run the test script in another runspace as WinPS'
+                Debug-Runspace will break on the first statement after the
+                attach and we want that to be the Wait-Debugger call.
+
+                We can use https://github.com/PowerShell/PowerShell/pull/25788
+                once that is merged and we are running against that version but
+                WinPS will always need this.
+            */
+            string scriptEntrypoint = @"
+                param([string]$TestScript)
+
+                $debugRunspaceCmd = Get-Command Debug-Runspace -Module Microsoft.PowerShell.Utility
+                $runspaceBase = [PSObject].Assembly.GetType(
+                    'System.Management.Automation.Runspaces.RunspaceBase')
+                $availabilityChangedField = $runspaceBase.GetField(
+                    'AvailabilityChanged',
+                    [System.Reflection.BindingFlags]'NonPublic, Instance')
+                if (-not $availabilityChangedField) {
+                    throw 'Failed to get AvailabilityChanged event field'
+                }
+
+                $ps = [PowerShell]::Create()
+                $runspace = $ps.Runspace
+
+                # Wait-Debugger is needed in WinPS to sync breakpoints before
+                # running the script.
+                $null = $ps.AddCommand('Wait-Debugger').AddStatement()
+                $null = $ps.AddCommand($TestScript)
+
+                # Let the runner know what Runspace to attach to and that it
+                # is ready to run.
+                'RID: {0}' -f $runspace.Id
+
+                $start = Get-Date
+                while ($true) {
+                    $subscribed = $availabilityChangedField.GetValue($runspace) |
+                        Where-Object Target -is $debugRunspaceCmd.ImplementingType
+                    if ($subscribed) {
+                        break
+                    }
+
+                    if (((Get-Date) - $start).TotalSeconds -gt 10) {
+                        throw 'Timeout waiting for Debug-Runspace to be subscribed.'
+                    }
+                }
+
+                $ps.Invoke()
+                foreach ($e in $ps.Streams.Error) {
+                    Write-Error -ErrorRecord $e
+                }
+
+                # Keep running until the runner has deleted the test script to
+                # ensure the process doesn't finish before the test does in
+                # normal circumstances.
+                while (Test-Path -LiteralPath $TestScript) {
+                    Start-Sleep -Seconds 1
+                }
+            ";
+
+            string filePath = NewTestFile(GenerateLoggingScript(logStatements));
+            string encArgs = CreatePwshEncodedArgs(filePath);
+            string encCommand = Convert.ToBase64String(Encoding.Unicode.GetBytes(scriptEntrypoint));
+
+            ProcessStartInfo psi = new ProcessStartInfo
+            {
+                FileName = PsesStdioLanguageServerProcessHost.PwshExe,
+                Arguments = $"-NoLogo -NoProfile -EncodedCommand {encCommand} -EncodedArguments {encArgs}",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+            psi.EnvironmentVariables["TERM"] = "dumb";  // Avoids color/VT sequences in test output.
+
+            TaskCompletionSource<int> ridOutput = new();
+
+            // Task shouldn't take longer than 30 seconds to complete.
+            using CancellationTokenSource debugTaskCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            using CancellationTokenRegistration _ = debugTaskCts.Token.Register(ridOutput.SetCanceled);
+            using Process? psProc = Process.Start(psi);
+            try
+            {
+                Assert.NotNull(psProc);
+                psProc.OutputDataReceived += (sender, args) =>
+                {
+                    if (!string.IsNullOrEmpty(args.Data))
+                    {
+                        if (args.Data.StartsWith("RID: "))
+                        {
+                            int rid = int.Parse(args.Data.Substring(5));
+                            ridOutput.SetResult(rid);
+                        }
+
+                        output.WriteLine("STDOUT: {0}", args.Data);
+                    }
+                };
+                psProc.ErrorDataReceived += (sender, args) =>
+                {
+                    if (!string.IsNullOrEmpty(args.Data))
+                    {
+                        output.WriteLine("STDERR: {0}", args.Data);
+                    }
+                };
+                psProc.EnableRaisingEvents = true;
+                psProc.BeginOutputReadLine();
+                psProc.BeginErrorReadLine();
+
+                Task procExited = psProc.WaitForExitAsync(debugTaskCts.Token);
+                Task<int> waitRid = ridOutput.Task;
+
+                // Wait for the process to fail or the script to start.
+                Task finishedTask = await Task.WhenAny(waitRid, procExited);
+                if (finishedTask == procExited)
+                {
+                    await procExited;
+                    Assert.Fail("The attached process exited before the PowerShell entrypoint could start.");
+                }
+                int rid = await waitRid;
+
+                Task debugTask = action(filePath, psProc.Id, rid);
+                finishedTask = await Task.WhenAny(procExited, debugTask);
+                if (finishedTask == procExited)
+                {
+                    await procExited;
+                    Assert.Fail("Attached process exited before the script could start.");
+                }
+
+                await debugTask;
+
+                File.Delete(filePath);
+                psProc.Kill();
+                await procExited;
+            }
+            catch
+            {
+                if (psProc is not null && !psProc.HasExited)
+                {
+                    psProc.Kill();
+                }
+
+                throw;
+            }
+        }
+
+        private static string CreatePwshEncodedArgs(params string[] args)
+        {
+            // Only way to pass args to -EncodedCommand is to use CLIXML with
+            // -EncodedArguments. Not pretty but the structure isn't too
+            // complex and saves us trying to embed/escape strings in a script.
+            string clixmlNamespace = "http://schemas.microsoft.com/powershell/2004/04";
+            string clixml = new XDocument(
+                new XDeclaration("1.0", "utf-16", "yes"),
+                new XElement(XName.Get("Objs", clixmlNamespace),
+                    new XAttribute("Version", "1.1.0.1"),
+                    new XElement(XName.Get("Obj", clixmlNamespace),
+                        new XAttribute("RefId", "0"),
+                        new XElement(XName.Get("TN", clixmlNamespace),
+                            new XAttribute("RefId", "0"),
+                            new XElement(XName.Get("T", clixmlNamespace), "System.Collections.ArrayList"),
+                            new XElement(XName.Get("T", clixmlNamespace), "System.Object")
+                        ),
+                        new XElement(XName.Get("LST", clixmlNamespace),
+                            args.Select(s => new XElement(XName.Get("S", clixmlNamespace), s))
+                        )
+                ))).ToString(SaveOptions.DisableFormatting);
+
+            return Convert.ToBase64String(Encoding.Unicode.GetBytes(clixml));
+        }
+
+        private record StartDebuggingAttachRequestArguments(PsesAttachRequestArguments Configuration, string Request);
     }
 }

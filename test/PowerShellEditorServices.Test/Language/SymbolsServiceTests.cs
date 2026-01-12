@@ -901,7 +901,7 @@ namespace PowerShellEditorServices.Test.Language
             AssertIsRegion(symbol.ScriptRegion, 27, 5, 27, 10);
         }
 
-        [SkippableFact()]
+        [SkippableFact]
         public void FindsSymbolsInDSCFile()
         {
             Skip.If(!isWindows, "DSC only works properly on Windows.");

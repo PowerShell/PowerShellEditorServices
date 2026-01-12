@@ -61,7 +61,7 @@ Once the basic language configurations have been installed, add this to your
 ```lua
 local on_attach = function(client, bufnr)
 	-- Enable completion triggered by <c-x><c-o>
-	vim.api.nvim_buf_set_option(bufnr, 'omnifunc', 'v:lua.vim.lsp.omnifunc')
+	vim.api.nvim_set_option_value("omnifunc", "v:lua.vim.lsp.omnifunc", { buf = bufnr })
 
 	local bufopts = { noremap = true, silent = true, buffer = bufnr }
 	vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, bufopts)
@@ -101,6 +101,15 @@ lua << EOF
 EOF
 ```
 
+#### Theme Troubleshooting
+If you find that your colorscheme appears correctly for a second and then 
+changes to not having full highlighting, you'll need to disable semantic 
+highlighting. 
+Add this line to the `on_attach` function.
+```lua
+client.server_capabilities.semanticTokensProvider = nil
+```
+
 #### Configure Additional Settings
 To further configure the server, you can supply settings to the setup table.
 For example, you can set the code formatting preset to one true brace style
@@ -112,6 +121,8 @@ require('lspconfig')['powershell_es'].setup {
 	settings = { powershell = { codeFormatting = { Preset = 'OTBS' } } }
 }
 ```
+For a more complete list of options have a look at this schema: 
+[nvim-lsp-installer powershell_es reference](https://github.com/williamboman/nvim-lsp-installer/blob/main/lua/nvim-lsp-installer/_generated/schemas/powershell_es.lua)
 
 You can also set the bundled PSScriptAnalyzer's custom rule path like so:
 ```lua
@@ -121,4 +132,35 @@ require('lspconfig')['powershell_es'].setup {
 	on_attach = on_attach,
 	settings = { powershell = { scriptAnalysis = { settingsPath = custom_settings_path } } }
 }
+```
+
+#### Autocomplete Brackets Troubleshooting
+If you're using `blink.cmp` and you're getting brackets when autocompleting 
+cmdlet names, you'll need to add `{ "ps1", "psm1" }` to the blocked filetypes 
+for both `kind_resolution` and `semantic_token_resolution` in the plugin's 
+config file.
+
+[Blink.cmp completion reference](https://cmp.saghen.dev/configuration/reference#completion-accept)
+
+### Indentation
+
+Vim/Neovim does not contain default `:h indentexpr` for filetype `ps1`.
+So you might notice indentation on newline is not behaving as expected for powershell files.
+Luckily powershell has similar syntax like C, so we can use `:h cindent` to fix the indentation problem.
+You can use the following snippet to either callback of an autocmd or ftplugin.
+
+```lua
+--- ./nvim/lua/ftplugin/ps1.lua
+
+-- disable indent from powershell treesitter parser
+-- because the parse isn't mature currently
+-- you can ignore this step if don't use treesitter
+if pcall(require, 'nvim-treesitter') then
+  vim.schedule(function() vim.cmd([[TSBufDisable indent]]) end)
+end
+
+vim.opt_local.cindent = true
+vim.opt_local.cinoptions:append { 'J1', '(1s', '+0' } -- see :h cino-J, cino-(, cino-+
+
+vim.opt_local.iskeyword:remove { '-' } -- OPTIONALLY consider Verb-Noun as a whole word
 ```

@@ -12,11 +12,11 @@ if ($PSRepository -eq "CFS" -and -not (Get-PSResourceRepository -Name CFS -Error
 # NOTE: Due to a bug in Install-PSResource with upstream feeds, we have to
 # request an exact version. Otherwise, if a newer version is available in the
 # upstream feed, it will fail to install any version at all.
-Install-PSResource -Verbose -TrustRepository -RequiredResource  @{
+Install-PSResource -Verbose -TrustRepository -RequiredResource @{
     InvokeBuild = @{
-        version = "5.12.1"
+        version = "5.14.18"
         repository = $PSRepository
-      }
+    }
     platyPS = @{
         version = "0.14.2"
         repository = $PSRepository
