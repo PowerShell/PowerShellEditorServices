@@ -1,5 +1,22 @@
 {
     "recommendations": [
-        "ms-vscode.azure-account"
+        // PowerShell development
+        "ms-vscode.powershell",
+
+        // .NET / C# for debugging and language features
+        "ms-dotnettools.csharp",
+
+        // Consistent formatting via .editorconfig
+        "EditorConfig.EditorConfig",
+
+        // YAML support for CI and config files
+        "redhat.vscode-yaml",
+
+        // GitHub Actions authoring (repo uses GH workflows)
+        "GitHub.vscode-github-actions",
+
+        // Markdown authoring and linting for docs
+        "yzhang.markdown-all-in-one",
+        "DavidAnson.vscode-markdownlint"
     ]
 }
