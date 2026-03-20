@@ -122,7 +122,7 @@ task RestorePsesModules {
     # NOTE: When updating module versions, ensure they are also saved to the CFS feed
     if (-not (Test-Path "module/PSScriptAnalyzer")) {
         Write-Build DarkMagenta "Restoring PSScriptAnalyzer module"
-        Save-PSResource -Path module -Name PSScriptAnalyzer -Version "1.24.0" -Repository $PSRepository -TrustRepository -Verbose
+        Save-PSResource -Path module -Name PSScriptAnalyzer -Version "1.25.0" -Repository $PSRepository -TrustRepository -Verbose
     }
     if (-not (Test-Path "module/PSReadLine")) {
         Write-Build DarkMagenta "Restoring PSReadLine module"
