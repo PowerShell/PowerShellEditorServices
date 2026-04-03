@@ -18,10 +18,10 @@ jobs:
       DOTNET_GENERATE_ASPNET_CERTIFICATE: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install dotnet
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           cache: true
           cache-dependency-path: '**/*.csproj'
@@ -32,7 +32,7 @@ jobs:
         run: ./tools/installPSResources.ps1
 
       - name: Download PowerShell install script
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: PowerShell/PowerShell
           path: pwsh
@@ -45,7 +45,7 @@ jobs:
 
       - name: If debugging, start upterm for interactive pipeline troubleshooting
         if: ${{ runner.debug == 1 }}
-        uses: lhotari/action-upterm@v1
+        uses: owenthereal/action-upterm@v1
         with:
           wait-timeout-minutes: 1
 
@@ -55,13 +55,13 @@ jobs:
 
       - name: Upload build artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: PowerShellEditorServices-module-${{ matrix.os }}
           path: module
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: PowerShellEditorServices-test-results-${{ matrix.os }}
