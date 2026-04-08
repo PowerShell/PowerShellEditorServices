@@ -61,8 +61,12 @@
       (let ((lsp (eglot-current-server)))
         (should (string= (eglot--project-nickname lsp) "PowerShellEditorServices"))
         (should (member (cons 'powershell-mode "powershell") (eglot--languages lsp))))
-      (sleep-for 5) ; TODO: Wait for "textDocument/publishDiagnostics" instead
       (flymake-start)
+      ;; Wait for diagnostics to arrive instead of sleeping a fixed duration
+      (let ((deadline (time-add (current-time) 30)))
+        (while (and (time-less-p (current-time) deadline)
+                    (null (flymake-diagnostics)))
+          (sleep-for 0.5)))
       (goto-char (point-min))
       (flymake-goto-next-error)
       (should (eq 'flymake-warning (face-at-point))))))
