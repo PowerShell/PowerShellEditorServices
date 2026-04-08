@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Hosting;
@@ -69,15 +68,16 @@ namespace PowerShellEditorServices.Test.Services.Symbols
         public async Task DoesNotDuplicateScriptMarkersAsync()
         {
             ScriptFile scriptFile = workspaceService.GetFileBuffer("untitled:Untitled-1", script);
-            ScriptFile[] scriptFiles = { scriptFile };
+            AnalysisService.CorrectionTableEntry fileAnalysisEntry =
+                AnalysisService.CorrectionTableEntry.CreateForFile(scriptFile);
 
             await analysisService
-                .DelayThenInvokeDiagnosticsAsync(scriptFiles, CancellationToken.None);
+                .DelayThenInvokeDiagnosticsAsync(scriptFile, fileAnalysisEntry);
             Assert.Single(scriptFile.DiagnosticMarkers);
 
             // This is repeated to test that the markers are not duplicated.
             await analysisService
-                .DelayThenInvokeDiagnosticsAsync(scriptFiles, CancellationToken.None);
+                .DelayThenInvokeDiagnosticsAsync(scriptFile, fileAnalysisEntry);
             Assert.Single(scriptFile.DiagnosticMarkers);
         }
 
@@ -86,10 +86,11 @@ namespace PowerShellEditorServices.Test.Services.Symbols
         {
             // Causing a missing closing } parser error
             ScriptFile scriptFile = workspaceService.GetFileBuffer("untitled:Untitled-2", script.TrimEnd('}'));
-            ScriptFile[] scriptFiles = { scriptFile };
+            AnalysisService.CorrectionTableEntry fileAnalysisEntry =
+                AnalysisService.CorrectionTableEntry.CreateForFile(scriptFile);
 
             await analysisService
-                .DelayThenInvokeDiagnosticsAsync(scriptFiles, CancellationToken.None);
+                .DelayThenInvokeDiagnosticsAsync(scriptFile, fileAnalysisEntry);
 
             Assert.Collection(scriptFile.DiagnosticMarkers,
                 (actual) =>
