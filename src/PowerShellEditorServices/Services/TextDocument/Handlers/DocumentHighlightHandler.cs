@@ -55,7 +55,19 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 });
             }
 
-            _logger.LogDebug("Highlights: " + highlights);
+            _logger.LogDebug("Highlights: {Count} highlight(s) found.", highlights.Count);
+            if (_logger.IsEnabled(LogLevel.Trace))
+            {
+                foreach (DocumentHighlight highlight in highlights)
+                {
+                    _logger.LogTrace("  Highlight: Kind={Kind}, Range=[({StartLine},{StartChar})-({EndLine},{EndChar})]",
+                        highlight.Kind,
+                        highlight.Range.Start.Line,
+                        highlight.Range.Start.Character,
+                        highlight.Range.End.Line,
+                        highlight.Range.End.Character);
+                }
+            }
 
             return cancellationToken.IsCancellationRequested || highlights.Count == 0
                 ? Task.FromResult(s_emptyHighlightContainer)
