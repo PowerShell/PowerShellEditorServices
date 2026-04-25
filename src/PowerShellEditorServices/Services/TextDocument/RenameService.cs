@@ -22,7 +22,7 @@ namespace Microsoft.PowerShell.EditorServices.Services;
 /// <summary>
 /// Used with Configuration Bind to sync the settings to what is set on the client.
 /// </summary>
-public class RenameServiceOptions
+internal class RenameServiceOptions
 {
     public bool createFunctionAlias { get; set; }
     public bool createParameterAlias { get; set; }
@@ -519,7 +519,7 @@ internal class RenameVariableVisitor(Ast target, string newName, bool skipVerify
 /// <summary>
 /// Represents a position in a script file that adapts and implicitly converts based on context. PowerShell script lines/columns start at 1, but LSP textdocument lines/columns start at 0. The default line/column constructor is 1-based.
 /// </summary>
-public record ScriptPositionAdapter(IScriptPosition position) : IScriptPosition, IComparable<ScriptPositionAdapter>, IComparable<Position>, IComparable<ScriptPosition>
+internal record ScriptPositionAdapter(IScriptPosition position) : IScriptPosition, IComparable<ScriptPositionAdapter>, IComparable<Position>, IComparable<ScriptPosition>
 {
     public int Line => position.LineNumber;
     public int LineNumber => position.LineNumber;

@@ -4,7 +4,7 @@
 using System;
 namespace Microsoft.PowerShell.EditorServices.Refactoring
 {
-    public class TargetSymbolNotFoundException : Exception
+    internal class TargetSymbolNotFoundException : Exception
     {
         public TargetSymbolNotFoundException()
         {
@@ -21,7 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.Refactoring
         }
     }
 
-    public class FunctionDefinitionNotFoundException : Exception
+    internal class FunctionDefinitionNotFoundException : Exception
     {
         public FunctionDefinitionNotFoundException()
         {

@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers;
 /// <param name="message">The message describing the reason for the request failure.</param>
 /// <param name="logDetails">Additional details to be logged regarding the failure. It should be serializable to JSON.</param>
 /// <param name="severity">The severity level of the message. This is only shown in internal logging.</param>
-public class HandlerErrorException
+internal class HandlerErrorException
 (
     string message,
     object logDetails = null,

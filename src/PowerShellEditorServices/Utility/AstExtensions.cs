@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.EditorServices.Language;
 
 // NOTE: A lot of this is reimplementation of https://github.com/PowerShell/PowerShell/blob/2d5d702273060b416aea9601e939ff63bb5679c9/src/System.Management.Automation/engine/parser/Position.cs which is internal and sealed.
 
-public static class AstExtensions
+internal static class AstExtensions
 {
     private const int IS_BEFORE = -1;
     private const int IS_AFTER = 1;
