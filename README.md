@@ -8,7 +8,7 @@
 functionality needed to enable a consistent and robust PowerShell development
 experience in almost any editor or integrated development environment (IDE).
 
-## [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) clients using PowerShell Editor Services:
+## [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) clients using PowerShell Editor Services
 
 - [PowerShell for Visual Studio Code](https://github.com/PowerShell/vscode-powershell)
 > [!NOTE]
@@ -142,6 +142,34 @@ The debugging functionality in PowerShell Editor Services is available in the fo
 - [nvim-dap-powershell for Neovim](https://github.com/Willem-J-an/nvim-dap-powershell)
 - [powershell.nvim for Neovim](https://github.com/TheLeoP/powershell.nvim)
 - [intellij-powershell](https://github.com/ant-druha/intellij-powershell)
+
+### Rename Disclaimer
+
+PowerShell is not a statically typed language. As such, the renaming of functions, parameters, and other symbols can only be done on a best effort basis. While this is sufficient for the majority of use cases, it cannot be relied upon to find all instances of a symbol and rename them across an entire code base such as in C# or TypeScript.
+
+There are several edge case scenarios which may exist where rename is difficult or impossible, or unable to be determined due to the dynamic scoping nature of PowerShell.
+
+The focus of the rename support is on quick updates to variables or functions within a self-contained script file. It is not intended for module developers to find and rename a symbol across multiple files, which is very difficult to do as the relationships are primarily only computed at runtime and not possible to be statically analyzed.
+
+#### 👍 [Implemented and Tested Rename Scenarios](https://github.com/PowerShell/PowerShellEditorServices/blob/main/test/PowerShellEditorServices.Test.Shared/Refactoring)
+
+#### 🤚 Unsupported Scenarios
+
+- ❌ Renaming can only be done within a single file. Renaming symbols across multiple files is not supported, even if those are dotsourced from the source file.
+- ❌ Functions or variables must have a corresponding definition within their scope or above to be renamed. If we cannot find the original definition of a variable or function, the rename will not be supported.
+- ❌ Dynamic Parameters are not supported
+- ❌ Dynamically constructed splat parameters will not be renamed/updated (e.g. `$splat = @{};$splat.a = 5;Do-Thing @a`)
+- ❌ Scoped variables (e.g. $SCRIPT:test) are not currently supported
+- ❌ Renaming a variable inside of a scriptblock that is used in unscoped operations like `Foreach-Parallel` or `Start-Job` and the variable is not defined within the scriptblock is not supported and can have unexpected results.
+- ❌ Scriptblocks part of an assignment are considered isolated scopes. For example `$a = 5; $x = {$a}; & $x` does not consider the two $a to be related, even though in execution this reference matches.
+- ❌ Scriptblocks that are part of a parameter are assumed to not be executing in a different runspace. For example, the renaming behavior will treat `ForEach-Object -Parallel {$x}` the same as `Foreach-Object {$x}` for purposes of finding scope definitions. To avoid unexpected renaming, define/redefine all your variables in the scriptblock using a param block.
+- ❌ A lot of the logic relies on the position of items, so for example, defining a variable in a `begin` block and placing it after a `process` block, while technically correct in PowerShell, will not rename as expected. 
+- ❌ Similarly, defining a function, and having the function rely on a variable that is assigned outside the function and after the function definition, will not find the outer variable reference.
+- ❌ `Get-Variable` and `Set-Variable` are not considered and not currently searched for renames
+
+#### 📄 Filing a Rename Issue
+
+If there is a rename scenario you feel can be reasonably supported in PowerShell, please file a bug report in the PowerShellEditorServices repository with the "Expected" and "Actual" being the before and after rename. We will evaluate it and accept or reject it and give reasons why. Items that fall under the Unsupported Scenarios above will be summarily rejected, however that does not mean that they may not be supported in the future if we come up with a reasonably safe way to implement a scenario.
 
 ## API Usage
 
