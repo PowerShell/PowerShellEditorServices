@@ -18,10 +18,10 @@ jobs:
       DOTNET_GENERATE_ASPNET_CERTIFICATE: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install dotnet
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           cache: true
           cache-dependency-path: '**/*.csproj'
@@ -41,13 +41,13 @@ jobs:
           version: nightly
 
       - name: Checkout vim-ps1
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: PProvost/vim-ps1
           path: vim-ps1
 
       - name: Checkout LanguageClient-neovim
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: autozimu/LanguageClient-neovim
           path: LanguageClient-neovim
@@ -57,13 +57,13 @@ jobs:
         working-directory: LanguageClient-neovim
 
       - name: Checkout Themis
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: thinca/vim-themis
           path: vim-themis
 
       # - name: Debug if run with debugging enabled
-      #   uses: lhotari/action-upterm@v1
+      #   uses: owenthereal/action-upterm@v1
 
       - name: Run Themis with full CLI
         env:

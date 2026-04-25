@@ -136,7 +136,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.DebugAdapter
             {
                 BreakpointDetails lineBreakpoint => SetLineBreakpointDelegate(
                     debugger,
-                    lineBreakpoint.Source,
+                    lineBreakpoint.MappedSource ?? lineBreakpoint.Source,
                     lineBreakpoint.LineNumber,
                     lineBreakpoint.ColumnNumber ?? 0,
                     actionScriptBlock,

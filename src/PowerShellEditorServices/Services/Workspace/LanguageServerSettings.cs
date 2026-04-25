@@ -207,6 +207,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         public bool WhitespaceInsideBrace { get; set; }
         public bool IgnoreOneLineBlock { get; set; }
         public bool AlignPropertyValuePairs { get; set; }
+        public bool AlignEnumMemberValues { get; set; }
         public bool UseCorrectCasing { get; set; }
 
         /// <summary>
@@ -298,7 +299,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     "PSAlignAssignmentStatement",
                     new Hashtable {
                     { "Enable", true },
-                    { "CheckHashtable", AlignPropertyValuePairs }
+                    { "CheckHashtable", AlignPropertyValuePairs },
+                    { "CheckEnums", AlignEnumMemberValues },
                 }
                 },
                 {

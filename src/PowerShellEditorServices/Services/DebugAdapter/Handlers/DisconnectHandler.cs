@@ -50,13 +50,23 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             //       We should instead ensure that the debugger is in some valid state, lock it and then tear things down
 
             _debugEventHandlerService.UnregisterEventHandlers();
+            _debugService.PathMappings = [];
 
             if (!_debugStateService.ExecutionCompleted)
             {
                 _debugStateService.ExecutionCompleted = true;
                 _debugService.Abort();
 
-                if (_debugStateService.IsInteractiveDebugSession && _debugStateService.IsAttachSession)
+                if (!_debugStateService.IsAttachSession && !_debugStateService.IsUsingTempIntegratedConsole)
+                {
+                    await _executionService.ExecutePSCommandAsync(
+                        new PSCommand().AddCommand("Remove-Variable")
+                            .AddParameter("Name", DebugService.PsesGlobalVariableDebugServerName)
+                            .AddParameter("Force", true),
+                        cancellationToken).ConfigureAwait(false);
+                }
+
+                if (_debugStateService.IsInteractiveDebugSession && _debugStateService.IsRemoteAttach)
                 {
                     // Pop the sessions
                     if (_runspaceContext.CurrentRunspace.RunspaceOrigin == RunspaceOrigin.EnteredProcess)

@@ -118,10 +118,16 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     }
 }
 
-task RestorePsesModules -If (-not (Test-Path "module/PSReadLine") -or -not (Test-Path "module/PSScriptAnalyzer")) {
-    Write-Build DarkMagenta "Restoring bundled modules"
-    Save-PSResource -Path module -Name PSScriptAnalyzer -Version "1.24.0" -Repository $PSRepository -TrustRepository -Verbose
-    Save-PSResource -Path module -Name PSReadLine -Version "2.4.1-beta1" -Prerelease -Repository $PSRepository -TrustRepository -Verbose
+task RestorePsesModules {
+    # NOTE: When updating module versions, ensure they are also saved to the CFS feed
+    if (-not (Test-Path "module/PSScriptAnalyzer")) {
+        Write-Build DarkMagenta "Restoring PSScriptAnalyzer module"
+        Save-PSResource -Path module -Name PSScriptAnalyzer -Version "1.25.0" -Repository $PSRepository -TrustRepository -Verbose
+    }
+    if (-not (Test-Path "module/PSReadLine")) {
+        Write-Build DarkMagenta "Restoring PSReadLine module"
+        Save-PSResource -Path module -Name PSReadLine -Version "2.4.5" -Repository $PSRepository -TrustRepository -Verbose
+    }
 }
 
 Task Build FindDotNet, CreateBuildInfo, RestorePsesModules, {
@@ -313,7 +319,7 @@ if ($env:GITHUB_ACTIONS) {
     $PwshPreview = if ($script:IsNix) { "$HOME/.powershell-preview/pwsh" } else { "$env:LOCALAPPDATA/Microsoft/powershell-preview/pwsh.exe" }
 }
 
-Task TestE2EPreview Build, SetupHelpForTests, {
+Task TestE2EPreview -If (-not $env:TF_BUILD) Build, SetupHelpForTests, {
     Assert (Test-Path $PwshPreview) "PowerShell Preview not found at $PwshPreview, please install it: https://github.com/PowerShell/PowerShell/blob/master/tools/install-powershell.ps1"
     Set-Location ./test/PowerShellEditorServices.Test.E2E/
     $env:PWSH_EXE_NAME = $PwshPreview
