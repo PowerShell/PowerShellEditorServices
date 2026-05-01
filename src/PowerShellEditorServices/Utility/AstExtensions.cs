@@ -295,23 +295,41 @@ internal static class AstExtensions
         {
             FunctionDefinitionAst? funcDef = scope.FindAll
             (
-                ast => ast is FunctionDefinitionAst funcDef
-                    && funcDef.StartsBefore(target)
-                    && funcDef.Name.Equals(functionName, StringComparison.CurrentCultureIgnoreCase)
-                    && (funcDef.Parameters ?? funcDef.Body.ParamBlock.Parameters)
-                        .SingleOrDefault(
-                            param => param.Name.GetUnqualifiedName().Equals(parameterName, StringComparison.CurrentCultureIgnoreCase)
-                        ) is not null
+                ast =>
+                {
+                    if (ast is not FunctionDefinitionAst funcDef
+                        || !funcDef.StartsBefore(target)
+                        || !funcDef.Name.Equals(functionName, StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        return false;
+                    }
+
+                    IReadOnlyList<ParameterAst>? parameters = funcDef.Parameters ?? funcDef.Body?.ParamBlock?.Parameters;
+                    if (parameters is null || parameters.Count == 0)
+                    {
+                        return false;
+                    }
+
+                    return parameters.SingleOrDefault(
+                        param => param.Name.GetUnqualifiedName().Equals(parameterName, StringComparison.CurrentCultureIgnoreCase)
+                    ) is not null;
+                }
                 , false
             ).LastOrDefault() as FunctionDefinitionAst;
 
             if (funcDef is not null)
             {
-                return (funcDef.Parameters ?? funcDef.Body.ParamBlock.Parameters)
+                IReadOnlyList<ParameterAst>? parameters = funcDef.Parameters ?? funcDef.Body?.ParamBlock?.Parameters;
+                if (parameters is null || parameters.Count == 0)
+                {
+                    return null;
+                }
+
+                return parameters
                     .SingleOrDefault
                     (
                         param => param.Name.GetUnqualifiedName().Equals(parameterName, StringComparison.CurrentCultureIgnoreCase)
-                    )?.Name; //Should not be null at this point
+                    )?.Name; // Should not be null at this point
             }
 
             scope = scope.GetScopeBoundary();
