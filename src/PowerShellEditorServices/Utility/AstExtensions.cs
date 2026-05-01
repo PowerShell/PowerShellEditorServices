@@ -576,13 +576,117 @@ internal static class AstExtensions
     /// </summary>
     internal static ScriptExtentAdapter GetFunctionNameExtent(this FunctionDefinitionAst ast)
     {
-        string name = ast.Name;
-        // FIXME: Gather dynamically from the AST and include backticks and whatnot that might be present
-        int funcLength = "function ".Length;
         ScriptExtentAdapter funcExtent = new(ast.Extent);
+        string? extentText = ast.Extent.Text;
+
+        if (TryGetFunctionNameOffsets(extentText, out int nameStartOffset, out int nameEndOffset))
+        {
+            funcExtent.Start = GetPositionAtOffset(funcExtent.Start, extentText!, nameStartOffset);
+            funcExtent.End = GetPositionAtOffset(funcExtent.Start, extentText!, nameEndOffset);
+            return funcExtent;
+        }
+
+        // Fallback for unexpected input: preserve the previous behavior as closely as possible.
+        string name = ast.Name;
+        int funcLength = "function ".Length;
         funcExtent.Start = funcExtent.Start.Delta(0, funcLength);
         funcExtent.End = funcExtent.Start.Delta(0, name.Length);
 
         return funcExtent;
+    }
+
+    private static ScriptPosition GetPositionAtOffset(
+        ScriptPosition basePosition,
+        string text,
+        int offset)
+    {
+        int lineDelta = 0;
+        int columnDelta = 0;
+
+        for (int i = 0; i < offset; i++)
+        {
+            char c = text[i];
+            if (c == '\r')
+            {
+                if (i + 1 < offset && text[i + 1] == '\n')
+                {
+                    i++;
+                }
+
+                lineDelta++;
+                columnDelta = 0;
+            }
+            else if (c == '\n')
+            {
+                lineDelta++;
+                columnDelta = 0;
+            }
+            else
+            {
+                columnDelta++;
+            }
+        }
+
+        return basePosition.Delta(lineDelta, columnDelta);
+    }
+
+    private static bool TryGetFunctionNameOffsets(
+        string? text,
+        out int nameStartOffset,
+        out int nameEndOffset)
+    {
+        nameStartOffset = 0;
+        nameEndOffset = 0;
+
+        if (string.IsNullOrEmpty(text))
+        {
+            return false;
+        }
+
+        const string functionKeyword = "function";
+        int functionIndex = text.IndexOf(functionKeyword, StringComparison.OrdinalIgnoreCase);
+        if (functionIndex < 0)
+        {
+            return false;
+        }
+
+        int index = functionIndex + functionKeyword.Length;
+        while (index < text.Length && char.IsWhiteSpace(text[index]))
+        {
+            index++;
+        }
+
+        if (index >= text.Length)
+        {
+            return false;
+        }
+
+        nameStartOffset = index;
+
+        while (index < text.Length)
+        {
+            char current = text[index];
+
+            if (current == '`')
+            {
+                index++;
+                if (index < text.Length)
+                {
+                    index++;
+                }
+
+                continue;
+            }
+
+            if (char.IsWhiteSpace(current) || current == '{' || current == '(')
+            {
+                break;
+            }
+
+            index++;
+        }
+
+        nameEndOffset = index;
+        return nameEndOffset > nameStartOffset;
     }
 }
