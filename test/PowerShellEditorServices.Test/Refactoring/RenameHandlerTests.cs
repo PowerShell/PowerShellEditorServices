@@ -21,7 +21,7 @@ namespace PowerShellEditorServices.Test.Handlers;
 [Trait("Category", "RenameHandlerFunction")]
 public class RenameHandlerTests
 {
-    internal WorkspaceService workspace = new(NullLoggerFactory.Instance);
+    private readonly WorkspaceService workspace = new(NullLoggerFactory.Instance);
 
     private readonly RenameHandler testHandler;
     public RenameHandlerTests()
@@ -36,7 +36,7 @@ public class RenameHandlerTests
             new RenameService
             (
                 workspace,
-                new fakeLspSendMessageRequestFacade("I Accept"),
+                new FakeLspSendMessageRequestFacade("I Accept"),
                 new EmptyConfiguration()
             )
             {

@@ -171,10 +171,10 @@ internal static class AstExtensions
     }
 
     internal static Ast? FindStartsAfter(this Ast target, Func<Ast, bool> predicate, bool searchNestedScriptBlocks = false)
-        => target.Parent.Find(ast => ast.StartsAfter(target) && predicate(ast), searchNestedScriptBlocks);
+        => target.Parent?.Find(ast => ast.StartsAfter(target) && predicate(ast), searchNestedScriptBlocks);
 
     internal static IEnumerable<Ast> FindAllStartsAfter(this Ast target, Func<Ast, bool> predicate, bool searchNestedScriptBlocks = false)
-        => target.Parent.FindAllStartsAfter(ast => ast.StartsAfter(target) && predicate(ast), searchNestedScriptBlocks);
+        => target.Parent?.FindAll(ast => ast.StartsAfter(target) && predicate(ast), searchNestedScriptBlocks) ?? [];
 
     /// <summary>
     /// Finds the most specific Ast at the given script position, or returns null if none found.<br/>
@@ -265,7 +265,7 @@ internal static class AstExtensions
     /// </summary>
     public static IEnumerable<Ast> FindParents(this Ast ast, params Type[] types)
     {
-        Ast parent = ast.Parent;
+        Ast? parent = ast.Parent;
         while (parent is not null)
         {
             if (types.Contains(parent.GetType()))
@@ -581,8 +581,9 @@ internal static class AstExtensions
 
         if (TryGetFunctionNameOffsets(extentText, out int nameStartOffset, out int nameEndOffset))
         {
-            funcExtent.Start = GetPositionAtOffset(funcExtent.Start, extentText!, nameStartOffset);
-            funcExtent.End = GetPositionAtOffset(funcExtent.Start, extentText!, nameEndOffset);
+            ScriptPosition originalStart = funcExtent.Start;
+            funcExtent.Start = GetPositionAtOffset(originalStart, extentText!, nameStartOffset);
+            funcExtent.End = GetPositionAtOffset(originalStart, extentText!, nameEndOffset);
             return funcExtent;
         }
 
@@ -627,8 +628,18 @@ internal static class AstExtensions
             }
         }
 
-        return basePosition.Delta(lineDelta, columnDelta);
+        return AdjustPosition(basePosition, lineDelta, columnDelta);
     }
+
+    private static ScriptPosition AdjustPosition(
+        ScriptPosition basePosition,
+        int lineDelta,
+        int columnDelta)
+        => new(
+            basePosition.File,
+            basePosition.LineNumber + lineDelta,
+            basePosition.ColumnNumber + columnDelta,
+            basePosition.Line);
 
     private static bool TryGetFunctionNameOffsets(
         string? text,
@@ -638,39 +649,41 @@ internal static class AstExtensions
         nameStartOffset = 0;
         nameEndOffset = 0;
 
-        if (string.IsNullOrEmpty(text))
+        if (text is null || text.Length == 0)
         {
             return false;
         }
 
+        string nonNullText = text;
+
         const string functionKeyword = "function";
-        int functionIndex = text.IndexOf(functionKeyword, StringComparison.OrdinalIgnoreCase);
+        int functionIndex = nonNullText.IndexOf(functionKeyword, StringComparison.OrdinalIgnoreCase);
         if (functionIndex < 0)
         {
             return false;
         }
 
         int index = functionIndex + functionKeyword.Length;
-        while (index < text.Length && char.IsWhiteSpace(text[index]))
+        while (index < nonNullText.Length && char.IsWhiteSpace(nonNullText[index]))
         {
             index++;
         }
 
-        if (index >= text.Length)
+        if (index >= nonNullText.Length)
         {
             return false;
         }
 
         nameStartOffset = index;
 
-        while (index < text.Length)
+        while (index < nonNullText.Length)
         {
-            char current = text[index];
+            char current = nonNullText[index];
 
             if (current == '`')
             {
                 index++;
-                if (index < text.Length)
+                if (index < nonNullText.Length)
                 {
                     index++;
                 }

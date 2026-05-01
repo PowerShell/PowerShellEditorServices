@@ -6,7 +6,7 @@
 namespace PowerShellEditorServices.Test.Shared.Refactoring;
 
 /// <summary>
-/// Describes a test case for renaming a file
+/// Describes a test case for renaming a symbol within a file.
 /// </summary>
 public class RenameTestTarget
 {
@@ -19,7 +19,7 @@ public class RenameTestTarget
     /// </summary>
     public int Line { get; set; } = -1;
     /// <summary>
-    /// The column/character indent where ther cursor should be positioned for the rename
+    /// The column/character indent where the cursor should be positioned for the rename.
     /// </summary>
     public int Column { get; set; } = -1;
     /// <summary>
@@ -32,7 +32,7 @@ public class RenameTestTarget
 
     /// <param name="FileName">The test case file name e.g. testScript.ps1</param>
     /// <param name="Line">The line where the cursor should be positioned for the rename</param>
-    /// <param name="Column">The column/character indent where ther cursor should be positioned for the rename</param>
+    /// <param name="Column">The column/character indent where the cursor should be positioned for the rename</param>
     /// <param name="NewName">What the target symbol represented by the line and column should be renamed to. Defaults to "Renamed" if not specified</param>
     /// <param name="NoResult">This test case should return null (cannot be renamed)</param>
     /// <param name="ShouldThrow">This test case should throw a HandlerErrorException meaning user needs to be alerted in a custom way</param>

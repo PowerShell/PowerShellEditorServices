@@ -42,7 +42,7 @@ public class PrepareRenameHandlerTests
             new RenameService
             (
                 workspace,
-                new fakeLspSendMessageRequestFacade("I Accept"),
+                new FakeLspSendMessageRequestFacade("I Accept"),
                 new EmptyConfiguration()
             )
             {
@@ -131,7 +131,7 @@ public static partial class RenameTestTargetExtensions
         };
 }
 
-public class fakeLspSendMessageRequestFacade(string title) : ILanguageServerFacade
+public class FakeLspSendMessageRequestFacade(string title) : ILanguageServerFacade
 {
     public async Task<TResponse> SendRequest<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken)
     {

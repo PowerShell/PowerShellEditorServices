@@ -19,9 +19,10 @@ namespace PowerShellEditorServices.Test.Refactoring
         /// <returns></returns>
         internal static string GetModifiedScript(string OriginalScript, TextEdit[] Modifications)
         {
-            string[] Lines = OriginalScript.Split(
-                            new string[] { Environment.NewLine },
-                            StringSplitOptions.None);
+            string normalizedScript = OriginalScript
+                .Replace("\r\n", "\n", StringComparison.Ordinal)
+                .Replace('\r', '\n');
+            string[] Lines = normalizedScript.Split('\n');
 
             // FIXME: Verify that we should be returning modifications in ascending order anyways as the LSP spec dictates it
             IEnumerable<TextEdit> sortedModifications = Modifications.OrderBy

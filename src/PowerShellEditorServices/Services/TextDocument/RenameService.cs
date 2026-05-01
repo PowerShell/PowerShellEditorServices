@@ -54,7 +54,7 @@ internal class RenameService(
     internal bool DisclaimerAcceptedForSession; //This is exposed to allow testing non-interactively
     private bool DisclaimerDeclinedForSession;
     private const string ConfigSection = "powershell.rename";
-    private RenameServiceOptions? options;
+
     public async Task<RangeOrPlaceholderRange?> PrepareRenameSymbol(PrepareRenameParams request, CancellationToken cancellationToken)
     {
         RenameParams renameRequest = new()
@@ -78,7 +78,7 @@ internal class RenameService(
     public async Task<WorkspaceEdit?> RenameSymbol(RenameParams request, CancellationToken cancellationToken)
     {
         // We want scoped settings because a workspace setting might be relevant here.
-        options = await GetScopedSettings(request.TextDocument.Uri, cancellationToken).ConfigureAwait(false);
+        RenameServiceOptions options = await GetScopedSettings(request.TextDocument.Uri, cancellationToken).ConfigureAwait(false);
 
         if (!await AcceptRenameDisclaimer(options.acceptDisclaimer, cancellationToken).ConfigureAwait(false)) { return null; }
 
@@ -97,7 +97,7 @@ internal class RenameService(
             VariableExpressionAst
             or CommandParameterAst
             or StringConstantExpressionAst
-            => RenameVariable(tokenToRename, scriptFile.ScriptAst, request),
+            => RenameVariable(tokenToRename, scriptFile.ScriptAst, request, options.createParameterAlias),
 
             _ => throw new InvalidOperationException("This should not happen as PrepareRename should have already checked for viability. File an issue if you see this.")
         };
@@ -117,10 +117,10 @@ internal class RenameService(
         return visitor.VisitAndGetEdits(scriptAst);
     }
 
-    private TextEdit[] RenameVariable(Ast symbol, Ast scriptAst, RenameParams requestParams)
+    private static TextEdit[] RenameVariable(Ast symbol, Ast scriptAst, RenameParams requestParams, bool createParameterAlias)
     {
         RenameVariableVisitor visitor = new(
-            symbol, requestParams.NewName, createParameterAlias: options?.createParameterAlias ?? false
+            symbol, requestParams.NewName, createParameterAlias: createParameterAlias
         );
         return visitor.VisitAndGetEdits(scriptAst);
     }
@@ -542,7 +542,15 @@ internal record ScriptPositionAdapter(IScriptPosition position) : IScriptPositio
     );
 
     public static implicit operator ScriptPositionAdapter(ScriptPosition position) => new(position);
-    public static implicit operator ScriptPosition(ScriptPositionAdapter position) => position;
+    public static implicit operator ScriptPosition(ScriptPositionAdapter position) =>
+        position.position is ScriptPosition scriptPosition
+            ? scriptPosition
+            : new ScriptPosition(
+                position.position.File,
+                position.position.LineNumber,
+                position.position.ColumnNumber,
+                position.position.Line
+            );
 
     internal ScriptPositionAdapter Delta(int LineAdjust, int ColumnAdjust) => new(
         position.LineNumber + LineAdjust,
@@ -587,7 +595,10 @@ internal record ScriptExtentAdapter(IScriptExtent extent) : IScriptExtent
         End = adapter.End
     };
 
-    public static implicit operator ScriptExtent(ScriptExtentAdapter adapter) => adapter;
+    public static implicit operator ScriptExtent(ScriptExtentAdapter adapter) =>
+        adapter.extent is ScriptExtent scriptExtent
+            ? scriptExtent
+            : new ScriptExtent(adapter.Start, adapter.End);
 
     public static implicit operator RangeOrPlaceholderRange(ScriptExtentAdapter adapter) => new((Range)adapter)
     {

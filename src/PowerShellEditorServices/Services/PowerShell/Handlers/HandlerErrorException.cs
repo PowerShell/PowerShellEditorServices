@@ -19,4 +19,6 @@ internal class HandlerErrorException
     object logDetails = null,
     MessageType severity = MessageType.Error
 ) : RpcErrorException(0, logDetails!, message)
-{ }
+{
+    internal MessageType Severity { get; } = severity;
+}

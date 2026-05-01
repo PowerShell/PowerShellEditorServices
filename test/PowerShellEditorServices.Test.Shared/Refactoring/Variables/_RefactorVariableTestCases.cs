@@ -3,7 +3,7 @@
 namespace PowerShellEditorServices.Test.Shared.Refactoring;
 public static class RefactorVariableTestCases
 {
-    public static RenameTestTarget[] TestCases =
+    public static readonly RenameTestTarget[] TestCases =
     [
         new ("VariableSimpleAssignment.ps1",                   Line:  1, Column:  1),
         new ("VariableSimpleAssignment.ps1",                   Line:  1, Column:  1, NewName: "$Renamed"),
@@ -35,6 +35,6 @@ public static class RefactorVariableTestCases
         new ("VariableusedInWhileLoop.ps1",                    Line:  2, Column:  5),
         new ("VariableWithinCommandAstScriptBlock.ps1",        Line:  3, Column: 75),
         new ("VariableWithinForeachObject.ps1",                Line:  2, Column:  1),
-        new ("VariableWithinHastableExpression.ps1",           Line:  3, Column: 46),
+        new ("VariableWithinHashtableExpression.ps1",          Line:  3, Column: 46),
     ];
 }

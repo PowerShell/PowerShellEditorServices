@@ -8,7 +8,7 @@ public static class RefactorFunctionTestCases
     /// <summary>
     /// Defines where functions should be renamed. These numbers are 1-based.
     /// </summary>
-    public static RenameTestTarget[] TestCases =
+    public static readonly RenameTestTarget[] TestCases =
     [
         new("FunctionSimple.ps1",                      Line:  1, Column: 11 ),
         new("FunctionSimple.ps1",                      Line:  1, Column:  1, NoResult: true  ),
