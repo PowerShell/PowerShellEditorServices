@@ -10,6 +10,7 @@ jobs:
   ci:
     name: dotnet
     strategy:
+      fail-fast: false
       matrix:
         os: [ windows-latest, macos-latest, ubuntu-latest ]
     runs-on: ${{ matrix.os }}
@@ -43,8 +44,8 @@ jobs:
         shell: pwsh
         run: ./pwsh/tools/install-powershell.ps1 -Preview -Destination ./preview
 
-      - name: Start VS Code Tunnel if in debug mode
-        if: ${{ runner.debug == '1' }}
+      - name: Start VS Code Tunnel if failed or in debug mode
+        if: ${{ failure() || runner.debug == '1' }}
         uses: justingrote/vscode-action@v0.0.2
         with:
           #All these settings are optional
