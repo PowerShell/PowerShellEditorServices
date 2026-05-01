@@ -24,7 +24,6 @@ namespace Microsoft.PowerShell.EditorServices.Services;
 /// </summary>
 internal class RenameServiceOptions
 {
-    public bool createFunctionAlias { get; set; }
     public bool createParameterAlias { get; set; }
     public bool acceptDisclaimer { get; set; }
 }
