@@ -37,7 +37,7 @@ namespace PowerShellEditorServices.Test.E2E
         /// <summary>
         /// Test scripts output here, where the output can be read to verify script progress against breakpointing
         /// </summary>
-        private static readonly string testScriptLogPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        private readonly string testScriptLogPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
         private readonly PsesStdioLanguageServerProcessHost psesHost = new(isDebugAdapter: true);
 
