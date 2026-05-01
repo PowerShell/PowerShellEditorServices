@@ -477,7 +477,7 @@ internal class RenameVariableVisitor(Ast target, string newName, bool skipVerify
                     Range = new ScriptExtentAdapter(var.Extent)
                 },
             StringConstantExpressionAst stringAst => !IsValidVariableName(NewName)
-                ? throw new Exception($"{NewName} is not a valid variable name.")
+                ? throw new HandlerErrorException($"{NewName} is not a valid variable name.")
                 : new TextEdit
                 {
                     NewText = NewName,
