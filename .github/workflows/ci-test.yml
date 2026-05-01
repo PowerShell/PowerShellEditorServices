@@ -44,19 +44,20 @@ jobs:
         shell: pwsh
         run: ./pwsh/tools/install-powershell.ps1 -Preview -Destination ./preview
 
+      - name: Build and test
+        shell: pwsh
+        run: Invoke-Build -Configuration Release TestFull
+
       - name: Start VS Code Tunnel if failed or in debug mode
         if: ${{ failure() || runner.debug == '1' }}
-        uses: justingrote/vscode-action@v0.0.2
+        #v0.0.2 - Pinned for security
+        uses: justingrote/vscode-action@5d495ef6156c20f1f9bb21031c15776d476c10c3
         with:
           #All these settings are optional
           tunnel-name: 'pses-action-tunnel'
           connection-timeout: 2
-          session-timeout: 60
+          session-timeout: 30
           no-cache-cli-auth: true
-
-      - name: Build and test
-        shell: pwsh
-        run: Invoke-Build -Configuration Release TestFull
 
       - name: Upload build artifacts
         if: always()
