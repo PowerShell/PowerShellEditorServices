@@ -402,7 +402,7 @@ internal class RenameVariableVisitor(Ast target, string newName, bool skipVerify
     internal AstVisitAction Visit(Ast ast)
     {
         // If this is our first visit, we need to initialize and verify the scope, otherwise verify we are still on the same document.
-        if (!skipVerify && CurrentDocument is null || VariableDefinition is null)
+        if ((!skipVerify && CurrentDocument is null) || VariableDefinition is null)
         {
             CurrentDocument = ast.GetHighestParent();
             if (CurrentDocument.Find(ast => ast == target, true) is null)
