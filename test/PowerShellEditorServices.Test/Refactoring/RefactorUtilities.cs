@@ -20,7 +20,7 @@ namespace PowerShellEditorServices.Test.Refactoring
         internal static string GetModifiedScript(string OriginalScript, TextEdit[] Modifications)
         {
             string normalizedScript = OriginalScript
-                .Replace("\r\n", "\n", StringComparison.Ordinal)
+                .Replace("\r\n", "\n")
                 .Replace('\r', '\n');
             string[] Lines = normalizedScript.Split('\n');
 
