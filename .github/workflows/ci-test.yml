@@ -43,11 +43,15 @@ jobs:
         shell: pwsh
         run: ./pwsh/tools/install-powershell.ps1 -Preview -Destination ./preview
 
-      - name: If debugging, start upterm for interactive pipeline troubleshooting
-        if: ${{ runner.debug == 1 }}
-        uses: owenthereal/action-upterm@v1
+      - name: Start VS Code Tunnel if in debug mode
+        if: ${{ runner.debug == '1' }}
+        uses: justingrote/vscode-action@v0.0.2
         with:
-          wait-timeout-minutes: 1
+          #All these settings are optional
+          tunnel-name: 'pses-action-tunnel'
+          connection-timeout: 2
+          session-timeout: 60
+          no-cache-cli-auth: true
 
       - name: Build and test
         shell: pwsh
