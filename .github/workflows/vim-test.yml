@@ -72,13 +72,13 @@ jobs:
           THEMIS_VIM: ${{ steps.vim.outputs.executable }}
         run: ./vim-themis/bin/themis ./test/vim-simple-test.vim
 
-      - name: Start VS Code Tunnel if failed or in debug mode
-        if: ${{ failure() || runner.debug == '1' }}
-        #v0.0.2 - Pinned for security
-        uses: justingrote/vscode-action@5d495ef6156c20f1f9bb21031c15776d476c10c3
-        with:
-          #All these settings are optional
-          tunnel-name: 'pses-action-tunnel'
-          connection-timeout: 2
-          session-timeout: 30
-          no-cache-cli-auth: true
+      # - name: Start VS Code Tunnel if failed or in debug mode
+      #   if: ${{ failure() || runner.debug == '1' }}
+      #   #v0.0.2 - Pinned for security
+      #   uses: justingrote/vscode-action@5d495ef6156c20f1f9bb21031c15776d476c10c3
+      #   with:
+      #     #All these settings are optional
+      #     tunnel-name: 'pses-action-tunnel'
+      #     connection-timeout: 2
+      #     session-timeout: 30
+      #     no-cache-cli-auth: true
