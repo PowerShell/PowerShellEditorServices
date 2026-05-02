@@ -37,8 +37,25 @@ function s:suite.analyzes_powershell_file()
   call s:assert.equal(getbufvar(l:bufinfo.bufnr, '&filetype'), 'ps1')
 
   execute 'LanguageClientStart'
-  execute 'sleep' 5
+  for l:attempt in range(1, 30)
+    if getbufvar(l:bufinfo.name, 'LanguageClient_isServerRunning') == 1
+      break
+    endif
+
+    execute 'sleep' 1
+  endfor
+
   call s:assert.equal(getbufvar(l:bufinfo.name, 'LanguageClient_isServerRunning'), 1)
   call s:assert.equal(getbufvar(l:bufinfo.name, 'LanguageClient_projectRoot'), g:repo_root)
-  call s:assert.equal(getbufvar(l:bufinfo.name, 'LanguageClient_statusLineDiagnosticsCounts'), {'E': 0, 'W': 1, 'H': 0, 'I': 0})
+
+  let l:expected_diagnostics = {'E': 0, 'W': 1, 'H': 0, 'I': 0}
+  for l:attempt in range(1, 30)
+    if getbufvar(l:bufinfo.name, 'LanguageClient_statusLineDiagnosticsCounts') == l:expected_diagnostics
+      break
+    endif
+
+    execute 'sleep' 1
+  endfor
+
+  call s:assert.equal(getbufvar(l:bufinfo.name, 'LanguageClient_statusLineDiagnosticsCounts'), l:expected_diagnostics)
 endfunction
