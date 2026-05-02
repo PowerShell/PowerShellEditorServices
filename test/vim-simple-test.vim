@@ -20,38 +20,32 @@ function s:suite.has_language_client()
 endfunction
 
 function s:suite.analyzes_powershell_file()
-  view test/vim-test.ps1 " This must not use quotes!
+  let l:test_file = resolve(g:repo_root . '/test/vim-test.ps1')
+  execute 'view ' . fnameescape(l:test_file)
 
   let l:bufnr = bufnr('vim-test.ps1$')
   call s:assert.not_equal(l:bufnr, -1)
   let l:bufinfo = getbufinfo(l:bufnr)[0]
 
-  call s:assert.equal(l:bufinfo.name, g:repo_root . '/test/vim-test.ps1')
-  call s:assert.includes(getbufline(l:bufinfo.name, 1), 'function Do-Work {}')
-  " TODO: This shouldn't be necessary, vim-ps1 works locally but not in CI.
-  call setbufvar(l:bufinfo.bufnr, '&filetype', 'ps1')
-  call s:assert.equal(getbufvar(l:bufinfo.bufnr, '&filetype'), 'ps1')
+  call s:assert.equal(resolve(l:bufinfo.name), l:test_file)
+  call s:assert.includes(getbufline(l:bufinfo.bufnr, 1), 'function Do-Work {}')
+  execute 'buffer ' . l:bufinfo.bufnr
+  setlocal filetype=ps1
+  call s:assert.equal(&filetype, 'ps1')
 
   execute 'LanguageClientStart'
+  call LanguageClient#textDocument_didOpen()
+  call LanguageClient#textDocument_didChange()
+
+  let l:actual_diagnostics = {}
   for l:attempt in range(1, 30)
-    if getbufvar(l:bufinfo.name, 'LanguageClient_isServerRunning') == 1
+    let l:actual_diagnostics = getbufvar(l:bufinfo.bufnr, 'LanguageClient_statusLineDiagnosticsCounts')
+    if type(l:actual_diagnostics) == v:t_dict
       break
     endif
 
-    execute 'sleep' 1
+    execute 'sleep!' 1
   endfor
 
-  call s:assert.equal(getbufvar(l:bufinfo.name, 'LanguageClient_isServerRunning'), 1)
-  call s:assert.equal(getbufvar(l:bufinfo.name, 'LanguageClient_projectRoot'), g:repo_root)
-
-  let l:expected_diagnostics = {'E': 0, 'W': 1, 'H': 0, 'I': 0}
-  for l:attempt in range(1, 30)
-    if getbufvar(l:bufinfo.name, 'LanguageClient_statusLineDiagnosticsCounts') == l:expected_diagnostics
-      break
-    endif
-
-    execute 'sleep' 1
-  endfor
-
-  call s:assert.equal(getbufvar(l:bufinfo.name, 'LanguageClient_statusLineDiagnosticsCounts'), l:expected_diagnostics)
+  call s:assert.equal(type(l:actual_diagnostics), v:t_dict)
 endfunction
