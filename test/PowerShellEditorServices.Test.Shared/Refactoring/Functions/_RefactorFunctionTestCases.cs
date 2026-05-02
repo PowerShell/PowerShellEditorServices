@@ -16,6 +16,7 @@ public static class RefactorFunctionTestCases
         new("FunctionSimple.ps1",                      Line:  1, Column: 11, NewName: "Bad Name", ShouldThrow: true ),
         new("FunctionCallWIthinStringExpression.ps1",  Line:  1, Column: 10 ),
         new("FunctionCmdlet.ps1",                      Line:  1, Column: 10 ),
+        new("FunctionFilter.ps1",                      Line:  1, Column:  8 ),
         new("FunctionForeach.ps1",                     Line: 11, Column:  5 ),
         new("FunctionForeachObject.ps1",               Line: 11, Column:  5 ),
         new("FunctionInnerIsNested.ps1",               Line:  5, Column:  5 ),
@@ -27,5 +28,6 @@ public static class RefactorFunctionTestCases
         new("FunctionScriptblock.ps1",                 Line:  5, Column:  5 ),
         new("FunctionWithInnerFunction.ps1",           Line:  5, Column:  5 ),
         new("FunctionWithInternalCalls.ps1",           Line:  3, Column:  6 ),
+        new("FunctionWorkflow.ps1",                    Line:  1, Column: 10 ),
     ];
 }

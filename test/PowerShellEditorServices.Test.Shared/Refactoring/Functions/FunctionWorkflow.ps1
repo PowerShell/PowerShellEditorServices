@@ -1,0 +1,5 @@
+workflow AWorkflow {
+    "workflow"
+}
+
+AWorkflow

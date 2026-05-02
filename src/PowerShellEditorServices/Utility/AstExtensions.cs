@@ -579,11 +579,12 @@ internal static class AstExtensions
         ScriptExtentAdapter funcExtent = new(ast.Extent);
         string? extentText = ast.Extent.Text;
 
-        if (TryGetFunctionNameOffsets(extentText, out int nameStartOffset, out int nameEndOffset))
+        if (!string.IsNullOrEmpty(extentText))
         {
+            (int nameStartOffset, int nameEndOffset) = GetFunctionNameOffsets(extentText, ast.Name);
             ScriptPosition originalStart = funcExtent.Start;
-            funcExtent.Start = GetPositionAtOffset(originalStart, extentText!, nameStartOffset);
-            funcExtent.End = GetPositionAtOffset(originalStart, extentText!, nameEndOffset);
+            funcExtent.Start = GetPositionAtOffset(originalStart, extentText, nameStartOffset);
+            funcExtent.End = GetPositionAtOffset(originalStart, extentText, nameEndOffset);
             return funcExtent;
         }
 
@@ -641,65 +642,55 @@ internal static class AstExtensions
             basePosition.ColumnNumber + columnDelta,
             basePosition.Line);
 
-    private static bool TryGetFunctionNameOffsets(
-        string? text,
-        out int nameStartOffset,
-        out int nameEndOffset)
+    internal static (int NameStartOffset, int NameEndOffset) GetFunctionNameOffsets(
+        string text,
+        string functionName)
     {
-        nameStartOffset = 0;
-        nameEndOffset = 0;
-
-        if (text is null || text.Length == 0)
+        if (string.IsNullOrEmpty(text))
         {
-            return false;
+            throw new ArgumentException("Function definition text cannot be null or empty.", nameof(text));
         }
 
-        string nonNullText = text;
-
-        const string functionKeyword = "function";
-        int functionIndex = nonNullText.IndexOf(functionKeyword, StringComparison.OrdinalIgnoreCase);
-        if (functionIndex < 0)
+        if (string.IsNullOrEmpty(functionName))
         {
-            return false;
+            throw new ArgumentException("Function name cannot be null or empty.", nameof(functionName));
         }
 
-        int index = functionIndex + functionKeyword.Length;
-        while (index < nonNullText.Length && char.IsWhiteSpace(nonNullText[index]))
+        int keywordStart = 0;
+        while (keywordStart < text.Length && char.IsWhiteSpace(text[keywordStart]))
         {
-            index++;
+            keywordStart++;
         }
 
-        if (index >= nonNullText.Length)
+        if (keywordStart >= text.Length)
         {
-            return false;
+            throw new InvalidOperationException("Function definition text does not contain a declaration keyword.");
         }
 
-        nameStartOffset = index;
-
-        while (index < nonNullText.Length)
+        int keywordEnd = keywordStart;
+        while (keywordEnd < text.Length && !char.IsWhiteSpace(text[keywordEnd]))
         {
-            char current = nonNullText[index];
-
-            if (current == '`')
-            {
-                index++;
-                if (index < nonNullText.Length)
-                {
-                    index++;
-                }
-
-                continue;
-            }
-
-            if (char.IsWhiteSpace(current) || current == '{' || current == '(')
-            {
-                break;
-            }
-
-            index++;
+            keywordEnd++;
         }
 
-        nameEndOffset = index;
-        return nameEndOffset > nameStartOffset;
+        string keyword = text.Substring(keywordStart, keywordEnd - keywordStart);
+        bool isKnownKeyword = keyword.Equals("function", StringComparison.OrdinalIgnoreCase)
+            || keyword.Equals("filter", StringComparison.OrdinalIgnoreCase)
+            || keyword.Equals("workflow", StringComparison.OrdinalIgnoreCase);
+
+        if (!isKnownKeyword)
+        {
+            throw new InvalidOperationException($"Unexpected function definition keyword '{keyword}'.");
+        }
+
+        int nameStartOffset = text.IndexOf(functionName, keywordEnd, StringComparison.Ordinal);
+        if (nameStartOffset < 0)
+        {
+            throw new InvalidOperationException($"Could not find function name '{functionName}' in function definition text.");
+        }
+
+        int nameEndOffset = nameStartOffset + functionName.Length;
+
+        return (nameStartOffset, nameEndOffset);
     }
 }
