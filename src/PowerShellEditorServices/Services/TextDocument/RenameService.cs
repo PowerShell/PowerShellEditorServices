@@ -483,7 +483,7 @@ internal class RenameVariableVisitor(Ast target, string newName, bool skipVerify
                     Range = new ScriptExtentAdapter(stringAst.Extent)
                 },
             CommandParameterAst param => !IsValidCommandParameterName(NewName)
-                ? throw new Exception($"-{NewName} is not a valid command parameter name.")
+                ? throw new HandlerErrorException($"-{NewName} is not a valid command parameter name.")
                 : new TextEdit
                 {
                     NewText = '-' + NewName,
