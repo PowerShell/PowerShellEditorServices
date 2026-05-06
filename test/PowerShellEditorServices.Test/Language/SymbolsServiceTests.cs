@@ -773,9 +773,9 @@ namespace PowerShellEditorServices.Test.Language
             IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInMultiSymbolFile.SourceDetails);
 
             Assert.Equal(7, symbols.Count(i => i.Type == SymbolType.Function));
-            Assert.Equal(8, symbols.Count(i => i.Type == SymbolType.Variable));
+            Assert.Equal(9, symbols.Count(i => i.Type == SymbolType.Variable));
             Assert.Equal(4, symbols.Count(i => i.Type == SymbolType.Parameter));
-            Assert.Equal(12, symbols.Count(i => i.Id.StartsWith("var ")));
+            Assert.Equal(13, symbols.Count(i => i.Id.StartsWith("var ")));
             Assert.Equal(2, symbols.Count(i => i.Id.StartsWith("prop ")));
 
             SymbolReference symbol = symbols.First(i => i.Type == SymbolType.Function);
@@ -786,6 +786,12 @@ namespace PowerShellEditorServices.Test.Language
 
             symbol = symbols.First(i => i.Id == "fn AFilter");
             Assert.Equal("filter AFilter ()", symbol.Name);
+            Assert.True(symbol.IsDeclaration);
+
+            // Verify that a variable declared inside a filter is tracked as a declaration,
+            // allowing it to appear as a child of the filter in the LSP outline hierarchy.
+            symbol = Assert.Single(symbols, i => i.Id == "var FilterVar");
+            Assert.Equal("$FilterVar", symbol.Name);
             Assert.True(symbol.IsDeclaration);
 
             symbol = symbols.Last(i => i.Type == SymbolType.Variable);

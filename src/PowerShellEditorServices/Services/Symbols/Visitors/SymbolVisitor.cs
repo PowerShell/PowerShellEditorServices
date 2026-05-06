@@ -50,6 +50,8 @@ internal sealed class SymbolVisitor : AstVisitor2
 
     public override AstVisitAction VisitFunctionDefinition(FunctionDefinitionAst functionDefinitionAst)
     {
+        // Treat filter the same as function: both get SymbolType.Function so they appear in the
+        // outline and support child symbols (variables, nested functions, etc.) in the hierarchy.
         SymbolType symbolType = functionDefinitionAst.IsWorkflow
             ? SymbolType.Workflow
             : SymbolType.Function;
