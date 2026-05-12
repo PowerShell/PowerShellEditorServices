@@ -18,16 +18,16 @@ namespace PowerShellEditorServices.Test.Extensions
         {
             TestEditorOperations editorOperations = new()
             {
-                OpenDocuments = new[]
-                {
+                OpenDocuments =
+                [
                     new WorkspaceOpenDocument(@"C:\test\one.ps1", saved: true),
                     new WorkspaceOpenDocument(@"C:\test\two.ps1", saved: true)
-                }
+                ]
             };
 
             EditorWorkspace workspace = new(editorOperations);
 
-            IEnumerable<EditorWorkspaceDocument> documents = workspace.Documents;
+            EditorWorkspaceDocument[] documents = workspace.Documents;
 
             Assert.Collection(
                 documents,
@@ -49,7 +49,7 @@ namespace PowerShellEditorServices.Test.Extensions
             const string filePath = @"C:\test\file.ps1";
             TestEditorOperations editorOperations = new()
             {
-                OpenDocuments = new[] { new WorkspaceOpenDocument(filePath, saved: true) }
+                OpenDocuments = [new WorkspaceOpenDocument(filePath, saved: true)]
             };
 
             EditorWorkspace workspace = new(editorOperations);

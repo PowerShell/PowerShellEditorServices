@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Microsoft.PowerShell.EditorServices.Extensions
@@ -85,9 +84,11 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Get all currently open documents in the workspace.
         /// </summary>
-        public IEnumerable<EditorWorkspaceDocument> Documents => editorOperations
+        public EditorWorkspaceDocument[] Documents => [..
+            editorOperations
             .GetWorkspaceOpenDocuments()
-            .Select(doc => new EditorWorkspaceDocument(this, doc.Path, doc.Saved));
+            .Select(doc => new EditorWorkspaceDocument(this, doc.Path, doc.Saved))
+        ];
 
         #endregion
 
