@@ -1,6 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System.Collections.Generic;
+using System.Linq;
+
 namespace Microsoft.PowerShell.EditorServices.Extensions
 {
     /// <summary>
@@ -28,19 +31,6 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public bool Saved { get; }
 
         /// <summary>
-        /// Gets the display name of this document and unsaved status.
-        /// </summary>
-        /// <returns>The display name of this document.</returns>
-        public override string ToString()
-        {
-            string documentPath = Path ?? string.Empty;
-            // Handle Windows and POSIX separators consistently across platforms.
-            int fileNameStartIndex = System.Math.Max(documentPath.LastIndexOf('\\'), documentPath.LastIndexOf('/')) + 1;
-            string fileName = documentPath.Substring(fileNameStartIndex);
-            return Saved ? fileName : fileName + " [Unsaved]";
-        }
-
-        /// <summary>
         /// Opens this document in the editor.
         /// </summary>
         public void Open() => _workspace.OpenFile(Path);
@@ -54,6 +44,17 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// Closes this document in the editor.
         /// </summary>
         public void Close() => _workspace.CloseFile(Path);
+
+        /// <summary>
+        /// Gets the display name of this document and unsaved status.
+        /// </summary>
+        /// <returns>The display name of this document.</returns>
+        public override string ToString()
+        {
+            string documentPath = Path ?? string.Empty;
+            string fileName = System.IO.Path.GetFileName(documentPath);
+            return Saved ? fileName : fileName + " [Unsaved]";
+        }
     }
 
     /// <summary>
@@ -84,20 +85,9 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Get all currently open documents in the workspace.
         /// </summary>
-        public EditorWorkspaceDocument[] Documents
-        {
-            get
-            {
-                WorkspaceOpenDocument[] openDocuments = editorOperations.GetWorkspaceOpenDocuments();
-                EditorWorkspaceDocument[] documents = new EditorWorkspaceDocument[openDocuments.Length];
-                for (int i = 0; i < openDocuments.Length; i++)
-                {
-                    documents[i] = new EditorWorkspaceDocument(this, openDocuments[i].Path, openDocuments[i].Saved);
-                }
-
-                return documents;
-            }
-        }
+        public IEnumerable<EditorWorkspaceDocument> Documents => editorOperations
+            .GetWorkspaceOpenDocuments()
+            .Select(doc => new EditorWorkspaceDocument(this, doc.Path, doc.Saved));
 
         #endregion
 
