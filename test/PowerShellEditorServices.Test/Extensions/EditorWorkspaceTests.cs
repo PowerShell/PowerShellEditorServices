@@ -54,6 +54,21 @@ namespace PowerShellEditorServices.Test.Extensions
                 call => Assert.Equal("CloseFile:" + filePath, call));
         }
 
+        [Fact]
+        public void DocumentToStringReturnsDocumentPath()
+        {
+            const string filePath = @"C:\test\file.ps1";
+            TestEditorOperations editorOperations = new()
+            {
+                OpenDocumentPaths = new[] { filePath }
+            };
+
+            EditorWorkspace workspace = new(editorOperations);
+            EditorWorkspaceDocument document = Assert.Single(workspace.Documents);
+
+            Assert.Equal(filePath, document.ToString());
+        }
+
         private sealed class TestEditorOperations : IEditorOperations
         {
             public string[] OpenDocumentPaths { get; set; } = Array.Empty<string>();

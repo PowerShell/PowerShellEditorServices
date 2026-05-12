@@ -22,6 +22,12 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public string Path { get; }
 
         /// <summary>
+        /// Gets the full path of this document.
+        /// </summary>
+        /// <returns>The full document path.</returns>
+        public override string ToString() => Path;
+
+        /// <summary>
         /// Opens this document in the editor.
         /// </summary>
         public void Open() => _workspace.OpenFile(Path);
