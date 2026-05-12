@@ -27,7 +27,7 @@ namespace PowerShellEditorServices.Test.Extensions
 
             EditorWorkspace workspace = new(editorOperations);
 
-            EditorWorkspaceDocument[] documents = workspace.Documents;
+            IEnumerable<EditorWorkspaceDocument> documents = workspace.Documents;
 
             Assert.Collection(
                 documents,
@@ -81,7 +81,7 @@ namespace PowerShellEditorServices.Test.Extensions
             };
 
             EditorWorkspace workspace = new(editorOperations);
-            EditorWorkspaceDocument[] documents = workspace.Documents;
+            IEnumerable<EditorWorkspaceDocument> documents = workspace.Documents;
 
             Assert.Collection(
                 documents,
@@ -102,7 +102,7 @@ namespace PowerShellEditorServices.Test.Extensions
             };
 
             EditorWorkspace workspace = new(editorOperations);
-            EditorWorkspaceDocument[] documents = workspace.Documents;
+            IEnumerable<EditorWorkspaceDocument> documents = workspace.Documents;
 
             Assert.Collection(
                 documents,
