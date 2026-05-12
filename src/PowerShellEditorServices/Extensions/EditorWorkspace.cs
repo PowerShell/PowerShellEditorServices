@@ -30,6 +30,11 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// Saves this document in the editor.
         /// </summary>
         public void Save() => _workspace.SaveFile(Path);
+
+        /// <summary>
+        /// Closes this document in the editor.
+        /// </summary>
+        public void Close() => _workspace.CloseFile(Path);
     }
 
     /// <summary>

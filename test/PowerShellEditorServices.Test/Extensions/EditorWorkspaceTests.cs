@@ -32,7 +32,7 @@ namespace PowerShellEditorServices.Test.Extensions
         }
 
         [Fact]
-        public void DocumentOpenAndSaveUseWorkspaceOperations()
+        public void DocumentOpenSaveAndCloseUseWorkspaceOperations()
         {
             const string filePath = @"C:\test\file.ps1";
             TestEditorOperations editorOperations = new()
@@ -45,11 +45,13 @@ namespace PowerShellEditorServices.Test.Extensions
 
             document.Open();
             document.Save();
+            document.Close();
 
             Assert.Collection(
                 editorOperations.Calls,
                 call => Assert.Equal("OpenFile:" + filePath, call),
-                call => Assert.Equal("SaveFile:" + filePath, call));
+                call => Assert.Equal("SaveFile:" + filePath, call),
+                call => Assert.Equal("CloseFile:" + filePath, call));
         }
 
         private sealed class TestEditorOperations : IEditorOperations
@@ -80,7 +82,11 @@ namespace PowerShellEditorServices.Test.Extensions
 
             public Task OpenFileAsync(string filePath, bool preview) => Task.CompletedTask;
 
-            public Task CloseFileAsync(string filePath) => Task.CompletedTask;
+            public Task CloseFileAsync(string filePath)
+            {
+                Calls.Add("CloseFile:" + filePath);
+                return Task.CompletedTask;
+            }
 
             public Task SaveFileAsync(string filePath)
             {
