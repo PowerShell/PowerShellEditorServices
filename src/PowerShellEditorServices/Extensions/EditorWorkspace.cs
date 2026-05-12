@@ -26,7 +26,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public string Path { get; }
 
         /// <summary>
-        /// Gets whether the document is saved (has no unsaved changes).
+        /// Gets whether the document is backed by a saved file path (not in-memory).
         /// </summary>
         public bool Saved { get; }
 

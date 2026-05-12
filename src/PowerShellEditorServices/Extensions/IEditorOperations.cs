@@ -14,8 +14,14 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
             Saved = saved;
         }
 
+        /// <summary>
+        /// Gets the path or URI of the open document.
+        /// </summary>
         public string Path { get; }
 
+        /// <summary>
+        /// Gets whether the document is backed by a saved file path (not in-memory).
+        /// </summary>
         public bool Saved { get; }
     }
 
