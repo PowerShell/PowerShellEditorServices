@@ -136,6 +136,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 {
                     await _remoteFileManagerService.SaveRemoteFileAsync(savedFile.FilePath).ConfigureAwait(false);
                 }
+
+                savedFile.IsSaved = true;
             }
             return Unit.Value;
         }

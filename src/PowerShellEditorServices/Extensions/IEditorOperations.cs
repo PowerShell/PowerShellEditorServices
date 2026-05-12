@@ -6,6 +6,19 @@ using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 
 namespace Microsoft.PowerShell.EditorServices.Extensions
 {
+    internal readonly struct WorkspaceOpenDocument
+    {
+        internal WorkspaceOpenDocument(string path, bool saved)
+        {
+            Path = path;
+            Saved = saved;
+        }
+
+        public string Path { get; }
+
+        public bool Saved { get; }
+    }
+
     /// <summary>
     /// Provides an interface that must be implemented by an editor
     /// host to perform operations invoked by extensions written in
@@ -33,10 +46,10 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         string[] GetWorkspacePaths();
 
         /// <summary>
-        /// Get all open document paths in the current workspace session.
+        /// Get all open documents in the current workspace session.
         /// </summary>
-        /// <returns>All currently open document paths.</returns>
-        string[] GetWorkspaceOpenDocumentPaths();
+        /// <returns>All currently open documents.</returns>
+        WorkspaceOpenDocument[] GetWorkspaceOpenDocuments();
 
         /// <summary>
         /// Resolves the given file path relative to the current workspace path.

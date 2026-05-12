@@ -10,10 +10,11 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
     {
         private readonly EditorWorkspace _workspace;
 
-        internal EditorWorkspaceDocument(EditorWorkspace workspace, string path)
+        internal EditorWorkspaceDocument(EditorWorkspace workspace, string path, bool saved)
         {
             _workspace = workspace;
             Path = path;
+            Saved = saved;
         }
 
         /// <summary>
@@ -22,10 +23,19 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         public string Path { get; }
 
         /// <summary>
-        /// Gets the full path of this document.
+        /// Gets whether the document has unsaved changes.
         /// </summary>
-        /// <returns>The full document path.</returns>
-        public override string ToString() => Path;
+        public bool Saved { get; }
+
+        /// <summary>
+        /// Gets the display name of this document and unsaved status.
+        /// </summary>
+        /// <returns>The display name of this document.</returns>
+        public override string ToString()
+        {
+            string fileName = System.IO.Path.GetFileName(Path);
+            return Saved ? fileName : fileName + " [Unsaved]";
+        }
 
         /// <summary>
         /// Opens this document in the editor.
@@ -75,11 +85,11 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         {
             get
             {
-                string[] openDocumentPaths = editorOperations.GetWorkspaceOpenDocumentPaths();
-                EditorWorkspaceDocument[] documents = new EditorWorkspaceDocument[openDocumentPaths.Length];
-                for (int i = 0; i < openDocumentPaths.Length; i++)
+                WorkspaceOpenDocument[] openDocuments = editorOperations.GetWorkspaceOpenDocuments();
+                EditorWorkspaceDocument[] documents = new EditorWorkspaceDocument[openDocuments.Length];
+                for (int i = 0; i < openDocuments.Length; i++)
                 {
-                    documents[i] = new EditorWorkspaceDocument(this, openDocumentPaths[i]);
+                    documents[i] = new EditorWorkspaceDocument(this, openDocuments[i].Path, openDocuments[i].Saved);
                 }
 
                 return documents;

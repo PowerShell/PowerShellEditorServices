@@ -18,7 +18,11 @@ namespace PowerShellEditorServices.Test.Extensions
         {
             TestEditorOperations editorOperations = new()
             {
-                OpenDocumentPaths = new[] { @"C:\test\one.ps1", @"C:\test\two.ps1" }
+                OpenDocuments = new[]
+                {
+                    new WorkspaceOpenDocument(@"C:\test\one.ps1", saved: true),
+                    new WorkspaceOpenDocument(@"C:\test\two.ps1", saved: true)
+                }
             };
 
             EditorWorkspace workspace = new(editorOperations);
@@ -27,8 +31,16 @@ namespace PowerShellEditorServices.Test.Extensions
 
             Assert.Collection(
                 documents,
-                document => Assert.Equal(@"C:\test\one.ps1", document.Path),
-                document => Assert.Equal(@"C:\test\two.ps1", document.Path));
+                document =>
+                {
+                    Assert.Equal(@"C:\test\one.ps1", document.Path);
+                    Assert.True(document.Saved);
+                },
+                document =>
+                {
+                    Assert.Equal(@"C:\test\two.ps1", document.Path);
+                    Assert.True(document.Saved);
+                });
         }
 
         [Fact]
@@ -37,7 +49,7 @@ namespace PowerShellEditorServices.Test.Extensions
             const string filePath = @"C:\test\file.ps1";
             TestEditorOperations editorOperations = new()
             {
-                OpenDocumentPaths = new[] { filePath }
+                OpenDocuments = new[] { new WorkspaceOpenDocument(filePath, saved: true) }
             };
 
             EditorWorkspace workspace = new(editorOperations);
@@ -55,23 +67,52 @@ namespace PowerShellEditorServices.Test.Extensions
         }
 
         [Fact]
-        public void DocumentToStringReturnsDocumentPath()
+        public void DocumentToStringReturnsFileNameAndSavedStatus()
         {
-            const string filePath = @"C:\test\file.ps1";
+            const string savedFilePath = @"C:\test\file.ps1";
+            const string unsavedFilePath = @"C:\test\other.ps1";
             TestEditorOperations editorOperations = new()
             {
-                OpenDocumentPaths = new[] { filePath }
+                OpenDocuments = new[]
+                {
+                    new WorkspaceOpenDocument(savedFilePath, saved: true),
+                    new WorkspaceOpenDocument(unsavedFilePath, saved: false)
+                }
             };
 
             EditorWorkspace workspace = new(editorOperations);
-            EditorWorkspaceDocument document = Assert.Single(workspace.Documents);
+            EditorWorkspaceDocument[] documents = workspace.Documents;
 
-            Assert.Equal(filePath, document.ToString());
+            Assert.Collection(
+                documents,
+                document => Assert.Equal("file.ps1", document.ToString()),
+                document => Assert.Equal("other.ps1 [Unsaved]", document.ToString()));
+        }
+
+        [Fact]
+        public void DocumentSavedReturnsWorkspaceSavedState()
+        {
+            TestEditorOperations editorOperations = new()
+            {
+                OpenDocuments = new[]
+                {
+                    new WorkspaceOpenDocument(@"C:\test\saved.ps1", saved: true),
+                    new WorkspaceOpenDocument(@"C:\test\unsaved.ps1", saved: false)
+                }
+            };
+
+            EditorWorkspace workspace = new(editorOperations);
+            EditorWorkspaceDocument[] documents = workspace.Documents;
+
+            Assert.Collection(
+                documents,
+                document => Assert.True(document.Saved),
+                document => Assert.False(document.Saved));
         }
 
         private sealed class TestEditorOperations : IEditorOperations
         {
-            public string[] OpenDocumentPaths { get; set; } = Array.Empty<string>();
+            public WorkspaceOpenDocument[] OpenDocuments { get; set; } = Array.Empty<WorkspaceOpenDocument>();
 
             public List<string> Calls { get; } = new();
 
@@ -81,7 +122,7 @@ namespace PowerShellEditorServices.Test.Extensions
 
             public string[] GetWorkspacePaths() => new[] { @"C:\test" };
 
-            public string[] GetWorkspaceOpenDocumentPaths() => OpenDocumentPaths;
+            public WorkspaceOpenDocument[] GetWorkspaceOpenDocuments() => OpenDocuments;
 
             public string GetWorkspaceRelativePath(ScriptFile scriptFile) => scriptFile.FilePath;
 
