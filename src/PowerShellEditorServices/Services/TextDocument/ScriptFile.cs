@@ -56,11 +56,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         public bool IsInMemory { get; }
 
         /// <summary>
-        /// Gets or sets whether this file has no unsaved changes.
-        /// </summary>
-        public bool IsSaved { get; internal set; }
-
-        /// <summary>
         /// Gets a string containing the full contents of the file.
         /// </summary>
         public string Contents => string.Join(Environment.NewLine, FileLines);
@@ -142,7 +137,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
             // SetFileContents() calls ParseFileContents() which initializes the rest of the properties.
             SetFileContents(textReader.ReadToEnd());
-            IsSaved = !IsInMemory;
             References = new ReferenceTable(this);
         }
 
@@ -370,7 +364,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
             // Parse the script again to be up-to-date
             ParseFileContents();
-            IsSaved = false;
             References.TagAsChanged();
         }
 

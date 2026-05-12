@@ -200,7 +200,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 
         public WorkspaceOpenDocument[] GetWorkspaceOpenDocuments()
             => _workspaceService.GetOpenedFiles()
-                .Select(static scriptFile => new WorkspaceOpenDocument(scriptFile.FilePath, scriptFile.IsSaved))
+                .Select(static scriptFile => new WorkspaceOpenDocument(scriptFile.FilePath, !scriptFile.IsInMemory))
                 .ToArray();
 
         public string GetWorkspaceRelativePath(ScriptFile scriptFile) => _workspaceService.GetRelativePath(scriptFile);
