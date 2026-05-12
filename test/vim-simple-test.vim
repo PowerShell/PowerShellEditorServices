@@ -1,6 +1,18 @@
 let s:suite = themis#suite('pses')
 let s:assert = themis#helper('assert')
 
+function s:wait_for_diagnostics(bufname, expected)
+  let l:attempts = 20
+  while l:attempts > 0
+    if getbufvar(a:bufname, 'LanguageClient_statusLineDiagnosticsCounts') == a:expected
+      return
+    endif
+
+    execute 'sleep 500m'
+    let l:attempts -= 1
+  endwhile
+endfunction
+
 function s:suite.before()
   let l:pses_path = g:repo_root . '/module'
   let g:LanguageClient_serverCommands = {
@@ -33,7 +45,7 @@ function s:suite.analyzes_powershell_file()
   call s:assert.equal(getbufvar(l:bufinfo.bufnr, '&filetype'), 'ps1')
 
   execute 'LanguageClientStart'
-  execute 'sleep' 5
+  call s:wait_for_diagnostics(l:bufinfo.name, {'E': 0, 'W': 1, 'H': 0, 'I': 0})
   call s:assert.equal(getbufvar(l:bufinfo.name, 'LanguageClient_isServerRunning'), 1)
   call s:assert.equal(getbufvar(l:bufinfo.name, 'LanguageClient_projectRoot'), g:repo_root)
   call s:assert.equal(getbufvar(l:bufinfo.name, 'LanguageClient_statusLineDiagnosticsCounts'), {'E': 0, 'W': 1, 'H': 0, 'I': 0})
