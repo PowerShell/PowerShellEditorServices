@@ -111,10 +111,11 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             {
                 fileToClose.IsOpen = false;
 
-                // If the file watcher is supported, only close in-memory files when this
+                // If the file watcher is supported, only close non-file-backed documents when this
                 // notification is triggered. This lets us keep workspace files open so we can scan
                 // for references. When a file is deleted, the file watcher will close the file.
-                if (!_isFileWatcherSupported || fileToClose.IsInMemory)
+                bool isBackedByFile = notification.TextDocument.Uri.ToUri().IsFile;
+                if (!_isFileWatcherSupported || !isBackedByFile)
                 {
                     _workspaceService.CloseFile(fileToClose);
                 }
@@ -132,6 +133,9 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
             if (savedFile != null)
             {
+                // On a save, untitled files will remain in memory, so this won't change for those
+                savedFile.IsInMemory = savedFile.IsUntitled;
+
                 if (_remoteFileManagerService.IsUnderRemoteTempPath(savedFile.FilePath))
                 {
                     await _remoteFileManagerService.SaveRemoteFileAsync(savedFile.FilePath).ConfigureAwait(false);

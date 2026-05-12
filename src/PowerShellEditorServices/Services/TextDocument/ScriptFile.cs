@@ -51,9 +51,14 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
         /// <summary>
         /// Gets a boolean that determines whether this file is
-        /// in-memory or not (either unsaved or non-file content).
+        /// in-memory or not (either unsaved or non-file content) aka "dirty"
         /// </summary>
-        public bool IsInMemory { get; }
+        public bool IsInMemory { get; internal set; }
+
+        /// <summary>
+        /// Getter that returns if the document is not backed by a saved file path (not in-memory).
+        /// </summary>
+        public bool IsUntitled => !DocumentUri?.ToUri().IsFile ?? false;
 
         /// <summary>
         /// Gets a string containing the full contents of the file.
@@ -127,11 +132,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             // so that other operations know it's untitled/in-memory
             // and don't think that it's a relative path
             // on the file system.
-            IsInMemory = !docUri.ToUri().IsFile;
+            DocumentUri = docUri;
+
+            // Initial state of document. Untitled files are in memory by definition, otherwise files start non-dirty on a filesystem
+            IsInMemory = IsUntitled;
+
             FilePath = IsInMemory
                 ? docUri.ToString()
                 : docUri.GetFileSystemPath();
-            DocumentUri = docUri;
+
             IsAnalysisEnabled = true;
             this.powerShellVersion = powerShellVersion;
 
@@ -365,6 +374,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             // Parse the script again to be up-to-date
             ParseFileContents();
             References.TagAsChanged();
+
+            // Flag the script as modified
+            IsInMemory = true;
         }
 
         /// <summary>

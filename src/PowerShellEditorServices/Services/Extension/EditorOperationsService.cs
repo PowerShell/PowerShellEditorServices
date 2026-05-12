@@ -199,9 +199,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         public string[] GetWorkspacePaths() => _workspaceService.WorkspacePaths.ToArray();
 
         public WorkspaceOpenDocument[] GetWorkspaceOpenDocuments()
-            => _workspaceService.GetOpenedFiles()
-                .Select(static scriptFile => new WorkspaceOpenDocument(scriptFile.FilePath, !scriptFile.IsInMemory))
-                .ToArray();
+            => [..
+                    _workspaceService
+                    .GetOpenedFiles()
+                    .Where(static scriptFile => scriptFile.IsOpen)
+                    .Select(static scriptFile => new WorkspaceOpenDocument(scriptFile.FilePath, !scriptFile.IsInMemory))
+                ];
 
         public string GetWorkspaceRelativePath(ScriptFile scriptFile) => _workspaceService.GetRelativePath(scriptFile);
 
