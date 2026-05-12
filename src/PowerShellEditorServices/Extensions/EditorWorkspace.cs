@@ -4,6 +4,35 @@
 namespace Microsoft.PowerShell.EditorServices.Extensions
 {
     /// <summary>
+    /// A document currently open in the editor workspace.
+    /// </summary>
+    public sealed class EditorWorkspaceDocument
+    {
+        private readonly EditorWorkspace _workspace;
+
+        internal EditorWorkspaceDocument(EditorWorkspace workspace, string path)
+        {
+            _workspace = workspace;
+            Path = path;
+        }
+
+        /// <summary>
+        /// Gets the path of the document.
+        /// </summary>
+        public string Path { get; }
+
+        /// <summary>
+        /// Opens this document in the editor.
+        /// </summary>
+        public void Open() => _workspace.OpenFile(Path);
+
+        /// <summary>
+        /// Saves this document in the editor.
+        /// </summary>
+        public void Save() => _workspace.SaveFile(Path);
+    }
+
+    /// <summary>
     /// Provides a PowerShell-facing API which allows scripts to
     /// interact with the editor's workspace.
     /// </summary>
@@ -27,6 +56,24 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// Get all the workspace folders' paths.
         /// </summary>
         public string[] Paths => editorOperations.GetWorkspacePaths();
+
+        /// <summary>
+        /// Get all currently open documents in the workspace.
+        /// </summary>
+        public EditorWorkspaceDocument[] Documents
+        {
+            get
+            {
+                string[] openDocumentPaths = editorOperations.GetWorkspaceOpenDocumentPaths();
+                EditorWorkspaceDocument[] documents = new EditorWorkspaceDocument[openDocumentPaths.Length];
+                for (int i = 0; i < openDocumentPaths.Length; i++)
+                {
+                    documents[i] = new EditorWorkspaceDocument(this, openDocumentPaths[i]);
+                }
+
+                return documents;
+            }
+        }
 
         #endregion
 

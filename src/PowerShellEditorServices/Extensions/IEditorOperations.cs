@@ -33,6 +33,12 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         string[] GetWorkspacePaths();
 
         /// <summary>
+        /// Get all open document paths in the current workspace session.
+        /// </summary>
+        /// <returns>All currently open document paths.</returns>
+        string[] GetWorkspaceOpenDocumentPaths();
+
+        /// <summary>
         /// Resolves the given file path relative to the current workspace path.
         /// </summary>
         /// <returns>The resolved file path.</returns>

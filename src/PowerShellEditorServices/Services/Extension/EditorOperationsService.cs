@@ -198,6 +198,8 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 
         public string[] GetWorkspacePaths() => _workspaceService.WorkspacePaths.ToArray();
 
+        public string[] GetWorkspaceOpenDocumentPaths() => _workspaceService.GetOpenedFiles().Select(static scriptFile => scriptFile.FilePath).ToArray();
+
         public string GetWorkspaceRelativePath(ScriptFile scriptFile) => _workspaceService.GetRelativePath(scriptFile);
 
         public async Task ShowInformationMessageAsync(string message)
