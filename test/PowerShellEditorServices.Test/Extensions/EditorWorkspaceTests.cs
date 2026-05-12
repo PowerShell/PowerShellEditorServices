@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -13,15 +14,20 @@ namespace PowerShellEditorServices.Test.Extensions
     [Trait("Category", "Extensions")]
     public class EditorWorkspaceTests
     {
+        private static readonly string WorkspacePath = Path.Combine("test");
+
         [Fact]
         public void DocumentsReturnsOpenWorkspaceDocuments()
         {
+            string firstPath = Path.Combine(WorkspacePath, "one.ps1");
+            string secondPath = Path.Combine(WorkspacePath, "two.ps1");
+
             TestEditorOperations editorOperations = new()
             {
                 OpenDocuments =
                 [
-                    new WorkspaceOpenDocument(@"C:\test\one.ps1", saved: true),
-                    new WorkspaceOpenDocument(@"C:\test\two.ps1", saved: true)
+                    new WorkspaceOpenDocument(firstPath, saved: true),
+                    new WorkspaceOpenDocument(secondPath, saved: true)
                 ]
             };
 
@@ -33,12 +39,12 @@ namespace PowerShellEditorServices.Test.Extensions
                 documents,
                 document =>
                 {
-                    Assert.Equal(@"C:\test\one.ps1", document.Path);
+                    Assert.Equal(firstPath, document.Path);
                     Assert.True(document.Saved);
                 },
                 document =>
                 {
-                    Assert.Equal(@"C:\test\two.ps1", document.Path);
+                    Assert.Equal(secondPath, document.Path);
                     Assert.True(document.Saved);
                 });
         }
@@ -46,7 +52,7 @@ namespace PowerShellEditorServices.Test.Extensions
         [Fact]
         public void DocumentOpenSaveAndCloseUseWorkspaceOperations()
         {
-            const string filePath = @"C:\test\file.ps1";
+            string filePath = Path.Combine(WorkspacePath, "file.ps1");
             TestEditorOperations editorOperations = new()
             {
                 OpenDocuments = [new WorkspaceOpenDocument(filePath, saved: true)]
@@ -69,15 +75,14 @@ namespace PowerShellEditorServices.Test.Extensions
         [Fact]
         public void DocumentToStringReturnsFileNameAndSavedStatus()
         {
-            const string savedFilePath = @"C:\test\file.ps1";
-            const string unsavedFilePath = @"C:\test\other.ps1";
+            string savedFilePath = Path.Combine(WorkspacePath, "file.ps1");
+            string unsavedFilePath = Path.Combine(WorkspacePath, "other.ps1");
             TestEditorOperations editorOperations = new()
             {
-                OpenDocuments = new[]
-                {
+                OpenDocuments = [
                     new WorkspaceOpenDocument(savedFilePath, saved: true),
                     new WorkspaceOpenDocument(unsavedFilePath, saved: false)
-                }
+                ]
             };
 
             EditorWorkspace workspace = new(editorOperations);
@@ -94,11 +99,10 @@ namespace PowerShellEditorServices.Test.Extensions
         {
             TestEditorOperations editorOperations = new()
             {
-                OpenDocuments = new[]
-                {
-                    new WorkspaceOpenDocument(@"C:\test\saved.ps1", saved: true),
-                    new WorkspaceOpenDocument(@"C:\test\unsaved.ps1", saved: false)
-                }
+                OpenDocuments = [
+                    new WorkspaceOpenDocument(Path.Combine(WorkspacePath, "saved.ps1"), saved: true),
+                    new WorkspaceOpenDocument(Path.Combine(WorkspacePath, "unsaved.ps1"), saved: false)
+                ]
             };
 
             EditorWorkspace workspace = new(editorOperations);
@@ -118,9 +122,9 @@ namespace PowerShellEditorServices.Test.Extensions
 
             public Task<EditorContext> GetEditorContextAsync() => Task.FromResult(default(EditorContext));
 
-            public string GetWorkspacePath() => @"C:\test";
+            public string GetWorkspacePath() => WorkspacePath;
 
-            public string[] GetWorkspacePaths() => new[] { @"C:\test" };
+            public string[] GetWorkspacePaths() => [WorkspacePath];
 
             public WorkspaceOpenDocument[] GetWorkspaceOpenDocuments() => OpenDocuments;
 
