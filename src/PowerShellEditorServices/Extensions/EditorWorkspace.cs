@@ -33,7 +33,8 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <returns>The display name of this document.</returns>
         public override string ToString()
         {
-            string fileName = System.IO.Path.GetFileName(Path);
+            int fileNameStartIndex = System.Math.Max(Path.LastIndexOf('\\'), Path.LastIndexOf('/')) + 1;
+            string fileName = Path.Substring(fileNameStartIndex);
             return Saved ? fileName : fileName + " [Unsaved]";
         }
 
