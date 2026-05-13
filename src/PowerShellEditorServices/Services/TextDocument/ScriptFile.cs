@@ -56,9 +56,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         public bool IsInMemory { get; internal set; }
 
         /// <summary>
-        /// Getter that returns if the document is not backed by a saved file path (not in-memory).
+        /// Gets a value indicating whether the document URI is not a <c>file://</c> URI
+        /// (for example, an <c>untitled:</c> URI).
         /// </summary>
-        public bool IsUntitled => !DocumentUri?.ToUri().IsFile ?? false;
+        public bool IsUntitled => !DocumentUri.ToUri().IsFile;
 
         /// <summary>
         /// Gets a string containing the full contents of the file.
