@@ -68,15 +68,18 @@ namespace PowerShellEditorServices.Test.Extensions
 
             openSaved.ApplyChange(new FileChange
             {
-                IsReload = true,
+                Line = 1,
+                Offset = 1,
+                EndLine = 1,
+                EndOffset = 1,
                 InsertString = "Set-StrictMode -Version Latest"
             });
 
             WorkspaceOpenDocument[] editedDocuments = editorOperationsService.GetWorkspaceOpenDocuments();
             Assert.Contains(editedDocuments, static document => document.Path.EndsWith("open-saved.ps1") && !document.Saved);
 
-            openSaved.IsInMemory = openSaved.IsUntitled;
-            openUntitled.IsInMemory = openUntitled.IsUntitled;
+            SimulateSaveReset(openSaved);
+            SimulateSaveReset(openUntitled);
 
             WorkspaceOpenDocument[] savedDocuments = editorOperationsService.GetWorkspaceOpenDocuments();
             Assert.Contains(savedDocuments, static document => document.Path.EndsWith("open-saved.ps1") && document.Saved);
@@ -87,6 +90,11 @@ namespace PowerShellEditorServices.Test.Extensions
         {
             string filePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), fileName);
             return workspaceService.GetFileBuffer(DocumentUri.FromFileSystemPath(filePath), initialBuffer: string.Empty);
+        }
+
+        private static void SimulateSaveReset(ScriptFile scriptFile)
+        {
+            scriptFile.IsInMemory = scriptFile.IsUntitled;
         }
     }
 }
