@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -69,7 +69,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             pwsh.InvocationStateChanged += handler;
         }
 
-        public static Collection<TResult> InvokeAndClear<TResult>(this PowerShell pwsh, PSInvocationSettings invocationSettings = null)
+        public static Collection<TResult> InvokeAndClear<TResult>(this PowerShell pwsh, PSInvocationSettings? invocationSettings = null)
         {
             try
             {
@@ -81,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             }
         }
 
-        public static void InvokeAndClear(this PowerShell pwsh, PSInvocationSettings invocationSettings = null)
+        public static void InvokeAndClear(this PowerShell pwsh, PSInvocationSettings? invocationSettings = null)
         {
             try
             {
@@ -93,13 +93,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             }
         }
 
-        public static Collection<TResult> InvokeCommand<TResult>(this PowerShell pwsh, PSCommand psCommand, PSInvocationSettings invocationSettings = null)
+        public static Collection<TResult> InvokeCommand<TResult>(this PowerShell pwsh, PSCommand psCommand, PSInvocationSettings? invocationSettings = null)
         {
             pwsh.Commands = psCommand;
             return pwsh.InvokeAndClear<TResult>(invocationSettings);
         }
 
-        public static void InvokeCommand(this PowerShell pwsh, PSCommand psCommand, PSInvocationSettings invocationSettings = null)
+        public static void InvokeCommand(this PowerShell pwsh, PSCommand psCommand, PSInvocationSettings? invocationSettings = null)
         {
             pwsh.Commands = psCommand;
             pwsh.InvokeAndClear(invocationSettings);
@@ -262,7 +262,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 .AppendLine("Exception:")
                 .Append("    ").Append(error.Exception.ToString() ?? "<null>");
 
-            Exception innerException = error.Exception?.InnerException;
+            Exception? innerException = error.Exception?.InnerException;
             while (innerException != null)
             {
                 sb.AppendLine("InnerException:")
