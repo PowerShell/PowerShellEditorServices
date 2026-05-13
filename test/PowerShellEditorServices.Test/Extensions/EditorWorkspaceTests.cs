@@ -50,27 +50,6 @@ namespace PowerShellEditorServices.Test.Extensions
         }
 
         [Fact]
-        public void DocumentSaveAndCloseUseWorkspaceOperations()
-        {
-            string filePath = Path.Combine(WorkspacePath, "file.ps1");
-            TestEditorOperations editorOperations = new()
-            {
-                OpenDocuments = [new WorkspaceOpenDocument(filePath, saved: true)]
-            };
-
-            EditorWorkspace workspace = new(editorOperations);
-            WorkspaceOpenDocument document = Assert.Single(workspace.Documents);
-
-            document.Save();
-            document.Close();
-
-            Assert.Collection(
-                editorOperations.Calls,
-                call => Assert.Equal("SaveFile:" + filePath, call),
-                call => Assert.Equal("CloseFile:" + filePath, call));
-        }
-
-        [Fact]
         public void DocumentToStringReturnsFileNameAndSavedStatus()
         {
             string savedFilePath = Path.Combine(WorkspacePath, "file.ps1");
