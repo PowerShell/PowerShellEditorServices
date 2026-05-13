@@ -110,6 +110,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
 
         internal ReferenceTable References { get; }
 
+        /// <summary>
+        /// Indicates whether the file is currently open in the editor. PSES may open files for analysis that aren't actually visible in the editor.
+        /// </summary>
         internal bool IsOpen { get; set; }
 
         #endregion
