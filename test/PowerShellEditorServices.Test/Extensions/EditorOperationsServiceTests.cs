@@ -93,9 +93,6 @@ namespace PowerShellEditorServices.Test.Extensions
             return workspaceService.GetFileBuffer(DocumentUri.FromFileSystemPath(filePath), initialBuffer: string.Empty);
         }
 
-        private static void MarkAsSaved(ScriptFile scriptFile)
-        {
-            scriptFile.IsInMemory = scriptFile.IsUntitled;
-        }
+        private static void MarkAsSaved(ScriptFile scriptFile) => scriptFile.IsInMemory = scriptFile.IsUntitled;
     }
 }
