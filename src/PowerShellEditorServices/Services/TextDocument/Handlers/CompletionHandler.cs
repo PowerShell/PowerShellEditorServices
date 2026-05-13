@@ -366,7 +366,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             if (textToBeReplaced.IndexOf(PSScriptRootVariable, StringComparison.OrdinalIgnoreCase) is int variableIndex and not -1
                 && System.IO.Path.GetDirectoryName(scriptFile.FilePath) is string scriptFolder and not ""
                 && completionText.IndexOf(scriptFolder, StringComparison.OrdinalIgnoreCase) is int pathIndex and not -1
-                && !scriptFile.IsInMemory)
+                && !scriptFile.IsUntitled)
             {
                 completionText = completionText
                     .Remove(pathIndex, scriptFolder.Length)

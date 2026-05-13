@@ -319,7 +319,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public string GetRelativePath(ScriptFile scriptFile)
         {
             Uri fileUri = scriptFile.DocumentUri.ToUri();
-            if (!scriptFile.IsInMemory)
+            if (!scriptFile.IsUntitled)
             {
                 // Support calculating out-of-workspace relative paths in the common case of a
                 // single workspace folder. Otherwise try to get the matching folder.
