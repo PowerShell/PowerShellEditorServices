@@ -33,7 +33,7 @@ namespace PowerShellEditorServices.Test.Extensions
 
             EditorWorkspace workspace = new(editorOperations);
 
-            EditorWorkspaceDocument[] documents = workspace.Documents;
+            WorkspaceOpenDocument[] documents = workspace.Documents;
 
             Assert.Collection(
                 documents,
@@ -50,7 +50,7 @@ namespace PowerShellEditorServices.Test.Extensions
         }
 
         [Fact]
-        public void DocumentOpenSaveAndCloseUseWorkspaceOperations()
+        public void DocumentSaveAndCloseUseWorkspaceOperations()
         {
             string filePath = Path.Combine(WorkspacePath, "file.ps1");
             TestEditorOperations editorOperations = new()
@@ -59,15 +59,13 @@ namespace PowerShellEditorServices.Test.Extensions
             };
 
             EditorWorkspace workspace = new(editorOperations);
-            EditorWorkspaceDocument document = Assert.Single(workspace.Documents);
+            WorkspaceOpenDocument document = Assert.Single(workspace.Documents);
 
-            document.Open();
             document.Save();
             document.Close();
 
             Assert.Collection(
                 editorOperations.Calls,
-                call => Assert.Equal("OpenFile:" + filePath, call),
                 call => Assert.Equal("SaveFile:" + filePath, call),
                 call => Assert.Equal("CloseFile:" + filePath, call));
         }
@@ -86,7 +84,7 @@ namespace PowerShellEditorServices.Test.Extensions
             };
 
             EditorWorkspace workspace = new(editorOperations);
-            IEnumerable<EditorWorkspaceDocument> documents = workspace.Documents;
+            IEnumerable<WorkspaceOpenDocument> documents = workspace.Documents;
 
             Assert.Collection(
                 documents,
@@ -106,7 +104,7 @@ namespace PowerShellEditorServices.Test.Extensions
             };
 
             EditorWorkspace workspace = new(editorOperations);
-            IEnumerable<EditorWorkspaceDocument> documents = workspace.Documents;
+            IEnumerable<WorkspaceOpenDocument> documents = workspace.Documents;
 
             Assert.Collection(
                 documents,

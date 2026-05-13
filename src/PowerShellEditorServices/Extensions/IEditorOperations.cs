@@ -3,26 +3,32 @@
 
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+#nullable enable
 
 namespace Microsoft.PowerShell.EditorServices.Extensions
 {
-    internal readonly struct WorkspaceOpenDocument
+    public readonly struct WorkspaceOpenDocument(string path, bool saved)
     {
-        internal WorkspaceOpenDocument(string path, bool saved)
-        {
-            Path = path;
-            Saved = saved;
-        }
-
         /// <summary>
         /// Gets the path or URI of the open document.
         /// </summary>
-        public string Path { get; }
+        public string Path { get; } = path;
 
         /// <summary>
         /// Gets whether the document is backed by a saved file path (not in-memory).
         /// </summary>
-        public bool Saved { get; }
+        public bool Saved { get; } = saved;
+
+        /// <summary>
+        /// Gets the display name of this document and unsaved status.
+        /// </summary>
+        /// <returns>The display name of this document.</returns>
+        public override string ToString()
+        {
+            string documentPath = Path ?? string.Empty;
+            string fileName = System.IO.Path.GetFileName(documentPath);
+            return Saved ? fileName : fileName + " [Unsaved]";
+        }
     }
 
     /// <summary>

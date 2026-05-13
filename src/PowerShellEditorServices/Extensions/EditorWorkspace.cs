@@ -6,57 +6,6 @@ using System.Linq;
 namespace Microsoft.PowerShell.EditorServices.Extensions
 {
     /// <summary>
-    /// A document currently open in the editor workspace.
-    /// </summary>
-    public sealed class EditorWorkspaceDocument
-    {
-        private readonly EditorWorkspace _workspace;
-
-        internal EditorWorkspaceDocument(EditorWorkspace workspace, string path, bool saved)
-        {
-            _workspace = workspace;
-            Path = path;
-            Saved = saved;
-        }
-
-        /// <summary>
-        /// Gets the path of the document.
-        /// </summary>
-        public string Path { get; }
-
-        /// <summary>
-        /// Gets whether the document is backed by a saved file path (not in-memory).
-        /// </summary>
-        public bool Saved { get; }
-
-        /// <summary>
-        /// Opens this document in the editor.
-        /// </summary>
-        public void Open() => _workspace.OpenFile(Path);
-
-        /// <summary>
-        /// Saves this document in the editor.
-        /// </summary>
-        public void Save() => _workspace.SaveFile(Path);
-
-        /// <summary>
-        /// Closes this document in the editor.
-        /// </summary>
-        public void Close() => _workspace.CloseFile(Path);
-
-        /// <summary>
-        /// Gets the display name of this document and unsaved status.
-        /// </summary>
-        /// <returns>The display name of this document.</returns>
-        public override string ToString()
-        {
-            string documentPath = Path ?? string.Empty;
-            string fileName = System.IO.Path.GetFileName(documentPath);
-            return Saved ? fileName : fileName + " [Unsaved]";
-        }
-    }
-
-    /// <summary>
     /// Provides a PowerShell-facing API which allows scripts to
     /// interact with the editor's workspace.
     /// </summary>
@@ -84,11 +33,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Get all currently open documents in the workspace.
         /// </summary>
-        public EditorWorkspaceDocument[] Documents => [..
-            editorOperations
-            .GetWorkspaceOpenDocuments()
-            .Select(doc => new EditorWorkspaceDocument(this, doc.Path, doc.Saved))
-        ];
+        public WorkspaceOpenDocument[] Documents => [.. editorOperations.GetWorkspaceOpenDocuments()];
 
         #endregion
 
@@ -138,6 +83,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="filePath">The path to the file to be closed.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Supporting synchronous API.")]
         public void CloseFile(string filePath) => editorOperations.CloseFileAsync(filePath).Wait();
+        public void CloseFile(WorkspaceOpenDocument document) => CloseFile(document.Path);
 
         /// <summary>
         /// Saves an open file in the workspace.
@@ -145,6 +91,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="filePath">The path to the file to be saved.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Supporting synchronous API.")]
         public void SaveFile(string filePath) => editorOperations.SaveFileAsync(filePath).Wait();
+        public void SaveFile(WorkspaceOpenDocument document) => SaveFile(document.Path);
 
         /// <summary>
         /// Saves a file with a new name AKA a copy.
