@@ -306,11 +306,19 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
                 _logger.LogDebug("InitialWorkingDirectory set!");
             }
 
+            _logger.LogDebug("Setting profile variable...");
+            await SetProfileVariableAsync(cancellationToken).ConfigureAwait(false);
+            _logger.LogDebug("Profile variable set!");
+
             if (startOptions.LoadProfiles)
             {
                 _logger.LogDebug("Loading profiles...");
                 await LoadHostProfilesAsync(cancellationToken).ConfigureAwait(false);
                 _logger.LogDebug("Profiles loaded!");
+            }
+            else
+            {
+                _logger.LogDebug("Profile loading skipped per configuration!");
             }
 
             if (!string.IsNullOrEmpty(startOptions.ShellIntegrationScript))
@@ -583,13 +591,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             }
         }
 
+        internal Task SetProfileVariableAsync(CancellationToken cancellationToken)
+        {
+            // NOTE: This is a special task run on startup!
+            return ExecuteDelegateAsync(
+            "SetProfileVariable",
+            executionOptions: null,
+            (pwsh, _) => pwsh.SetProfileVariable(_hostInfo.ProfilePaths),
+            cancellationToken);
+        }
+
         internal Task LoadHostProfilesAsync(CancellationToken cancellationToken)
         {
             // NOTE: This is a special task run on startup!
             return ExecuteDelegateAsync(
                 "LoadProfiles",
                 executionOptions: null,
-                (pwsh, _) => pwsh.LoadProfiles(_hostInfo.ProfilePaths),
+            (pwsh, _) => pwsh.LoadProfileScripts(_hostInfo.ProfilePaths),
                 cancellationToken);
         }
 
@@ -812,8 +830,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
             {
                 // Make sure we execute any startup tasks first. These should be, in order:
                 // 1. Delegate to register psEditor variable
-                // 2. LoadProfiles delegate
-                // 3. Delegate to import PSEditModule
+                // 2. SetProfileVariable delegate
+                // 3. Optional LoadProfiles delegate
+                // 4. Delegate to import PSEditModule
                 while (_taskQueue.TryTake(out ISynchronousTask task))
                 {
                     task.ExecuteSynchronously(CancellationToken.None);

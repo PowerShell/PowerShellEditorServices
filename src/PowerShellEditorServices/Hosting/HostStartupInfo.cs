@@ -190,32 +190,13 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     }
 
     /// <summary>
-    /// This is a strange class that is generally <c>null</c> or otherwise just has a single path
-    /// set. It is eventually parsed one-by-one when setting up the PowerShell runspace.
+    /// Stores profile information passed from Start-EditorServices to be used for loading profiles if configured
+    /// and for the $PROFILE variable in the initial session state.
     /// </summary>
-    /// <remarks>
-    /// TODO: Simplify this as a <see langword="record"/>.
-    /// </remarks>
-    public sealed class ProfilePathInfo
-    {
-        public ProfilePathInfo(
-            string currentUserAllHosts,
-            string currentUserCurrentHost,
-            string allUsersAllHosts,
-            string allUsersCurrentHost)
-        {
-            CurrentUserAllHosts = currentUserAllHosts;
-            CurrentUserCurrentHost = currentUserCurrentHost;
-            AllUsersAllHosts = allUsersAllHosts;
-            AllUsersCurrentHost = allUsersCurrentHost;
-        }
-
-        public string CurrentUserAllHosts { get; }
-
-        public string CurrentUserCurrentHost { get; }
-
-        public string AllUsersAllHosts { get; }
-
-        public string AllUsersCurrentHost { get; }
-    }
+    public readonly record struct ProfilePathInfo(
+        string CurrentUserAllHosts,
+        string CurrentUserCurrentHost,
+        string AllUsersAllHosts,
+        string AllUsersCurrentHost
+    );
 }
