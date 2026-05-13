@@ -46,6 +46,43 @@ namespace PowerShellEditorServices.Test.Extensions
             Assert.DoesNotContain(documents, static document => document.Path.EndsWith("closed.ps1"));
         }
 
+        [Fact]
+        public void GetWorkspaceOpenDocumentsTracksEditedAndUntitledSaveStates()
+        {
+            WorkspaceService workspaceService = new(NullLoggerFactory.Instance);
+
+            ScriptFile openSaved = CreateFileBuffer(workspaceService, "open-saved.ps1");
+            openSaved.IsOpen = true;
+
+            ScriptFile openUntitled = workspaceService.GetFileBuffer("untitled:Untitled-1", initialBuffer: string.Empty);
+            openUntitled.IsOpen = true;
+
+            EditorOperationsService editorOperationsService = new(
+                psesHost: null,
+                workspaceService,
+                languageServer: null);
+
+            WorkspaceOpenDocument[] initialDocuments = editorOperationsService.GetWorkspaceOpenDocuments();
+            Assert.Contains(initialDocuments, static document => document.Path.EndsWith("open-saved.ps1") && document.Saved);
+            Assert.Contains(initialDocuments, static document => document.Path.StartsWith("untitled:", StringComparison.Ordinal) && !document.Saved);
+
+            openSaved.ApplyChange(new FileChange
+            {
+                IsReload = true,
+                InsertString = "Set-StrictMode -Version Latest"
+            });
+
+            WorkspaceOpenDocument[] editedDocuments = editorOperationsService.GetWorkspaceOpenDocuments();
+            Assert.Contains(editedDocuments, static document => document.Path.EndsWith("open-saved.ps1") && !document.Saved);
+
+            openSaved.IsInMemory = openSaved.IsUntitled;
+            openUntitled.IsInMemory = openUntitled.IsUntitled;
+
+            WorkspaceOpenDocument[] savedDocuments = editorOperationsService.GetWorkspaceOpenDocuments();
+            Assert.Contains(savedDocuments, static document => document.Path.EndsWith("open-saved.ps1") && document.Saved);
+            Assert.Contains(savedDocuments, static document => document.Path.StartsWith("untitled:", StringComparison.Ordinal) && !document.Saved);
+        }
+
         private static ScriptFile CreateFileBuffer(WorkspaceService workspaceService, string fileName)
         {
             string filePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), fileName);
