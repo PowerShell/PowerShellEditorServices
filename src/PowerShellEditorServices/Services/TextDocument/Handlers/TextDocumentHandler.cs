@@ -114,7 +114,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 // If the file watcher is supported, only close non-file-backed documents when this
                 // notification is triggered. This lets us keep workspace files open so we can scan
                 // for references. When a file is deleted, the file watcher will close the file.
-                bool isBackedByFile = notification.TextDocument.Uri.ToUri().IsFile;
+                bool isBackedByFile = !fileToClose.IsUntitled;
                 if (!_isFileWatcherSupported || !isBackedByFile)
                 {
                     _workspaceService.CloseFile(fileToClose);
