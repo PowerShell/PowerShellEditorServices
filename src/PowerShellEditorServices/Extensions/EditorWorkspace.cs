@@ -31,7 +31,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <summary>
         /// Get all currently open documents in the workspace.
         /// </summary>
-        public WorkspaceOpenDocument[] Documents => [.. editorOperations.GetWorkspaceOpenDocuments()];
+        public WorkspaceOpenDocument[] Documents => editorOperations.GetWorkspaceOpenDocuments();
 
         #endregion
 
