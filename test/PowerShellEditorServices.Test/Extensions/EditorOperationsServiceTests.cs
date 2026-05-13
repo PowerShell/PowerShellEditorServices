@@ -74,6 +74,7 @@ namespace PowerShellEditorServices.Test.Extensions
                 EndOffset = 1,
                 InsertString = "Set-StrictMode -Version Latest"
             });
+            Assert.Contains("Set-StrictMode -Version Latest", openSaved.Contents, StringComparison.Ordinal);
 
             WorkspaceOpenDocument[] editedDocuments = editorOperationsService.GetWorkspaceOpenDocuments();
             Assert.Contains(editedDocuments, static document => document.Path.EndsWith("open-saved.ps1") && !document.Saved);
