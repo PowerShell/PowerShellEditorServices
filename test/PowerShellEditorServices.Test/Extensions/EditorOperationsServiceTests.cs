@@ -78,8 +78,8 @@ namespace PowerShellEditorServices.Test.Extensions
             WorkspaceOpenDocument[] editedDocuments = editorOperationsService.GetWorkspaceOpenDocuments();
             Assert.Contains(editedDocuments, static document => document.Path.EndsWith("open-saved.ps1") && !document.Saved);
 
-            SimulateSaveReset(openSaved);
-            SimulateSaveReset(openUntitled);
+            MarkAsSaved(openSaved);
+            MarkAsSaved(openUntitled);
 
             WorkspaceOpenDocument[] savedDocuments = editorOperationsService.GetWorkspaceOpenDocuments();
             Assert.Contains(savedDocuments, static document => document.Path.EndsWith("open-saved.ps1") && document.Saved);
@@ -92,7 +92,7 @@ namespace PowerShellEditorServices.Test.Extensions
             return workspaceService.GetFileBuffer(DocumentUri.FromFileSystemPath(filePath), initialBuffer: string.Empty);
         }
 
-        private static void SimulateSaveReset(ScriptFile scriptFile)
+        private static void MarkAsSaved(ScriptFile scriptFile)
         {
             scriptFile.IsInMemory = scriptFile.IsUntitled;
         }
