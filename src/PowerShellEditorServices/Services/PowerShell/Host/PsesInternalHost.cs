@@ -593,6 +593,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         internal Task SetProfileVariableAsync(CancellationToken cancellationToken)
         {
+            // If the CurrentUserCurrentHost profile is null then we cannot create the profile variable
+            if (_hostInfo.ProfilePaths.CurrentUserCurrentHost is null)
+            {
+                return Task.CompletedTask;
+            }
+
             // NOTE: This is a special task run on startup!
             return ExecuteDelegateAsync(
             "SetProfileVariable",
@@ -603,6 +609,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Host
 
         internal Task LoadHostProfilesAsync(CancellationToken cancellationToken)
         {
+            // If the CurrentUserCurrentHost profile is null then we cannot instantiate
+            if (_hostInfo.ProfilePaths.CurrentUserCurrentHost is null)
+            {
+                return Task.CompletedTask;
+            }
+
             // NOTE: This is a special task run on startup!
             return ExecuteDelegateAsync(
                 "LoadProfiles",
