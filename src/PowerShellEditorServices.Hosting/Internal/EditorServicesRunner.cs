@@ -267,18 +267,12 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
         {
             _logger.Log(PsesLogLevel.Debug, "Creating startup info object");
 
-            ProfilePathInfo profilePaths = null;
-            if (_config.ProfilePaths.AllUsersAllHosts != null
-                || _config.ProfilePaths.AllUsersCurrentHost != null
-                || _config.ProfilePaths.CurrentUserAllHosts != null
-                || _config.ProfilePaths.CurrentUserCurrentHost != null)
-            {
-                profilePaths = new ProfilePathInfo(
-                    _config.ProfilePaths.CurrentUserAllHosts,
-                    _config.ProfilePaths.CurrentUserCurrentHost,
-                    _config.ProfilePaths.AllUsersAllHosts,
-                    _config.ProfilePaths.AllUsersCurrentHost);
-            }
+            ProfilePathInfo profilePaths = new(
+                _config.ProfilePaths.CurrentUserAllHosts,
+                _config.ProfilePaths.CurrentUserCurrentHost,
+                _config.ProfilePaths.AllUsersAllHosts,
+                _config.ProfilePaths.AllUsersCurrentHost
+            );
 
             return new HostStartupInfo(
                 _config.HostInfo.Name,
