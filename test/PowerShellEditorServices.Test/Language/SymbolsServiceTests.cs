@@ -21,6 +21,7 @@ using Microsoft.PowerShell.EditorServices.Test.Shared.ParameterHint;
 using Microsoft.PowerShell.EditorServices.Test.Shared.References;
 using Microsoft.PowerShell.EditorServices.Test.Shared.SymbolDetails;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Symbols;
+using Microsoft.PowerShell.EditorServices.Handlers;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
@@ -138,6 +139,21 @@ namespace PowerShellEditorServices.Test.Language
             return symbolsService
                 .FindSymbolsInFile(GetScriptFile(scriptRegion))
                 .OrderBy(symbol => symbol.ScriptRegion.ToRange().Start);
+        }
+
+        private async Task<IEnumerable<DocumentSymbol>> GetDocumentSymbols(ScriptRegion scriptRegion)
+        {
+            string path = TestUtilities.GetSharedPath(scriptRegion.File);
+            PsesDocumentSymbolHandler handler = new(NullLoggerFactory.Instance, workspace);
+            SymbolInformationOrDocumentSymbolContainer result = await handler.Handle(
+                new DocumentSymbolParams
+                {
+                    TextDocument = new TextDocumentIdentifier { Uri = DocumentUri.FromFileSystemPath(path) }
+                },
+                CancellationToken.None);
+            return result
+                .Where(s => s.IsDocumentSymbol)
+                .Select(s => s.DocumentSymbol);
         }
 
         [Fact]
@@ -768,7 +784,7 @@ namespace PowerShellEditorServices.Test.Language
         }
 
         [Fact]
-        public void FindsSymbolsInFile()
+        public async Task FindsSymbolsInFile()
         {
             IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInMultiSymbolFile.SourceDetails);
 
@@ -795,8 +811,8 @@ namespace PowerShellEditorServices.Test.Language
             Assert.True(symbol.IsDeclaration);
 
             DocumentSymbol filterDocumentSymbol = Assert.Single(
-                GetDocumentSymbols(FindSymbolsInMultiSymbolFile.SourceDetails),
-                i => i.Name == "AFilter");
+                await GetDocumentSymbols(FindSymbolsInMultiSymbolFile.SourceDetails),
+                i => i.Name == "filter AFilter ()");
             DocumentSymbol filterVariableDocumentSymbol = Assert.Single(
                 filterDocumentSymbol.Children,
                 i => i.Name == "$FilterVar");
