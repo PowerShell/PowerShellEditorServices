@@ -789,10 +789,18 @@ namespace PowerShellEditorServices.Test.Language
             Assert.True(symbol.IsDeclaration);
 
             // Verify that a variable declared inside a filter is tracked as a declaration,
-            // allowing it to appear as a child of the filter in the LSP outline hierarchy.
+            // and that it is returned as a child of the filter in the LSP outline hierarchy.
             symbol = Assert.Single(symbols, i => i.Id == "var FilterVar");
             Assert.Equal("$FilterVar", symbol.Name);
             Assert.True(symbol.IsDeclaration);
+
+            DocumentSymbol filterDocumentSymbol = Assert.Single(
+                GetDocumentSymbols(FindSymbolsInMultiSymbolFile.SourceDetails),
+                i => i.Name == "AFilter");
+            DocumentSymbol filterVariableDocumentSymbol = Assert.Single(
+                filterDocumentSymbol.Children,
+                i => i.Name == "$FilterVar");
+            Assert.Equal(SymbolKind.Variable, filterVariableDocumentSymbol.Kind);
 
             symbol = symbols.Last(i => i.Type == SymbolType.Variable);
             Assert.Equal("var nestedVar", symbol.Id);
