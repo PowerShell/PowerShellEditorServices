@@ -119,7 +119,7 @@ namespace PowerShellEditorServices.Test.Session
                     pwsh.SetProfileVariable(emptyProfilePaths);
                     pwsh.LoadProfileScripts(emptyProfilePaths);
 
-                    Assert.Equal(emptyProfilePaths.CurrentUserCurrentHost, pwsh.Runspace.SessionStateProxy.GetVariable("PROFILE"));
+                    Assert.Equal(emptyProfilePaths.CurrentUserCurrentHost, pwsh.Runspace.SessionStateProxy.GetVariable("PROFILE")?.ToString());
                     Assert.Empty(pwsh.Commands.Commands);
                 },
                 CancellationToken.None);
