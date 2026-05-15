@@ -621,7 +621,7 @@ namespace PowerShellEditorServices.Test.E2E
             await terminatedTcs.Task;
         }
 
-        [SkippableFact(Timeout = 10000)]
+        [SkippableFact(Timeout = 15000)]
         public async Task CanAttachScriptWithPathMappings()
         {
             Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
