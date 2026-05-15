@@ -1,5 +1,12 @@
 # PowerShell Editor Services Release History
 
+## v4.6.0
+### Friday, May 15, 2026
+
+See more details at the GitHub Release for [v4.6.0](https://github.com/PowerShell/PowerShellEditorServices/releases/tag/v4.6.0).
+
+New rename provider and workspace document API!
+
 ## v4.5.0
 ### Wednesday, April 08, 2026
 
