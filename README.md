@@ -150,7 +150,7 @@ There are several edge case scenarios which may exist where rename is difficult 
 
 The focus of the rename support is on quick updates to variables or functions within a self-contained script file. It is not intended for module developers to find and rename a symbol across multiple files, which is very difficult to do as the relationships are primarily only computed at runtime and not possible to be statically analyzed.
 
-#### 👍 [Implemented and Tested Rename Scenarios](https://github.com/PowerShell/PowerShellEditorServices/blob/main/test/PowerShellEditorServices.Test.Shared/Refactoring)
+#### 👍 [Implemented and Tested Rename Scenarios](https://github.com/PowerShell/PowerShellEditorServices/blob/main/test/PowerShellEditorServices.Test.Shared/Refactoring) <- Link to Tests
 
 #### 🤚 Unsupported Scenarios
 
