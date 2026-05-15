@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -69,7 +69,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             pwsh.InvocationStateChanged += handler;
         }
 
-        public static Collection<TResult> InvokeAndClear<TResult>(this PowerShell pwsh, PSInvocationSettings invocationSettings = null)
+        public static Collection<TResult> InvokeAndClear<TResult>(this PowerShell pwsh, PSInvocationSettings? invocationSettings = null)
         {
             try
             {
@@ -81,7 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             }
         }
 
-        public static void InvokeAndClear(this PowerShell pwsh, PSInvocationSettings invocationSettings = null)
+        public static void InvokeAndClear(this PowerShell pwsh, PSInvocationSettings? invocationSettings = null)
         {
             try
             {
@@ -93,13 +93,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             }
         }
 
-        public static Collection<TResult> InvokeCommand<TResult>(this PowerShell pwsh, PSCommand psCommand, PSInvocationSettings invocationSettings = null)
+        public static Collection<TResult> InvokeCommand<TResult>(this PowerShell pwsh, PSCommand psCommand, PSInvocationSettings? invocationSettings = null)
         {
             pwsh.Commands = psCommand;
             return pwsh.InvokeAndClear<TResult>(invocationSettings);
         }
 
-        public static void InvokeCommand(this PowerShell pwsh, PSCommand psCommand, PSInvocationSettings invocationSettings = null)
+        public static void InvokeCommand(this PowerShell pwsh, PSCommand psCommand, PSInvocationSettings? invocationSettings = null)
         {
             pwsh.Commands = psCommand;
             pwsh.InvokeAndClear(invocationSettings);
@@ -193,7 +193,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             }
         }
 
-        public static void LoadProfiles(this PowerShell pwsh, ProfilePathInfo profilePaths)
+        public static void SetProfileVariable(this PowerShell pwsh, ProfilePathInfo profilePaths)
         {
             // Per the documentation, "the `$PROFILE` variable stores the path to the 'Current User,
             // Current Host' profile. The other profiles are saved in note properties of the
@@ -202,14 +202,23 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
             // https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_profiles?view=powershell-7.1#the-profile-variable
             PSObject profileVariable = PSObject.AsPSObject(profilePaths.CurrentUserCurrentHost);
 
+            profileVariable.Members.Add(new PSNoteProperty(nameof(profilePaths.AllUsersAllHosts), profilePaths.AllUsersAllHosts));
+            profileVariable.Members.Add(new PSNoteProperty(nameof(profilePaths.AllUsersCurrentHost), profilePaths.AllUsersCurrentHost));
+            profileVariable.Members.Add(new PSNoteProperty(nameof(profilePaths.CurrentUserAllHosts), profilePaths.CurrentUserAllHosts));
+            profileVariable.Members.Add(new PSNoteProperty(nameof(profilePaths.CurrentUserCurrentHost), profilePaths.CurrentUserCurrentHost));
+
+            pwsh.Runspace.SessionStateProxy.SetVariable("PROFILE", profileVariable);
+        }
+
+        public static void LoadProfileScripts(this PowerShell pwsh, ProfilePathInfo profilePaths)
+        {
+            PSObject profileVariable = PSObject.AsPSObject(profilePaths.CurrentUserCurrentHost);
+
             PSCommand psCommand = new PSCommand()
                 .AddProfileLoadIfExists(profileVariable, nameof(profilePaths.AllUsersAllHosts), profilePaths.AllUsersAllHosts)
                 .AddProfileLoadIfExists(profileVariable, nameof(profilePaths.AllUsersCurrentHost), profilePaths.AllUsersCurrentHost)
                 .AddProfileLoadIfExists(profileVariable, nameof(profilePaths.CurrentUserAllHosts), profilePaths.CurrentUserAllHosts)
                 .AddProfileLoadIfExists(profileVariable, nameof(profilePaths.CurrentUserCurrentHost), profilePaths.CurrentUserCurrentHost);
-
-            // NOTE: This must be set before the profiles are loaded.
-            pwsh.Runspace.SessionStateProxy.SetVariable("PROFILE", profileVariable);
 
             // NOTE: Because it's possible there are no profiles defined, we might have an empty
             // command. Since this is being executed directly, we can't rely on `ThrowOnError =
@@ -253,7 +262,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
                 .AppendLine("Exception:")
                 .Append("    ").Append(error.Exception.ToString() ?? "<null>");
 
-            Exception innerException = error.Exception?.InnerException;
+            Exception? innerException = error.Exception?.InnerException;
             while (innerException != null)
             {
                 sb.AppendLine("InnerException:")

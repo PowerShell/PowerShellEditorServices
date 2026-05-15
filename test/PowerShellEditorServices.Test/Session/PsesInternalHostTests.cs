@@ -105,21 +105,43 @@ namespace PowerShellEditorServices.Test.Session
         }
 
         [Fact]
-        public async Task CanHandleNoProfiles()
+        public async Task CanHandleMissingProfilePaths()
         {
-            // Call LoadProfiles with profile paths that won't exist, and assert that it does not
-            // throw PSInvalidOperationException (which it previously did when it tried to invoke an
-            // empty command).
+            // Call LoadProfileScripts with profile paths that won't exist, and assert that it does
+            // not throw PSInvalidOperationException (which it previously did when it tried to
+            // invoke an empty command).
             ProfilePathInfo emptyProfilePaths = new("", "", "", "");
             await psesHost.ExecuteDelegateAsync(
-                "LoadProfiles",
+                "SetProfileVariableAndLoadProfileScripts",
                 executionOptions: null,
                 (pwsh, _) =>
                 {
-                    pwsh.LoadProfiles(emptyProfilePaths);
+                    pwsh.SetProfileVariable(emptyProfilePaths);
+                    pwsh.LoadProfileScripts(emptyProfilePaths);
+
+                    Assert.Equal(emptyProfilePaths.CurrentUserCurrentHost, pwsh.Runspace.SessionStateProxy.GetVariable("PROFILE")?.ToString());
                     Assert.Empty(pwsh.Commands.Commands);
                 },
                 CancellationToken.None);
+        }
+
+        [Fact]
+        public async Task SetsProfileVariableWhenProfilesAreNotLoaded()
+        {
+            // This host fixture starts with LoadProfiles = false. Ensure $PROFILE is still set.
+            IReadOnlyList<string> profileVariable = await psesHost.ExecutePSCommandAsync<string>(
+                new PSCommand().AddScript("$PROFILE"),
+                CancellationToken.None);
+
+            Assert.Collection(profileVariable,
+                (p) => Assert.Equal(PsesHostFactory.TestProfilePaths.CurrentUserCurrentHost, p));
+
+            // Ensure profile scripts were not loaded as part of startup.
+            IReadOnlyList<PSObject> profileLoadedCommand = await psesHost.ExecutePSCommandAsync<PSObject>(
+                new PSCommand().AddScript("Get-Command Assert-ProfileLoaded -ErrorAction Ignore"),
+                CancellationToken.None);
+
+            Assert.Empty(profileLoadedCommand);
         }
 
         // NOTE: Tests where we call functions that use PowerShell runspaces are slightly more

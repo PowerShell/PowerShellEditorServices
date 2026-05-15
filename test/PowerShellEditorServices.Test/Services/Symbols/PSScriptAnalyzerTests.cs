@@ -29,7 +29,7 @@ namespace PowerShellEditorServices.Test.Services.Symbols
                 profileId: "",
                 version: null,
                 psHost: null,
-                profilePaths: null,
+                profilePaths: default,
                 featureFlags: null,
                 additionalModules: null,
                 initialSessionState: null,
