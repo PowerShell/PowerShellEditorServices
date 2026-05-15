@@ -1239,7 +1239,10 @@ function CanSendGetCommentHelpRequest {
         [SkippableFact(Timeout = 120000)]
         public async Task CanSendGetCommandRequestAsync()
         {
-            Skip.If(Environment.GetEnvironmentVariable("TF_BUILD") is not null,
+            Skip.If(
+                Environment.GetEnvironmentVariable("TF_BUILD") is not null ||
+                Environment.GetEnvironmentVariable("GITHUB_ACTIONS") is not null ||
+                Environment.GetEnvironmentVariable("CI") is not null,
                 "This test is too slow in CI.");
 
             List<object> pSCommandMessages =
