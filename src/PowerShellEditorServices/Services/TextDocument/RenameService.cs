@@ -190,7 +190,7 @@ internal class RenameService(
         if (DisclaimerDeclinedForSession) { throw new HandlerErrorException(disclaimerDeclinedMessage); }
         if (acceptDisclaimerOption || DisclaimerAcceptedForSession) { return true; }
 
-        const string renameDisclaimer = "PowerShell rename functionality is only supported in a limited set of circumstances. [Please review the notice](https://github.com/PowerShell/PowerShellEditorServices?tab=readme-ov-file#rename-disclaimer) and accept the limitations and risks.";
+        const string renameDisclaimer = "PowerShell rename functionality is only supported in a limited set of circumstances. [Please review the notice](https://aka.ms/powershell-rename-disclaimer) and accept the limitations and risks.";
         const string acceptAnswer = "I Accept";
         const string declineAnswer = "Decline";
 
