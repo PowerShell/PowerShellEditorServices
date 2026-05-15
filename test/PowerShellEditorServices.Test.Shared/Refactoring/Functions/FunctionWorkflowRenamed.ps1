@@ -1,0 +1,5 @@
+workflow Renamed {
+    "workflow"
+}
+
+Renamed
