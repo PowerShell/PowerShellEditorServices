@@ -302,7 +302,14 @@ namespace Microsoft.PowerShell.EditorServices.Services
             Validate.IsNotNull(nameof(scriptFile), scriptFile);
 
             string keyName = GetFileKey(scriptFile.DocumentUri);
-            workspaceFiles.TryRemove(keyName, out ScriptFile _);
+            if (workspaceFiles.TryRemove(keyName, out ScriptFile _))
+            {
+                logger.LogDebug("Closed file: " + scriptFile.DocumentUri);
+            }
+            else
+            {
+                logger.LogWarning("Tried to close file that was not open: " + scriptFile.DocumentUri);
+            }
         }
 
         /// <summary>
@@ -312,7 +319,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public string GetRelativePath(ScriptFile scriptFile)
         {
             Uri fileUri = scriptFile.DocumentUri.ToUri();
-            if (!scriptFile.IsInMemory)
+            if (!scriptFile.IsUntitled)
             {
                 // Support calculating out-of-workspace relative paths in the common case of a
                 // single workspace folder. Otherwise try to get the matching folder.

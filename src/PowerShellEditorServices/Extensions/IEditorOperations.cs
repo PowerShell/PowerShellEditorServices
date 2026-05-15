@@ -3,9 +3,34 @@
 
 using System.Threading.Tasks;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+#nullable enable
 
 namespace Microsoft.PowerShell.EditorServices.Extensions
 {
+    public readonly struct WorkspaceOpenDocument(string path, bool saved)
+    {
+        /// <summary>
+        /// Gets the path or URI of the open document.
+        /// </summary>
+        public string Path { get; } = path;
+
+        /// <summary>
+        /// Gets whether the document is backed by a saved file path (not in-memory).
+        /// </summary>
+        public bool Saved { get; } = saved;
+
+        /// <summary>
+        /// Gets the display name of this document and unsaved status.
+        /// </summary>
+        /// <returns>The display name of this document.</returns>
+        public override string ToString()
+        {
+            string documentPath = Path ?? string.Empty;
+            string fileName = System.IO.Path.GetFileName(documentPath);
+            return Saved ? fileName : fileName + " [Unsaved]";
+        }
+    }
+
     /// <summary>
     /// Provides an interface that must be implemented by an editor
     /// host to perform operations invoked by extensions written in
@@ -31,6 +56,12 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         /// <returns></returns>
         string[] GetWorkspacePaths();
+
+        /// <summary>
+        /// Get all open documents in the current workspace session.
+        /// </summary>
+        /// <returns>All currently open documents.</returns>
+        WorkspaceOpenDocument[] GetWorkspaceOpenDocuments();
 
         /// <summary>
         /// Resolves the given file path relative to the current workspace path.

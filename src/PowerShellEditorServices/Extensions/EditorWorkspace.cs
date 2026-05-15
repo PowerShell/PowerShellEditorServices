@@ -28,6 +28,11 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         public string[] Paths => editorOperations.GetWorkspacePaths();
 
+        /// <summary>
+        /// Get all currently open documents in the workspace.
+        /// </summary>
+        public WorkspaceOpenDocument[] Documents => editorOperations.GetWorkspaceOpenDocuments();
+
         #endregion
 
         #region Constructors
@@ -76,6 +81,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="filePath">The path to the file to be closed.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Supporting synchronous API.")]
         public void CloseFile(string filePath) => editorOperations.CloseFileAsync(filePath).Wait();
+        public void CloseFile(WorkspaceOpenDocument document) => CloseFile(document.Path);
 
         /// <summary>
         /// Saves an open file in the workspace.
@@ -83,6 +89,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="filePath">The path to the file to be saved.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Supporting synchronous API.")]
         public void SaveFile(string filePath) => editorOperations.SaveFileAsync(filePath).Wait();
+        public void SaveFile(WorkspaceOpenDocument document) => SaveFile(document.Path);
 
         /// <summary>
         /// Saves a file with a new name AKA a copy.
