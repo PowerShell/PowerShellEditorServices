@@ -2,7 +2,6 @@
 
 [![CI Tests](https://github.com/PowerShell/PowerShellEditorServices/actions/workflows/ci-test.yml/badge.svg)](https://github.com/PowerShell/PowerShellEditorServices/actions/workflows/ci-test.yml)
 [![Discord](https://img.shields.io/discord/180528040881815552.svg?label=%23vscode&logo=discord&logoColor=white)](https://aka.ms/psdiscord)
-[![Join the chat at https://gitter.im/PowerShell/PowerShellEditorServices](https://badges.gitter.im/PowerShell/PowerShellEditorServices.svg)](https://gitter.im/PowerShell/PowerShellEditorServices?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 **PowerShell Editor Services** is a PowerShell module that provides common
 functionality needed to enable a consistent and robust PowerShell development
