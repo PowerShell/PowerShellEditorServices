@@ -94,8 +94,6 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         private Lazy<PssaCmdletAnalysisEngine> _analysisEngineLazy;
 
-        private CancellationTokenSource _diagnosticsCancellationTokenSource;
-
         private readonly string _pssaModulePath;
 
         private string _pssaSettingsFilePath;
@@ -135,37 +133,32 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
             EnsureEngineSettingsCurrent();
 
-            // If there's an existing task, we want to cancel it here;
-            CancellationTokenSource cancellationSource = new();
-            CancellationTokenSource oldTaskCancellation = Interlocked.Exchange(ref _diagnosticsCancellationTokenSource, cancellationSource);
-            if (oldTaskCancellation is not null)
-            {
-                try
-                {
-                    oldTaskCancellation.Cancel();
-                    oldTaskCancellation.Dispose();
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Exception occurred while cancelling analysis task");
-                }
-            }
-
             if (filesToAnalyze.Length == 0)
             {
                 return;
             }
 
-            Task analysisTask = Task.Run(() => DelayThenInvokeDiagnosticsAsync(filesToAnalyze, _diagnosticsCancellationTokenSource.Token), _diagnosticsCancellationTokenSource.Token);
-
-            // Ensure that any next corrections request will wait for this diagnostics publication
+            // Analyze each file independently with its own cancellation token
             foreach (ScriptFile file in filesToAnalyze)
             {
-                CorrectionTableEntry fileCorrectionsEntry = _mostRecentCorrectionsByFile.GetOrAdd(
-                    file,
-                    CorrectionTableEntry.CreateForFile);
+                CorrectionTableEntry fileAnalysisEntry = _mostRecentCorrectionsByFile.GetOrAdd(file, CorrectionTableEntry.CreateForFile);
 
-                fileCorrectionsEntry.DiagnosticPublish = analysisTask;
+                CancellationTokenSource cancellationSource = new();
+                CancellationTokenSource oldTaskCancellation = Interlocked.Exchange(ref fileAnalysisEntry.CancellationSource, cancellationSource);
+                if (oldTaskCancellation is not null)
+                {
+                    try
+                    {
+                        oldTaskCancellation.Cancel();
+                        oldTaskCancellation.Dispose();
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Exception occurred while cancelling analysis task");
+                    }
+                }
+
+                _ = Task.Run(() => DelayThenInvokeDiagnosticsAsync(file, fileAnalysisEntry), cancellationSource.Token);
             }
         }
 
@@ -222,7 +215,9 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
 
             // Wait for diagnostics to be published for this file
+            #pragma warning disable VSTHRD003
             await corrections.DiagnosticPublish.ConfigureAwait(false);
+            #pragma warning restore VSTHRD003
 
             return corrections.Corrections;
         }
@@ -345,18 +340,20 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        internal async Task DelayThenInvokeDiagnosticsAsync(ScriptFile[] filesToAnalyze, CancellationToken cancellationToken)
+        internal async Task DelayThenInvokeDiagnosticsAsync(ScriptFile fileToAnalyze, CorrectionTableEntry fileAnalysisEntry)
         {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return;
-            }
+            CancellationToken cancellationToken = fileAnalysisEntry.CancellationSource.Token;
+            Task previousAnalysisTask = fileAnalysisEntry.DiagnosticPublish;
 
-            try
-            {
-                await Task.Delay(_analysisDelayMillis, cancellationToken).ConfigureAwait(false);
-            }
-            catch (TaskCanceledException)
+            // Shouldn't start a new analysis task until:
+            //  1. Delay/debounce period finishes (i.e. user has not started typing again)
+            //  2. Previous analysis task finishes (runspace pool is capped at 1, so we'd be sitting in a queue there)
+            Task debounceAndPrevious = Task.WhenAll(Task.Delay(_analysisDelayMillis), previousAnalysisTask);
+
+            // In parallel, we will keep an eye on our cancellation token
+            Task cancellationTask = Task.Delay(Timeout.Infinite, cancellationToken);
+
+            if (cancellationTask == await Task.WhenAny(debounceAndPrevious, cancellationTask).ConfigureAwait(false))
             {
                 return;
             }
@@ -368,16 +365,36 @@ namespace Microsoft.PowerShell.EditorServices.Services
             // on.  It makes sense to send back the results from the first
             // delay period while the second one is ticking away.
 
-            foreach (ScriptFile scriptFile in filesToAnalyze)
+            TaskCompletionSource<ScriptFileMarker[]> placeholder = new TaskCompletionSource<ScriptFileMarker[]>();
+
+            // Try to take the place of the currently running task by atomically writing our task in the fileAnalysisEntry.
+            Task valueAtExchange = Interlocked.CompareExchange(ref fileAnalysisEntry.DiagnosticPublish, placeholder.Task, previousAnalysisTask);
+
+            if (valueAtExchange != previousAnalysisTask)
             {
-                ScriptFileMarker[] semanticMarkers = await AnalysisEngine.AnalyzeScriptAsync(scriptFile.Contents).ConfigureAwait(false);
+                // Some other task has managed to jump in front of us i.e. fileAnalysisEntry.DiagnosticPublish is
+                // no longer equal to previousAnalysisTask which we noted down at the start of this method
+                _logger.LogDebug("Failed to claim the running analysis task spot");
+                return;
+            }
+
+            // Successfully claimed the running task slot, we can actually run the analysis now
+            try
+            {
+                ScriptFileMarker[] semanticMarkers = await AnalysisEngine.AnalyzeScriptAsync(fileToAnalyze.Contents).ConfigureAwait(false);
+                placeholder.SetResult(semanticMarkers);
 
                 // Clear existing PSScriptAnalyzer markers (but keep parser errors where the source is "PowerShell")
                 // so that they are not duplicated when re-opening files.
-                scriptFile.DiagnosticMarkers.RemoveAll(m => m.Source == "PSScriptAnalyzer");
-                scriptFile.DiagnosticMarkers.AddRange(semanticMarkers);
+                fileToAnalyze.DiagnosticMarkers.RemoveAll(m => m.Source == "PSScriptAnalyzer");
+                fileToAnalyze.DiagnosticMarkers.AddRange(semanticMarkers);
 
-                PublishScriptDiagnostics(scriptFile);
+                PublishScriptDiagnostics(fileToAnalyze);
+            }
+            catch (Exception ex)
+            {
+                placeholder.SetException(ex);
+                throw;
             }
         }
 
@@ -481,7 +498,11 @@ namespace Microsoft.PowerShell.EditorServices.Services
                         _analysisEngineLazy.Value.Dispose();
                     }
 
-                    _diagnosticsCancellationTokenSource?.Dispose();
+                    foreach (CorrectionTableEntry entry in _mostRecentCorrectionsByFile.Values)
+                    {
+                        entry.Dispose();
+                    }
+                    _mostRecentCorrectionsByFile.Clear();
                 }
 
                 disposedValue = true;
@@ -501,7 +522,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// wait for analysis to finish if needed,
         /// and then fetch the corrections set in the table entry by PSSA.
         /// </summary>
-        private class CorrectionTableEntry
+        internal class CorrectionTableEntry : IDisposable
         {
             public static CorrectionTableEntry CreateForFile(ScriptFile _) => new();
 
@@ -509,11 +530,17 @@ namespace Microsoft.PowerShell.EditorServices.Services
             {
                 Corrections = new ConcurrentDictionary<string, IEnumerable<MarkerCorrection>>();
                 DiagnosticPublish = Task.CompletedTask;
+                CancellationSource = new CancellationTokenSource();
             }
 
             public ConcurrentDictionary<string, IEnumerable<MarkerCorrection>> Corrections { get; }
 
-            public Task DiagnosticPublish { get; set; }
+            public Task DiagnosticPublish;
+
+            public CancellationTokenSource CancellationSource;
+
+            public void Dispose() =>
+                CancellationSource?.Dispose();
         }
     }
 }
