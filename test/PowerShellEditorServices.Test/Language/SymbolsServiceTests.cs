@@ -21,6 +21,7 @@ using Microsoft.PowerShell.EditorServices.Test.Shared.ParameterHint;
 using Microsoft.PowerShell.EditorServices.Test.Shared.References;
 using Microsoft.PowerShell.EditorServices.Test.Shared.SymbolDetails;
 using Microsoft.PowerShell.EditorServices.Test.Shared.Symbols;
+using Microsoft.PowerShell.EditorServices.Handlers;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
@@ -138,6 +139,21 @@ namespace PowerShellEditorServices.Test.Language
             return symbolsService
                 .FindSymbolsInFile(GetScriptFile(scriptRegion))
                 .OrderBy(symbol => symbol.ScriptRegion.ToRange().Start);
+        }
+
+        private async Task<IEnumerable<DocumentSymbol>> GetDocumentSymbols(ScriptRegion scriptRegion)
+        {
+            string path = TestUtilities.GetSharedPath(scriptRegion.File);
+            PsesDocumentSymbolHandler handler = new(NullLoggerFactory.Instance, workspace);
+            SymbolInformationOrDocumentSymbolContainer result = await handler.Handle(
+                new DocumentSymbolParams
+                {
+                    TextDocument = new TextDocumentIdentifier { Uri = DocumentUri.FromFileSystemPath(path) }
+                },
+                CancellationToken.None);
+            return result
+                .Where(s => s.IsDocumentSymbol)
+                .Select(s => s.DocumentSymbol);
         }
 
         [Fact]
@@ -768,14 +784,14 @@ namespace PowerShellEditorServices.Test.Language
         }
 
         [Fact]
-        public void FindsSymbolsInFile()
+        public async Task FindsSymbolsInFile()
         {
             IEnumerable<SymbolReference> symbols = FindSymbolsInFile(FindSymbolsInMultiSymbolFile.SourceDetails);
 
             Assert.Equal(7, symbols.Count(i => i.Type == SymbolType.Function));
-            Assert.Equal(8, symbols.Count(i => i.Type == SymbolType.Variable));
+            Assert.Equal(9, symbols.Count(i => i.Type == SymbolType.Variable));
             Assert.Equal(4, symbols.Count(i => i.Type == SymbolType.Parameter));
-            Assert.Equal(12, symbols.Count(i => i.Id.StartsWith("var ")));
+            Assert.Equal(13, symbols.Count(i => i.Id.StartsWith("var ")));
             Assert.Equal(2, symbols.Count(i => i.Id.StartsWith("prop ")));
 
             SymbolReference symbol = symbols.First(i => i.Type == SymbolType.Function);
@@ -787,6 +803,20 @@ namespace PowerShellEditorServices.Test.Language
             symbol = symbols.First(i => i.Id == "fn AFilter");
             Assert.Equal("filter AFilter ()", symbol.Name);
             Assert.True(symbol.IsDeclaration);
+
+            // Verify that a variable declared inside a filter is tracked as a declaration,
+            // and that it is returned as a child of the filter in the LSP outline hierarchy.
+            symbol = Assert.Single(symbols, i => i.Id == "var FilterVar");
+            Assert.Equal("$FilterVar", symbol.Name);
+            Assert.True(symbol.IsDeclaration);
+
+            DocumentSymbol filterDocumentSymbol = Assert.Single(
+                await GetDocumentSymbols(FindSymbolsInMultiSymbolFile.SourceDetails),
+                i => i.Name == "filter AFilter ()");
+            DocumentSymbol filterVariableDocumentSymbol = Assert.Single(
+                filterDocumentSymbol.Children,
+                i => i.Name == "$FilterVar");
+            Assert.Equal(SymbolKind.Variable, filterVariableDocumentSymbol.Kind);
 
             symbol = symbols.Last(i => i.Type == SymbolType.Variable);
             Assert.Equal("var nestedVar", symbol.Id);
