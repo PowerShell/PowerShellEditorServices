@@ -42,6 +42,7 @@ namespace PowerShellEditorServices.Test.Debugging
         private WorkspaceService workspace;
         private ScriptFile debugScriptFile;
         private ScriptFile oddPathScriptFile;
+        private ScriptFile psProviderPathScriptFile;
         private ScriptFile variableScriptFile;
         private readonly TestReadLine testReadLine = new();
 
@@ -70,10 +71,19 @@ namespace PowerShellEditorServices.Test.Debugging
             debugService.DebuggerStopped += OnDebuggerStopped;
 
             // Load the test debug files.
-            workspace = new WorkspaceService(NullLoggerFactory.Instance);
+            workspace = new WorkspaceService(NullLoggerFactory.Instance, psesHost);
             debugScriptFile = GetDebugScript("DebugTest.ps1");
             oddPathScriptFile = GetDebugScript("Debug' W&ith $Params [Test].ps1");
             variableScriptFile = GetDebugScript("VariableTest.ps1");
+
+            string variableScriptFilePath = TestUtilities.GetSharedPath(Path.Combine("Debugging", "VariableTest.ps1"));
+            dynamic psItem = (await psesHost.ExecutePSCommandAsync<dynamic>(
+                new PSCommand()
+                    .AddCommand("Get-Item")
+                    .AddParameter("LiteralPath", variableScriptFilePath),
+                CancellationToken.None)).First();
+
+            psProviderPathScriptFile = workspace.GetFile(ConvertPSPathToUri((string)psItem.PSPath.ToString()));
         }
 
         public async Task DisposeAsync()
@@ -93,6 +103,15 @@ namespace PowerShellEditorServices.Test.Debugging
         /// <param name="e"></param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD110:Observe result of async calls", Justification = "This intentionally fires and forgets on another thread.")]
         private void OnDebuggerStopped(object sender, DebuggerStoppedEventArgs e) => Task.Run(() => debuggerStoppedQueue.Add(e));
+
+        private static string ConvertPSPathToUri(string psPath)
+        {
+            string[] parts = psPath.Split(new[] { "::" }, 2, StringSplitOptions.None);
+            string provider = parts[0].Split('\\').Last();
+            string normalizedPath = parts[1].Replace('\\', '/');
+            string encodedPath = string.Join("/", normalizedPath.Split('/').Select(Uri.EscapeDataString));
+            return $"pspath://{Uri.EscapeDataString(provider)}/{encodedPath}";
+        }
 
         private ScriptFile GetDebugScript(string fileName) => workspace.GetFile(TestUtilities.GetSharedPath(Path.Combine("Debugging", fileName)));
 
@@ -624,6 +643,20 @@ namespace PowerShellEditorServices.Test.Debugging
 
             // Check the PowerShell history
             Assert.Equal(". " + PSCommandHelpers.EscapeScriptFilePath(oddPathScriptFile.FilePath), Assert.Single(historyResult));
+        }
+
+        [Fact]
+        public async Task PSProviderPathsLaunchCorrectly()
+        {
+            ConfigurationDoneHandler configurationDoneHandler = new(
+                NullLoggerFactory.Instance, null, debugService, null, null, psesHost, workspace, null);
+            await configurationDoneHandler.LaunchScriptAsync(psProviderPathScriptFile.FilePath);
+
+            IReadOnlyList<string> historyResult = await psesHost.ExecutePSCommandAsync<string>(
+                new PSCommand().AddScript("(Get-History).CommandLine"),
+                CancellationToken.None);
+
+            Assert.Equal(". $args[0]", Assert.Single(historyResult));
         }
 
         [Fact]
