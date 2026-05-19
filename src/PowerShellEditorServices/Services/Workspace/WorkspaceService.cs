@@ -512,6 +512,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
+        // Return only file-backed workspace roots as filesystem paths.
+        // Example:
+        //   file:///repo -> /repo
+        //   pspath://FileSystem/C%3A/repo -> excluded
         private IEnumerable<string> GetFileSystemWorkspacePaths()
         {
             if (WorkspaceFolders.Count > 0)
@@ -527,6 +531,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 : new[] { InitialWorkingDirectory };
         }
 
+        // Return only provider-backed workspace roots as PowerShell literal paths.
+        // Example:
+        //   pspath://FileSystem/C%3A/repo -> FileSystem::C:/repo
+        //   file:///repo -> excluded
         private IEnumerable<string> GetPowerShellWorkspacePaths()
         {
             if (WorkspaceFolders.Count > 0)
@@ -540,6 +548,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             return Array.Empty<string>();
         }
 
+        // Normalize Get-ChildItem output to a workspace path string.
+        // Example:
+        //   FullName=/repo/a.ps1 -> /repo/a.ps1
+        //   PSPath=Registry::HKEY_CURRENT_USER\\Software\\Foo -> pspath://Registry/HKEY_CURRENT_USER/Software/Foo
         private static string ConvertWorkspaceItemPath(PSObject item)
         {
             if (item.Properties["FullName"]?.Value is string fullName && !string.IsNullOrEmpty(fullName))
@@ -552,6 +564,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
                 : null;
         }
 
+        // Convert a document URI to the literal path PowerShell commands should use.
+        // Example:
+        //   file:///repo/a.ps1 -> /repo/a.ps1
+        //   pspath://FileSystem/C%3A/repo/a.ps1 -> FileSystem::C:/repo/a.ps1
         private static string GetPowerShellPath(DocumentUri uri)
         {
             Uri parsedUri = uri.ToUri();
@@ -577,6 +593,10 @@ namespace Microsoft.PowerShell.EditorServices.Services
             throw new NotSupportedException($"Unsupported URI scheme '{uri.Scheme}'.");
         }
 
+        // Convert a PowerShell provider path to the pspath:// document form used by the workspace.
+        // Example:
+        //   FileSystem::C:\\repo\\a.ps1 -> pspath://FileSystem/C%3A/repo/a.ps1
+        //   Registry::HKEY_CURRENT_USER\\Software\\Foo -> pspath://Registry/HKEY_CURRENT_USER/Software/Foo
         private static string CreatePowerShellPathUri(string psPath)
         {
             string[] parts = psPath.Split(new[] { "::" }, 2, StringSplitOptions.None);

@@ -104,6 +104,10 @@ namespace PowerShellEditorServices.Test.Debugging
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD110:Observe result of async calls", Justification = "This intentionally fires and forgets on another thread.")]
         private void OnDebuggerStopped(object sender, DebuggerStoppedEventArgs e) => Task.Run(() => debuggerStoppedQueue.Add(e));
 
+        // Convert a PowerShell provider path into the pspath:// URI form used by workspace tests.
+        // Example:
+        //   FileSystem::C:\\repo\\a.ps1 -> pspath://FileSystem/C%3A/repo/a.ps1
+        //   Registry::HKEY_CURRENT_USER\\Software\\Foo -> pspath://Registry/HKEY_CURRENT_USER/Software/Foo
         private static string ConvertPSPathToUri(string psPath)
         {
             string[] parts = psPath.Split(new[] { "::" }, 2, StringSplitOptions.None);
