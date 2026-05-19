@@ -117,7 +117,8 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         #region Public Methods
 
-        public IEnumerable<string> WorkspacePaths => WorkspaceFolders.Select(i => i.Uri.GetFileSystemPath());
+        public IEnumerable<string> WorkspacePaths => WorkspaceFolders.Select(
+            folder => folder.Uri.ToUri().IsFile ? folder.Uri.GetFileSystemPath() : GetPowerShellPath(folder.Uri));
 
         /// <summary>
         /// Gets an open file in the workspace. If the file isn't open but exists on the filesystem, load and return it.
@@ -391,21 +392,26 @@ namespace Microsoft.PowerShell.EditorServices.Services
             int maxDepth,
             bool ignoreReparsePoints)
         {
-            string[] workspacePaths = GetPowerShellWorkspacePaths()
+            string[] powerShellWorkspacePaths = GetPowerShellWorkspacePaths()
                 .Where(path => !string.IsNullOrEmpty(path))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();
 
-            if (workspacePaths.Length == 0)
+            string[] fileSystemWorkspacePaths = GetFileSystemWorkspacePaths()
+                .Where(path => !string.IsNullOrEmpty(path))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            if (powerShellWorkspacePaths.Length == 0 && fileSystemWorkspacePaths.Length == 0)
             {
                 yield break;
             }
 
-            if (psesInternalHost is not null)
+            if (psesInternalHost is not null && powerShellWorkspacePaths.Length > 0)
             {
                 PSCommand psCommand = new PSCommand()
                     .AddCommand(@"Microsoft.PowerShell.Management\Get-ChildItem")
-                        .AddParameter("LiteralPath", workspacePaths)
+                        .AddParameter("LiteralPath", powerShellWorkspacePaths)
                         .AddParameter("Recurse")
                         .AddParameter("ErrorAction", ActionPreference.SilentlyContinue)
                         .AddParameter("Force")
@@ -437,7 +443,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             foreach (string pattern in includeGlobs) { matcher.AddInclude(pattern); }
             foreach (string pattern in excludeGlobs) { matcher.AddExclude(pattern); }
 
-            foreach (string rootPath in workspacePaths)
+            foreach (string rootPath in fileSystemWorkspacePaths)
             {
                 if (!Directory.Exists(rootPath))
                 {
@@ -478,7 +484,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
 
         internal string ReadFileContents(DocumentUri uri)
         {
-            if (psesInternalHost is null)
+            if (uri.ToUri().IsFile || psesInternalHost is null)
             {
                 using StreamReader reader = OpenStreamReader(uri);
                 return reader.ReadToEnd();
@@ -506,16 +512,32 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
         }
 
-        private IEnumerable<string> GetPowerShellWorkspacePaths()
+        private IEnumerable<string> GetFileSystemWorkspacePaths()
         {
             if (WorkspaceFolders.Count > 0)
             {
-                return WorkspaceFolders.Select(folder => GetPowerShellPath(folder.Uri));
+                return WorkspaceFolders
+                    .Select(folder => folder.Uri)
+                    .Where(uri => uri.ToUri().IsFile)
+                    .Select(uri => uri.GetFileSystemPath());
             }
 
             return string.IsNullOrEmpty(InitialWorkingDirectory)
                 ? Array.Empty<string>()
                 : new[] { InitialWorkingDirectory };
+        }
+
+        private IEnumerable<string> GetPowerShellWorkspacePaths()
+        {
+            if (WorkspaceFolders.Count > 0)
+            {
+                return WorkspaceFolders
+                    .Select(folder => folder.Uri)
+                    .Where(uri => !uri.ToUri().IsFile)
+                    .Select(GetPowerShellPath);
+            }
+
+            return Array.Empty<string>();
         }
 
         private static string ConvertWorkspaceItemPath(PSObject item)
