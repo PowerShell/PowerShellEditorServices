@@ -195,7 +195,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// <param name="scriptFile">The out parameter that will contain the ScriptFile object.</param>
         public bool TryGetFile(DocumentUri documentUri, out ScriptFile scriptFile)
         {
-            if (ScriptFile.IsUntitledPath(documentUri.ToString()) || !ScriptFile.IsSupportedScheme(documentUri.Scheme))
+            if (!ScriptFile.IsSupportedScheme(documentUri.Scheme))
             {
                 scriptFile = null;
                 return false;
