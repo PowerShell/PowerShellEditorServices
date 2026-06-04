@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services;
@@ -127,49 +128,39 @@ public class RenameHandlerTests
         Assert.Equal(expected, actual);
     }
 
-    [Fact]
-    public void GetRegistrationOptionsDoesNotThrowWhenCapabilityIsNull()
+    public enum RegistrationHandlerKind
     {
-        // Acts: framework hands us null when client omits the capability.
-        RenameRegistrationOptions opts = testHandler.GetRegistrationOptions(
-            capability: null,
-            clientCapabilities: new ClientCapabilities());
-
-        Assert.NotNull(opts);
-        // Without PrepareSupport advertised, PrepareProvider should be false.
-        Assert.False(opts.PrepareProvider);
+        Rename,
+        PrepareRename
     }
 
-    [Fact]
-    public void GetRegistrationOptionsHonorsPrepareSupportWhenCapabilityProvided()
+    // A null prepareSupport represents the client omitting the capability entirely (framework hands us null).
+    public static TheoryData<RegistrationHandlerKind, bool?, bool> RegistrationOptionsTestCases() => new()
     {
-        RenameRegistrationOptions opts = testHandler.GetRegistrationOptions(
-            capability: new RenameCapability { PrepareSupport = true },
-            clientCapabilities: new ClientCapabilities());
+        { RegistrationHandlerKind.Rename, null, false },
+        { RegistrationHandlerKind.Rename, true, true },
+        { RegistrationHandlerKind.PrepareRename, null, false },
+        { RegistrationHandlerKind.PrepareRename, true, true }
+    };
+
+    [Theory]
+    [MemberData(nameof(RegistrationOptionsTestCases))]
+    public void GetRegistrationOptionsReflectsPrepareSupport(RegistrationHandlerKind handlerKind, bool? prepareSupport, bool expectedPrepareProvider)
+    {
+        RenameCapability capability = prepareSupport is bool ps
+            ? new RenameCapability { PrepareSupport = ps }
+            : null;
+
+        Func<RenameCapability, ClientCapabilities, RenameRegistrationOptions> getRegistrationOptions = handlerKind switch
+        {
+            RegistrationHandlerKind.Rename => testHandler.GetRegistrationOptions,
+            RegistrationHandlerKind.PrepareRename => testPrepareHandler.GetRegistrationOptions,
+            _ => throw new ArgumentOutOfRangeException(nameof(handlerKind))
+        };
+
+        RenameRegistrationOptions opts = getRegistrationOptions(capability, new ClientCapabilities());
 
         Assert.NotNull(opts);
-        Assert.True(opts.PrepareProvider);
-    }
-
-    [Fact]
-    public void PrepareGetRegistrationOptionsDoesNotThrowWhenCapabilityIsNull()
-    {
-        RenameRegistrationOptions opts = testPrepareHandler.GetRegistrationOptions(
-            capability: null,
-            clientCapabilities: new ClientCapabilities());
-
-        Assert.NotNull(opts);
-        Assert.False(opts.PrepareProvider);
-    }
-
-    [Fact]
-    public void PrepareGetRegistrationOptionsHonorsPrepareSupportWhenCapabilityProvided()
-    {
-        RenameRegistrationOptions opts = testPrepareHandler.GetRegistrationOptions(
-            capability: new RenameCapability { PrepareSupport = true },
-            clientCapabilities: new ClientCapabilities());
-
-        Assert.NotNull(opts);
-        Assert.True(opts.PrepareProvider);
+        Assert.Equal(expectedPrepareProvider, opts.PrepareProvider);
     }
 }
