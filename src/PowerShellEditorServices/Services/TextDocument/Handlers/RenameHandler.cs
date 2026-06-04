@@ -20,7 +20,7 @@ internal class PrepareRenameHandler
     RenameService renameService
 ) : IPrepareRenameHandler
 {
-    public RenameRegistrationOptions GetRegistrationOptions(RenameCapability capability, ClientCapabilities clientCapabilities) => capability.PrepareSupport ? new() { PrepareProvider = true } : new();
+    public RenameRegistrationOptions GetRegistrationOptions(RenameCapability capability, ClientCapabilities clientCapabilities) => capability?.PrepareSupport == true ? new() { PrepareProvider = true } : new();
 
     public async Task<RangeOrPlaceholderRange?> Handle(PrepareRenameParams request, CancellationToken cancellationToken)
         => await renameService.PrepareRenameSymbol(request, cancellationToken).ConfigureAwait(false);
@@ -34,7 +34,9 @@ internal class RenameHandler(
 ) : IRenameHandler
 {
     // RenameOptions may only be specified if the client states that it supports prepareSupport in its initial initialize request.
-    public RenameRegistrationOptions GetRegistrationOptions(RenameCapability capability, ClientCapabilities clientCapabilities) => capability.PrepareSupport ? new() { PrepareProvider = true } : new();
+    // Passes a null capability when the client omits textDocument.rename from its advertised capabilities (e.g. a completion-only client).
+    // Use the null-conditional operator so we don't throw NullReferenceException during initialize.
+    public RenameRegistrationOptions GetRegistrationOptions(RenameCapability capability, ClientCapabilities clientCapabilities) => capability?.PrepareSupport == true ? new() { PrepareProvider = true } : new();
 
     public async Task<WorkspaceEdit?> Handle(RenameParams request, CancellationToken cancellationToken)
         => await renameService.RenameSymbol(request, cancellationToken).ConfigureAwait(false);

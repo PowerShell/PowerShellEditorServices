@@ -7,6 +7,7 @@ using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
 using OmniSharp.Extensions.LanguageServer.Protocol;
+using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using static PowerShellEditorServices.Test.Refactoring.RefactorUtilities;
 using System.Linq;
@@ -24,6 +25,7 @@ public class RenameHandlerTests
     private readonly WorkspaceService workspace = new(NullLoggerFactory.Instance);
 
     private readonly RenameHandler testHandler;
+    private readonly PrepareRenameHandler testPrepareHandler;
     public RenameHandlerTests()
     {
         workspace.WorkspaceFolders.Add(new WorkspaceFolder
@@ -31,18 +33,17 @@ public class RenameHandlerTests
             Uri = DocumentUri.FromFileSystemPath(TestUtilities.GetSharedPath("Refactoring"))
         });
 
-        testHandler = new
+        RenameService renameService = new
         (
-            new RenameService
-            (
-                workspace,
-                new FakeLspSendMessageRequestFacade("I Accept"),
-                new EmptyConfiguration()
-            )
-            {
-                DisclaimerAcceptedForSession = true //Disables UI prompts
-            }
-        );
+            workspace,
+            new FakeLspSendMessageRequestFacade("I Accept"),
+            new EmptyConfiguration()
+        )
+        {
+            DisclaimerAcceptedForSession = true //Disables UI prompts
+        };
+        testHandler = new(renameService);
+        testPrepareHandler = new(renameService);
     }
 
     // Decided to keep this DAMP instead of DRY due to memberdata boundaries, duplicates with PrepareRenameHandler
@@ -124,5 +125,51 @@ public class RenameHandlerTests
         string actual = GetModifiedScript(scriptFile.Contents, response.Changes[testScriptUri].ToArray());
 
         Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public void GetRegistrationOptionsDoesNotThrowWhenCapabilityIsNull()
+    {
+        // Acts: framework hands us null when client omits the capability.
+        RenameRegistrationOptions opts = testHandler.GetRegistrationOptions(
+            capability: null,
+            clientCapabilities: new ClientCapabilities());
+
+        Assert.NotNull(opts);
+        // Without PrepareSupport advertised, PrepareProvider should be false.
+        Assert.False(opts.PrepareProvider);
+    }
+
+    [Fact]
+    public void GetRegistrationOptionsHonorsPrepareSupportWhenCapabilityProvided()
+    {
+        RenameRegistrationOptions opts = testHandler.GetRegistrationOptions(
+            capability: new RenameCapability { PrepareSupport = true },
+            clientCapabilities: new ClientCapabilities());
+
+        Assert.NotNull(opts);
+        Assert.True(opts.PrepareProvider);
+    }
+
+    [Fact]
+    public void PrepareGetRegistrationOptionsDoesNotThrowWhenCapabilityIsNull()
+    {
+        RenameRegistrationOptions opts = testPrepareHandler.GetRegistrationOptions(
+            capability: null,
+            clientCapabilities: new ClientCapabilities());
+
+        Assert.NotNull(opts);
+        Assert.False(opts.PrepareProvider);
+    }
+
+    [Fact]
+    public void PrepareGetRegistrationOptionsHonorsPrepareSupportWhenCapabilityProvided()
+    {
+        RenameRegistrationOptions opts = testPrepareHandler.GetRegistrationOptions(
+            capability: new RenameCapability { PrepareSupport = true },
+            clientCapabilities: new ClientCapabilities());
+
+        Assert.NotNull(opts);
+        Assert.True(opts.PrepareProvider);
     }
 }
