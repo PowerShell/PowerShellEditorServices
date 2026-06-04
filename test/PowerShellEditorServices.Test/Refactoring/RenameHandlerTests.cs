@@ -134,12 +134,15 @@ public class RenameHandlerTests
         PrepareRename
     }
 
-    // A null prepareSupport represents the client omitting the capability entirely (framework hands us null).
+    // prepareSupport has three distinct inputs: null = client omitted the capability entirely (framework hands us null),
+    // true = client supports prepareRename, false = client explicitly does not. Only true should enable PrepareProvider.
     public static TheoryData<RegistrationHandlerKind, bool?, bool> RegistrationOptionsTestCases() => new()
     {
         { RegistrationHandlerKind.Rename, null, false },
+        { RegistrationHandlerKind.Rename, false, false },
         { RegistrationHandlerKind.Rename, true, true },
         { RegistrationHandlerKind.PrepareRename, null, false },
+        { RegistrationHandlerKind.PrepareRename, false, false },
         { RegistrationHandlerKind.PrepareRename, true, true }
     };
 
