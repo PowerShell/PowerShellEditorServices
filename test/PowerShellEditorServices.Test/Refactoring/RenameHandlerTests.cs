@@ -125,4 +125,15 @@ public class RenameHandlerTests
 
         Assert.Equal(expected, actual);
     }
+
+    [Fact]
+    public void GetRegistrationOptionsToleratesOmittedRenameCapability()
+    {
+        // Regression for PowerShell/PowerShellEditorServices#2297: a client that omits
+        // textDocument.rename causes the framework to pass a null RenameCapability;
+        // GetRegistrationOptions must not dereference it (the NRE hung initialize).
+        RenameRegistrationOptions options = testHandler.GetRegistrationOptions(null!, new());
+        Assert.NotNull(options);
+        Assert.False(options.PrepareProvider, "omitted rename capability must not enable PrepareProvider");
+    }
 }

@@ -20,7 +20,11 @@ internal class PrepareRenameHandler
     RenameService renameService
 ) : IPrepareRenameHandler
 {
-    public RenameRegistrationOptions GetRegistrationOptions(RenameCapability capability, ClientCapabilities clientCapabilities) => capability.PrepareSupport ? new() { PrepareProvider = true } : new();
+    // A null capability means the client omitted textDocument.rename from its initialize
+    // request; treat that as "no prepare support" instead of dereferencing it. Dereferencing
+    // the null capability threw a NullReferenceException that hung the initialize handshake.
+    // Fixes PowerShell/PowerShellEditorServices#2297.
+    public RenameRegistrationOptions GetRegistrationOptions(RenameCapability capability, ClientCapabilities clientCapabilities) => capability is { PrepareSupport: true } ? new() { PrepareProvider = true } : new();
 
     public async Task<RangeOrPlaceholderRange?> Handle(PrepareRenameParams request, CancellationToken cancellationToken)
         => await renameService.PrepareRenameSymbol(request, cancellationToken).ConfigureAwait(false);
@@ -34,7 +38,9 @@ internal class RenameHandler(
 ) : IRenameHandler
 {
     // RenameOptions may only be specified if the client states that it supports prepareSupport in its initial initialize request.
-    public RenameRegistrationOptions GetRegistrationOptions(RenameCapability capability, ClientCapabilities clientCapabilities) => capability.PrepareSupport ? new() { PrepareProvider = true } : new();
+    // A null capability means the client omitted textDocument.rename; guard it rather than
+    // dereferencing (the NRE hung initialize). Fixes PowerShell/PowerShellEditorServices#2297.
+    public RenameRegistrationOptions GetRegistrationOptions(RenameCapability capability, ClientCapabilities clientCapabilities) => capability is { PrepareSupport: true } ? new() { PrepareProvider = true } : new();
 
     public async Task<WorkspaceEdit?> Handle(RenameParams request, CancellationToken cancellationToken)
         => await renameService.RenameSymbol(request, cancellationToken).ConfigureAwait(false);
