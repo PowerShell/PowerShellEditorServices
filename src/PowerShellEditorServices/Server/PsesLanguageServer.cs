@@ -121,6 +121,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     .WithHandler<GetCommentHelpHandler>()
                     .WithHandler<EvaluateHandler>()
                     .WithHandler<GetCommandHandler>()
+                    .WithHandler<GetModuleHandler>()
                     .WithHandler<ShowHelpHandler>()
                     .WithHandler<ExpandAliasHandler>()
                     .WithHandler<PsesSemanticTokensHandler>()
