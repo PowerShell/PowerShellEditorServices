@@ -1300,6 +1300,60 @@ function CanSendGetCommentHelpRequest {
             Assert.Equal("Get-ChildItem | Where-Object Name | ForEach-Object Name", expandAliasResult.Text);
         }
 
+        [SkippableFact]
+        public async Task CanSendGetModuleRequestAsync()
+        {
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
+                "The getModule request's script doesn't work in Constrained Language Mode.");
+
+            PSModuleMessage module =
+                await PsesLanguageClient
+                    .SendRequest(
+                        "powerShell/getModule",
+                        new GetModuleParams
+                        {
+                            Name = "Microsoft.PowerShell.Management"
+                        })
+                    .Returning<PSModuleMessage>(CancellationToken.None);
+
+            Assert.NotNull(module);
+            Assert.Equal("Microsoft.PowerShell.Management", module.Name);
+            Assert.NotEmpty(module.Version);
+            Assert.NotEmpty(module.Path);
+
+            // Pinning to the resolved version should return that same version,
+            // exercising the handler's explicit-version branch.
+            PSModuleMessage pinned =
+                await PsesLanguageClient
+                    .SendRequest(
+                        "powerShell/getModule",
+                        new GetModuleParams
+                        {
+                            Name = "Microsoft.PowerShell.Management",
+                            Version = module.Version
+                        })
+                    .Returning<PSModuleMessage>(CancellationToken.None);
+
+            Assert.NotNull(pinned);
+            Assert.Equal(module.Version, pinned.Version);
+        }
+
+        [Fact]
+        public async Task CanSendGetModuleRequestForMissingModuleAsync()
+        {
+            PSModuleMessage module =
+                await PsesLanguageClient
+                    .SendRequest(
+                        "powerShell/getModule",
+                        new GetModuleParams
+                        {
+                            Name = $"ThisModuleDoesNotExist-{Guid.NewGuid():N}"
+                        })
+                    .Returning<PSModuleMessage>(CancellationToken.None);
+
+            Assert.Null(module);
+        }
+
         [Fact]
         public async Task CanSendSemanticTokenRequestAsync()
         {
