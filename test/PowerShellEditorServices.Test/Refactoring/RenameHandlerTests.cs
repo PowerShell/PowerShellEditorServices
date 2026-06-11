@@ -1,12 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
 using OmniSharp.Extensions.LanguageServer.Protocol;
+using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using static PowerShellEditorServices.Test.Refactoring.RefactorUtilities;
 using System.Linq;
@@ -24,6 +26,7 @@ public class RenameHandlerTests
     private readonly WorkspaceService workspace = new(NullLoggerFactory.Instance);
 
     private readonly RenameHandler testHandler;
+    private readonly PrepareRenameHandler testPrepareHandler;
     public RenameHandlerTests()
     {
         workspace.WorkspaceFolders.Add(new WorkspaceFolder
@@ -31,18 +34,17 @@ public class RenameHandlerTests
             Uri = DocumentUri.FromFileSystemPath(TestUtilities.GetSharedPath("Refactoring"))
         });
 
-        testHandler = new
+        RenameService renameService = new
         (
-            new RenameService
-            (
-                workspace,
-                new FakeLspSendMessageRequestFacade("I Accept"),
-                new EmptyConfiguration()
-            )
-            {
-                DisclaimerAcceptedForSession = true //Disables UI prompts
-            }
-        );
+            workspace,
+            new FakeLspSendMessageRequestFacade("I Accept"),
+            new EmptyConfiguration()
+        )
+        {
+            DisclaimerAcceptedForSession = true //Disables UI prompts
+        };
+        testHandler = new(renameService);
+        testPrepareHandler = new(renameService);
     }
 
     // Decided to keep this DAMP instead of DRY due to memberdata boundaries, duplicates with PrepareRenameHandler
@@ -124,5 +126,44 @@ public class RenameHandlerTests
         string actual = GetModifiedScript(scriptFile.Contents, response.Changes[testScriptUri].ToArray());
 
         Assert.Equal(expected, actual);
+    }
+
+    public enum RegistrationHandlerKind
+    {
+        Rename,
+        PrepareRename
+    }
+
+    // prepareSupport has three distinct inputs: null = client omitted the capability entirely (framework hands us null),
+    // true = client supports prepareRename, false = client explicitly does not. Only true should enable PrepareProvider.
+    public static TheoryData<RegistrationHandlerKind, bool?, bool> RegistrationOptionsTestCases() => new()
+    {
+        { RegistrationHandlerKind.Rename, null, false },
+        { RegistrationHandlerKind.Rename, false, false },
+        { RegistrationHandlerKind.Rename, true, true },
+        { RegistrationHandlerKind.PrepareRename, null, false },
+        { RegistrationHandlerKind.PrepareRename, false, false },
+        { RegistrationHandlerKind.PrepareRename, true, true }
+    };
+
+    [Theory]
+    [MemberData(nameof(RegistrationOptionsTestCases))]
+    public void GetRegistrationOptionsReflectsPrepareSupport(RegistrationHandlerKind handlerKind, bool? prepareSupport, bool expectedPrepareProvider)
+    {
+        RenameCapability capability = prepareSupport is bool ps
+            ? new RenameCapability { PrepareSupport = ps }
+            : null;
+
+        Func<RenameCapability, ClientCapabilities, RenameRegistrationOptions> getRegistrationOptions = handlerKind switch
+        {
+            RegistrationHandlerKind.Rename => testHandler.GetRegistrationOptions,
+            RegistrationHandlerKind.PrepareRename => testPrepareHandler.GetRegistrationOptions,
+            _ => throw new ArgumentOutOfRangeException(nameof(handlerKind))
+        };
+
+        RenameRegistrationOptions opts = getRegistrationOptions(capability, new ClientCapabilities());
+
+        Assert.NotNull(opts);
+        Assert.Equal(expectedPrepareProvider, opts.PrepareProvider);
     }
 }
