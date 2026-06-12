@@ -42,6 +42,9 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
         /// </summary>
         public int CompareTo(FoldingReference that)
         {
+            // A null instance sorts before (is less than) any actual reference.
+            if (that is null) { return 1; }
+
             // Initially look at the start line
             if (StartLine < that.StartLine) { return -1; }
             if (StartLine > that.StartLine) { return 1; }
@@ -73,7 +76,16 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             return -1;
         }
 
-        public bool Equals(FoldingReference other) => CompareTo(other) == 0;
+        public bool Equals(FoldingReference other) => other is not null && CompareTo(other) == 0;
+
+        public override bool Equals(object obj) => Equals(obj as FoldingReference);
+
+        public override int GetHashCode() =>
+            StartLine.GetHashCode()
+            ^ StartCharacter.GetHashCode()
+            ^ EndLine.GetHashCode()
+            ^ EndCharacter.GetHashCode()
+            ^ (Kind?.GetHashCode() ?? 0);
     }
 
     /// <summary>
