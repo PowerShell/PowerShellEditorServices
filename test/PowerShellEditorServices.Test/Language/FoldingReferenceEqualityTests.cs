@@ -67,5 +67,22 @@ namespace PowerShellEditorServices.Test.Language
             FoldingReference reference = CreateFoldingReference();
             Assert.False(reference.Equals("not a folding reference"));
         }
+
+        [Fact]
+        public void CompareToWithDifferingKindsIsAntisymmetric()
+        {
+            FoldingReference comment = CreateFoldingReference();
+            comment.Kind = FoldingRangeKind.Comment;
+            FoldingReference region = CreateFoldingReference();
+            region.Kind = FoldingRangeKind.Region;
+
+            // Same range but different (non-null) kinds must order
+            // deterministically: the comparisons must have opposite signs so
+            // Array.Sort stays stable. Previously both returned -1.
+            int forward = comment.CompareTo(region);
+            int backward = region.CompareTo(comment);
+            Assert.NotEqual(0, forward);
+            Assert.Equal(-System.Math.Sign(forward), System.Math.Sign(backward));
+        }
     }
 }

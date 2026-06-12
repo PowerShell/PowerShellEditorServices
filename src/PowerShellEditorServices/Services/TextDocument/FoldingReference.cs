@@ -60,20 +60,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.TextDocument
             if (EndCharacter < that.EndCharacter) { return -1; }
             if (EndCharacter > that.EndCharacter) { return 1; }
 
-            // They're the same range, but what about kind
-            if (Kind == that.Kind)
-            {
-                return 0;
-            }
+            // They're the same range, so now consider the kind. Equal kinds
+            // (including both null) compare as equal.
+            if (Kind == that.Kind) { return 0; }
 
-            // That has a kind but this doesn't.
-            if (Kind is null && that.Kind is not null)
-            {
-                return 1;
-            }
+            // A reference without a kind sorts after one that has a kind.
+            if (Kind is null) { return 1; }
+            if (that.Kind is null) { return -1; }
 
-            // This has a kind but that doesn't.
-            return -1;
+            // Both have a kind but they differ: order deterministically by their
+            // string representation so the comparison stays antisymmetric (i.e.
+            // a.CompareTo(b) and b.CompareTo(a) have opposite signs).
+            return string.CompareOrdinal(Kind.Value.ToString(), that.Kind.Value.ToString());
         }
 
         public bool Equals(FoldingReference other) => other is not null && CompareTo(other) == 0;
