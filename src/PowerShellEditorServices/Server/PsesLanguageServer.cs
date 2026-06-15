@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.LanguageServer.Protocol.General;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Server;
 
@@ -138,12 +140,13 @@ namespace Microsoft.PowerShell.EditorServices.Server
                                 languageServer.Services.GetService<ILogger<HostLoggerAdapter>>()
                             ));
 
-                            // Set the workspace path from the parameters.
+                            // Set the workspace path from the parameters. The collection may be
+                            // absent (the field is optional in LSP), uninitialized, or contain
+                            // entries without a URI, so we treat any of those as "no folders yet"
+                            // rather than dereferencing a null and throwing.
                             WorkspaceService workspaceService = languageServer.Services.GetService<WorkspaceService>();
-                            if (initializeParams.WorkspaceFolders is not null)
-                            {
-                                workspaceService.WorkspaceFolders.AddRange(initializeParams.WorkspaceFolders);
-                            }
+                            workspaceService.WorkspaceFolders.AddRange(
+                                GetValidWorkspaceFolders(initializeParams.WorkspaceFolders));
 
                             // Parse initialization options.
                             JObject initializationOptions = initializeParams.InitializationOptions as JObject;
@@ -161,7 +164,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
                                 // First check the setting, then use the first workspace folder,
                                 // finally fall back to CWD.
                                 InitialWorkingDirectory = initializationOptions?.GetValue("initialWorkingDirectory")?.Value<string>()
-                                    ?? workspaceService.WorkspaceFolders.FirstOrDefault()?.Uri.GetFileSystemPath()
+                                    ?? workspaceService.WorkspaceFolders.FirstOrDefault()?.Uri?.GetFileSystemPath()
                                     ?? Directory.GetCurrentDirectory(),
                                 // If a shell integration script path is provided, that implies the feature is enabled.
                                 ShellIntegrationScript = initializationOptions?.GetValue("shellIntegrationScript")?.Value<string>()
@@ -179,6 +182,21 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
             _serverStart.SetResult(true);
         }
+
+        /// <summary>
+        /// Filters the workspace folders provided on <c>initialize</c> down to the usable ones.
+        /// </summary>
+        /// <remarks>
+        /// The <c>workspaceFolders</c> field is optional in LSP, so the collection may be absent or
+        /// uninitialized, and individual folders may be sent without a URI. Any of those are treated
+        /// as "no folder" so that downstream code (which dereferences <see cref="WorkspaceFolder.Uri" />)
+        /// does not throw a <see cref="NullReferenceException" />.
+        /// </remarks>
+        /// <param name="workspaceFolders">The workspace folders from the initialize parameters.</param>
+        /// <returns>The folders that have a non-null URI, or an empty sequence.</returns>
+        internal static IEnumerable<WorkspaceFolder> GetValidWorkspaceFolders(IEnumerable<WorkspaceFolder> workspaceFolders)
+            => workspaceFolders?.Where(static folder => folder?.Uri is not null)
+                ?? Enumerable.Empty<WorkspaceFolder>();
 
         /// <summary>
         /// Get a task that completes when the server is shut down.
