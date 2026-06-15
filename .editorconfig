@@ -48,7 +48,7 @@ dotnet_diagnostic.CS1998.severity = suggestion
 dotnet_diagnostic.CS4014.severity = suggestion
 
 # CA1067: Should override Equals because it implements IEquatable<T>
-dotnet_diagnostic.CA1067.severity = silent
+dotnet_diagnostic.CA1067.severity = error
 # CA1068: CancellationToken parameters must come last
 dotnet_diagnostic.CA1068.severity = error
 # CA1501: Avoid excessive inheritance
