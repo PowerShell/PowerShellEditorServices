@@ -45,7 +45,7 @@ Alternatively, you can extract the zip file into the same place:
 $DownloadUrl = 'https://github.com/neovim/nvim-lspconfig/archive/refs/heads/master.zip';
 $ZipPath = "$HOME/AppData/local/nvim/nvim-lspconfig.zip";
 $InstallPath = "$HOME/AppData/local/nvim/pack/complete/start/nvim-lspconfig";
-Invoke-WebRequest -Method 'GET' Uri $DownloadUrl -OutFile $ZipPath;
+Invoke-WebRequest -Method 'GET' -Uri $DownloadUrl -OutFile $ZipPath;
 Expand-Archive -Path $ZipPath -DestinationPath $InstallPath;
 ```
 
