@@ -118,22 +118,22 @@ namespace Microsoft.PowerShell.EditorServices.Services
         /// </remarks>
         public void AddWorkspaceFolders(IEnumerable<WorkspaceFolder> workspaceFolders)
         {
-            if (workspaceFolders is null)
+            foreach (WorkspaceFolder workspaceFolder in GetValidWorkspaceFolders(workspaceFolders))
             {
-                return;
-            }
-
-            foreach (WorkspaceFolder workspaceFolder in workspaceFolders)
-            {
-                if (workspaceFolder?.Uri is null)
-                {
-                    logger.LogWarning("Ignored workspace folder without a URI: " + workspaceFolder?.Name);
-                    continue;
-                }
-
                 WorkspaceFolders.Add(workspaceFolder);
             }
         }
+
+        /// <summary>
+        /// Filters workspace folders down to those usable by the service: non-null folders with a
+        /// non-null URI. The <c>workspaceFolders</c> field is optional in LSP, so the collection
+        /// itself may also be null.
+        /// </summary>
+        /// <param name="workspaceFolders">The workspace folders from the initialize parameters.</param>
+        /// <returns>The folders that have a non-null URI, or an empty sequence.</returns>
+        internal static IEnumerable<WorkspaceFolder> GetValidWorkspaceFolders(IEnumerable<WorkspaceFolder> workspaceFolders)
+            => workspaceFolders?.Where(static folder => folder?.Uri is not null)
+                ?? Enumerable.Empty<WorkspaceFolder>();
 
         /// <summary>
         /// Gets an open file in the workspace. If the file isn't open but exists on the filesystem, load and return it.
