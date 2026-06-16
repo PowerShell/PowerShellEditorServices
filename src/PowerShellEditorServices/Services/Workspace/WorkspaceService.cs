@@ -107,6 +107,35 @@ namespace Microsoft.PowerShell.EditorServices.Services
         public IEnumerable<string> WorkspacePaths => WorkspaceFolders.Select(i => i.Uri.GetFileSystemPath());
 
         /// <summary>
+        /// Adds the given workspace folders, ignoring any that are null or lack a URI.
+        /// </summary>
+        /// <remarks>
+        /// Some LSP clients send workspace folders without a URI on initialize. Adding such a
+        /// folder would later throw a <see cref="NullReferenceException"/> when its URI is
+        /// dereferenced (e.g. when resolving the initial working directory or a relative path),
+        /// breaking the handshake. See
+        /// https://github.com/PowerShell/PowerShellEditorServices/issues/2300.
+        /// </remarks>
+        public void AddWorkspaceFolders(IEnumerable<WorkspaceFolder> workspaceFolders)
+        {
+            if (workspaceFolders is null)
+            {
+                return;
+            }
+
+            foreach (WorkspaceFolder workspaceFolder in workspaceFolders)
+            {
+                if (workspaceFolder?.Uri is null)
+                {
+                    logger.LogWarning("Ignored workspace folder without a URI: " + workspaceFolder?.Name);
+                    continue;
+                }
+
+                WorkspaceFolders.Add(workspaceFolder);
+            }
+        }
+
+        /// <summary>
         /// Gets an open file in the workspace. If the file isn't open but exists on the filesystem, load and return it.
         /// <para>IMPORTANT: Not all documents have a backing file e.g. untitled: scheme documents.  Consider using
         /// <see cref="TryGetFile(string, out ScriptFile)"/> instead.</para>
