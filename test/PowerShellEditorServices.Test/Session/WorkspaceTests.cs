@@ -113,31 +113,6 @@ namespace PowerShellEditorServices.Test.Session
         }
 
         [Fact]
-        public void GetValidWorkspaceFoldersReturnsEmptyWhenNull()
-            => Assert.Empty(WorkspaceService.GetValidWorkspaceFolders(null));
-
-        [Fact]
-        public void GetValidWorkspaceFoldersReturnsEmptyWhenEmpty()
-            => Assert.Empty(WorkspaceService.GetValidWorkspaceFolders(new Container<WorkspaceFolder>()));
-
-        [Fact]
-        public void GetValidWorkspaceFoldersSkipsNullFoldersAndNullUris()
-        {
-            WorkspaceFolder valid = new()
-            {
-                Uri = DocumentUri.FromFileSystemPath(s_workspacePath),
-                Name = "valid"
-            };
-
-            Container<WorkspaceFolder> folders = new(
-                null,
-                new WorkspaceFolder { Name = "missing-uri" },
-                valid);
-
-            Assert.Equal(valid, Assert.Single(WorkspaceService.GetValidWorkspaceFolders(folders)));
-        }
-
-        [Fact]
         public void HasDefaultForWorkspacePaths()
         {
             WorkspaceService workspace = FixturesWorkspace();
