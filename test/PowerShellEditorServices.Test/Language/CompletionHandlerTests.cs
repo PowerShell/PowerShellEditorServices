@@ -130,7 +130,7 @@ namespace PowerShellEditorServices.Test.Language
         public async Task CompletionResolveHandlesTaskCanceledException()
         {
             using CancellationTokenSource cancellationTokenSource = new();
-#if NET5_0_OR_GREATER
+#if CoreCLR
             await cancellationTokenSource.CancelAsync();
 #else
             cancellationTokenSource.Cancel();
