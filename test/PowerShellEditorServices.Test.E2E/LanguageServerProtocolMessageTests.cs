@@ -1274,6 +1274,29 @@ function CanSendGetCommentHelpRequest {
             Assert.Equal("Get-ChildItem", expandAliasResult.Text);
         }
 
+        [SkippableFact]
+        public async Task CanSendExpandAliasRequestWithMultipleAliasesAsync()
+        {
+            Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
+                "The expand alias request doesn't work in Constrained Language Mode.");
+
+            // Exercises multiple aliases on one line, including `?` whose name is a
+            // wildcard metacharacter that the legacy tokenizer-based implementation
+            // would have to escape by hand. Substitution happens from the end so the
+            // earlier offsets stay valid as the text grows.
+            ExpandAliasResult expandAliasResult =
+                await PsesLanguageClient
+                    .SendRequest(
+                        "powerShell/expandAlias",
+                        new ExpandAliasParams
+                        {
+                            Text = "gci | ? Name | % Name"
+                        })
+                    .Returning<ExpandAliasResult>(CancellationToken.None);
+
+            Assert.Equal("Get-ChildItem | Where-Object Name | ForEach-Object Name", expandAliasResult.Text);
+        }
+
         [Fact]
         public async Task CanSendSemanticTokenRequestAsync()
         {
