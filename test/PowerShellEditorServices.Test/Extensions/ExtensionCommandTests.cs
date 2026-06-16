@@ -93,20 +93,27 @@ namespace PowerShellEditorServices.Test.Extensions
             const string commandName = "test.scriptblock";
             const string commandDisplayName = "ScriptBlock extension";
 
+            // Use AddScript so the script block is created in PowerShell's own session state
+            // rather than C#'s module context. ScriptBlock.Create() binds to the C# module,
+            // so $global: writes made via Invoke-Command land in an isolated scope on PS 5.1.
             await psesHost.ExecutePSCommandAsync(
                 new PSCommand()
-                    .AddCommand("Register-EditorCommand")
-                    .AddParameter("Name", commandName)
-                    .AddParameter("DisplayName", commandDisplayName)
-                    .AddParameter("ScriptBlock", ScriptBlock.Create("Write-Output 10")),
+                    .AddScript(
+                        $"Register-EditorCommand -Name '{commandName}' -DisplayName \"{commandDisplayName}\" " +
+                        "-ScriptBlock { $global:extensionValue = 10 }"),
                 CancellationToken.None);
 
             Assert.NotNull(commandAdded);
             Assert.Equal(commandName, commandAdded.Name);
             Assert.Equal(commandDisplayName, commandAdded.DisplayName);
 
-            // Invoke the command and verify it completes without error.
-            await extensionCommandService.InvokeCommandAsync("test.scriptblock", editorContext);
+            // Invoke the command.
+            await extensionCommandService.InvokeCommandAsync(commandName, editorContext);
+
+            // Assert the expected value.
+            PSCommand psCommand = new PSCommand().AddScript("$global:extensionValue");
+            IEnumerable<int> results = await psesHost.ExecutePSCommandAsync<int>(psCommand, CancellationToken.None);
+            Assert.Equal(10, results.FirstOrDefault());
         }
 
         [Fact]
