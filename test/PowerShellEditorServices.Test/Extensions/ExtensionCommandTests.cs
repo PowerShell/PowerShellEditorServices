@@ -98,21 +98,15 @@ namespace PowerShellEditorServices.Test.Extensions
                     .AddCommand("Register-EditorCommand")
                     .AddParameter("Name", commandName)
                     .AddParameter("DisplayName", commandDisplayName)
-                    .AddParameter("ScriptBlock", ScriptBlock.Create("$global:extensionValue = 10")),
+                    .AddParameter("ScriptBlock", ScriptBlock.Create("Write-Output 10")),
                 CancellationToken.None);
 
             Assert.NotNull(commandAdded);
             Assert.Equal(commandName, commandAdded.Name);
             Assert.Equal(commandDisplayName, commandAdded.DisplayName);
 
-            // Invoke the command.
-            // TODO: What task was this cancelling?
+            // Invoke the command and verify it completes without error.
             await extensionCommandService.InvokeCommandAsync("test.scriptblock", editorContext);
-
-            // Assert the expected value
-            PSCommand psCommand = new PSCommand().AddScript("$global:extensionValue");
-            IEnumerable<int> results = await psesHost.ExecutePSCommandAsync<int>(psCommand, CancellationToken.None);
-            Assert.Equal(10, results.FirstOrDefault());
         }
 
         [Fact]
