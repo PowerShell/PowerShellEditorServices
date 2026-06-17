@@ -28,26 +28,25 @@ namespace PowerShellEditorServices.Test.Session
         // action and dispatches it asynchronously around subsequent pipeline executions.
         // So instead of sleeping a fixed amount, poll the handler variable until it
         // reports true (each read is itself a pipeline, giving the engine another chance
-        // to drain the pending action). On timeout we return the last observed value so
-        // the caller's assertion still fails loudly.
-        internal static async Task<IReadOnlyList<bool>> WaitForHandledAsync(
-            PsesInternalHost psesHost, string variableName)
+        // to drain the pending action), and fail if it never does within the timeout.
+        internal static async Task AssertHandledAsync(PsesInternalHost psesHost, string variableName)
         {
             using CancellationTokenSource cancellationSource = new(millisecondsDelay: 15000);
-            IReadOnlyList<bool> handled = Array.Empty<bool>();
-            while (true)
+            while (!cancellationSource.IsCancellationRequested)
             {
-                handled = await psesHost.ExecutePSCommandAsync<bool>(
+                IReadOnlyList<bool> handled = await psesHost.ExecutePSCommandAsync<bool>(
                     new PSCommand().AddScript(variableName),
                     CancellationToken.None);
 
-                if ((handled.Count > 0 && handled[0]) || cancellationSource.IsCancellationRequested)
+                if (handled.Count > 0 && handled[0])
                 {
-                    return handled;
+                    return;
                 }
 
                 await Task.Delay(200);
             }
+
+            Assert.Fail($"Timed out waiting for the OnIdle handler to set '{variableName}'.");
         }
     }
 
@@ -235,9 +234,7 @@ namespace PowerShellEditorServices.Test.Session
                 (_, _) => psesHost.OnPowerShellIdle(CancellationToken.None),
                 CancellationToken.None);
 
-            handled = await OnIdleTestHelpers.WaitForHandledAsync(psesHost, "$handled");
-
-            Assert.Collection(handled, Assert.True);
+            await OnIdleTestHelpers.AssertHandledAsync(psesHost, "$handled");
         }
 
         [Fact]
@@ -330,9 +327,7 @@ namespace PowerShellEditorServices.Test.Session
                 (_, _) => psesHost.OnPowerShellIdle(CancellationToken.None),
                 CancellationToken.None);
 
-            IReadOnlyList<bool> handled = await OnIdleTestHelpers.WaitForHandledAsync(psesHost, "$handledInProfile");
-
-            Assert.Collection(handled, Assert.True);
+            await OnIdleTestHelpers.AssertHandledAsync(psesHost, "$handledInProfile");
         }
     }
 }
