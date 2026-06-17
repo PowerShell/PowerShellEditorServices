@@ -28,25 +28,25 @@ namespace PowerShellEditorServices.Test.Session
         // action and dispatches it asynchronously around subsequent pipeline executions.
         // So instead of sleeping a fixed amount, poll the handler variable until it
         // reports true (each read is itself a pipeline, giving the engine another chance
-        // to drain the pending action), and fail if it never does within the timeout.
+        // to drain the pending action), then assert it was set within the timeout.
         internal static async Task AssertHandledAsync(PsesInternalHost psesHost, string variableName)
         {
             using CancellationTokenSource cancellationSource = new(millisecondsDelay: 15000);
-            while (!cancellationSource.IsCancellationRequested)
+            bool handled = false;
+            while (!handled && !cancellationSource.IsCancellationRequested)
             {
-                IReadOnlyList<bool> handled = await psesHost.ExecutePSCommandAsync<bool>(
+                IReadOnlyList<bool> result = await psesHost.ExecutePSCommandAsync<bool>(
                     new PSCommand().AddScript(variableName),
                     CancellationToken.None);
 
-                if (handled.Count > 0 && handled[0])
+                handled = result.Count > 0 && result[0];
+                if (!handled)
                 {
-                    return;
+                    await Task.Delay(200);
                 }
-
-                await Task.Delay(200);
             }
 
-            Assert.Fail($"Timed out waiting for the OnIdle handler to set '{variableName}'.");
+            Assert.True(handled, $"Timed out waiting for the OnIdle handler to set '{variableName}'.");
         }
     }
 
