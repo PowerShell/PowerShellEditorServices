@@ -14,6 +14,10 @@ jobs:
       matrix:
         os: [ windows-latest, macos-latest, ubuntu-latest ]
     runs-on: ${{ matrix.os }}
+    # A normal run finishes in well under 15 minutes (Windows, the slowest, is
+    # ~12-14 minutes); this caps a hung test at 15 minutes instead of letting it
+    # ride GitHub's 6-hour default.
+    timeout-minutes: 15
     env:
       DOTNET_NOLOGO: true
       DOTNET_GENERATE_ASPNET_CERTIFICATE: false

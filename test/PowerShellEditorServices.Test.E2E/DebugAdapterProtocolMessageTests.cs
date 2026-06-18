@@ -217,34 +217,58 @@ namespace PowerShellEditorServices.Test.E2E
         /// <summary>
         /// Reads the next output line from the test script log file. Useful in assertions to verify script progress against breakpointing.
         /// </summary>
-        private async Task<string> ReadScriptLogLineAsync()
+        private async Task<string> ReadScriptLogLineAsync(CancellationToken cancellationToken = default)
         {
-            while (scriptLogReader is null)
-            {
-                try
-                {
-                    scriptLogReader = new StreamReader(
-                        new FileStream(
-                            testScriptLogPath,
-                            FileMode.OpenOrCreate,
-                            FileAccess.Read, // Because we use append, its OK to create the file ahead of the script
-                            FileShare.ReadWrite
-                        )
-                    );
-                }
-                catch (IOException) //Sadly there does not appear to be a xplat way to wait for file availability, but luckily this does not appear to fire often.
-                {
-                    await Task.Delay(500);
-                }
-            }
+            // Reading a log line should be near-instant, but the script we read
+            // from is driven by the debugger and can fail to produce output (for
+            // example if an attach or breakpoint never lands). Cap the wait so
+            // the test fails fast with a clear message instead of spinning
+            // forever -- a busy-spin here previously pegged the CPU and starved
+            // xUnit's cooperative test timeout, hanging CI for the full six hours.
+            using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(15));
+            CancellationToken token = timeoutCts.Token;
 
-            // return valid lines only
-            string nextLine = string.Empty;
-            while (nextLine is null || nextLine.Length == 0)
+            try
             {
-                nextLine = await scriptLogReader.ReadLineAsync(); //Might return null if at EOF because we created it above but the script hasn't written to it yet
+                while (scriptLogReader is null)
+                {
+                    try
+                    {
+                        scriptLogReader = new StreamReader(
+                            new FileStream(
+                                testScriptLogPath,
+                                FileMode.OpenOrCreate,
+                                FileAccess.Read, // Because we use append, its OK to create the file ahead of the script
+                                FileShare.ReadWrite
+                            )
+                        );
+                    }
+                    catch (IOException) //Sadly there does not appear to be a xplat way to wait for file availability, but luckily this does not appear to fire often.
+                    {
+                        await Task.Delay(500, token);
+                    }
+                }
+
+                // return valid lines only
+                string nextLine = string.Empty;
+                while (string.IsNullOrEmpty(nextLine))
+                {
+                    nextLine = await scriptLogReader.ReadLineAsync(token); //Might return null if at EOF because we created it above but the script hasn't written to it yet
+                    if (string.IsNullOrEmpty(nextLine))
+                    {
+                        // At EOF waiting for the script to write more: yield and
+                        // back off so we don't busy-spin the CPU while polling.
+                        await Task.Delay(100, token);
+                    }
+                }
+                return nextLine;
             }
-            return nextLine;
+            catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+            {
+                throw new TimeoutException(
+                    $"Timed out waiting for the test script to write a log line to '{testScriptLogPath}'.");
+            }
         }
 
         [Fact]
