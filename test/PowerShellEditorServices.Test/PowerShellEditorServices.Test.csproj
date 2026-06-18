@@ -16,6 +16,11 @@
     <ProjectReference Include="..\PowerShellEditorServices.Test.Shared\PowerShellEditorServices.Test.Shared.csproj" />
   </ItemGroup>
 
+  <!-- The Hosting assembly (and thus PsesLoadContext) only exists on .NET Core. -->
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
+    <ProjectReference Include="..\..\src\PowerShellEditorServices.Hosting\PowerShellEditorServices.Hosting.csproj" />
+  </ItemGroup>
+
   <!-- PowerShell 7.4.x -->
   <ItemGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
     <PackageReference Include="Microsoft.PowerShell.SDK" />
