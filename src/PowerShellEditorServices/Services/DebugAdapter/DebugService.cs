@@ -308,7 +308,16 @@ namespace Microsoft.PowerShell.EditorServices.Services
             await debugInfoHandle.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                variableList = variables;
+                // Search the scope containers in order of narrowest to broadest scope (local,
+                // then script, then global) so that a variable defined in a more local scope
+                // correctly shadows one of the same name in a parent scope, matching
+                // PowerShell's own variable resolution. The flattened list of every variable is
+                // appended as a fallback so that names not present in those scopes (such as
+                // frame-specific variables) still resolve. See issue #1882.
+                variableList = new[] { localScopeVariables, scriptScopeVariables, globalScopeVariables }
+                    .Where(container => container is not null)
+                    .SelectMany(container => container.Children.Values)
+                    .Concat(variables);
             }
             finally
             {

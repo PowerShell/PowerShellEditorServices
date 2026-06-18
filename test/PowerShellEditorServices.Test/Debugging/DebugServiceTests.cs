@@ -644,6 +644,27 @@ namespace PowerShellEditorServices.Test.Debugging
             Assert.False(var.IsExpandable);
         }
 
+        // Regression test for #1882: when a variable of the same name exists in both a parent
+        // scope and the current (more local) scope, evaluating it via a watch/evaluate request
+        // must return the most-local value, matching what's shown in the Variables explorer and
+        // PowerShell's own variable resolution.
+        [Fact]
+        public async Task DebuggerResolvesVariableFromMostLocalScope()
+        {
+            ScriptFile scopeScriptFile = GetDebugScript("VariableScopeTest.ps1");
+            await debugService.SetLineBreakpointsAsync(
+                scopeScriptFile.FilePath,
+                new[] { BreakpointDetails.Create(scopeScriptFile.FilePath, 4) });
+
+            Task _ = ExecuteScriptFileAsync(scopeScriptFile.FilePath);
+            await AssertDebuggerStopped(scopeScriptFile.FilePath, 4);
+
+            VariableDetailsBase resolved = await debugService.GetVariableFromExpression(
+                "$scopeTestVariable", CancellationToken.None);
+            Assert.NotNull(resolved);
+            Assert.Equal("\"from local scope\"", resolved.ValueString);
+        }
+
         [Fact]
         public async Task DebuggerGetsVariables()
         {
