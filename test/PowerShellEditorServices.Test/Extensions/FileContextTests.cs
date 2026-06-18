@@ -64,5 +64,36 @@ namespace PowerShellEditorServices.Test.Extensions
 
             Assert.Equal("Line Three", editorContext.CurrentFile.GetText(range));
         }
+
+        // The concrete FileRange overloads exist to preserve binary compatibility
+        // with callers compiled before GetText/GetTextLines were widened to IFileRange.
+        // Declaring the variable as FileRange (not IFileRange) selects those overloads.
+        [Fact]
+        public void CanGetTextFromConcreteFileRange()
+        {
+            EditorContext editorContext = CreateEditorContext(
+                "Line One\nLine Two\nLine Three",
+                BufferRange.None);
+
+            FileRange range = new(
+                new Microsoft.PowerShell.EditorServices.Extensions.FilePosition(3, 1),
+                new Microsoft.PowerShell.EditorServices.Extensions.FilePosition(3, 11));
+
+            Assert.Equal("Line Three", editorContext.CurrentFile.GetText(range));
+        }
+
+        [Fact]
+        public void CanGetTextLinesFromConcreteFileRange()
+        {
+            EditorContext editorContext = CreateEditorContext(
+                "Line One\nLine Two\nLine Three",
+                BufferRange.None);
+
+            FileRange range = new(
+                new Microsoft.PowerShell.EditorServices.Extensions.FilePosition(1, 1),
+                new Microsoft.PowerShell.EditorServices.Extensions.FilePosition(2, 9));
+
+            Assert.Equal(new[] { "Line One", "Line Two" }, editorContext.CurrentFile.GetTextLines(range));
+        }
     }
 }

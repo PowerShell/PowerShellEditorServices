@@ -113,6 +113,18 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         }
 
         /// <summary>
+        /// Gets the file content in the specified range as a string.
+        /// </summary>
+        /// <param name="bufferRange">The buffer range for which content will be extracted.</param>
+        /// <returns>A string with the specified range of content.</returns>
+        /// <remarks>
+        /// This overload preserves binary compatibility with callers compiled
+        /// against the concrete <see cref="FileRange"/> parameter; it delegates
+        /// to the <see cref="GetText(IFileRange)"/> overload.
+        /// </remarks>
+        public string GetText(FileRange bufferRange) => GetText((IFileRange)bufferRange);
+
+        /// <summary>
         /// Gets the complete file content as an array of strings.
         /// </summary>
         /// <returns>An array of strings, each representing a line in the file.</returns>
@@ -124,6 +136,18 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// <param name="fileRange">The buffer range for which content will be extracted.</param>
         /// <returns>An array of strings, each representing a line in the file within the specified range.</returns>
         public string[] GetTextLines(IFileRange fileRange) => scriptFile.GetLinesInRange(fileRange.ToBufferRange());
+
+        /// <summary>
+        /// Gets the file content in the specified range as an array of strings.
+        /// </summary>
+        /// <param name="fileRange">The buffer range for which content will be extracted.</param>
+        /// <returns>An array of strings, each representing a line in the file within the specified range.</returns>
+        /// <remarks>
+        /// This overload preserves binary compatibility with callers compiled
+        /// against the concrete <see cref="FileRange"/> parameter; it delegates
+        /// to the <see cref="GetTextLines(IFileRange)"/> overload.
+        /// </remarks>
+        public string[] GetTextLines(FileRange fileRange) => GetTextLines((IFileRange)fileRange);
 
         #endregion
 
