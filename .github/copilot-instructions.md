@@ -127,7 +127,8 @@ Each PR requires:
 The `Issue-*` label is not optional: GitHub's auto-generated release notes use it
 to pick the changelog category. See [`.github/release.yml`](./release.yml) for the
 authoritative mapping (`Issue-Enhancement` → "Enhancements & Features ✨",
-`Issue-Bug` → "Squashed Bugs 🐛"). Any PR **without** an `Issue-*` label falls
+`Issue-Bug` → "Squashed Bugs 🐛", `Issue-Performance` → "Performance
+Improvements 🚀"). Any PR **without** an `Issue-*` label falls
 through the `"*"` catch-all into "Other Changes 🙏" and is silently
 miscategorized, so always set one correctly.
 
