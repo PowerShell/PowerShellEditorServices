@@ -19,6 +19,37 @@ namespace PowerShellEditorServices.Test.Session
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;
 
+    // Shared helpers for the OnIdle engine-event tests, whose handler actions are
+    // dispatched asynchronously by PowerShell's event manager.
+    internal static class OnIdleTestHelpers
+    {
+        // The OnIdle engine event's -Action scriptblock is not run inline when
+        // OnPowerShellIdle generates the event; PowerShell enqueues it as a pending
+        // action and dispatches it asynchronously around subsequent pipeline executions.
+        // So instead of sleeping a fixed amount, poll the handler variable until it
+        // reports true (each read is itself a pipeline, giving the engine another chance
+        // to drain the pending action), then assert it was set within the timeout.
+        internal static async Task AssertHandledAsync(PsesInternalHost psesHost, string variableName)
+        {
+            using CancellationTokenSource cancellationSource = new(millisecondsDelay: 15000);
+            bool handled = false;
+            while (!handled && !cancellationSource.IsCancellationRequested)
+            {
+                IReadOnlyList<bool> result = await psesHost.ExecutePSCommandAsync<bool>(
+                    new PSCommand().AddScript(variableName),
+                    CancellationToken.None);
+
+                handled = result.Count > 0 && result[0];
+                if (!handled)
+                {
+                    await Task.Delay(200);
+                }
+            }
+
+            Assert.True(handled, $"Timed out waiting for the OnIdle handler to set '{variableName}'.");
+        }
+    }
+
     [Trait("Category", "PsesInternalHost")]
     public class PsesInternalHostTests : IAsyncLifetime
     {
@@ -203,14 +234,7 @@ namespace PowerShellEditorServices.Test.Session
                 (_, _) => psesHost.OnPowerShellIdle(CancellationToken.None),
                 CancellationToken.None);
 
-            // TODO: Why is this racy?
-            Thread.Sleep(2000);
-
-            handled = await psesHost.ExecutePSCommandAsync<bool>(
-                new PSCommand().AddScript("$handled"),
-                CancellationToken.None);
-
-            Assert.Collection(handled, Assert.True);
+            await OnIdleTestHelpers.AssertHandledAsync(psesHost, "$handled");
         }
 
         [Fact]
@@ -303,14 +327,7 @@ namespace PowerShellEditorServices.Test.Session
                 (_, _) => psesHost.OnPowerShellIdle(CancellationToken.None),
                 CancellationToken.None);
 
-            // TODO: Why is this racy?
-            Thread.Sleep(2000);
-
-            IReadOnlyList<bool> handled = await psesHost.ExecutePSCommandAsync<bool>(
-                new PSCommand().AddScript("$handledInProfile"),
-                CancellationToken.None);
-
-            Assert.Collection(handled, Assert.True);
+            await OnIdleTestHelpers.AssertHandledAsync(psesHost, "$handledInProfile");
         }
     }
 }
