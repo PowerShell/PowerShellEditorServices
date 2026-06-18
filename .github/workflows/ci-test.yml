@@ -19,7 +19,7 @@ jobs:
       DOTNET_GENERATE_ASPNET_CERTIFICATE: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install dotnet
         uses: actions/setup-dotnet@v5
@@ -33,7 +33,7 @@ jobs:
         run: ./tools/installPSResources.ps1
 
       - name: Download PowerShell install script
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: PowerShell/PowerShell
           path: pwsh
@@ -61,13 +61,13 @@ jobs:
 
       - name: Upload build artifacts
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: PowerShellEditorServices-module-${{ matrix.os }}
           path: module
 
       - name: Upload test results
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: PowerShellEditorServices-test-results-${{ matrix.os }}
