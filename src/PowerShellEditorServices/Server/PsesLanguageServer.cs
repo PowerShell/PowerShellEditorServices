@@ -140,10 +140,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
 
                             // Set the workspace path from the parameters.
                             WorkspaceService workspaceService = languageServer.Services.GetService<WorkspaceService>();
-                            if (initializeParams.WorkspaceFolders is not null)
-                            {
-                                workspaceService.WorkspaceFolders.AddRange(initializeParams.WorkspaceFolders);
-                            }
+                            workspaceService.AddWorkspaceFolders(initializeParams.WorkspaceFolders);
 
                             // Parse initialization options.
                             JObject initializationOptions = initializeParams.InitializationOptions as JObject;

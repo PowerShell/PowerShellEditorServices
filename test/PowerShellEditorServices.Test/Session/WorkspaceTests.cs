@@ -86,6 +86,32 @@ namespace PowerShellEditorServices.Test.Session
             };
         }
 
+        // Regression test for https://github.com/PowerShell/PowerShellEditorServices/issues/2300:
+        // a client that sends a workspace folder without a URI on initialize used to crash the
+        // server with a NullReferenceException when the URI was later dereferenced.
+        [Fact]
+        public void AddWorkspaceFoldersIgnoresNullAndUrilessFolders()
+        {
+            WorkspaceService workspace = new(NullLoggerFactory.Instance);
+
+            // Null collection is a no-op rather than a throw.
+            workspace.AddWorkspaceFolders(null);
+            Assert.Empty(workspace.WorkspaceFolders);
+
+            workspace.AddWorkspaceFolders(new[]
+            {
+                new WorkspaceFolder { Uri = DocumentUri.FromFileSystemPath(s_workspacePath), Name = "valid" },
+                new WorkspaceFolder { Name = "missing-uri" },
+                null
+            });
+
+            WorkspaceFolder folder = Assert.Single(workspace.WorkspaceFolders);
+            Assert.Equal("valid", folder.Name);
+
+            // The downstream dereferences that previously threw now succeed.
+            Assert.Equal(s_workspacePath, Assert.Single(workspace.WorkspacePaths));
+        }
+
         [Fact]
         public void HasDefaultForWorkspacePaths()
         {
