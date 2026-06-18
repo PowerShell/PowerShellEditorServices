@@ -217,61 +217,34 @@ namespace PowerShellEditorServices.Test.E2E
         /// <summary>
         /// Reads the next output line from the test script log file. Useful in assertions to verify script progress against breakpointing.
         /// </summary>
-        private async Task<string> ReadScriptLogLineAsync(CancellationToken cancellationToken = default)
+        private async Task<string> ReadScriptLogLineAsync()
         {
-            // Reading a log line should be near-instant, but the script we read
-            // from is driven by the debugger and can fail to produce output (for
-            // example if an attach or breakpoint never lands). Cap the wait so
-            // the test fails fast with a clear message instead of spinning
-            // forever -- a busy-spin here previously pegged the CPU and starved
-            // xUnit's cooperative test timeout, hanging CI for the full six hours.
-            // Keep this cap meaningfully below the tightest per-test xUnit
-            // `Timeout` (15s on `CanAttachScriptWithPathMappings`) so this
-            // descriptive message wins instead of xUnit's generic timeout.
-            using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(TimeSpan.FromSeconds(10));
-            CancellationToken token = timeoutCts.Token;
-
-            try
+            while (scriptLogReader is null)
             {
-                while (scriptLogReader is null)
+                try
                 {
-                    try
-                    {
-                        scriptLogReader = new StreamReader(
-                            new FileStream(
-                                testScriptLogPath,
-                                FileMode.OpenOrCreate,
-                                FileAccess.Read, // Because we use append, its OK to create the file ahead of the script
-                                FileShare.ReadWrite
-                            )
-                        );
-                    }
-                    catch (IOException) //Sadly there does not appear to be a xplat way to wait for file availability, but luckily this does not appear to fire often.
-                    {
-                        await Task.Delay(500, token);
-                    }
+                    scriptLogReader = new StreamReader(
+                        new FileStream(
+                            testScriptLogPath,
+                            FileMode.OpenOrCreate,
+                            FileAccess.Read, // Because we use append, its OK to create the file ahead of the script
+                            FileShare.ReadWrite
+                        )
+                    );
                 }
+                catch (IOException) //Sadly there does not appear to be a xplat way to wait for file availability, but luckily this does not appear to fire often.
+                {
+                    await Task.Delay(500);
+                }
+            }
 
-                // return valid lines only
-                string nextLine = string.Empty;
-                while (string.IsNullOrEmpty(nextLine))
-                {
-                    nextLine = await scriptLogReader.ReadLineAsync(token); //Might return null if at EOF because we created it above but the script hasn't written to it yet
-                    if (string.IsNullOrEmpty(nextLine))
-                    {
-                        // At EOF waiting for the script to write more: yield and
-                        // back off so we don't busy-spin the CPU while polling.
-                        await Task.Delay(100, token);
-                    }
-                }
-                return nextLine;
-            }
-            catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+            // return valid lines only
+            string nextLine = string.Empty;
+            while (nextLine is null || nextLine.Length == 0)
             {
-                throw new TimeoutException(
-                    $"Timed out waiting for the test script to write a log line to '{testScriptLogPath}'.");
+                nextLine = await scriptLogReader.ReadLineAsync(); //Might return null if at EOF because we created it above but the script hasn't written to it yet
             }
+            return nextLine;
         }
 
         [Fact]
