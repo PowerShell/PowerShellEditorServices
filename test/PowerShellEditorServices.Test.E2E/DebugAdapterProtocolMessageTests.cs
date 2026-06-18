@@ -225,8 +225,11 @@ namespace PowerShellEditorServices.Test.E2E
             // the test fails fast with a clear message instead of spinning
             // forever -- a busy-spin here previously pegged the CPU and starved
             // xUnit's cooperative test timeout, hanging CI for the full six hours.
+            // Keep this cap meaningfully below the tightest per-test xUnit
+            // `Timeout` (15s on `CanAttachScriptWithPathMappings`) so this
+            // descriptive message wins instead of xUnit's generic timeout.
             using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(TimeSpan.FromSeconds(15));
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(10));
             CancellationToken token = timeoutCts.Token;
 
             try
