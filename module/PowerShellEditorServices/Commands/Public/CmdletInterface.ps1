@@ -195,7 +195,7 @@ function Open-EditorFile {
             $preview = $true
         }
 
-        Get-ChildItem $Paths -File | ForEach-Object {
+        Get-ChildItem $Paths -File -Force | ForEach-Object {
             $psEditor.Workspace.OpenFile($_.FullName, $preview)
         }
     }
