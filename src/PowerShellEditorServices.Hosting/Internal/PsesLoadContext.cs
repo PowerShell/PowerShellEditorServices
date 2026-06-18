@@ -76,72 +76,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 return false;
             }
 
-            return IsSatisfyingAssembly(requiredAssemblyName, AssemblyName.GetAssemblyName(assemblyPath));
-        }
+            AssemblyName asmToLoadName = AssemblyName.GetAssemblyName(assemblyPath);
 
-        // Internal (rather than private) purely so it can be unit tested with constructed
-        // AssemblyName instances; it has no file-system dependency of its own.
-        internal static bool IsSatisfyingAssembly(AssemblyName requiredAssemblyName, AssemblyName asmToLoadName)
-        {
-            // The simple name must match (case-insensitively, as assembly names are).
-            if (!string.Equals(asmToLoadName.Name, requiredAssemblyName.Name, StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            // The candidate must be at least the requested version. We still accept newer
-            // versions, since shared framework and $PSHOME assemblies are generally
-            // forward-compatible via the runtime's binding.
-            if (asmToLoadName.Version < requiredAssemblyName.Version)
-            {
-                return false;
-            }
-
-            // The strong-name identity must match. Previously only the simple name and version
-            // were compared, so a same-named assembly with a *different* public key token (i.e.
-            // a genuinely different assembly) was treated as a drop-in replacement and would then
-            // fail at runtime with a FileLoadException/TypeLoadException. Requiring the public key
-            // token to match means we only short-circuit to a $PSHOME/Common assembly that can
-            // actually satisfy the reference; otherwise we fall through and let the default load
-            // context resolve it with its own (laxer) rules.
-            if (!PublicKeyTokensMatch(requiredAssemblyName, asmToLoadName))
-            {
-                return false;
-            }
-
-            // The culture must match so we never substitute a satellite resource assembly for the
-            // neutral one (or vice versa).
-            return string.Equals(
-                asmToLoadName.CultureName ?? string.Empty,
-                requiredAssemblyName.CultureName ?? string.Empty,
-                StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool PublicKeyTokensMatch(AssemblyName requiredAssemblyName, AssemblyName candidateAssemblyName)
-        {
-            byte[] requiredToken = requiredAssemblyName.GetPublicKeyToken();
-
-            // A reference to a non-strong-named assembly imposes no public key token requirement.
-            if (requiredToken is null || requiredToken.Length == 0)
-            {
-                return true;
-            }
-
-            byte[] candidateToken = candidateAssemblyName.GetPublicKeyToken();
-            if (candidateToken is null || candidateToken.Length != requiredToken.Length)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < requiredToken.Length; i++)
-            {
-                if (requiredToken[i] != candidateToken[i])
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return string.Equals(asmToLoadName.Name, requiredAssemblyName.Name, StringComparison.OrdinalIgnoreCase)
+                && asmToLoadName.Version >= requiredAssemblyName.Version;
         }
     }
 }
