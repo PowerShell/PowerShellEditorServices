@@ -104,7 +104,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         /// <param name="bufferRange">The buffer range for which content will be extracted.</param>
         /// <returns>A string with the specified range of content.</returns>
-        public string GetText(FileRange bufferRange)
+        public string GetText(IFileRange bufferRange)
         {
             return
                 string.Join(
@@ -123,7 +123,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions
         /// </summary>
         /// <param name="fileRange">The buffer range for which content will be extracted.</param>
         /// <returns>An array of strings, each representing a line in the file within the specified range.</returns>
-        public string[] GetTextLines(FileRange fileRange) => scriptFile.GetLinesInRange(fileRange.ToBufferRange());
+        public string[] GetTextLines(IFileRange fileRange) => scriptFile.GetLinesInRange(fileRange.ToBufferRange());
 
         #endregion
 
