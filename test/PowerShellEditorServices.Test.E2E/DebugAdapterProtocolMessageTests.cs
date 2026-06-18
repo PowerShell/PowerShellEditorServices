@@ -238,13 +238,24 @@ namespace PowerShellEditorServices.Test.E2E
                 }
             }
 
-            // return valid lines only
-            string nextLine = string.Empty;
-            while (nextLine is null || nextLine.Length == 0)
+            // Tail the log until a non-empty line is available. The awaited
+            // delay between reads is essential: at EOF ReadLineAsync completes
+            // synchronously with null, so without it this becomes a tight loop
+            // that never releases its thread-pool thread. On constrained CI
+            // runners that starves the pool, wedging the DAP client's
+            // background I/O (and the whole test) and defeating both the xUnit
+            // and harness timeouts so a stall hangs for hours instead of
+            // failing fast.
+            while (true)
             {
-                nextLine = await scriptLogReader.ReadLineAsync(); //Might return null if at EOF because we created it above but the script hasn't written to it yet
+                string nextLine = await scriptLogReader.ReadLineAsync();
+                if (!string.IsNullOrEmpty(nextLine))
+                {
+                    return nextLine;
+                }
+
+                await Task.Delay(100);
             }
-            return nextLine;
         }
 
         [Fact]
@@ -762,6 +773,10 @@ namespace PowerShellEditorServices.Test.E2E
                     if (((Get-Date) - $start).TotalSeconds -gt 10) {
                         throw 'Timeout waiting for Debug-Runspace to be subscribed.'
                     }
+
+                    # Yield a slice so this poll doesn't peg a core while the
+                    # runner is also servicing the attach handshake.
+                    Start-Sleep -Milliseconds 100
                 }
 
                 $ps.Invoke()
