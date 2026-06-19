@@ -635,6 +635,13 @@ namespace PowerShellEditorServices.Test.E2E
         [SkippableFact(Timeout = 15000)]
         public async Task CanAttachScriptWithPathMappings()
         {
+            // This passes against PowerShell Core but hangs against in-box Windows
+            // PowerShell since the windows-2025-vs2026 runner image moved from
+            // 20260608 to 20260614: the cross-process Debug-Runspace attach wedges
+            // and rides the job timeout. Skipped pending a real fix; see #2323.
+            Skip.If(PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
+                "Attach wedges on Windows PowerShell since the 20260614 runner image; see #2323.");
+
             Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
                 "Breakpoints can't be set in Constrained Language Mode.");
 
