@@ -239,13 +239,11 @@ namespace PowerShellEditorServices.Test.E2E
             }
 
             // Tail the log until a non-empty line is available. The awaited
-            // delay between reads is essential: at EOF ReadLineAsync completes
-            // synchronously with null, so without it this becomes a tight loop
-            // that never releases its thread-pool thread. On constrained CI
-            // runners that starves the pool, wedging the DAP client's
-            // background I/O (and the whole test) and defeating both the xUnit
-            // and harness timeouts so a stall hangs for hours instead of
-            // failing fast.
+            // delay between reads matters: at EOF ReadLineAsync completes
+            // synchronously with null, so without it this is a tight loop that
+            // never releases its thread-pool thread and needlessly pressures
+            // the pool on constrained CI runners. Yielding keeps the tail loop
+            // cheap while we wait for the script to write.
             while (true)
             {
                 string nextLine = await scriptLogReader.ReadLineAsync();
