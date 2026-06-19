@@ -19,7 +19,7 @@ public sealed class SkippableTheoryOnWindowsPowerShellAttribute : SkippableTheor
     {
         if (PsesStdioLanguageServerProcessHost.IsWindowsPowerShell)
         {
-            Skip = WindowsPowerShellDebugAdapterSkip.Reason;
+            Skip = WindowsPowerShellServerStartupSkip.Reason;
         }
     }
 }

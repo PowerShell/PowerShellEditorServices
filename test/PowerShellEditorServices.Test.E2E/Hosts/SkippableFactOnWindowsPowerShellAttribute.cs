@@ -8,11 +8,18 @@ namespace PowerShellEditorServices.Test.E2E;
 
 /// <summary>
 /// The shared skip reason used by the discovery-time Windows PowerShell skip
-/// attributes for the debug adapter end-to-end tests.
+/// attributes for the end-to-end tests.
 /// </summary>
-internal static class WindowsPowerShellDebugAdapterSkip
+/// <remarks>
+/// This is a runner-image regression, not a PSES code change: re-running a
+/// commit that predates all recent PRs (and previously passed) reproduces the
+/// same hang on the current windows-latest image, while macOS and Linux stay
+/// green. The wedge is in the in-box Windows PowerShell server's startup, so it
+/// affects both the debug adapter and language server end-to-end suites.
+/// </remarks>
+internal static class WindowsPowerShellServerStartupSkip
 {
-    public const string Reason = "The debug adapter can wedge during startup on in-box Windows PowerShell since the 20260614 runner image; see https://github.com/PowerShell/PowerShellEditorServices/issues/2323.";
+    public const string Reason = "The in-box Windows PowerShell server can wedge during startup on the current windows-latest runner image (a runner-image regression, not our code); see https://github.com/PowerShell/PowerShellEditorServices/issues/2323.";
 }
 
 /// <summary>
@@ -29,6 +36,12 @@ internal static class WindowsPowerShellDebugAdapterSkip
 /// <c>InitializeAsync</c>. The <see cref="SkippableFactAttribute"/> discoverer is
 /// retained so runtime <see cref="Skip"/> calls (e.g. for Constrained Language
 /// Mode) still work when the test is not skipped at discovery time.
+/// <para>
+/// Caveat: xUnit still creates an <see cref="IClassFixture{TFixture}"/> even when
+/// every test method in the class is skipped at discovery time, so a fixture that
+/// starts the server in its own <c>InitializeAsync</c> (e.g. <c>LSPTestsFixture</c>)
+/// must additionally guard against starting it under Windows PowerShell.
+/// </para>
 /// </remarks>
 [XunitTestCaseDiscoverer("Xunit.Sdk.SkippableFactDiscoverer", "Xunit.SkippableFact")]
 public sealed class SkippableFactOnWindowsPowerShellAttribute : SkippableFactAttribute
@@ -37,7 +50,7 @@ public sealed class SkippableFactOnWindowsPowerShellAttribute : SkippableFactAtt
     {
         if (PsesStdioLanguageServerProcessHost.IsWindowsPowerShell)
         {
-            Skip = WindowsPowerShellDebugAdapterSkip.Reason;
+            Skip = WindowsPowerShellServerStartupSkip.Reason;
         }
     }
 }
