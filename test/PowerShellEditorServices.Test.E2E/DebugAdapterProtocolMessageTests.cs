@@ -630,16 +630,16 @@ namespace PowerShellEditorServices.Test.E2E
             await terminatedTcs.Task;
         }
 
-        [SkippableFact(Timeout = 15000)]
+        // NOTE: This passes against PowerShell Core but hangs against in-box Windows
+        // PowerShell since the windows-2025-vs2026 runner image moved from 20260608 to
+        // 20260614, where it wedges during server setup and rides the job timeout. The
+        // skip must happen at discovery time (via the attribute) rather than with an
+        // in-body Skip.If, because xUnit runs InitializeAsync (which is where the hang
+        // occurs) before the test body. Skipped on Windows PowerShell pending a real
+        // fix; see https://github.com/PowerShell/PowerShellEditorServices/issues/2323.
+        [SkippableFactOnWindowsPowerShell(Timeout = 15000)]
         public async Task CanAttachScriptWithPathMappings()
         {
-            // This passes against PowerShell Core but hangs against in-box Windows
-            // PowerShell since the windows-2025-vs2026 runner image moved from
-            // 20260608 to 20260614: the cross-process Debug-Runspace attach wedges
-            // and rides the job timeout. Skipped pending a real fix; see #2323.
-            Skip.If(PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
-                "Attach wedges on Windows PowerShell since the 20260614 runner image; see #2323.");
-
             Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
                 "Breakpoints can't be set in Constrained Language Mode.");
 
