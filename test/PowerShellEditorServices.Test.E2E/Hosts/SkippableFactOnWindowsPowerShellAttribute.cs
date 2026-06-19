@@ -7,6 +7,15 @@ using Xunit.Sdk;
 namespace PowerShellEditorServices.Test.E2E;
 
 /// <summary>
+/// The shared skip reason used by the discovery-time Windows PowerShell skip
+/// attributes for the debug adapter end-to-end tests.
+/// </summary>
+internal static class WindowsPowerShellDebugAdapterSkip
+{
+    public const string Reason = "The debug adapter can wedge during startup on in-box Windows PowerShell since the 20260614 runner image; see https://github.com/PowerShell/PowerShellEditorServices/issues/2323.";
+}
+
+/// <summary>
 /// A <see cref="SkippableFactAttribute"/> that additionally skips the test at
 /// <em>discovery</em> time when running under in-box Windows PowerShell.
 /// </summary>
@@ -28,7 +37,7 @@ public sealed class SkippableFactOnWindowsPowerShellAttribute : SkippableFactAtt
     {
         if (PsesStdioLanguageServerProcessHost.IsWindowsPowerShell)
         {
-            Skip = "Attach wedges during setup on Windows PowerShell since the 20260614 runner image; see https://github.com/PowerShell/PowerShellEditorServices/issues/2323.";
+            Skip = WindowsPowerShellDebugAdapterSkip.Reason;
         }
     }
 }
