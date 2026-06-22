@@ -92,6 +92,36 @@ Handlers live under `Services/<Feature>/Handlers/` and follow a consistent patte
 - Roslynator analyzers are enabled for formatting and code quality.
 - Use `Microsoft.Extensions.Logging` (`ILogger<T>` via `ILoggerFactory`) for all logging.
 
+### Public API & Binary Compatibility
+
+The public types under `Microsoft.PowerShell.EditorServices` are not consumed only
+through PowerShell script. Downstream modules **compile against the shipped PSES
+assemblies** and bind to that metadata at build time. The most prominent example is
+[`SeeminglyScience/EditorServicesCommandSuite`](https://github.com/SeeminglyScience/EditorServicesCommandSuite),
+which references the extension API surface (`FileContext`, `EditorContext`, the
+`IFileRange`/`FilePosition` types, `ILspCurrentFileContext`, `IEditorScriptFile`,
+etc.) directly from C#.
+
+Because of that, treat any change to an existing `public` member as potentially
+**binary breaking**, and review for it explicitly before merging:
+
+- Changing the **type of a parameter** (even widening a concrete class to an
+  interface it implements, e.g. `FileRange` -> `IFileRange`), the **return type**,
+  the **parameter count/order**, or **renaming/removing** a public member is
+  source-compatible at most but **binary-breaking**. The method's signature/metadata
+  token changes, so a precompiled caller throws `MissingMethodException` at runtime
+  even though it would recompile cleanly.
+- When you need a wider or different signature, **add an overload** instead of
+  editing the existing one. Keep the original signature in place and have it delegate
+  to the new implementation so existing binaries keep resolving. Cast as needed to
+  pick the new overload from the old body (e.g. `Foo((IFileRange)range)`).
+- Add a regression test that binds to the **old, concrete signature** (declare the
+  argument as the original parameter type, not the widened one) so overload
+  resolution to the compatibility shim is actually exercised.
+- If a breaking change is genuinely unavoidable, call it out in the PR description
+  as a binary breaking change so maintainers can weigh it and coordinate a
+  downstream release.
+
 ### Testing
 
 - **Framework:** xUnit with `Xunit.SkippableFact` for conditionally skipped tests.
