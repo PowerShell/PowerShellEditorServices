@@ -52,6 +52,27 @@ jobs:
         shell: pwsh
         run: ./pwsh/tools/install-powershell.ps1 -Preview -Destination ./preview
 
+      - name: Install ProcDump for Windows PowerShell hang dumps
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # VSTest's built-in hang dumper only handles .NET Core test hosts, so
+          # capturing a dump of a wedged .NET Framework (net462 / Windows
+          # PowerShell 5.1) test host requires ProcDump, which isn't on the
+          # runner image. Install is best-effort: a failure must not fail CI
+          # (the net8 legs dump without it, and `--blame-hang` still terminates
+          # the host and writes a sequence file naming the hung test). See #2323.
+          try {
+            $zip = Join-Path $env:RUNNER_TEMP 'Procdump.zip'
+            $dir = Join-Path $env:RUNNER_TEMP 'procdump'
+            Invoke-WebRequest -Uri 'https://download.sysinternals.com/files/Procdump.zip' -OutFile $zip
+            Expand-Archive -Path $zip -DestinationPath $dir -Force
+            "PROCDUMP_PATH=$dir" | Out-File -FilePath $env:GITHUB_ENV -Append
+            Write-Host "ProcDump installed to $dir"
+          } catch {
+            Write-Warning "ProcDump install failed; net462 hang dumps will be unavailable: $_"
+          }
+
       - name: Build and test
         shell: pwsh
         run: Invoke-Build -Configuration Release TestFull
@@ -79,4 +100,7 @@ jobs:
         if: always()
         with:
           name: PowerShellEditorServices-test-results-${{ matrix.os }}
-          path: '**/*.trx'
+          path: |
+            **/*.trx
+            **/*.dmp
+            **/*_Sequence.xml

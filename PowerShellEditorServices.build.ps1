@@ -32,6 +32,11 @@ $script:dotnetBuildArgs = @(
 
 $script:dotnetTestArgs = @("test") + $script:dotnetBuildArgs + $TestArgs + @(
     if ($TestFilter) { "--filter", $TestFilter }
+    # In CI, collect a hang dump and fail fast if any single test wedges instead
+    # of riding the job's `timeout-minutes` cap blind. The Windows PowerShell 5.1
+    # (net462) unit leg intermittently hangs under the 20260614 runner image; the
+    # dump names the offending test and captures its stacks. See #2323.
+    if ($env:GITHUB_ACTIONS) { "--blame-hang", "--blame-hang-timeout", "10m", "--blame-hang-dump-type", "full" }
     "--framework"
 )
 
