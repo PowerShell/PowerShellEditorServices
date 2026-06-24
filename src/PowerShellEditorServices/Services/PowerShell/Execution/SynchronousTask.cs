@@ -25,9 +25,6 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
         private readonly CancellationToken _taskRequesterCancellationToken;
 
         private bool _executionCanceled;
-
-        private TResult _result;
-
         private ExceptionDispatchInfo _exceptionInfo;
 
         protected SynchronousTask(
@@ -57,8 +54,10 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
                 _exceptionInfo?.Throw();
 
-                return _result;
+                return field;
             }
+
+            private set;
         }
 
         public bool IsCanceled => _executionCanceled || _taskRequesterCancellationToken.IsCancellationRequested;
@@ -123,7 +122,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
         private void SetResult(TResult result)
         {
-            _result = result;
+            Result = result;
             _taskCompletionSource.SetResult(result);
         }
     }

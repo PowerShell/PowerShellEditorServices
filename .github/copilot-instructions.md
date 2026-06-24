@@ -2,7 +2,7 @@
 
 ## Build & Test
 
-Requires .NET SDK 8.0+. Use `dotnet` directly for building and testing — it's faster and
+Requires .NET SDK 10.0+. Use `dotnet` directly for building and testing — it's faster and
 requires no extra tooling. The `Invoke-Build` script requires the `InvokeBuild` and `platyPS`
 PowerShell modules (platyPS is `#Requires`'d at the top, so the whole script fails without it),
 and is mainly needed to assemble the full PowerShell module for release.
@@ -10,19 +10,19 @@ and is mainly needed to assemble the full PowerShell module for release.
 ```powershell
 # Build (run both; Hosting depends on the core library)
 dotnet publish src/PowerShellEditorServices/PowerShellEditorServices.csproj -f netstandard2.0
-dotnet publish src/PowerShellEditorServices.Hosting/PowerShellEditorServices.Hosting.csproj -f net8.0
+dotnet publish src/PowerShellEditorServices.Hosting/PowerShellEditorServices.Hosting.csproj -f net10.0
 
 # Run all unit tests
-dotnet test test/PowerShellEditorServices.Test/ --framework net8.0
+dotnet test test/PowerShellEditorServices.Test/ --framework net10.0
 
 # Run a single test by name
-dotnet test test/PowerShellEditorServices.Test/ --framework net8.0 --filter "FullyQualifiedName~CompletesCommandInFile"
+dotnet test test/PowerShellEditorServices.Test/ --framework net10.0 --filter "FullyQualifiedName~CompletesCommandInFile"
 
 # Run tests by trait category
-dotnet test test/PowerShellEditorServices.Test/ --framework net8.0 --filter "Category=Completions"
+dotnet test test/PowerShellEditorServices.Test/ --framework net10.0 --filter "Category=Completions"
 
 # Run E2E tests
-dotnet test test/PowerShellEditorServices.Test.E2E/ --framework net8.0
+dotnet test test/PowerShellEditorServices.Test.E2E/ --framework net10.0
 ```
 
 For assembling the full module or running the complete CI suite (including Windows PowerShell
@@ -48,11 +48,11 @@ Protocol (DAP)** server for PowerShell, consumed by VS Code and other editors.
 - **`src/PowerShellEditorServices`** (`netstandard2.0`) — Core library containing all LSP/DAP
   handlers, services, and the PowerShell execution engine. Namespace:
   `Microsoft.PowerShell.EditorServices`.
-- **`src/PowerShellEditorServices.Hosting`** (`net8.0`, `net462`) — Entry point layer that loads
+- **`src/PowerShellEditorServices.Hosting`** (`net10.0`, `net462`) — Entry point layer that loads
   PSES into a PowerShell process via `StartEditorServicesCommand`. Uses a custom
   `AssemblyLoadContext` (`PsesLoadContext`) on .NET Core to isolate dependencies.
 - **`module/PowerShellEditorServices/`** — The shipped PowerShell module. The build assembles
-  compiled binaries into `bin/Core/` (net8.0) and `bin/Desktop/` (net462). The module manifest
+  compiled binaries into `bin/Core/` (net10.0) and `bin/Desktop/` (net462). The module manifest
   loads the appropriate DLL based on PowerShell edition.
 
 ### Key Services (registered in `PsesServiceCollectionExtensions`)
@@ -136,7 +136,7 @@ Because of that, treat any change to an existing `public` member as potentially
 ### Multi-targeting
 
 The core library targets `netstandard2.0` for compatibility with both .NET Core and .NET
-Framework. The hosting project and tests dual-target `net8.0` and `net462` (Windows PowerShell
+Framework. The hosting project and tests dual-target `net10.0` and `net462` (Windows PowerShell
 5.1). Non-Windows platforms skip `net462` targets.
 
 ## Pull Request Labels

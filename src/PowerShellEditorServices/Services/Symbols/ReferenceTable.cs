@@ -22,8 +22,6 @@ internal sealed class ReferenceTable
 
     private readonly ConcurrentDictionary<string, ConcurrentBag<SymbolReference>> _symbolReferences = new(StringComparer.OrdinalIgnoreCase);
 
-    private bool _isInited;
-
     public ReferenceTable(ScriptFile parent) => _parent = parent;
 
     /// <summary>
@@ -32,15 +30,15 @@ internal sealed class ReferenceTable
     public void TagAsChanged()
     {
         _symbolReferences.Clear();
-        _isInited = false;
+        IsInitialized = false;
     }
 
     /// <summary>
-    /// Prefer checking if the dictionary has contents to determine if initialized. The field
-    /// `_isInited` is to guard against re-scanning files with no command references, but will
+    /// Prefer checking if the dictionary has contents to determine if initialized. The backing
+    /// field is to guard against re-scanning files with no command references, but will
     /// generally be less reliable of a check.
     /// </summary>
-    private bool IsInitialized => !_symbolReferences.IsEmpty || _isInited;
+    private bool IsInitialized { get => !_symbolReferences.IsEmpty || field; set; }
 
     internal IEnumerable<SymbolReference> TryGetReferences(SymbolReference? symbol)
     {

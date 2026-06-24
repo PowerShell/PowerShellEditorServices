@@ -90,7 +90,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return s_emptyTextEditContainer;
             }
 
-            return new TextEditContainer(new OmniSharp.Extensions.LanguageServer.Protocol.Models.TextEdit
+            return new TextEditContainer(new TextEdit
             {
                 NewText = formattedScript,
                 Range = editRange
@@ -184,7 +184,7 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return s_emptyTextEditContainer;
             }
 
-            return new TextEditContainer(new OmniSharp.Extensions.LanguageServer.Protocol.Models.TextEdit
+            return new TextEditContainer(new TextEdit
             {
                 NewText = formattedScript,
                 Range = editRange
