@@ -42,18 +42,6 @@ namespace PowerShellEditorServices.Test.E2E
 
         public async Task InitializeAsync()
         {
-            // All LSP end-to-end tests are skipped at discovery time on Windows
-            // PowerShell (see SkippableFactOnWindowsPowerShell), but xUnit still
-            // creates this class fixture even when every test method is skipped.
-            // The in-box Windows PowerShell server can wedge during startup on the
-            // current windows-latest runner image (a runner-image regression, not
-            // our code); see https://github.com/PowerShell/PowerShellEditorServices/issues/2323.
-            // So we must not start the server here on Windows PowerShell.
-            if (PsesStdioLanguageServerProcessHost.IsWindowsPowerShell)
-            {
-                return;
-            }
-
             (StreamReader stdout, StreamWriter stdin) = await _psesHost.Start();
 
             // Splice the streams together and enable debug logging of all messages sent and received
@@ -112,8 +100,11 @@ namespace PowerShellEditorServices.Test.E2E
 
         public async Task DisposeAsync()
         {
-            // The server is never started on Windows PowerShell (see
-            // InitializeAsync), so there is nothing to shut down there.
+            // If InitializeAsync failed before the client connected (e.g. the
+            // server never finished starting), PsesLanguageClient was never
+            // assigned, so there is nothing to shut down. Guarding here keeps a
+            // startup failure from being masked by a NullReferenceException
+            // during teardown.
             if (PsesLanguageClient is null)
             {
                 return;

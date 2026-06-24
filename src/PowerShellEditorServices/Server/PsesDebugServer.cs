@@ -5,7 +5,9 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.PowerShell.EditorServices.Handlers;
+using Microsoft.PowerShell.EditorServices.Logging;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using OmniSharp.Extensions.DebugAdapter.Server;
@@ -89,23 +91,40 @@ namespace Microsoft.PowerShell.EditorServices.Server
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
                     .OnInitialize(async (server, _, cancellationToken) =>
                     {
-                        // Start the host if not already started, and enable debug mode (required
-                        // for remote debugging).
-                        //
-                        // TODO: We might need to fill in HostStartOptions here.
-                        _startedPses = !await _psesHost.TryStartAsync(new HostStartOptions(), cancellationToken).ConfigureAwait(false);
-                        _psesHost.DebugContext.EnableDebugMode();
-
-                        // We need to give the host a handle to the DAP so it can register
-                        // notifications (specifically for sendKeyPress).
-                        if (_isTemp)
+                        try
                         {
-                            _psesHost.DebugServer = server;
-                        }
+                            // Start the host if not already started, and enable debug mode (required
+                            // for remote debugging).
+                            //
+                            // TODO: We might need to fill in HostStartOptions here.
+                            _startedPses = !await _psesHost.TryStartAsync(new HostStartOptions(), cancellationToken).ConfigureAwait(false);
+                            _psesHost.DebugContext.EnableDebugMode();
 
-                        // Clear any existing breakpoints before proceeding.
-                        BreakpointService breakpointService = server.GetService<BreakpointService>();
-                        await breakpointService.RemoveAllBreakpointsAsync().ConfigureAwait(false);
+                            // We need to give the host a handle to the DAP so it can register
+                            // notifications (specifically for sendKeyPress).
+                            if (_isTemp)
+                            {
+                                _psesHost.DebugServer = server;
+                            }
+
+                            // Clear any existing breakpoints before proceeding.
+                            BreakpointService breakpointService = server.GetService<BreakpointService>();
+                            await breakpointService.RemoveAllBreakpointsAsync().ConfigureAwait(false);
+                        }
+                        catch (Exception e)
+                        {
+                            // Never let an exception escape this delegate. OmniSharp's
+                            // DebugAdapterServer only signals its internal initialize-complete
+                            // subject on the success path of the InitializeRequest handler, so a
+                            // throw here leaves DebugAdapterServer.From() (and thus StartAsync)
+                            // awaiting that subject forever -- wedging startup and riding the job
+                            // timeout instead of failing fast. Log the failure and signal shutdown
+                            // so WaitForShutdown unblocks and the process can exit cleanly.
+                            ServiceProvider.GetService<ILoggerFactory>()?
+                                .CreateLogger<PsesDebugServer>()
+                                .LogException("Failed to start the debug server; terminating the debug session.", e);
+                            _serverStopped.TrySetResult(true);
+                        }
                     })
                     // The OnInitialized delegate gets run right before the server responds to the _Initialize_ request:
                     // https://microsoft.github.io/debug-adapter-protocol/specification#Requests_Initialize
@@ -134,7 +153,7 @@ namespace Microsoft.PowerShell.EditorServices.Server
             _debugAdapterServer?.Dispose();
             _inputStream.Dispose();
             _outputStream.Dispose();
-            _serverStopped.SetResult(true);
+            _serverStopped.TrySetResult(true);
             // TODO: If the debugger has stopped, should we clear the breakpoints?
         }
 
