@@ -100,9 +100,19 @@ namespace PowerShellEditorServices.Test.E2E
 
         public async Task DisposeAsync()
         {
+            // If InitializeAsync failed before the client connected (e.g. the
+            // server never finished starting), PsesLanguageClient was never
+            // assigned, so there is nothing to shut down. Guarding here keeps a
+            // startup failure from being masked by a NullReferenceException
+            // during teardown.
+            if (PsesLanguageClient is null)
+            {
+                return;
+            }
+
             await PsesLanguageClient.Shutdown();
             await _psesHost.Stop();
-            PsesLanguageClient?.Dispose();
+            PsesLanguageClient.Dispose();
         }
     }
 }
