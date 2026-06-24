@@ -1306,11 +1306,14 @@ function CanSendGetCommentHelpRequest {
             Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
                 "The getModule request's script doesn't work in Constrained Language Mode.");
 
-            // Probe a module that ships on disk in every host's module path so it
-            // resolves via Get-Module -ListAvailable everywhere. Windows PowerShell's
-            // in-box core modules (e.g. Microsoft.PowerShell.Management) are snap-in
-            // based and are not returned by -ListAvailable, whereas Microsoft.PowerShell.Archive
-            // is a file-based module on both Windows PowerShell and PowerShell 7+.
+            Skip.If(PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
+                "The Windows PowerShell E2E host launches with an emptied PSModulePath (see the TestE2EPowerShell build task and vscode-powershell#3886), so Get-Module -ListAvailable finds no modules and getModule can't resolve any module metadata.");
+
+            // Probe Microsoft.PowerShell.Archive: it's a file-based module (so it
+            // resolves via Get-Module -ListAvailable) that ships with both Windows
+            // PowerShell and PowerShell 7+, unlike the snap-in-based in-box core
+            // modules (e.g. Microsoft.PowerShell.Management) that -ListAvailable
+            // doesn't return.
             const string moduleName = "Microsoft.PowerShell.Archive";
 
             PSModuleMessage module =
@@ -1345,9 +1348,12 @@ function CanSendGetCommentHelpRequest {
             Assert.Equal(module.Version, pinned.Version);
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task CanSendGetModuleRequestForMissingModuleAsync()
         {
+            Skip.If(PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
+                "The Windows PowerShell E2E host launches with an emptied PSModulePath (see the TestE2EPowerShell build task and vscode-powershell#3886), so every module resolves to null and this test would pass vacuously rather than exercise the missing-module path.");
+
             PSModuleMessage module =
                 await PsesLanguageClient
                     .SendRequest(
