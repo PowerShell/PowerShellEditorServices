@@ -630,13 +630,14 @@ namespace PowerShellEditorServices.Test.E2E
             await terminatedTcs.Task;
         }
 
-        // Generous timeout: the attach handshake and subsequent debugging are
-        // much slower under Windows PowerShell on constrained CI runners.
-        [SkippableFact(Timeout = 60000)]
+        [SkippableFact(Timeout = 15000)]
         public async Task CanAttachScriptWithPathMappings()
         {
             Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
                 "Breakpoints can't be set in Constrained Language Mode.");
+
+            Skip.If(PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
+                "In-box Windows PowerShell wedges on the cross-process Debug-Runspace attach handshake (see #2323).");
 
             string[] logStatements = ["$PSCommandPath", "after breakpoint"];
 
@@ -770,7 +771,7 @@ namespace PowerShellEditorServices.Test.E2E
                         break
                     }
 
-                    if (((Get-Date) - $start).TotalSeconds -gt 30) {
+                    if (((Get-Date) - $start).TotalSeconds -gt 10) {
                         throw 'Timeout waiting for Debug-Runspace to be subscribed.'
                     }
 
@@ -809,9 +810,8 @@ namespace PowerShellEditorServices.Test.E2E
 
             TaskCompletionSource<int> ridOutput = new();
 
-            // Task shouldn't take longer than 60 seconds to complete (it is
-            // much slower under Windows PowerShell on constrained CI runners).
-            using CancellationTokenSource debugTaskCts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+            // Task shouldn't take longer than 30 seconds to complete.
+            using CancellationTokenSource debugTaskCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
             using CancellationTokenRegistration _ = debugTaskCts.Token.Register(ridOutput.SetCanceled);
             using Process? psProc = Process.Start(psi);
             try
