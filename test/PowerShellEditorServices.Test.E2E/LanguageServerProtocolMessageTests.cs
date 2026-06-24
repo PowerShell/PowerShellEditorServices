@@ -1306,18 +1306,25 @@ function CanSendGetCommentHelpRequest {
             Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
                 "The getModule request's script doesn't work in Constrained Language Mode.");
 
+            // Probe a module that ships on disk in every host's module path so it
+            // resolves via Get-Module -ListAvailable everywhere. Windows PowerShell's
+            // in-box core modules (e.g. Microsoft.PowerShell.Management) are snap-in
+            // based and are not returned by -ListAvailable, whereas Microsoft.PowerShell.Archive
+            // is a file-based module on both Windows PowerShell and PowerShell 7+.
+            const string moduleName = "Microsoft.PowerShell.Archive";
+
             PSModuleMessage module =
                 await PsesLanguageClient
                     .SendRequest(
                         "powerShell/getModule",
                         new GetModuleParams
                         {
-                            Name = "Microsoft.PowerShell.Management"
+                            Name = moduleName
                         })
                     .Returning<PSModuleMessage>(CancellationToken.None);
 
             Assert.NotNull(module);
-            Assert.Equal("Microsoft.PowerShell.Management", module.Name);
+            Assert.Equal(moduleName, module.Name);
             Assert.NotEmpty(module.Version);
             Assert.NotEmpty(module.Path);
 
@@ -1329,7 +1336,7 @@ function CanSendGetCommentHelpRequest {
                         "powerShell/getModule",
                         new GetModuleParams
                         {
-                            Name = "Microsoft.PowerShell.Management",
+                            Name = moduleName,
                             Version = module.Version
                         })
                     .Returning<PSModuleMessage>(CancellationToken.None);
