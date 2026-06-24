@@ -32,6 +32,7 @@ public static class RefactorVariableTestCases
         new ("VariableRedefinition.ps1",                       Line:  1, Column:  1),
         new ("VariableScriptWithParamBlock.ps1",               Line:  1, Column: 30),
         new ("VariableSimpleFunctionParameter.ps1",            Line:  6, Column:  9),
+        new ("VariableSplattedReference.ps1",                  Line:  1, Column:  1),
         new ("VariableusedInWhileLoop.ps1",                    Line:  2, Column:  5),
         new ("VariableWithinCommandAstScriptBlock.ps1",        Line:  3, Column: 75),
         new ("VariableWithinForeachObject.ps1",                Line:  2, Column:  1),
