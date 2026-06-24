@@ -570,6 +570,9 @@ namespace PowerShellEditorServices.Test.E2E
             Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
                 "PowerShellEditorServices.Command is not signed to run FLM in Constrained Language Mode.");
 
+            Skip.If(PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
+                "The Start-DebugAttachSession reverse-request round-trip is flaky on in-box Windows PowerShell CI runners (see #2323).");
+
             string script = NewTestFile($"Start-DebugAttachSession {paramString}");
 
             using CancellationTokenSource timeoutCts = new(30000);
