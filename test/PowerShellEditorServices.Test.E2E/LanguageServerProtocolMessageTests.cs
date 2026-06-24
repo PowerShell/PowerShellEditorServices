@@ -25,15 +25,6 @@ using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
 namespace PowerShellEditorServices.Test.E2E
 {
-    /// <remarks>
-    /// Every test in this class is skipped at discovery time on in-box Windows
-    /// PowerShell (via <see cref="SkippableFactOnWindowsPowerShellAttribute"/>)
-    /// because the shared <see cref="LSPTestsFixture"/> startup spawns an in-box
-    /// Windows PowerShell server that can wedge there since the 20260614 runner
-    /// image, riding the job timeout. This is the same server-startup hang that
-    /// affects the debug adapter tests; it is not specific to either protocol.
-    /// See https://github.com/PowerShell/PowerShellEditorServices/issues/2323.
-    /// </remarks>
     [Trait("Category", "LSP")]
     public class LanguageServerProtocolMessageTests : IClassFixture<LSPTestsFixture>, IDisposable
     {
@@ -101,7 +92,7 @@ namespace PowerShellEditorServices.Test.E2E
             }
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendPowerShellGetVersionRequestAsync()
         {
             PowerShellVersion details
@@ -121,7 +112,7 @@ namespace PowerShellEditorServices.Test.E2E
             }
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendWorkspaceSymbolRequestAsync()
         {
             NewTestFile(@"
@@ -143,7 +134,7 @@ function CanSendWorkspaceSymbolRequest {
             Assert.Equal("function CanSendWorkspaceSymbolRequest ()", symbol.Name);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [SkippableFact]
         public async Task CanReceiveDiagnosticsFromFileOpenAsync()
         {
             Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
@@ -156,7 +147,7 @@ function CanSendWorkspaceSymbolRequest {
             Assert.Equal("PSUseDeclaredVarsMoreThanAssignments", diagnostic.Code);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task WontReceiveDiagnosticsFromFileOpenThatIsNotPowerShellAsync()
         {
             NewTestFile("$a = 4", languageId: "plaintext");
@@ -165,7 +156,7 @@ function CanSendWorkspaceSymbolRequest {
             Assert.Empty(Diagnostics);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [SkippableFact]
         public async Task CanReceiveDiagnosticsFromFileChangedAsync()
         {
             Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
@@ -216,7 +207,7 @@ function CanSendWorkspaceSymbolRequest {
             Assert.Equal("PSUseDeclaredVarsMoreThanAssignments", diagnostic.Code);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [SkippableFact]
         public async Task CanReceiveDiagnosticsFromConfigurationChangeAsync()
         {
             Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
@@ -275,7 +266,7 @@ function CanSendWorkspaceSymbolRequest {
             Assert.Equal("PSUseDeclaredVarsMoreThanAssignments", diagnostic.Code);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendFoldingRangeRequestAsync()
         {
             string scriptPath = NewTestFile(@"gci | % {
@@ -316,7 +307,7 @@ $_
                 });
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [SkippableFact]
         public async Task CanSendFormattingRequestAsync()
         {
             Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
@@ -352,7 +343,7 @@ Get-Process
             Assert.Contains("\t", textEdit.NewText);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [SkippableFact]
         public async Task CanSendRangeFormattingRequestAsync()
         {
             Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
@@ -401,7 +392,7 @@ Get-Process
             Assert.Contains("\t", textEdit.NewText);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendDocumentSymbolRequestAsync()
         {
             string scriptPath = NewTestFile(@"
@@ -447,7 +438,7 @@ CanSendDocumentSymbolRequest
                 });
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendReferencesRequestAsync()
         {
             string scriptPath = NewTestFile(@"
@@ -490,7 +481,7 @@ CanSendReferencesRequest
                 });
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendDocumentHighlightRequestAsync()
         {
             string scriptPath = NewTestFile(@"
@@ -536,7 +527,7 @@ Write-Host 'Goodbye'
                 });
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendPowerShellGetPSHostProcessesRequestAsync()
         {
             Process process = new();
@@ -577,7 +568,7 @@ Write-Host 'Goodbye'
             Assert.NotEmpty(pSHostProcessResponses);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendPowerShellGetRunspaceRequestAsync()
         {
             Process process = new();
@@ -620,7 +611,7 @@ Write-Host 'Goodbye'
             Assert.NotEmpty(runspaceResponses);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendPesterLegacyCodeLensRequestAsync()
         {
             // Make sure LegacyCodeLens is enabled because we'll need it in this test.
@@ -686,7 +677,7 @@ Describe 'DescribeName' {
                 });
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendPesterCodeLensRequestAsync()
         {
             // Make sure Pester legacy CodeLens is disabled because we'll need it in this test.
@@ -796,7 +787,7 @@ Describe 'DescribeName' {
                 });
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task NoMessageIfPesterCodeLensDisabled()
         {
             // Make sure Pester legacy CodeLens is disabled because we'll need it in this test.
@@ -839,7 +830,7 @@ Describe 'DescribeName' {
             Assert.Empty(codeLenses);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendFunctionReferencesCodeLensRequestAsync()
         {
             string filePath = NewTestFile(@"
@@ -877,7 +868,7 @@ CanSendReferencesCodeLensRequest
             Assert.Equal("1 reference", codeLensResolveResult.Command.Title);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendClassReferencesCodeLensRequestAsync()
         {
             string filePath = NewTestFile(@"
@@ -936,7 +927,7 @@ $o -is [MyBaseClass]
             Assert.Equal("4 references", codeLensResolveResult.Command.Title);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendEnumReferencesCodeLensRequestAsync()
         {
             string filePath = NewTestFile(@"
@@ -981,7 +972,7 @@ enum MyEnum {
             Assert.Equal("3 references", codeLensResolveResult.Command.Title);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [SkippableFact]
         public async Task CanSendCodeActionRequestAsync()
         {
             Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
@@ -1037,7 +1028,7 @@ enum MyEnum {
                 });
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendCompletionAndCompletionResolveRequestAsync()
         {
             CompletionList completionItems = await PsesLanguageClient.TextDocument.RequestCompletion(
@@ -1060,7 +1051,7 @@ enum MyEnum {
             Assert.Contains(testDescription, updatedCompletionItem.Documentation.String);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendCompletionResolveWithModulePrefixRequestAsync()
         {
             await PsesLanguageClient
@@ -1107,7 +1098,7 @@ enum MyEnum {
             }
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendHoverRequestAsync()
         {
             string filePath = NewTestFile(testCommand);
@@ -1132,7 +1123,7 @@ enum MyEnum {
                 });
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendSignatureHelpRequestAsync()
         {
             string filePath = NewTestFile($"{testCommand} -");
@@ -1156,7 +1147,7 @@ enum MyEnum {
             Assert.Contains(testCommand, signatureHelp.Signatures.First().Label);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendDefinitionRequestAsync()
         {
             string scriptPath = NewTestFile(@"
@@ -1187,7 +1178,7 @@ CanSendDefinitionRequest
             Assert.Equal(33, locationOrLocationLink.Location.Range.End.Character);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [SkippableFact]
         public async Task CanSendGetCommentHelpRequestAsync()
         {
             Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode && PsesStdioLanguageServerProcessHost.IsWindowsPowerShell,
@@ -1226,7 +1217,7 @@ function CanSendGetCommentHelpRequest {
             Assert.Contains("myParam", commentHelpRequestResult.Content[7]);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendEvaluateRequestAsync()
         {
             EvaluateResponseBody evaluateResponseBody =
@@ -1245,7 +1236,7 @@ function CanSendGetCommentHelpRequest {
         }
 
         // getCommand gets all the commands in the system, and is not optimized and can take forever on CI systems
-        [SkippableFactOnWindowsPowerShell(Timeout = 120000)]
+        [SkippableFact(Timeout = 120000)]
         public async Task CanSendGetCommandRequestAsync()
         {
             Skip.If(
@@ -1264,7 +1255,7 @@ function CanSendGetCommentHelpRequest {
             Assert.True(pSCommandMessages.Count > 20);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [SkippableFact]
         public async Task CanSendExpandAliasRequestAsync()
         {
             Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
@@ -1283,7 +1274,7 @@ function CanSendGetCommentHelpRequest {
             Assert.Equal("Get-ChildItem", expandAliasResult.Text);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [SkippableFact]
         public async Task CanSendExpandAliasRequestWithMultipleAliasesAsync()
         {
             Skip.If(PsesStdioLanguageServerProcessHost.RunningInConstrainedLanguageMode,
@@ -1306,7 +1297,7 @@ function CanSendGetCommentHelpRequest {
             Assert.Equal("Get-ChildItem | Where-Object Name | ForEach-Object Name", expandAliasResult.Text);
         }
 
-        [SkippableFactOnWindowsPowerShell]
+        [Fact]
         public async Task CanSendSemanticTokenRequestAsync()
         {
             const string scriptContent = "function";

@@ -138,10 +138,31 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Utility
         {
             // We want to get the list hierarchy of execution policies
             // Calling the cmdlet is the simplest way to do that
-            IReadOnlyList<PSObject> policies = pwsh
-                .AddCommand(@"Microsoft.PowerShell.Security\Get-ExecutionPolicy")
-                .AddParameter("List")
-                .InvokeAndClear<PSObject>();
+            IReadOnlyList<PSObject> policies;
+            try
+            {
+                policies = pwsh
+                    .AddCommand(@"Microsoft.PowerShell.Security\Get-ExecutionPolicy")
+                    .AddParameter("List")
+                    .InvokeAndClear<PSObject>();
+            }
+            catch (Exception e)
+            {
+                // Some Windows PowerShell servicing builds throw a type-data conflict
+                // ("The member ... is already present" on ObjectSecurity) when
+                // autoloading Microsoft.PowerShell.Security into a runspace whose
+                // InitialSessionState already carries that module's type data.
+                // Configuring the execution policy is best-effort, so log and skip
+                // rather than letting it abort host startup (which manifests as a hang).
+                logger.LogError(e, "Failed to query the execution policy; skipping execution policy configuration.");
+                return;
+            }
+
+            // We need at least the CurrentUser and LocalMachine scopes to proceed.
+            if (policies is null || policies.Count < 2)
+            {
+                return;
+            }
 
             // The policies come out in the following order:
             // - MachinePolicy
