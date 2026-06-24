@@ -48,9 +48,9 @@ namespace Microsoft.PowerShell.EditorServices.Utility
         public static bool IsPS7OrGreater { get; } = PSVersion.Major >= 7;
 
         /// <summary>
-        /// True if we are running in PowerShell 7.4, false otherwise.
+        /// True if we are running in PowerShell 7.4 or greater, false otherwise.
         /// </summary>
-        public static bool IsPS74 { get; } = PSVersion.Major == 7 && PSVersion.Minor == 4;
+        public static bool IsPS74OrGreater { get; } = PSVersion >= new Version(7, 4);
 
         /// <summary>
         /// True if we are running on Windows, false otherwise.

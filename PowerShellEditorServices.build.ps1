@@ -40,7 +40,7 @@ $script:BuildInfoPath = "src/PowerShellEditorServices.Hosting/BuildInfo.cs"
 
 $script:NetFramework = @{
     PS51     = 'net462'
-    PS74     = 'net8.0'
+    PS74     = 'net10.0'
     Standard = 'netstandard2.0'
 }
 
@@ -58,7 +58,7 @@ Task FindDotNet {
 
     # Strip out semantic version metadata so it can be cast to `Version`
     [Version]$existingVersion, $null = (dotnet --version) -split " " -split "-"
-    Assert ($existingVersion -ge [Version]("8.0")) ".NET SDK 8.0 or higher is required, please update it: https://aka.ms/dotnet-cli"
+    Assert ($existingVersion -ge [Version]("10.0")) ".NET SDK 10.0 or higher is required, please update it: https://aka.ms/dotnet-cli"
 
     Write-Build DarkGreen "Using dotnet v$(dotnet --version) at path $((Get-Command dotnet).Source)"
 }

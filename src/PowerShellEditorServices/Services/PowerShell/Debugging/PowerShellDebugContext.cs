@@ -114,10 +114,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
             // then this came over LSP and we need to set it.
             _psesHost.SetExit();
 
-            if (LastStopEventArgs is not null)
-            {
-                LastStopEventArgs.ResumeAction = debuggerResumeAction;
-            }
+            LastStopEventArgs?.ResumeAction = debuggerResumeAction;
 
             // We need to tell whatever is happening right now in the debug prompt to wrap up so we
             // can continue. However, if the host was initialized with the console REPL disabled,
