@@ -68,7 +68,11 @@ internal class DidChangeWatchedFilesHandler : IDidChangeWatchedFilesHandler
         matcher.AddExcludePatterns(_workspaceService.ExcludeFilesGlob);
         foreach (FileEvent change in request.Changes)
         {
-            if (matcher.Match(change.Uri.GetFileSystemPath()).HasMatches)
+            string changePath = change.Uri.ToUri().IsFile
+                ? change.Uri.GetFileSystemPath()
+                : change.Uri.ToUri().AbsolutePath;
+
+            if (matcher.Match(changePath).HasMatches)
             {
                 continue;
             }
@@ -102,7 +106,7 @@ internal class DidChangeWatchedFilesHandler : IDidChangeWatchedFilesHandler
                 string fileContents;
                 try
                 {
-                    fileContents = WorkspaceService.ReadFileContents(change.Uri);
+                    fileContents = _workspaceService.ReadFileContents(change.Uri);
                 }
                 catch
                 {
