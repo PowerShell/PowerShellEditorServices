@@ -58,9 +58,6 @@ Task FindDotNet {
 
     [string[]]$dotnetInfo = dotnet --version 2>&1
     $missingDotnet = ($dotnetInfo -match '(Install the .+ \.NET SDK) or update')[0]
-    if ($missingDotnet) {
-        $missingDotnetMessage = $missingDotnet[0] -replace 'or update.+'
-    }
     Assert (!$missingDotnet) ($missingDotnet -replace 'or update.+')
     Write-Build DarkGreen "Using dotnet v$($dotnetInfo) at path $((Get-Command dotnet).Source)"
 }
