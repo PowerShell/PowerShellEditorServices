@@ -20,15 +20,15 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution
 
     internal abstract class SynchronousTask<TResult> : ISynchronousTask
     {
-        private readonly TaskCompletionSource<TResult> _taskCompletionSource;
+        private TaskCompletionSource<TResult> _taskCompletionSource { get; }
 
-        private readonly CancellationToken _taskRequesterCancellationToken;
+        private CancellationToken _taskRequesterCancellationToken { get; }
 
-        private bool _executionCanceled;
+        private bool _executionCanceled { get; set; }
 
-        private TResult _result;
+        private TResult _result { get; set; }
 
-        private ExceptionDispatchInfo _exceptionInfo;
+        private ExceptionDispatchInfo _exceptionInfo { get; set; }
 
         protected SynchronousTask(
             ILogger logger,

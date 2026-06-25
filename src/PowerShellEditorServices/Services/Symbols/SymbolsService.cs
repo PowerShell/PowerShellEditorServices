@@ -70,7 +70,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             _codeLensProviders = new ConcurrentDictionary<string, ICodeLensProvider>();
             if (configurationService.CurrentSettings.EnableReferencesCodeLens)
             {
-                ReferencesCodeLensProvider referencesProvider = new(_workspaceService, this);
+                ReferencesCodeLensProvider referencesProvider = new(this);
                 _ = _codeLensProviders.TryAdd(referencesProvider.ProviderId, referencesProvider);
             }
 
@@ -495,7 +495,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
                     return;
                 }
 
-                TryRegisterCodeLensProvider(new ReferencesCodeLensProvider(_workspaceService, this));
+                TryRegisterCodeLensProvider(new ReferencesCodeLensProvider(this));
                 return;
             }
 

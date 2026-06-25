@@ -13,13 +13,13 @@ namespace Microsoft.PowerShell.EditorServices.Services.PowerShell.Debugging
 
         DebuggerStopEventArgs LastStopEventArgs { get; }
 
-        public bool IsDebuggingRemoteRunspace { get; set; }
+        bool IsDebuggingRemoteRunspace { get; set; }
 
-        public event Action<object, DebuggerStopEventArgs> DebuggerStopped;
+        event Action<object, DebuggerStopEventArgs> DebuggerStopped;
 
-        public event Action<object, DebuggerResumingEventArgs> DebuggerResuming;
+        event Action<object, DebuggerResumingEventArgs> DebuggerResuming;
 
-        public event Action<object, BreakpointUpdatedEventArgs> BreakpointUpdated;
+        event Action<object, BreakpointUpdatedEventArgs> BreakpointUpdated;
 
         void Continue();
 
