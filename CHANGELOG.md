@@ -1,5 +1,12 @@
 # PowerShell Editor Services Release History
 
+## v4.7.0
+### Thursday, June 25, 2026
+
+See more details at the GitHub Release for [v4.7.0](https://github.com/PowerShell/PowerShellEditorServices/releases/tag/v4.7.0).
+
+Add a module metadata handler, enhance command and help handlers, and fix a Windows PowerShell host-start hang.
+
 ## v4.6.0
 ### Friday, May 15, 2026
 
