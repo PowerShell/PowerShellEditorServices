@@ -691,10 +691,7 @@ namespace Microsoft.PowerShell.EditorServices.Services
             }
             try
             {
-                if (runspaceInfo.Runspace.Events != null)
-                {
-                    runspaceInfo.Runspace.Events.ReceivedEvents.PSEventReceived -= HandlePSEventReceivedAsync;
-                }
+                runspaceInfo.Runspace.Events.ReceivedEvents.PSEventReceived -= HandlePSEventReceivedAsync;
 
                 if (runspaceInfo.Runspace.RunspaceStateInfo.State == RunspaceState.Opened)
                 {

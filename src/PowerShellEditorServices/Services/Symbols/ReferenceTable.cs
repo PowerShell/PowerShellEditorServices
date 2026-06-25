@@ -22,7 +22,7 @@ internal sealed class ReferenceTable
 
     private readonly ConcurrentDictionary<string, ConcurrentBag<SymbolReference>> _symbolReferences = new(StringComparer.OrdinalIgnoreCase);
 
-    private bool _isInited;
+    private bool _isInited { get; set; }
 
     public ReferenceTable(ScriptFile parent) => _parent = parent;
 
