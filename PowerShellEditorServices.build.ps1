@@ -56,11 +56,13 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
 Task FindDotNet {
     Assert (Get-Command dotnet -ErrorAction SilentlyContinue) "dotnet not found, please install it: https://aka.ms/dotnet-cli"
 
-    # Strip out semantic version metadata so it can be cast to `Version`
-    [Version]$existingVersion, $null = (dotnet --version) -split " " -split "-"
-    Assert ($existingVersion -ge [Version]("8.0")) ".NET SDK 8.0 or higher is required, please update it: https://aka.ms/dotnet-cli"
-
-    Write-Build DarkGreen "Using dotnet v$(dotnet --version) at path $((Get-Command dotnet).Source)"
+    [string[]]$dotnetInfo = dotnet --version 2>&1
+    $missingDotnet = ($dotnetInfo -match '(Install the .+ \.NET SDK) or update')[0]
+    if ($missingDotnet) {
+        $missingDotnetMessage = $missingDotnet[0] -replace 'or update.+'
+    }
+    Assert (!$missingDotnet) ($missingDotnet -replace 'or update.+')
+    Write-Build DarkGreen "Using dotnet v$($dotnetInfo) at path $((Get-Command dotnet).Source)"
 }
 
 Task Clean FindDotNet, {
