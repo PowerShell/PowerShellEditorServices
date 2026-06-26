@@ -161,22 +161,30 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 return request;
             }
 
-            // Get the documentation for the function
-            CommandInfo commandInfo = await CommandHelpers.GetCommandInfoAsync(
-                request.Label,
-                _runspaceContext.CurrentRunspace,
-                _executionService,
-                cancellationToken).ConfigureAwait(false);
-
-            if (commandInfo is not null)
+            try
             {
-                return request with
+                // Get the documentation for the function
+                CommandInfo commandInfo = await CommandHelpers.GetCommandInfoAsync(
+                    request.Label,
+                    _runspaceContext.CurrentRunspace,
+                    _executionService,
+                    cancellationToken).ConfigureAwait(false);
+
+                if (commandInfo is not null)
                 {
-                    Documentation = await CommandHelpers.GetCommandSynopsisAsync(
-                        commandInfo,
-                        _executionService,
-                        cancellationToken).ConfigureAwait(false)
-                };
+                    return request with
+                    {
+                        Documentation = await CommandHelpers.GetCommandSynopsisAsync(
+                            commandInfo,
+                            _executionService,
+                            cancellationToken).ConfigureAwait(false)
+                    };
+                }
+            }
+            // Ignore canceled requests (logging will pollute the output).
+            catch (TaskCanceledException)
+            {
+                return request;
             }
 
             return request;
