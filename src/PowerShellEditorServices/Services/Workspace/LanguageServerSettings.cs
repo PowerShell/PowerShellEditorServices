@@ -134,6 +134,11 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         OTBS,
 
         /// <summary>
+        /// Configure the formatting settings to resemble OTBS with else on new line.
+        /// </summary>
+        OTPS,
+
+        /// <summary>
         /// Configure the formatting settings to resemble the Stroustrup brace style variant of K&amp;R indent/brace style.
         /// </summary>
         Stroustrup
@@ -238,6 +243,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     openBraceSettings["OnSameLine"] = true;
                     openBraceSettings["NewLineAfter"] = true;
                     closeBraceSettings["NewLineAfter"] = false;
+                    break;
+
+                case CodeFormattingPreset.OTPS:
+                    openBraceSettings["OnSameLine"] = true;
+                    openBraceSettings["NewLineAfter"] = true;
+                    closeBraceSettings["NewLineAfter"] = true;
                     break;
 
                 case CodeFormattingPreset.Stroustrup:
