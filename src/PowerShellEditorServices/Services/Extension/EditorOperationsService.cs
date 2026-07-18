@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System;
 using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
@@ -17,15 +18,18 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
         private readonly PsesInternalHost _psesHost;
         private readonly WorkspaceService _workspaceService;
         private readonly ILanguageServerFacade _languageServer;
+        private readonly ConfigurationService _configurationService;
 
         public EditorOperationsService(
             PsesInternalHost psesHost,
             WorkspaceService workspaceService,
-            ILanguageServerFacade languageServer)
+            ILanguageServerFacade languageServer,
+            ConfigurationService configurationService)
         {
             _psesHost = psesHost;
             _workspaceService = workspaceService;
             _languageServer = languageServer;
+            _configurationService = configurationService;
         }
 
         public async Task<EditorContext> GetEditorContextAsync()
@@ -260,6 +264,12 @@ namespace Microsoft.PowerShell.EditorServices.Services.Extension
 
         public void ClearTerminal()
         {
+            if (_configurationService.CurrentSettings.IntegratedConsole.ForceClearScrollbackBuffer)
+            {
+                Console.Write("\u001b[3J");
+                return;
+            }
+
             if (!TestHasLanguageServer(warnUser: false))
             {
                 return;
