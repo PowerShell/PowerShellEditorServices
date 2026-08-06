@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// In particular, this class wraps the point where Editor Services is safely loaded
     /// in a way that separates its dependencies from the calling context.
     /// </summary>
-    public sealed class EditorServicesLoader : IDisposable
+    public sealed class EditorServicesLoader
     {
 #if !CoreCLR
         // TODO: Well, we're saying we need 4.8 here but we're building for 4.6.2...
@@ -172,8 +172,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
         private readonly Version _powerShellVersion;
 
-        private EditorServicesRunner _editorServicesRunner;
-
         private EditorServicesLoader(
             HostLogger logger,
             EditorServicesConfig hostConfig,
@@ -217,20 +215,10 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
 
             _logger.Log(PsesLogLevel.Information, "Starting PowerShell Editor Services");
 
-            _editorServicesRunner = new EditorServicesRunner(_logger, _hostConfig, _sessionFileWriter, _loggersToUnsubscribe);
+            EditorServicesRunner editorServicesRunner = new(_logger, _hostConfig, _sessionFileWriter, _loggersToUnsubscribe);
 
             // The trigger method for Editor Services
-            return Task.Run(_editorServicesRunner.RunUntilShutdown);
-        }
-
-        public void Dispose()
-        {
-            _logger.Log(PsesLogLevel.Trace, "Loader disposed");
-            _editorServicesRunner?.Dispose();
-
-            // TODO:
-            // Remove assembly resolve events
-            // This is not high priority, since the PSES process shouldn't be reused
+            return Task.Run(editorServicesRunner.RunUntilShutdown);
         }
 
         private static void LoadEditorServices() =>
