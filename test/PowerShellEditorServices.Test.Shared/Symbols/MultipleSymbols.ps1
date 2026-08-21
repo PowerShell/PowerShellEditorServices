@@ -6,7 +6,7 @@ $Script:ScriptVar2 = 2
 
 function script:AFunction {}
 
-filter AFilter {$_}
+filter AFilter { $FilterVar = $_ }
 
 function AnAdvancedFunction {
     begin {
