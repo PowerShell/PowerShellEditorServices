@@ -68,14 +68,36 @@ The Visual Studio Code, Vim, Neovim, and IntelliJ extensions use named pipes.
 
 ### Standard Input and Output
 
-Alternatively, the `-SessionDetailsPath ./session.json` argument can be replaced with just `-Stdio`.
-The use of stdio is the _simplest_ way to connect with most LSP clients,
-but will limit some features, such as the debugger and Extension Terminal.
-This is because because these two features require their own IO streams and stdio only provides a single pair of streams.
+Connecting to PSES over standard input and output (stdio) is the simplest option in most LSP clients.
 
-Please see the [emacs-simple-test.el](test/emacs-simple-test.el),
-[emacs-test.el](test/emacs-test.el),
-[vim-simple-test.vim](test/vim-simple-test.vim) and [vim-test.vim](test/vim-test.vim) for examples of end-to-end tested configurations.
+> [!NOTE]
+> Some features are not available over stdio, such as the debugger and Extension
+> Terminal, because they require their own IO streams and stdio provides a single
+> pair of streams.
+
+Use PSES over stdio as follows:
+
+```powershell
+pwsh -NoLogo -NoProfile -Command "./PowerShellEditorServices/Start-EditorServices.ps1 -Stdio -LogLevel Error"
+```
+
+> [!IMPORTANT]
+> Adjust the path to `Start-EditorServices.ps1` as needed. The command above assumes
+> that the current directory is set to the folder where you expanded the PSES ZIP
+> archive to.
+>
+> Depending on your editor, set the environment variables `NO_COLOR` and `TERM`
+> before issuing the command above to improve the readability of any error messages
+> `pwsh` may output. See [Disabling ANSI Output](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_ansi_terminals#disabling-ansi-output)
+> for more details.
+
+For examples of tested end-to-end configurations, see:
+
+- [emacs-simple-test.el](test/emacs-simple-test.el)
+- [emacs-test.el](test/emacs-test.el)
+- [vim-simple-test.vim](test/vim-simple-test.vim)
+- [vim-test.vim](test/vim-test.vim)
+
 They use [eglot for Emacs](https://github.com/joaotavora/eglot) and [LanguageClient-neovim](https://github.com/autozimu/LanguageClient-neovim).
 
 ### Advanced Usage
