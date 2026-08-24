@@ -121,12 +121,13 @@ and IntelliJ.
 
 ### Standard Input and Output
 
-Connecting to PSES over standard input and output (stdio) is the simplest option in most LSP clients.
+Connecting to PSES over standard input and output (stdio) is the simplest option
+in most LSP clients.
 
 > [!NOTE]
-> Some features are not available over stdio, such as the debugger and Extension
-> Terminal, because they require their own IO streams and stdio provides a single
-> pair of streams.
+> Some PSES features are not available over stdio, such as the debugger and
+> Extension Terminal, because they require their own IO streams and stdio
+> provides a single pair of streams.
 
 Use PSES over stdio as follows:
 
@@ -134,24 +135,26 @@ Use PSES over stdio as follows:
 pwsh -NoLogo -NoProfile -Command "./PowerShellEditorServices/Start-EditorServices.ps1 -Stdio -LogLevel Error"
 ```
 
+The script **Start-EditorServices.ps1** is located inside the
+**PowerShellEditorServices** directory. See [Manual Installation](#manual-installation).
+
 > [!IMPORTANT]
-> Adjust the path to `Start-EditorServices.ps1` as needed. The command above assumes
-> that the current directory is set to the folder where you expanded the PSES ZIP
-> archive to.
->
-> Depending on your editor, set the environment variables `NO_COLOR` and `TERM`
-> before issuing the command above to improve the readability of any error messages
-> `pwsh` may output. See [Disabling ANSI Output](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_ansi_terminals#disabling-ansi-output)
+> Depending on your editor, consider setting the environment variables
+> `NO_COLOR` and `TERM` before executing the command above to improve the
+> readability of any error messages output by `pwsh`. See [Disabling ANSI Output][disabling-ansi-output]
 > for more details.
 
-For examples of tested end-to-end configurations, see:
+[disabling-ansi-output]: https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_ansi_terminals#disabling-ansi-output
+
+For examples of tested sdtio-based configurations, see:
 
 - [emacs-simple-test.el](test/emacs-simple-test.el)
 - [emacs-test.el](test/emacs-test.el)
 - [vim-simple-test.vim](test/vim-simple-test.vim)
 - [vim-test.vim](test/vim-test.vim)
 
-They use [eglot for Emacs](https://github.com/joaotavora/eglot) and [LanguageClient-neovim](https://github.com/autozimu/LanguageClient-neovim).
+The examples above use [eglot for Emacs](https://github.com/joaotavora/eglot)
+and [LanguageClient-neovim](https://github.com/autozimu/LanguageClient-neovim).
 
 ### Advanced Usage
 
