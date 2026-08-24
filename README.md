@@ -32,7 +32,9 @@ It is recommended to use a generic [LSP plugin](#Usage) with your client if poss
 
 ## Supported PowerShell Versions
 
-PSES runs as a PowerShell Module in [currently supported versions of PowerShell 7+](https://learn.microsoft.com/en-us/powershell/scripting/install/powershell-support-lifecycle).
+PSES runs as a PowerShell Module in [currently supported versions of PowerShell 7+][supported-ps-versions].
+
+[supported-ps-versions]: https://learn.microsoft.com/en-us/powershell/scripting/install/powershell-support-lifecycle
 
 Windows PowerShell 5.1 is supported on a best-effort basis.
 
