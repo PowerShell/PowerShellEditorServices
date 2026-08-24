@@ -18,7 +18,7 @@ with clients, especially text editors and IDEs.
 [lsp]: https://microsoft.github.io/language-server-protocol/
 
 PSES runs in [currently supported versions of PowerShell 7+][supported-ps-versions].
-Windows PowerShell 5.1 is supported on a best efforts basis.
+Windows PowerShell 5.1 is supported on a best-effort basis.
 
 [supported-ps-versions]: https://learn.microsoft.com/en-us/powershell/scripting/install/powershell-support-lifecycle
 
