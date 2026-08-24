@@ -80,7 +80,7 @@ Expand-Archive ./PowerShellEditorservices.zip PowerShellEditorServices
 
 ## Usage
 
-If your  text editor or client supports LSP, you can connect to PSES in two
+If your text editor or client supports LSP, you can connect to PSES in two
 ways: via
 [named pipes](#named-pipes) (Unix domain sockets) or
 [standard input and output](#standard-input-and-output) (stdio).
