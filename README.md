@@ -22,18 +22,19 @@ Windows PowerShell 5.1 is supported on a best efforts basis.
 
 [supported-ps-versions]: https://learn.microsoft.com/en-us/powershell/scripting/install/powershell-support-lifecycle
 
-## [Language Server Protocol][lsp] clients using PowerShell Editor Services
-
-[lsp]: https://microsoft.github.io/language-server-protocol/
+#### LSP clients using PSES
 
 - [PowerShell for Visual Studio Code](https://github.com/PowerShell/vscode-powershell)
+
 > [!NOTE]
 > PowerShell for Azure Data Studio will no longer be updated or maintained.
 
-The functionality in PowerShell Editor Services is available in the following editor extensions:
+PSES is also available through the following editor extensions:
+
 > [!WARNING]
-> These clients are community maintained and may be very out of date.
-It is recommended to use a generic [LSP plugin](#Usage) with your client if possible.
+> These clients are community maintained and may be very out of date. It
+> is recommended to use a generic [LSP plugin](#usage) with your client if
+> possible.
 
 - [lsp-pwsh](https://github.com/emacs-lsp/lsp-mode/blob/master/clients/lsp-pwsh.el), an Emacs PowerShell plugin
 - [intellij-powershell](https://github.com/ant-druha/intellij-powershell), adds PowerShell language support to IntelliJ-based IDEs
