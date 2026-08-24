@@ -89,7 +89,7 @@ Some features are only enabled based on the connection method used.
 | Feature                       | Named Pipes | Stdio |
 | ----------------------------- |:-----------:|:-----:|
 | **Extension Terminal**        |✅           |❌     |
-| **Debugger Adapter Protocol** |✅           |❌     |
+| **Debug Adapter Protocol**    |✅           |❌     |
 
 > [!NOTE]
 > All connection methods are available in all OSes supported by PowerShell
