@@ -60,7 +60,9 @@ named pipes (AKA sockets) are the way to go.
 They give you all the benefits of the Language Server Protocol with extra capabilities that you can take advantage of:
 
 - The PowerShell Extension Terminal
-- Debugging using the [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/)
+- Debugging using the [Debug Adapter Protocol][debug-adapter-protocol]
+
+[debug-adapter-protocol]: https://microsoft.github.io/debug-adapter-protocol/
 
 The typical command to start PowerShell Editor Services using named pipes / sockets is as follows:
 
