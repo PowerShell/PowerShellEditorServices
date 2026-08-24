@@ -12,7 +12,9 @@
 functionality needed to enable a consistent and robust PowerShell development
 experience in almost any editor or integrated development environment (IDE).
 
-## [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) clients using PowerShell Editor Services
+## [Language Server Protocol][lsp] clients using PowerShell Editor Services
+
+[lsp]: https://microsoft.github.io/language-server-protocol/
 
 - [PowerShell for Visual Studio Code](https://github.com/PowerShell/vscode-powershell)
 > [!NOTE]
