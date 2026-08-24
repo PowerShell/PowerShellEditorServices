@@ -73,7 +73,7 @@ You can copy and paste it into your PowerShell terminal.
 ```powershell
 $uri = 'https://api.github.com/repos/PowerShell/PowerShellEditorServices/releases/latest'
 irm $uri | % { iwr $_.assets.browser_download_url -OutFile PowerShellEditorServices.zip }
-Expand-Archive ./PowershellEditorservices.zip PowerShellEditorServices
+Expand-Archive ./PowerShellEditorservices.zip PowerShellEditorServices
 ```
 
 [pses-releases]: https://github.com/PowerShell/PowerShellEditorServices/releases
