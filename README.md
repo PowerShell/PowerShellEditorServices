@@ -1,33 +1,45 @@
 # PowerShell Editor Services
 
-[![CI Tests](https://github.com/PowerShell/PowerShellEditorServices/actions/workflows/ci-test.yml/badge.svg)](https://github.com/PowerShell/PowerShellEditorServices/actions/workflows/ci-test.yml)
-[![Discord](https://img.shields.io/discord/180528040881815552.svg?label=%23vscode&logo=discord&logoColor=white)](https://aka.ms/psdiscord)
+[![CI Tests][ci-tests-badge]][ci-tests-yaml]
+[![Discord][discord-badge]][discord]
 
-**PowerShell Editor Services** is a PowerShell module that provides common
-functionality needed to enable a consistent and robust PowerShell development
-experience in almost any editor or integrated development environment (IDE).
+[ci-tests-badge]: https://github.com/PowerShell/PowerShellEditorServices/actions/workflows/ci-test.yml/badge.svg
+[ci-tests-yaml]: https://github.com/PowerShell/PowerShellEditorServices/actions/workflows/ci-test.yml
+[discord-badge]: https://img.shields.io/discord/180528040881815552.svg?label=%23vscode&logo=discord&logoColor=white
+[discord]: https://aka.ms/psdiscord
 
-## [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) clients using PowerShell Editor Services
+**PowerShell Editor Services** (PSES) is a PowerShell module that provides
+a consistent and robust PowerShell development experience in almost any text
+editor and IDE (integrated development environment).
+
+PSES adheres to the [Language Server Protocol][lsp] (LSP) for easy integration
+with clients, especially text editors and IDEs.
+
+[lsp]: https://microsoft.github.io/language-server-protocol/
+
+PSES runs in [currently supported versions of PowerShell 7+][supported-ps-versions].
+Windows PowerShell 5.1 is supported on a best-effort basis.
+
+[supported-ps-versions]: https://learn.microsoft.com/en-us/powershell/scripting/install/powershell-support-lifecycle
+
+## LSP clients using PSES
 
 - [PowerShell for Visual Studio Code](https://github.com/PowerShell/vscode-powershell)
+
 > [!NOTE]
 > PowerShell for Azure Data Studio will no longer be updated or maintained.
 
-The functionality in PowerShell Editor Services is available in the following editor extensions:
+PSES is also available through the following editor extensions:
+
 > [!WARNING]
-> These clients are community maintained and may be very out of date.
-It is recommended to use a generic [LSP plugin](#Usage) with your client if possible.
+> These clients are community maintained and may be very out of date. It
+> is recommended to use a generic [LSP plugin](#usage) with your client if
+> possible.
 
 - [lsp-pwsh](https://github.com/emacs-lsp/lsp-mode/blob/master/clients/lsp-pwsh.el), an Emacs PowerShell plugin
 - [intellij-powershell](https://github.com/ant-druha/intellij-powershell), adds PowerShell language support to IntelliJ-based IDEs
 - [coc-powershell](https://github.com/yatli/coc-powershell), a Vim and Neovim plugin
 - [powershell.nvim](https://github.com/TheLeoP/powershell.nvim) a Neovim plugin
-
-## Supported PowerShell Versions
-
-PSES runs as a PowerShell Module in [currently supported versions of PowerShell 7+](https://learn.microsoft.com/en-us/powershell/scripting/install/powershell-support-lifecycle).
-
-Windows PowerShell 5.1 is supported on a best-effort basis.
 
 ## Features
 
@@ -39,41 +51,83 @@ Windows PowerShell 5.1 is supported on a best-effort basis.
 - The [$psEditor API](docs/guide/extensions.md) enables scripting of the host editor
 - A full, Extension Terminal experience for interactive development and debugging
 
+## Installation
+
+PSES is implemented as a PowerShell module, but you cannot install it using
+PSResourceGet or `Install-Module`. To install PSES, follow the instructions in the
+sections below.
+
+### Automated Installation
+
+Your text editor, IDE or LSP client may be able to install PSES for you. Check
+the relevant documentation.
+
+### Manual Installation
+
+Download **PowerShellEditorServices.zip** from [GitHub Releases][pses-releases]
+and extract the contents to a directory of your choice.
+
+The following script will download and extract **PowerShellEditorServices.zip**.
+You can copy and paste it into your PowerShell terminal.
+
+```powershell
+$uri = 'https://api.github.com/repos/PowerShell/PowerShellEditorServices/releases/latest'
+irm $uri | % { iwr $_.assets.browser_download_url -OutFile PowerShellEditorServices.zip }
+Expand-Archive ./PowerShellEditorservices.zip PowerShellEditorServices
+```
+
+[pses-releases]: https://github.com/PowerShell/PowerShellEditorServices/releases
+
 ## Usage
 
-If you're looking to integrate PowerShell Editor Services into your [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) compliant editor or client,
-we support two ways of connecting.
+If your text editor or client supports LSP, you can connect to PSES in two
+ways: via
+[named pipes](#named-pipes) (Unix domain sockets) or
+[standard input and output](#standard-input-and-output) (stdio).
+Some features are only enabled based on the connection method used.
 
-### Named Pipes / Unix Domain Sockets
+| Feature                       | Named Pipes | Stdio |
+| ----------------------------- |:-----------:|:-----:|
+| **Extension Terminal**        |✅           |❌     |
+| **Debug Adapter Protocol**    |✅           |❌     |
 
-If you're looking for a more feature-rich experience,
-named pipes (AKA sockets) are the way to go.
-They give you all the benefits of the Language Server Protocol with extra capabilities that you can take advantage of:
+> [!NOTE]
+> All connection methods are available in all OSes supported by PowerShell
+> unless otherwise noted.
 
-- The PowerShell Extension Terminal
-- Debugging using the [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/)
+### Named Pipes
 
-The typical command to start PowerShell Editor Services using named pipes / sockets is as follows:
+Named pipes enable all additional LSP capabilities, including:
+
+- the PowerShell Extension Terminal, and
+- debugging using the [Debug Adapter Protocol][Debug Adapter Protocol]
+
+[Debug Adapter Protocol]: https://microsoft.github.io/debug-adapter-protocol/
+
+To start PSES using named pipes, use a command like:
 
 ```powershell
 pwsh -NoLogo -NoProfile -Command "./PowerShellEditorServices/Start-EditorServices.ps1 -SessionDetailsPath ./session.json"
 ```
 
-The start script, `Start-EditorServices.ps1`, is found in the `PowerShellEditorServices` folder instead the `PowerShellEditorServices.zip` downloaded from the GitHub releases.
+The script **Start-EditorServices.ps1** is located inside the
+**PowerShellEditorServices** directory. See [Manual Installation](#manual-installation).
 
-The session details (which named pipes were created) will be written to the given session details path,
-and the client needs to point to these in order to connect.
+The file path given to `-SessionDetailsPath` will contain information about the
+created named pipes that the client needs to connect to PSES.
 
-The Visual Studio Code, Vim, Neovim, and IntelliJ extensions use named pipes.
+Named pipes are used in the extensions for Visual Studio Code, Vim, Neovim,
+and IntelliJ.
 
 ### Standard Input and Output
 
-Connecting to PSES over standard input and output (stdio) is the simplest option in most LSP clients.
+Connecting to PSES over standard input and output (stdio) is the simplest option
+in most LSP clients.
 
 > [!NOTE]
-> Some features are not available over stdio, such as the debugger and Extension
-> Terminal, because they require their own IO streams and stdio provides a single
-> pair of streams.
+> Some PSES features are not available over stdio, such as the debugger and
+> Extension Terminal, because they require their own IO streams and stdio
+> provides a single pair of streams.
 
 Use PSES over stdio as follows:
 
@@ -81,24 +135,26 @@ Use PSES over stdio as follows:
 pwsh -NoLogo -NoProfile -Command "./PowerShellEditorServices/Start-EditorServices.ps1 -Stdio -LogLevel Error"
 ```
 
+The script **Start-EditorServices.ps1** is located inside the
+**PowerShellEditorServices** directory. See [Manual Installation](#manual-installation).
+
 > [!IMPORTANT]
-> Adjust the path to `Start-EditorServices.ps1` as needed. The command above assumes
-> that the current directory is set to the folder where you expanded the PSES ZIP
-> archive to.
->
-> Depending on your editor, set the environment variables `NO_COLOR` and `TERM`
-> before issuing the command above to improve the readability of any error messages
-> `pwsh` may output. See [Disabling ANSI Output](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_ansi_terminals#disabling-ansi-output)
+> Depending on your editor, consider setting the environment variables
+> `NO_COLOR` and `TERM` before executing the command above to improve the
+> readability of any error messages output by `pwsh`. See [Disabling ANSI Output][disabling-ansi-output]
 > for more details.
 
-For examples of tested end-to-end configurations, see:
+[disabling-ansi-output]: https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_ansi_terminals#disabling-ansi-output
+
+For examples of tested sdtio-based configurations, see:
 
 - [emacs-simple-test.el](test/emacs-simple-test.el)
 - [emacs-test.el](test/emacs-test.el)
 - [vim-simple-test.vim](test/vim-simple-test.vim)
 - [vim-test.vim](test/vim-test.vim)
 
-They use [eglot for Emacs](https://github.com/joaotavora/eglot) and [LanguageClient-neovim](https://github.com/autozimu/LanguageClient-neovim).
+The examples above use [eglot for Emacs](https://github.com/joaotavora/eglot)
+and [LanguageClient-neovim](https://github.com/autozimu/LanguageClient-neovim).
 
 ### Advanced Usage
 
