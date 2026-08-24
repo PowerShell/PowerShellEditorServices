@@ -51,6 +51,33 @@ PSES is also available through the following editor extensions:
 - The [$psEditor API](docs/guide/extensions.md) enables scripting of the host editor
 - A full, Extension Terminal experience for interactive development and debugging
 
+## Installation
+
+PSES is implemented as a PowerShell module, but you cannot install it using
+PSResourceGet or `Install-Module`. To install PSES, follow the instructions in the
+sections below.
+
+#### Automated Installation
+
+Your text editor, IDE or LSP client may be able to install PSES for you. Check
+the relevant documentation.
+
+#### Manual Installation
+
+Download **PowerShellEditorServices.zip** from [GitHub Releases][pses-releases]
+and extract the contents to a directory of your choice.
+
+The following script will download and extract **PowerShellEditorServices.zip**.
+You can copy and paste it into your PowerShell terminal.
+
+```powershell
+$uri = 'https://api.github.com/repos/PowerShell/PowerShellEditorServices/releases/latest'
+irm $uri | % { iwr $_.assets.browser_download_url -OutFile PowerShellEditorServices.zip }
+Expand-Archive ./PowershellEditorservices.zip PowerShellEditorServices
+```
+
+[pses-releases]: https://github.com/PowerShell/PowerShellEditorServices/releases
+
 ## Usage
 
 If you're looking to integrate PowerShell Editor Services into your [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) compliant editor or client,
