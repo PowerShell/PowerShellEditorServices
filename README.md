@@ -95,29 +95,29 @@ Some features are only enabled based on the connection method used.
 > All connection methods are available in all OSes supported by PowerShell
 > unless otherwise noted.
 
-### Named Pipes / Unix Domain Sockets
+### Named Pipes
 
-If you're looking for a more feature-rich experience,
-named pipes (AKA sockets) are the way to go.
-They give you all the benefits of the Language Server Protocol with extra capabilities that you can take advantage of:
+Named pipes enable all additional LSP capabilities, including:
 
-- The PowerShell Extension Terminal
-- Debugging using the [Debug Adapter Protocol][debug-adapter-protocol]
+- the PowerShell Extension Terminal, and
+- debugging using the [Debug Adapter Protocol][Debug Adapter Protocol]
 
-[debug-adapter-protocol]: https://microsoft.github.io/debug-adapter-protocol/
+[Debug Adapter Protocol]: https://microsoft.github.io/debug-adapter-protocol/
 
-The typical command to start PowerShell Editor Services using named pipes / sockets is as follows:
+To start PSES using named pipes, use a command like:
 
 ```powershell
 pwsh -NoLogo -NoProfile -Command "./PowerShellEditorServices/Start-EditorServices.ps1 -SessionDetailsPath ./session.json"
 ```
 
-The start script, `Start-EditorServices.ps1`, is found in the `PowerShellEditorServices` folder instead the `PowerShellEditorServices.zip` downloaded from the GitHub releases.
+The script **Start-EditorServices.ps1** is located inside the
+**PowerShellEditorServices** directory. See [Manual Installation](#manual-installation).
 
-The session details (which named pipes were created) will be written to the given session details path,
-and the client needs to point to these in order to connect.
+The file path given to `-SessionDetailsPath` will contain information about the
+created named pipes that the client needs to connect to PSES.
 
-The Visual Studio Code, Vim, Neovim, and IntelliJ extensions use named pipes.
+Named pipes are used in the extensions for Visual Studio Code, Vim, Neovim,
+and IntelliJ.
 
 ### Standard Input and Output
 
