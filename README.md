@@ -80,8 +80,20 @@ Expand-Archive ./PowershellEditorservices.zip PowerShellEditorServices
 
 ## Usage
 
-If you're looking to integrate PowerShell Editor Services into your [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) compliant editor or client,
-we support two ways of connecting.
+If your  text editor or client supports LSP, you can connect to PSES in two
+ways: via
+[named pipes](#named-pipes) (Unix domain sockets) or
+[standard input and output](#standard-input-and-output) (stdio).
+Some features are only enabled based on the connection method used.
+
+| Feature                       | Named Pipes | Stdio |
+| ----------------------------- |:-----------:|:-----:|
+| **Extension Terminal**        |✅           |❌     |
+| **Debugger Adapter Protocol** |✅           |❌     |
+
+> [!NOTE]
+> All connection methods are available in all OSes supported by PowerShell
+> unless otherwise noted.
 
 ### Named Pipes / Unix Domain Sockets
 
