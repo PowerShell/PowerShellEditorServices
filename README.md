@@ -8,9 +8,19 @@
 [discord-badge]: https://img.shields.io/discord/180528040881815552.svg?label=%23vscode&logo=discord&logoColor=white
 [discord]: https://aka.ms/psdiscord
 
-**PowerShell Editor Services** is a PowerShell module that provides common
-functionality needed to enable a consistent and robust PowerShell development
-experience in almost any editor or integrated development environment (IDE).
+**PowerShell Editor Services** (PSES) is a PowerShell module that provides
+a consistent and robust PowerShell development experience in almost any text
+editor and IDE (integrated development environment).
+
+PSES adheres to the [Language Server Protocol][lsp] (LSP) for easy integration
+with clients, especially text editors and IDEs.
+
+[lsp]: https://microsoft.github.io/language-server-protocol/
+
+PSES runs in [currently supported versions of PowerShell 7+][supported-ps-versions].
+Windows PowerShell 5.1 is supported on a best efforts basis.
+
+[supported-ps-versions]: https://learn.microsoft.com/en-us/powershell/scripting/install/powershell-support-lifecycle
 
 ## [Language Server Protocol][lsp] clients using PowerShell Editor Services
 
@@ -29,14 +39,6 @@ It is recommended to use a generic [LSP plugin](#Usage) with your client if poss
 - [intellij-powershell](https://github.com/ant-druha/intellij-powershell), adds PowerShell language support to IntelliJ-based IDEs
 - [coc-powershell](https://github.com/yatli/coc-powershell), a Vim and Neovim plugin
 - [powershell.nvim](https://github.com/TheLeoP/powershell.nvim) a Neovim plugin
-
-## Supported PowerShell Versions
-
-PSES runs as a PowerShell Module in [currently supported versions of PowerShell 7+][supported-ps-versions].
-
-[supported-ps-versions]: https://learn.microsoft.com/en-us/powershell/scripting/install/powershell-support-lifecycle
-
-Windows PowerShell 5.1 is supported on a best-effort basis.
 
 ## Features
 
