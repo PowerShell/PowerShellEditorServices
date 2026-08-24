@@ -22,7 +22,7 @@ Windows PowerShell 5.1 is supported on a best efforts basis.
 
 [supported-ps-versions]: https://learn.microsoft.com/en-us/powershell/scripting/install/powershell-support-lifecycle
 
-#### LSP clients using PSES
+## LSP clients using PSES
 
 - [PowerShell for Visual Studio Code](https://github.com/PowerShell/vscode-powershell)
 
@@ -57,12 +57,12 @@ PSES is implemented as a PowerShell module, but you cannot install it using
 PSResourceGet or `Install-Module`. To install PSES, follow the instructions in the
 sections below.
 
-#### Automated Installation
+### Automated Installation
 
 Your text editor, IDE or LSP client may be able to install PSES for you. Check
 the relevant documentation.
 
-#### Manual Installation
+### Manual Installation
 
 Download **PowerShellEditorServices.zip** from [GitHub Releases][pses-releases]
 and extract the contents to a directory of your choice.
