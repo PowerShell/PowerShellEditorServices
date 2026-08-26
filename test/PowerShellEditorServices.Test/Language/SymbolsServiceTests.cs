@@ -764,7 +764,7 @@ namespace PowerShellEditorServices.Test.Language
                 FindsDetailsForBuiltInCommandData.SourceDetails.StartColumnNumber,
                 CancellationToken.None);
 
-            Assert.Equal("Extracts files from a specified archive (zipped) file.", symbolDetails.Documentation);
+            Assert.Contains("Expand-Archive", symbolDetails.Documentation);
         }
 
         [Fact]

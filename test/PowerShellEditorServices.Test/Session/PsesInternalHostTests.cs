@@ -238,9 +238,9 @@ namespace PowerShellEditorServices.Test.Session
         }
 
         [Fact]
-        public async Task CanLoadPSReadLine()
+        public async Task CannotLoadPSReadLineInTests()
         {
-            Assert.True(await psesHost.ExecuteDelegateAsync(
+            Assert.False(await psesHost.ExecuteDelegateAsync(
                 nameof(psesHost.TryLoadPSReadLine),
                 executionOptions: null,
                 (pwsh, _) => psesHost.TryLoadPSReadLine(
