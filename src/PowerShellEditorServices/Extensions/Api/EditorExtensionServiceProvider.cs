@@ -116,7 +116,7 @@ namespace Microsoft.PowerShell.EditorServices.Extensions.Services
             {
                 using (EnterPsesAlcReflectionContext())
                 {
-                    serviceType = s_psesAsm.GetType(asmQualifiedTypeName);
+                    serviceType = Type.GetType(asmQualifiedTypeName);
                 }
             }
             else
