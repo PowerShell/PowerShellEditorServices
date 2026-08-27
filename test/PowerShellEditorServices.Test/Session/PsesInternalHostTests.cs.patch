@@ -1,0 +1,17 @@
+--- test/PowerShellEditorServices.Test/Session/PsesInternalHostTests.cs
++++ test/PowerShellEditorServices.Test/Session/PsesInternalHostTests.cs
+@@ -237,13 +237,13 @@
+             await OnIdleTestHelpers.AssertHandledAsync(psesHost, "$handled");
+         }
+ 
+         [Fact]
+-        public async Task CannotLoadPSReadLineInTests()
++        public async Task CanLoadPSReadLine()
+         {
+-            Assert.False(await psesHost.ExecuteDelegateAsync(
++            Assert.True(await psesHost.ExecuteDelegateAsync(
+                 nameof(psesHost.TryLoadPSReadLine),
+                 executionOptions: null,
+                 (pwsh, _) => psesHost.TryLoadPSReadLine(
+                     pwsh,
+                     (EngineIntrinsics)pwsh.Runspace.SessionStateProxy.GetVariable("ExecutionContext"),
