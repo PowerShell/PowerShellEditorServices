@@ -126,6 +126,27 @@ namespace PowerShellEditorServices.Test.Language
             Assert.All(results, r => Assert.True(r.Kind is CompletionItemKind.File or CompletionItemKind.Folder));
         }
 
+        [Fact]
+        public async Task CompletionResolveHandlesTaskCanceledException()
+        {
+            using CancellationTokenSource cancellationTokenSource = new();
+#if CoreCLR
+            await cancellationTokenSource.CancelAsync();
+#else
+            cancellationTokenSource.Cancel();
+#endif
+            CompletionItem request = new()
+            {
+                Kind = CompletionItemKind.Function,
+                Label = "Get-ChildItem",
+                Detail = "Microsoft.PowerShell.Management"
+            };
+
+            CompletionItem actual = await completionHandler.Handle(request, cancellationTokenSource.Token);
+
+            Assert.Equal(request, actual);
+        }
+
         // TODO: These should be an integration tests at a higher level if/when https://github.com/PowerShell/PowerShell/pull/25108 is merged. As of today, we can't actually test this in the PS engine currently.
         [Fact]
         public void CanExtractTypeAndDescriptionFromTooltip()
