@@ -7,18 +7,24 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
+using System.Management.Automation.Runspaces;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Handlers;
 using Microsoft.PowerShell.EditorServices.Services;
 using Microsoft.PowerShell.EditorServices.Services.DebugAdapter;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Context;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Execution;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Console;
 using Microsoft.PowerShell.EditorServices.Services.PowerShell.Host;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell;
+using Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
 using Microsoft.PowerShell.EditorServices.Test;
 using Microsoft.PowerShell.EditorServices.Test.Shared;
 using Microsoft.PowerShell.EditorServices.Utility;
+using SMA = System.Management.Automation;
 using Xunit;
 
 namespace PowerShellEditorServices.Test.Debugging
@@ -30,6 +36,69 @@ namespace PowerShellEditorServices.Test.Debugging
         public string ReadLine(CancellationToken cancellationToken) => "";
 
         public void AddToHistory(string historyEntry) => history.Add(historyEntry);
+    }
+
+    internal sealed class TestRunspaceInfo(Runspace runspace) : IRunspaceInfo
+    {
+        public RunspaceOrigin RunspaceOrigin => global::Microsoft.PowerShell.EditorServices.Services.PowerShell.Runspace.RunspaceOrigin.Local;
+
+        public bool IsOnRemoteMachine => false;
+
+        public PowerShellVersionDetails PowerShellVersionDetails => throw new NotImplementedException();
+
+        public SessionDetails SessionDetails => throw new NotImplementedException();
+
+        public Runspace Runspace { get; } = runspace;
+    }
+
+    internal sealed class TestRunspaceContext(Runspace runspace) : IRunspaceContext
+    {
+        public IRunspaceInfo CurrentRunspace { get; } = new TestRunspaceInfo(runspace);
+    }
+
+    internal sealed class ThrowingExecutionService : IInternalPowerShellExecutionService
+    {
+        public event Action<object, RunspaceChangedEventArgs> RunspaceChanged
+        {
+            add { }
+            remove { }
+        }
+
+        public Task<TResult> ExecuteDelegateAsync<TResult>(
+            string representation,
+            ExecutionOptions executionOptions,
+            Func<SMA.PowerShell, CancellationToken, TResult> func,
+            CancellationToken cancellationToken) => throw new NotImplementedException();
+
+        public Task ExecuteDelegateAsync(
+            string representation,
+            ExecutionOptions executionOptions,
+            Action<SMA.PowerShell, CancellationToken> action,
+            CancellationToken cancellationToken) => throw new NotImplementedException();
+
+        public Task<TResult> ExecuteDelegateAsync<TResult>(
+            string representation,
+            ExecutionOptions executionOptions,
+            Func<CancellationToken, TResult> func,
+            CancellationToken cancellationToken) => throw new NotImplementedException();
+
+        public Task ExecuteDelegateAsync(
+            string representation,
+            ExecutionOptions executionOptions,
+            Action<CancellationToken> action,
+            CancellationToken cancellationToken) => throw new NotImplementedException();
+
+        public Task<IReadOnlyList<TResult>> ExecutePSCommandAsync<TResult>(
+            PSCommand psCommand,
+            CancellationToken cancellationToken,
+            PowerShellExecutionOptions executionOptions = null) => throw new NotImplementedException();
+
+        public Task ExecutePSCommandAsync(
+            PSCommand psCommand,
+            CancellationToken cancellationToken,
+            PowerShellExecutionOptions executionOptions = null) => throw new NotImplementedException();
+
+        public void CancelCurrentTask() => throw new NotImplementedException();
     }
 
     [Trait("Category", "DebugService")]
@@ -587,6 +656,44 @@ namespace PowerShellEditorServices.Test.Debugging
 
             // Check the stubbed PSReadLine history
             Assert.Equal(". '" + debugScriptFile.FilePath + "'", Assert.Single(testReadLine.history));
+        }
+
+        [Fact]
+        public async Task LaunchFailsInConstrainedLanguageWhenDebugCommandsAreUnavailable()
+        {
+            InitialSessionState initialSessionState = InitialSessionState.CreateDefault2();
+            initialSessionState.LanguageMode = PSLanguageMode.ConstrainedLanguage;
+            using Runspace constrainedRunspace = RunspaceFactory.CreateRunspace(initialSessionState);
+            constrainedRunspace.Open();
+
+            Assert.Equal(PSLanguageMode.ConstrainedLanguage, constrainedRunspace.SessionStateProxy.LanguageMode);
+            Assert.Null(constrainedRunspace.SessionStateProxy.InvokeCommand.GetCommand("Wait-Debugger", CommandTypes.Cmdlet));
+
+            LaunchAndAttachHandler launchHandler = new(
+                NullLoggerFactory.Instance,
+                debugAdapterServer: null,
+                breakpointService: null,
+                debugEventHandlerService: null,
+                debugService,
+                new TestRunspaceContext(constrainedRunspace),
+                new ThrowingExecutionService(),
+                new DebugStateService(),
+                remoteFileManagerService: null);
+
+            HandlerErrorException exception = await Assert.ThrowsAsync<HandlerErrorException>(() =>
+                launchHandler.Handle(
+                    new PsesLaunchRequestArguments
+                    {
+                        Script = debugScriptFile.FilePath,
+                        Cwd = "",
+                        CreateTemporaryIntegratedConsole = false,
+                        ExecuteMode = "DotSource",
+                    },
+                    CancellationToken.None));
+
+            Assert.Equal(
+                "Cannot start debugging because you are running PowerShell in a constrained language mode that does not have the required debug commands available. Please contact your administrator to add the debug commands to your constrained runspace.",
+                exception.Message);
         }
 
         [Fact]
