@@ -24,7 +24,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         public string Cwd { get; set; }
         public bool EnableReferencesCodeLens { get; set; } = true;
         public bool AnalyzeOpenDocumentsOnly { get; set; }
-
+        public bool EnableParameterOutline { get; set; }
         public LanguageServerSettings()
         {
             ScriptAnalysis = new ScriptAnalysisSettings();
@@ -50,6 +50,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     Cwd = settings.Cwd;
                     EnableReferencesCodeLens = settings.EnableReferencesCodeLens;
                     AnalyzeOpenDocumentsOnly = settings.AnalyzeOpenDocumentsOnly;
+                    EnableParameterOutline = settings.EnableParameterOutline;
                 }
             }
         }
