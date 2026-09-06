@@ -27,10 +27,10 @@ jobs:
       DOTNET_GENERATE_ASPNET_CERTIFICATE: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install dotnet
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
         with:
           cache: true
           cache-dependency-path: '**/*.csproj'
@@ -41,7 +41,7 @@ jobs:
         run: ./tools/installPSResources.ps1
 
       - name: Download PowerShell install script
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: PowerShell/PowerShell
           path: pwsh
@@ -69,13 +69,13 @@ jobs:
 
       - name: Upload build artifacts
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: PowerShellEditorServices-module-${{ matrix.os }}
           path: module
 
       - name: Upload test results
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: PowerShellEditorServices-test-results-${{ matrix.os }}

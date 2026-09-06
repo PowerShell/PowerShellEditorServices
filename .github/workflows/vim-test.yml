@@ -21,10 +21,10 @@ jobs:
       DOTNET_GENERATE_ASPNET_CERTIFICATE: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install dotnet
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
         with:
           cache: true
           cache-dependency-path: '**/*.csproj'
@@ -39,18 +39,18 @@ jobs:
 
       - name: Install Vim
         id: vim
-        uses: rhysd/action-setup-vim@v1
+        uses: rhysd/action-setup-vim@febef33995d6649302e9d88dda81e071b68f16a7 # v1.6.1
         with:
           version: nightly
 
       - name: Checkout vim-ps1
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: PProvost/vim-ps1
           path: vim-ps1
 
       - name: Checkout LanguageClient-neovim
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: autozimu/LanguageClient-neovim
           path: LanguageClient-neovim
@@ -60,7 +60,7 @@ jobs:
         working-directory: LanguageClient-neovim
 
       - name: Checkout Themis
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: thinca/vim-themis
           path: vim-themis
