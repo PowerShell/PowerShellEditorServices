@@ -21,12 +21,17 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private static readonly SymbolInformationOrDocumentSymbolContainer s_emptySymbolInformationOrDocumentSymbolContainer = new();
         private readonly ILogger _logger;
         private readonly WorkspaceService _workspaceService;
+        private readonly ConfigurationService _configurationService;
         private readonly IDocumentSymbolProvider[] _providers;
 
-        public PsesDocumentSymbolHandler(ILoggerFactory factory, WorkspaceService workspaceService)
+        public PsesDocumentSymbolHandler(
+            ILoggerFactory factory,
+            WorkspaceService workspaceService,
+            ConfigurationService configurationService)
         {
             _logger = factory.CreateLogger<PsesDocumentSymbolHandler>();
             _workspaceService = workspaceService;
+            _configurationService = configurationService;
             _providers = new IDocumentSymbolProvider[]
             {
                 new ScriptDocumentSymbolProvider(),
@@ -166,7 +171,13 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
                 //
                 // TODO: We should also include function invocations that are part of DSLs (like
                 // Invoke-Build etc.).
-                if (!symbolReference.IsDeclaration || symbolReference.Type is SymbolType.Parameter)
+                if (!symbolReference.IsDeclaration)
+                {
+                    continue;
+                }
+
+                if (symbolReference.Type is SymbolType.Parameter &&
+                    !_configurationService.CurrentSettings.EnableParameterOutline)
                 {
                     continue;
                 }
