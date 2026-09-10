@@ -114,6 +114,12 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
         private readonly DebugEventHandlerService _debugEventHandlerService;
         private readonly IDebugAdapterServerFacade _debugAdapterServer;
         private readonly RemoteFileManagerService _remoteFileManagerService;
+        private static readonly string[] s_requiredDebugCommands =
+        [
+            "Get-Variable",
+            "Wait-Debugger",
+            "Get-Runspace",
+        ];
 
         public LaunchAndAttachHandler(
             ILoggerFactory factory,
@@ -154,6 +160,8 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
 
         public async Task<LaunchResponse> HandleImpl(PsesLaunchRequestArguments request, CancellationToken cancellationToken)
         {
+            EnsureDebugCommandsAvailable();
+
             // The debugger has officially started. We use this to later check if we should stop it.
             ((PsesInternalHost)_executionService).DebugContext.IsActive = true;
 
@@ -244,6 +252,24 @@ namespace Microsoft.PowerShell.EditorServices.Handlers
             _debugStateService.ServerStarted.TrySetResult(true);
 
             return new LaunchResponse();
+        }
+
+        private void EnsureDebugCommandsAvailable()
+        {
+            if (_runspaceContext.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode != PSLanguageMode.ConstrainedLanguage)
+            {
+                return;
+            }
+
+            foreach (string commandName in s_requiredDebugCommands)
+            {
+                if (_runspaceContext.CurrentRunspace.Runspace.SessionStateProxy.InvokeCommand.GetCommand(commandName, CommandTypes.Cmdlet) is null)
+                {
+                    throw new HandlerErrorException(
+                        "Cannot start debugging because you are running PowerShell in a constrained language mode that does not have the required debug commands available. Please contact your administrator to add the debug commands to your constrained runspace.",
+                        new { MissingCommand = commandName, LanguageMode = _runspaceContext.CurrentRunspace.Runspace.SessionStateProxy.LanguageMode.ToString() });
+                }
+            }
         }
 
         public async Task<AttachResponse> Handle(PsesAttachRequestArguments request, CancellationToken cancellationToken)
