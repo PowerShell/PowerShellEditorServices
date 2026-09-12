@@ -6,13 +6,21 @@ using System.IO;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.PowerShell.EditorServices.Extensions;
 using Microsoft.PowerShell.EditorServices.Services;
+using Microsoft.PowerShell.EditorServices.Services.Configuration;
 using Microsoft.PowerShell.EditorServices.Services.Extension;
 using Microsoft.PowerShell.EditorServices.Services.TextDocument;
+using Newtonsoft.Json;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using Xunit;
 
 namespace PowerShellEditorServices.Test.Extensions
 {
+    [CollectionDefinition("Console", DisableParallelization = true)]
+    public class ConsoleCollectionDefinition
+    {
+    }
+
+    [Collection("Console")]
     [Trait("Category", "Extensions")]
     public class EditorOperationsServiceTests
     {
@@ -36,7 +44,8 @@ namespace PowerShellEditorServices.Test.Extensions
             EditorOperationsService editorOperationsService = new(
                 psesHost: null,
                 workspaceService,
-                languageServer: null);
+                languageServer: null,
+                new ConfigurationService());
 
             WorkspaceOpenDocument[] documents = editorOperationsService.GetWorkspaceOpenDocuments();
 
@@ -60,7 +69,8 @@ namespace PowerShellEditorServices.Test.Extensions
             EditorOperationsService editorOperationsService = new(
                 psesHost: null,
                 workspaceService,
-                languageServer: null);
+                languageServer: null,
+                new ConfigurationService());
 
             WorkspaceOpenDocument[] initialDocuments = editorOperationsService.GetWorkspaceOpenDocuments();
             Assert.Contains(initialDocuments, static document => document.Path.EndsWith("open-saved.ps1") && document.Saved);
@@ -85,6 +95,45 @@ namespace PowerShellEditorServices.Test.Extensions
             WorkspaceOpenDocument[] savedDocuments = editorOperationsService.GetWorkspaceOpenDocuments();
             Assert.Contains(savedDocuments, static document => document.Path.EndsWith("open-saved.ps1") && document.Saved);
             Assert.Contains(savedDocuments, static document => document.Path.StartsWith("untitled:", StringComparison.Ordinal) && !document.Saved);
+        }
+
+        [Fact]
+        public void LanguageServerSettingsUpdatesForceClearScrollbackBuffer()
+        {
+            LanguageServerSettings incomingSettings = JsonConvert.DeserializeObject<LanguageServerSettings>(
+                "{\"integratedConsole\":{\"forceClearScrollbackBuffer\":true}}");
+            LanguageServerSettings currentSettings = new();
+
+            currentSettings.Update(incomingSettings, workspaceRootPath: string.Empty, NullLogger.Instance);
+
+            Assert.True(currentSettings.IntegratedConsole.ForceClearScrollbackBuffer);
+        }
+
+        [Fact]
+        public void ClearTerminalWritesEraseSavedLinesWhenConfigured()
+        {
+            WorkspaceService workspaceService = new(NullLoggerFactory.Instance);
+            ConfigurationService configurationService = new();
+            configurationService.CurrentSettings.IntegratedConsole.ForceClearScrollbackBuffer = true;
+            EditorOperationsService editorOperationsService = new(
+                psesHost: null,
+                workspaceService,
+                languageServer: null,
+                configurationService);
+            StringWriter output = new();
+            TextWriter originalOutput = Console.Out;
+
+            try
+            {
+                Console.SetOut(output);
+                editorOperationsService.ClearTerminal();
+            }
+            finally
+            {
+                Console.SetOut(originalOutput);
+            }
+
+            Assert.Equal("\u001b[3J", output.ToString());
         }
 
         private static ScriptFile CreateFileBuffer(WorkspaceService workspaceService, string fileName)

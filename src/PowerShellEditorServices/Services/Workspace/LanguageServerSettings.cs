@@ -21,6 +21,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
         public CodeFormattingSettings CodeFormatting { get; set; }
         public CodeFoldingSettings CodeFolding { get; set; }
         public PesterSettings Pester { get; set; }
+        public IntegratedConsoleSettings IntegratedConsole { get; set; }
         public string Cwd { get; set; }
         public bool EnableReferencesCodeLens { get; set; } = true;
         public bool AnalyzeOpenDocumentsOnly { get; set; }
@@ -31,6 +32,7 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
             CodeFormatting = new CodeFormattingSettings();
             CodeFolding = new CodeFoldingSettings();
             Pester = new PesterSettings();
+            IntegratedConsole = new IntegratedConsoleSettings();
         }
 
         public void Update(
@@ -47,12 +49,28 @@ namespace Microsoft.PowerShell.EditorServices.Services.Configuration
                     CodeFormatting = new CodeFormattingSettings(settings.CodeFormatting);
                     CodeFolding.Update(settings.CodeFolding, logger);
                     Pester.Update(settings.Pester, logger);
+                    IntegratedConsole = new IntegratedConsoleSettings(settings.IntegratedConsole);
                     Cwd = settings.Cwd;
                     EnableReferencesCodeLens = settings.EnableReferencesCodeLens;
                     AnalyzeOpenDocumentsOnly = settings.AnalyzeOpenDocumentsOnly;
                 }
             }
         }
+    }
+
+    internal class IntegratedConsoleSettings
+    {
+        public IntegratedConsoleSettings() { }
+
+        public IntegratedConsoleSettings(IntegratedConsoleSettings integratedConsoleSettings)
+        {
+            if (integratedConsoleSettings is not null)
+            {
+                ForceClearScrollbackBuffer = integratedConsoleSettings.ForceClearScrollbackBuffer;
+            }
+        }
+
+        public bool ForceClearScrollbackBuffer { get; set; }
     }
 
     internal class ScriptAnalysisSettings
