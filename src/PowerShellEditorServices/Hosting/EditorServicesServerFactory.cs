@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -17,7 +16,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// <summary>
     /// Factory for creating the LSP server and debug server instances.
     /// </summary>
-    internal sealed class EditorServicesServerFactory : IDisposable
+    internal sealed class EditorServicesServerFactory
     {
         private readonly HostLogger _hostLogger;
 
@@ -125,8 +124,5 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
                 serviceProvider,
                 isTemp: true);
         }
-
-        // TODO: Clean up host logger? Shouldn't matter since we start a new process after shutdown.
-        public void Dispose() { }
     }
 }

@@ -233,7 +233,7 @@ namespace Microsoft.PowerShell.EditorServices.Commands
                 // Create the configuration from parameters
                 EditorServicesConfig editorServicesConfig = CreateConfigObject();
 
-                using EditorServicesLoader psesLoader = EditorServicesLoader.Create(_logger, editorServicesConfig, SessionDetailsPath, _loggerUnsubscribers);
+                EditorServicesLoader psesLoader = EditorServicesLoader.Create(_logger, editorServicesConfig, SessionDetailsPath, _loggerUnsubscribers);
                 _logger.Log(PsesLogLevel.Debug, "Loading EditorServices");
                 // Synchronously start editor services and wait here until it shuts down.
                 psesLoader.LoadAndRunEditorServicesAsync().GetAwaiter().GetResult();

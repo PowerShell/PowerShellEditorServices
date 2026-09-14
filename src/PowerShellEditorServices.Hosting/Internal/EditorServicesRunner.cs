@@ -18,7 +18,7 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
     /// cref="Microsoft.Extensions.Logging"/> and <see
     /// cref="Microsoft.Extensions.DependencyInjection"/>.
     /// </remarks>
-    internal class EditorServicesRunner : IDisposable
+    internal class EditorServicesRunner
     {
         private readonly HostLogger _logger;
 
@@ -67,15 +67,6 @@ namespace Microsoft.PowerShell.EditorServices.Hosting
             _logger.Log(PsesLogLevel.Debug, "Waiting on PSES run/shutdown");
             return runAndAwaitShutdown;
         }
-
-        /// <summary>
-        /// TODO: This class probably should not be <see cref="IDisposable"/> as the primary
-        /// intention of that interface is to provide cleanup of unmanaged resources, which the
-        /// logger certainly is not. Nor is this class used with a <see langword="using"/>. It is
-        /// only because of the use of <see cref="_serverFactory"/> that this class is also
-        /// disposable, and instead that class should be fixed.
-        /// </summary>
-        public void Dispose() => _serverFactory.Dispose();
 
         /// <summary>
         /// This is the servers' entry point, e.g. <c>main</c>, as it instantiates, runs and waits
